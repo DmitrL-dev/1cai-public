@@ -1,0 +1,200 @@
+# Metricbeat конфигурация для сбора системных метрик
+
+metricbeat.config.modules:
+  # Glob pattern для modules configuration
+  path: ${path.config}/modules.d/*.yml
+  
+  # Автоматическая загрузка модулей
+  reload.enabled: true
+  reload.period: 30s
+
+# Параметры модуля system
+metricbeat.modules:
+- module: system
+  enabled: true
+  period: 10s
+  metricsets:
+    - cpu
+    - memory
+    - network
+    - process
+    - socket
+    - filesystem
+    - fsstat
+  processes:
+    - process.name:*
+    - process.include_top_n:
+        by_cpu: 5
+        by_memory: 5
+  process.include_top_n:
+    by_cpu: 5
+    by_memory: 5
+
+- module: docker
+  enabled: true
+  period: 10s
+  hosts: ["unix:///var/run/docker.sock"]
+  metricsets:
+    - container
+    - cpu
+    - diskio
+    - event
+    - health
+    - info
+    - memory
+    - network
+  hosts: ["unix:///var/run/docker.sock"]
+
+- module: kubernetes
+  enabled: true
+  period: 10s
+  metricsets:
+    - container
+    - node
+    - pod
+    - system
+  hosts: ["kube-state-metrics:8080"]
+
+- module: nginx
+  enabled: true
+  period: 10s
+  hosts: ["nginx-exporter:9113"]
+
+- module: postgresql
+  enabled: true
+  period: 10s
+  hosts: ["postgres-exporter:9187"]
+  metricsets:
+    - activity
+    - bgwriter
+    - database
+    - locks
+    - stat_database
+    - stat_user
+    - stat_xact
+    - user
+    - user_groups
+
+# Output configuration
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  
+  # Template настройки
+  template.name: "metricbeat"
+  template.pattern: "metricbeat-*"
+  template.overwrite: true
+  template.settings:
+    index.number_of_shards: 1
+    index.number_of_replicas: 0
+    index.refresh_interval: 30s
+    index.codec: best_compression
+    _meta.version: "8.11.0"
+    
+  # Connection настройки
+  compression_level: 3
+  worker: 1
+  bulk_max_size: 50
+  flush_bytes: 1024
+  flush_interval: 5s
+
+# Логирование
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/metricbeat
+  name: metricbeat
+  keepfiles: 7
+  permissions: 0600
+
+# X-Pack monitoring (отключено для экономии ресурсов)
+monitoring.enabled: false
+
+# HTTP API
+http.enabled: true
+http.port: 5067
+
+# Data и config paths
+path.data: /usr/share/metricbeat/data
+path.config: /etc/metricbeat
+
+# Queue настройки
+queue.mem:
+  events: 4096
+  flush.min_events: 512
+  flush.timeout: 5s
+
+# Processors для дополнительной обработки
+processors:
+  # Добавление информации о хосте
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+
+  # Добавление информации о Docker контейнере
+  - add_docker_metadata: ~
+
+  # Добавление информации о Kubernetes
+  - add_kubernetes_metadata:
+      host: kubernetes.default.svc
+      matchers:
+      - logs_path:
+          logs_path: "/var/log/containers/"
+
+  # Добавление environment тэга
+  - add_tags:
+      tags: ["demo-ai-assistants", "production"]
+
+# Configuration reload
+metricbeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: true
+  reload.period: 30s
+
+# GeoIP database (если нужно)
+# processor.geoip:
+#   database_file: /usr/share/GeoIP/GeoLite2-City.mmdb
+
+# Kibana configuration (для дашбордов)
+setup.kibana:
+  host: "kibana:5601"
+
+# Dashboards
+setup.dashboards.enabled: true
+setup.dashboards.index: "metricbeat-*"
+
+# Force Kibana index pattern creation
+setup.template.settings:
+  index.number_of_shards: 1
+  index.number_of_replicas: 0
+  index.codec: best_compression
+
+# ILM (Index Lifecycle Management)
+setup.ilm.enabled: true
+setup.ilm.rollover_alias: "metricbeat"
+setup.ilm.pattern: "{now/d}-*"
+setup.ilm.policy: "metricbeat-8.0.0-policy"
+
+# ILM Policy definition (если нужно создать)
+# setup.ilm.check_exists: false
+
+# Setup template settings
+setup.template.settings:
+  index.number_of_shards: 1
+  index.number_of_replicas: 0
+  index.refresh_interval: 30s
+  index.codec: best_compression
+
+# Processors для enrich данных
+processors:
+  # Drop debug и trace метрики (экономия места)
+  - drop_fields:
+      fields: ["agent", "ecs", "metricset", "input", "host"]
+
+  # Добавляем пользовательские тэги
+  - add_tags:
+      tags: ["demo-ai-assistants", "monitoring"]
+
+  # Normalize environment
+  - add_fields:
+      fields:
+        environment: "production"
+        service: "demo-ai-assistants"

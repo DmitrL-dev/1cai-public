@@ -1,0 +1,6 @@
+apiVersion: v2
+name: observability-stack
+description: Prometheus + Loki + Tempo + Grafana stack for 1C AI Stack
+version: 0.1.0
+appVersion: "0.1.0"
+type: application

@@ -1,0 +1,102 @@
+@startuml intelligent-cache-flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+title Intelligent Cache - Caching Flow
+
+actor User
+participant "AI Orchestrator" as Orchestrator
+participant "Intelligent Cache" as Cache
+participant "Cache Entry" as Entry
+participant "Prometheus" as Metrics
+
+User -> Orchestrator: Query: "Как создать функцию в 1С?"
+activate Orchestrator
+
+Orchestrator -> Cache: get(query, context)
+activate Cache
+
+Cache -> Cache: generate_key(query, context)
+Cache -> Cache: check_cache(key)
+
+alt Cache Hit
+    Cache -> Entry: get_entry(key)
+    activate Entry
+    Entry -> Entry: check_expired()
+    
+    alt Not Expired
+        Entry -> Entry: touch()  # Update last_accessed
+        Cache -> Cache: move_to_end(key)  # LRU
+        Entry --> Cache: value
+        deactivate Entry
+        
+        Cache -> Metrics: track_intelligent_cache_hit(query_type)
+        activate Metrics
+        deactivate Metrics
+        
+        Cache -> Metrics: track_intelligent_cache_operation("get", duration, "success")
+        activate Metrics
+        deactivate Metrics
+        
+        Cache --> Orchestrator: cached_value
+        Orchestrator --> User: Response (from cache)
+    else Expired
+        Cache -> Cache: delete_entry(key)
+        Entry --> Cache: None
+        deactivate Entry
+        
+        Cache -> Metrics: track_intelligent_cache_miss(query_type)
+        Cache -> Metrics: track_intelligent_cache_eviction(eviction_reason="ttl_expired")
+        activate Metrics
+        deactivate Metrics
+        
+        Cache --> Orchestrator: None
+        note right: Cache miss, proceed to LLM
+    end
+else Cache Miss
+    Cache -> Metrics: track_intelligent_cache_miss(query_type)
+    activate Metrics
+    deactivate Metrics
+    
+    Cache --> Orchestrator: None
+    note right: Cache miss, proceed to LLM
+end
+
+deactivate Cache
+
+alt Cache Miss
+    Orchestrator -> Orchestrator: call LLM provider
+    Orchestrator -> Orchestrator: get_response
+    
+    Orchestrator -> Cache: set(query, response, query_type="code_generation", ttl_seconds=600)
+    activate Cache
+    
+    Cache -> Cache: generate_key(query, context)
+    Cache -> Cache: determine_ttl(query_type)
+    
+    alt Cache Full (LRU Eviction)
+        Cache -> Cache: remove_oldest_entry()
+        Cache -> Metrics: track_intelligent_cache_eviction(eviction_reason="lru")
+        activate Metrics
+        deactivate Metrics
+    end
+    
+    Cache -> Entry: create_entry(value, expires_at, query_type, tags)
+    activate Entry
+    Cache -> Cache: add_entry(key, entry)
+    deactivate Entry
+    
+    Cache -> Metrics: track_intelligent_cache_operation("set", duration, "success")
+    Cache -> Metrics: update_intelligent_cache_size(current_size, max_size)
+    activate Metrics
+    deactivate Metrics
+    
+    deactivate Cache
+end
+
+Orchestrator --> User: Response
+deactivate Orchestrator
+
+@enduml
+

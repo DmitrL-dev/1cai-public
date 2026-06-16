@@ -1,0 +1,60 @@
+name: security-scan
+
+on:
+  workflow_call:
+    inputs:
+      preset:
+        required: false
+        default: web-api
+        type: string
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install security agent
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r security/agent_framework/requirements.txt
+
+      - name: Copy preset
+        run: |
+          python -m security.agent_framework.cli preset ${{ inputs.preset }} --output scan.yaml
+
+      - name: Run scan
+        env:
+          SECURITY_SLACK: ${{ secrets.SECURITY_SLACK_WEBHOOK }}
+          CONFLUENCE_USER: ${{ secrets.CONFLUENCE_USER }}
+          CONFLUENCE_TOKEN: ${{ secrets.CONFLUENCE_TOKEN }}
+          SECURITY_TICKET_WEBHOOK: ${{ secrets.SECURITY_TICKET_WEBHOOK }}
+        run: |
+          python -m security.agent_framework.cli run \
+            --config scan.yaml \
+            --publish-dir portal/security \
+            --publish-url-base https://security.example.com/reports \
+            --slack-webhook "$SECURITY_SLACK" \
+            --s3-bucket security-reports \
+            --s3-prefix github-actions \
+            --confluence-url https://confluence.example.com \
+            --confluence-user "$CONFLUENCE_USER" \
+            --confluence-token "$CONFLUENCE_TOKEN" \
+            --confluence-space SEC \
+            --tickets-dir reports/tickets \
+            --ticket-webhook "$SECURITY_TICKET_WEBHOOK" \
+            --knowledge-base reports/findings.jsonl
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            reports/
+            portal/security/
+

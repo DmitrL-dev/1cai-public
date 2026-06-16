@@ -1,0 +1,334 @@
+# Dockerfile для тестирования 1С:Enterprise
+# Основан на стандартах тестирования из docs/1c_testing_standards.md
+
+# Базовый образ для 1С тестирования
+FROM ubuntu:22.04
+
+# Метаданные
+LABEL maintainer="1C DevOps Team" \
+      version="1.0.0" \
+      description="Docker образ для автоматизации тестирования в 1С:Предприятие" \
+      org.opencontainers.image.source="https://github.com/company/1c-ci-cd" \
+      org.opencontainers.image.documentation="https://docs.company.com/1c-ci-cd" \
+      org.opencontainers.image.licenses="MIT"
+
+# Переменные окружения
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LC_ALL=C.UTF-8
+ENV LANG=C.UTF-8
+ENV LANGUAGE=C.UTF-8
+
+# Версии компонентов
+ENV V8_VERSION=8.3.22
+ENV V8_PLATFORM=linux64
+ENV V8_DISTRIBUTIVE_URL=https://downloads.1c.ru/tsl/8.3.22.2282/linux64.tar.gz
+
+# Python версия
+ENV PYTHON_VERSION=3.11
+ENV PIP_NO_CACHE_DIR=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Пути для установки компонентов
+ENV INSTALL_DIR=/opt/1c
+ENV V8_TOOLS_DIR=/opt/1c/v8
+ENV SCRIPTS_DIR=/opt/1c/scripts
+ENV DATA_DIR=/var/lib/1c
+ENV LOGS_DIR=/var/log/1c
+
+# Пользователь для запуска тестов
+ENV TEST_USER=onetest
+ENV TEST_GROUP=onetest
+
+# Параметры тестирования
+ENV TEST_TIMEOUT=1800
+ENV MAX_CONCURRENT_TESTS=4
+ENV COVERAGE_THRESHOLD=80
+ENV PARALLEL_EXECUTORS=2
+
+# Обновление системы и установка базовых пакетов
+RUN apt-get update && apt-get install -y \
+    # Системные пакеты
+    curl \
+    wget \
+    gnupg2 \
+    ca-certificates \
+    software-properties-common \
+    apt-transport-https \
+    lsb-release \
+    locales \
+    git \
+    unzip \
+    zip \
+    tar \
+    gzip \
+    bzip2 \
+    xz-utils \
+    # Java для SonarQube и инструментов анализа
+    openjdk-11-jdk \
+    # Дополнительные утилиты
+    vim \
+    nano \
+    htop \
+    tree \
+    jq \
+    dos2unix \
+    # Утилиты для сети и мониторинга
+    net-tools \
+    dnsutils \
+    telnet \
+    # Пакеты для работы с PostgreSQL (для тестовых БД)
+    postgresql-client \
+    # Пакеты для архивирования
+    p7zip-full \
+    rar \
+    # Очистка кэша
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/* /var/tmp/*
+
+# Настройка локалей
+RUN locale-gen en_US.UTF-8 && \
+    locale-gen ru_RU.UTF-8 && \
+    update-locale LANG=en_US.UTF-8
+
+# Создание пользователя для тестов
+RUN groupadd -r $TEST_GROUP && \
+    useradd -r -g $TEST_GROUP -m -s /bin/bash $TEST_USER && \
+    usermod -aG sudo $TEST_USER
+
+# Создание необходимых директорий
+RUN mkdir -p $INSTALL_DIR \
+    $V8_TOOLS_DIR \
+    $SCRIPTS_DIR \
+    $DATA_DIR \
+    $LOGS_DIR \
+    /workspace \
+    /tests \
+    /reports \
+    && chown -R $TEST_USER:$TEST_GROUP $INSTALL_DIR $DATA_DIR $LOGS_DIR /workspace /tests /reports
+
+# Установка Python 3.11
+RUN add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y \
+    python$PYTHON_VERSION \
+    python$PYTHON_VERSION-dev \
+    python$PYTHON_VERSION-distutils \
+    python3-pip \
+    python3-setuptools \
+    python3-wheel && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
+    update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1
+
+# Установка pip для Python 3.11
+RUN wget https://bootstrap.pypa.io/get-pip.py && \
+    python3.11 get-pip.py && \
+    rm get-pip.py
+
+# Установка Python зависимостей для тестирования
+COPY requirements.txt /tmp/requirements.txt
+RUN pip3.11 install --no-cache-dir -r /tmp/requirements.txt && \
+    pip3.11 install --no-cache-dir \
+    # Инструменты тестирования
+    pytest==7.4.3 \
+    pytest-xdist==3.3.1 \
+    pytest-html==3.2.0 \
+    pytest-cov==4.1.0 \
+    pytest-json-report==1.5.0 \
+    # Инструменты качества кода
+    flake8==6.1.0 \
+    black==23.9.1 \
+    isort==5.12.0 \
+    mypy==1.6.1 \
+    pylint==3.0.2 \
+    # Инструменты безопасности
+    bandit==1.7.5 \
+    safety==2.3.4 \
+    semgrep==1.38.0 \
+    # Инструменты анализа
+    coverage==7.3.2 \
+    radon==6.0.1 \
+    vulture==2.7 \
+    xenon==0.9.1 \
+    # Инструменты для работы с XML/JSON
+    lxml==4.9.3 \
+    xmltodict==0.13.0 \
+    jsonschema==4.19.1 \
+    pyyaml==6.0.1 \
+    jinja2==3.1.2 \
+    # Инструменты для HTTP запросов
+    requests==2.31.0 \
+    httpx==0.25.1 \
+    aiohttp==3.8.6 \
+    # Инструменты для работы с базами данных
+    psycopg2-binary==2.9.9 \
+    sqlalchemy==2.0.23 \
+    alembic==1.12.1 \
+    # Инструменты для генерации отчетов
+    allure-pytest==2.13.2 \
+    reportlab==4.0.7 \
+    matplotlib==3.7.2 \
+    pandas==2.1.3 \
+    numpy==1.24.3 \
+    # Инструменты для параллельного выполнения
+    joblib==1.3.2 \
+    concurrent-futures==3.1.1 \
+    # Инструменты для мониторинга
+    psutil==5.9.6 \
+    prometheus-client==0.19.0 \
+    # Очистка кэша
+    && rm -rf /root/.cache/pip /tmp/*
+
+# Скачивание и установка платформы 1С (если доступна)
+RUN if [ "${V8_VERSION}" != "8.3.22" ]; then \
+        echo "Downloading 1C Platform ${V8_VERSION}..."; \
+        cd /tmp && \
+        wget -q --show-progress ${V8_DISTRIBUTIVE_URL} -O 1c-platform.tar.gz && \
+        mkdir -p ${V8_TOOLS_DIR} && \
+        tar -xzf 1c-platform.tar.gz -C ${V8_TOOLS_DIR} --strip-components=1 && \
+        rm 1c-platform.tar.gz && \
+        echo "1C Platform ${V8_VERSION} installed successfully"; \
+    else \
+        echo "Skipping 1C Platform installation - using default version"; \
+    fi
+
+# Создание скриптов для тестирования
+COPY scripts/ $SCRIPTS_DIR/
+RUN chmod +x $SCRIPTS_DIR/*.py $SCRIPTS_DIR/*.sh && \
+    chown -R $TEST_USER:$TEST_GROUP $SCRIPTS_DIR
+
+# Создание переменных окружения для 1С
+ENV PATH="${V8_TOOLS_DIR}/bin:$PATH" \
+    LD_LIBRARY_PATH="${V8_TOOLS_DIR}/lib:${LD_LIBRARY_PATH}" \
+    1C_DATA_DIR="${DATA_DIR}" \
+    1C_LOG_DIR="${LOGS_DIR}"
+
+# Копирование тестовых шаблонов
+COPY tests/templates/ /tests/templates/
+RUN chown -R $TEST_USER:$TEST_GROUP /tests
+
+# Настройка рабочего каталога для тестов
+WORKDIR /workspace
+
+# Переключение на пользователя тестов
+USER $TEST_USER
+
+# Проверка установки
+RUN echo "=== 1C Testing Environment Check ===" && \
+    echo "Python version:" && python3 --version && \
+    echo "1C Tools:" && which 1cv8 || echo "1C tools not available" && \
+    echo "Installed packages:" && pip3 list | head -10 && \
+    echo "=== Environment ready for testing ==="
+
+# Expose ports для различных сервисов
+EXPOSE 8080 8081 8082 5432 9000
+
+# Health check для мониторинга состояния контейнера
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD python3 $SCRIPTS_DIR/health_check.py || exit 1
+
+# Volume для персистентных данных
+VOLUME ["$DATA_DIR", "$LOGS_DIR", "/workspace", "/tests", "/reports"]
+
+# Тома для обмена данными между контейнерами
+VOLUME ["/shared/tests", "/shared/reports", "/shared/build"]
+
+# Загрузочная команда по умолчанию
+CMD ["/bin/bash"]
+
+# Дополнительные теги для разных вариантов использования
+# Разработка: docker build --target development -t 1c-test:dev .
+# Тестирование: docker build --target testing -t 1c-test:testing .
+# Анализ качества: docker build --target quality -t 1c-test:quality .
+
+# ===============================
+# Различные варианты сборки
+# ===============================
+
+# Вариант для разработки
+FROM base as development
+USER root
+RUN pip3.11 install --no-cache-dir \
+    ipython==8.16.1 \
+    jupyter==1.0.0 \
+    debugpy==1.8.0 \
+    rich==13.6.0 \
+    typer==0.9.0
+USER $TEST_USER
+
+# Вариант для тестирования с дополнительными инструментами
+FROM base as testing
+USER root
+RUN pip3.11 install --no-cache-dir \
+    locust==2.16.1 \
+    selenium==4.14.0 \
+    playwright==1.40.0 \
+    faker==19.12.0 \
+    factory-boy==3.3.0 \
+    freezegun==1.2.2 \
+    responses==0.23.3
+USER $TEST_USER
+
+# Вариант для анализа качества кода
+FROM base as quality
+USER root
+RUN pip3.11 install --no-cache-dir \
+    sonar-scanner==5.0.0 \
+    sonarqube-api==2.7.0 \
+    codeclimate-test-reporter==0.2.0 \
+    codacy-coverage==3.1.0 \
+    codecov==2.1.13
+USER $TEST_USER
+
+# Вариант для производительности
+FROM base as performance
+USER root
+RUN pip3.11 install --no-cache-dir \
+    memory-profiler==0.61.0 \
+    line-profiler==4.1.1 \
+    py-spy==0.3.14 \
+    gprof2dot==2022.7.29 \
+    snakeviz==2.1.1
+USER $TEST_USER
+
+# ===============================
+# Примеры использования
+# ===============================
+
+# Запуск тестового окружения:
+# docker run --rm -it \
+#   -v $(pwd)/src:/workspace/src \
+#   -v $(pwd)/tests:/workspace/tests \
+#   -v $(pwd)/reports:/workspace/reports \
+#   -e V8_SERVER_URL=http://1c-server:80 \
+#   -e V8_USER=test_user \
+#   -e V8_PASSWORD=test_password \
+#   1c-test:testing bash
+
+# Запуск юнит-тестов:
+# docker run --rm \
+#   -v $(pwd):/workspace \
+#   -e PYTEST_CURRENT_TEST=tests/unit/ \
+#   1c-test:testing python3 /opt/1c/scripts/run_unit_tests.py
+
+# Запуск интеграционных тестов:
+# docker run --rm \
+#   -v $(pwd):/workspace \
+#   -e INTEGRATION_TESTS=true \
+#   -e MOCK_SERVER=true \
+#   1c-test:testing python3 /opt/1c/scripts/run_integration_tests.py
+
+# Запуск анализа качества:
+# docker run --rm \
+#   -v $(pwd):/workspace \
+#   -e SONARQUBE_URL=http://sonarqube:9000 \
+#   -e SONARQUBE_TOKEN=$SONARQUBE_TOKEN \
+#   1c-test:quality python3 /opt/1c/scripts/run_quality_analysis.py
+
+# Запуск нагрузочного тестирования:
+# docker run --rm \
+#   -v $(pwd):/workspace \
+#   -e PERFORMANCE_TESTS=true \
+#   -e LOAD_USERS=100 \
+#   -e TEST_DURATION=300 \
+#   1c-test:performance python3 /opt/1c/scripts/run_performance_tests.py

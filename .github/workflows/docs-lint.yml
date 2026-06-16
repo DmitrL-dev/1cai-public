@@ -1,0 +1,33 @@
+name: Documentation Quality
+
+on:
+  pull_request:
+  push:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  markdownlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      - name: Install markdownlint
+        run: npm install --global markdownlint-cli@0.37.0
+      - name: Run markdownlint
+        run: markdownlint \"**/*.md\" --ignore node_modules --ignore output --ignore dist
+
+  link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Lychee broken link check
+        uses: lycheeverse/lychee-action@v1.6.1
+        with:
+          args: --config .lychee.toml .
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

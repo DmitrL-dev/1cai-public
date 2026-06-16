@@ -1,0 +1,274 @@
+# Filebeat конфигурация для сбора логов
+filebeat.inputs:
+  # Логи приложений (контейнеров)
+  - type: container
+    enabled: true
+    paths:
+      - /var/lib/docker/containers/*/*.log
+    processors:
+      - add_docker_metadata:
+          host: "unix:///var/run/docker.sock"
+      - decode_json_fields:
+          fields: ["log"]
+          target: "json"
+          overwrite_keys: true
+      - drop_fields:
+          fields: ["host", "agent", "ecs", "input", "log.offset"]
+
+  # Системные логи
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/syslog
+      - /var/log/auth.log
+    fields:
+      service: system
+      log_type: system
+    fields_under_root: false
+
+  # Nginx логи
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/nginx/*.log
+    fields:
+      service: nginx
+      log_type: http
+    multiline.pattern: '^\d{4}/\d{2}/\d{2}'
+    multiline.negate: true
+    multiline.match: after
+
+  # API Gateway логи
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/api-gateway/*.log
+    fields:
+      service: api-gateway
+      log_type: application
+    fields_under_root: false
+
+  # Auth Service логи
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/auth-service/*.log
+    fields:
+      service: auth-service
+      log_type: application
+    fields_under_root: false
+
+  # User Service логи
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/user-service/*.log
+    fields:
+      service: user-service
+      log_type: application
+    fields_under_root: false
+
+  # Product Service логи
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/product-service/*.log
+    fields:
+      service: product-service
+      log_type: application
+    fields_under_root: false
+
+  # Order Service логи
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/order-service/*.log
+    fields:
+      service: order-service
+      log_type: application
+    fields_under_root: false
+
+  # Payment Service логи
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/payment-service/*.log
+    fields:
+      service: payment-service
+      log_type: application
+    fields_under_root: false
+
+  # Notification Service логи
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/notification-service/*.log
+    fields:
+      service: notification-service
+      log_type: application
+    fields_under_root: false
+
+  # PostgreSQL логи
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/postgresql/*.log
+    fields:
+      service: postgresql
+      log_type: database
+    fields_under_root: false
+
+  # Redis логи
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/redis/*.log
+    fields:
+      service: redis
+      log_type: database
+    fields_under_root: false
+
+# Логи для сбора метрик
+filebeat.modules:
+  - module: system
+    syslog:
+      enabled: true
+    auth:
+      enabled: true
+
+  - module: nginx
+    access:
+      enabled: true
+      var.paths: ["/var/log/nginx/access.log*"]
+    error:
+      enabled: true
+      var.paths: ["/var/log/nginx/error.log*"]
+
+  - module: postgresql
+    log:
+      enabled: true
+      var.paths: ["/var/log/postgresql/*.log"]
+
+# Elasticsearch вывод
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  username: "elastic"
+  password: "changeme"
+  index: "filebeat-%{+yyyy.MM.dd}"
+  pipeline: "filebeat-pipeline"
+  
+  # Настройки оптимизации
+  worker: 2
+  compression_level: 5
+  bulk_max_size: 2048
+  flush_interval: 5s
+
+# Kibana вывод (для дашбордов)
+setup.kibana:
+  host: "kibana:5601"
+  username: "elastic"
+  password: "changeme"
+
+# Настройки индекса
+setup.template.name: "filebeat"
+setup.template.pattern: "filebeat-*"
+setup.template.settings:
+  index.number_of_shards: 1
+  index.number_of_replicas: 1
+  index.refresh_interval: "5s"
+
+# Дашборды
+setup.dashboards.enabled: true
+setup.dashboards.retry.enabled: true
+setup.dashboards.retry.interval: 10
+setup.dashboards.retry.max_attempts: 5
+
+# Индексы
+xpack.monitoring.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  username: "elastic"
+  password: "changeme"
+
+# Логирование
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0644
+  interval: 24h
+
+# Процессоры
+processors:
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+  - add_docker_metadata: ~
+  - add_kubernetes_metadata:
+      host: ${NODE_NAME}
+      match_pod_annotation_prefix: "filebeat"
+      match_container_name: "filebeat"
+
+# Процессоры для JSON логов
+- decode_json_fields:
+    fields: ["message", "log", "MSG"]
+    target: "json"
+    overwrite_keys: true
+    add_error_key: true
+
+# Процессоры для временных меток
+- timestamp:
+    field: "@timestamp"
+    layouts:
+      - '2006-01-02T15:04:05.000Z'
+      - '2006-01-02 15:04:05'
+    test:
+      - '2024-01-01T12:00:00.000Z'
+
+# Процессоры для фильтрации чувствительных данных
+- drop_fields:
+    fields: ["input.type", "agent.type", "agent.ephemeral_id", "agent.hostname", "ecs.version"]
+
+# Настройки для логов контейнеров
+json.keys_under_root: true
+json.add_error_key: true
+
+# Сохранение состояния
+filebeat.registry.path: /usr/share/filebeat/data/registry
+filebeat.registry.flush: 5s
+filebeat.registry.file_permissions: 0600
+
+# Входной поток
+queue.mem:
+  events: 4096
+  flush.min_events: 512
+  flush.timeout: 5s
+
+# Лимиты ресурсов
+max_procs: 4
+http.enabled: true
+http.port: 5066
+
+# Настройки пульса (опционально)
+heartbeat.inputs:
+  - type: tcp
+    name: "api-health"
+    hosts: ["api-gateway:8080"]
+    schedule: "@every 30s"
+    check.request.method: "GET"
+    check.request.path: "/health"
+    check.response.status_code: 200
+    
+  - type: tcp
+    name: "auth-health"
+    hosts: ["auth-service:8080"]
+    schedule: "@every 30s"
+    check.request.method: "GET"
+    check.request.path: "/health"
+    check.response.status_code: 200
+
+output.heartbeat:
+  hosts: ["elasticsearch:9200"]
+  username: "elastic"
+  password: "changeme"
+  index: "heartbeat-%{+yyyy.MM.dd}"

@@ -1,0 +1,12 @@
+[run]
+branch = True
+source = src
+
+[report]
+include =
+    src/services/embedding_service.py
+    src/ai/orchestrator.py
+skip_empty = True
+fail_under = 10
+
+

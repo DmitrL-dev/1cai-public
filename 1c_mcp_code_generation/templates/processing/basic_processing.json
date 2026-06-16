@@ -1,0 +1,63 @@
+{
+  "metadata": {
+    "name": "basic_processing",
+    "description": "Базовый шаблон обработки с простым функционалом",
+    "version": "1.0.0",
+    "object_type": "processing",
+    "complexity_level": "simple",
+    "author": "TemplateLibrary",
+    "created_at": "2025-10-30T09:40:34Z",
+    "updated_at": "2025-10-30T09:40:34Z",
+    "tags": ["basic", "simple", "template"],
+    "usage_count": 0,
+    "rating": 0.0,
+    "dependencies": [],
+    "requirements": []
+  },
+  "template_content": {
+    "module_object": "&НаСервере\nПроцедура ВыполнитьОбработку() Экспорт\n    // Основная логика обработки\n    Сообщить(\"Выполняется обработка...\");\n    \n    // TODO: Добавить основную логику здесь\n    \n    Возврат Истина;\nКонецПроцедуры\n\n&НаСервере\nФункция ПолучитьРезультат() Экспорт\n    // Возвращает результат обработки\n    Возврат \"Результат обработки\";\nКонецФункции",
+    "module_form": "&НаКлиенте\nПроцедура КнопкаВыполнитьНажатие(Кнопка)\n    // Обработчик кнопки \"Выполнить\"\n    \n    Состояние(\"Выполняется обработка...\", 0);\n    \n    Результат = ВыполнитьОбработку();\n    \n    Если Результат Тогда\n        Сообщить(\"Обработка завершена успешно\");\n        ОбновитьОтображениеДанных();\n    Иначе\n        Сообщить(\"Произошла ошибка при обработке\");\n    КонецЕсли;\n    \n    Состояние();\nКонецПроцедуры\n\n&НаКлиенте\nПроцедура КнопкаОтменаНажатие(Кнопка)\n    // Обработчик кнопки \"Отмена\"\n    Закрыть();\nКонецПроцедуры"
+  },
+  "form_layout": "<Form xmlns=\"http://v8.1c.ru/8.3/xcf/logform\" xmlns:core=\"http://v8.1c.ru/8.1/core/core.xml\">\n    <FormItems>\n        <FormGroup Item=\"Group1\" UseAutoDeletion=\"false\">\n            <Items>\n                <FormItem Item=\"КнопкаВыполнить\" Type=\"Button\" UseAutoDeletion=\"false\">\n                    <Properties>\n                        <Title>Выполнить</Title>\n                        <Picture>Icons.icon_play</Picture>\n                    </Properties>\n                    <Events>\n                        <OnClick>КнопкаВыполнитьНажатие</OnClick>\n                    </Events>\n                </FormItem>\n                <FormItem Item=\"КнопкаОтмена\" Type=\"Button\" UseAutoDeletion=\"false\">\n                    <Properties>\n                        <Title>Отмена</Title>\n                        <Picture>Icons.icon_cancel</Picture>\n                    </Properties>\n                    <Events>\n                        <OnClick>КнопкаОтменаНажатие</OnClick>\n                    </Events>\n                </FormItem>\n            </Items>\n        </FormGroup>\n    </FormItems>\n</Form>",
+  "configuration": {},
+  "variables": {
+    "object_name": {
+      "description": "Имя объекта обработки",
+      "default": "МояОбработка",
+      "required": true,
+      "validation_pattern": "^[a-zA-Zа-яА-Я_][a-zA-Zа-яА-Я0-9_]*$",
+      "example": "ОбработкаЦен"
+    },
+    "description": {
+      "description": "Описание назначения обработки",
+      "default": "",
+      "required": true,
+      "validation_pattern": "^.{10,200}$",
+      "example": "Обработка для массового изменения цен товаров"
+    },
+    "input_parameters": {
+      "description": "Входные параметры обработки",
+      "default": "",
+      "required": false,
+      "validation_pattern": "^[^<>]*$",
+      "example": "ДатаНачала, ДатаОкончания, СписокТоваров"
+    },
+    "output_result": {
+      "description": "Результат работы обработки",
+      "default": "Таблица результатов",
+      "required": false,
+      "validation_pattern": "^[^<>]*$",
+      "example": "Обновленные цены товаров"
+    }
+  },
+  "validation_rules": [
+    "Проверить доступность данных",
+    "Проверить права пользователя",
+    "Проверить корректность параметров"
+  ],
+  "examples": [
+    "Создание обработки для массового изменения цен",
+    "Обработка импорта данных из файла",
+    "Группировка и анализ данных"
+  ]
+}

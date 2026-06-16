@@ -1,0 +1,462 @@
+# Automated Dependency Updates Configuration
+# Конфигурирует автоматические обновления зависимостей и безопасности
+
+# Dependency Scanning Configuration
+scanning:
+  schedule:
+    security_scan: "0 2 * * 1"      # Каждый понедельник в 02:00
+    minor_updates: "0 3 * * 1"       # Каждый понедельник в 03:00
+    major_updates: "0 4 1 * *"       # Первый день месяца в 04:00
+  
+  tools:
+    # Node.js Dependencies
+    npm_audit:
+      enabled: true
+      severity_threshold: "moderate"
+      fail_on_issues: false
+      output_format: "json"
+    
+    snyk:
+      enabled: true
+      severity_threshold: "high"
+      fail_on_issues: true
+      test_dependencies: true
+      test_applications: true
+      org: "${SNYK_ORG}"
+    
+    # Python Dependencies
+    safety:
+      enabled: true
+      full_report: true
+      json_report: true
+    
+    pip_audit:
+      enabled: true
+      severity: "HIGH"
+      output_format: "json"
+    
+    # Docker Images
+    trivy:
+      enabled: true
+      severity: "HIGH,CRITICAL"
+      format: "sarif"
+      exit_code: 1
+    
+    grype:
+      enabled: true
+      severity: "high,critical"
+      format: "json"
+  
+  # Scan Scope
+  scope:
+    directories:
+      - "services/*/"
+      - "frontend/"
+      - "backend/"
+    
+    file_patterns:
+      - "package.json"
+      - "package-lock.json"
+      - "requirements.txt"
+      - "Pipfile"
+      - "poetry.lock"
+      - "Dockerfile*"
+      - "docker-compose.yml"
+    
+    exclude_patterns:
+      - "node_modules/**"
+      - "**/node_modules/**"
+      - "**/.git/**"
+      - "**/dist/**"
+      - "**/build/**"
+
+# Security Update Configuration
+security_updates:
+  enabled: true
+  auto_apply: false  # Always manual review for security
+  
+  # Severity Levels
+  severity_levels:
+    critical:
+      auto_pr: true
+      notify_immediately: true
+      escalation: "immediate"
+    
+    high:
+      auto_pr: true
+      notify_immediately: true
+      escalation: "within_hour"
+    
+    medium:
+      auto_pr: true
+      batch_updates: true
+      escalation: "daily"
+    
+    low:
+      manual_review: true
+      batch_updates: true
+      escalation: "weekly"
+  
+  # Notification Rules
+  notifications:
+    critical_security:
+      channels: ["slack", "email", "pagerduty"]
+      message: "🚨 Critical security vulnerability detected: ${PACKAGE_NAME} v${CURRENT_VERSION}"
+      urgency: "high"
+    
+    security_update_pr:
+      channels: ["slack"]
+      message: "🔒 Security update PR created: ${PACKAGE_NAME} ${OLD_VERSION} → ${NEW_VERSION}"
+      labels: ["security", "dependencies", "automated"]
+  
+  # Testing Requirements
+  testing:
+    required_tests:
+      - "unit"
+      - "integration"
+      - "security"
+    
+  timeout: 300  # seconds
+  retry_attempts: 2
+
+# Dependency Update Policies
+update_policies:
+  # Semantic Versioning Rules
+  semantic_versioning:
+    enabled: true
+    
+    major_updates:
+      auto_update: false
+      manual_approval: true
+      breaking_change_detection: true
+      migration_guide_required: true
+    
+    minor_updates:
+      auto_update: true
+      auto_merge_after_review: true
+      changelog_required: true
+      test_coverage_required: true
+    
+    patch_updates:
+      auto_update: true
+      auto_merge: true
+      security_fixes_only: false
+  
+  # Package-specific Policies
+  packages:
+    # Critical packages - always require review
+    critical:
+      - "express"
+      - "react"
+      - "vue"
+      - "typescript"
+      - "webpack"
+      - "eslint"
+      - "jest"
+    
+    # Stable packages - auto-update minor/patch
+    stable:
+      - "lodash"
+      - "moment"
+      - "axios"
+      - "classnames"
+    
+    # Development packages - more permissive
+    development:
+      auto_update_minor: true
+      auto_update_patch: true
+      exclude_major: false
+  
+  # Time-based Policies
+  time_policies:
+    # Block updates during certain periods
+    blackout_periods:
+      - start: "2023-12-20"
+        end: "2024-01-05"
+        reason: "Holiday season"
+      - start: "2024-07-01"
+        end: "2024-09-01"
+        reason: "Summer vacation"
+    
+    # Weekend policy
+    weekend_updates:
+      allowed: false
+      emergency_only: true
+
+# Docker Image Updates
+docker_updates:
+  enabled: true
+  
+  # Base Images
+  base_images:
+    node:
+      current: "node:20"
+      alpine: "node:20-alpine"
+      update_policy: "security_only"
+    
+    python:
+      current: "python:3.11"
+      alpine: "python:3.11-alpine"
+      update_policy: "security_only"
+    
+    nginx:
+      current: "nginx:1.25"
+      alpine: "nginx:1.25-alpine"
+      update_policy: "minor_updates"
+  
+  # Scanning Frequency
+  scan_frequency: "weekly"
+  
+  # Update Policies
+  policies:
+    security_updates:
+      auto_pr: true
+      required_tests: ["build", "security_scan"]
+    
+    minor_updates:
+      auto_pr: false
+      manual_review: true
+    
+    major_updates:
+      auto_pr: false
+      breaking_change_review: true
+
+# GitHub Integration
+github_integration:
+  # Pull Request Configuration
+  pull_requests:
+    auto_create: true
+    auto_assign_reviewers: true
+    required_approvals: 1
+    
+    reviewers:
+      security_team:
+        - "security-team"
+      devops_team:
+        - "devops-team"
+      service_owners:
+        - "${SERVICE_OWNER}"
+    
+    # Labels
+    labels:
+      security: ["security", "dependencies"]
+      updates: ["dependencies", "automated"]
+      minor: ["dependencies", "minor-update"]
+      major: ["dependencies", "major-update", "breaking-changes"]
+    
+    # Templates
+    templates:
+      security_update: |
+        ## 🔒 Security Update
+        
+        **Package:** ${PACKAGE_NAME}
+        **Version:** ${OLD_VERSION} → ${NEW_VERSION}
+        **Severity:** ${SEVERITY}
+        
+        ### Changes
+        ${CHANGES}
+        
+        ### Testing
+        - [ ] Build verification completed
+        - [ ] Security scan passed
+        - [ ] Integration tests passed
+        
+        ### Review Checklist
+        - [ ] Review security implications
+        - [ ] Verify no breaking changes
+        - [ ] Test in staging environment
+        - [ ] Update documentation if needed
+      
+      dependency_update: |
+        ## ⬆️ Dependency Update
+        
+        **Package:** ${PACKAGE_NAME}
+        **Version:** ${OLD_VERSION} → ${NEW_VERSION}
+        **Type:** ${UPDATE_TYPE}
+        
+        ### Changes
+        ${CHANGELOG}
+        
+        ### Breaking Changes
+        ${BREAKING_CHANGES}
+        
+        ### Migration Notes
+        ${MIGRATION_NOTES}
+        
+        ### Testing
+        - [ ] Unit tests passed
+        - [ ] Integration tests passed
+        - [ ] E2E tests passed
+        - [ ] Performance impact assessed
+
+# Automation Rules
+automation:
+  # Auto-merge Rules
+  auto_merge:
+    enabled: true
+    
+    conditions:
+      - "all_checks_passed"
+      - "no_breaking_changes"
+      - "coverage_not_decreased"
+      - "security_scan_clean"
+    
+    # Time-based auto-merge
+    time_rules:
+      security_updates: "immediate"
+      patch_updates: "after_2_hours"
+      minor_updates: "after_24_hours"
+      major_updates: "never"  # Manual review required
+  
+  # Batch Updates
+  batch_updates:
+    enabled: true
+    schedule: "weekly"
+    
+    # Group similar updates
+    grouping:
+      by_package_manager: true
+      by_severity: true
+      by_service: true
+    
+    # Batch processing
+    max_batch_size: 20
+    timeout: 1800  # seconds
+  
+  # Escalation Rules
+  escalation:
+    # Failed automated updates
+    failed_updates:
+      notify_after: 3  # failures
+      escalate_to: "devops-team"
+      create_issue: true
+    
+    # Outstanding security updates
+    security_debt:
+      critical:
+        notify_after: 0  # immediate
+        escalate_immediately: true
+      high:
+        notify_after: 24  # hours
+      medium:
+        notify_after: 72  # hours
+
+# Reporting and Analytics
+reporting:
+  # Generate Reports
+  enabled: true
+  schedule: "weekly"
+  
+  # Report Types
+  reports:
+    security_summary:
+      enabled: true
+      format: ["markdown", "json"]
+      recipients: ["security-team@company.com"]
+    
+    dependency_health:
+      enabled: true
+      format: ["dashboard", "json"]
+      metrics:
+        - "outdated_packages"
+        - "security_vulnerabilities"
+        - "license_issues"
+        - "maintenance_score"
+    
+    update_effectiveness:
+      enabled: true
+      format: ["json"]
+      metrics:
+        - "successful_updates"
+        - "failed_updates"
+        - "rollbacks_required"
+        - "time_to_merge"
+  
+  # Dashboards
+  dashboards:
+    dependency_overview:
+      refresh_interval: "1h"
+      metrics:
+        - "total_packages"
+        - "outdated_packages"
+        - "vulnerable_packages"
+        - "last_update"
+    
+    security_status:
+      refresh_interval: "30m"
+      metrics:
+        - "critical_vulnerabilities"
+        - "high_vulnerabilities"
+        - "scan_coverage"
+        - "remediation_progress"
+
+# Quality Gates for Updates
+quality_gates:
+  # Pre-update Gates
+  pre_update:
+    dependency_scan: true
+    license_check: true
+    breaking_change_detection: true
+    test_impact_analysis: true
+  
+  # Post-update Gates
+  post_update:
+    build_success: true
+    test_success: true
+    security_scan: true
+    performance_impact: true
+  
+  # Thresholds
+  thresholds:
+    test_coverage_decrease: 0    # percent
+    performance_degradation: 5   # percent
+    build_time_increase: 20      # percent
+    bundle_size_increase: 10     # percent
+
+# Integration with External Services
+integrations:
+  # Security Platforms
+  snyk:
+    enabled: true
+    organization: "${SNYK_ORG}"
+    project_id: "${SNYK_PROJECT_ID}"
+  
+  # License Management
+  license_checker:
+    enabled: true
+    fail_on_licenses:
+      - "GPL"
+      - "AGPL"
+      - "LGPL"
+  
+  # Package Registries
+  registries:
+    npm:
+      enabled: true
+      timeout: 30
+    
+    pypi:
+      enabled: true
+      timeout: 30
+    
+    docker:
+      enabled: true
+      timeout: 60
+  
+  # Notification Channels
+  slack:
+    enabled: true
+    webhook: "${SLACK_WEBHOOK_URL}"
+    channels:
+      security: "#security-alerts"
+      updates: "#dependency-updates"
+      general: "#devops"
+  
+  # Monitoring
+  prometheus:
+    enabled: true
+    metrics:
+      - "dependency_update_success_rate"
+      - "security_vulnerabilities_total"
+      - "update_time_duration"
+      - "rollback_rate"

@@ -1,0 +1,321 @@
+# Prometheus Alert Rules for AI-Assistants Production Environment
+groups:
+  - name: ai-assistants.rules
+    rules:
+      # Application availability alerts
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: "{{ $labels.job }}"
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "Service {{ $labels.job }} on {{ $labels.instance }} has been down for more than 1 minute"
+          runbook_url: "https://docs.company.com/runbooks/service-down"
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: ai-assistants
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s for {{ $labels.job }}"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          service: ai-assistants
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.job }}"
+
+      # Database alerts
+      - alert: DatabaseConnectionsHigh
+        expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
+        for: 2m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "High database connections"
+          description: "Database connections are at {{ $value | humanizePercentage }} for {{ $labels.job }}"
+
+      - alert: DatabaseDown
+        expr: pg_up == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "Database is down"
+          description: "PostgreSQL database {{ $labels.job }} is down"
+
+      - alert: DatabaseSlowQueries
+        expr: rate(pg_stat_database_blk_read_time[5m]) / rate(pg_stat_database_blk_read_time[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "Database slow queries detected"
+          description: "High database query latency detected on {{ $labels.job }}"
+
+      # Redis alerts
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 30s
+        labels:
+          severity: critical
+          service: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis server {{ $labels.job }} is down"
+
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis memory usage high"
+          description: "Redis memory usage is {{ $value | humanizePercentage }} on {{ $labels.job }}"
+
+      - alert: RedisKeyspaceHitsLow
+        expr: rate(redis_keyspace_hits_total[5m]) / rate(redis_keyspace_hits_total[5m] + redis_keyspace_misses_total[5m]) < 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+        annotations:
+          summary: "Redis hit rate low"
+          description: "Redis hit rate is {{ $value | humanizePercentage }} on {{ $labels.job }}"
+
+      # ML System alerts
+      - alert: MLflowDown
+        expr: up{job="mlflow"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: mlflow
+        annotations:
+          summary: "MLflow is down"
+          description: "MLflow server has been down for more than 2 minutes"
+
+      - alert: MLModelTrainingFailing
+        expr: rate(ml_model_training_failures_total[5m]) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          service: ml-system
+        annotations:
+          summary: "ML model training failures"
+          description: "Model training failure rate is {{ $value | humanizePercentage }}"
+
+      # System resource alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is above 80% on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is above 85% on {{ $labels.instance }}"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: disk
+        annotations:
+          summary: "Disk space low"
+          description: "Disk usage is above 85% on {{ $labels.instance }} for mount {{ $labels.mountpoint }}"
+
+      - alert: DiskSpaceCritical
+        expr: (node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes > 0.95
+        for: 2m
+        labels:
+          severity: critical
+          service: disk
+        annotations:
+          summary: "Disk space critically low"
+          description: "Disk usage is above 95% on {{ $labels.instance }} for mount {{ $labels.mountpoint }}"
+
+      # Container alerts
+      - alert: ContainerCPUUsageHigh
+        expr: (sum by(container,instance) (rate(container_cpu_usage_seconds_total{container!=""}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: containers
+        annotations:
+          summary: "Container CPU usage high"
+          description: "Container {{ $labels.container }} CPU usage is above 80% on {{ $labels.instance }}"
+
+      - alert: ContainerMemoryUsageHigh
+        expr: (sum by(container,instance) (container_memory_working_set_bytes{container!=""}) / sum by(container,instance) (container_spec_memory_limit_bytes{container!=""})) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: containers
+        annotations:
+          summary: "Container memory usage high"
+          description: "Container {{ $labels.container }} memory usage is above 85% on {{ $labels.instance }}"
+
+      # Celery alerts
+      - alert: CeleryWorkerDown
+        expr: up{job="celery-worker"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: celery
+        annotations:
+          summary: "Celery worker is down"
+          description: "Celery worker {{ $labels.job }} has been down for more than 1 minute"
+
+      - alert: CeleryQueueLengthHigh
+        expr: celery_queue_length > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: celery
+        annotations:
+          summary: "Celery queue length high"
+          description: "Celery queue length is {{ $value }} on {{ $labels.job }}"
+
+      - alert: CeleryTaskFailureRateHigh
+        expr: rate(celery_tasks_failed_total[5m]) / rate(celery_tasks_total[5m]) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          service: celery
+        annotations:
+          summary: "Celery task failure rate high"
+          description: "Task failure rate is {{ $value | humanizePercentage }} on {{ $labels.job }}"
+
+      # Network and SSL alerts
+      - alert: SSLCertificateExpiringSoon
+        expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 30
+        for: 1h
+        labels:
+          severity: warning
+          service: ssl
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate for {{ $labels.instance }} expires in {{ $value }} days"
+
+      - alert: SSLCertificateExpired
+        expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 0
+        for: 0m
+        labels:
+          severity: critical
+          service: ssl
+        annotations:
+          summary: "SSL certificate expired"
+          description: "SSL certificate for {{ $labels.instance }} has expired"
+
+      # Backup alerts
+      - alert: BackupFailed
+        expr: backup_last_success_timestamp_seconds < (time() - 86400)
+        for: 0m
+        labels:
+          severity: critical
+          service: backup
+        annotations:
+          summary: "Database backup failed"
+          description: "Database backup has not completed successfully for over 24 hours"
+
+      # Security alerts
+      - alert: HighRateFailedLogins
+        expr: rate(login_failures_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "High rate of failed login attempts"
+          description: "Failed login rate is {{ $value }} per second from IP {{ $labels.client_ip }}"
+
+  - name: infrastructure.rules
+    rules:
+      # Docker daemon alerts
+      - alert: DockerDaemonDown
+        expr: docker_daemon_up == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: docker
+        annotations:
+          summary: "Docker daemon is down"
+          description: "Docker daemon on {{ $labels.instance }} has been down for more than 2 minutes"
+
+      # Network connectivity
+      - alert: NetworkInterfaceDown
+        expr: node_network_up{device!="lo"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: network
+        annotations:
+          summary: "Network interface is down"
+          description: "Network interface {{ $labels.device }} on {{ $labels.instance }} is down"
+
+      - alert: HighNetworkLatency
+        expr: rate(node_network_transmit_bytes_total[5m]) + rate(node_network_receive_bytes_total[5m]) > 100000000
+        for: 10m
+        labels:
+          severity: warning
+          service: network
+        annotations:
+          summary: "High network traffic"
+          description: "High network traffic detected on {{ $labels.device }} ({{ $value }} bytes/sec)"
+
+  - name: business.rules
+    rules:
+      # Business metrics
+      - alert: LowActiveUsers
+        expr: active_users_count < 100
+        for: 30m
+        labels:
+          severity: info
+          service: business
+        annotations:
+          summary: "Low active users"
+          description: "Active users count is {{ $value }}, below expected threshold"
+
+      - alert: HighAPIUsage
+        expr: rate(api_requests_total[5m]) > 1000
+        for: 15m
+        labels:
+          severity: info
+          service: business
+        annotations:
+          summary: "High API usage"
+          description: "API request rate is {{ $value }} requests per second"
+
+      - alert: MLInferenceLatencyHigh
+        expr: histogram_quantile(0.95, rate(ml_inference_duration_seconds_bucket[5m])) > 5
+        for: 10m
+        labels:
+          severity: warning
+          service: ml-inference
+        annotations:
+          summary: "High ML inference latency"
+          description: "95th percentile ML inference latency is {{ $value }}s"

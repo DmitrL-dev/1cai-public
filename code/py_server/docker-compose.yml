@@ -1,0 +1,208 @@
+# Docker Compose для API администрирования кэша
+
+version: '3.8'
+
+services:
+  # API сервер
+  cache-admin-api:
+    build: .
+    container_name: cache_admin_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-admin_token_123_change_in_production}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-super-secret-jwt-key-change-in-production}
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+      - RATE_LIMIT_PER_MINUTE=${RATE_LIMIT_PER_MINUTE:-100}
+      - METRICS_ENABLED=true
+      - LOG_LEVEL=INFO
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    depends_on:
+      - redis
+      - prometheus
+    networks:
+      - cache_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Redis для кэша
+  redis:
+    image: redis:7-alpine
+    container_name: cache_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    networks:
+      - cache_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Prometheus для мониторинга
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cache_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - cache_network
+    profiles:
+      - monitoring
+
+  # Grafana для визуализации метрик
+  grafana:
+    image: grafana/grafana:latest
+    container_name: cache_grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - cache_network
+    profiles:
+      - monitoring
+
+  # Nginx как реверс прокси
+  nginx:
+    image: nginx:alpine
+    container_name: cache_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - cache-admin-api
+    networks:
+      - cache_network
+    profiles:
+      - production
+
+  # Лог агрегатор
+  loki:
+    image: grafana/loki:latest
+    container_name: cache_loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki_data:/loki
+    networks:
+      - cache_network
+    profiles:
+      - logging
+
+  # Promtail для сбора логов
+  promtail:
+    image: grafana/promtail:latest
+    container_name: cache_promtail
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs:ro
+      - /var/log:/var/log:ro
+      - ./monitoring/promtail.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - cache_network
+    profiles:
+      - logging
+
+  # Кэш-очистик (cron job)
+  cache-cleaner:
+    build: .
+    container_name: cache_cleaner
+    restart: "no"
+    environment:
+      - ENVIRONMENT=production
+      - CLEANUP_MODE=true
+    volumes:
+      - ./logs:/app/logs
+    command: >
+      sh -c "
+        echo 'Запуск очистки кэша...' &&
+        python -c 'from api.cache_admin import active_caches; [cache.clear() for cache in active_caches.values() if hasattr(cache, \"clear\")]' &&
+        echo 'Очистка кэша завершена'
+      "
+    depends_on:
+      - cache-admin-api
+    networks:
+      - cache_network
+    profiles:
+      - maintenance
+
+# Тома для персистентности данных
+volumes:
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  loki_data:
+    driver: local
+
+# Сеть для взаимодействия сервисов
+networks:
+  cache_network:
+    driver: bridge
+
+# Дополнительные настройки
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+# Секции с настройками для разных профилей
+x-development: &development
+  environment:
+    - ENVIRONMENT=development
+    - DEBUG=true
+    - RELOAD=true
+  volumes:
+    - ./logs:/app/logs
+    - ./data:/app/data

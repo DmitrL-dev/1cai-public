@@ -1,0 +1,326 @@
+# Quality Gates Configuration
+# Конфигурирует пороги качества для CI/CD pipeline
+
+# Code Coverage Configuration
+coverage:
+  minimum_percentage: 80
+  target_percentage: 85
+  critical_code_threshold: 95
+  fail_under: 80
+  exclude_patterns:
+    - "tests/**"
+    - "**/*.test.js"
+    - "**/*.spec.js"
+    - "**/migrations/**"
+    - "**/config/**"
+    - "**/*.d.ts"
+  services:
+    api-gateway:
+      minimum: 85
+      target: 90
+    auth-service:
+      minimum: 90
+      target: 95
+    payment-service:
+      minimum: 90
+      target: 95
+    user-service:
+      minimum: 80
+      target: 85
+    notification-service:
+      minimum: 75
+      target: 80
+
+# Security Scanning Configuration
+security:
+  tools:
+    - "snyk"
+    - "trivy"
+    - "bandit"
+    - "safety"
+  
+  severity_thresholds:
+    critical: 0
+    high: 0
+    medium: 5
+    low: 10
+  
+  snyk:
+    fail_on_issues: true
+    severity_threshold: "high"
+    test_dependencies: true
+    test_applications: true
+  
+  trivy:
+    severity: "HIGH,CRITICAL"
+    exit_code: 1
+    format: "sarif"
+  
+  bandit:
+    severity_level: "medium"
+    exclude_dirs:
+      - "tests"
+      - "scripts"
+
+# Test Configuration
+tests:
+  timeout: 300  # seconds
+  parallel_workers: 4
+  retry_attempts: 2
+  
+  unit_tests:
+    enabled: true
+    coverage_required: true
+    timeout: 120
+  
+  integration_tests:
+    enabled: true
+    timeout: 300
+    database_required: true
+    mock_external: true
+  
+  e2e_tests:
+    enabled: true
+    timeout: 600
+    browser: "chromium"
+    headless: true
+  
+  performance_tests:
+    enabled: true
+    timeout: 600
+    lhci:
+      preset: "perf"
+      thresholds:
+        performance: 90
+        accessibility: 90
+        best-practices: 90
+        seo: 90
+  
+  security_tests:
+    enabled: true
+    tools: ["owasp-zap", "zap-baseline"]
+
+# Build Configuration
+build:
+  timeout: 600
+  parallel_builds: true
+  cache_dependencies: true
+  
+  docker:
+    buildkit: true
+    cache_from:
+      - "${REGISTRY}/${IMAGE_NAME}:cache"
+    target: "production"
+    platforms:
+      - "linux/amd64"
+      - "linux/arm64"
+  
+  node:
+    versions: ["18", "20"]
+    cache_key: |
+      {{
+        hashFiles('package-lock.json')
+      }}
+  
+  python:
+    version: "3.11"
+    cache_key: |
+      {{
+        hashFiles('**/requirements*.txt')
+      }}
+
+# Deployment Configuration
+deployment:
+  timeout: 900
+  health_check_timeout: 300
+  rollback_timeout: 300
+  
+  blue_green:
+    enabled: true
+    verification_period: 60
+    canary_steps: 3
+    health_check_interval: 10
+  
+  canary:
+    enabled: true
+    steps:
+      - weight: 10
+        pause: "30s"
+      - weight: 25
+        pause: "60s"
+      - weight: 50
+        pause: "120s"
+      - weight: 75
+        pause: "180s"
+      - weight: 100
+  
+  rolling:
+    enabled: true
+    max_unavailable: 1
+    max_surge: 1
+
+# Performance Benchmarks
+performance:
+  response_time:
+    api_gateway: 200  # ms
+    auth_service: 100
+    user_service: 150
+    payment_service: 300
+    notification_service: 250
+  
+  throughput:
+    api_gateway: 1000  # req/sec
+    auth_service: 500
+    user_service: 800
+    payment_service: 200
+    notification_service: 300
+  
+  memory_usage:
+    warning: 512  # MB
+    critical: 1024
+  
+  cpu_usage:
+    warning: 70   # percent
+    critical: 90
+
+# Monitoring Configuration
+monitoring:
+  enabled: true
+  metrics_interval: 30
+  alert_thresholds:
+    error_rate: 5      # percent
+    response_time: 1000  # ms
+    memory_usage: 80     # percent
+  
+  dashboards:
+    - "deployment-health"
+    - "service-metrics"
+    - "infrastructure-overview"
+
+# Notification Configuration
+notifications:
+  slack:
+    webhook: "${SLACK_WEBHOOK_URL}"
+    channels:
+      success: "#ci-cd-success"
+      failure: "#ci-cd-alerts"
+      deployment: "#deployments"
+  
+  email:
+    smtp_host: "${SMTP_HOST}"
+    recipients:
+      - "devops@company.com"
+      - "tech-leads@company.com"
+  
+  webhook:
+    url: "${WEBHOOK_URL}"
+    timeout: 10
+
+# Environment-specific Settings
+environments:
+  development:
+    quality_gates:
+      coverage: 70
+      security_medium: 10
+      skip_performance: true
+    deployment:
+      strategy: "rolling"
+      auto_approve: true
+  
+  staging:
+    quality_gates:
+      coverage: 80
+      security_medium: 5
+      performance_required: true
+    deployment:
+      strategy: "blue-green"
+      auto_approve: false
+  
+  production:
+    quality_gates:
+      coverage: 85
+      security_medium: 0
+      security_high: 0
+      performance_required: true
+      manual_approval: true
+    deployment:
+      strategy: "canary"
+      auto_approve: false
+      approval_required: ["tech-lead", "devops"]
+
+# Artifact Management
+artifacts:
+  retention_days: 90
+  test_reports: 30
+  logs: 7
+  
+  upload:
+    include:
+      - "test-results/**"
+      - "coverage/**"
+      - "reports/**"
+      - "logs/**"
+      - "*.md"
+      - "*.json"
+      - "*.sarif"
+
+# Compliance Configuration
+compliance:
+  standards:
+    - "ISO27001"
+    - "SOC2"
+    - "GDPR"
+  
+  required_checks:
+    - "security_scan"
+    - "dependency_audit"
+    - "license_check"
+    - "vulnerability_scan"
+  
+  reporting:
+    enabled: true
+    format: "json"
+    schedule: "weekly"
+
+# Custom Quality Gates
+custom_gates:
+  code_quality:
+    eslint:
+      max_errors: 0
+      max_warnings: 5
+  
+  code_style:
+    prettier: true
+    black: true
+    formatter_check: true
+  
+  documentation:
+    readme_updated: true
+    changelog_updated: true
+    api_docs_updated: true
+  
+  dependency_management:
+    outdated_allowed: 5
+    security_updates_required: true
+    license_check_required: true
+
+# Escalation Rules
+escalation:
+  auto_rollback:
+    enabled: true
+    conditions:
+      - "health_check_failed"
+      - "error_rate > 10%"
+      - "response_time > 2000ms"
+    timeouts:
+      health_check: 300
+      performance_degradation: 600
+  
+  notifications:
+    immediate:
+      - "security_critical"
+      - "deployment_failed"
+      - "service_down"
+    delayed:
+      - "performance_degradation"
+      - "memory_usage_high"

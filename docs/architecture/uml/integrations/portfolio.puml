@@ -1,0 +1,24 @@
+@startuml
+title Integration Portfolio
+
+skinparam backgroundColor #FFFFFF
+
+salt
+{
+{T
++ Channel | Purpose | Auth | Status | Owner
+| 1C EDT Plugin | IDE assistant, analysis actions | Service token (MCP) | GA | DevTools Squad
+| n8n Node | Workflow automation | API key (validated) | GA | Integration Squad
+| Telegram Bot | Chatops, alerts | Bot token + RBAC | GA | SRE Squad
+| Marketplace | Extension distribution | Signed package | Beta | Product Squad
+| Webhook API | Partner integration | HMAC signature | Alpha | Platform Squad
+| ITS Scraper Writers | Data export plugins | IAM role / S3 creds | GA | Knowledge Squad
+| MCP Platform Context | Inline docs via external MCP (alkoleft/mcp-bsl-platform-context) | Bearer token (optional) | Beta | DevTools Squad
+| MCP Test Runner | Remote YAxUnit/Vanessa execution (alkoleft/mcp-onec-test-runner) | Bearer token (optional) | Beta | QA Squad
+| JIRA Connector | Issue auto creation | OAuth2 | Planned | Integration Squad
+| Slack App | Alternative chatops | OAuth2 Bot | Planned | SRE Squad
+}
+}
+
+@enduml
+

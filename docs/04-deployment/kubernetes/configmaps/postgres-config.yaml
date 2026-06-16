@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: 1c-ai-stack
+data:
+  database: knowledge_base
+  
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+  namespace: 1c-ai-stack
+data:
+  01_schema.sql: |
+    -- Schema will be loaded from mounted file
+    -- See db/init/01_schema.sql
+

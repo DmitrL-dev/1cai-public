@@ -1,0 +1,59 @@
+id: plan-dr-vault
+goal:
+  id: dr-vault
+  title: "DR rehearsal для сервиса vault"
+  description: "Отработать сценарий отказа и восстановления сервиса vault в staging."
+  constraints:
+    environment: "staging"
+  success_criteria:
+    - "DR-плейбук выполнен без критических ошибок"
+    - "Постмортем-черновик создан и заполнен"
+steps:
+  - id: dr-plan-validate
+    title: "Проверка актуальности DR-плана"
+    description: "Проверить, что DR-план и артефакты для сервиса актуальны."
+    risk_level: "read_only"
+    autonomy_required: "A1_safe_automation"
+    checks:
+      - "DR-план найден для сервиса"
+      - "Последний DR-отчёт учтён в плане"
+    executor: "agent:DevOps"
+    metadata:
+      service: "vault"
+      graph_refs:
+        - "node:docs/runbooks/dr_rehearsal_plan.md:FILE"
+        - "node:scripts/runbooks/generate_dr_postmortem.py:MODULE"
+  - id: dr-simulate
+    title: "Симуляция отказа и восстановления"
+    description: "Выполнить DR rehearsal в staging по плейбуку."
+    risk_level: "non_prod_change"
+    autonomy_required: "A2_non_prod_changes"
+    checks:
+      - "Все шаги DR-плейбука выполнены в staging"
+      - "Мониторинг/алерты сработали ожидаемым образом"
+    executor: "playbook:dr"
+    metadata:
+      service: "vault"
+      graph_refs:
+        - "node:playbooks/dr_vault_example.yaml:FILE"
+        - "node:monitoring/AI_SERVICES_MONITORING.md:ALERT"
+  - id: dr-postmortem
+    title: "Генерация и доработка постмортема"
+    description: "Сгенерировать черновик постмортема и доработать его."
+    risk_level: "read_only"
+    autonomy_required: "A1_safe_automation"
+    checks:
+      - "Постмортем-черновик создан"
+      - "Ключевые выводы и follow-up задачи зафиксированы"
+    executor: "agent:DR"
+    metadata:
+      service: "vault"
+      graph_refs:
+        - "node:docs/runbooks/postmortems:INCIDENT"
+required_autonomy: "A2_non_prod_changes"
+overall_risk: "non_prod_change"
+context:
+  kind: "dr-rehearsal"
+  service: "vault"
+
+

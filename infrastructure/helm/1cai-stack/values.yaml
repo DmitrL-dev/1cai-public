@@ -1,0 +1,112 @@
+image:
+  repository: ghcr.io/1c-ai-stack/api
+  tag: latest
+  pullPolicy: IfNotPresent
+
+api:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    IGNORE_PY_VERSION_CHECK: "false"
+    LOG_LEVEL: info
+
+mcp:
+  enabled: true
+  image:
+    repository: ghcr.io/1c-ai-stack/mcp
+    tag: latest
+  replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 8080
+
+observability:
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
+  alertmanager:
+    enabled: true
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: api.localdev
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+secrets:
+  vaultAddress: "http://vault.vault:8200"
+  role: "1cai-app"
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+vault:
+  enabled: false
+  mountPath: /vault/secrets
+  secretProviderClass:
+    name: vault-1cai
+    provider: vault
+    parameters:
+      static:
+        vaultAddress: "http://vault.vault:8200"
+        roleName: "1cai-app"
+        namespace: ""
+      objects: |
+        - objectName: db-url
+          secretPath: secret/data/1cai/database
+          secretKey: url
+    secretObjects:
+      - secretName: db-credentials
+        type: Opaque
+        data:
+          - objectName: db-url
+            key: url
+  env:
+    - name: DATABASE_URL
+      secretName: db-credentials
+      secretKey: url
+  agent:
+    enabled: false
+    image: hashicorp/vault:1.15.5
+    annotations: {}
+    config: |
+      exit_after_auth = false
+      pid_file = "/tmp/vault-agent.pid"
+
+      auto_auth {
+        method "kubernetes" {
+          mount_path = "auth/kubernetes"
+          config = {
+            role = "1cai-app"
+          }
+        }
+
+        sink "file" {
+          config = {
+            path = "/vault/secrets/token"
+          }
+        }
+      }
+
+      template {
+        destination = "/vault/secrets/app.env"
+        contents    = <<EOT
+{{- with secret "secret/data/1cai/database" -}}
+DATABASE_URL={{ .Data.data.url }}
+{{- end -}}
+EOT
+      }

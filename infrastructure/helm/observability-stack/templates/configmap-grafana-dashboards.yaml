@@ -1,0 +1,115 @@
+{{- if .Values.grafana.dashboards.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "observability-stack.fullname" . }}-grafana-dashboards
+  labels:
+    app.kubernetes.io/name: {{ include "observability-stack.name" . }}
+    grafana_dashboard: "1"
+data:
+  api-overview.json: |
+    {
+      "id": null,
+      "uid": "api-overview",
+      "title": "API Overview",
+      "tags": ["1cai", "api"],
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "panels": [
+        {
+          "type": "timeseries",
+          "title": "Request Rate",
+          "targets": [
+            {
+              "expr": "sum(rate(http_requests_total{app_kubernetes_io_component='api'}[5m]))",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "req/s"
+            }
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Error Rate",
+          "targets": [
+            {
+              "expr": "sum(rate(http_requests_total{app_kubernetes_io_component='api',status=~'5..'}[5m]))",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Latency P95",
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{app_kubernetes_io_component='api'}[5m])) by (le))",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s"
+            }
+          }
+        }
+      ],
+      "schemaVersion": 37,
+      "version": 1
+    }
+  platform-health.json: |
+    {
+      "id": null,
+      "uid": "platform-health",
+      "title": "Platform Health",
+      "tags": ["1cai", "platform"],
+      "time": {
+        "from": "now-24h",
+        "to": "now"
+      },
+      "panels": [
+        {
+          "type": "timeseries",
+          "title": "Pod Restart Count",
+          "targets": [
+            {
+              "expr": "sum(increase(kube_pod_container_status_restarts_total[6h])) by (namespace)",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Tempo Ingest Rate",
+          "targets": [
+            {
+              "expr": "sum(rate(tempo_distributor_received_spans_total[5m]))",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "type": "logs",
+          "title": "Loki Recent Logs",
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "loki",
+                "uid": "Loki"
+              },
+              "expr": "{namespace='1cai'}",
+              "queryType": "range"
+            }
+          ]
+        }
+      ],
+      "schemaVersion": 37,
+      "version": 1
+    }
+{{- end }}

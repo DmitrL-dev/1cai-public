@@ -1,0 +1,63 @@
+@startuml cli-tool-overview
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+title Unified CLI Tool - Component Overview
+
+package "CLI Tool (1cai_cli.py)" {
+    [CLI Main] as CLI
+    [Command Parser] as Parser
+    [API Client] as Client
+}
+
+package "AI Orchestrator API" {
+    [Orchestrator] as Orchestrator
+    [Query Classifier] as Classifier
+}
+
+package "Scenario Hub API" {
+    [Scenario Hub] as ScenarioHub
+    [Scenario Recommender] as Recommender
+}
+
+package "Unified Change Graph API" {
+    [Graph API] as GraphAPI
+    [Impact Analyzer] as ImpactAnalyzer
+}
+
+package "LLM Provider API" {
+    [LLM Provider Abstraction] as LLMAbstraction
+    [Model Profiles] as Profiles
+}
+
+package "Cache API" {
+    [Intelligent Cache] as Cache
+    [Cache Metrics] as CacheMetrics
+}
+
+CLI --> Parser: parse_args()
+Parser --> Client: create_request()
+
+Client --> Orchestrator: POST /api/ai/query
+Client --> ScenarioHub: GET /api/scenarios/examples
+Client --> Recommender: POST /api/scenarios/recommend
+Client --> ImpactAnalyzer: POST /api/graph/impact
+Client --> LLMAbstraction: GET /api/llm/providers
+Client --> LLMAbstraction: POST /api/llm/select-provider
+Client --> CacheMetrics: GET /api/cache/metrics
+Client --> Cache: POST /api/cache/invalidate
+
+Orchestrator --> Classifier: classify query
+Orchestrator --> Cache: get/set
+Orchestrator --> Recommender: recommend scenarios
+Orchestrator --> ImpactAnalyzer: analyze impact
+Orchestrator --> LLMAbstraction: select provider
+
+ScenarioHub --> Recommender: get scenarios
+GraphAPI --> ImpactAnalyzer: analyze impact
+LLMAbstraction --> Profiles: get profiles
+Cache --> CacheMetrics: get metrics
+
+@enduml
+

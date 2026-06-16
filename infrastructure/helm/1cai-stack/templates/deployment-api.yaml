@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "1cai-stack.fullname" . }}-api
+  labels:
+    app.kubernetes.io/name: {{ include "1cai-stack.name" . }}
+    app.kubernetes.io/component: api
+spec:
+  replicas: {{ .Values.api.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "1cai-stack.name" . }}
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "1cai-stack.name" . }}
+        app.kubernetes.io/component: api
+    spec:
+      serviceAccountName: {{ include "1cai-stack.serviceAccountName" . }}
+      initContainers:
+{{- if and .Values.vault.enabled .Values.vault.agent.enabled }}
+        - name: vault-agent-init
+          image: {{ .Values.vault.agent.image }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              cp /vault/config/agent.hcl /vault/data/agent.hcl
+          volumeMounts:
+            - name: vault-agent-config
+              mountPath: /vault/config
+            - name: vault-secrets
+              mountPath: /vault/data
+{{- end }}
+      containers:
+        - name: api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: IGNORE_PY_VERSION_CHECK
+              value: {{ quote .Values.api.env.IGNORE_PY_VERSION_CHECK }}
+            - name: LOG_LEVEL
+              value: {{ quote .Values.api.env.LOG_LEVEL }}
+{{- if and .Values.vault.enabled .Values.vault.agent.enabled }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: url
+{{- else if and .Values.vault.enabled .Values.vault.env }}
+{{- range .Values.vault.env }}
+            - name: {{ .name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .secretName }}
+                  key: {{ .secretKey }}
+{{- end }}
+{{- end }}
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}
+          volumeMounts:
+            - name: vault-token
+              mountPath: /var/run/secrets/vault
+{{- if .Values.vault.enabled }}
+            - name: vault-secrets
+              mountPath: {{ .Values.vault.mountPath | default "/vault/secrets" }}
+              readOnly: true
+{{- end }}
+{{- if and .Values.vault.enabled .Values.vault.agent.enabled }}
+        - name: vault-agent
+          image: {{ .Values.vault.agent.image }}
+          args:
+            - agent
+            - -config=/vault/data/agent.hcl
+            - -log-level=info
+          env:
+            - name: VAULT_ADDR
+              value: {{ .Values.vault.secretProviderClass.parameters.static.vaultAddress | quote }}
+          volumeMounts:
+            - name: vault-agent-config
+              mountPath: /vault/config
+            - name: vault-secrets
+              mountPath: {{ .Values.vault.mountPath | default "/vault/secrets" }}
+{{- end }}
+      volumes:
+        - name: vault-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: vault
+                  expirationSeconds: 7200
+                  path: token
+{{- if .Values.vault.enabled }}
+        - name: vault-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ .Values.vault.secretProviderClass.name }}
+{{- end }}
+{{- if and .Values.vault.enabled .Values.vault.agent.enabled }}
+        - name: vault-agent-config
+          configMap:
+            name: {{ include "1cai-stack.fullname" . }}-vault-agent
+{{- end }}

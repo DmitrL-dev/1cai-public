@@ -1,0 +1,62 @@
+@startuml
+title Release Readiness Workflow
+
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #eef6ff
+  SwimlaneFontSize 12
+}
+
+partition "Developer" {
+  :Feature complete;
+  :Raise PR;
+  --> "Tech Lead" : Request review;
+  :Address comments;
+  :Merge to main;
+  --> "CI" : Trigger pipeline;
+}
+
+partition "Tech Lead" {
+  :Review PR;
+  if (Approve?) then (yes)
+    :Approve PR;
+    --> "Developer" : Merge allowed;
+  else (no)
+    :Request changes;
+    --> "Developer" : Feedback loop;
+  endif
+}
+
+partition "CI" {
+  :Run tests / audits;
+  if (Pass checks?) then (yes)
+    :Publish artifacts;
+    :Provision staging;
+    :Run smoke tests;
+    --> "CD" : Promote candidate;
+  else (no)
+    --> "Developer" : Failing pipeline;
+  endif
+}
+
+partition "CD" {
+  :Promote to production;
+  :Run post deploy checks;
+  --> "Ops" : Notify release;
+}
+
+partition "Ops" {
+  :Update status page;
+  :Watch dashboards;
+  if (SLO ok?) then (yes)
+    :Announce release;
+  else (no)
+    :Raise incident;
+    --> "CI" : Trigger rollback;
+  endif
+  :Capture release notes;
+  :Close release window;
+}
+
+@enduml
+

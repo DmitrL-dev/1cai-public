@@ -1,0 +1,127 @@
+# 152-ФЗ Compliance Specification
+
+**Version:** 1.0 | **Last Updated:** 2025-11-27
+
+## Overview
+Спецификация соответствия 1C AI Stack требованиям 152-ФЗ "О персональных данных".
+
+---
+
+## 📋 Compliance Configuration
+
+Configuration file: `152_fz_compliance.json`
+
+```json
+{
+  "version": "1.0",
+  "compliance_level": "UZ-1",
+  "personal_data_categories": [
+    "name",
+    "email",
+    "phone",
+    "organization",
+    "position"
+  ],
+  "data_storage": {
+    "location": "Russian Federation",
+    "encryption": "AES-256",
+    "backup_frequency": "daily",
+    "retention_period_days": 365
+  },
+  "access_control": {
+    "authentication": "JWT + 2FA",
+    "authorization": "RBAC",
+    "audit_logging": true
+  },
+  "data_processing": {
+    "consent_required": true,
+    "purpose_limitation": true,
+    "data_minimization": true
+  },
+  "security_measures": {
+    "encryption_at_rest": true,
+    "encryption_in_transit": true,
+    "access_logging": true,
+    "intrusion_detection": true,
+    "regular_audits": true
+  },
+  "user_rights": {
+    "right_to_access": true,
+    "right_to_rectification": true,
+    "right_to_erasure": true,
+    "right_to_data_portability": true
+  }
+}
+```
+
+---
+
+## 🔒 Security Measures
+
+### Technical Measures
+- ✅ Encryption at rest (AES-256)
+- ✅ Encryption in transit (TLS 1.3)
+- ✅ Access control (RBAC)
+- ✅ Audit logging
+- ✅ Intrusion detection
+
+### Organizational Measures
+- ✅ Data protection policy
+- ✅ Employee training
+- ✅ Incident response plan
+- ✅ Regular audits
+- ✅ Data protection officer
+
+---
+
+## 📊 Compliance Checklist
+
+### Data Collection
+- [ ] User consent obtained
+- [ ] Purpose clearly stated
+- [ ] Minimal data collected
+- [ ] Secure transmission
+
+### Data Storage
+- [ ] Stored in Russian Federation
+- [ ] Encrypted at rest
+- [ ] Access controlled
+- [ ] Regular backups
+
+### Data Processing
+- [ ] Purpose limitation
+- [ ] Data minimization
+- [ ] Accuracy maintained
+- [ ] Storage limitation
+
+### User Rights
+- [ ] Right to access
+- [ ] Right to rectification
+- [ ] Right to erasure
+- [ ] Right to data portability
+
+---
+
+## 🔍 Audit Requirements
+
+### Regular Audits
+- **Frequency:** Quarterly
+- **Scope:** All personal data processing
+- **Auditor:** Internal + External
+- **Report:** Submitted to regulator
+
+### Audit Checklist
+1. Data inventory
+2. Consent verification
+3. Security measures review
+4. Access logs review
+5. Incident reports
+6. User rights requests
+7. Data retention compliance
+
+---
+
+**See Also:**
+- [Security Agent Guide](../03-ai-agents/SECURITY_AGENT_GUIDE.md)
+- [Auth Guide](../06-features/AUTH_GUIDE.md)
+- [Constitution](../research/constitution.md)

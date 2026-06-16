@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: linkerd-multi-env
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: linkerd-staging
+            namespace: linkerd-staging
+          - name: linkerd-prod
+            namespace: linkerd-prod
+  template:
+    metadata:
+      name: '{{name}}'
+    spec:
+      project: 1cai
+      source:
+        repoURL: https://helm.linkerd.io/stable
+        chart: linkerd-control-plane
+        targetRevision: 1.13.2
+        helm:
+          values: |
+            installNamespace: true
+            identityTrustAnchorsPEM: |
+              # TODO: provide trust anchors via sealed secret or external secret
+            identity:
+              issuer:
+                scheme: kubernetes.io/tls
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

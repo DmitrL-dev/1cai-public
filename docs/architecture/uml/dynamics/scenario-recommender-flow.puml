@@ -1,0 +1,73 @@
+@startuml scenario-recommender-flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+title Scenario Recommender & Impact Analyzer Flow
+
+actor User
+participant "AI Orchestrator" as Orchestrator
+participant "Scenario Recommender" as Recommender
+participant "Impact Analyzer" as ImpactAnalyzer
+participant "Unified Change Graph" as Graph
+participant "Scenario Hub" as ScenarioHub
+participant "Prometheus" as Metrics
+
+User -> Orchestrator: Query: "Нужно реализовать новую фичу"
+activate Orchestrator
+
+Orchestrator -> Graph: find_nodes_by_query(query)
+activate Graph
+Graph --> Orchestrator: graph_nodes: [req:FEATURE001, module:src/feature.py]
+deactivate Graph
+
+Orchestrator -> Recommender: recommend_scenarios(query, graph_nodes)
+activate Recommender
+
+Recommender -> Graph: analyze graph nodes
+activate Graph
+Graph --> Recommender: node_kinds, relationships
+deactivate Graph
+
+Recommender -> Recommender: infer_task_type(query, graph_nodes)
+Recommender -> Recommender: calculate_relevance(query, scenario_info)
+Recommender -> ScenarioHub: get_scenarios_by_task_type()
+activate ScenarioHub
+ScenarioHub --> Recommender: scenarios: [ba_dev_qa, code_review, ...]
+deactivate ScenarioHub
+
+Recommender -> Metrics: track_scenario_recommendation(duration, graph_size_category, count)
+activate Metrics
+deactivate Metrics
+
+Recommender --> Orchestrator: recommendations: [{scenario_id, relevance_score, reason}]
+deactivate Recommender
+
+Orchestrator -> ImpactAnalyzer: analyze_impact(graph_nodes, max_depth=3)
+activate ImpactAnalyzer
+
+ImpactAnalyzer -> Graph: find_dependent_nodes(node_ids, max_depth)
+activate Graph
+Graph --> ImpactAnalyzer: affected_nodes: [module:src/feature.py, test:test_feature.py]
+deactivate Graph
+
+ImpactAnalyzer -> Graph: find_related_tests(node_ids)
+activate Graph
+Graph --> ImpactAnalyzer: affected_tests: [test:test_feature.py]
+deactivate Graph
+
+ImpactAnalyzer -> ImpactAnalyzer: determine_impact_level(affected_nodes, affected_tests)
+ImpactAnalyzer -> ImpactAnalyzer: generate_recommendations(affected_nodes, impact_level)
+
+ImpactAnalyzer -> Metrics: track_impact_analysis(duration, max_depth, affected_count)
+activate Metrics
+deactivate Metrics
+
+ImpactAnalyzer --> Orchestrator: impact_report: {affected_nodes, impact_level, recommendations}
+deactivate ImpactAnalyzer
+
+Orchestrator --> User: Response with suggested_scenarios and graph_nodes_touched
+deactivate Orchestrator
+
+@enduml
+

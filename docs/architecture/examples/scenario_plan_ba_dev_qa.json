@@ -1,0 +1,87 @@
+{
+  "id": "plan-ba-dev-qa-EXTERNAL_DEMO",
+  "version": "1.0.0",
+  "spec": "scenario-dsl/v1",
+  "goal": {
+    "id": "ba-dev-qa-EXTERNAL_DEMO",
+    "title": "BA → Dev → QA для внешней фичи EXTERNAL_DEMO",
+    "description": "Пример сценария для внешнего оркестратора, совместимого с Scenario DSL.",
+    "constraints": {
+      "environment": "staging"
+    },
+    "success_criteria": [
+      "BA-спецификация согласована",
+      "Изменения применены на staging",
+      "Автотесты по фиче зелёные"
+    ]
+  },
+  "steps": [
+    {
+      "id": "ba-spec",
+      "title": "Уточнение требований",
+      "description": "BA готовит и согласует спецификацию.",
+      "risk_level": "read_only",
+      "autonomy_required": "A1_safe_automation",
+      "checks": [
+        "Спецификация сохранена в Wiki",
+        "Есть согласие владельца продукта"
+      ],
+      "executor": "agent:BA",
+      "metadata": {
+        "feature_id": "EXTERNAL_DEMO",
+        "graph_refs": [
+          "node:ba-requirements:BA_REQUIREMENT"
+        ]
+      }
+    },
+    {
+      "id": "dev-impl",
+      "title": "Реализация изменений",
+      "description": "Dev применяет изменения в конфигурации/коде.",
+      "risk_level": "non_prod_change",
+      "autonomy_required": "A2_non_prod_changes",
+      "checks": [
+        "Изменения применены только на staging",
+        "Статические анализаторы зелёные"
+      ],
+      "executor": "agent:Dev",
+      "metadata": {
+        "feature_id": "EXTERNAL_DEMO",
+        "graph_refs": [
+          "node:svc:service-api",
+          "node:tests/system/test_e2e_ba_dev_qa_external.py:TEST_SUITE"
+        ]
+      }
+    },
+    {
+      "id": "qa-coverage",
+      "title": "Покрытие тестами",
+      "description": "QA обновляет тесты и запускает E2E.",
+      "risk_level": "non_prod_change",
+      "autonomy_required": "A2_non_prod_changes",
+      "checks": [
+        "Тесты по фиче зелёные",
+        "E2E по критическим путям прошли"
+      ],
+      "executor": "agent:QA",
+      "metadata": {
+        "feature_id": "EXTERNAL_DEMO",
+        "graph_refs": [
+          "node:tests/system/test_e2e_ba_dev_qa_external.py:TEST_SUITE"
+        ]
+      }
+    }
+  ],
+  "required_autonomy": "A2_non_prod_changes",
+  "overall_risk": "non_prod_change",
+  "context": {
+    "kind": "ba-dev-qa",
+    "origin": "external-orchestrator"
+  },
+  "artifacts": {
+    "runbook": "https://example.com/docs/ba-dev-qa-runbook",
+    "playbook": "https://example.com/playbooks/ba_dev_qa_external.yaml"
+  }
+}
+
+

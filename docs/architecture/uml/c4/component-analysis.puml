@@ -1,0 +1,79 @@
+@startuml component_analysis
+!include <C4/C4_Component>
+
+LAYOUT_LEFT_RIGHT()
+LAYOUT_WITH_LEGEND()
+
+AddElementTag("Service","#e8f4ff","")
+AddElementTag("Adapter","#fff4e6","")
+AddElementTag("Data","#f0f7ff","")
+
+Container(API, "Graph API", "FastAPI", "Public entry point for analysis and automation")
+
+Component(AnalysisRouter, "Analysis Router", "FastAPI Router", "REST endpoints: quick analysis, dependency graph")
+Component(SchemaResolver, "Graph Schema Resolver", "GraphQL Resolvers", "GraphQL access to dependency graph")
+Component(AsyncGateway, "Async Gateway", "Starlette + WebSocket", "MCP and realtime streaming to IDEs")
+Component(AuthMiddleware, "Auth Middleware", "OAuth2 / RBAC", "Token validation, permission checks", "Service")
+Component(RateLimiter, "Rate Limiter", "Redis / slowapi", "Protects public endpoints", "Adapter")
+Component(AuditService, "Audit Service", "Python Service", "Persist requests, results, trace IDs", "Service")
+Component(DependencyClient, "Dependency Client", "gRPC/HTTP client", "Calls analysis orchestrator", "Adapter")
+Component(MetricsEmitter, "Metrics Emitter", "prometheus_client", "Request metrics, histograms", "Service")
+
+Component(AIOrchestrator, "AI Orchestrator", "Python Service", "Intelligent routing of queries to AI services", "Service")
+Component(ScenarioRecommender, "Scenario Recommender", "Python Service", "Recommend scenarios based on Unified Change Graph", "Service")
+Component(ImpactAnalyzer, "Impact Analyzer", "Python Service", "Analyze impact of changes through graph", "Service")
+Component(LLMProviderAbstraction, "LLM Provider Abstraction", "Python Service", "Unified interface for LLM providers", "Service")
+Component(IntelligentCache, "Intelligent Cache", "Python Service", "Context-aware caching with TTL and LRU eviction", "Service")
+Component(CLITool, "Unified CLI Tool", "Python CLI", "Command-line interface for platform components", "Adapter")
+
+ComponentDb(Postgres, "PostgreSQL", "Relational DB", "Projects, audit logs", "Data")
+ComponentDb(Neo4j, "Neo4j", "Graph DB", "Function/object dependency graph", "Data")
+ComponentDb(Qdrant, "Qdrant", "Vector DB", "Embeddings for semantic search", "Data")
+ComponentDb(Redis, "Redis", "In-memory", "Rate limiting, short-term cache", "Data")
+
+Rel(API, AnalysisRouter, "Routes HTTP requests")
+Rel(API, SchemaResolver, "GraphQL queries")
+Rel(API, AsyncGateway, "Realtime channels")
+
+Rel(AnalysisRouter, AuthMiddleware, "Enforce scopes")
+Rel(AnalysisRouter, RateLimiter, "Throttle requests")
+Rel(AnalysisRouter, DependencyClient, "Invoke orchestrator", "gRPC / REST")
+Rel(AnalysisRouter, AuditService, "Write audit trail")
+Rel(AnalysisRouter, MetricsEmitter, "Record latency")
+
+Rel(SchemaResolver, AuthMiddleware, "Authorize")
+Rel(SchemaResolver, DependencyClient, "Query graph")
+Rel(SchemaResolver, MetricsEmitter, "Record metrics")
+
+Rel(AsyncGateway, AuthMiddleware, "Token validation")
+Rel(AsyncGateway, DependencyClient, "Stream analysis progress")
+
+Rel(AuditService, Postgres, "Insert audit records")
+Rel(DependencyClient, Neo4j, "Query dependencies")
+Rel(DependencyClient, Qdrant, "Query embeddings")
+Rel(DependencyClient, Postgres, "Persist job metadata")
+Rel(RateLimiter, Redis, "Consume token bucket")
+Rel(MetricsEmitter, Redis, "Push ephemeral series", "Pushgateway (optional)")
+
+Rel(AnalysisRouter, AIOrchestrator, "Route AI queries")
+Rel(AIOrchestrator, ScenarioRecommender, "Get scenario recommendations")
+Rel(AIOrchestrator, ImpactAnalyzer, "Analyze change impact")
+Rel(AIOrchestrator, LLMProviderAbstraction, "Select LLM provider")
+Rel(AIOrchestrator, IntelligentCache, "Cache query results")
+Rel(ScenarioRecommender, Neo4j, "Query Unified Change Graph")
+Rel(ImpactAnalyzer, Neo4j, "Query Unified Change Graph")
+Rel(CLITool, AIOrchestrator, "CLI commands")
+Rel(CLITool, ScenarioRecommender, "CLI commands")
+Rel(CLITool, ImpactAnalyzer, "CLI commands")
+Rel(CLITool, LLMProviderAbstraction, "CLI commands")
+Rel(CLITool, IntelligentCache, "CLI commands")
+Rel(AIOrchestrator, MetricsEmitter, "Emit orchestrator metrics")
+Rel(ScenarioRecommender, MetricsEmitter, "Emit scenario metrics")
+Rel(ImpactAnalyzer, MetricsEmitter, "Emit impact metrics")
+Rel(LLMProviderAbstraction, MetricsEmitter, "Emit LLM provider metrics")
+Rel(IntelligentCache, MetricsEmitter, "Emit cache metrics")
+Rel(IntelligentCache, Redis, "Optional: distributed cache backend")
+
+SHOW_LEGEND()
+@enduml
+

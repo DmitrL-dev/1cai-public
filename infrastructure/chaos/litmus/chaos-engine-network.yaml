@@ -1,0 +1,19 @@
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: api-network-latency
+  namespace: 1cai
+spec:
+  engineState: active
+  chaosServiceAccount: litmus-admin
+  experiments:
+    - name: pod-network-latency
+      spec:
+        components:
+          env:
+            - name: TARGET_NAMESPACE
+              value: "1cai"
+            - name: APP_LABEL
+              value: "app.kubernetes.io/component=api"
+            - name: APP_KIND
+              value: "deployment"

@@ -1,0 +1,24 @@
+{
+  "name": "enterprise_api",
+  "windows": [
+    {
+      "name": "per_minute",
+      "type": "sliding_window",
+      "limit": 1000,
+      "window_seconds": 60
+    },
+    {
+      "name": "per_hour",
+      "type": "fixed_window",
+      "limit": 10000,
+      "window_seconds": 3600
+    },
+    {
+      "name": "burst_protection",
+      "type": "token_bucket",
+      "capacity": 100,
+      "refill_rate": 5.0
+    }
+  ],
+  "description": "Enterprise API с многоуровневыми лимитами"
+}

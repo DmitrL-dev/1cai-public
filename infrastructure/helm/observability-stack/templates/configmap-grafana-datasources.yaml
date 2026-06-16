@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "observability-stack.fullname" . }}-grafana-datasources
+  labels:
+    app.kubernetes.io/name: {{ include "observability-stack.name" . }}
+    grafana_datasource: "1"
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: {{ .Values.grafana.datasources.prometheusUrl }}
+        isDefault: true
+      - name: Loki
+        type: loki
+        access: proxy
+        url: {{ .Values.grafana.datasources.lokiUrl }}
+      - name: Tempo
+        type: tempo
+        access: proxy
+        url: {{ .Values.grafana.datasources.tempoUrl }}

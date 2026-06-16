@@ -1,0 +1,97 @@
+trigger:
+  branches:
+    include:
+      - main
+
+stages:
+  - stage: Lint
+    jobs:
+      - job: lint
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+          - script: |
+              pip install -r requirements-dev.txt
+              make lint
+            displayName: Lint
+
+  - stage: Test
+    jobs:
+      - job: tests
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+          - script: |
+              pip install -r requirements-dev.txt
+              make test
+            displayName: Tests
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: JUnit
+              testResultsFiles: 'output/test-results/**/*.xml'
+
+  - stage: Security
+    jobs:
+      - job: security
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+          - script: |
+              sudo apt-get update && sudo apt-get install -y helm
+              pip install semgrep checkov
+              bash scripts/security/run_policy_checks.sh
+            displayName: Policy-as-code
+
+  - stage: Build
+    jobs:
+      - job: build
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+          - task: Docker@2
+            inputs:
+              containerRegistry: '$(dockerRegistryServiceConnection)'
+              repository: '1cai/api'
+              command: 'buildAndPush'
+              Dockerfile: '**/Dockerfile'
+              tags: |
+                $(Build.SourceVersion)
+                latest
+
+  - stage: Deploy_AKS
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: deploy
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'aks'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                - task: AzureCLI@2
+                  displayName: Terraform AKS Apply
+                  inputs:
+                    azureSubscription: '$(azureServiceConnection)'
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      cd infrastructure/terraform/azure-aks
+                      terraform init
+                      terraform apply -auto-approve \
+                        -var="azure_subscription_id=$(AZURE_SUBSCRIPTION_ID)" \
+                        -var="cluster_name=$(AKS_CLUSTER_NAME)"
+                - task: AzureCLI@2
+                  displayName: Helm Deploy via kubectl
+                  inputs:
+                    azureSubscription: '$(azureServiceConnection)'
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      az aks get-credentials --resource-group $(AKS_RESOURCE_GROUP) --name $(AKS_CLUSTER_NAME) --admin --overwrite-existing
+                      make gitops-apply

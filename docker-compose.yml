@@ -1,0 +1,220 @@
+version: '3.8'
+
+# ═══════════════════════════════════════════════════════════════
+# 1C AI Stack - MINIMAL MVP VERSION
+# ═══════════════════════════════════════════════════════════════
+#
+# Этот файл содержит ТОЛЬКО необходимые компоненты для MVP
+#
+# Включено:
+#   ✅ PostgreSQL - основная БД
+#   ✅ Redis - кэш и очереди
+#
+# НЕ включено (опционально):
+#   ⚠️ Neo4j - граф зависимостей (можно добавить позже)
+#   ⚠️ Qdrant - векторный поиск (можно добавить позже)
+#   ❌ Elasticsearch - не нужен для MVP
+#
+# Время старта: ~1 минута
+# Требования: ~1 GB RAM
+#
+# Запуск:
+#   docker-compose -f docker-compose.mvp.yml up -d
+#
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # PostgreSQL - Основная база данных
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  postgres:
+    image: postgres:15-alpine
+    container_name: 1c-ai-postgres
+    environment:
+      POSTGRES_DB: knowledge_base
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    networks:
+      - 1c-ai-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Redis - Кэш, очереди, rate limiting
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  redis:
+    image: redis:7-alpine
+    container_name: 1c-ai-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - 1c-ai-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # PgAdmin - Управление PostgreSQL (только для разработки)
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: 1c-ai-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@1c-ai.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    networks:
+      - 1c-ai-network
+    depends_on:
+      - postgres
+    profiles:
+      - dev
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Neo4j - Граф зависимостей кода (Рентген)
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  neo4j:
+    image: neo4j:5-community
+    container_name: 1c-ai-neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/sentinel2026
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_server_memory_heap_initial__size: 2G
+      NEO4J_server_memory_heap_max__size: 3G
+      NEO4J_server_memory_pagecache_size: 512m
+    volumes:
+      - neo4j_data:/data
+    networks:
+      - 1c-ai-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p sentinel2026 'RETURN 1'"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+
+# ═══════════════════════════════════════════════════════════════
+# Volumes
+# ═══════════════════════════════════════════════════════════════
+volumes:
+  postgres_data:
+    name: 1c-ai-postgres-data
+  redis_data:
+    name: 1c-ai-redis-data
+  neo4j_data:
+    name: 1c-ai-neo4j-data
+
+# ═══════════════════════════════════════════════════════════════
+# Networks
+# ═══════════════════════════════════════════════════════════════
+networks:
+  1c-ai-network:
+    name: 1c-ai-network
+    driver: bridge
+
+# ═══════════════════════════════════════════════════════════════
+# USAGE EXAMPLES
+# ═══════════════════════════════════════════════════════════════
+#
+# 1. Запустить MVP (только PostgreSQL + Redis):
+#    docker-compose -f docker-compose.mvp.yml up -d
+#
+# 2. Запустить с PgAdmin (для разработки):
+#    docker-compose -f docker-compose.mvp.yml --profile dev up -d
+#
+# 3. Проверить статус:
+#    docker-compose -f docker-compose.mvp.yml ps
+#
+# 4. Посмотреть логи:
+#    docker-compose -f docker-compose.mvp.yml logs -f
+#
+# 5. Остановить:
+#    docker-compose -f docker-compose.mvp.yml down
+#
+# 6. Удалить данные (ВНИМАНИЕ: удалит БД!):
+#    docker-compose -f docker-compose.mvp.yml down -v
+#
+# ═══════════════════════════════════════════════════════════════
+# ДОСТУПНЫЕ СЕРВИСЫ
+# ═══════════════════════════════════════════════════════════════
+#
+# PostgreSQL:
+#   - Host: localhost
+#   - Port: 5432
+#   - Database: knowledge_base
+#   - User: admin
+#   - Password: changeme (или из .env)
+#   - Connection string: postgresql://admin:changeme@localhost:5432/knowledge_base
+#
+# Redis:
+#   - Host: localhost
+#   - Port: 6379
+#   - Connection: redis://localhost:6379
+#
+# PgAdmin (если запущен с --profile dev):
+#   - URL: http://localhost:5050
+#   - Email: admin@1c-ai.local (или из .env)
+#   - Password: admin (или из .env)
+#
+# ═══════════════════════════════════════════════════════════════
+# СЛЕДУЮЩИЕ ШАГИ
+# ═══════════════════════════════════════════════════════════════
+#
+# После запуска этого файла вы можете:
+#
+# 1. Запустить FastAPI:
+#    uvicorn src.main:app --reload
+#
+# 2. Запустить Telegram Bot:
+#    python src/telegram/bot_minimal.py
+#
+# 3. Запустить MCP Server:
+#    python src/ai/mcp_server.py
+#
+# 4. Запустить Code Execution:
+#    cd execution-env
+#    deno run --allow-all execution-harness.ts
+#
+# Полная инструкция: docs/02-architecture/PROJECT_SUMMARY.md
+#
+# ═══════════════════════════════════════════════════════════════
+

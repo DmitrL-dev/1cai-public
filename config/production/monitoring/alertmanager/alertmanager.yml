@@ -1,0 +1,350 @@
+# Alertmanager Configuration for AI-Assistants Production
+global:
+  smtp_smarthost: '${SMTP_SERVER}:${SMTP_PORT}'
+  smtp_from: 'alerts@yourcompany.com'
+  smtp_auth_username: '${SMTP_USERNAME}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  smtp_require_tls: true
+
+# Templates for notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route configuration - determines how alerts are routed to receivers
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: 'default-receiver'
+  
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 0s
+      repeat_interval: 5m
+      continue: true
+    
+    # Warning alerts - less urgent
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 30s
+      repeat_interval: 4h
+    
+    # Database alerts - specialized handling
+    - match:
+        service: database
+      receiver: 'database-alerts'
+      group_wait: 5s
+      repeat_interval: 1h
+    
+    # Security alerts - highest priority
+    - match:
+        service: security
+      receiver: 'security-alerts'
+      group_wait: 0s
+      repeat_interval: 30m
+      continue: true
+    
+    # Backup alerts - critical for data protection
+    - match:
+        service: backup
+      receiver: 'backup-alerts'
+      group_wait: 0s
+      repeat_interval: 15m
+
+# Inhibit rules - suppress duplicate alerts
+inhibit_rules:
+  # Suppress warnings when critical alerts are firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']
+  
+  # Suppress service down alerts when the host is down
+  - source_match:
+      alertname: 'HostDown'
+    target_match_re:
+      alertname: 'ServiceDown'
+    equal: ['instance']
+
+# Receivers - where alerts are sent
+receivers:
+  # Default receiver for all alerts
+  - name: 'default-receiver'
+    email_configs:
+      - to: '${ALERT_EMAIL}'
+        subject: '[{{ .GroupLabels.alertname }}] {{ .CommonAnnotations.summary }}'
+        body: |
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Severity: {{ .Labels.severity }}
+          Service: {{ .Labels.service }}
+          Instance: {{ .Labels.instance }}
+          Time: {{ .StartsAt.Format "2006-01-02 15:04:05 MST" }}
+          {{ end }}
+        headers:
+          X-Priority: '3'
+          X-MSMail-Priority: 'Normal'
+
+  # Critical alerts - immediate notification with multiple channels
+  - name: 'critical-alerts'
+    email_configs:
+      - to: '${ALERT_EMAIL}'
+        subject: 'CRITICAL: {{ .GroupLabels.alertname }}'
+        body: |
+          🚨 CRITICAL ALERT 🚨
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Service: {{ .Labels.service }}
+          Instance: {{ .Labels.instance }}
+          Severity: {{ .Labels.severity }}
+          Started: {{ .StartsAt.Format "2006-01-02 15:04:05 MST" }}
+          {{ if .Annotations.runbook_url }}
+          Runbook: {{ .Annotations.runbook_url }}
+          {{ end }}
+          {{ end }}
+          
+          Action Required: Immediate attention needed!
+        headers:
+          X-Priority: '1'
+          X-MSMail-Priority: 'High'
+    
+    # Slack notifications for critical alerts
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#critical-alerts'
+        title: '🚨 CRITICAL ALERT'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Service:* {{ .Labels.service }}
+          *Instance:* {{ .Labels.instance }}
+          *Severity:* {{ .Labels.severity }}
+          *Description:* {{ .Annotations.description }}
+          {{ if .Annotations.runbook_url }}
+          *Runbook:* <{{ .Annotations.runbook_url }}|View Runbook>
+          {{ end }}
+          {{ end }}
+        send_resolved: true
+        color: 'danger'
+
+  # Warning alerts - less urgent notifications
+  - name: 'warning-alerts'
+    email_configs:
+      - to: '${ALERT_EMAIL}'
+        subject: 'WARNING: {{ .GroupLabels.alertname }}'
+        body: |
+          ⚠️ WARNING ALERT ⚠️
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Service: {{ .Labels.service }}
+          Instance: {{ .Labels.instance }}
+          Severity: {{ .Labels.severity }}
+          Time: {{ .StartsAt.Format "2006-01-02 15:04:05 MST" }}
+          {{ end }}
+          
+          Please review and take action if necessary.
+        headers:
+          X-Priority: '3'
+          X-MSMail-Priority: 'Normal'
+    
+    slack_configs:
+      - api_url: '${SLACK_WEBHOOK_URL}'
+        channel: '#warnings'
+        title: '⚠️ WARNING ALERT'
+        text: |
+          {{ range .Alerts }}
+          *Alert:* {{ .Annotations.summary }}
+          *Service:* {{ .Labels.service }}
+          *Description:* {{ .Annotations.description }}
+          {{ end }}
+        send_resolved: true
+        color: 'warning'
+
+  # Database alerts - specialized database monitoring
+  - name: 'database-alerts'
+    email_configs:
+      - to: '${ALERT_EMAIL}'
+        subject: 'DATABASE ALERT: {{ .GroupLabels.alertname }}'
+        body: |
+          🗄️ DATABASE ALERT 🗄️
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Database: {{ .Labels.job }}
+          Severity: {{ .Labels.severity }}
+          Time: {{ .StartsAt.Format "2006-01-02 15:04:05 MST" }}
+          
+          This requires immediate attention from the database team.
+          {{ end }}
+        headers:
+          X-Priority: '2'
+          X-MSMail-Priority: 'High'
+
+  # Security alerts - highest priority
+  - name: 'security-alerts'
+    email_configs:
+      - to: '${ALERT_EMAIL}'
+        subject: '🔒 SECURITY ALERT: {{ .GroupLabels.alertname }}'
+        body: |
+          🔒 SECURITY ALERT 🔒
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Service: {{ .Labels.service }}
+          Source IP: {{ .Labels.client_ip }}
+          Severity: {{ .Labels.severity }}
+          Time: {{ .StartsAt.Format "2006-01-02 15:04:05 MST" }}
+          
+          ⚠️ IMMEDIATE ACTION REQUIRED ⚠️
+          {{ end }}
+        headers:
+          X-Priority: '1'
+          X-MSMail-Priority: 'High'
+    
+    # SMS alerts for security issues (requires SMS gateway integration)
+    # webhook_configs:
+    #   - url: 'http://sms-gateway:8080/send'
+    #     send_resolved: true
+
+  # Backup alerts - critical for data protection
+  - name: 'backup-alerts'
+    email_configs:
+      - to: '${ALERT_EMAIL}'
+        subject: '💾 BACKUP ALERT: {{ .GroupLabels.alertname }}'
+        body: |
+          💾 BACKUP ALERT 💾
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Description: {{ .Annotations.description }}
+          Service: {{ .Labels.service }}
+          Severity: {{ .Labels.severity }}
+          Time: {{ .StartsAt.Format "2006-01-02 15:04:05 MST" }}
+          
+          CRITICAL: Data protection is at risk!
+          {{ end }}
+        headers:
+          X-Priority: '1'
+          X-MSMail-Priority: 'High'
+
+# Inhibition rules for specific services
+inhibit_rules:
+  # Suppress service-specific alerts when the infrastructure is down
+  - source_match:
+      alertname: 'HostDown'
+    target_match_re:
+      alertname: 'ServiceDown|HighCPUUsage|HighMemoryUsage'
+    equal: ['instance']
+  
+  # Suppress database alerts when database is completely down
+  - source_match:
+      alertname: 'DatabaseDown'
+    target_match_re:
+      alertname: 'DatabaseConnectionsHigh|DatabaseSlowQueries'
+    equal: ['job']
+  
+  # Suppress Redis alerts when Redis is down
+  - source_match:
+      alertname: 'RedisDown'
+    target_match_re:
+      alertname: 'RedisMemoryHigh|RedisKeyspaceHitsLow'
+    equal: ['job']
+
+# Time-based routing
+time_intervals:
+  - name: 'business-hours'
+    time_intervals:
+      - times:
+          - start_time: '09:00'
+            end_time: '17:00'
+        weekdays: ['monday:friday']
+        timezone: 'UTC'
+  
+  - name: 'maintenance'
+    time_intervals:
+      - times:
+          - start_time: '02:00'
+            end_time: '04:00'
+        weekdays: ['sunday']
+
+# Modify routes to use time intervals
+route:
+  # ... (existing route configuration)
+  routes:
+    # Non-critical alerts during maintenance window
+    - match:
+        severity: warning
+        service: database
+      receiver: 'maintenance-notifications'
+      group_interval: 30s
+      repeat_interval: 2h
+      time_intervals: ['business-hours']
+    
+    # Escalate critical alerts after business hours
+    - match:
+        severity: critical
+      receiver: 'escalated-critical-alerts'
+      group_wait: 0s
+      repeat_interval: 15m
+      continue: true
+      time_intervals: ['maintenance']
+
+# Additional receivers for time-based routing
+receivers:
+  # ... (existing receivers)
+  
+  - name: 'maintenance-notifications'
+    email_configs:
+      - to: '${ALERT_EMAIL}'
+        subject: 'MAINTENANCE WINDOW: {{ .GroupLabels.alertname }}'
+        body: |
+          🛠️ MAINTENANCE WINDOW ALERT 🛠️
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Service: {{ .Labels.service }}
+          Description: {{ .Annotations.description }}
+          Time: {{ .StartsAt.Format "2006-01-02 15:04:05 MST" }}
+          
+          This alert is suppressed during the maintenance window.
+          {{ end }}
+        headers:
+          X-Priority: '3'
+          X-MSMail-Priority: 'Normal'
+  
+  - name: 'escalated-critical-alerts'
+    email_configs:
+      - to: '${ALERT_EMAIL}'
+        subject: 'ESCALATED: {{ .GroupLabels.alertname }}'
+        body: |
+          🚨 ESCALATED CRITICAL ALERT 🚨
+          
+          {{ range .Alerts }}
+          Alert: {{ .Annotations.summary }}
+          Service: {{ .Labels.service }}
+          Instance: {{ .Labels.instance }}
+          Description: {{ .Annotations.description }}
+          Time: {{ .StartsAt.Format "2006-01-02 15:04:05 MST" }}
+          
+          This alert has been escalated due to after-hours timing.
+          {{ end }}
+        headers:
+          X-Priority: '1'
+          X-MSMail-Priority: 'High'
+
+# High availability configuration
+# For production, run multiple Alertmanager instances and use load balancing
+# This configuration assumes a single instance for simplicity

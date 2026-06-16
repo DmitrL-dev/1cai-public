@@ -1,0 +1,56 @@
+@startuml component_ml
+!include <C4/C4_Component>
+
+LAYOUT_LEFT_RIGHT()
+LAYOUT_WITH_LEGEND()
+
+AddElementTag("Pipeline","#eef6ff","")
+AddElementTag("Task","#fef4e7","")
+AddElementTag("Infra","#f6fdf3","")
+
+Container(MLPlatform, "ML Pipelines", "Python, Prefect", "Training, evaluation, deployment of models")
+
+Component(Orchestrator, "Pipeline Orchestrator", "Prefect Flow", "Schedules training and evaluation jobs", "Pipeline")
+Component(DataPrep, "Data Preparation", "Python Module", "Cleans, labels and augments datasets", "Task")
+Component(FeatureStore, "Feature Store Adapter", "Python Module", "Extracts 1C code features, heuristics", "Task")
+Component(ModelTrainer, "Model Trainer", "PyTorch Lightning", "Fine-tunes and trains models", "Task")
+Component(Evaluator, "Evaluation Suite", "pytest, bespoke metrics", "Runs regression and benchmark tests", "Task")
+Component(ModelRegistry, "Model Registry Adapter", "S3 + metadata", "Versioned artifacts and metadata", "Infra")
+Component(DeploymentPublisher, "Deployment Publisher", "FastAPI client", "Publishes models to serving endpoints", "Infra")
+Component(ExperimentTracker, "Experiment Tracker", "MLflow / Weights & Biases", "Captures runs, metrics, params", "Infra")
+Component(Alerting, "ML Alerting", "Prometheus Rules", "SLO and drift monitoring", "Infra")
+
+ComponentDb(Minio, "MinIO", "Object Storage", "Datasets, checkpoints, reports")
+ComponentDb(Qdrant, "Qdrant", "Vector DB", "Embeddings store")
+ComponentDb(Postgres, "PostgreSQL", "Relational DB", "Metadata, experiment index")
+ComponentDb(Neo4j, "Neo4j", "Graph DB", "Structural relationships")
+Container(API, "Graph API", "FastAPI", "Serving inference endpoints")
+
+Rel(Orchestrator, DataPrep, "Runs tasks")
+Rel(Orchestrator, FeatureStore, "Enrich dataset")
+Rel(Orchestrator, ModelTrainer, "Launch training jobs")
+Rel(Orchestrator, Evaluator, "Trigger evaluation")
+Rel(Orchestrator, DeploymentPublisher, "Promote release")
+Rel(Orchestrator, ExperimentTracker, "Log runs")
+
+Rel(DataPrep, Minio, "Read raw datasets")
+Rel(DataPrep, Minio, "Write curated datasets")
+Rel(FeatureStore, Neo4j, "Query dependency graph")
+Rel(FeatureStore, Qdrant, "Query embeddings")
+
+Rel(ModelTrainer, Minio, "Persist checkpoints")
+Rel(ModelTrainer, ExperimentTracker, "Log metrics")
+Rel(ModelTrainer, Qdrant, "Generate embeddings")
+
+Rel(Evaluator, Minio, "Read test datasets")
+Rel(Evaluator, Postgres, "Store benchmark summary")
+Rel(Evaluator, Alerting, "Push regression alerts")
+
+Rel(ModelRegistry, Minio, "Version artifacts")
+Rel(ModelRegistry, Postgres, "Manage metadata index")
+Rel(DeploymentPublisher, API, "Publish new model version", "REST")
+Rel(ExperimentTracker, Postgres, "Persist runs metadata")
+
+SHOW_LEGEND()
+@enduml
+

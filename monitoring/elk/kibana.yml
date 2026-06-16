@@ -1,0 +1,171 @@
+# Kibana конфигурация
+server.host: "0.0.0.0"
+server.port: 5601
+server.name: "kibana-monitoring"
+
+# Elasticsearch подключение
+elasticsearch.hosts: ["http://elasticsearch:9200"]
+elasticsearch.username: "elastic"
+elasticsearch.password: "changeme"
+
+# TLS настройки
+server.ssl.enabled: false
+server.ssl.certificate: /usr/share/kibana/config/certs/kibana.crt
+server.ssl.key: /usr/share/kibana/config/certs/kibana.key
+
+# Логирование
+logging.appenders:
+  file:
+    type: file
+    fileName: /usr/share/kibana/logs/kibana.log
+    layout:
+      type: json
+
+logging.root:
+  level: info
+  appenders:
+    - file
+  default: info
+
+logging.loggers:
+  - name: http.server.response
+    level: debug
+  - name: ops
+    level: info
+
+# Настройки производительности
+ops.interval: 10000
+
+# Региональные настройки
+i18n.locale: "ru"
+
+# Карты
+map.regionmap.layers:
+  - url: "http://vector-tiles.tile.maps.elastic.co/v2/raster/{z}/{x}/{y}.png?elastic_tile_service_tos=accept&my_app_id=test_id&my_app_code=test_code"
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    fields:
+      - name: "label"
+        description: "Country name"
+      - name: "abbr"
+        description: "Country abbreviation"
+
+# Telemetry настройки
+telemetry.enabled: false
+telemetry.optIn: false
+telemetry.allowChangingOptInStatus: false
+
+# Feature controls
+features.enabled: true
+
+# Настройки аналитики
+data.search.aggs.shardDelay.enabled: true
+
+# Настройки безопасности
+xpack.security.enabled: true
+xpack.security.encryptionKey: "something_at_least_32_characters"
+xpack.security.sessionTimeout: 3600000
+
+# API keys
+xpack.security.apiKey.enabled: true
+
+# Monitoring
+xpack.monitoring.collection.enabled: true
+
+# Machine Learning
+xpack.ml.enabled: true
+
+# Graph
+xpack.graph.enabled: true
+
+# Canvas
+xpack.canvas.enabled: true
+
+# Maps
+xpack.maps.enabled: true
+
+# Upgrades
+xpack.upgrade_assistant.enabled: true
+
+# Reporting
+xpack.reporting.enabled: true
+xpack.reporting.kibanaServer.hostname: "localhost"
+
+# Watcher
+xpack.watcher.enabled: true
+
+# Index lifecycle management
+xpack.ilm.enabled: true
+
+# Rollup jobs
+xpack.rollup.enabled: true
+
+# Security solution
+xpack.securitySolution.enabled: true
+
+# Observability
+xpack.observability.enabled: true
+
+# APM
+xpack.apm.enabled: true
+
+# Крайние настройки для мониторинга логов
+logging.appenders:
+  file:
+    type: file
+    fileName: /usr/share/kibana/logs/kibana.log
+    layout:
+      type: json
+  audit_file:
+    type: file
+    fileName: /usr/share/kibana/logs/audit.log
+    layout:
+      type: json
+  audit_console:
+    type: console
+    layout:
+      type: json
+
+logging.loggers:
+  - name: http.server.response
+    level: info
+  - name: ops
+    level: info
+  - name: server
+    level: info
+  - name: plugins
+    level: info
+  - name: route
+    level: info
+  - name: task_manager
+    level: info
+  - name: ui settings
+    level: info
+  - name: savedobjects-service
+    level: info
+  - name:嵌启用
+
+logging.root:
+  level: info
+  appenders:
+    - file
+  default: info
+
+logging.appenders:
+  - type: console
+    layout:
+      type: json
+  - type: file
+    fileName: /usr/share/kibana/logs/kibana.log
+    layout:
+      type: json
+
+# Настройки для агрегирования логов
+data.search.aggs.shardDelay.enabled: true
+data.search.aggs.shardDelay.delay: 1000
+
+# Настройки для сохранения данных
+savedObjects.maxImportExportSize: 10000
+
+# Настройки для интерфейса
+newsfeed.enabled: true
+telemetry.enabled: false

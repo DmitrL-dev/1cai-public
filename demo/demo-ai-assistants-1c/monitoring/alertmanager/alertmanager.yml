@@ -1,0 +1,175 @@
+global:
+  smtp_smarthost: 'localhost:587'
+  smtp_from: 'alerts@demo-ai-assistants.com'
+  smtp_auth_username: 'alerts@demo-ai-assistants.com'
+  smtp_auth_password: 'your-email-password'
+
+# Маршрутизация алертов
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: 'web.hook'
+  routes:
+    # Критические алерты - немедленно
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 0s
+      repeat_interval: 30m
+      
+    # Предупреждения - менее критично
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 2m
+      repeat_interval: 2h
+      
+    # По сервисам
+    - match:
+        service: api-gateway
+      receiver: 'api-team'
+      
+    - match:
+        service: supabase
+      receiver: 'backend-team'
+      
+    - match:
+        service: database
+      receiver: 'dba-team'
+      
+    - match:
+        service: infrastructure
+      receiver: 'devops-team'
+      
+    - match:
+        service: logging
+      receiver: 'logging-team'
+
+# Ингибирование алертов
+inhibit_rules:
+  # Игнорировать предупреждения, если есть критические алерты для того же сервиса
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'service']
+    
+  # Если сервис полностью недоступен, не отправлять алерты о высокой задержке
+  - source_match:
+      alertname: 'ServiceDown'
+    target_match:
+      alertname: 'HighLatency'
+    equal: ['service']
+
+# Получатели уведомлений
+receivers:
+  # Критические алерты - все каналы
+  - name: 'critical-alerts'
+    email_configs:
+      - to: 'critical-alerts@demo-ai-assistants.com'
+        subject: '🚨 КРИТИЧНО: {{ .GroupLabels.service }} - {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          🚨 {{ .Annotations.summary }}
+          
+          Сервис: {{ .Labels.service }}
+          Время: {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          Описание: {{ .Annotations.description }}
+          Runbook: {{ .Annotations.runbook_url }}
+          {{ end }}
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#critical-alerts'
+        title: '🚨 КРИТИЧНО'
+        text: |
+          {{ range .Alerts }}
+          *{{ .Annotations.summary }}*
+          Сервис: {{ .Labels.service }}
+          Время: {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          {{ end }}
+        color: 'danger'
+        
+    webhook_configs:
+      - url: 'http://pagerduty-webhook:8080/trigger'
+        send_resolved: true
+        
+  # Предупреждения - только email и Slack
+  - name: 'warning-alerts'
+    email_configs:
+      - to: 'warnings@demo-ai-assistants.com'
+        subject: '⚠️ ПРЕДУПРЕЖДЕНИЕ: {{ .GroupLabels.service }} - {{ .GroupLabels.alertname }}'
+        body: |
+          {{ range .Alerts }}
+          ⚠️ {{ .Annotations.summary }}
+          
+          Сервис: {{ .Labels.service }}
+          Время: {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          Описание: {{ .Annotations.description }}
+          {{ end }}
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#warnings'
+        title: '⚠️ Предупреждение'
+        text: |
+          {{ range .Alerts }}
+          *{{ .Annotations.summary }}*
+          Сервис: {{ .Labels.service }}
+          {{ end }}
+        color: 'warning'
+
+  # Webhook общие уведомления
+  - name: 'web.hook'
+    webhook_configs:
+      - url: 'http://webhook-service:8080/alerts'
+        send_resolved: true
+        
+  # API команда
+  - name: 'api-team'
+    email_configs:
+      - to: 'api-team@demo-ai-assistants.com'
+        subject: 'API Gateway Alert: {{ .GroupLabels.alertname }}'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#api-alerts'
+        
+  # Backend команда  
+  - name: 'backend-team'
+    email_configs:
+      - to: 'backend-team@demo-ai-assistants.com'
+        subject: 'Backend Alert: {{ .GroupLabels.alertname }}'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#backend-alerts'
+        
+  # DBA команда
+  - name: 'dba-team'
+    email_configs:
+      - to: 'dba-team@demo-ai-assistants.com'
+        subject: 'Database Alert: {{ .GroupLabels.alertname }}'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#database-alerts'
+        
+  # DevOps команда
+  - name: 'devops-team'
+    email_configs:
+      - to: 'devops-team@demo-ai-assistants.com'
+        subject: 'Infrastructure Alert: {{ .GroupLabels.alertname }}'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#devops-alerts'
+        
+  # Logging команда
+  - name: 'logging-team'
+    email_configs:
+      - to: 'logging-team@demo-ai-assistants.com'
+        subject: 'Logging Alert: {{ .GroupLabels.alertname }}'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+        channel: '#logging-alerts'
+
+# Шаблоны уведомлений
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'

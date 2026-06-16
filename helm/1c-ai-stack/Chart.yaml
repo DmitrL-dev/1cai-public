@@ -1,0 +1,35 @@
+apiVersion: v2
+name: 1cai-public
+description: Enterprise 1C AI Development Stack - Helm Chart
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+keywords:
+  - 1c
+  - ai
+  - neo4j
+  - qdrant
+  - postgresql
+  - machine-learning
+
+home: https://github.com/DmitrL-dev/1cai-public
+sources:
+  - https://github.com/DmitrL-dev/1cai-public
+
+maintainers:
+  - name: 1C AI Team
+    email: team@example.com
+
+dependencies: []
+
+annotations:
+  category: AI/ML
+  licenses: MIT
+
+
+
+
+
+
+

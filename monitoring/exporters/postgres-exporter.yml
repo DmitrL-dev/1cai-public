@@ -1,0 +1,195 @@
+# PostgreSQL Exporter конфигурация
+# Основные настройки
+web.listen-address: ":9187"
+web.telemetry-path: "/metrics"
+
+# Логирование
+log.level: info
+log.format: logfmt
+
+# Connection строка для PostgreSQL
+data-source-names:
+  - "postgresql://postgres:password@postgres:5432/postgres?sslmode=disable"
+  - "postgresql://postgres:password@postgres:5432/monitoring?sslmode=disable"
+
+# Состояние автозапуска
+auto-discover-databases: true
+
+# Логирование запросов
+exclude-databases:
+  - "template0"
+  - "template1"
+
+# Инклюдировать базы данных
+include-databases: []
+
+# Включить дополнительные метрики
+extend.query-path: ""
+disable-default-metrics: false
+
+# Настройки для получения статуса сервера
+server-state-cache-size: 1000
+server-state-cache-last-successful-connection-time: ""
+
+# Настройки для получения информации о релизе
+persist-server-version: true
+server-version-print-label: ""
+
+# Номера релизов
+release-id: ""
+
+# Настройки для Connection Pool
+max-connections-limit: 10
+
+# Разделение процессов для коллекции метрик
+collect.bin-log: false
+collect.confîg: false
+collect.database: true
+collect.disk-size: false
+collect.events: false
+collect.extensions: false
+collect.hot-standby: false
+collect.locks: false
+collect.long-running-transactions: false
+collect.max-indexes: false
+collect.nodemx-gauge: false
+collect.pg-database: true
+collect.pg-db-stat-sum-bgwriter: false
+collect.pg-db-stat-sum-database: false
+collect.pg-db-stat-sum-database-cpu: false
+collect.pg-db-stat-sum-instance: false
+collect.pg-db-stat-sum-plans: false
+collect.pg-db-stat-sum-stat-activity: false
+collect.pg-db-stat-sum-stat-activity-cpu: false
+collect.pg-db-stat-sum-stat-invacuum: false
+collect.pg-db-stat-sum-stat-replication: false
+collect.pg-db-stat-sum-stat-slru: false
+collect.pg-db-stat-sum-stat-slow-queries: false
+collect.pg-db-stat-sum-stat-statements: false
+collect.pg-db-stat-sum-stat-statements-field-name: ""
+collect.pg-db-stat-sum-stat-statements-load: false
+collect.pg-db-stat-sum-stat-statements-timing: false
+collect.pg-db-stat-sum-stat-statements-verbose: false
+collect.pg-db-stat-sum-stat-user-tables: false
+collect.pg-db-stat-sum-wal-receiver-status: false
+collect.pg-settings: false
+collect.pg-slice: false
+collect.pg-sni: false
+collect.pg-stat-activity: true
+collect.pg-stat-archiver: false
+collect.pg-stat-bgwriter: true
+collect.pg-stat-database: true
+collect.pg-stat-database-cpu: false
+collect.pg-stat-database-conflicts: false
+collect.pg-stat-io: false
+collect.pg-stat-replication-slots: false
+collect.pg-stat-replication: false
+collect.pg-stat-slow-queries: false
+collect.pg-stat-statements: false
+collect.pg-stat-statements-field-name: ""
+collect.pg-stat-statements-load: false
+collect.pg-stat-statements-timing: false
+collect.pg-stat-statements-verbose: false
+collect.pg-stat-user-functions: false
+collect.pg-stat-user-tables: true
+collect.pg-stat-vacuum-cpu: false
+collect.pg-stat-user-tables-cpu: false
+collect.pg-stat-user-indexes: false
+collect.pg-stat-user-tables-cpu: false
+collect.pg-stat-archiver: false
+collect.pg-stat-slru: false
+collect.pg-stat-replication-slots: false
+collect.pg-stat-wal-receiver-status: false
+collect.pg-stat-replication: false
+collect.pg-stat-replication-pg-timeline-history: false
+collect.pg-stat-replication-pg-wal: false
+collect.pg-stat-replication-pg-wal-stream: false
+collect.pg-stat-replication-pg-wal-stream-local: false
+collect.pg-stat-replication-pg-wal-stream-remote: false
+collect.pg-stat-replication-pg-wal-stream-remote-primary: false
+collect.pg-stat-replication-pg-wal-stream-replica: false
+collect.pg-stat-replication-pg-wal-stream-standby: false
+collect.pg-stat-user-functions-cpu: false
+collect.pg-statio-user-indexes: false
+collect.pg-statio-user-tables: false
+collect.pg-statio-user-relations: false
+collect.pg-statio-user-system: false
+collect.pg-statio-user-tables-cpu: false
+collect.pg-statio-user-indexes-cpu: false
+collect.pg-statio-user-relations-cpu: false
+collect.pg-statio-user-system-cpu: false
+collect.pg-slice-user-tables: false
+collect.pg-slice-user-tables-cpu: false
+collect.pg-slice-user-indexes: false
+collect.pg-slice-user-tables-cpu: false
+collect.pg-slice-user-relations: false
+collect.pg-slice-user-system: false
+collect.pg-slice-user-tables-cpu: false
+collect.pg-slice-user-indexes-cpu: false
+collect.pg-slice-user-relations-cpu: false
+collect.pg-slice-user-system-cpu: false
+collect.pg-slice-stat-database: false
+collect.pg-slice-stat-database-cpu: false
+collect.pg-slice-stat-replication: false
+collect.pg-slice-stat-replication-pg-wal: false
+collect.pg-slice-stat-replication-pg-wal-stream: false
+collect.pg-slice-stat-replication-pg-wal-stream-local: false
+collect.pg-slice-stat-replication-pg-wal-stream-remote: false
+collect.pg-slice-stat-replication-pg-wal-stream-remote-primary: false
+collect.pg-slice-stat-replication-pg-wal-stream-replica: false
+collect.pg-slice-stat-replication-pg-wal-stream-standby: false
+collect.pg-slice-stat-replication-slots: false
+collect.pg-slice-stat-replication-pg-timeline-history: false
+collect.pg-slice-stat-replication-pg-wal-stream-replica: false
+collect.pg-slice-stat-replication-pg-wal-stream-standby: false
+collect.pg-slice-stat-replication-pg-wal-stream-local: false
+collect.pg-slice-stat-replication-pg-wal-stream-remote: false
+collect.pg-slice-stat-replication-pg-wal-stream-remote-primary: false
+
+# Интервал сбора метрик (в секундах)
+collect.period: 30s
+
+# Настройки для File System
+file.sysfs.path: /sys
+file.procfs.path: /proc
+file.rootfs.path: /
+
+# Настройки для Timer
+timer.statements.max-time: 10s
+
+# Настройки для SSL
+ssl.mode: disable
+
+# Настройки для Connection Pool
+pg-settings.query: |
+  SELECT name, setting FROM pg_settings
+
+pg-settings.exclude: |
+  passfile
+
+# Настройки дляstat-rel-latency
+stat-rel-latency.query: |
+  SELECT 
+    CASE 
+      WHEN EXTRACT(EPOCH FROM now() - last_vacuum) > autovacuum_vacuum_threshold / autovacuum_vacuum_scale_factor 
+      THEN 'vacuum' 
+      WHEN EXTRACT(EPOCH FROM now() - last_autovacuum) > autovacuum_vacuum_threshold / autovacuum_vacuum_scale_factor 
+      THEN 'autovacuum' 
+      WHEN EXTRACT(EPOCH FROM now() - last_analyze) > autovacuum_analyze_threshold / autovacuum_analyze_scale_factor 
+      THEN 'analyze' 
+      WHEN EXTRACT(EPOCH FROM now() - last_autoanalyze) > autovacuum_analyze_threshold / autovacuum_analyze_scale_factor 
+      THEN 'autoanalyze' 
+      ELSE 'idle' 
+    END AS activity,
+    datname, 
+    pid, 
+    usename, 
+    application_name, 
+    client_addr, 
+    EXTRACT(EPOCH FROM now() - query_start) AS duration_seconds, 
+    state 
+  FROM pg_stat_activity 
+  WHERE datname IS NOT NULL
+
+# Metric labels
+metric-prefix: pg

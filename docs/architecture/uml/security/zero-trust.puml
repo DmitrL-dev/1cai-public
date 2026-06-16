@@ -1,0 +1,87 @@
+@startuml
+title Zero Trust Access Map
+
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+rectangle "Identity Providers" {
+  component "OIDC Provider\n(Keycloak/Azure AD)" as OIDC
+  component "Service Mesh CA\n(certs)" as MeshCA
+}
+
+rectangle "Access Policy Plane" {
+  component "Policy Engine\n(Open Policy Agent)" as OPA
+  component "RBAC Matrix\n(policy.yaml)" as RBAC
+  component "Secrets Store\n(Vault)" as Vault
+}
+
+rectangle "Control Plane" {
+  component "API Gateway\n(Sidecar mTLS)" as Gateway
+  component "Worker Sidecar\n(Envoy)" as WorkerSidecar
+  component "Event Bus Sidecar" as EventBusSidecar
+  component "ML Pipeline Sidecar" as MLsidecar
+  component "Scraper Sidecar" as ScraperSidecar
+}
+
+rectangle "Workloads" {
+  component "Graph API Pod" as APIPod
+  component "Event-Driven Worker Pod" as WorkerPod
+  component "NATS Event Bus Pod" as EventBusPod
+  component "ML Pipeline Pod" as MLPipelinePod
+  component "ITS Scraper Pod" as ScraperPod
+}
+
+rectangle "Data Plane" {
+  database "PostgreSQL" as Postgres
+  database "Neo4j" as Neo4j
+  database "Qdrant" as Qdrant
+  database "MinIO" as Minio
+}
+
+OIDC --> Gateway : Issue ID token
+OIDC --> WorkerSidecar
+OIDC --> EventBusSidecar
+OIDC --> MLsidecar
+OIDC --> ScraperSidecar
+
+MeshCA --> Gateway : mTLS certs
+MeshCA --> WorkerSidecar
+MeshCA --> EventBusSidecar
+MeshCA --> MLsidecar
+MeshCA --> ScraperSidecar
+
+RBAC --> OPA : Policies per role
+Vault --> Gateway : Short lived secrets
+Vault --> WorkerSidecar
+Vault --> EventBusSidecar
+Vault --> MLsidecar
+Vault --> ScraperSidecar
+
+Gateway --> APIPod : Enforce policy\n(OPA check + mTLS)
+WorkerSidecar --> WorkerPod
+EventBusSidecar --> EventBusPod
+MLsidecar --> MLPipelinePod
+ScraperSidecar --> ScraperPod
+
+APIPod --> Postgres : JWT + mTLS\nPolicy enforced
+WorkerPod --> Qdrant
+WorkerPod --> Neo4j
+MLPipelinePod --> Minio
+ScraperPod --> Minio
+
+OPA --> Gateway : Allow/Deny
+OPA --> WorkerSidecar
+OPA --> MLsidecar
+OPA --> ScraperSidecar
+
+note bottom
+  Zero Trust Principles:
+  1. Every workload has unique identity (SPIFFE).
+  2. mTLS enforced between all components.
+  3. Policy decisions are centralised via OPA bundles.
+  4. Secrets delivered just in time with Vault dynamic creds.
+  5. Audit logs collected for each decision.
+end note
+
+@enduml
+

@@ -1,0 +1,98 @@
+name: Quality Checks
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test-collection:
+    name: Test Collection Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install jsonschema hypothesis
+
+      - name: Check test collection
+        run: |
+          python -m pytest tests/ --collect-only -q
+
+      - name: Run quick tests
+        run: |
+          python -m pytest tests/unit/ -v --tb=short -x
+
+  lint:
+    name: Linting
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install linters
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff black mypy
+
+      - name: Run ruff
+        run: ruff check src/ tests/
+        continue-on-error: true
+
+      - name: Run black
+        run: black --check src/ tests/
+        continue-on-error: true
+
+      - name: Run mypy
+        run: mypy src/ --ignore-missing-imports
+        continue-on-error: true
+
+  import-check:
+    name: Import Verification
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify critical imports
+        run: |
+          python -c "from src.config import settings; print('✓ settings')"
+          python -c "from src.services.ocr_service import ocr_with_structure; print('✓ ocr_with_structure')"
+          python -c "from src.ai.orchestrator import AIOrchestrator, QueryType; print('✓ orchestrator')"
+          python -c "from src.main import app; print('✓ app')"
+          python -c "from src.ai.advanced_orchestrator import AdvancedAIOrchestrator; print('✓ advanced')"
+          echo "All critical imports verified ✓"

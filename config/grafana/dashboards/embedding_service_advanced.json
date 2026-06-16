@@ -1,0 +1,156 @@
+{
+  "dashboard": {
+    "title": "Embedding Service - Advanced Optimizations",
+    "tags": ["embedding", "optimization", "slo"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "SLO Latency P95",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "embedding_slo_latency_p95{slo_name=\"latency_p95\"}",
+            "legendFormat": "Latency P95"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Seconds",
+            "format": "s"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Error Budgets",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "embedding_slo_error_budget",
+            "legendFormat": "{{slo_name}}"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Budget",
+            "format": "short"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "SLO Violations",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(rate(embedding_slo_violations_total[5m]))",
+            "legendFormat": "Violations/min"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Adaptive Quantization Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "embedding_adaptive_quantization_calibrated",
+            "legendFormat": "Calibrated"
+          },
+          {
+            "expr": "embedding_adaptive_quantization_scale",
+            "legendFormat": "Scale ({{dtype}})"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Semantic Cache ANN Size",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "embedding_semantic_cache_ann_size",
+            "legendFormat": "{{index_type}}"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Size",
+            "format": "short"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "ANN Search Duration",
+        "type": "histogram",
+        "targets": [
+          {
+            "expr": "rate(embedding_semantic_cache_ann_search_duration_seconds_bucket[5m])",
+            "legendFormat": "{{index_type}}"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Predictive Batch History Size",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "embedding_predictive_batch_history_size",
+            "legendFormat": "History Size"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Predictive Batch Model Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "embedding_predictive_batch_model_trained",
+            "legendFormat": "Model Trained"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Weighted GPU Weights",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "embedding_weighted_gpu_weights",
+            "legendFormat": "GPU {{gpu_id}}"
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Weighted GPU Load",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "embedding_weighted_gpu_load",
+            "legendFormat": "GPU {{gpu_id}}"
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Memory-Aware Batching Stats",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "embedding_memory_aware_batching_enabled",
+            "legendFormat": "Enabled"
+          }
+        ]
+      }
+    ]
+  }
+}
+

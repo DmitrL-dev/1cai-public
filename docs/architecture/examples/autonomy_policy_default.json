@@ -1,0 +1,20 @@
+{
+  "A0_propose_only": {
+    "max_auto_risk": "read_only",
+    "max_allowed_risk": "read_only"
+  },
+  "A1_safe_automation": {
+    "max_auto_risk": "read_only",
+    "max_allowed_risk": "non_prod_change"
+  },
+  "A2_non_prod_changes": {
+    "max_auto_risk": "non_prod_change",
+    "max_allowed_risk": "non_prod_change"
+  },
+  "A3_restricted_prod": {
+    "max_auto_risk": "prod_low",
+    "max_allowed_risk": "prod_high"
+  }
+}
+
+

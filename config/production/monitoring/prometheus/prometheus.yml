@@ -1,0 +1,161 @@
+# Prometheus Configuration for AI-Assistants Production
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: 'production'
+    cluster: 'ai-assistants'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  - "rules/*.yml"
+
+# Scrape configuration for different services
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # AI-Assistants API
+  - job_name: 'ai-assistants-api'
+    static_configs:
+      - targets: ['ai-assistants:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    params:
+      format: ['prometheus']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'http_.*'
+        target_label: __name__
+        replacement: 'http_${__name__}'
+
+  # ML System API
+  - job_name: 'ml-system-api'
+    static_configs:
+      - targets: ['ml-system:8001']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # MLflow
+  - job_name: 'mlflow'
+    static_configs:
+      - targets: ['mlflow:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 60s
+
+  # Redis monitoring
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # PostgreSQL monitoring (via postgres_exporter)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    metrics_path: '/metrics'
+    scrape_interval: 60s
+
+  # Nginx monitoring
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx:80']
+    metrics_path: '/nginx_status'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Celery monitoring
+  - job_name: 'celery-worker'
+    static_configs:
+      - targets: ['celery-worker:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 60s
+
+  # Node exporter for system metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+
+  # Docker daemon monitoring
+  - job_name: 'docker'
+    static_configs:
+      - targets: ['docker-daemon:9323']
+    scrape_interval: 30s
+
+  # Custom application metrics
+  - job_name: 'application-health'
+    static_configs:
+      - targets: 
+          - 'ai-assistants:8000'
+          - 'ml-system:8001'
+          - 'nginx:80'
+    metrics_path: '/health/metrics'
+    scrape_interval: 60s
+    scrape_timeout: 30s
+
+  # Redis slow log monitoring
+  - job_name: 'redis-slowlog'
+    static_configs:
+      - targets: ['redis:6379']
+    metrics_path: '/slowlog'
+    scrape_interval: 300s  # Check slow queries every 5 minutes
+
+  # Database connection pool monitoring
+  - job_name: 'database-connections'
+    static_configs:
+      - targets: ['postgres:5432']
+    metrics_path: '/connection-metrics'
+    scrape_interval: 60s
+
+  # Backup monitoring
+  - job_name: 'backup-status'
+    static_configs:
+      - targets: ['ai-assistants:8000']
+    metrics_path: '/backup/status'
+    scrape_interval: 3600s  # Check backup status hourly
+
+# Remote write configuration (for long-term storage)
+# remote_write:
+#   - url: "https://your-remote-storage-endpoint/api/v1/write"
+#     basic_auth:
+#       username: "username"
+#       password: "password"
+#     queue_config:
+#       max_samples_per_send: 1000
+#       max_shards: 200
+#       capacity: 2500
+
+# Remote read configuration
+# remote_read:
+#   - url: "https://your-remote-storage-endpoint/api/v1/read"
+#     basic_auth:
+#       username: "username"
+#       password: "password"
+
+# Storage configuration
+storage:
+  tsdb:
+    retention.time: 30d
+    retention.size: 50GB
+
+# Web configuration
+web:
+  console.templates: '/etc/prometheus/consoles'
+  console.libraries: '/etc/prometheus/console_libraries'
+  page-title: 'AI-Assistants Prometheus'
+  cors.origin: '.*'
+  enable-lifecycle: true
+  enable-admin-api: true

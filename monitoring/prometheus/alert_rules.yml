@@ -1,0 +1,214 @@
+# Правила алертов для системы мониторинга
+groups:
+  - name: system_alerts
+    rules:
+      # Критичные алерты
+      
+      # Служба не работает
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: devops
+        annotations:
+          summary: "Служба {{ $labels.job }} на хосте {{ $labels.instance }} не работает"
+          description: "Служба {{ $labels.job }} была недоступна более 1 минуты"
+
+      # Высокая загрузка CPU
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Высокая загрузка CPU на {{ $labels.instance }}"
+          description: "Загрузка CPU составляет {{ $value }}% на протяжении 5 минут"
+
+      # Недостаточно памяти
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Недостаточно памяти на {{ $labels.instance }}"
+          description: "Использование памяти составляет {{ $value }}%"
+
+      # Заполнение диска
+      - alert: DiskSpaceLow
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Мало места на диске {{ $labels.instance }}"
+          description: "Диск {{ $labels.mountpoint }} заполнен на {{ $value }}%"
+
+      # Высокая загрузка диска
+      - alert: HighDiskIO
+        expr: rate(node_disk_io_time_seconds_total[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Высокая нагрузка на диск {{ $labels.device }} на {{ $labels.instance }}"
+          description: "Время ввода-вывода диска составляет {{ $value }}%"
+
+      # Ненулевые ответы HTTP
+      - alert: HighHTTPErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "Высокая частота ошибок в {{ $labels.job }}"
+          description: "Ошибки составляют {{ $value | humanizePercentage }} от общего количества запросов"
+
+      # Медленные HTTP запросы
+      - alert: HighHTTPRequestLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Медленные HTTP запросы в {{ $labels.job }}"
+          description: "95-й перцентиль времени ответа составляет {{ $value }}s"
+
+      # Высокая частота запросов
+      - alert: HighRequestRate
+        expr: rate(http_requests_total[5m]) > 1000
+        for: 5m
+        labels:
+          severity: info
+          team: backend
+        annotations:
+          summary: "Высокая частота запросов в {{ $labels.job }}"
+          description: "Частота запросов составляет {{ $value }} req/s"
+
+      # Контейнер не работает
+      - alert: ContainerDown
+        expr: absent(container_last_seen{name!=""}) == 1
+        for: 1m
+        labels:
+          severity: critical
+          team: devops
+        annotations:
+          summary: "Контейнер {{ $labels.name }} не работает"
+          description: "Контейнер не отвечает более 1 минуты"
+
+      # Высокое потребление ресурсов контейнером
+      - alert: ContainerHighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Высокое потребление CPU контейнером {{ $labels.name }}"
+          description: "CPU использование составляет {{ $value }}%"
+
+      - alert: ContainerHighMemoryUsage
+        expr: container_memory_usage_bytes{name!=""} / container_spec_memory_limit_bytes * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Высокое потребление памяти контейнером {{ $labels.name }}"
+          description: "Память используется на {{ $value }}%"
+
+  - name: database_alerts
+    rules:
+      # PostgreSQL алерты
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: database
+        annotations:
+          summary: "PostgreSQL база данных недоступна"
+          description: "PostgreSQL не отвечает более 1 минуты"
+
+      - alert: PostgreSQLTooManyConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: database
+        annotations:
+          summary: "Слишком много подключений к PostgreSQL"
+          description: "Использование подключений составляет {{ $value | humanizePercentage }}"
+
+      - alert: PostgreSQLSlowQueries
+        expr: pg_stat_activity_max_tx_duration > 300
+        for: 2m
+        labels:
+          severity: warning
+          team: database
+        annotations:
+          summary: "Медленные запросы в PostgreSQL"
+          description: "Максимальное время выполнения запроса: {{ $value }} секунд"
+
+  - name: redis_alerts
+    rules:
+      # Redis алерты
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "Redis недоступен"
+          description: "Redis не отвечает более 1 минуты"
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Высокое потребление памяти Redis"
+          description: "Использование памяти составляет {{ $value }}%"
+
+      - alert: RedisHighCPUUsage
+        expr: rate(redis_cpu_user_seconds_total[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Высокая загрузка CPU Redis"
+          description: "CPU использование составляет {{ $value }}%"
+
+  - name: business_metrics_alerts
+    rules:
+      # Бизнес метрики алерты
+      - alert: LowSuccessRate
+        expr: rate(success_operations_total[5m]) / rate(total_operations_total[5m]) < 0.95
+        for: 3m
+        labels:
+          severity: critical
+          team: business
+        annotations:
+          summary: "Низкий процент успешных операций"
+          description: "Процент успешных операций составляет {{ $value | humanizePercentage }}"
+
+      - alert: HighErrorRate
+        expr: rate(error_operations_total[5m]) / rate(total_operations_total[5m]) > 0.05
+        for: 3m
+        labels:
+          severity: critical
+          team: business
+        annotations:
+          summary: "Высокая частота ошибок операций"
+          description: "Ошибки составляют {{ $value | humanizePercentage }} от всех операций"

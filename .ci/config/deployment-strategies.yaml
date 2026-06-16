@@ -1,0 +1,439 @@
+# Deployment Strategies Configuration
+# Конфигурирует различные стратегии развертывания для микросервисов
+
+# Blue-Green Deployment Configuration
+blue_green:
+  enabled: true
+  description: "Развертывание с полным переключением трафика"
+  
+  # Environment Configuration
+  environments:
+    blue:
+      port: 8080
+      health_endpoint: "/health"
+      ready_endpoint: "/ready"
+      
+    green:
+      port: 8080
+      health_endpoint: "/health"
+      ready_endpoint: "/ready"
+  
+  # Traffic Management
+  traffic_switch:
+    method: "service_selector"  # service_selector, dns, load_balancer
+    verification_timeout: 60  # seconds
+    rollback_on_failure: true
+  
+  # Health Checks
+  health_checks:
+    timeout: 30
+    interval: 5
+    failure_threshold: 3
+    success_threshold: 1
+  
+  # Service Configuration
+  service:
+    name: "api-gateway"
+    namespace: "microservices"
+    type: "LoadBalancer"
+    ports:
+      - name: "http"
+        port: 80
+        target_port: 8080
+        protocol: "TCP"
+  
+  # Deployment Configuration
+  deployment:
+    replicas: 3
+    strategy:
+      type: "RollingUpdate"
+      rolling_update:
+        max_unavailable: 1
+        max_surge: 1
+    
+    # Resource Limits
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+    
+    # Pod Configuration
+    pod:
+      termination_grace_period_seconds: 30
+      restart_policy: "Always"
+      
+      # Labels and Annotations
+      labels:
+        app: "api-gateway"
+        version: "${DEPLOYMENT_COLOR}"  # blue или green
+        deployment_id: "${DEPLOYMENT_ID}"
+      
+      annotations:
+        deployment.kubernetes.io/revision: "1"
+        deployment_timestamp: "${TIMESTAMP}"
+        deployed_by: "${DEPLOYED_BY}"
+  
+  # Cleanup Configuration
+  cleanup:
+    enabled: true
+    delay: 3600  # seconds (1 hour)
+    keep_revisions: 1
+    
+  # Monitoring
+  monitoring:
+    enabled: true
+    metrics_endpoint: "/metrics"
+    health_endpoint: "/health"
+    
+    # Alerting
+    alerts:
+      - "deployment_failed"
+      - "health_check_failed"
+      - "traffic_switch_failed"
+
+# Canary Deployment Configuration
+canary:
+  enabled: true
+  description: "Поэтапное развертывание с мониторингом"
+  
+  # Rollout Configuration
+  rollout:
+    replicas: 10
+    revision_history_limit: 3
+    
+    steps:
+      - weight: 10
+        pause: "30s"
+        analysis:
+          templates:
+            - "success-rate"
+            - "response-time"
+          args:
+            - name: "service-name"
+              value: "${SERVICE_NAME}.${NAMESPACE}.svc.cluster.local"
+      
+      - weight: 25
+        pause: "60s"
+        analysis:
+          templates:
+            - "success-rate"
+            - "response-time"
+      
+      - weight: 50
+        pause: "120s"
+        analysis:
+          templates:
+            - "success-rate"
+            - "response-time"
+            - "error-rate"
+      
+      - weight: 75
+        pause: "180s"
+        analysis:
+          templates:
+            - "success-rate"
+            - "response-time"
+            - "error-rate"
+            - "memory-usage"
+      
+      - weight: 100
+  
+  # Analysis Templates
+  analysis_templates:
+    success_rate:
+      success_condition: "result[0] >= 0.95"
+      failure_condition: "result[0] < 0.90"
+      interval: 30
+      count: 5
+    
+    response_time:
+      success_condition: "result[0] <= 500"
+      failure_condition: "result[0] > 1000"
+      interval: 30
+      count: 10
+    
+    error_rate:
+      success_condition: "result[0] <= 0.01"
+      failure_condition: "result[0] > 0.05"
+      interval: 30
+      count: 5
+    
+    memory_usage:
+      success_condition: "result[0] <= 512"
+      failure_condition: "result[0] > 1024"
+      interval: 30
+      count: 5
+  
+  # Services
+  services:
+    stable:
+      name: "${SERVICE_NAME}-stable"
+      port: 80
+      target_port: 8080
+    
+    canary:
+      name: "${SERVICE_NAME}-canary"
+      port: 80
+      target_port: 8080
+  
+  # Monitoring
+  monitoring:
+    prometheus:
+      enabled: true
+      query_interval: 30s
+      queries:
+        success_rate: |
+          sum(rate(http_requests_total{service="${SERVICE_NAME}"}[5m])) /
+          sum(rate(http_requests_total{service="${SERVICE_NAME}"}))
+        
+        response_time: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket{service="${SERVICE_NAME}"}[5m]))
+        
+        error_rate: |
+          sum(rate(http_requests_total{service="${SERVICE_NAME}",status=~"5.."}[5m])) /
+          sum(rate(http_requests_total{service="${SERVICE_NAME}"}[5m]))
+        
+        memory_usage: |
+          container_memory_usage_bytes{pod=~"${SERVICE_NAME}.*"} / 1024 / 1024
+
+# Rolling Update Configuration
+rolling_update:
+  enabled: true
+  description: "Постепенное обновление подов"
+  
+  # Strategy Configuration
+  strategy:
+    type: "RollingUpdate"
+    rolling_update:
+      max_unavailable: 1  # pod
+      max_surge: 1        # pod
+  
+  # Progress Configuration
+  progress_deadline_seconds: 600
+  revision_history_limit: 3
+  
+  # Health Checks
+  readiness_probe:
+    http_get:
+      path: "/ready"
+      port: 8080
+    initial_delay_seconds: 5
+    period_seconds: 5
+    timeout_seconds: 3
+    failure_threshold: 3
+  
+  liveness_probe:
+    http_get:
+      path: "/health"
+      port: 8080
+    initial_delay_seconds: 30
+    period_seconds: 10
+    timeout_seconds: 5
+    failure_threshold: 3
+
+# Multi-Service Deployment
+multi_service:
+  enabled: true
+  description: "Координированное развертывание нескольких сервисов"
+  
+  # Service Order (dependencies)
+  deployment_order:
+    - "user-service"      # 1st (no dependencies)
+    - "auth-service"      # 2nd (depends on user-service)
+    - "api-gateway"       # 3rd (depends on auth-service, user-service)
+    - "payment-service"   # 4th (depends on api-gateway)
+    - "notification-service"  # 5th (depends on payment-service)
+  
+  # Strategy per Service
+  strategies:
+    user-service:
+      type: "rolling"
+      replicas: 3
+    
+    auth-service:
+      type: "rolling"
+      replicas: 3
+    
+    api-gateway:
+      type: "blue-green"
+      replicas: 3
+    
+    payment-service:
+      type: "canary"
+      replicas: 5
+    
+    notification-service:
+      type: "rolling"
+      replicas: 2
+  
+  # Coordination
+  coordination:
+    wait_for_previous: true
+    verification_timeout: 300
+    failure_rollback_all: true
+
+# Environment-specific Deployment Settings
+environments:
+  development:
+    default_strategy: "rolling"
+    replicas: 1
+    health_check_timeout: 60
+    
+    features:
+      auto_rollback: true
+      skip_monitoring: true
+      parallel_deployment: true
+  
+  staging:
+    default_strategy: "blue-green"
+    replicas: 3
+    health_check_timeout: 300
+    
+    features:
+      canary_analysis: true
+      performance_monitoring: true
+      security_scanning: true
+  
+  production:
+    default_strategy: "canary"
+    replicas: 5
+    health_check_timeout: 600
+    
+    features:
+      manual_approval: true
+      comprehensive_monitoring: true
+      automatic_rollback: true
+      performance_benchmarks: true
+
+# Database Migration Strategy
+database_migration:
+  enabled: true
+  strategy: "backward_compatible"  # backward_compatible, downtime, blue_green
+  
+  # Migration Configuration
+  migration:
+    type: "flyway"  # flyway, liquibase, custom
+    timeout: 1800  # seconds
+    backup_before: true
+  
+  # Blue-Green Database
+  blue_green_db:
+    enabled: false  # Only for critical migrations
+    sync_delay: 300  # seconds
+    verification_queries:
+      - "SELECT COUNT(*) FROM information_schema.tables"
+      - "SELECT COUNT(*) FROM health_check"
+  
+  # Rollback Strategy
+  rollback:
+    automatic: false  # Manual approval required
+    timeout: 1800
+    verification_required: true
+
+# Post-Deployment Verification
+post_deployment:
+  enabled: true
+  timeout: 900
+  
+  # Verification Steps
+  steps:
+    health_checks:
+      enabled: true
+      timeout: 60
+      interval: 10
+    
+    smoke_tests:
+      enabled: true
+      timeout: 300
+      endpoints:
+        - "/health"
+        - "/api/v1/status"
+        - "/api/v1/auth/test"
+    
+    integration_tests:
+      enabled: true
+      timeout: 600
+      test_suite: "deployment_smoke"
+    
+    performance_benchmark:
+      enabled: true
+      timeout: 300
+      concurrent_users: 10
+      test_duration: 60
+  
+  # Monitoring Period
+  monitoring:
+    duration: 1800  # seconds
+    metrics:
+      - "response_time"
+      - "error_rate"
+      - "throughput"
+      - "memory_usage"
+      - "cpu_usage"
+
+# Notification and Alerting
+notifications:
+  deployment_started:
+    channels: ["slack", "email"]
+    message: "🚀 Started deployment of ${SERVICE_NAME}:${VERSION} to ${ENVIRONMENT}"
+  
+  deployment_success:
+    channels: ["slack", "email"]
+    message: "✅ Successfully deployed ${SERVICE_NAME}:${VERSION} to ${ENVIRONMENT}"
+  
+  deployment_failed:
+    channels: ["slack", "email", "pagerduty"]
+    message: "❌ Deployment failed for ${SERVICE_NAME}:${VERSION} in ${ENVIRONMENT}"
+  
+  rollback_initiated:
+    channels: ["slack", "email", "pagerduty"]
+    message: "🔄 Automatic rollback initiated for ${SERVICE_NAME}:${VERSION}"
+
+# Security Configuration
+security:
+  # Secrets Management
+  secrets:
+    source: "kubernetes_secrets"  # kubernetes_secrets, vault, aws_secrets
+    encryption: true
+    rotation: "automatic"
+  
+  # Network Policies
+  network_policies:
+    enabled: true
+    default_deny: true
+    namespace_isolation: true
+  
+  # RBAC
+  rbac:
+    enabled: true
+    service_account: "deployment-sa"
+    permissions: ["get", "list", "watch", "create", "update", "patch"]
+
+# Backup and Recovery
+backup:
+  enabled: true
+  strategy: "automated"
+  
+  # Pre-deployment Backup
+  pre_deployment:
+    enabled: true
+    timeout: 300
+    retention: "24h"
+  
+  # State Snapshot
+  state_snapshot:
+    enabled: true
+    services:
+      - "database"
+      - "redis"
+      - "elasticsearch"
+  
+  # Recovery Procedures
+  recovery:
+    automatic_rollback: true
+    manual_intervention_threshold: 3
+    escalation_timeout: 600

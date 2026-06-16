@@ -1,0 +1,51 @@
+{
+  "name": "Test OneC Custom",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "TriggerNode",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [
+        120,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "custom",
+        "customMethod": "GET",
+        "customEndpoint": "/get"
+      },
+      "id": "OneCNode1",
+      "name": "1C AI Custom",
+      "type": "@onecai/n8n-nodes-onec-ai.oneCai",
+      "typeVersion": 1,
+      "position": [
+        380,
+        300
+      ],
+      "credentials": {
+        "oneCaiApi": {
+          "id": "1",
+          "name": "Test httpbin"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "1C AI Custom",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

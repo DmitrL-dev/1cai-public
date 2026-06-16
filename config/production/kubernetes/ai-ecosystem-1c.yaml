@@ -1,0 +1,723 @@
+# ===========================================
+# Kubernetes манифесты для облачного развертывания
+# AI Экосистема 1С с Supabase интеграцией
+# ===========================================
+
+---
+# Namespace для изоляции ресурсов
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai-ecosystem-1c
+  labels:
+    name: ai-ecosystem-1c
+    environment: production
+
+---
+# ConfigMap для конфигурации приложения
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-assistants-config
+  namespace: ai-ecosystem-1c
+data:
+  # Environment Configuration
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  MAX_WORKERS: "8"
+  MAX_MEMORY: "2G"
+  MAX_CPU: "2"
+  
+  # API Configuration
+  RATE_LIMIT_PER_MINUTE: "60"
+  RATE_LIMIT_PER_HOUR: "500"
+  CACHE_TTL: "7200"
+  
+  # Supabase Configuration
+  USE_SUPABASE: "true"
+  SUPABASE_TIMEOUT: "30"
+  SUPABASE_RETRY_ATTEMPTS: "3"
+  
+  # Security Configuration
+  CORS_ORIGINS: "https://your-domain.com"
+  ALLOWED_HOSTS: "your-domain.com,api.your-domain.com"
+  
+---
+# Secret для чувствительных данных
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ai-assistants-secrets
+  namespace: ai-ecosystem-1c
+type: Opaque
+stringData:
+  # Supabase Configuration
+  SUPABASE_API_URL: "https://your-project-id.supabase.co"
+  SUPABASE_ANON_KEY: "your-supabase-anon-key-here"
+  SUPABASE_SERVICE_ROLE_KEY: "your-service-role-key-here"
+  SUPABASE_DATABASE_URL: "postgresql://postgres:[password]@db.[project-id].supabase.co:5432/postgres"
+  
+  # JWT Configuration
+  JWT_SECRET_KEY: "your-jwt-secret-key-here"
+  SECRET_KEY: "your-django-secret-key-here"
+  
+  # Database Configuration
+  POSTGRES_PASSWORD: "your-postgres-password"
+  POSTGRES_LOCAL_PASSWORD: "your-local-postgres-password"
+  REDIS_PASSWORD: "your-redis-password"
+  
+  # External APIs
+  OPENAI_API_KEY: "your-openai-api-key-here"
+  
+  # SMTP Configuration
+  SMTP_SERVER: "smtp.gmail.com"
+  SMTP_PORT: "587"
+  SMTP_USERNAME: "your-email@gmail.com"
+  SMTP_PASSWORD: "your-app-password"
+  
+  # Monitoring
+  GRAFANA_PASSWORD: "your-grafana-password"
+  SENTRY_DSN: "your-sentry-dsn-here"
+
+---
+# Deployment для AI Assistants API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-assistants-api
+  namespace: ai-ecosystem-1c
+  labels:
+    app: ai-assistants-api
+    version: v1.0.0
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: ai-assistants-api
+  template:
+    metadata:
+      labels:
+        app: ai-assistants-api
+        version: v1.0.0
+    spec:
+      containers:
+      - name: ai-assistants-api
+        image: ai-assistants:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: ai-assistants-config
+        - secretRef:
+            name: ai-assistants-secrets
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: ai-assistants-secrets
+              key: SUPABASE_DATABASE_URL
+        - name: REDIS_URL
+          value: "redis://redis:6379/0"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: data
+          mountPath: /app/data
+      volumes:
+      - name: logs
+        emptyDir: {}
+      - name: data
+        emptyDir: {}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+---
+# Service для AI Assistants API
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-assistants-api-service
+  namespace: ai-ecosystem-1c
+  labels:
+    app: ai-assistants-api
+spec:
+  type: ClusterIP
+  selector:
+    app: ai-assistants-api
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+
+---
+# Deployment для ML System
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-system
+  namespace: ai-ecosystem-1c
+  labels:
+    app: ml-system
+    version: v1.0.0
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: ml-system
+  template:
+    metadata:
+      labels:
+        app: ml-system
+        version: v1.0.0
+    spec:
+      containers:
+      - name: ml-system
+        image: ml-system:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: ai-assistants-config
+        - secretRef:
+            name: ai-assistants-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: ml-models
+          mountPath: /app/models
+        - name: ml-data
+          mountPath: /app/data
+      volumes:
+      - name: ml-models
+        emptyDir: {}
+      - name: ml-data
+        emptyDir: {}
+
+---
+# Service для ML System
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-system-service
+  namespace: ai-ecosystem-1c
+  labels:
+    app: ml-system
+spec:
+  type: ClusterIP
+  selector:
+    app: ml-system
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+
+---
+# Deployment для Redis
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: ai-ecosystem-1c
+  labels:
+    app: redis
+    version: v7-alpine
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        version: v7-alpine
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+          name: redis
+          protocol: TCP
+        command:
+        - redis-server
+        - /usr/local/etc/redis/redis.conf
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ai-assistants-secrets
+              key: REDIS_PASSWORD
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        - name: redis-config
+          mountPath: /usr/local/etc/redis
+          readOnly: true
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: redis-pvc
+      - name: redis-config
+        configMap:
+          name: redis-config
+
+---
+# Service для Redis
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: ai-ecosystem-1c
+  labels:
+    app: redis
+spec:
+  type: ClusterIP
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+    protocol: TCP
+    name: redis
+
+---
+# ConfigMap для Redis конфигурации
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: ai-ecosystem-1c
+data:
+  redis.conf: |
+    bind 0.0.0.0
+    port 6379
+    timeout 0
+    tcp-keepalive 300
+    databases 16
+    save 900 1
+    save 300 10
+    save 60 10000
+    stop-writes-on-bgsave-error yes
+    rdbcompression yes
+    rdbchecksum yes
+    dbfilename dump.rdb
+    dir /data
+    requirepass $(REDIS_PASSWORD)
+
+---
+# PersistentVolumeClaim для Redis
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: ai-ecosystem-1c
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+
+---
+# Deployment для Nginx Load Balancer
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  namespace: ai-ecosystem-1c
+  labels:
+    app: nginx
+    version: v1.0.0
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+        version: v1.0.0
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        - containerPort: 443
+          name: https
+          protocol: TCP
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/nginx.conf
+          readOnly: true
+        - name: nginx-sites
+          mountPath: /etc/nginx/sites-available
+          readOnly: true
+        - name: ssl-certs
+          mountPath: /etc/nginx/ssl
+          readOnly: true
+        - name: static-files
+          mountPath: /var/www/static
+          readOnly: true
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "100m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-config
+      - name: nginx-sites
+        configMap:
+          name: nginx-sites-config
+      - name: ssl-certs
+        secret:
+          secretName: ssl-certs
+      - name: static-files
+        emptyDir: {}
+
+---
+# Service для Nginx (LoadBalancer)
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: ai-ecosystem-1c
+  labels:
+    app: nginx
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  - port: 443
+    targetPort: 443
+    protocol: TCP
+    name: https
+
+---
+# HorizontalPodAutoscaler для AI Assistants API
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ai-assistants-api-hpa
+  namespace: ai-ecosystem-1c
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-assistants-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 60
+
+---
+# NetworkPolicy для ограничения сетевого доступа
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-assistants-network-policy
+  namespace: ai-ecosystem-1c
+spec:
+  podSelector:
+    matchLabels:
+      app: ai-assistants-api
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: nginx
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  - to:
+    - podSelector:
+        matchLabels:
+          app: ml-system
+    ports:
+    - protocol: TCP
+      port: 8080
+
+---
+# Ingress для внешнего доступа
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-assistants-ingress
+  namespace: ai-ecosystem-1c
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+spec:
+  tls:
+  - hosts:
+    - your-domain.com
+    - api.your-domain.com
+    secretName: ai-assistants-tls
+  rules:
+  - host: your-domain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx-service
+            port:
+              number: 80
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: ai-assistants-api-service
+            port:
+              number: 8000
+      - path: /ml
+        pathType: Prefix
+        backend:
+          service:
+            name: ml-system-service
+            port:
+              number: 8080
+  - host: api.your-domain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ai-assistants-api-service
+            port:
+              number: 8000
+
+---
+# ServiceMonitor для Prometheus мониторинга
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ai-assistants-monitor
+  namespace: ai-ecosystem-1c
+  labels:
+    app: ai-assistants-api
+spec:
+  selector:
+    matchLabels:
+      app: ai-assistants-api
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+
+---
+# PodDisruptionBudget для обеспечения доступности
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ai-assistants-pdb
+  namespace: ai-ecosystem-1c
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: ai-assistants-api
+
+---
+# ResourceQuota для контроля ресурсов
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: ai-assistants-quota
+  namespace: ai-ecosystem-1c
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: 8Gi
+    limits.cpu: "8"
+    limits.memory: 16Gi
+    persistentvolumeclaims: "10"
+    pods: "20"
+    services: "10"
+    secrets: "10"
+    configmaps: "10"
+
+---
+# LimitRange для стандартизации лимитов
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: ai-assistants-limits
+  namespace: ai-ecosystem-1c
+spec:
+  limits:
+  - default:
+      cpu: "500m"
+      memory: "1Gi"
+    defaultRequest:
+      cpu: "250m"
+      memory: "512Mi"
+    type: Container
+  - max:
+      cpu: "2"
+      memory: "2Gi"
+    min:
+      cpu: "100m"
+      memory: "256Mi"
+    type: Container
+  - max:
+      storage: 10Gi
+    min:
+      storage: 1Gi
+    type: PersistentVolumeClaim

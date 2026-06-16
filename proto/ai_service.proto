@@ -1,0 +1,160 @@
+syntax = "proto3";
+
+package ai_service;
+
+// Сервис AI Orchestrator для обработки запросов к AI
+service AIOrchestrator {
+  // Простой запрос-ответ к AI
+  rpc ProcessQuery(QueryRequest) returns (QueryResponse);
+  
+  // Стриминг ответа для длинных генераций
+  rpc StreamQuery(QueryRequest) returns (stream QueryChunk);
+  
+  // Двунаправленный стрим для анализа экрана в реальном времени
+  rpc StreamScreenContext(stream ScreenFrame) returns (stream ContextAnalysis);
+}
+
+// Сервис для работы с графом кода 1С
+service CodeGraphService {
+  // Семантический поиск по коду
+  rpc SearchCode(CodeSearchRequest) returns (CodeSearchResponse);
+  
+  // Анализ зависимостей модулей
+  rpc AnalyzeDependencies(DependencyRequest) returns (DependencyResponse);
+  
+  // Получить метаданные объекта 1С
+  rpc GetMetadata(MetadataRequest) returns (MetadataResponse);
+}
+
+// Сервис для работы со сценариями
+service ScenarioService {
+  // Получить рекомендуемые сценарии на основе контекста
+  rpc GetRecommendations(ScenarioRequest) returns (ScenarioResponse);
+  
+  // Выполнить сценарий с отслеживанием прогресса
+  rpc ExecuteScenario(ExecuteRequest) returns (stream ExecutionStatus);
+}
+
+// ============================================================================
+// Типы сообщений для AIOrchestrator
+// ============================================================================
+
+message QueryRequest {
+  string query = 1;                    // Запрос пользователя
+  string context = 2;                  // Контекст (текущий файл, окно и т.д.)
+  map<string, string> metadata = 3;    // Дополнительные метаданные
+  string user_id = 4;                  // ID пользователя для персонализации
+}
+
+message QueryResponse {
+  string response = 1;                 // Ответ AI
+  repeated string sources = 2;         // Источники информации
+  float confidence = 3;                // Уверенность в ответе (0.0-1.0)
+  string model_used = 4;               // Использованная модель
+}
+
+message QueryChunk {
+  string chunk = 1;                    // Часть ответа
+  bool is_final = 2;                   // Последний ли это чанк
+}
+
+message ScreenFrame {
+  bytes image_data = 1;                // Сжатое изображение (JPEG/PNG)
+  string window_title = 2;             // Заголовок активного окна
+  int64 timestamp = 3;                 // Timestamp в миллисекундах
+  int32 width = 4;                     // Ширина изображения
+  int32 height = 5;                    // Высота изображения
+}
+
+message ContextAnalysis {
+  string detected_context = 1;         // Определенный контекст (например, "1C:Enterprise Form")
+  repeated string suggestions = 2;     // Предложения AI
+  string active_1c_object = 3;         // Активный объект 1С (если определен)
+  map<string, string> ui_elements = 4; // Распознанные элементы UI
+}
+
+// ============================================================================
+// Типы сообщений для CodeGraphService
+// ============================================================================
+
+message CodeSearchRequest {
+  string query = 1;                    // Поисковый запрос
+  string language = 2;                 // Язык кода ("bsl", "python", etc.)
+  int32 max_results = 3;               // Максимальное количество результатов
+  repeated string file_filters = 4;    // Фильтры по файлам (glob patterns)
+}
+
+message CodeSearchResponse {
+  repeated CodeResult results = 1;
+  int32 total_found = 2;               // Общее количество найденных результатов
+}
+
+message CodeResult {
+  string file_path = 1;                // Путь к файлу
+  string code_snippet = 2;             // Фрагмент кода
+  int32 line_number = 3;               // Номер строки
+  float relevance_score = 4;           // Релевантность (0.0-1.0)
+  string object_type = 5;              // Тип объекта 1С (Документ, Справочник и т.д.)
+}
+
+message DependencyRequest {
+  string module_name = 1;              // Имя модуля для анализа
+  int32 depth = 2;                     // Глубина анализа зависимостей
+}
+
+message DependencyResponse {
+  repeated Dependency dependencies = 1;
+}
+
+message Dependency {
+  string from_module = 1;              // Откуда зависимость
+  string to_module = 2;                // Куда зависимость
+  string dependency_type = 3;          // Тип зависимости (import, call, etc.)
+}
+
+message MetadataRequest {
+  string object_name = 1;              // Имя объекта 1С
+  string object_type = 2;              // Тип объекта (Документ, Справочник и т.д.)
+}
+
+message MetadataResponse {
+  string object_name = 1;
+  string object_type = 2;
+  map<string, string> properties = 3;  // Свойства объекта
+  repeated string methods = 4;         // Методы объекта
+}
+
+// ============================================================================
+// Типы сообщений для ScenarioService
+// ============================================================================
+
+message ScenarioRequest {
+  string current_context = 1;          // Текущий контекст работы
+  string user_role = 2;                // Роль пользователя (Developer, QA, etc.)
+}
+
+message ScenarioResponse {
+  repeated Scenario scenarios = 1;
+}
+
+message Scenario {
+  string id = 1;                       // ID сценария
+  string name = 2;                     // Название сценария
+  string description = 3;              // Описание
+  float relevance = 4;                 // Релевантность для текущего контекста
+  repeated string required_params = 5; // Требуемые параметры
+}
+
+message ExecuteRequest {
+  string scenario_id = 1;              // ID сценария для выполнения
+  map<string, string> params = 2;      // Параметры выполнения
+}
+
+message ExecutionStatus {
+  string stage = 1;                    // Текущая стадия выполнения
+  float progress = 2;                  // Прогресс (0.0-1.0)
+  string message = 3;                  // Сообщение о статусе
+  bool is_complete = 4;                // Завершено ли выполнение
+  bool has_error = 5;                  // Есть ли ошибка
+  string error_message = 6;            // Сообщение об ошибке (если есть)
+}

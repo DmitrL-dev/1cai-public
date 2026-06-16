@@ -1,0 +1,79 @@
+groups:
+  - name: mcp_server.critical_alerts
+    rules:
+      # Критические ошибки интеграции
+      - alert: MCPIntegrationErrorsHigh
+        expr: rate(mcp_integration_errors_total[5m]) > 0.01
+        for: 1m
+        labels:
+          severity: critical
+          component: integration
+        annotations:
+          summary: "Высокая частота ошибок интеграции MCP"
+          description: "Частота ошибок интеграции {{ $labels.integration_type }} превышает 0.01/сек в течение 5 минут"
+          runbook_url: "https://wiki.company.com/runbooks/integration-errors"
+          correlation_id_field: "{{ $labels.correlation_id }}"
+
+      # Критические ошибки аутентификации
+      - alert: MCPAuthenticationErrorsHigh
+        expr: rate(mcp_auth_errors_total[5m]) > 0.005
+        for: 1m
+        labels:
+          severity: critical
+          component: auth
+        annotations:
+          summary: "Высокая частота ошибок аутентификации"
+          description: "Частота ошибок аутентификации превышает 0.005/сек в течение 5 минут"
+          runbook_url: "https://wiki.company.com/runbooks/auth-errors"
+          correlation_id_field: "{{ $labels.correlation_id }}"
+
+      # Circuit Breaker в открытом состоянии
+      - alert: MCPCircuitBreakerOpen
+        expr: mcp_circuit_breaker_state == 2
+        for: 0m
+        labels:
+          severity: critical
+          component: circuit_breaker
+        annotations:
+          summary: "Circuit Breaker открыт"
+          description: "Circuit Breaker для операции {{ $labels.operation }} находится в открытом состоянии"
+          runbook_url: "https://wiki.company.com/runbooks/circuit-breaker"
+          correlation_id_field: "{{ $labels.correlation_id }}"
+
+      # Высокий уровень активных запросов
+      - alert: MCPHighActiveRequests
+        expr: mcp_active_requests > 100
+        for: 2m
+        labels:
+          severity: high
+          component: performance
+        annotations:
+          summary: "Высокий уровень активных запросов"
+          description: "Количество активных запросов типа {{ $labels.operation_type }} превышает 100 в течение 2 минут"
+          runbook_url: "https://wiki.company.com/runbooks/high-load"
+
+      # Критические транспортные ошибки
+      - alert: MCPTransportErrorsHigh
+        expr: rate(mcp_transport_errors_total[5m]) > 0.02
+        for: 1m
+        labels:
+          severity: critical
+          component: transport
+        annotations:
+          summary: "Высокая частота транспортных ошибок"
+          description: "Частота транспортных ошибок превышает 0.02/сек в течение 5 минут"
+          runbook_url: "https://wiki.company.com/runbooks/transport-errors"
+          correlation_id_field: "{{ $labels.correlation_id }}"
+
+      # Превышение времени ответа
+      - alert: MCPSlowResponseTime
+        expr: histogram_quantile(0.95, rate(mcp_http_request_duration_seconds_bucket[5m])) > 0.5
+        for: 3m
+        labels:
+          severity: high
+          component: performance
+        annotations:
+          summary: "Высокое время ответа HTTP"
+          description: "95-й перцентиль времени ответа HTTP превышает 500ms в течение 3 минут"
+          runbook_url: "https://wiki.company.com/runbooks/slow-response"
+          correlation_id_field: "N/A"

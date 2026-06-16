@@ -1,0 +1,85 @@
+{
+  "name": "GitHub PR Code Review",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "path": "onec-ai/pr-review",
+        "httpMethod": "POST",
+        "responseMode": "onReceived",
+        "options": {
+          "responseContentType": "application/json"
+        }
+      },
+      "id": "WebhookTrigger",
+      "name": "Incoming PR Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        260,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "codeReview",
+        "operation": "analyze",
+        "code": "={{$json[\"code\"]}}",
+        "language": "bsl",
+        "fileName": "={{$json[\"fileName\"]}}",
+        "projectContext": "={{$json[\"projectContext\"]}}",
+        "codeReviewAdditionalFields": {
+          "recentChanges": "={{$json[\"recentChanges\"]}}"
+        }
+      },
+      "id": "OneCCodeReview",
+      "name": "1C AI Code Review",
+      "type": "@onecai/n8n-nodes-onec-ai.oneCai",
+      "typeVersion": 1,
+      "position": [
+        560,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "responseBody": "={\"status\":\"ok\",\"analysis\":$json}"
+      },
+      "id": "RespondWebhook",
+      "name": "Respond to PR",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        840,
+        520
+      ]
+    }
+  ],
+  "connections": {
+    "Incoming PR Webhook": {
+      "main": [
+        [
+          {
+            "node": "1C AI Code Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1C AI Code Review": {
+      "main": [
+        [
+          {
+            "node": "Respond to PR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {},
+  "version": 2
+}
+

@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai-assistants
+  labels:
+    name: ai-assistants
+    environment: production
+    managed-by: terraform
+spec:
+  finalizers:
+  - kubernetes
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai-assistants-staging
+  labels:
+    name: ai-assistants-staging
+    environment: staging
+    managed-by: terraform
+spec:
+  finalizers:
+  - kubernetes
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai-assistants-dev
+  labels:
+    name: ai-assistants-dev
+    environment: development
+    managed-by: terraform
+spec:
+  finalizers:
+  - kubernetes

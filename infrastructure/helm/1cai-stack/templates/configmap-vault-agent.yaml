@@ -1,0 +1,16 @@
+{{- if and .Values.vault.enabled .Values.vault.agent.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "1cai-stack.fullname" . }}-vault-agent
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "1cai-stack.name" . }}
+  annotations:
+{{- with .Values.vault.agent.annotations }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+data:
+  agent.hcl: |
+{{ .Values.vault.agent.config | indent 4 }}
+{{- end }}

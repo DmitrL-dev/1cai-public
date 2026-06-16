@@ -1,0 +1,85 @@
+groups:
+  - name: system_alerts
+    interval: 30s
+    rules:
+      # High error rate alert
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      # Slow response time
+      - alert: SlowResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1.0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow API response time"
+          description: "p95 latency is {{ $value }}s (threshold: 1s)"
+
+      # Database connection pool exhausted
+      - alert: DatabasePoolExhausted
+        expr: database_pool_active_connections >= database_pool_max_connections * 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database pool near capacity"
+          description: "Pool is {{ $value | humanizePercentage }} full"
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) < 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low memory available"
+          description: "Only {{ $value | humanizePercentage }} memory available"
+
+      # Service down
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "Service has been down for more than 1 minute"
+
+      # High AI query latency
+      - alert: SlowAIQueries
+        expr: ai_query_duration_seconds > 5.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "AI queries are slow"
+          description: "AI query taking {{ $value }}s (threshold: 5s)"
+
+      # Low cache hit rate
+      - alert: LowCacheHitRate
+        expr: (rate(cache_hits_total[10m]) / rate(cache_requests_total[10m])) < 0.5
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "Cache hit rate is low"
+          description: "Only {{ $value | humanizePercentage }} cache hits"
+
+      # Customer churn spike
+      - alert: CustomerChurnSpike
+        expr: increase(tenants_cancelled_total[1d]) > 5
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "High customer churn"
+          description: "{{ $value }} customers cancelled today"
+
+

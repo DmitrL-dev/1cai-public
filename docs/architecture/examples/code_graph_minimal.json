@@ -1,0 +1,47 @@
+{
+  "nodes": [
+    {
+      "id": "svc-orchestrator",
+      "kind": "service",
+      "display_name": "AI Orchestrator",
+      "labels": ["python", "fastapi"],
+      "props": {
+        "file": "src/ai/orchestrator.py"
+      }
+    },
+    {
+      "id": "test-e2e-ba-dev-qa",
+      "kind": "test_case",
+      "display_name": "E2E BA→Dev→QA",
+      "labels": ["system-test"],
+      "props": {
+        "file": "tests/system/test_e2e_ba_dev_qa.py"
+      }
+    },
+    {
+      "id": "scenario-ba-dev-qa",
+      "kind": "incident",
+      "display_name": "ScenarioPlan BA→Dev→QA",
+      "labels": ["scenario"],
+      "props": {
+        "file": "playbooks/ba_dev_qa_example.yaml"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "svc-orchestrator",
+      "target": "test-e2e-ba-dev-qa",
+      "kind": "TESTED_BY",
+      "props": {}
+    },
+    {
+      "source": "scenario-ba-dev-qa",
+      "target": "svc-orchestrator",
+      "kind": "PART_OF_SCENARIO",
+      "props": {}
+    }
+  ]
+}
+
+

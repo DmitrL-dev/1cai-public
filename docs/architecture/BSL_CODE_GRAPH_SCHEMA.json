@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://1c-ai-stack.example.com/schemas/bsl-code-graph/v1",
+  "title": "BSLCodeGraphExport",
+  "description": "JSON Schema для экспорта BSL Code Graph (расширение Unified Change Graph для 1C:Предприятие)",
+  "type": "object",
+  "required": ["nodes", "edges"],
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "display_name"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Глобально уникальный идентификатор узла"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "service",
+              "module",
+              "file",
+              "function",
+              "procedure",
+              "db_table",
+              "db_view",
+              "queue",
+              "topic",
+              "api_endpoint",
+              "k8s_deployment",
+              "k8s_service",
+              "ingress",
+              "job",
+              "helm_chart",
+              "argo_app",
+              "tf_resource",
+              "test_case",
+              "test_suite",
+              "alert",
+              "slo",
+              "incident",
+              "ba_requirement",
+              "ticket",
+              "bsl_document",
+              "bsl_catalog",
+              "bsl_common_module",
+              "bsl_register_information",
+              "bsl_register_accumulation",
+              "bsl_register_accounting",
+              "bsl_report",
+              "bsl_data_processor",
+              "bsl_chart_of_accounts",
+              "bsl_chart_of_characteristic_types",
+              "bsl_chart_of_calculation_types",
+              "bsl_business_process",
+              "bsl_task",
+              "bsl_constant",
+              "bsl_enum",
+              "bsl_external_data_processor",
+              "bsl_external_report",
+              "bsl_http_service",
+              "bsl_ws_reference",
+              "bsl_exchange_plan",
+              "bsl_query",
+              "bsl_form",
+              "bsl_command",
+              "bsl_object_module",
+              "bsl_manager_module",
+              "bsl_form_module",
+              "bsl_command_module"
+            ],
+            "description": "Тип узла (базовые типы из Unified Change Graph + BSL-specific типы)"
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Человекочитаемое название узла"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "description": "Список тегов (язык, домен, слой, команда)"
+          },
+          "props": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Свойства узла (зависят от типа узла)",
+            "properties": {
+              "metadata_path": {
+                "type": "string",
+                "description": "Путь к объекту метаданных (для bsl_* узлов)"
+              },
+              "module_path": {
+                "type": "string",
+                "description": "Путь к модулю (для модулей)"
+              },
+              "function_name": {
+                "type": "string",
+                "description": "Имя функции/процедуры"
+              },
+              "uuid": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+                "description": "UUID объекта метаданных"
+              },
+              "version": {
+                "type": "string",
+                "description": "Версия платформы 1C"
+              },
+              "loc": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Количество строк кода"
+              },
+              "complexity": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Сложность (цикломатическая сложность)"
+              },
+              "exported": {
+                "type": "boolean",
+                "description": "Является ли функция экспортируемой"
+              },
+              "query_text": {
+                "type": "string",
+                "description": "Текст SQL-запроса (для bsl_query)"
+              },
+              "query_type": {
+                "type": "string",
+                "enum": ["SELECT", "INSERT", "UPDATE", "DELETE"],
+                "description": "Тип SQL-запроса"
+              },
+              "tables_used": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Список используемых таблиц БД"
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "target", "kind"],
+        "properties": {
+          "source": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "ID исходного узла"
+          },
+          "target": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "ID целевого узла"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "DEPENDS_ON",
+              "DEPLOYED_AS",
+              "EXPOSES",
+              "OWNS",
+              "TESTED_BY",
+              "MONITORED_BY",
+              "IMPLEMENTS",
+              "TRIGGERS_INCIDENT",
+              "PART_OF_SCENARIO",
+              "BSL_CALLS",
+              "BSL_USES_METADATA",
+              "BSL_READS_TABLE",
+              "BSL_WRITES_TABLE",
+              "BSL_EXECUTES_QUERY",
+              "BSL_HAS_MODULE",
+              "BSL_HAS_FORM",
+              "BSL_HAS_COMMAND",
+              "BSL_EXTENDS",
+              "BSL_REFERENCES",
+              "BSL_SUBTYPE",
+              "BSL_HAS_REGISTER"
+            ],
+            "description": "Тип связи (базовые типы + BSL-specific типы)"
+          },
+          "props": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Свойства связи",
+            "properties": {
+              "line": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Номер строки в коде, где обнаружена связь"
+              },
+              "dynamic": {
+                "type": "boolean",
+                "description": "Является ли вызов динамическим"
+              },
+              "operation": {
+                "type": "string",
+                "enum": ["read", "write", "create", "delete"],
+                "description": "Тип операции с метаданными/таблицей"
+              }
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Метаданные графа",
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Версия спецификации (1.0.0)"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Дата создания графа"
+        },
+        "source": {
+          "type": "string",
+          "description": "Источник графа (например, путь к конфигурации 1C)"
+        },
+        "parser_version": {
+          "type": "string",
+          "description": "Версия парсера, использованного для построения графа"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
+

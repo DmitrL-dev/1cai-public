@@ -1,0 +1,212 @@
+groups:
+  - name: demo-ai-assistants.rules
+    rules:
+      # ===== КРИТИЧЕСКИЕ АЛЕРТЫ =====
+
+      # Высокий процент ошибок API
+      - alert: HighErrorRate
+        expr: |
+          (
+            rate(http_requests_total{status=~"5.."}[5m]) /
+            rate(http_requests_total[5m])
+          ) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+          service: api-gateway
+        annotations:
+          summary: "Высокий процент ошибок API Gateway"
+          description: "Процент ошибок 5xx составляет {{ $value | humanize }}% за последние 5 минут"
+          runbook_url: "https://wiki.company.com/runbooks/high-error-rate"
+
+      # API Gateway недоступен
+      - alert: ServiceDown
+        expr: up{job="api-gateway"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: api-gateway
+        annotations:
+          summary: "Сервис {{ $labels.job }} недоступен"
+          description: "Сервис {{ $labels.job }} недоступен более 1 минуты"
+
+      # Высокое использование CPU
+      - alert: HighCPUUsage
+        expr: |
+          (
+            rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100
+          ) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "Высокое использование CPU"
+          description: "Использование CPU: {{ $value | humanize }}% для контейнера {{ $labels.name }}"
+
+      # Недостаточно памяти
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            container_memory_usage_bytes{name!=""} /
+            container_spec_memory_limit_bytes{name!=""} * 100
+          ) > 90
+        for: 5m
+        labels:
+          severity: critical
+          service: infrastructure
+        annotations:
+          summary: "Недостаточно памяти"
+          description: "Использование памяти: {{ $value | humanize }}% для контейнера {{ $labels.name }}"
+
+      # База данных недоступна
+      - alert: DatabaseDown
+        expr: up{job="postgres-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "База данных PostgreSQL недоступна"
+          description: "База данных недоступна более 1 минуты"
+
+      # Высокая задержка API
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket{job="api-gateway"}[5m])
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: api-gateway
+        annotations:
+          summary: "Высокая задержка API"
+          description: "95-й перцентиль задержки: {{ $value | humanize }} секунд"
+
+      # Низкая производительность Edge Functions
+      - alert: EdgeFunctionHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket{job="supabase-functions"}[5m])
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: supabase
+        annotations:
+          summary: "Высокая задержка Edge Functions"
+          description: "95-й перцентиль задержки Edge Functions: {{ $value | humanize }} секунд"
+
+      # Высокое количество активных соединений к БД
+      - alert: DatabaseConnectionsHigh
+        expr: pg_stat_database_numbackends / pg_settings_max_connections * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "Высокое количество соединений к БД"
+          description: "Использование соединений: {{ $value | humanize }}%"
+
+      # Нехватка места на диске
+      - alert: DiskSpaceLow
+        expr: |
+          (
+            node_filesystem_avail_bytes{mountpoint="/"} /
+            node_filesystem_size_bytes{mountpoint="/"} * 100
+          ) < 15
+        for: 5m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "Нехватка места на диске"
+          description: "Доступно только {{ $value | humanize }}% места на диске"
+
+      # Elasticsearch недоступен
+      - alert: ElasticsearchDown
+        expr: up{job="elasticsearch"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: logging
+        annotations:
+          summary: "Elasticsearch недоступен"
+          description: "Elasticsearch кластер недоступен более 2 минут"
+
+      # Jaeger недоступен
+      - alert: JaegerDown
+        expr: up{job="jaeger"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: tracing
+        annotations:
+          summary: "Jaeger недоступен"
+          description: "Jaeger tracing система недоступна более 2 минут"
+
+      # Высокий error rate в логах
+      - alert: HighLogErrorRate
+        expr: |
+          (
+            rate(log_entries_total{level="error"}[5m]) /
+            rate(log_entries_total[5m])
+          ) * 100 > 10
+        for: 3m
+        labels:
+          severity: warning
+          service: logging
+        annotations:
+          summary: "Высокий процент ошибок в логах"
+          description: "Процент ошибок в логах: {{ $value | humanize }}% за последние 5 минут"
+
+      # Supabase Edge Function ошибки
+      - alert: EdgeFunctionError
+        expr: rate(http_requests_total{job="supabase-functions", status=~"4.."}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: supabase
+        annotations:
+          summary: "Ошибки в Edge Functions"
+          description: "Обнаружены ошибки 4xx в Edge Functions"
+
+      # Низкая доступность сервиса (SLA)
+      - alert: LowAvailability
+        expr: |
+          (
+            rate(http_requests_total{status!~"5.."}[5m]) /
+            rate(http_requests_total[5m])
+          ) * 100 < 99.5
+        for: 10m
+        labels:
+          severity: critical
+          service: api-gateway
+        annotations:
+          summary: "Доступность сервиса ниже SLA"
+          description: "Доступность составляет {{ $value | humanize }}% за последние 5 минут"
+
+      # Kubernetes Pod CrashLoopBackOff
+      - alert: PodCrashLooping
+        expr: |
+          rate(kube_pod_container_status_restarts_total[15m]) * 60 * 15 > 3
+        for: 5m
+        labels:
+          severity: critical
+          service: kubernetes
+        annotations:
+          summary: "Pod в состоянии CrashLoopBackOff"
+          description: "Pod {{ $labels.pod }} перезапускается слишком часто"
+
+      # Memory leak в приложении
+      - alert: MemoryLeak
+        expr: |
+          rate(container_memory_usage_bytes{name!=""}[10m]) > 0
+        for: 10m
+        labels:
+          severity: warning
+          service: infrastructure
+        annotations:
+          summary: "Возможная утечка памяти"
+          description: "Постоянный рост использования памяти в {{ $labels.name }}"

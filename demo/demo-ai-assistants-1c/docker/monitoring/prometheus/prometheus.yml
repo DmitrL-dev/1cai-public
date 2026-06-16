@@ -1,0 +1,138 @@
+# Prometheus Configuration for Microservices Monitoring
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'ai-assistants-monitor'
+    environment: 'production'
+
+# Scrape configuration
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+
+  # Node Exporter (system metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+
+  # API Gateway metrics
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['api-gateway:3000']
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+
+  # AI Assistant Service metrics
+  - job_name: 'ai-assistant'
+    static_configs:
+      - targets: ['ai-assistant:8000']
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+
+  # 1C Integration Service metrics
+  - job_name: '1c-integration'
+    static_configs:
+      - targets: ['1c-integration:8001']
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+
+  # User Management Service metrics
+  - job_name: 'user-management'
+    static_configs:
+      - targets: ['user-management:8002']
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+
+  # Analytics Service metrics
+  - job_name: 'analytics'
+    static_configs:
+      - targets: ['analytics:8003']
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+
+  # Security Service metrics
+  - job_name: 'security'
+    static_configs:
+      - targets: ['security:8004']
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+
+  # PostgreSQL metrics (if postgres_exporter is added)
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres_exporter:9187']
+    scrape_interval: 15s
+    scrape_timeout: 5s
+
+  # Redis metrics (if redis_exporter is added)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis_exporter:9121']
+    scrape_interval: 15s
+    scrape_timeout: 5s
+
+  # Nginx metrics (if nginx-prometheus-exporter is added)
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx-prometheus-exporter:9113']
+    scrape_interval: 15s
+    scrape_timeout: 5s
+
+# Alerting configuration (commented out - configure when AlertManager is added)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'
+rule_files:
+  - "/etc/prometheus/rules/*.yml"
+
+# Enable HTTP API for querying metrics
+# enable-feature controls Prometheus features like:
+# - expand-external-labels: Add external labels to all loaded time series
+# - memory-snapshot-on-shutdown: Take a snapshot of the in-memory metric state when Prometheus shuts down
+# - extra-scrape-metrics: Add additional metrics for each scrape target
+enable-feature:
+  - "memory-snapshot-on-shutdown"
+  - "extra-scrape-metrics"
+
+# Query configuration
+query:
+  timeout: 60s
+  max-concurrency: 20
+  max-samples: 50000000
+  lookback-delta: 5m
+
+# Storage configuration
+storage:
+  tsdb:
+    retention.time: 30d
+    retention.size: 10GB
+    wal-compression: true
+    allow-overlapping-blocks: false
+
+# Remote write configuration (commented out - configure when remote storage is needed)
+# remote_write:
+#   - url: "http://remote-storage:8086/api/v1/prom/write?db=prometheus"
+#     queue_config:
+#       max_samples_per_send: 10000
+#       max_shards: 200
+#       capacity: 2500
+
+# Remote read configuration (commented out - configure when remote reading is needed)
+# remote_read:
+#   - url: "http://remote-storage:8086/api/v1/prom/read?db=prometheus"

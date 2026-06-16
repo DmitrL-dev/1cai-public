@@ -1,0 +1,30 @@
+# Основные зависимости для FastAPI и сервера
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+
+# Зависимости для API администрирования кэша
+psutil==5.9.6
+
+# Для Redis (опционально)
+redis==5.0.1
+
+# Для разработки и тестирования
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2
+
+# Логирование и мониторинг
+structlog==23.2.0
+
+# Аутентификация и безопасность
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# Для работы с JSON и сериализацией
+orjson==3.9.10
+
+# Дополнительные зависимости
+dataclasses-json==0.6.3
+typing-extensions==4.8.0

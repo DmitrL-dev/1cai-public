@@ -1,0 +1,316 @@
+# Test-related files to ignore
+# Файлы, связанные с тестированием, которые не должны попадать в репозиторий
+
+# Coverage reports
+coverage/
+*.lcov
+.nyc_output/
+coverage-final.json
+
+# Test output and logs
+test-output/
+test-results/
+*.test.log
+*.test.report.json
+*.test.report.html
+
+# Temporary test files
+*.tmp
+*.temp
+*.test-cache
+
+# Mock data files
+tests/fixtures/generated/
+tests/data/generated/
+
+# Test databases
+*.test.db
+*.test.sqlite
+*.test.sqlite3
+test-data/
+
+# Performance test results
+perf-results/
+benchmark-results/
+test-performance.log
+
+# Test configuration overrides
+tests/config/local.config.ts
+tests/config/override.config.ts
+.env.test
+.env.testing
+
+# Test screenshots and videos
+tests/e2e/screenshots/
+tests/e2e/videos/
+*.screenshot.*
+*.video.*
+
+# Browser test data
+tests/e2e/browser-data/
+user-data-dir/
+chrome-profile/
+
+# Load testing results
+artillery-results/
+k6-results/
+
+# Test reports
+junit.xml
+test-report.xml
+coverage.xml
+*.test.xml
+
+# Node modules in test directories (if any)
+tests/node_modules/
+tests/**/*.node_modules
+
+# Cache directories
+.eslintcache
+stylelintcache
+test-cache/
+.cache/
+
+# Test environment variables
+test.env
+local.env.test
+
+# Coverage tools temporary files
+.temp-coverage/
+.coverage-temp/
+
+# Test build artifacts
+dist-test/
+build-test/
+tests/dist/
+
+# Puppeteer/Playwright browser binaries
+tests/browser-binaries/
+browser-downloads/
+
+# Test execution logs
+*.execution.log
+test-execution.log
+integration-test.log
+e2e-test.log
+
+# Generated test documentation
+docs/test-coverage/
+docs/test-reports/
+
+# Test result diffs
+*.diff
+*.patch
+test-diff/
+
+# Temporary directories for test execution
+tmp-tests/
+temp-test-data/
+
+# Test-specific IDE files
+.vscode/test-settings.json
+.idea/test.xml
+*.test-workspace
+
+# Mock API responses
+tests/mocks/responses/generated/
+api-mock-data/
+
+# Test metrics and analytics
+test-metrics/
+test-analytics/
+*.metrics.json
+
+# Screenshot comparison baselines
+visual-baselines/
+screenshot-baselines/
+
+# Accessibility test results
+accessibility-results/
+axe-results/
+
+# Security test results
+security-test-results/
+dependency-check/
+
+# Load testing artifacts
+load-test-results/
+stress-test-results/
+
+# Test certificates and keys
+test-certs/
+*.test.crt
+*.test.key
+
+# Test monitoring data
+test-monitoring/
+performance-metrics/
+
+# CI/CD test artifacts
+.github/test-artifacts/
+.gitlab/test-results/
+
+# Coverage badge generation
+coverage-badge.png
+test-badge.svg
+
+# Test runner temporary files
+.vitest/
+vitest.config.ts.timestamp-*
+
+# MSW (Mock Service Worker) files
+public/mockServiceWorker.js
+
+# Test performance monitoring
+lighthouse-results/
+web-vitals.json
+
+# Hot reload test files (development only)
+tests/hot-reload/
+*.hot-reload.*
+
+# Test encryption keys and secrets (development)
+tests/keys/
+test-private.key
+test-public.key
+
+# Test analytics and tracking
+tests/analytics/
+test-tracking-data/
+
+# End-to-end test videos and recordings
+recordings/
+test-recordings/
+*.webm
+*.mp4
+
+# Test environment snapshots
+test-snapshots/
+env-snapshots/
+
+# Test database dumps
+test-dumps/
+*.test-backup
+
+# Temporary test workspaces
+test-workspaces/
+temporary-test-env/
+
+# Test iteration data
+test-iterations/
+iteration-results/
+
+# Mock external services data
+tests/mocks/external-services/
+api-stub-data/
+
+# Test transaction logs
+test-transactions/
+transaction-logs/
+
+# Test performance baselines
+performance-baselines/
+benchmark-baselines/
+
+# Generated mock configurations
+tests/mocks/config/generated/
+
+# Test validation results
+validation-results/
+test-validation-log.xml
+
+# Test data migrations
+test-migrations/
+migration-test-data/
+
+# Test user sessions
+test-sessions/
+session-test-data/
+
+# Mock analytics data
+analytics-test-data/
+test-analytics-events/
+
+# Test notification data
+notification-test-data/
+test-notifications/
+
+# API test collections
+postman-collections/
+insomnia-collections/
+
+# Test deployment data
+deployment-test-data/
+test-deployments/
+
+# Integration test orchestrator logs
+orchestrator-logs/
+test-orchestration.log
+
+# Test environment health checks
+health-check-results/
+test-health-status/
+
+# Test dependency tree outputs
+test-dependency-tree.txt
+dependency-analysis-test.txt
+
+# Test security scan results
+security-scan-results/
+vulnerability-test-report.json
+
+# Test accessibility scan results
+accessibility-scan-results/
+a11y-test-report.json
+
+# Test code quality metrics
+quality-metrics-test.json
+code-quality-test-results.json
+
+# Test release candidate data
+release-candidate-test-data/
+rc-test-results/
+
+# Test rollback verification
+rollback-test-data/
+rollback-verification-results/
+
+# Test disaster recovery data
+disaster-recovery-test-data/
+dr-test-results/
+
+# Test compliance verification
+compliance-test-results/
+test-compliance-reports/
+
+# Test audit logs
+audit-test-results/
+test-audit-logs/
+
+# Test governance tracking
+governance-test-data/
+test-governance-results/
+
+# Test capacity planning data
+capacity-test-data/
+load-test-planning-results/
+
+# Test incident response data
+incident-response-test-data/
+test-incident-scenarios/
+
+# Test business continuity data
+business-continuity-test-data/
+bc-test-scenarios/
+
+# Test risk assessment data
+risk-assessment-test-data/
+test-risk-scenarios/
+
+# Test compliance framework data
+compliance-framework-test-data/
+framework-test-results/
+
+# Test regulatory requirement data
+regulatory-test-data/
+test-regulatory-requirements/

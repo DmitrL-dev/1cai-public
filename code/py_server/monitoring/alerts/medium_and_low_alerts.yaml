@@ -1,0 +1,134 @@
+groups:
+  - name: mcp_server.medium_alerts
+    rules:
+      # Ошибки валидации
+      - alert: MCPValidationErrorsHigh
+        expr: rate(mcp_validation_errors_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: medium
+          component: validation
+        annotations:
+          summary: "Высокая частота ошибок валидации"
+          description: "Частота ошибок валидации превышает 0.05/сек в течение 2 минут"
+          runbook_url: "https://wiki.company.com/runbooks/validation-errors"
+          correlation_id_field: "{{ $labels.correlation_id }}"
+
+      # Увеличенное время MCP операций
+      - alert: MCPSlowOperationTime
+        expr: histogram_quantile(0.95, rate(mcp_operation_duration_seconds_bucket[5m])) > 1.0
+        for: 5m
+        labels:
+          severity: medium
+          component: performance
+        annotations:
+          summary: "Высокое время выполнения MCP операций"
+          description: "95-й перцентиль времени выполнения MCP операции {{ $labels.operation_type }}/{{ $labels.operation }} превышает 1 секунду в течение 5 минут"
+          runbook_url: "https://wiki.company.com/runbooks/slow-operations"
+          correlation_id_field: "{{ $labels.correlation_id }}"
+
+      # Большое количество retry попыток
+      - alert: MCPRetryAttemptsHigh
+        expr: rate(mcp_retry_attempts_total[5m]) > 10
+        for: 3m
+        labels:
+          severity: medium
+          component: reliability
+        annotations:
+          summary: "Высокое количество попыток повтора"
+          description: "Частота попыток повтора для операции {{ $labels.operation }} превышает 10/сек в течение 3 минут"
+          runbook_url: "https://wiki.company.com/runbooks/retry-attempts"
+          correlation_id_field: "N/A"
+
+      # Полуоткрытое состояние Circuit Breaker
+      - alert: MCPCircuitBreakerHalfOpen
+        expr: mcp_circuit_breaker_state == 1
+        for: 2m
+        labels:
+          severity: medium
+          component: circuit_breaker
+        annotations:
+          summary: "Circuit Breaker в полуоткрытом состоянии"
+          description: "Circuit Breaker для операции {{ $labels.operation }} находится в полуоткрытом состоянии в течение 2 минут"
+          runbook_url: "https://wiki.company.com/runbooks/circuit-breaker"
+          correlation_id_field: "{{ $labels.correlation_id }}"
+
+      # Превышение размера очереди
+      - alert: MCPQueueSizeHigh
+        expr: mcp_queue_size > 50
+        for: 3m
+        labels:
+          severity: medium
+          component: performance
+        annotations:
+          summary: "Большой размер очереди"
+          description: "Размер очереди {{ $labels.queue_name }} превышает 50 в течение 3 минут"
+          runbook_url: "https://wiki.company.com/runbooks/high-queue-size"
+          correlation_id_field: "N/A"
+
+  - name: mcp_server.low_alerts
+    rules:
+      # Небольшое увеличение ошибок
+      - alert: MCPValidationErrorsMedium
+        expr: rate(mcp_validation_errors_total[10m]) > 0.1
+        for: 5m
+        labels:
+          severity: low
+          component: validation
+        annotations:
+          summary: "Умеренное увеличение ошибок валидации"
+          description: "Частота ошибок валидации превышает 0.1/сек в течение 10 минут"
+          runbook_url: "https://wiki.company.com/runbooks/validation-errors"
+          correlation_id_field: "{{ $labels.correlation_id }}"
+
+      # Небольшое замедление операций
+      - alert: MCPOperationLatencyMedium
+        expr: histogram_quantile(0.50, rate(mcp_operation_duration_seconds_bucket[10m])) > 0.2
+        for: 5m
+        labels:
+          severity: low
+          component: performance
+        annotations:
+          summary: "Умеренное замедление MCP операций"
+          description: "Медианное время выполнения MCP операции {{ $labels.operation_type }}/{{ $labels.operation }} превышает 200ms в течение 10 минут"
+          runbook_url: "https://wiki.company.com/runbooks/operation-latency"
+          correlation_id_field: "{{ $labels.correlation_id }}"
+
+      # Малые ошибки интеграции
+      - alert: MCPIntegrationErrorsLow
+        expr: rate(mcp_integration_errors_total[10m]) > 0.002
+        for: 5m
+        labels:
+          severity: low
+          component: integration
+        annotations:
+          summary: "Небольшие ошибки интеграции"
+          description: "Частота ошибок интеграции {{ $labels.integration_type }} превышает 0.002/сек в течение 10 минут"
+          runbook_url: "https://wiki.company.com/runbooks/integration-errors"
+          correlation_id_field: "{{ $labels.correlation_id }}"
+
+      # Изменения в активности
+      - alert: MCPActiveRequestsUnusual
+        expr: abs(rate(mcp_active_requests[5m])) > 0.5
+        for: 3m
+        labels:
+          severity: low
+          component: activity
+        annotations:
+          summary: "Необычные изменения в активности запросов"
+          description: "Быстрые изменения в количестве активных запросов типа {{ $labels.operation_type }}"
+          runbook_url: "https://wiki.company.com/runbooks/activity-changes"
+          correlation_id_field: "N/A"
+
+      # Успешные retry попытки (информационный алерт)
+      - alert: MCPRetryAttemptsSuccessInfo
+        expr: rate(mcp_retry_attempts_total{success="true"}[5m]) > 5
+        for: 5m
+        labels:
+          severity: low
+          component: info
+        annotations:
+          summary: "Информация о успешных попытках повтора"
+          description: "Частота успешных попыток повтора для операции {{ $labels.operation }} превышает 5/сек в течение 5 минут"
+          runbook_url: "https://wiki.company.com/runbooks/retry-info"
+          correlation_id_field: "N/A"

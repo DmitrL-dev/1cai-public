@@ -1,0 +1,491 @@
+# ===========================================
+# GitHub Actions CI/CD Pipeline
+# AI Экосистема 1С - Полный автоматический пайплайн
+# ===========================================
+
+name: AI Ecosystem 1C - Production Deployment
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Ежедневная сборка в 02:00 UTC
+    - cron: '0 2 * * *'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # ===========================================
+  # Security and Code Quality Checks
+  # ===========================================
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      
+      - name: Install dependencies
+        run: |
+          cd live-demo
+          npm ci
+      
+      - name: Run ESLint
+        run: |
+          cd live-demo
+          npx eslint src --ext .ts,.tsx --report-unused-disable-directives --max-warnings 0
+      
+      - name: Run TypeScript check
+        run: |
+          cd live-demo
+          npx tsc --noEmit
+      
+      - name: Run tests with coverage
+        run: |
+          cd live-demo
+          npm run test:coverage
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./live-demo/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+
+  # ===========================================
+  # Backend Testing and Quality
+  # ===========================================
+  backend-test:
+    name: Backend Testing
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov black isort flake8 mypy
+      
+      - name: Code formatting check
+        run: |
+          black --check .
+          isort --check-only .
+      
+      - name: Linting
+        run: |
+          flake8 .
+          mypy .
+      
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=. --cov-report=xml --cov-report=html
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: backend
+          name: backend-coverage
+
+  # ===========================================
+  # Build and Package
+  # ===========================================
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: [security-scan, code-quality, backend-test]
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+      
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  # ===========================================
+  # Infrastructure Testing
+  # ===========================================
+  infrastructure-test:
+    name: Infrastructure Testing
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Docker Compose
+        run: |
+          sudo rm /usr/local/bin/docker-compose
+          curl -L https://github.com/docker/compose/releases/download/v2.23.0/docker-compose-linux-x86_64 > docker-compose
+          chmod +x docker-compose
+          sudo mv docker-compose /usr/local/bin
+      
+      - name: Copy environment files
+        run: |
+          cp config/production/.env.production .env.production
+          cp config/production/.env.supabase .env.supabase
+          # Заполняем тестовыми значениями
+          sed -i 's/SUPABASE_API_URL=.*/SUPABASE_API_URL=https:\/\/test.supabase.co/g' .env.supabase
+          sed -i 's/SUPABASE_ANON_KEY=.*/SUPABASE_ANON_KEY=test-key/g' .env.supabase
+      
+      - name: Start infrastructure
+        run: |
+          docker-compose -f docker-compose-supabase.yml up -d --wait
+          sleep 60
+      
+      - name: Health check
+        run: |
+          curl -f http://localhost/health || exit 1
+          curl -f http://localhost:80/api/health || exit 1
+      
+      - name: Stop infrastructure
+        if: always()
+        run: |
+          docker-compose -f docker-compose-supabase.yml down -v
+
+  # ===========================================
+  # Supabase Integration Testing
+  # ===========================================
+  supabase-test:
+    name: Supabase Integration Testing
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Supabase CLI
+        run: |
+          curl -sSfL https://get.supabase.io/cli | sh -s -- -b /usr/local/bin
+      
+      - name: Deploy Edge Functions
+        run: |
+          cd edge-functions
+          for func in *.ts; do
+            echo "Deploying $func..."
+            supabase functions deploy ${func%.ts} --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+          done
+      
+      - name: Test Edge Functions
+        run: |
+          # Тест start-demo функции
+          curl -X POST ${{ secrets.SUPABASE_URL }}/functions/v1/start-demo \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"demo_type": "test", "roles": ["developer"], "complexity": "low"}'
+      
+      - name: Database Migration Test
+        run: |
+          supabase db push --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+
+  # ===========================================
+  # Performance Testing
+  # ===========================================
+  performance-test:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install k6
+        run: |
+          sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+      
+      - name: Setup infrastructure
+        run: |
+          docker-compose -f docker-compose-supabase.yml up -d --wait
+          sleep 60
+      
+      - name: Run performance tests
+        run: |
+          k6 run tests/performance/load-test.js
+      
+      - name: Upload k6 results
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-results
+          path: tests/performance/results/
+
+  # ===========================================
+  # Security Testing
+  # ===========================================
+  security-test:
+    name: Security Testing
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup infrastructure
+        run: |
+          docker-compose -f docker-compose-supabase.yml up -d --wait
+          sleep 60
+      
+      - name: OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.7.0
+        with:
+          target: 'http://localhost'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+      
+      - name: SSL Labs Test
+        run: |
+          curl -s "https://api.ssllabs.com/api/v3/analyze?host=localhost&publish=off" | jq -r '.status'
+
+  # ===========================================
+  # Deployment to Staging
+  # ===========================================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build, infrastructure-test]
+    if: github.ref == 'refs/heads/develop' || github.event_name == 'pull_request'
+    environment: staging
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+      
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.STAGING_KUBE_CONFIG }}" | base64 -d > kubeconfig
+          export KUBECONFIG=kubeconfig
+      
+      - name: Deploy to staging
+        run: |
+          kubectl apply -f config/production/kubernetes/ai-ecosystem-1c.yaml -n ai-ecosystem-1c-staging
+          kubectl rollout status deployment/ai-assistants-api -n ai-ecosystem-1c-staging --timeout=300s
+      
+      - name: Run smoke tests
+        run: |
+          kubectl run test-pod --image=curlimages/curl:latest -n ai-ecosystem-1c-staging --rm -it --restart=Never -- sh -c "curl -f http://ai-assistants-api-service:8000/health"
+
+  # ===========================================
+  # Production Deployment
+  # ===========================================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, supabase-test, performance-test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+      
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.PRODUCTION_KUBE_CONFIG }}" | base64 -d > kubeconfig
+          export KUBECONFIG=kubeconfig
+      
+      - name: Create backup before deployment
+        run: |
+          # Создаем backup через Edge Function
+          curl -X POST ${{ secrets.SUPABASE_URL }}/functions/v1/export-backup \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"action": "create_backup", "backup_type": "pre_deployment"}'
+      
+      - name: Deploy to production
+        run: |
+          kubectl apply -f config/production/kubernetes/ai-ecosystem-1c.yaml -n ai-ecosystem-1c
+          kubectl rollout status deployment/ai-assistants-api -n ai-ecosystem-1c --timeout=600s
+      
+      - name: Run production health checks
+        run: |
+          for i in {1..10}; do
+            echo "Health check attempt $i..."
+            if curl -f https://your-domain.com/health; then
+              echo "Health check passed"
+              break
+            fi
+            echo "Health check failed, retrying in 30 seconds..."
+            sleep 30
+          done
+      
+      - name: Run smoke tests
+        run: |
+          kubectl run smoke-test-pod --image=curlimages/curl:latest -n ai-ecosystem-1c --rm -it --restart=Never -- sh -c "
+            curl -f https://your-domain.com/api/health &&
+            curl -f https://your-domain.com/ml/health &&
+            echo 'All smoke tests passed'
+          "
+      
+      - name: Update deployment status
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#deployments'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        if: always()
+
+  # ===========================================
+  # Notification and Reporting
+  # ===========================================
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: always() && github.ref == 'refs/heads/main'
+    steps:
+      - name: Notify deployment status
+        run: |
+          if [ "${{ needs.deploy-production.result }}" == "success" ]; then
+            MESSAGE="✅ Production deployment successful for AI Ecosystem 1C"
+          else
+            MESSAGE="❌ Production deployment failed for AI Ecosystem 1C"
+          fi
+          
+          # Slack notification
+          curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
+            -H 'Content-Type: application/json' \
+            -d "{\"text\":\"$MESSAGE\",\"channel\":\"#deployments\"}"
+          
+          # Email notification
+          curl -X POST ${{ secrets.EMAIL_WEBHOOK }} \
+            -H 'Content-Type: application/json' \
+            -d "{\"to\":\"${{ secrets.NOTIFICATION_EMAIL }}\",\"subject\":\"AI Ecosystem 1C Deployment\",\"body\":\"$MESSAGE\"}"
+
+      - name: Update Supabase status
+        run: |
+          curl -X POST ${{ secrets.SUPABASE_URL }}/functions/v1/realtime-notifications \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "action": "broadcast",
+              "message": "Production deployment completed",
+              "title": "AI Ecosystem 1C Update",
+              "channels": ["web"]
+            }'
+
+  # ===========================================
+  # Post-deployment cleanup
+  # ===========================================
+  cleanup:
+    name: Cleanup Old Resources
+    runs-on: ubuntu-latest
+    if: always() && github.ref == 'refs/heads/main'
+    steps:
+      - name: Cleanup old container images
+        run: |
+          # Удаляем старые образы старше 30 дней
+          ghcr.io $IMAGE_NAME | grep -v "latest" | awk '{print $1}' | head -n 5 | xargs -I {} docker rmi {} || true
+      
+      - name: Update release notes
+        run: |
+          # Генерируем release notes на основе коммитов
+          git log --oneline --since="7 days ago" --until="1 day ago" > release-notes.txt
+      
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-artifacts
+          path: |
+            release-notes.txt
+            tests/performance/results/
+          retention-days: 30

@@ -1,0 +1,257 @@
+# Redis Exporter конфигурация
+# Основные настройки
+web.listen-address: ":9121"
+web.telemetry-path: "/metrics"
+
+# Redis сервер
+redis.addr: "redis:6379"
+redis.password: ""
+redis.alias: ""
+
+# Таймауты
+redis.timeout: 5s
+
+# Клиентские настройки
+redis.client-name: ""
+
+# Включить Redis Sentinel
+redis.sentinel: ""
+redis.sentinel-master: ""
+
+# Cluster mode
+redis.cluster: false
+
+# Исключить отдельные ключи
+redis.key-files: []
+
+# Включить все ключи
+redis.key-files-pattern: "*"
+
+# Настройки для каждой базы данных
+redis.file-lists: []
+
+# Сжатие ключей
+redis.key-compression: "gzip"
+
+# Сжатие ключей из файлов
+redis.file-compression: ""
+
+# Сключи из файла
+redis.keys-from-file: ""
+redis.key-separator: ":"
+
+# Уровень логирования
+log-level: info
+
+# Формат логирования
+log-format: logfmt
+
+# Lua scripting
+lua-scripting: false
+
+# Connection pool настройки
+max-distinct-key-groups: 100
+
+# Измерение времени ping
+ping-payload: ""
+
+# Latency history
+latency-history: false
+latency-thresholds: "1,5,25,100,1000"
+
+# Info metric settings
+info.metrics: "*"
+info.group-map: |
+  default: redis
+
+# Конфигурационная статистика
+config-command: "CONFIG"
+
+# Ping диапазон
+ping-duration: 1s
+
+# Настройки для Latency Metrics
+latency-history-enabled: true
+latency-thresholds-string: "1,5,25,100,1000"
+
+# Настройки для Stream Metrics
+stream-commands-metrics: false
+
+# Формат timestamping
+redis-check-keys-script: |
+  redis.call('get', 'non_existent_key')
+
+# SSH tunnelling
+ssh: ""
+ssh-user: ""
+ssh-key: ""
+ssh-key-password: ""
+
+# TLS настройки
+tls.enabled: false
+tls.cert-file: ""
+tls.key-file: ""
+tls.ca-file: ""
+tls.insecure: true
+tls.skip-verify: false
+
+# Export client list
+export.client-list: false
+
+# Export CPU usage
+export.cpu: false
+
+# Export keyspace groups
+export.key-groups: false
+
+# Export client list size
+export.keyspace: false
+
+# Export latency metrics
+export.latency-metrics: false
+
+# Export latency history
+export.latency-history: false
+
+# Export maxmem
+export.maxmem: false
+
+# Export key value sizes
+export.key-value-sizes: false
+
+# Export redis config
+export.redis-config: false
+
+# Export connection counts
+export.connection-counts: false
+
+# Export cluster info
+export.cluster-info: false
+
+# Export map size info
+export.map-size-info: false
+
+# Export Lua memory usage
+export.lua-memory-usage: false
+
+# Export slowlog
+export.slowlog: false
+
+# Export delayed executions
+export.delayed-executions: false
+
+# Специальные настройки для MySQL
+mysql: false
+
+# Настройки производительности
+collect-keys-progress-debugging: false
+
+# Размер элементов статистики
+stats-key-pattern: "*"
+
+# Stream stats
+stream-stats-keys: []
+
+# Hash stats
+hash-stats-keys: []
+
+# List stats
+list-stats-keys: []
+
+# Set stats
+set-stats-keys: []
+
+# String stats
+string-stats-keys: []
+
+# Zset stats
+zset-stats-keys: []
+
+# Keyspace chunksize
+keyspace-chunksize: 100
+
+# Lag threshold
+lag-threshold: "5s"
+
+# Namespace настройки
+namespace: ""
+
+# Redis connection pool size
+redis-pool: 10
+
+# Key listings latency
+key-list-check-duration: "10ms"
+
+# Key listing duration threshold
+key-list-check-duration: "10ms"
+
+# Redis modes
+redis-modes:
+  - standalone
+  - cluster
+  - sentinel
+
+#  Redis URI format
+# redis://[password@]host:port[/db]
+# rediss://[password@]host:port[/db]
+
+# Max slowlog entries
+max-slowlog-entries: 2000
+
+# Slowlog latency threshold
+slowlog-logs-threshold: 10000
+
+# SSH host
+redis-ssh-host: ""
+
+# SSH port
+redis-ssh-port: 22
+
+# SSH timeout
+redis-ssh-timeout: 30s
+
+# Redis password location
+redis-password-locations: [environment, command-line, file]
+
+# Redis key files compression
+redis-key-files-compression: "gzip"
+
+# Redis file lists
+redis-file-lists: []
+
+# Изображение статистики
+export.image: ""
+export.image-info: false
+
+# Статистика по ключам
+export.key-stats: false
+
+# Статистика раздач
+export.distribution-stats: false
+
+# Статистика кэша
+export.cache-stats: false
+
+# Ключи по кластерам
+keys-per-cluster: 1000
+
+# Sample keys
+sample-keys: 100
+
+# Sample configuration
+sample-configuration: false
+
+# Кэш для конфигурации
+config-cache: true
+
+# Кэш настроек
+settings-cache: true
+
+# Статистика экспорта
+export-stats: false
+
+# Статистика бэкапов
+export-backup-stats: false
+
+# Debug порт
+debug-port: 9122

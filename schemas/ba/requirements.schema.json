@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Business Analyst Requirements Extraction",
+  "type": "object",
+  "required": [
+    "document_type",
+    "functional_requirements",
+    "non_functional_requirements",
+    "constraints",
+    "stakeholders",
+    "user_stories",
+    "acceptance_criteria",
+    "summary"
+  ],
+  "properties": {
+    "document_type": {
+      "type": "string"
+    },
+    "source_path": {
+      "type": ["string", "null"]
+    },
+    "functional_requirements": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/requirement" }
+    },
+    "non_functional_requirements": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/requirement" }
+    },
+    "constraints": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/requirement" }
+    },
+    "stakeholders": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "user_stories": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/user_story" }
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "summary": {
+      "type": "object",
+      "required": [
+        "total_requirements",
+        "functional",
+        "non_functional",
+        "constraints",
+        "priority_distribution"
+      ],
+      "properties": {
+        "total_requirements": { "type": "integer" },
+        "functional": { "type": "integer" },
+        "non_functional": { "type": "integer" },
+        "constraints": { "type": "integer" },
+        "priority_distribution": {
+          "type": "object",
+          "additionalProperties": { "type": "integer" }
+        },
+        "llm_used": { "type": "boolean" }
+      }
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "definitions": {
+    "requirement": {
+      "type": "object",
+      "required": ["id", "title", "description", "priority", "confidence"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "priority": {
+          "type": "string",
+          "enum": ["high", "medium", "low"]
+        },
+        "confidence": { "type": "number" },
+        "category": { "type": ["string", "null"] },
+        "source": { "type": ["string", "null"] }
+      }
+    },
+    "user_story": {
+      "type": "object",
+      "required": ["id", "role", "goal", "benefit"],
+      "properties": {
+        "id": { "type": "string" },
+        "role": { "type": "string" },
+        "goal": { "type": "string" },
+        "benefit": { "type": "string" },
+        "acceptance_criteria": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}
+

@@ -1,0 +1,186 @@
+# Traefik основная конфигурация
+api:
+  dashboard: true
+  insecure: true
+  debug: true
+
+# Включение Docker провайдера
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: "monitoring"
+
+# Точки входа
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entrypoint:
+          to: websecure
+          scheme: https
+
+  websecure:
+    address: ":443"
+
+  metrics:
+    address: ":8080"
+
+# Логирование
+log:
+  level: INFO
+  filePath: "/var/log/traefik/traefik.log"
+
+accessLog: {}
+
+# Метрики
+metrics:
+  prometheus:
+    addEntryPointsLabels: true
+    addServicesLabels: true
+
+# Ping
+ping:
+  entryPoint: "web"
+
+# Сертификаты Let's Encrypt (для production)
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: "admin@company.com"
+      storage: "/etc/traefik/acme/acme.json"
+      httpChallenge:
+        entryPoint: "web"
+      # Для production раскомментируйте:
+      # caServer: "https://acme-v02.api.letsencrypt.org/directory"
+      # Для staging раскомментируйте:
+      # caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+
+# Средний уровень (настройки по умолчанию)
+middlewares:
+  # Безопасность
+  security-headers:
+    headers:
+      accessControlAllowMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+      accessControlMaxAge: 100
+      hostsProxyHeaders:
+        - "X-Forwarded-Host"
+      referrerPolicy: "strict-origin-when-cross-origin"
+      stsSeconds: 63072000
+      stsIncludeSubdomains: true
+      stsPreload: true
+      forceSTSHeader: false
+      frameDeny: false
+      contentTypeNosniff: true
+      browserXssFilter: true
+      customFrameOptionsValue: "SAMEORIGIN"
+      customRequestHeaders:
+        X-Forwarded-Proto: "https"
+      customResponseHeaders:
+        X-Robots-Tag: "noindex,nofollow,nosnippet,noarchive"
+        server: "Traefik"
+
+  # Сжатие
+  compression:
+    compress: {}
+
+  # Rate limiting
+  rate-limit:
+    rateLimit:
+      burst: 100
+      average: 50
+
+  # Аутентификация для админ панелей
+  auth-basic:
+    basicAuth:
+      users:
+        - "admin:$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi"  # admin/admin
+
+# Перенаправления
+http:
+  routers:
+    # Перенаправление всех HTTP на HTTPS
+    http-to-https:
+      rule: "HostRegexp(`{host:.+}`)"
+      entryPoints:
+        - web
+      middlewares:
+        - redirect-to-https
+      priority: 1000
+
+  middlewares:
+    # Перенаправление на HTTPS
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
+
+# Динамическая конфигурация для кастомных сервисов
+experimental:
+  localPlugins:
+    header-middleware:
+      moduleName: "github.com/traefik/header-middleware"
+      version: "v1.0.0"
+
+# Дополнительные настройки
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+# Файлы конфигурации
+configFile: /etc/traefik/traefik.yml
+staticConfig: /etc/traefik/dynamic.yml
+
+# Порт для API
+serverstransport:
+  insecureSkipVerify: true
+
+# Дополнительные настройки безопасности
+serversTransport:
+  insecureSkipVerify: true
+  rootCAs:
+    - /etc/ssl/certs/ca-certificates.crt
+  maxIdleConnsPerHost: 10
+
+# Настройки прокси
+forwardingTimeouts:
+  dialTimeout: "30s"
+  responseHeaderTimeout: "30s"
+  idleConnTimeout: "90s"
+
+# Настройки ретраев
+retries:
+  attempts: 3
+  perTryTimeout: "30s"
+
+# Настройки health check
+providersThrottleDuration: "10s"
+
+# Настройки TLS
+tls:
+  options:
+    default:
+      minVersion: "VersionTLS12"
+      cipherSuites:
+        - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+        - "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305"
+        - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+      curvePreferences:
+        - CurveP521
+        - CurveP384
+      sniStrict: true
+
+# Метрики
+metrics:
+  datadog:
+    address: "datadog:8125"
+  prometheus:
+    addEntryPointsLabels: true
+    addServicesLabels: true
+  statsD:
+    address: "statsd-exporter:8125"

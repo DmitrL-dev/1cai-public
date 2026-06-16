@@ -1,0 +1,39 @@
+name: DR Rehearsal
+
+on:
+  schedule:
+    - cron: '0 5 1 */3 *'
+  workflow_dispatch:
+
+jobs:
+  rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup kubectl & make
+        run: |
+          sudo apt-get update && sudo apt-get install -y kubectl make
+      - name: Vault rehearsal
+        env:
+          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+        run: |
+          python scripts/runbooks/dr_rehearsal_runner.py vault
+      - name: Linkerd rehearsal
+        run: |
+          python scripts/runbooks/dr_rehearsal_runner.py linkerd
+      - name: FinOps rehearsal
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_BUDGET_NAMES: ${{ secrets.AWS_BUDGET_NAMES }}
+          AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          AZURE_BUDGET_NAMES: ${{ secrets.AZURE_BUDGET_NAMES }}
+        run: |
+          python scripts/runbooks/dr_rehearsal_runner.py finops

@@ -1,0 +1,111 @@
+{
+  "test_environment": {
+    "target_host": "http://localhost:8000",
+    "concurrent_users": {
+      "light_load": 50,
+      "normal_load": 200,
+      "heavy_load": 500,
+      "stress_load": 1000
+    },
+    "test_durations": {
+      "quick": "30s",
+      "standard": "5m",
+      "extended": "30m",
+      "endurance": "2h"
+    }
+  },
+  "performance_thresholds": {
+    "response_time_ms": {
+      "cache_hit": 10,
+      "cache_miss": 50,
+      "api_call": 100,
+      "rate_limit_check": 5
+    },
+    "throughput_rps": {
+      "minimum": 100,
+      "target": 1000,
+      "excellent": 5000
+    },
+    "error_rate_percent": {
+      "acceptable": 1.0,
+      "degraded": 5.0,
+      "critical": 10.0
+    },
+    "memory_usage_mb": {
+      "normal": 500,
+      "high": 1000,
+      "critical": 2000
+    }
+  },
+  "test_scenarios": {
+    "smoke_test": {
+      "users": 10,
+      "duration": "1m",
+      "description": "Быстрая проверка работоспособности"
+    },
+    "load_test": {
+      "users": 200,
+      "duration": "5m",
+      "description": "Тест нормальной нагрузки"
+    },
+    "stress_test": {
+      "users": 1000,
+      "duration": "10m",
+      "description": "Stress тест до точки разрушения"
+    },
+    "endurance_test": {
+      "users": 100,
+      "duration": "1h",
+      "description": "Длительная стабильность"
+    },
+    "spike_test": {
+      "users": [50, 500, 50],
+      "pattern": "spike",
+      "description": "Тест резких пиков нагрузки"
+    }
+  },
+  "monitoring": {
+    "enabled": true,
+    "metrics_interval_seconds": 10,
+    "alert_thresholds": {
+      "response_time_ms": 200,
+      "error_rate_percent": 5.0,
+      "memory_usage_mb": 1500,
+      "cpu_usage_percent": 80
+    }
+  },
+  "reporting": {
+    "save_results": true,
+    "generate_html_report": true,
+    "generate_csv_report": true,
+    "results_directory": "performance_results",
+    "retention_days": 30
+  },
+  "load_test_profiles": {
+    "steady_load": {
+      "type": "constant",
+      "users": 100,
+      "spawn_rate": 5,
+      "duration": "10m"
+    },
+    "ramp_up_load": {
+      "type": "ramp",
+      "start_users": 10,
+      "end_users": 500,
+      "ramp_time": "5m",
+      "sustain_time": "10m"
+    },
+    "spike_load": {
+      "type": "spike",
+      "base_users": 100,
+      "spike_users": 1000,
+      "spike_duration": "2m",
+      "recovery_time": "5m"
+    },
+    "soak_load": {
+      "type": "constant",
+      "users": 200,
+      "duration": "2h"
+    }
+  }
+}

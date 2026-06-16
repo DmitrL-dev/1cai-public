@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "observability-stack.fullname" . }}-loki
+  labels:
+    app.kubernetes.io/name: {{ include "observability-stack.name" . }}
+    app.kubernetes.io/component: loki
+spec:
+  replicas: {{ .Values.loki.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "observability-stack.name" . }}
+      app.kubernetes.io/component: loki
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "observability-stack.name" . }}
+        app.kubernetes.io/component: loki
+    spec:
+      containers:
+        - name: loki
+          image: {{ .Values.loki.image }}
+          args:
+            - "-config.file=/etc/loki/loki-config.yaml"
+          ports:
+            - containerPort: 3100
+              name: http
+          volumeMounts:
+            - name: config
+              mountPath: /etc/loki
+            {{- if .Values.loki.storage.enabled }}
+            - name: data
+              mountPath: /var/loki
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "observability-stack.fullname" . }}-loki-config
+        {{- if .Values.loki.storage.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "observability-stack.fullname" . }}-loki-pvc
+        {{- end }}

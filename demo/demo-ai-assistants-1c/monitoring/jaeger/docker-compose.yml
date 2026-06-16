@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  jaeger-collector:
+    image: jaegertracing/jaeger-collector:1.51
+    container_name: jaeger-collector
+    ports:
+      - "14268:14268"  # HTTP thrift
+      - "14269:14269"  # HTTP metrics
+      - "14250:14250"  # Protobuf
+      - "9411:9411"    # Zipkin compatible endpoint
+    environment:
+      - SPAN_STORAGE_TYPE=elasticsearch
+      - ES_SERVER_URLS=http://elasticsearch:9200
+      - ES_NUM_SHARDS=1
+      - ES_NUM_REPLICAS=0
+      - ES_INDEX_PREFIX=jaeger
+      - COLLECTOR_OTLP_ENABLED=true
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+      - COLLECTOR_HOST_PORT=:14250
+      - METRICS_HOST_PORT=:14269
+      - SPAN_STORAGE_TYPE=elasticsearch
+      - COLLECTOR_STORAGE_TYPE=elasticsearch
+    networks:
+      - monitoring
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  jaeger-query:
+    image: jaegertracing/jaeger-query:1.51
+    container_name: jaeger-query
+    ports:
+      - "16686:16686"  # UI
+      - "16687:16687"  # Health check
+    environment:
+      - SPAN_STORAGE_TYPE=elasticsearch
+      - ES_SERVER_URLS=http://elasticsearch:9200
+      - ES_NUM_SHARDS=1
+      - ES_NUM_REPLICAS=0
+      - ES_INDEX_PREFIX=jaeger
+      - JAEGER_SERVER_HTTP_PORT=16686
+      - METRICS_HOST_PORT=:16687
+    networks:
+      - monitoring
+    depends_on:
+      - elasticsearch
+    - jaeger-collector
+    restart: unless-stopped
+
+  jaeger-agent:
+    image: jaegertracing/jaeger-agent:1.51
+    container_name: jaeger-agent
+    ports:
+      - "5775:5775/udp"   # zipkin.thrift
+      - "5778:5778"       # configs
+      - "6831:6831/udp"   # jaeger.thrift
+      - "6832:6832/udp"   # jaeger.thrift
+    environment:
+      - REPORTER_GRPC_HOST_PORT=jaeger-collector:14250
+    command: ["--config-file=/etc/jaeger/jaeger-config.yaml"]
+    volumes:
+      - ./jaeger-agent.yaml:/etc/jaeger/jaeger-config.yaml
+    networks:
+      - monitoring
+    restart: unless-stopped
+    deploy:
+      replicas: 3
+
+networks:
+  monitoring:
+    driver: bridge

@@ -1,0 +1,17 @@
+# Базовый пример конфигурации
+targets:
+  - http://localhost:8080/health
+profile: web-api
+local: true
+format: json
+output: reports/web.json
+markdown: reports/web.md
+html: reports/web.html
+# knowledge_base: reports/security-findings.jsonl
+# publish_dir: portal/security
+# publish_url_base: https://portal.local/security
+# slack_webhook: https://hooks.slack.com/services/xxx/yyy/zzz
+# neo4j_url: http://localhost:7474
+# neo4j_user: neo4j
+# neo4j_password: secret
+

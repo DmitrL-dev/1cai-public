@@ -1,0 +1,25 @@
+{
+  "DEMO": {
+    "description": "Мини-гайдинг для smoke-теста (10-20 примеров)",
+    "dataset_host": "output/dataset/DEMO_dataset.jsonl",
+    "dataset_container": "/data/DEMO_dataset.jsonl",
+    "qa_host": "output/dataset/DEMO_qa.jsonl",
+    "model_host": "models/demo-model",
+    "model_container": "/models/demo-model",
+    "eval_report": "reports/eval/demo-model.json",
+    "default_epochs": 1,
+    "notes": "Используется в make eval-ml-demo/train-ml-demo"
+  },
+  "ERPCPM": {
+    "description": "Полная конфигурация ERPCPM: 30k+ функций",
+    "dataset_host": "output/dataset/ERPCPM_dataset.jsonl",
+    "dataset_container": "/data/ERPCPM_dataset.jsonl",
+    "qa_host": "output/dataset/ERPCPM_qa.jsonl",
+    "model_host": "models/ERPCPM-7B",
+    "model_container": "/models/ERPCPM-7B",
+    "eval_report": "reports/eval/ERPCPM.json",
+    "default_epochs": 3,
+    "notes": "Основной сценарий из LOCAL_MODEL_TRAINING.md"
+  }
+}
+

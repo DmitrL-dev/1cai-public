@@ -1,0 +1,129 @@
+# BSL (1С:Enterprise) Grammar for GBNF
+# Auto-generated for llama.cpp grammar-constrained generation
+# Supports Russian and English keywords
+#
+# Usage:
+#   ./llama-cli --model model.gguf --grammar-file bsl.gbnf --prompt "Создай функцию"
+
+root ::= file
+
+# Keywords
+kw_if ::= "Если" | "если" | "ЕСЛИ" | "If" | "if" | "IF"
+kw_then ::= "Тогда" | "тогда" | "ТОГДА" | "Then" | "then" | "THEN"
+kw_elsif ::= "ИначеЕсли" | "иначеесли" | "ИНАЧЕЕСЛИ" | "ElsIf" | "elsif" | "ELSIF"
+kw_else ::= "Иначе" | "иначе" | "ИНАЧЕ" | "Else" | "else" | "ELSE"
+kw_endif ::= "КонецЕсли" | "конецесли" | "КОНЕЦЕСЛИ" | "EndIf" | "endif" | "ENDIF"
+kw_for ::= "Для" | "для" | "ДЛЯ" | "For" | "for" | "FOR"
+kw_each ::= "Каждого" | "каждого" | "КАЖДОГО" | "Each" | "each" | "EACH"
+kw_in ::= "Из" | "из" | "ИЗ" | "In" | "in" | "IN"
+kw_to ::= "По" | "по" | "ПО" | "To" | "to" | "TO"
+kw_while ::= "Пока" | "пока" | "ПОКА" | "While" | "while" | "WHILE"
+kw_do ::= "Цикл" | "цикл" | "ЦИКЛ" | "Do" | "do" | "DO"
+kw_enddo ::= "КонецЦикла" | "конеццикла" | "КОНЕЦЦИКЛА" | "EndDo" | "enddo" | "ENDDO"
+kw_break ::= "Прервать" | "прервать" | "ПРЕРВАТЬ" | "Break" | "break" | "BREAK"
+kw_continue ::= "Продолжить" | "продолжить" | "ПРОДОЛЖИТЬ" | "Continue" | "continue" | "CONTINUE"
+kw_function ::= "Функция" | "функция" | "ФУНКЦИЯ" | "Function" | "function" | "FUNCTION"
+kw_endfunction ::= "КонецФункции" | "конецфункции" | "КОНЕЦФУНКЦИИ" | "EndFunction" | "endfunction" | "ENDFUNCTION"
+kw_procedure ::= "Процедура" | "процедура" | "ПРОЦЕДУРА" | "Procedure" | "procedure" | "PROCEDURE"
+kw_endprocedure ::= "КонецПроцедуры" | "конецпроцедуры" | "КОНЕЦПРОЦЕДУРЫ" | "EndProcedure" | "endprocedure" | "ENDPROCEDURE"
+kw_return ::= "Возврат" | "возврат" | "ВОЗВРАТ" | "Return" | "return" | "RETURN"
+kw_var ::= "Перем" | "перем" | "ПЕРЕМ" | "Var" | "var" | "VAR"
+kw_export ::= "Экспорт" | "экспорт" | "ЭКСПОРТ" | "Export" | "export" | "EXPORT"
+kw_new ::= "Новый" | "новый" | "НОВЫЙ" | "New" | "new" | "NEW"
+kw_try ::= "Попытка" | "попытка" | "ПОПЫТКА" | "Try" | "try" | "TRY"
+kw_except ::= "Исключение" | "исключение" | "ИСКЛЮЧЕНИЕ" | "Except" | "except" | "EXCEPT"
+kw_endtry ::= "КонецПопытки" | "конецпопытки" | "КОНЕЦПОПЫТКИ" | "EndTry" | "endtry" | "ENDTRY"
+kw_raise ::= "ВызватьИсключение" | "вызватьисключение" | "ВЫЗВАТЬИСКЛЮЧЕНИЕ" | "Raise" | "raise" | "RAISE"
+kw_true ::= "Истина" | "истина" | "ИСТИНА" | "True" | "true" | "TRUE"
+kw_false ::= "Ложь" | "ложь" | "ЛОЖЬ" | "False" | "false" | "FALSE"
+kw_undefined ::= "Неопределено" | "неопределено" | "НЕОПРЕДЕЛЕНО" | "Undefined" | "undefined" | "UNDEFINED"
+kw_null ::= "NULL" | "null" | "Null"
+kw_and ::= "И" | "и" | "And" | "and" | "AND"
+kw_or ::= "Или" | "или" | "ИЛИ" | "Or" | "or" | "OR"
+kw_not ::= "Не" | "не" | "НЕ" | "Not" | "not" | "NOT"
+
+# Grammar Rules
+file ::= ws module_header? module_body ws
+
+module_header ::= var_declaration*
+
+module_body ::= method_declaration*
+
+method_declaration ::= function_declaration | procedure_declaration
+
+function_declaration ::= kw_function ws identifier ws "(" ws parameter_list? ws ")" ws export? ws statement* ws kw_endfunction
+
+procedure_declaration ::= kw_procedure ws identifier ws "(" ws parameter_list? ws ")" ws export? ws statement* ws kw_endprocedure
+
+parameter_list ::= parameter (ws "," ws parameter)*
+
+parameter ::= identifier (ws "=" ws expression)?
+
+var_declaration ::= kw_var ws identifier (ws "," ws identifier)* ws ";" ws
+
+statement ::= ws (assignment | if_statement | for_statement | while_statement | for_each_statement | try_statement | return_statement | break_statement | continue_statement | expression_statement) ws
+
+assignment ::= identifier ws "=" ws expression ws ";"
+
+if_statement ::= kw_if ws expression ws kw_then ws statement* (ws kw_elsif ws expression ws kw_then ws statement*)* (ws kw_else ws statement*)? ws kw_endif
+
+for_statement ::= kw_for ws identifier ws "=" ws expression ws kw_to ws expression ws kw_do ws statement* ws kw_enddo
+
+for_each_statement ::= kw_for ws kw_each ws identifier ws kw_in ws expression ws kw_do ws statement* ws kw_enddo
+
+while_statement ::= kw_while ws expression ws kw_do ws statement* ws kw_enddo
+
+try_statement ::= kw_try ws statement* ws kw_except ws statement* ws kw_endtry
+
+return_statement ::= kw_return (ws expression)? ws ";"
+
+break_statement ::= kw_break ws ";"
+
+continue_statement ::= kw_continue ws ";"
+
+expression_statement ::= expression ws ";"
+
+expression ::= logical_or_expression
+
+logical_or_expression ::= logical_and_expression (ws kw_or ws logical_and_expression)*
+
+logical_and_expression ::= equality_expression (ws kw_and ws equality_expression)*
+
+equality_expression ::= relational_expression (ws ("=" | "<>") ws relational_expression)*
+
+relational_expression ::= additive_expression (ws ("<" | "<=" | ">" | ">=") ws additive_expression)*
+
+additive_expression ::= multiplicative_expression (ws ("+" | "-") ws multiplicative_expression)*
+
+multiplicative_expression ::= unary_expression (ws ("*" | "/" | "%") ws unary_expression)*
+
+unary_expression ::= (kw_not ws unary_expression) | ("-" ws unary_expression) | primary_expression
+
+primary_expression ::= literal | identifier | function_call | new_expression | ("(" ws expression ws ")")
+
+function_call ::= identifier ws "(" ws argument_list? ws ")"
+
+argument_list ::= expression (ws "," ws expression)*
+
+new_expression ::= kw_new ws identifier ws "(" ws argument_list? ws ")"
+
+literal ::= number | string | kw_true | kw_false | kw_undefined | kw_null
+
+# Basic Tokens
+
+# Идентификаторы (поддержка кириллицы)
+identifier ::= [a-zA-Zа-яА-ЯёЁ_] [a-zA-Zа-яА-ЯёЁ0-9_]*
+
+# Числа
+number ::= [0-9]+ ("." [0-9]+)?
+
+# Строки (двойные или одинарные кавычки)
+string ::= "\"" [^\"]* "\"" | "'" [^']* "'"
+
+# Пробелы и комментарии
+ws ::= ([ \t\n\r] | comment)*
+
+comment ::= "//" [^\n]* | "/*" ([^*] | "*" [^/])* "*/"
+
+# Экспорт (опциональный)
+export ::= kw_export

@@ -1,0 +1,23 @@
+name: Linkerd Chaos
+
+on:
+  schedule:
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+jobs:
+  chaos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install deps
+        run: |
+          sudo apt-get update && sudo apt-get install -y curl
+          curl -Lo kind https://kind.sigs.k8s.io/dl/v0.22.0/kind-linux-amd64
+          chmod +x kind
+          sudo mv kind /usr/local/bin/kind
+      - name: Run Linkerd chaos scenario
+        run: |
+          curl -sL https://run.linkerd.io/install | sh
+          export PATH=$HOME/.linkerd2/bin:$PATH
+          bash scripts/service_mesh/linkerd/chaos_ci.sh

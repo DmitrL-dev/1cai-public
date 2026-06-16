@@ -1,0 +1,120 @@
+# Конфигурация провайдеров LLM и fallback-стратегий
+#
+# Этот файл не включает чувствительные данные (API-ключи). Секреты хранятся в Vault/переменных среды.
+# При необходимости создайте локальную копию config/llm_providers.local.yaml и переопределите параметры.
+
+providers:
+  openai:
+    type: remote
+    priority: 50
+    enabled: true
+    status: optional           # Может быть отключён регуляторно
+    base_url: https://api.openai.com/v1
+    models:
+      - name: gpt-4o
+        capabilities: [general, reasoning, english, code]
+      - name: gpt-4o-mini
+        capabilities: [general, russian, fast]
+    timeout_seconds: 40
+    retry_policy:
+      max_retries: 2
+      backoff_seconds: 5
+
+  gigachat:
+    type: remote
+    priority: 60
+    enabled: true
+    status: preferred
+    base_url: https://gigachat.devices.sberbank.ru/api
+    models:
+      - name: gigachat
+        capabilities: [general, russian, compliance]
+    timeout_seconds: 30
+    retry_policy:
+      max_retries: 3
+      backoff_seconds: 4
+
+  yandex-gpt:
+    type: remote
+    priority: 55
+    enabled: true
+    base_url: https://llm.api.cloud.yandex.net
+    models:
+      - name: yandexgpt-lite
+        capabilities: [general, russian, compliance]
+    timeout_seconds: 30
+    retry_policy:
+      max_retries: 2
+      backoff_seconds: 4
+
+  naparnik:
+    type: remote
+    priority: 40
+    enabled: true
+    base_url: https://naparnik.platform.1c.ru/api
+    models:
+      - name: naparnik-pro
+        capabilities: [1c, configuration, russian]
+    timeout_seconds: 25
+    retry_policy:
+      max_retries: 2
+      backoff_seconds: 3
+
+  local-qwen:
+    type: self_hosted
+    priority: 80
+    enabled: false             # включить после развёртывания локальной модели
+    status: planned
+    base_url: http://llm-gateway:8080/v1
+    driver: vllm
+    models:
+      - name: qwen2.5-coder-7b-instruct
+        capabilities: [code, russian]
+      - name: qwen2.5-coder-32b-instruct
+        capabilities: [code, analysis, russian]
+    timeout_seconds: 25
+    retry_policy:
+      max_retries: 1
+      backoff_seconds: 2
+
+  local-mistral:
+    type: self_hosted
+    priority: 70
+    enabled: false
+    status: planned
+    base_url: http://llm-gateway:8080/v1
+    driver: tgi
+    models:
+      - name: mistral-7b-instruct
+        capabilities: [general, reasoning, russian]
+    timeout_seconds: 25
+    retry_policy:
+      max_retries: 1
+      backoff_seconds: 2
+
+fallback_matrix:
+  developer:
+    primary: qwen3-coder
+    chain: [local-qwen, naparnik, gigachat, yandex-gpt, openai]
+  business_analyst:
+    primary: gigachat
+    chain: [yandex-gpt, openai, local-mistral]
+  qa_engineer:
+    primary: qwen3-coder
+    chain: [local-qwen, openai, gigachat]
+  architect:
+    primary: openai
+    chain: [gigachat, local-mistral, yandex-gpt]
+  devops:
+    primary: openai
+    chain: [local-mistral, gigachat, yandex-gpt]
+  technical_writer:
+    primary: gigachat
+    chain: [yandex-gpt, openai, local-mistral]
+
+health_checks:
+  interval_seconds: 60
+  failure_threshold: 3
+  recovery_threshold: 2
+  metrics_prefix: ai_provider
+

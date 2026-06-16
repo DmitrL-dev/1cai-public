@@ -1,0 +1,123 @@
+# Default values for ai-assistants
+replicaCount: 3
+
+image:
+  repository: ai-assistants/api
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  fsGroup: 1000
+  runAsNonRoot: true
+  runAsUser: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+    - ALL
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+  hosts:
+    - host: ai-assistants.company.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: ai-assistants-tls
+      hosts:
+        - ai-assistants.company.com
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Database configuration
+database:
+  host: ""
+  port: 5432
+  name: "aiassistants"
+  username: "postgres"
+  # Секрет должен быть создан отдельно
+  existingSecret: "ai-assistants-secrets"
+  existingSecretKey: "database.password"
+
+# Redis configuration
+redis:
+  host: ""
+  port: 6379
+  # Секрет должен быть создан отдельно
+  existingSecret: "ai-assistants-secrets"
+  existingSecretKey: "redis.password"
+
+# AI API configuration
+ai:
+  apiKeySecret: "ai-assistants-secrets"
+  apiKeySecretKey: "ai.api.key"
+
+# Logging
+logging:
+  level: info
+  format: json
+
+# Monitoring
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    path: /metrics
+
+# Backup configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Ежедневно в 2:00
+  retention: 7  # дней
+  storage:
+    type: s3
+    bucket: "ai-assistants-backups"
+
+# Environment-specific settings
+environment: production

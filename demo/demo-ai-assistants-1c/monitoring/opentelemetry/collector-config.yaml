@@ -1,0 +1,132 @@
+# OpenTelemetry Collector конфигурация
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  jaeger:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:14250
+      thrift_http:
+        endpoint: 0.0.0.0:14268
+      thrift_compact:
+        endpoint: 0.0.0.0:6831
+      thrift_binary:
+        endpoint: 0.0.0.0:6832
+  zipkin:
+    endpoint: 0.0.0.0:9411
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'otel-collector'
+          scrape_interval: 10s
+          static_configs:
+            - targets: ['localhost:8888']
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 8192
+    send_batch_max_size: 16384
+    
+  memory_limiter:
+    limit_mib: 512
+    spike_limit_mib: 128
+    check_interval: 5s
+    
+  resource:
+    attributes:
+      - key: service.name
+        value: demo-ai-assistants
+        action: upsert
+      - key: service.version
+        value: 1.0.0
+        action: upsert
+      - key: environment
+        value: production
+        action: upsert
+        
+  attributes:
+    actions:
+      - key: user.id
+        from_context: user.id
+        action: insert
+      - key: correlation.id
+        from_context: correlation.id
+        action: insert
+      - key: request.id
+        from_context: request.id
+        action: insert
+
+exporters:
+  jaeger:
+    endpoint: jaeger-collector:14250
+    tls:
+      insecure: true
+    retry_on_failure:
+      enabled: true
+      max_elapsed_time: 30s
+      initial_interval: 5s
+      max_interval: 10s
+      
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    namespace: demo_ai_assistants
+    const_labels:
+      service: "demo-ai-assistants"
+      
+  elasticsearch:
+    endpoints: [http://elasticsearch:9200]
+    index: demo-traces-{+yyyy.MM.dd}
+    tls:
+      ca_file: ""
+      cert_file: ""
+      key_file: ""
+      
+  logging:
+    loglevel: info
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+    path: /health
+    check_collector_pipeline:
+      enabled: true
+      path: /metrics
+      pipeline:
+        traces: [jaeger, zipkin, otlp]
+        metrics: [prometheus]
+        logs: []
+        
+  pprof:
+    endpoint: 0.0.0.0:1777
+    
+  zpages:
+    endpoint: 0.0.0.0:55679
+    
+  load_balancing:
+    service_name: demo-ai-assistants
+    endpoint: jaeger-collector:14250
+
+service:
+  extensions: [health_check, pprof, zpages, load_balancing]
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+    logs:
+      level: info
+      initial_fields:
+        service: demo-ai-assistants-collector
+  pipelines:
+    traces:
+      receivers: [otlp, jaeger, zipkin]
+      processors: [memory_limiter, resource, attributes, batch]
+      exporters: [jaeger, elasticsearch, logging]
+    metrics:
+      receivers: [prometheus]
+      processors: [memory_limiter, resource, batch]
+      exporters: [prometheus, logging]

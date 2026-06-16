@@ -1,0 +1,117 @@
+groups:
+  - name: ai_services
+    interval: 30s
+    rules:
+      # Kimi-K2-Thinking Alerts
+      - alert: KimiHighErrorRate
+        expr: |
+          rate(kimi_queries_total{status="error"}[5m]) / rate(kimi_queries_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: kimi_k2
+        annotations:
+          summary: "Kimi-K2-Thinking error rate is high"
+          description: "Kimi error rate is {{ $value | humanizePercentage }} (threshold: 10%)"
+
+      - alert: KimiServiceDown
+        expr: |
+          ai_service_available{service="kimi_k2"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: kimi_k2
+        annotations:
+          summary: "Kimi-K2-Thinking service is down"
+          description: "Kimi service is unavailable for more than 2 minutes"
+
+      - alert: KimiHighResponseTime
+        expr: |
+          histogram_quantile(0.95, rate(kimi_response_duration_seconds_bucket[5m])) > 60
+        for: 5m
+        labels:
+          severity: warning
+          service: kimi_k2
+        annotations:
+          summary: "Kimi-K2-Thinking response time is high"
+          description: "95th percentile response time is {{ $value }}s (threshold: 60s)"
+
+      - alert: KimiHighTokenUsage
+        expr: |
+          rate(kimi_tokens_used_total[5m]) > 10000
+        for: 5m
+        labels:
+          severity: warning
+          service: kimi_k2
+        annotations:
+          summary: "Kimi-K2-Thinking token usage is high"
+          description: "Token usage rate is {{ $value }} tokens/sec (threshold: 10000)"
+
+      # AI Orchestrator Alerts
+      - alert: OrchestratorHighFallbackRate
+        expr: |
+          rate(orchestrator_fallback_total[5m]) / rate(orchestrator_queries_total[5m]) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          service: orchestrator
+        annotations:
+          summary: "Orchestrator fallback rate is high"
+          description: "Fallback rate is {{ $value | humanizePercentage }} (threshold: 20%)"
+
+      - alert: OrchestratorLowCacheHitRate
+        expr: |
+          rate(orchestrator_cache_hits_total[5m]) / (rate(orchestrator_cache_hits_total[5m]) + rate(orchestrator_cache_misses_total[5m])) < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          service: orchestrator
+        annotations:
+          summary: "Orchestrator cache hit rate is low"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} (threshold: 50%)"
+
+      # General AI Service Alerts
+      - alert: AIServiceHighErrorRate
+        expr: |
+          rate(ai_errors_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: ai_services
+        annotations:
+          summary: "AI service error rate is high"
+          description: "Error rate is {{ $value }} errors/sec for service {{ $labels.service }}"
+
+      - alert: AIServiceUnavailable
+        expr: |
+          ai_service_available == 0
+        for: 3m
+        labels:
+          severity: critical
+          service: ai_services
+        annotations:
+          summary: "AI service is unavailable"
+          description: "Service {{ $labels.service }} (model: {{ $labels.model }}) is unavailable"
+
+      - alert: AIHighResponseTime
+        expr: |
+          histogram_quantile(0.95, rate(ai_response_duration_seconds_bucket[5m])) > 30
+        for: 5m
+        labels:
+          severity: warning
+          service: ai_services
+        annotations:
+          summary: "AI service response time is high"
+          description: "95th percentile response time is {{ $value }}s for {{ $labels.agent_type }} (threshold: 30s)"
+
+      - alert: AIHighTokenUsage
+        expr: |
+          rate(ai_tokens_used_total[5m]) > 50000
+        for: 5m
+        labels:
+          severity: warning
+          service: ai_services
+        annotations:
+          summary: "AI service token usage is high"
+          description: "Token usage rate is {{ $value }} tokens/sec for {{ $labels.model }} (threshold: 50000)"
+

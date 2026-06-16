@@ -1,0 +1,250 @@
+# Blackbox Exporter конфигурация для HTTP health checks
+
+modules:
+  # HTTP 2xx проверка
+  http_2xx:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 201, 202, 204]
+      method: GET
+      headers:
+        User-Agent: "Blackbox-Exporter/1.0"
+        Accept: "application/json"
+      no_follow_redirects: false
+      fail_if_ssl: false
+      fail_if_not_ssl: false
+      tls_config:
+        insecure_skip_verify: false
+      preferred_ip_protocol: "ip4"  # Переключаем на "ip6" для IPv6
+
+  # HTTP GET с аутентификацией
+  http_basic_auth:
+    prober: http
+    timeout: 15s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 201, 202]
+      method: GET
+      basic_auth:
+        username: "${HTTP_BASIC_AUTH_USERNAME}"
+        password: "${HTTP_BASIC_AUTH_PASSWORD}"
+
+  # HTTP POST запрос
+  http_post_2xx:
+    prober: http
+    timeout: 15s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 201, 202]
+      method: POST
+      headers:
+        Content-Type: "application/json"
+        User-Agent: "Blackbox-Exporter/1.0"
+      body: '{}'
+
+  # TCP проверка
+  tcp_connect:
+    prober: tcp
+    timeout: 10s
+
+  # ICMP ping
+  icmp:
+    prober: icmp
+    timeout: 10s
+    icmp:
+      preferred_ip_protocol: "ip4"
+
+  # DNS проверка
+  dns_udp:
+    prober: dns
+    timeout: 10s
+    dns:
+      query_name: "localhost.localdomain"
+      query_type: "A"
+      valid_rcodes:
+        - NOERROR
+      validate_answer_rrs:
+        fail_if_matches_regexp:
+          - ".*127.0.0.1"
+        fail_if_not_matches_regexp:
+          - ".*localhost.localdomain.*    300.*    IN.*    A.*"
+
+  # DNS с TCP
+  dns_tcp:
+    prober: dns
+    timeout: 10s
+    dns:
+      transport_protocol: "tcp"
+      query_name: "localhost.localdomain"
+      query_type: "A"
+
+  # SMTP проверка
+  smtp:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      query_response:
+        - expect: "^220.*"
+        - send: "HELO localhost.localdomain"
+        - expect: "^250.*"
+        - send: "QUIT"
+        - expect: "^221.*"
+
+  # SSH проверка
+  ssh_banner:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      query_response:
+        - expect: "^SSH-2.0-"
+
+  # Oracle Database проверка
+  oracle:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      query_response:
+        - send: "SELECT 1 FROM dual"
+        - expect: "^1$"
+
+  # PostgreSQL проверка
+  postgres:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      query_response:
+        - send: ""
+        - send: ""
+        - send: ""
+        - send: "SELECT 1"
+        - send: ""
+        - expect: "1"
+
+# Модули для Demo AI Assistants
+
+  # API Gateway health check
+  api_gateway_health:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200]
+      method: GET
+      headers:
+        User-Agent: "Blackbox-Exporter/1.0"
+        Accept: "application/json"
+      url: http://api-gateway:8080/health/live
+      no_follow_redirects: false
+
+  # API Gateway readiness check
+  api_gateway_ready:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200]
+      method: GET
+      url: http://api-gateway:8080/health/ready
+
+  # Edge Functions health check
+  edge_functions_health:
+    prober: http
+    timeout: 15s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200, 404]  # 404 тоже считаем нормальным для health endpoint
+      method: GET
+      url: http://supabase-functions:8000/health/live
+
+  # Frontend health check
+  frontend_health:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+      valid_status_codes: [200]
+      method: GET
+      url: http://frontend:3000/health
+
+  # Database connection check
+  database_health:
+    prober: tcp
+    timeout: 10s
+    tcp:
+      host: postgres
+      port: 5432
+
+  # Redis connection check
+  redis_health:
+    prober: tcp
+    timeout: 5s
+    tcp:
+      host: redis
+      port: 6379
+
+  # Elasticsearch health check
+  elasticsearch_health:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1"]
+      valid_status_codes: [200]
+      method: GET
+      url: http://elasticsearch:9200/_cluster/health
+
+  # Kibana health check
+  kibana_health:
+    prober: http
+    timeout: 15s
+    http:
+      valid_http_versions: ["HTTP/1.1"]
+      valid_status_codes: [200]
+      method: GET
+      url: http://kibana:5601/api/status
+
+  # Prometheus health check
+  prometheus_health:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1"]
+      valid_status_codes: [200]
+      method: GET
+      url: http://prometheus:9090/-/healthy
+
+  # Grafana health check
+  grafana_health:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1"]
+      valid_status_codes: [200]
+      method: GET
+      url: http://grafana:3000/api/health
+
+  # Jaeger health check
+  jaeger_health:
+    prober: http
+    timeout: 10s
+    http:
+      valid_http_versions: ["HTTP/1.1"]
+      valid_status_codes: [200]
+      method: GET
+      url: http://jaeger-query:16686/api/services
+
+# Настройки для всех модулей по умолчанию
+http:
+  user_agent: "Blackbox-Exporter/1.0"
+  # fail_if_not_matches_regexp: []
+  # fail_if_matches_regexp: []
+
+tcp:
+  # query_response: []
+
+icmp:
+  # preferred_ip_protocol: "ip4"
+
+dns:
+  # transport_protocol: "udp"

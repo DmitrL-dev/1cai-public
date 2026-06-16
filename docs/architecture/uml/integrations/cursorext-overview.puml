@@ -1,0 +1,42 @@
+@startuml CursorExtOverview
+title CursorExt / IDE Telemetry Integration
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam arrowColor #0f62fe
+skinparam component {
+  FontColor #161616
+  BackgroundColor #e7f0ff
+  BorderColor #0f62fe
+}
+
+actor Developer as Dev
+component "Cursor IDE\nExtension" as CursorExt {
+  [Command Palette]
+  [CodeLens Hooks]
+  [File Sync Agent]
+}
+
+component "CursorExt Gateway\n(src/cursorext/*.py)" as Gateway
+component "Telemetry Queue\n(Redis Stream)" as Queue
+database "Observability Stack\n(OpenTelemetry Collector)" as Otel
+component "AI Services\n(FastAPI, MCP)" as AiServices
+component "Analytics Store\n(PostgreSQL + MinIO)" as Store
+
+Dev --> CursorExt : actions / prompts
+CursorExt --> Gateway : HTTPS (mTLS)
+Gateway --> Queue : push telemetry\nrate limit + batching
+Queue --> Otel : OTLP exporter
+Otel --> Store : structured events\nartifacts
+Gateway --> AiServices : realtime RPC\n(analysis, code gen)
+AiServices --> Store : session summaries
+Store --> Dev : dashboards / reports
+
+note right of Gateway
+* JWT auth per tenant
+* Circuit breaker vs AI services
+* Offline cache для\nIDE telemetry
+end note
+
+@enduml
+

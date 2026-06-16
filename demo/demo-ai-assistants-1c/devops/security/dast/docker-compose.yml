@@ -1,0 +1,45 @@
+# OWASP ZAP Configuration for DAST
+version: '3.8'
+
+services:
+  zap:
+    image: owasp/zap2docker-stable:latest
+    container_name: zap-baseline-scan
+    command: >
+      zap-baseline.py
+      -t ${TARGET_URL:-http://localhost:3000}
+      -J zap-report.json
+      -r zap-report.html
+      -m 5
+      -d
+      -z "auth.method=script
+          auth.script=auth.js
+          auth.script攀aram={username:${ZAP_USERNAME:-admin},password:${ZAP_PASSWORD:-admin}}"
+    environment:
+      - TARGET_URL=http://ai-assistants.company.com
+      - ZAP_USERNAME=admin
+      - ZAP_PASSWORD=secure_password_123!
+    volumes:
+      - ./auth.js:/zap/auth.js
+      - ./zap-reports:/zap/wrk
+    networks:
+      - zap-network
+    depends_on:
+      - selenium
+
+  selenium:
+    image: selenium/standalone-chrome:latest
+    container_name: selenium-standalone
+    environment:
+      - SE_OPTS=--disable-dev-shm-usage
+    volumes:
+      - /dev/shm:/dev/shm
+    networks:
+      - zap-network
+
+networks:
+  zap-network:
+    driver: bridge
+
+volumes:
+  zap-reports:

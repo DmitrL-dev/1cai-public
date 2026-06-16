@@ -1,0 +1,135 @@
+# Скрейпер 1С ИТС (`integrations/its_scraper`)
+
+## 📌 Назначение
+
+Инструмент для массовой выгрузки статей с портала 1С:ИТС, конвертации их в несколько форматов (JSON, Markdown, TXT) и подготовки метаданных для дальнейшего использования в ML/RAG-пайплайнах. Скрейпер построен на `httpx` + `BeautifulSoup`, поддерживает параллельные запросы, экспоненциальные ретраи и настраиваемые CSS-селекторы.
+
+> Основа взята из проекта [hawkxtreme/scraping_its](https://github.com/hawkxtreme/scraping_its).  
+> Огромное спасибо автору за отличную базу: мы адаптировали решения под наши пайплайны, добавив интеграцию и дополнительные функции.
+
+## 🚀 Особенности
+
+- ✅ Асинхронный загрузчик (`httpx.AsyncClient`) + семафор для ограничения параллелизма.
+- ✅ Экспоненциальные ретраи (`tenacity`), настраиваемое число попыток, таймауты и задержка между запросами.
+- ✅ Гибкая конфигурация (CSS-селекторы, лимиты, user-agent rotation, concurrency, sleep, proxy, metrics) через JSON.
+- ✅ Генерация нескольких форматов: JSON/Markdown/TXT + RAG-метаданные (`output/<slug>/metadata.json`) с `content_hash`, `word_count`, `excerpt`, `previous_version`.
+- ✅ Возможность пропускать уже загруженные статьи (`--update`), версионирование и архив предыдущих ревизий (`versions/<timestamp>/`).
+- ✅ Stream-режим (JSONL), Prometheus-метрики и queue-based producer/consumer с поддержкой `state_file` для резюма.
+- ✅ Простое подключение в пайплайны (Typer CLI, Python API, Makefile-таргет).
+
+## 🧩 Установка зависимостей
+
+```bash
+pip install -r requirements.txt
+```
+
+Зависимости: `httpx`, `tenacity`, `beautifulsoup4`, `markdownify`, `typer`, `pydantic`.
+
+## 🛠 CLI
+
+```bash
+python -m integrations.its_scraper scrape \
+  https://its.1c.ru/db/cabinetdoc \
+  --format json --format markdown \
+  --limit 25 \
+  --output data/its-dump
+```
+
+Доступные флаги:
+
+| Параметр         | Описание                                                                   |
+|------------------|----------------------------------------------------------------------------|
+| `start_url`      | URL страницы со списком статей                                            |
+| `--format, -f`   | Форматы (`json`, `markdown`, `txt`)                                        |
+| `--limit`        | Ограничение на количество статей                                          |
+| `--config, -c`   | Путь к JSON-конфигу (`ScrapeConfig`)                                      |
+| `--update`       | Пропустить статьи с уже существующим `metadata.json` в папке статьи       |
+| `--concurrency, -n` | Переопределить параллелизм                                             |
+| `--sleep, -s`    | Задержка между HTTP-запросами (секунды)                                   |
+| `--user-agent`   | Переопределить User-Agent (можно указать несколько раз)                   |
+| `--user-agent-file` | Файл со списком User-Agent для ротации                               |
+| `--proxy`        | Прокси для доступа к ИТС                                                 |
+| `--metrics-port` | Порт для Prometheus (например, 9200)                                      |
+| `--stream`       | Выводить JSONL в stdout вместо сохранения на диск                        |
+| `--state-file`   | Путь к файлу состояния queue (для `--resume`)                            |
+| `--resume`       | Считать очередь из state-файла и продолжить скрейп                       |
+| `--output, -o`   | Директория для сохранения                                                 |
+
+Сгенерировать конфиг:
+
+```bash
+python -m integrations.its_scraper generate-config ./its.config.json
+```
+
+## 🧱 Конфигурация
+
+`ScrapeConfig` определяет селекторы и параметры подключения. Пример (`its.config.json`):
+
+```json
+{
+  "start_url": "https://its.1c.ru/db/cabinetdoc",
+  "article_link_selector": "a.article-list__item",
+  "article_title_selector": "h1",
+  "article_content_selector": "[data-role='content']",
+  "next_page_selector": "a.pagination__next",
+  "formats": ["json", "markdown"],
+  "concurrency": 5,
+  "retry_attempts": 4,
+  "request_timeout": 45,
+  "output_directory": "output/its-scraper",
+  "rag_metadata": true,
+  "user_agents": [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Firefox/125.0"
+  ],
+  "proxy": null,
+  "delay_between_requests": 0.5
+}
+```
+
+## 🔄 Интеграция с пайплайнами
+
+- **Makefile**: `make scrape-its` поддерживает `ITS_START_URL`, `ITS_OUTPUT`, `ITS_FORMATS`, `ITS_CONCURRENCY`, `ITS_SLEEP`, `ITS_PROXY`, `ITS_USER_AGENT_FILE`.
+- **Orchestrator**: модуль можно дергать как Python API:
+
+```python
+from integrations.its_scraper import ITSScraper, DEFAULT_CONFIG, persist_article
+
+config = DEFAULT_CONFIG.copy(update={"start_url": "https://its.1c.ru/db/cabinetdoc"})
+async with ITSScraper(config) as scraper:
+    for article in await scraper.scrape():
+        persist_article(article, config)
+```
+
+## ✅ Тесты
+## 📈 Метрики и мониторинг
+
+- `--metrics-port 9200` — поднимает Prometheus endpoint (`/metrics`).
+- Метрики:
+  - `its_scraper_requests_total{status}` — успешные/ошибочные запросы к ИТС.
+  - `its_scraper_articles_total{state}` — сколько статей сохранено/пропущено/от.streamлено.
+  - `its_scraper_request_duration_seconds` — длительность цикла скрейпа.
+  - `its_scraper_delay_seconds` — текущий адаптивный delay (увеличивается при ошибках).
+- Подключите endpoint к `prometheus.yml` и добавьте алерты на рост `status="failed"`.
+
+Юнит-тесты `tests/unit/test_its_scraper.py` эмулируют ответы сервера через `httpx.MockTransport`. Запуск:
+
+```bash
+pytest tests/unit/test_its_scraper.py
+```
+
+CI автоматически прогоняет тесты благодаря обновлённым зависимостям.
+
+## ⚠️ Ограничения и рекомендации
+
+- Убедитесь, что ваша подписка на ИТС позволяет массовую выгрузку материалов.
+- Не поднимайте `concurrency` слишком высоко: стандартное значение 5 щадит сервер.
+- Для больших выгрузок добавьте паузы между запусками и ведите учёт изменений через `metadata.json`.
+- Если структура страниц меняется, скорректируйте селекторы в конфиге и распишите это в README.
+
+## 📚 Следующие шаги
+
+- Добавить прямую выгрузку в MinIO/S3.
+- Хранить эмбеддинги в Qdrant/Neo4j сразу после парсинга.
+- Расширить тесты контрактами с реальным стендом (на отдельной ветке).
+

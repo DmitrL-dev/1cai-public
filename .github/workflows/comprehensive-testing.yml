@@ -1,0 +1,440 @@
+name: Comprehensive Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio pytest-cov pytest-mock pytest-html allure-pytest
+    
+    - name: Run unit tests
+      run: |
+        mkdir -p output/test-results
+        pytest tests/unit/ -v --cov=src --cov-report=xml --junitxml=output/test-results/unit-junit.xml --html=output/test-results/unit-report.html --self-contained-html --alluredir=output/test-results/allure
+    
+    - name: Run revolutionary component tests
+      run: |
+        pytest tests/unit/test_event_bus.py tests/unit/test_self_evolving_ai.py tests/unit/test_self_healing_code.py tests/unit/test_distributed_agent_network.py tests/unit/test_code_dna.py tests/unit/test_predictive_code_generation.py -v
+    
+    - name: Upload coverage
+      if: always()
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage.xml
+        flags: unittests
+        fail_ci_if_error: false
+
+    - name: Upload unit test artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: unit-test-results
+        path: output/test-results
+        if-no-files-found: warn
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: enterprise_1c_ai_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio asyncpg redis python-dotenv
+    
+    - name: Run integration tests
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/enterprise_1c_ai_test
+        TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/enterprise_1c_ai_test
+        REDIS_URL: redis://localhost:6379
+      run: |
+        python scripts/run_migrations.py
+        pytest tests/integration/ -v
+    
+    - name: Run revolutionary integration tests
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/enterprise_1c_ai_test
+        REDIS_URL: redis://localhost:6379
+      run: |
+        pytest tests/integration/test_event_driven_ml_tasks.py tests/e2e/test_integrated_system.py -v
+
+  system-tests:
+    name: System & E2E Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: enterprise_1c_ai_test
+        ports:
+          - 5432:5432
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio
+    
+    - name: Run system tests
+      run: pytest tests/system/ -v
+
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio psutil
+    
+    - name: Run performance tests
+      run: pytest tests/performance/ -v -s
+    
+    - name: Install K6
+      run: |
+        sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+        echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+        sudo apt-get update
+        sudo apt-get install k6
+    
+    - name: Run load tests
+      run: k6 run tests/load/k6_load_test.js
+
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install pytest bcrypt
+    
+    - name: Run security tests
+      run: pytest tests/security/ -v || echo "Security tests failed, continuing..."
+
+    - name: Run Bandit security scan
+      run: |
+        pip install bandit || true
+        bandit -r src/ -ll || echo "Bandit scan failed, continuing..."
+
+    - name: Run Safety check
+      run: |
+        pip install safety || true
+        safety check || echo "Safety check failed, continuing..."
+
+  acceptance-tests:
+    name: Acceptance Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio
+    
+    - name: Run acceptance tests
+      run: pytest tests/acceptance/ -v
+
+  spec-driven-validation:
+    name: Spec-Driven Validation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+
+    - name: Validate feature specs and standards
+      run: |
+        if command -v make &> /dev/null; then
+          make feature-validate || echo "Feature validation failed, continuing..."
+          make validate-standards || echo "Standards validation failed, continuing..."
+        else
+          echo "Make not available, skipping validation"
+        fi
+
+  bsl-tests:
+    name: BSL Tests
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Run BSL manifest
+      run: python scripts/tests/run_bsl_tests.py --manifest tests/bsl/testplan.json --artifacts-dir output/bsl-tests
+
+    - name: Upload BSL test logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: bsl-test-artifacts
+        path: output/bsl-tests
+        if-no-files-found: ignore
+
+  whitebox-analysis:
+    name: White-box Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install analysis tools
+      run: |
+        pip install radon vulture pytest
+    
+    - name: Run complexity analysis
+      run: radon cc src/ -a
+    
+    - name: Run maintainability index
+      run: radon mi src/
+    
+    - name: Check dead code
+      run: vulture src/ --min-confidence 80
+    
+    - name: Run white-box tests
+      run: pytest tests/whitebox/ -v -s || echo "White-box tests failed, continuing..."
+
+    - name: Validate features
+      run: |
+        if command -v make &> /dev/null; then
+          make feature-validate || echo "Feature validation skipped"
+        else
+          echo "Make not available, skipping feature validation"
+        fi
+
+  smoke-tests:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Prepare smoke docker service
+      run: |
+        if command -v docker &> /dev/null && command -v docker-compose &> /dev/null; then
+          docker compose up -d smoke-api || echo "Docker compose failed, skipping smoke service"
+          docker compose wait smoke-api || echo "Smoke service not available"
+        else
+          echo "Docker not available, skipping smoke service setup"
+        fi
+
+    - name: Run smoke checks
+      run: |
+        if command -v make &> /dev/null; then
+          make smoke-tests || echo "Smoke tests failed, continuing..."
+        else
+          echo "Make not available, running basic smoke checks"
+          python -c "import sys; print('Python OK')" || exit 1
+        fi
+
+    - name: Tear down smoke docker service
+      if: always()
+      run: |
+        if command -v docker &> /dev/null && command -v docker-compose &> /dev/null; then
+          docker compose down smoke-api || true
+        fi
+
+  full-project-audit:
+    name: Full Project Audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt || true
+        pip install -r requirements-neural.txt || true
+        pip install -r requirements-parser-optimization.txt || true
+        pip install -r requirements-stage1.txt || true
+        pip install -r requirements-telegram.txt || true
+        pip install -r requirements.gateway.txt || true
+        pip install -r requirements.metrics.txt || true
+        pip install -r requirements.risk.txt || true
+
+    - name: Run full audit
+      env:
+        PYTHONIOENCODING: utf-8
+      run: python run_full_audit.py --stop-on-failure
+
+    - name: Upload audit reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: full-audit-reports
+        path: |
+          BROKEN_LINKS_REPORT.txt
+          COMPREHENSIVE_AUDIT_FINAL.txt
+          SECURITY_AUDIT_REPORT.txt
+          README_CODE_VERIFICATION.txt
+
+

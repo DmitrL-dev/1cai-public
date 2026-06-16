@@ -1,0 +1,53 @@
+# Dev Container Configuration
+
+Конфигурация для разработки в Docker контейнере.
+
+## 🚀 Быстрый старт
+
+1. Откройте проект в Cursor/VSCode
+2. Выберите "Reopen in Container" когда появится запрос
+3. Дождитесь сборки контейнера (первый раз может занять 5-10 минут)
+
+## ⚠️ Проблемы на Windows
+
+### Ошибка: `Failed to run devcontainer command`
+
+**Основная причина:** Пробелы в пути к проекту (например, `package (1)`)
+
+**Быстрое решение:**
+
+```powershell
+# Переименуйте папку проекта без пробелов
+Rename-Item "C:\Users\User\Downloads\package (1)" "package-1"
+```
+
+**Альтернатива:** Используйте WSL2 для лучшей совместимости:
+
+```bash
+# В WSL2
+cd ~
+git clone <repo-url> package-1
+cd package-1
+# Откройте в Cursor из WSL2 пути
+```
+
+Подробнее см. [TROUBLESHOOTING.md](../TROUBLESHOOTING.md#ошибка-failed-to-install-cursor-server-failed-to-run-devcontainer-command)
+
+## 📋 Требования
+
+- Docker Desktop установлен и запущен
+- Минимум 8GB RAM для Docker
+- 20GB свободного места на диске
+
+## 🔧 Что включено
+
+- Python 3.11
+- Node.js 18
+- PostgreSQL, Redis, Neo4j, Qdrant
+- Все зависимости из `requirements.txt` и `requirements-dev.txt`
+
+## 📝 Дополнительная информация
+
+- [Полная документация по troubleshooting](../TROUBLESHOOTING.md)
+- [Quick Start Guide](../docs/01-getting-started/quickstart.md)
+

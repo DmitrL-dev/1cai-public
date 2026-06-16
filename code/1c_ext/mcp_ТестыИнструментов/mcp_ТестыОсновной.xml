@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.1/data-composition-system/settings" xmlns:cmi="http://v8.1c.ru/8.2/managed-application/cmi" xmlns:ent="http://v8.1c.ru/8.1/data-enterprise" xmlns:lf="http://v8.1c.ru/8.1/managed-application/logform" xmlns:style="http://v8.1c.ru/8.1/data-composition-system/style" xmlns:sys="http://v8.1c.ru/8.1/data-ui/system-types" xmlns:unig="http://v8.1c.ru/8.1/uni-universes" xmlns:uni="http://v8.1c.ru/8.1/uni-core" xmlns:v8="http://v8.1c.ru/8.1/data-core" xmlns:v8ui="http://v8.1c.ru/8.1/data-ui" xmlns:web="http://v8.1c.ru/8.1/data-web-platform" xmlns:win="http://v8.1c.ru/8.1/data-windows" xmlns:ws="http://v8.1c.ru/8.1/data-sp" xmlns:wsc="http://v8.1c.ru/8.1/data-composition-system/window-config" xmlns:wsf="http://v8.1c.ru/8.1/data-ux" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.18">
+	<DataProcessor uuid="a1b2c3d4-e5f6-7890-abcd-ef1234567890" name="mcp_ТестыОсновной">
+		<InternalInfo>
+			<Comment>Основная тестовая обработка для комплексного тестирования MCP инструментов
+			
+			Возможности:
+			- Тестирование всех доступных MCP инструментов
+			- Positive/Negative/Edge cases/Performance тесты
+			- Подробная отчетность с метриками
+			- Генерация тестовых данных для изоляции</Comment>
+			<synonym>
+				<v8:item lang="ru">Тесты MCP инструментов</v8:item>
+			</synonym>
+			<comment>Комплексное тестирование MCP инструментов с подробной отчетностью</comment>
+		</InternalInfo>
+		<Properties>
+			<Name>mcp_ТестыОсновной</Name>
+			<Synonym>
+				<v8:item lang="ru">Тесты MCP инструментов</v8:item>
+			</Synonym>
+			<Comment>Основная тестовая обработка для проверки всех MCP инструментов</Comment>
+			<UseStandardCommands>true</UseStandardCommands>
+			<DefaultForm>DataProcessor.mcp_ТестыОсновной.Form.ФормаТестов</DefaultForm>
+			<HelpFileName></HelpFileName>
+			<CreateOnStart>UseListAdd</CreateOnStart>
+			<SearchStringMode>EntireLevel</SearchStringMode>
+			<DefaultListForm>DataProcessor.mcp_ТестыОсновной.Form.ФормаСписка</DefaultListForm>
+			<DefaultChoiceForm>DataProcessor.mcp_ТестыОсновной.Form.ФормаВыбора</DefaultChoiceForm>
+			<AuxiliaryObjectGroup/>
+			<AuxiliaryObject/>
+			<MainObjectGroup/>
+			<MainObject/>
+			<HelpUrl/>
+			<Vendor/>
+			<Version/>
+			<UpdateCatalogAddress/>
+			<IncludeInHelpCollection>false</IncludeInHelpCollection>
+		</Properties>
+		<ChildObjects>
+			<Form>ФормаТестов</Form>
+			<Form>ФормаНастроек</Form>
+			<Form>ФормаОтчета</Form>
+			<Form>ФормаСписка</Form>
+			<Form>ФормаВыбора</Form>
+			<ManagerModule>Ext/ManagerModule.bsl</ManagerModule>
+			<ObjectModule>Ext/ObjectModule.bsl</ObjectModule>
+		</ChildObjects>
+	</DataProcessor>
+</MetaDataObject>

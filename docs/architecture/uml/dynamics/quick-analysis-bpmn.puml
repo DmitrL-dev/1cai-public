@@ -1,0 +1,42 @@
+@startuml
+title Quick Analysis Journey (Developer)
+
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #f6fdf3
+  SwimlaneFontSize 12
+}
+
+partition "Developer" {
+  :Open EDT project;
+  :Invoke Quick Analysis;
+  --> "Graph API" : Request payload;
+  :Await results;
+  :Review findings;
+  if (Need actions?) then (yes)
+    :Trigger fixes (auto refactor);
+    :Re-run analysis;
+  else (no)
+    :Create ticket / document decision;
+  endif
+}
+
+partition "Graph API" {
+  :Validate auth / scope;
+  :Enqueue job;
+  --> "Workers" : Dispatch analysis;
+  :Stream progress to IDE;
+  :Assemble response;
+  --> "Developer" : Return metrics + dependencies;
+}
+
+partition "Workers" {
+  :Parse EDT metadata;
+  :Run dependency graph;
+  :Run best practices engine;
+  :Aggregate metrics;
+  --> "Graph API" : Persist and notify;
+}
+
+@enduml
+

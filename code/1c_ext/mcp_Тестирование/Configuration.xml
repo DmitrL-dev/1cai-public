@@ -1,0 +1,464 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.2/managed-application/config" xmlns:cmi="http://v8.1c.ru/8.2/managed-application/cmi" xmlns:ent="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:excf="http://v8.1c.ru/8.2/managed-application/exchangeform" xmlns:ft="http://v8.1c.ru/8.2/managed-application/forms" xmlns:ftd="http://v8.1c.ru/8.2/managed-application/forms-data" xmlns:fts="http://v8.1c.ru/8.2/managed-application/form-tree" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" configurationFullCompatibility="false" configurationCompatibilityMode="8.3.16" applicationCompatibility="8.3.16" defaultRunMode="managed-application" dataLockControlMode="managed" dataLockUseMode="manual" modifieUseMode="extended" sessionSessionMode="mixed" uuid="test-configuration" version="1.0.0">
+	<configuration>
+		<Properties>
+			<Name>MCP_Testing_Framework</Name>
+			<Synonym>
+				<key>ru</key>
+				<value>Фреймворк тестирования MCP</value>
+			</Synonym>
+			<Comment>Фреймворк тестирования для проекта 1c_mcp</Comment>
+			<Version>1.0.0</Version>
+			<ConfigurationExtensionCompatibilityMode>8.3.16</ConfigurationExtensionCompatibilityMode>
+			<Modification>Extension</Modification>
+			<AutoUpdate>False</AutoUpdate>
+			<DefaultLanguage>ru</DefaultLanguage>
+			<DefaultRunMode>ManagedApplication</DefaultRunMode>
+			<DefaultUseMode>Use</DefaultUseMode>
+			<SessionMode>Mixed</SessionMode>
+			<SessionRoles>Empty</SessionRoles>
+			<SessionSessionMode>Mixed</SessionSessionMode>
+		</Properties>
+		
+		<!-- Подсистемы -->
+		<Subsystems uuid="mcp_testing_subsystem">
+			<Properties>
+				<Name>Мср_Тестирование</Name>
+				<Synonym>
+					<key>ru</key>
+					<value>MCP Тестирование</value>
+				</Synonym>
+				<Comment>Подсистема для управления тестированием MCP</Comment>
+				<Representation>Hierarchy</Representation>
+				<Help>
+					<key>ru</key>
+					<value>Содержит инструменты для тестирования компонентов MCP</value>
+				</Help>
+			</Properties>
+			<ChildObjects>
+				<CommonModule>Мср_Тестирование</CommonModule>
+				<DataProcessor>Мср_Тест_Инструментов</DataProcessor>
+				<DataProcessor>Мср_Тест_HTTPСервисов</DataProcessor>
+				<DataProcessor>Мср_Тест_E2EПолныйЦикл</DataProcessor>
+				<Form>Мср_УправлениеТестами</Form>
+				<Role>Мср_РольТестировщика</Role>
+			</ChildObjects>
+		</Subsystems>
+
+		<!-- Общие модули -->
+		<CommonModule uuid="mcp_testing_module">
+			<Properties>
+				<Name>Мср_Тестирование</Name>
+				<Synonym>
+					<key>ru</key>
+					<value>Тестирование</value>
+				</Synonym>
+				<Comment>Основной модуль фреймворка тестирования MCP</Comment>
+				<Global>false</Global>
+				<ClientManagedApplication>true</ClientManagedApplication>
+				<Server>true</Server>
+				<ExternalConnection>true</ExternalConnection>
+				<ServerCallContext>true</ServerCallContext>
+			</Properties>
+			<Module>Module.bsl</Module>
+		</CommonModule>
+
+		<CommonModule uuid="mcp_testing_comparison_utility">
+			<Properties>
+				<Name>Мср_СравнениеДанных</Name>
+				<Synonym>
+					<key>ru</key>
+					<value>Сравнение данных</value>
+				</Synonym>
+				<Comment>Утилиты для сравнения структур и данных</Comment>
+				<Global>false</Global>
+				<ClientManagedApplication>true</ClientManagedApplication>
+				<Server>true</Server>
+				<ExternalConnection>true</ExternalConnection>
+				<ServerCallContext>true</ServerCallContext>
+			</Properties>
+			<Module>Утилиты/СравнениеДанных.bsl</Module>
+		</CommonModule>
+
+		<CommonModule uuid="mcp_testing_reports_utility">
+			<Properties>
+				<Name>Мср_ГенераторОтчетов</Name>
+				<Synonym>
+					<key>ru</key>
+					<value>Генератор отчетов</value>
+				</Synonym>
+				<Comment>Генератор отчетов о результатах тестирования</Comment>
+				<Global>false</Global>
+				<ClientManagedApplication>true</ClientManagedApplication>
+				<Server>true</Server>
+				<ExternalConnection>true</ExternalConnection>
+				<ServerCallContext>true</ServerCallContext>
+			</Properties>
+			<Module>Утилиты/ГенераторОтчетов.bsl</Module>
+		</CommonModule>
+
+		<!-- Обработки -->
+		<DataProcessor uuid="mcp_basic_tests">
+			<Properties>
+				<Name>Мср_Тест_Инструментов</Name>
+				<Synonym>
+					<key>ru</key>
+					<value>Тест инструментов</value>
+				</Synonym>
+				<Comment>Базовая тестовая обработка для MCP инструментов</Comment>
+				<DefaultObjectForm>Мср_ФормаУправленияТестами</DefaultObjectForm>
+				<DefaultListForm>Мср_ФормаУправленияТестами</DefaultListForm>
+			</Properties>
+			<ObjectModule>ТестовыеОбработки/Тест_MCPИнструмента_Базовый.epf</ObjectModule>
+		</DataProcessor>
+
+		<DataProcessor uuid="mcp_http_tests">
+			<Properties>
+				<Name>Мср_Тест_HTTPСервисов</Name>
+				<Synonym>
+					<key>ru</key>
+					<value>Тест HTTP сервисов</value>
+				</Synonym>
+				<Comment>Тестовая обработка для HTTP сервисов и JSON-RPC</Comment>
+				<DefaultObjectForm>Мср_ФормаУправленияТестами</DefaultObjectForm>
+			</Properties>
+			<ObjectModule>ТестовыеОбработки/Тест_HTTP_Services.epf</ObjectModule>
+		</DataProcessor>
+
+		<DataProcessor uuid="mcp_e2e_tests">
+			<Properties>
+				<Name>Мср_Тест_E2EПолныйЦикл</Name>
+				<Synonym>
+					<key>ru</key>
+					<value>Тест E2E полный цикл</value>
+				</Synonym>
+				<Comment>End-to-End тесты полного цикла работы с MCP</Comment>
+				<DefaultObjectForm>Мср_ФормаУправленияТестами</DefaultObjectForm>
+			</Properties>
+			<ObjectModule>ТестовыеОбработки/Тест_E2E_ПолныйЦикл.epf</ObjectModule>
+		</DataProcessor>
+
+		<!-- Форма управления тестами -->
+		<Form uuid="mcp_test_management_form">
+			<Properties>
+				<Name>Мср_ФормаУправленияТестами</Name>
+				<Synonym>
+					<key>ru</key>
+					<value>Форма управления тестами</value>
+				</Synonym>
+				<Comment>Интерфейс для управления и запуска тестов</Comment>
+				<FormType>managed</FormType>
+				<AutoSaveSettings>Use</AutoSaveSettings>
+			</Properties>
+			<Attributes>
+				<Attribute uuid="test_suites_attribute">
+					<Name>ТестовыеНаборы</Name>
+					<Synonym>
+						<key>ru</key>
+						<value>Тестовые наборы</value>
+					</Synonym>
+					<Type>
+						<v8:Type>cfg:ValueTable</v8:Type>
+					</Type>
+					<Attribute>
+						<v8:Name>Имя</v8:Name>
+						<v8:Type>cfg:String</v8:Type>
+					</Attribute>
+					<Attribute>
+						<v8:Name>Описание</v8:Name>
+						<v8:Type>cfg:String</v8:Type>
+					</Attribute>
+					<Attribute>
+						<v8:Name>Категория</v8:Name>
+						<v8:Type>cfg:String</v8:Type>
+					</Attribute>
+					<Attribute>
+						<v8:Name>Включен</v8:Name>
+						<v8:Type>cfg:Boolean</v8:Type>
+					</Attribute>
+					<Attribute>
+						<v8:Name>Статус</v8:Name>
+						<v8:Type>cfg:String</v8:Type>
+					</Attribute>
+					<Attribute>
+						<v8:Name>ПоследнийРезультат</v8:Name>
+						<v8:Type>cfg:String</v8:Type>
+					</Attribute>
+					<Attribute>
+						<v8:Name>ВремяВыполнения</v8:Name>
+						<v8:Type>cfg:Number</v8:Type>
+					</Attribute>
+				</Attribute>
+
+				<Attribute uuid="test_results_attribute">
+					<Name>РезультатыТестирования</Name>
+					<Synonym>
+						<key>ru</key>
+						<value>Результаты тестирования</value>
+					</Synonym>
+					<Type>
+						<v8:Type>cfg:ValueList</v8:Type>
+					</Type>
+				</Attribute>
+
+				<Attribute uuid="progress_indicator_attribute">
+					<Name>ИндикаторВыполнения</Name>
+					<Synonym>
+						<key>ru</key>
+						<value>Индикатор выполнения</value>
+					</Synonym>
+					<Type>
+						<v8:Type>cfg:Number</v8:Type>
+					</Type>
+				</Attribute>
+
+				<Attribute uuid="category_filter_attribute">
+					<Name>ФильтрКатегория</Name>
+					<Synonym>
+						<key>ru</key>
+						<value>Фильтр категория</value>
+					</Synonym>
+					<Type>
+						<v8:Type>cfg:String</v8:Type>
+					</Type>
+				</Attribute>
+
+				<Attribute uuid="status_filter_attribute">
+					<Name>ФильтрСтатус</Name>
+					<Synonym>
+						<key>ru</key>
+						<value>Фильтр статус</value>
+					</Synonym>
+					<Type>
+						<v8:Type>cfg:String</v8:Type>
+					</Type>
+				</Attribute>
+			</Attributes>
+			<Commands>
+				<Command uuid="run_selected_tests_command">
+					<Name>КомандаЗапуститьТесты</Name>
+					<Synonym>
+						<key>ru</key>
+						<value>Запустить выбранные тесты</value>
+					</Synonym>
+					<ToolTip>
+						<key>ru</key>
+						<value>Запустить только выбранные тестовые наборы</value>
+					</ToolTip>
+					<Representation>Picture</Representation>
+				</Command>
+
+				<Command uuid="run_all_tests_command">
+					<Name>КомандаЗапуститьВсеТесты</Name>
+					<Synonym>
+						<key>ru</key>
+						<value>Запустить все тесты</value>
+					</Synonym>
+					<ToolTip>
+						<key>ru</key>
+						<value>Запустить все доступные тестовые наборы</value>
+					</ToolTip>
+					<Representation>PictureAndText</Representation>
+				</Command>
+
+				<Command uuid="stop_tests_command">
+					<Name>КомандаОстановитьТесты</Name>
+					<Synonym>
+						<key>ru</key>
+						<value>Остановить тесты</value>
+					</Synonym>
+					<ToolTip>
+						<key>ru</key>
+						<value>Остановить выполнение тестов</value>
+					</ToolTip>
+					<Representation>Picture</Representation>
+				</Command>
+
+				<Command uuid="refresh_list_command">
+					<Name>КомандаОбновитьСписок</Name>
+					<Synonym>
+						<key>ru</key>
+						<value>Обновить список</value>
+					</Synonym>
+					<ToolTip>
+						<key>ru</key>
+						<value>Обновить список доступных тестов</value>
+					</ToolTip>
+					<Representation>Picture</Representation>
+				</Command>
+
+				<Command uuid="export_report_command">
+					<Name>КомандаЭкспортироватьОтчет</Name>
+					<Synonym>
+						<key>ru</key>
+						<value>Экспортировать отчет</value>
+					</Synonym>
+					<ToolTip>
+						<key>ru</key>
+						<value>Экспортировать отчет о результатах тестирования</value>
+					</ToolTip>
+					<Representation>Picture</Representation>
+				</Command>
+			</Commands>
+			<ConditionalAppearance>
+				<Appearance>
+					<Condition>
+						<v8:Field>ИндикаторВыполнения</v8:Field>
+						<ComparisonType>Greater</ComparisonType>
+						<v8:Value>0</v8:Value>
+					</Condition>
+					<Appearance>
+						<v8:Color>LightGreen</v8:Color>
+						<v8:Bold>true</v8:Bold>
+					</Appearance>
+				</Appearance>
+			</ConditionalAppearance>
+			<Events>
+				<Event>
+					<EventName>ПриОткрытии</EventName>
+				</Event>
+			</Events>
+			<Module>Forms/УправлениеТестами/Form.bsl</Module>
+		</Form>
+
+		<!-- Роли -->
+		<Role uuid="mcp_tester_role">
+			<Properties>
+				<Name>Мср_РольТестировщика</Name>
+				<Synonym>
+					<key>ru</key>
+					<value>Роль тестировщика MCP</value>
+				</Synonym>
+				<Comment>Роль для пользователей, выполняющих тестирование</Comment>
+			</Properties>
+			<Content>
+				<Right uuid="mcp_testing_full_access">
+					<Name>Мср_Тестирование_ПолныйДоступ</Name>
+					<Synonym>
+						<key>ru</key>
+						<value>Полный доступ к тестированию</value>
+					</Synonym>
+					<Object>
+						<type>CommonModule</type>
+						<name>Мср_Тестирование</name>
+					</Object>
+					<Operations>
+						<Right>Use</Right>
+						<Right>View</Right>
+						<Right>Edit</Right>
+					</Operations>
+				</Right>
+
+				<Right uuid="mcp_testing_data_processors">
+					<Name>Мср_Тестирование_Обработки</Name>
+					<Synonym>
+						<key>ru</key>
+						<value>Использование тестовых обработок</value>
+					</Synonym>
+					<Object>
+						<type>DataProcessor</type>
+						<name>Мср_Тест_*</name>
+					</Object>
+					<Operations>
+						<Right>View</Right>
+						<Right>Use</Right>
+					</Operations>
+				</Right>
+
+				<Right uuid="mcp_testing_forms">
+					<Name>Мср_Тестирование_Формы</Name>
+					<Synonym>
+						<key>ru</key>
+						<value>Доступ к формам тестирования</value>
+					</Synonym>
+					<Object>
+						<type>Form</type>
+						<name>Мср_*</name>
+					</Object>
+					<Operations>
+						<Right>View</Right>
+						<Right>Use</Right>
+					</Operations>
+				</Right>
+
+				<Right uuid="mcp_testing_reports">
+					<Name>Мср_Тестирование_Отчеты</Name>
+					<Synonym>
+						<key>ru</key>
+						<value>Создание отчетов тестирования</value>
+					</Synonym>
+					<Object>
+						<type>CommonModule</type>
+						<name>Мср_ГенераторОтчетов</name>
+					</Object>
+					<Operations>
+						<Right>Use</Right>
+						<Right>View</Right>
+					</Operations>
+				</Right>
+			</Content>
+		</Role>
+
+		<!-- Подсистемы - дочерние элементы -->
+		<Subsystems uuid="unit_tests_subsystem">
+			<Properties>
+				<Name>ЮнитТесты</Name>
+				<Synonym>
+					<key>ru</key>
+					<value>Юнит тесты</value>
+				</Synonym>
+				<Comment>Юнит тесты отдельных компонентов</Comment>
+			</Properties>
+			<Parent>Мср_Тестирование</Parent>
+			<ChildObjects>
+				<DataProcessor>Мср_Тест_Инструментов</DataProcessor>
+			</ChildObjects>
+		</Subsystems>
+
+		<Subsystems uuid="integration_tests_subsystem">
+			<Properties>
+				<Name>ИнтеграционныеТесты</Name>
+				<Synonym>
+					<key>ru</key>
+					<value>Интеграционные тесты</value>
+				</Synonym>
+				<Comment>Интеграционные тесты взаимодействия компонентов</Comment>
+			</Properties>
+			<Parent>Мср_Тестирование</Parent>
+			<ChildObjects>
+				<DataProcessor>Мср_Тест_HTTPСервисов</DataProcessor>
+			</ChildObjects>
+		</Subsystems>
+
+		<Subsystems uuid="e2e_tests_subsystem">
+			<Properties>
+				<Name>E2EТесты</Name>
+				<Synonym>
+					<key>ru</key>
+					<value>E2E тесты</value>
+				</Synonym>
+				<Comment>End-to-End тесты полного цикла</Comment>
+			</Properties>
+			<Parent>Мср_Тестирование</Parent>
+			<ChildObjects>
+				<DataProcessor>Мср_Тест_E2EПолныйЦикл</DataProcessor>
+			</ChildObjects>
+		</Subsystems>
+
+		<Subsystems uuid="reports_subsystem">
+			<Properties>
+				<Name>ОтчетыТестирования</Name>
+				<Synonym>
+					<key>ru</key>
+					<value>Отчеты тестирования</value>
+				</Synonym>
+				<Comment>Отчеты и аналитика результатов тестирования</Comment>
+			</Properties>
+			<Parent>Мср_Тестирование</Parent>
+			<ChildObjects>
+				<Form>Мср_ФормаУправленияТестами</Form>
+			</ChildObjects>
+		</Subsystems>
+
+	</configuration>
+</MetaDataObject>

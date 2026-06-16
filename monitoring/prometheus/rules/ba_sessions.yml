@@ -1,0 +1,42 @@
+groups:
+  - name: ba-sessions
+    rules:
+      - alert: BAWebsocketDown
+        expr: avg_over_time(ba_ws_active_sessions[5m]) == 0
+        for: 5m
+        labels:
+          severity: warning
+          team: ba
+          service: ba-session
+        annotations:
+          summary: "BA WebSocket inactivity"
+          description: >
+            No active BA collaborative sessions detected for 5 minutes.
+            Check schedulers/runbooks if a workshop should be running.
+
+      - alert: BAAuditErrors
+        expr: increase(ba_ws_audit_failures_total[10m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          team: ba
+          service: ba-session
+        annotations:
+          summary: "Audit trail write failures"
+          description: >
+            Audit logging for BA sessions failed within the last 10 minutes.
+            Inspect logs at logs/audit/ba_sessions.log and storage permissions.
+
+      - alert: BAIntegrationFailure
+        expr: avg_over_time(integration_status{system=~"jira|confluence|docflow"}[3m]) == 0
+        for: 3m
+        labels:
+          severity: warning
+          team: ba
+          service: integration
+        annotations:
+          summary: "Integration service unavailable"
+          description: >
+            One of BA integrations returned status=0 for more than 3 minutes.
+            Review connector logs and credentials.
+

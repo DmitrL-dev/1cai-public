@@ -1,0 +1,218 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Rate Limiting Monitoring",
+    "tags": [
+      "rate-limiting",
+      "1c-performance"
+    ],
+    "timezone": "browser",
+    "refresh": "5s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Total Requests Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(rate_limit_requests_total[1m])",
+            "legendFormat": "Requests/sec"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        },
+        "yAxes": [
+          {
+            "label": "Requests/sec",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Blocked Requests",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(rate_limit_blocked_total[1m])",
+            "legendFormat": "Blocked/sec"
+          },
+          {
+            "expr": "rate(rate_limit_requests_total[1m])",
+            "legendFormat": "Total/sec"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        },
+        "yAxes": [
+          {
+            "label": "Requests/sec",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Requests Per Second by IP",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, rate_limit_requests_per_second)",
+            "legendFormat": "{{ip}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {},
+              "indexByName": {},
+              "renameByName": {
+                "ip": "IP Address",
+                "Value": "RPS"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Response Time Distribution",
+        "type": "heatmap",
+        "targets": [
+          {
+            "expr": "rate_limit_response_time_seconds_bucket",
+            "legendFormat": "{{le}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        }
+      },
+      {
+        "id": 5,
+        "title": "Active Limits",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate_limit_active_limits",
+            "legendFormat": "Active Limits"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 0,
+          "y": 16
+        },
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                },
+                {
+                  "color": "yellow",
+                  "value": 500
+                },
+                {
+                  "color": "red",
+                  "value": 1000
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Active Alerts",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "ALERTS{alertstate=\"firing\"}",
+            "legendFormat": "{{alertname}}"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 6,
+          "y": 16
+        }
+      },
+      {
+        "id": 7,
+        "title": "System Health",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "rate_limit_health_status",
+            "legendFormat": "Health Status"
+          }
+        ],
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 12,
+          "y": 16
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "options": {
+                  "0": {
+                    "text": "Unhealthy",
+                    "color": "red"
+                  },
+                  "1": {
+                    "text": "Healthy",
+                    "color": "green"
+                  }
+                },
+                "type": "value"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "datasource": "Prometheus",
+          "enable": true,
+          "expr": "rate_limit_requests_total",
+          "iconColor": "blue",
+          "name": "Request Rate",
+          "titleFormat": "Request Spike",
+          "textFormat": "High request rate detected"
+        }
+      ]
+    }
+  }
+}

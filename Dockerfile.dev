@@ -1,0 +1,32 @@
+# Development Dockerfile
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 18
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -m -s /bin/bash vscode \
+    && usermod -aG sudo vscode
+
+# Set working directory
+WORKDIR /workspace
+
+# Install Python dependencies (will be overridden by volume mount)
+COPY requirements.txt requirements-dev.txt* ./
+RUN pip install --no-cache-dir -r requirements.txt \
+    && if [ -f requirements-dev.txt ]; then pip install --no-cache-dir -r requirements-dev.txt; fi
+
+USER vscode
+
+CMD ["sleep", "infinity"]
+
+

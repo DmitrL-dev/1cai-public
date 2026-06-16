@@ -1,0 +1,74 @@
+id: plan-code-review-EXTERNAL_PR
+version: "1.0.0"
+spec: "scenario-dsl/v1"
+goal:
+  id: code-review-EXTERNAL_PR
+  title: "Code review для внешнего PR EXTERNAL_PR"
+  description: "Структурированный code review: diff, статический анализ, AI-обзор и итоговый отчёт."
+  constraints:
+    environment: "dev"
+  success_criteria:
+    - "Все изменения по PR рассмотрены"
+    - "Сформирован отчёт с основными рисками и рекомендациями"
+steps:
+  - id: collect-diff
+    title: "Сбор diff и контекста"
+    description: "Собрать diff по PR и связать его с задачами/тестами."
+    risk_level: "read_only"
+    autonomy_required: "A1_safe_automation"
+    checks:
+      - "Diff получен и сохранён"
+      - "Есть ссылка на исходный PR/задачу"
+    executor: "script:git-diff"
+    metadata:
+      feature_id: "EXTERNAL_PR"
+      graph_refs:
+        - "node:service:ai-orchestrator:service"
+
+  - id: static-analysis
+    title: "Статический анализ"
+    description: "Запустить статические анализаторы и собрать результаты."
+    risk_level: "read_only"
+    autonomy_required: "A1_safe_automation"
+    checks:
+      - "Статические анализаторы отработали без ошибок"
+      - "Результаты собраны в единый отчёт"
+    executor: "script:static-analysis"
+    metadata:
+      feature_id: "EXTERNAL_PR"
+      graph_refs:
+        - "node:tests/unit/test_code_review_api.py:TEST_SUITE"
+
+  - id: ai-review
+    title: "AI-обзор изменений"
+    description: "Вызвать Developer AI Secure / Code Review Agent для анализа diff."
+    risk_level: "read_only"
+    autonomy_required: "A1_safe_automation"
+    checks:
+      - "AI-обзор получен для всех ключевых изменений"
+      - "Сформирован список потенциальных рисков"
+    executor: "agent:DevReview"
+    metadata:
+      feature_id: "EXTERNAL_PR"
+      graph_refs:
+        - "node:src/api/code_review.py:MODULE"
+
+  - id: summary
+    title: "Итоговый отчёт"
+    description: "Сконсолидировать результаты и оформить краткий отчёт по PR."
+    risk_level: "read_only"
+    autonomy_required: "A1_safe_automation"
+    checks:
+      - "Отчёт опубликован в системе управления задачами/PR"
+    executor: "agent:BA"
+    metadata:
+      feature_id: "EXTERNAL_PR"
+      graph_refs:
+        - "node:docs/06-features/DEVELOPER_AGENT_GUIDE.md:FILE"
+required_autonomy: "A1_safe_automation"
+overall_risk: "read_only"
+context:
+  kind: "code-review"
+  feature_id: "EXTERNAL_PR"
+
+

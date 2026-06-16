@@ -1,0 +1,282 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "MCP Error Analysis",
+    "tags": ["mcp", "errors", "analysis"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Total Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(mcp_validation_errors_total[5m])",
+            "refId": "A",
+            "legendFormat": "Validation Errors"
+          },
+          {
+            "expr": "rate(mcp_transport_errors_total[5m])",
+            "refId": "B",
+            "legendFormat": "Transport Errors"
+          },
+          {
+            "expr": "rate(mcp_integration_errors_total[5m])",
+            "refId": "C",
+            "legendFormat": "Integration Errors"
+          },
+          {
+            "expr": "rate(mcp_auth_errors_total[5m])",
+            "refId": "D",
+            "legendFormat": "Auth Errors"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Errors/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "Error Rate by Operation",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "sum by (operation, error_type) (rate(mcp_validation_errors_total[5m])) + sum by (operation, error_type) (rate(mcp_transport_errors_total[5m])) + sum by (operation, error_type) (rate(mcp_integration_errors_total[5m])) + sum by (operation, error_type) (rate(mcp_auth_errors_total[5m]))",
+            "refId": "A",
+            "format": "table"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {},
+              "indexByName": {
+                "Time": 0,
+                "error_type": 1,
+                "operation": 2,
+                "Value": 3
+              },
+              "renameByName": {
+                "error_type": "Error Type",
+                "operation": "Operation",
+                "Value": "Error Rate (errors/sec)"
+              }
+            }
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 8
+        }
+      },
+      {
+        "id": 3,
+        "title": "Error Distribution by Time of Day",
+        "type": "heatmap",
+        "targets": [
+          {
+            "expr": "sum by (le, error_type) (rate(mcp_validation_errors_total[1h]))",
+            "refId": "A",
+            "format": "heatmap"
+          },
+          {
+            "expr": "sum by (le, error_type) (rate(mcp_transport_errors_total[1h]))",
+            "refId": "B",
+            "format": "heatmap"
+          },
+          {
+            "expr": "sum by (le, error_type) (rate(mcp_integration_errors_total[1h]))",
+            "refId": "C",
+            "format": "heatmap"
+          },
+          {
+            "expr": "sum by (le, error_type) (rate(mcp_auth_errors_total[1h]))",
+            "refId": "D",
+            "format": "heatmap"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 16
+        }
+      },
+      {
+        "id": 4,
+        "title": "Top Error Operations",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, sum by (operation, error_type) (rate(mcp_validation_errors_total[1h])))",
+            "refId": "A",
+            "format": "table"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {},
+              "indexByName": {
+                "Time": 0,
+                "error_type": 1,
+                "operation": 2,
+                "Value": 3
+              },
+              "renameByName": {
+                "error_type": "Error Type",
+                "operation": "Top Operations",
+                "Value": "Errors (1h)"
+              }
+            }
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        }
+      },
+      {
+        "id": 5,
+        "title": "Error Correlation Analysis",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "sum by (correlation_id) (rate(mcp_validation_errors_total[1h])) + sum by (correlation_id) (rate(mcp_transport_errors_total[1h])) + sum by (correlation_id) (rate(mcp_integration_errors_total[1h])) + sum by (correlation_id) (rate(mcp_auth_errors_total[1h]))",
+            "refId": "A",
+            "format": "table"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "filter",
+            "options": {
+              "query": "Value > 0"
+            }
+          },
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {},
+              "indexByName": {
+                "Time": 0,
+                "correlation_id": 1,
+                "Value": 2
+              },
+              "renameByName": {
+                "correlation_id": "Correlation ID",
+                "Value": "Total Errors (1h)"
+              }
+            }
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        }
+      },
+      {
+        "id": 6,
+        "title": "Circuit Breaker Error Analysis",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(mcp_circuit_breaker_errors_total[5m])",
+            "refId": "A",
+            "legendFormat": "{{operation}}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "CB Errors/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 32
+        }
+      },
+      {
+        "id": 7,
+        "title": "Error Recovery Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "increase(mcp_retry_attempts_total{success=\"true\"}[5m])",
+            "refId": "A",
+            "legendFormat": "Successful Retries"
+          },
+          {
+            "expr": "increase(mcp_retry_attempts_total{success=\"false\"}[5m])",
+            "refId": "B",
+            "legendFormat": "Failed Retries"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Retry Count",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 40
+        }
+      },
+      {
+        "id": 8,
+        "title": "Error Rate by Endpoint",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum by (endpoint, status_code) (rate(mcp_http_request_duration_seconds_count{status_code=~\"4..|5..\"}[5m]))",
+            "refId": "A",
+            "legendFormat": "{{endpoint}} ({{status_code}})"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "HTTP Errors/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 40
+        }
+      }
+    ],
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "refresh": "1m",
+    "schemaVersion": 27,
+    "version": 1
+  }
+}

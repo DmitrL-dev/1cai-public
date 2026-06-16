@@ -1,0 +1,57 @@
+@startuml bounded_context
+!include <C4/C4_Context>
+
+LAYOUT_TOP_DOWN()
+LAYOUT_WITH_LEGEND()
+
+AddElementTag("Domain","#eef6ff","")
+AddElementTag("Shared","#fdf4ff","")
+
+System_Ext(Users, "End Users", "Developers, Ops, Product, Security", "Shared")
+
+System_Boundary(Knowledge, "Knowledge Ingestion", "Domain") {
+  System(ITSScraper, "ITS Scraper", "Async Python", "Harvest ITS knowledge base")
+  System(ITSWriters, "Writers SDK", "Plugin API", "Persist data to MinIO, S3, partners")
+  System(KnowledgeIndexer, "Knowledge Indexer", "Event-Driven (NATS), Qdrant", "Build embeddings and metadata")
+}
+
+System_Boundary(Analysis, "Static and Dynamic Analysis", "Domain") {
+  System(GraphAPI, "Graph API", "FastAPI", "Endpoint for analysis requests")
+  System(AnalysisWorkers, "Analysis Workers", "Event-Driven (NATS)", "Code inspection, architecture audit")
+  System(BestPracticeEngine, "Best Practice Engine", "Rules DSL", "Linting, anti pattern detection")
+}
+
+System_Boundary(AIAssist, "AI Assistance", "Domain") {
+  System(MLPipelines, "ML Pipelines", "Prefect", "Train, evaluate models")
+  System(Inference, "Inference Gateway", "FastAPI", "Serve language and code models")
+  System(PromptLibrary, "Prompt Library", "YAML, versioned", "Reusable prompt sets")
+}
+
+System_Boundary(Integrations, "Experience Layer", "Domain") {
+  System(EDTPlugin, "EDT Plugin", "Eclipse RCP", "IDE integration for 1C developers")
+  System(n8nNode, "n8n Node", "TypeScript", "Workflow automation")
+  System(TelegramBot, "ChatOps", "Python", "Notifications and commands")
+  System(Marketplace, "Marketplace", "1C Extensions", "Deliver assets to clients")
+}
+
+System_Boundary(Operations, "Operations / SRE", "Domain") {
+  System(Observability, "Observability Stack", "Prometheus, Grafana, Loki", "SLO tracking")
+  System(SecurityAgent, "Security Agent Framework", "Python, Zap", "Continuous security scanning")
+  System(ReleasePipeline, "Release Pipeline", "GitHub Actions + Terraform", "Delivery automation")
+}
+
+Rel(Users, Integrations, "Consume experiences")
+Rel(Integrations, GraphAPI, "Invoke platform capabilities", "REST / MCP")
+Rel(GraphAPI, AnalysisWorkers, "Dispatch analysis jobs")
+Rel(AnalysisWorkers, KnowledgeIndexer, "Update knowledge base")
+Rel(Inference, Integrations, "Deliver AI suggestions")
+Rel(MLPipelines, Inference, "Publish models")
+Rel(SecurityAgent, GraphAPI, "Scan surface and endpoints")
+Rel(Observability, ReleasePipeline, "Provide deploy feedback")
+Rel(Observability, Users, "Expose dashboards, alerts")
+Rel(ReleasePipeline, AnalysisWorkers, "Promote new releases")
+Rel(KnowledgeIndexer, PromptLibrary, "Enrich prompts with ITS data")
+
+SHOW_LEGEND()
+@enduml
+

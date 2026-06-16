@@ -1,0 +1,101 @@
+/**
+ * Тестовый файл для демонстрации работы модуля Image Generation API
+ * Запуск: npx ts-node src/utils/testImageGeneration.ts
+ */
+
+import { 
+  generateDemoImage, 
+  generateRoleExampleImage,
+  getAvailableRoles,
+  getRoleDescription,
+  getRoleExamples,
+  testImageGenerationModule,
+  AssistantRole 
+} from './imageGeneration';
+
+async function runTests() {
+  console.log('🧪 Начало тестирования модуля Image Generation API\n');
+
+  try {
+    // Тест 1: Проверка доступных ролей
+    console.log('1️⃣ Тест получения списка ролей:');
+    const roles = getAvailableRoles();
+    console.log(`✅ Найдено ролей: ${roles.length}`);
+    console.log(`   Роли: ${roles.join(', ')}\n`);
+
+    // Тест 2: Проверка описаний ролей
+    console.log('2️⃣ Тест описаний ролей:');
+    for (const role of roles) {
+      const description = getRoleDescription(role);
+      console.log(`✅ ${role}: ${description}`);
+    }
+    console.log('');
+
+    // Тест 3: Проверка примеров промптов
+    console.log('3️⃣ Тест примеров промптов:');
+    for (const role of roles) {
+      const examples = getRoleExamples(role);
+      console.log(`✅ ${role}: ${examples.length} примеров`);
+      console.log(`   Первый пример: ${examples[0]}`);
+    }
+    console.log('');
+
+    // Тест 4: Генерация изображения для архитектора
+    console.log('4️⃣ Тест генерации для Архитектора:');
+    const architectResult = await generateRoleExampleImage('architect');
+    console.log(`✅ Результат: ${architectResult.success ? 'Успех' : 'Ошибка'}`);
+    if (architectResult.success) {
+      console.log(`   Изображение: ${architectResult.imageUrl}`);
+    } else {
+      console.log(`   Ошибка: ${architectResult.error}`);
+    }
+    console.log('');
+
+    // Тест 5: Генерация изображения для разработчика
+    console.log('5️⃣ Тест генерации для Разработчика:');
+    const developerResult = await generateDemoImage(
+      'Modern dashboard UI for inventory management system', 
+      'developer'
+    );
+    console.log(`✅ Результат: ${developerResult.success ? 'Успех' : 'Ошибка'}`);
+    if (developerResult.success) {
+      console.log(`   Изображение: ${developerResult.imageUrl}`);
+    } else {
+      console.log(`   Ошибка: ${developerResult.error}`);
+    }
+    console.log('');
+
+    // Тест 6: Проверка валидации
+    console.log('6️⃣ Тест валидации промптов:');
+    const testPrompts = [
+      { prompt: 'Clean architecture diagram', role: 'architect', valid: true },
+      { prompt: '', role: 'architect', valid: false },
+      { prompt: 'A'.repeat(501), role: 'architect', valid: false }
+    ];
+
+    for (const test of testPrompts) {
+      const { validatePrompt } = await import('./imageGeneration');
+      const isValid = validatePrompt(test.prompt, test.role as AssistantRole);
+      console.log(`✅ "${test.prompt.substring(0, 30)}...": ${isValid ? 'Валидно' : 'Невалидно'}`);
+    }
+    console.log('');
+
+    console.log('🎉 Все тесты завершены!');
+
+  } catch (error) {
+    console.error('❌ Ошибка во время тестирования:', error);
+  }
+}
+
+// Запуск тестов если файл выполняется напрямую
+if (require.main === module) {
+  runTests().then(() => {
+    console.log('\n🏁 Тестирование завершено');
+    process.exit(0);
+  }).catch((error) => {
+    console.error('\n💥 Критическая ошибка:', error);
+    process.exit(1);
+  });
+}
+
+export { runTests };

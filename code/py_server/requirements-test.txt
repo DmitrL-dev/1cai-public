@@ -1,0 +1,70 @@
+# Тестовые зависимости для системы Rate Limiting
+
+# Core testing framework
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-xdist>=3.3.0  # Параллельное выполнение тестов
+pytest-cov>=4.1.0    # Покрытие кода
+pytest-benchmark>=4.0.0  # Performance benchmarking
+pytest-mock>=3.11.0  # Mocking utilities
+pytest-html>=3.2.0   # HTML отчеты
+pytest-json-report>=1.5.0  # JSON отчеты
+pytest-timeout>=2.1.0  # Timeout для тестов
+pytest-repeat>=0.9.0  # Повторение тестов
+pytest-rerunfailures>=12.0  # Перезапуск неудачных тестов
+
+# Load testing
+locust>=2.15.0  # Нагрузочное тестирование
+
+# Performance profiling
+memory-profiler>=0.61.0  # Профилирование памяти
+py-spy>=0.3.14  # Sampling profiler
+line-profiler>=4.0.0  # Line-by-line profiling
+
+# Code quality
+flake8>=6.0.0  # Linting
+black>=23.7.0  # Code formatting
+isort>=5.12.0  # Import sorting
+mypy>=1.5.0  # Type checking
+bandit>=1.7.5  # Security linting
+
+# Test data and utilities
+factory-boy>=3.3.0  # Test data generation
+faker>=19.6.0  # Fake data generation
+responses>=0.23.0  # HTTP request mocking
+requests-mock>=1.11.0  # Additional HTTP mocking
+freezegun>=1.2.0  # Time mocking
+
+# Database and storage
+redis>=4.6.0  # Redis client for testing
+sqlalchemy>=2.0.0  # SQLAlchemy for database testing
+
+# Async testing utilities
+aiofiles>=23.2.0  # Async file operations
+aiohttp>=3.8.0  # Async HTTP client
+httpx>=0.24.0  # Async HTTP client with testing support
+
+# Monitoring and metrics
+prometheus-client>=0.17.0  # Metrics collection
+psutil>=5.9.0  # System monitoring
+
+# Test configuration
+pytest-env>=0.8.0  # Environment variables for tests
+python-dotenv>=1.0.0  # Environment configuration
+
+# Additional testing tools
+parameterized>=0.9.0  # Parameterized tests
+testfixtures>=7.0.0  # Testing utilities
+tox>=4.6.0  # Testing across environments
+coverage[toml]>=7.2.0  # Coverage reporting
+
+# Documentation
+sphinx>=7.1.0  # Documentation generation
+sphinx-rtd-theme>=1.3.0  # RTD theme for docs
+
+# Development tools
+pre-commit>=3.3.0  # Pre-commit hooks
+watchdog>=3.0.0  # File watching for auto-reload
+
+# Note: Для production установки используйте:
+# pip install -r requirements-test.txt --no-cache-dir

@@ -1,0 +1,85 @@
+@startuml
+title Threat Model - Core Data Paths (STRIDE)
+
+skinparam backgroundColor #FFFFFF
+skinparam defaultTextAlignment center
+skinparam componentStyle rectangle
+
+rectangle "Trust Zone: Public Internet" as Public {
+  actor "External Actors\nDevelopers, Bots" as External
+  actor "ITS Portal" as ITSPortal
+}
+
+rectangle "Trust Zone: DMZ" as DMZ {
+  component "Ingress Controller\n(Nginx/Envoy)" as Ingress
+  component "Web Application Firewall\n(ModSecurity)" as WAF
+  component "API Gateway\n(FastAPI Graph API)" as APIGateway
+  component "Realtime Gateway\nWebSocket/MCP" as Realtime
+}
+
+rectangle "Trust Zone: Service Mesh" as Mesh {
+  component "Auth Service\nOAuth2/JWT" as Auth
+  component "Event-Driven Workers (NATS)" as Workers
+  component "NATS Event Bus" as EventBus
+  component "ML Pipelines" as MLPipelines
+  component "ITS Scraper" as Scraper
+  component "Security Agent\n(ZAP, custom scans)" as SecurityAgent
+}
+
+rectangle "Trust Zone: Data Plane" as DataPlane {
+  database "PostgreSQL" as Postgres
+  database "Redis" as Redis
+  database "Neo4j" as Neo4j
+  database "Qdrant" as Qdrant
+  database "MinIO" as Minio
+  storage "Secrets Manager\n(Vault/KMS)" as Secrets
+}
+
+rectangle "Trust Zone: Observability" as Observability {
+  component "Prometheus" as Prometheus
+  component "Grafana" as Grafana
+  component "Alertmanager" as Alertmanager
+}
+
+External --> Ingress : HTTPS requests\n(Repudiation, Tampering)
+Ingress --> WAF : Routed traffic
+WAF --> APIGateway : Sanitised requests
+APIGateway --> Auth : Token introspection\n(Spoofing)
+Auth --> APIGateway : Claims, scopes
+APIGateway --> EventBus : Publish events via NATS\n(DoS)
+EventBus --> Workers : Route events\n(DoS)
+APIGateway --> Redis : Cache, rate limit tokens
+Workers --> Postgres : Read/write analysis artefacts\n(Tampering)
+Workers --> Neo4j : Update dependency graph
+Workers --> Qdrant : Upsert embeddings
+Workers --> Minio : Store reports
+Scraper --> ITSPortal : Fetch docs\n(Information disclosure)
+Scraper --> Minio : Persist raw dumps
+Scraper --> Postgres : Sync metadata
+MLPipelines --> Minio : Datasets, models\n(Integrity)
+MLPipelines --> Qdrant : Embedding versions
+SecurityAgent --> APIGateway : Active scans
+SecurityAgent --> Workers : Pipeline security tests
+
+APIGateway --> Prometheus : Export metrics
+Workers --> Prometheus
+Scraper --> Prometheus
+Prometheus --> Alertmanager : Alert rules\n(Denial of Service)
+Alertmanager --> Grafana : Alert status
+
+Secrets --> APIGateway : JWT signing keys
+Secrets --> Workers : Service credentials
+Secrets --> MLPipelines : Model secrets
+
+note right of APIGateway
+  STRIDE focus:
+  - Spoofing: OAuth2 + mTLS service accounts
+  - Tampering: WAF rules, audit logging
+  - Repudiation: immutable audit log in Postgres
+  - Information disclosure: field level masking
+  - Denial of Service: rate limiting via Redis
+  - Elevation of privilege: RBAC + policy engine
+end note
+
+@enduml
+

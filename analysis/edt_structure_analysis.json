@@ -1,0 +1,160 @@
+{
+  "top_level": {
+    "CommonModules": 9047,
+    "CommonPictures": 6537,
+    "Roles": 4074,
+    "InformationRegisters": 3685,
+    "Catalogs": 2720,
+    "Reports": 2598,
+    "Enums": 2298,
+    "Documents": 1694,
+    "Constants": 1683,
+    "DataProcessors": 1348,
+    "CommonCommands": 1054,
+    "CommonForms": 1045,
+    "FunctionalOptions": 1041,
+    "XDTOPackages": 836,
+    "DefinedTypes": 715,
+    "EventSubscriptions": 647,
+    "CommonTemplates": 614,
+    "ScheduledJobs": 533,
+    "StyleItems": 533,
+    "AccumulationRegisters": 494,
+    "Subsystems": 137,
+    "SessionParameters": 120,
+    "DocumentJournals": 116,
+    "ChartsOfCharacteristicTypes": 48,
+    "CommandGroups": 46,
+    "WebServices": 40,
+    "BusinessProcesses": 38,
+    "ExchangePlans": 38,
+    "CommonAttributes": 20,
+    "FilterCriteria": 18,
+    "Ext": 15,
+    "FunctionalOptionsParameters": 11,
+    "HTTPServices": 10,
+    "AccountingRegisters": 8,
+    "SettingsStorages": 8,
+    "WSReferences": 8,
+    "ChartsOfAccounts": 6,
+    "DocumentNumerators": 5,
+    "CalculationRegisters": 4,
+    "ChartsOfCalculationTypes": 4,
+    "IntegrationServices": 4,
+    "Tasks": 4,
+    "Sequences": 3,
+    "Languages": 2,
+    "Styles": 2
+  },
+  "common_modules": {
+    "total_modules": 9047,
+    "modules_with_code": 50,
+    "modules_with_xml": 0,
+    "total_code_size_mb": 0,
+    "avg_code_size_kb": 0,
+    "modules_by_ext": {
+      ".bsl": 50
+    },
+    "sample_modules": [
+      {
+        "name": "CRMЛокализация",
+        "has_code": true,
+        "has_xml": false,
+        "code_size_kb": 0,
+        "files": [
+          "Module.bsl"
+        ]
+      },
+      {
+        "name": "GoogleПереводчик",
+        "has_code": true,
+        "has_xml": false,
+        "code_size_kb": 0,
+        "files": [
+          "Module.bsl"
+        ]
+      },
+      {
+        "name": "HttpBridgeКлиент",
+        "has_code": true,
+        "has_xml": false,
+        "code_size_kb": 0,
+        "files": [
+          "Module.bsl"
+        ]
+      }
+    ]
+  },
+  "catalogs": {
+    "total_catalogs": 2720,
+    "sample_catalogs": [
+      {
+        "name": "АвансовыйОтчетПрисоединенныеФайлы",
+        "has_forms": false,
+        "has_commands": false,
+        "has_manager_module": false,
+        "has_object_module": false,
+        "forms_count": 0,
+        "commands_count": 0
+      },
+      {
+        "name": "АвансовыйПлатежИностранцаПоНДФЛПрисоединенныеФайлы",
+        "has_forms": false,
+        "has_commands": false,
+        "has_manager_module": false,
+        "has_object_module": false,
+        "forms_count": 0,
+        "commands_count": 0
+      },
+      {
+        "name": "АктВыполненныхВнутреннихРаботПрисоединенныеФайлы",
+        "has_forms": false,
+        "has_commands": false,
+        "has_manager_module": false,
+        "has_object_module": false,
+        "forms_count": 0,
+        "commands_count": 0
+      }
+    ]
+  },
+  "documents": {
+    "total_documents": 1694,
+    "sample_documents": [
+      {
+        "name": "АвансовыйОтчет",
+        "has_forms": true,
+        "has_commands": false,
+        "has_manager_module": false,
+        "has_object_module": false,
+        "has_tabular_sections": false,
+        "forms_count": 16,
+        "commands_count": 0
+      },
+      {
+        "name": "АвансовыйПлатежИностранцаПоНДФЛ",
+        "has_forms": true,
+        "has_commands": false,
+        "has_manager_module": false,
+        "has_object_module": false,
+        "has_tabular_sections": false,
+        "forms_count": 4,
+        "commands_count": 0
+      },
+      {
+        "name": "АккредитацияПоставщика",
+        "has_forms": true,
+        "has_commands": false,
+        "has_manager_module": false,
+        "has_object_module": false,
+        "has_tabular_sections": false,
+        "forms_count": 8,
+        "commands_count": 0
+      }
+    ]
+  },
+  "forms": {
+    "common_forms": 1045,
+    "total_form_modules": 0
+  },
+  "analysis_time": 0.4007749557495117
+}

@@ -1,0 +1,371 @@
+# 🗺️ Roadmap
+
+**План развития 1C AI Stack**
+
+> **⚠️ ВАЖНО:** Большая часть функционала из Q1-Q3 2025 **УЖЕ РЕАЛИЗОВАНА!**  
+> Roadmap обновлен согласно реальному состоянию проекта (November 2024)
+
+---
+
+## ✅ Текущий статус (November 2024) - PRODUCTION READY
+
+### Что УЖЕ работает:
+
+#### 🤖 AI & Backend (100% готово)
+- ✅ **AI Orchestrator** - маршрутизация между AI сервисами
+- ✅ **Neo4j** - граф метаданных 1С
+- ✅ **Qdrant** - векторный семантический поиск
+- ✅ **PostgreSQL** - основная БД
+- ✅ **Elasticsearch** - полнотекстовый поиск
+- ✅ **Redis** - кеширование
+- ✅ **Ollama + Qwen3-Coder** - генерация кода
+- ✅ **OpenAI API** - альтернативный AI backend
+- ✅ **Embedding Service** - векторизация кода
+
+#### 🔌 Интеграции (95% готово)
+- ✅ **Telegram Bot** - полнофункциональный бот с AI
+- ✅ **MCP Server** - интеграция с Cursor/VSCode
+- ✅ **EDT Plugin** - базовая структура для Eclipse
+- ✅ **FastAPI** - REST API + WebSocket
+- ✅ **GitHub Actions** - CI/CD pipeline
+- ✅ **Docker Compose** - одна команда для запуска
+- ✅ **Kubernetes** - production deployment
+
+#### 🛡️ Enterprise Features (90% готово)
+- ✅ **OAuth2 / JWT** - аутентификация
+- ✅ **RBAC** - ролевая модель
+- ✅ **Rate Limiting** - защита от перегрузки
+- ✅ **Audit Logs** - полный аудит действий
+- ✅ **Monitoring** - Prometheus + Grafana
+- ✅ **ELK Stack** - централизованное логирование
+- ✅ **Secret Management** - безопасное хранение
+
+#### 🤖 AI Agents (85% готово)
+- ✅ **Code Review Agent** - автоматический ревью кода
+- ✅ **Security Scanner** - поиск уязвимостей
+- ✅ **Performance Analyzer** - анализ производительности
+- ✅ **Test Generator** - генерация тестов (BDD)
+- ✅ **SQL Optimizer** - оптимизация запросов
+- ✅ **Tech Log Analyzer** - анализ технологического журнала
+- ✅ **Auto Fixer** - автоматическое исправление кода
+- ✅ **Architecture Agent** - архитектурные решения
+
+#### 📊 DevOps & Monitoring (80% готово)
+- ✅ **CI/CD** - автоматическое тестирование и деплой
+- ✅ **Health Checks** - проверка состояния сервисов
+- ✅ **Auto Recovery** - автоматическое восстановление
+- ✅ **Blue-Green Deployment** - безопасный деплой
+- ✅ **Circuit Breaker** - защита от каскадных сбоев
+
+### В активной разработке:
+
+- 🚧 **EDT Plugin** - расширение функционала (65%)
+- 🚧 **Multi-language** - English UI/docs (30%)
+- 🚧 **Voice queries** - голосовые команды (0%)
+- 🚧 **Marketplace** - плагины от сообщества (20%)
+- 🚧 **Fine-tuned BSL model** - специализированная модель (10%)
+
+---
+
+## 🎯 Q1 2025 (Январь - Март) - **ФОКУС НА ПОЛЬЗОВАТЕЛЕЙ**
+
+> Основная инфраструктура **ГОТОВА**. Переходим к росту пользовательской базы.
+
+### Milestone 1: Public Launch (Январь)
+
+**Цель:** Первая 1000 пользователей
+
+**Что делаем:**
+- [ ] ~~Neo4j/Qdrant/PostgreSQL~~ ✅ ГОТОВО
+- [ ] Публичный запуск Telegram бота
+- [ ] Запуск маркетинговой кампании
+- [ ] Статья на Habr (с видео-демо)
+- [ ] Посты в 20+ Telegram чатах
+- [ ] YouTube партнерства (3-5 каналов)
+- [ ] User feedback система + чат поддержки
+- [ ] Referral program (invite bonus)
+
+**KPI:** 
+- 1000+ пользователей
+- 20%+ retention (30 дней)
+- 50+ active daily users
+
+---
+
+### Milestone 2: Polish & Improve (Февраль)
+
+**Цель:** Улучшить UX на основе feedback
+
+**Что делаем:**
+- [ ] Анализ user feedback
+- [ ] Исправление топ-10 issues
+- [ ] Улучшение документации (video guides)
+- [ ] Добавление примеров использования
+- [ ] Оптимизация скорости ответов AI
+- [ ] Улучшение качества генерации кода
+- [ ] A/B тестирование UI/prompts
+
+**KPI:**
+- User satisfaction: 4.5+/5
+- Response time: <3 сек (median)
+- Code quality: 85%+ (по отзывам)
+
+---
+
+### Milestone 3: Monetization Start (Март)
+
+**Цель:** Первые платящие пользователи
+
+**Что делаем:**
+- [ ] Telegram Stars integration
+- [ ] Premium tier (расширенный лимит)
+- [ ] Team plan (для команд)
+- [ ] Billing dashboard
+- [ ] Trial period (14 дней бесплатно)
+- [ ] Payment analytics
+
+**Pricing:**
+- Free: 50 запросов/день
+- Premium: 500 запросов/день (299₽/мес)
+- Team: безлимит (2990₽/мес)
+
+**KPI:**
+- 30-50 платящих пользователей
+- Conversion: 3-5% (free → paid)
+- MRR: 10,000-15,000₽
+
+---
+
+## 🚀 Q2 2025 (Апрель - Июнь) - **МАСШТАБИРОВАНИЕ**
+
+> Infrastructure готова. Фокус на IDE интеграции и advanced features.
+
+### Milestone 4: IDE Expansion (Апрель)
+
+**Цель:** IDE plugins для всех платформ
+
+**Что делаем:**
+- [ ] ~~MCP Server~~ ✅ ГОТОВО (Cursor/VSCode)
+- [ ] ~~EDT plugin структура~~ ✅ ГОТОВО
+- [ ] VSCode extension (standalone, не MCP)
+- [ ] EDT plugin - полная функциональность
+- [ ] IntelliJ IDEA plugin (если спрос >100 запросов)
+- [ ] Shared context между IDE и Telegram
+- [ ] Sync settings across devices
+
+**KPI:**
+- 500+ установок IDE plugins
+- 30%+ пользователей используют IDE
+- Rating 4.0+ на marketplace
+
+---
+
+### Milestone 5: Polish Advanced AI (Май)
+
+**Цель:** Улучшить качество AI
+
+**Что делаем:**
+- [ ] ~~Code review~~ ✅ ГОТОВО - улучшить качество
+- [ ] ~~Test generation~~ ✅ ГОТОВО - добавить больше сценариев
+- [ ] ~~Performance analysis~~ ✅ ГОТОВО - расширить проверки
+- [ ] ~~Security scanning~~ ✅ ГОТОВО - добавить больше правил
+- [ ] Advanced refactoring (auto-apply suggestions)
+- [ ] Code completion (like Copilot)
+- [ ] Diagram generation (PlantUML, Mermaid)
+
+**KPI:**
+- 80%+ users используют advanced features
+- Code quality improvement: 40%+
+- Bug detection rate: 90%+
+
+---
+
+### Milestone 6: Scale to 5K Users (Июнь)
+
+**Цель:** 5000+ активных пользователей
+
+**Что делаем:**
+- [ ] ~~Kubernetes~~ ✅ ГОТОВО - production deploy
+- [ ] ~~Monitoring~~ ✅ ГОТОВО - расширить метрики
+- [ ] Multi-region (EU + RU)
+- [ ] CDN для статики
+- [ ] Load balancing optimization
+- [ ] Database sharding (если нужно)
+- [ ] Advanced caching strategies
+
+**KPI:**
+- 5,000+ users
+- 99.9% uptime (SLA)
+- Response time: <2 сек (p95)
+- MRR: 50,000₽+
+
+---
+
+## 🌍 Q3 2025 (Июль - Сентябрь) - **ГЛОБАЛИЗАЦИЯ**
+
+> Базовые enterprise features готовы. Выход на международный рынок.
+
+### Milestone 7: Go International (Июль-Август)
+
+**Цель:** Международная аудитория
+
+**Что делаем:**
+- [ ] English UI (полный перевод)
+- [ ] English documentation
+- [ ] Multi-language AI responses (EN/RU)
+- [ ] International payments (Stripe + PayPal)
+- [ ] EN marketing materials
+- [ ] Global community (Discord)
+- [ ] Partnerships с international 1C partners
+
+**KPI:**
+- 30%+ non-Russian users
+- 10,000+ total users
+- Presence in 10+ countries
+
+---
+
+### Milestone 8: Enterprise Ready (Август-Сентябрь)
+
+**Цель:** Enterprise клиенты
+
+**Что делаем:**
+- [ ] ~~SSO (OAuth2/JWT)~~ ✅ ГОТОВО - добавить LDAP/AD
+- [ ] ~~Audit logs~~ ✅ ГОТОВО - расширить reporting
+- [ ] ~~On-premise~~ ✅ ГОТОВО - enterprise support package
+- [ ] Compliance certifications (ISO 27001 подготовка)
+- [ ] Custom branding (white-label)
+- [ ] SLA contracts (99.95% uptime)
+- [ ] Dedicated support channels
+- [ ] Multi-tenancy improvements
+
+**Pricing (Enterprise):**
+- Enterprise: от 50,000₽/мес
+- On-premise: от 500,000₽/год
+- Custom: по запросу
+
+**KPI:**
+- 5-10 enterprise клиентов
+- ARR: 3,000,000₽+
+- 99.95% uptime achieved
+
+---
+
+## 🏆 Q4 2025 (Октябрь - Декабрь)
+
+### Milestone 9: Ecosystem
+
+**Цель:** Платформа, а не просто бот
+
+- [ ] Marketplace (плагины от сообщества)
+- [ ] Open API для third-party integrations
+- [ ] Webhooks и event streaming
+- [ ] Developer portal
+- [ ] Partner program
+
+**KPI:** 20+ community plugins
+
+---
+
+### Milestone 10: AI Evolution
+
+**Цель:** Cutting-edge AI
+
+- [ ] Fine-tuned модель специально для BSL
+- [ ] Multi-modal AI (code + diagrams + docs)
+- [ ] Predictive analytics
+- [ ] Autonomous agents
+- [ ] Self-improving system
+
+**KPI:** 90%+ code generation accuracy
+
+---
+
+## 💡 Долгосрочное видение (2026+)
+
+### Глобальные цели:
+
+**2026:**
+- 50,000+ пользователей
+- €50K+ MRR
+- Profitable & sustainable
+- Топ-1 AI инструмент для 1С
+
+**2027:**
+- 100,000+ пользователей  
+- €200K+ MRR
+- Enterprise standard
+- International expansion
+
+---
+
+## 🔄 Процесс обновления Roadmap
+
+### Как мы решаем что делать:
+
+1. **User feedback** (50% weight)
+   - Что просят пользователи
+   - Топ feature requests
+
+2. **Technical feasibility** (30% weight)
+   - Что реально сделать
+   - Доступные ресурсы
+
+3. **Business value** (20% weight)
+   - ROI каждой фичи
+   - Влияние на revenue
+
+### Roadmap обновляется:
+
+- **Ежемесячно** - мелкие корректировки
+- **Ежеквартально** - major changes
+- **Community input** - через GitHub Discussions
+
+---
+
+## 📊 Progress Tracking
+
+### Где смотреть прогресс:
+
+- **GitHub Projects** - kanban board
+- **Milestones** - GitHub milestones
+- **Releases** - changelog в GitHub releases
+- **GitHub Releases** - check for updates
+
+---
+
+## 💬 Ваш голос важен!
+
+**Что вы хотите видеть в приоритете?**
+
+- 👍 Upvote issues на GitHub
+- 💡 Предлагайте идеи в [Discussions](https://github.com/DmitrL-dev/1cai-public/discussions)
+- 📧 Напишите: Issues на GitHub
+
+**Топ-5 requested features идут в следующий milestone!**
+
+---
+
+**Версия roadmap:** 3.0 (MAJOR UPDATE - отражает реальное состояние проекта)  
+**Последнее обновление:** 2024-11-05  
+**Следующее обновление:** 2025-01-01
+
+---
+
+## 📌 Ключевые изменения в версии 3.0
+
+**ЧТО ИЗМЕНИЛОСЬ:**
+
+1. ✅ **Обновлен текущий статус** - большинство Q1-Q3 фич УЖЕ реализовано
+2. ✅ **Переориентация roadmap** - фокус на рост пользователей, а не на инфраструктуру
+3. ✅ **Реалистичные KPI** - на основе готовой infrastructure
+4. ✅ **Enterprise pricing** - добавлены конкретные цены
+
+**ГОТОВО К PRODUCTION:**
+- 🤖 AI Backend (100%)
+- 🔌 Integrations (95%)
+- 🛡️ Security (90%)
+- 📊 Monitoring (80%)
+- 🤖 AI Agents (85%)
+
+

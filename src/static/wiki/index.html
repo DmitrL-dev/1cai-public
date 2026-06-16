@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1C AI Stack Wiki</title>
+    <style>
+        :root {
+            --primary-color: #0078d4;
+            --bg-color: #f3f2f1;
+            --card-bg: #ffffff;
+            --text-color: #323130;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        #sidebar {
+            width: 250px;
+            background: var(--card-bg);
+            border-right: 1px solid #e1dfdd;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        #main {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+        h1, h2, h3 { margin-top: 0; }
+        input, button, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #8a8886;
+            border-radius: 4px;
+        }
+        button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover { background: #005a9e; }
+        .page-content {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .wiki-link { color: var(--primary-color); text-decoration: none; }
+        .wiki-link:hover { text-decoration: underline; }
+        .code-transclusion {
+            background: #f4f4f4;
+            border-left: 4px solid #0078d4;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        #editor-container {
+            display: flex;
+            gap: 20px;
+            height: 600px;
+        }
+        #editor, #preview {
+            flex: 1;
+            height: 100%;
+        }
+        #preview {
+            border: 1px solid #e1dfdd;
+            padding: 20px;
+            background: white;
+            overflow-y: auto;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h2>📚 Wiki</h2>
+        <input type="text" id="search-input" placeholder="Search..." onkeyup="if(event.key === 'Enter') search()">
+        <button onclick="search()">Search</button>
+        <button onclick="showCreate()">+ New Page</button>
+        <hr>
+        <div id="recent-pages">
+            <!-- Recent pages stub -->
+            <div><a href="#" onclick="loadPage('home')">Home</a></div>
+            <div><a href="#" onclick="loadPage('architecture')">Architecture</a></div>
+        </div>
+    </div>
+
+    <div id="main">
+        <!-- View Mode -->
+        <div id="view-mode" class="hidden">
+            <div class="page-content">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h1 id="page-title">Page Title</h1>
+                    <button onclick="editCurrentPage()" style="width: auto;">Edit</button>
+                </div>
+                <div id="page-body"></div>
+                <hr>
+                <h3>Comments</h3>
+                <div id="comments-section"></div>
+                <textarea id="new-comment" placeholder="Write a comment..."></textarea>
+                <button onclick="postComment()">Post Comment</button>
+            </div>
+        </div>
+
+        <!-- Edit Mode -->
+        <div id="edit-mode" class="hidden">
+            <div class="page-content" style="max-width: 1200px;">
+                <h2>Edit Page</h2>
+                <input type="text" id="edit-slug" placeholder="Slug (e.g. architecture-overview)">
+                <input type="text" id="edit-title" placeholder="Page Title">
+                <div id="editor-container">
+                    <textarea id="markdown-input" oninput="updatePreview()" placeholder="# Write Markdown here..."></textarea>
+                    <div id="preview"></div>
+                </div>
+                <input type="text" id="commit-message" placeholder="Commit message">
+                <button onclick="savePage()">Save Page</button>
+                <button onclick="cancelEdit()" style="background: #666;">Cancel</button>
+            </div>
+        </div>
+        
+        <!-- Search Results -->
+        <div id="search-mode" class="hidden">
+             <h2>Search Results</h2>
+             <div id="search-results"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1/wiki';
+        let currentPage = null;
+
+        async function loadPage(slug) {
+            try {
+                const res = await fetch(`${API_BASE}/pages/${slug}`);
+                if (!res.ok) throw new Error('Page not found');
+                const page = await res.json();
+                currentPage = page;
+                renderPage(page);
+            } catch (e) {
+                alert(e.message);
+                showCreate(slug);
+            }
+        }
+
+        async function renderPage(page) {
+            document.getElementById('view-mode').classList.remove('hidden');
+            document.getElementById('edit-mode').classList.add('hidden');
+            document.getElementById('search-mode').classList.add('hidden');
+
+            document.getElementById('page-title').innerText = page.title;
+            
+            // Render markdown using backend preview API for accuracy
+            const previewRes = await fetch(`${API_BASE}/preview?content=${encodeURIComponent(page.content || "")}`, { method: 'POST' });
+            const previewData = await previewRes.json();
+            document.getElementById('page-body').innerHTML = previewData.html;
+
+            loadComments(page.id);
+        }
+
+        function showCreate(slug = '') {
+            document.getElementById('view-mode').classList.add('hidden');
+            document.getElementById('edit-mode').classList.remove('hidden');
+            document.getElementById('search-mode').classList.add('hidden');
+
+            document.getElementById('edit-slug').value = slug;
+            document.getElementById('edit-title').value = '';
+            document.getElementById('markdown-input').value = '';
+            document.getElementById('preview').innerHTML = '';
+            currentPage = null;
+        }
+
+        function editCurrentPage() {
+            if (!currentPage) return;
+            showCreate(currentPage.slug);
+            document.getElementById('edit-title').value = currentPage.title;
+            document.getElementById('markdown-input').value = currentPage.content || ""; // Assuming content is in DTO
+            updatePreview();
+        }
+
+        async function updatePreview() {
+            const content = document.getElementById('markdown-input').value;
+            // Optimization: Debounce this in real app
+            const res = await fetch(`${API_BASE}/preview?content=${encodeURIComponent(content)}`, { method: 'POST' });
+            const data = await res.json();
+            document.getElementById('preview').innerHTML = data.html;
+        }
+
+        async function savePage() {
+            const slug = document.getElementById('edit-slug').value;
+            const title = document.getElementById('edit-title').value;
+            const content = document.getElementById('markdown-input').value;
+            const message = document.getElementById('commit-message').value;
+
+            const payload = {
+                slug,
+                title,
+                content,
+                namespace: 'default',
+                commit_message: message || 'Update',
+                version: currentPage ? currentPage.version : 0
+            };
+
+            let res;
+            if (currentPage) {
+                // Update
+                 res = await fetch(`${API_BASE}/pages/${slug}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        content,
+                        version: currentPage.version,
+                        commit_message: message
+                    })
+                });
+            } else {
+                // Create
+                res = await fetch(`${API_BASE}/pages`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            if (res.ok) {
+                loadPage(slug);
+            } else {
+                const err = await res.json();
+                alert('Error: ' + JSON.stringify(err));
+            }
+        }
+        
+        async function search() {
+            const query = document.getElementById('search-input').value;
+            const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`);
+            const results = await res.json();
+            
+            document.getElementById('view-mode').classList.add('hidden');
+            document.getElementById('edit-mode').classList.add('hidden');
+            document.getElementById('search-mode').classList.remove('hidden');
+            
+            const container = document.getElementById('search-results');
+            container.innerHTML = results.map(r => `
+                <div style="padding: 10px; border-bottom: 1px solid #eee;">
+                    <h3><a href="#" onclick="loadPage('${r.page_id}')">${r.title}</a> <small>(${Math.round(r.score*100)}%)</small></h3>
+                    <p>${r.snippet}</p>
+                </div>
+            `).join('');
+        }
+
+        async function loadComments(pageId) {
+            // Stub
+            document.getElementById('comments-section').innerHTML = "<i>Comments loading...</i>";
+        }
+
+        // Init
+        loadPage('home');
+    </script>
+</body>
+</html>
+

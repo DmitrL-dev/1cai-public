@@ -1,0 +1,46 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: 1c-ai-stack
+
+resources:
+  - namespace.yaml
+  - configmaps/postgres-config.yaml
+  - secrets/secrets.yaml
+  - persistent-volumes/postgres-pv.yaml
+  - persistent-volumes/neo4j-pv.yaml
+  - deployments/postgres.yaml
+  - deployments/neo4j.yaml
+  - deployments/api-gateway.yaml
+  - ingress.yaml
+
+# ConfigMap generator
+configMapGenerator:
+  - name: app-config
+    literals:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+
+# Secret generator (for non-sensitive config)
+secretGenerator:
+  - name: app-secrets
+    envs:
+      - .env.production
+
+# Images
+images:
+  - name: 1c-ai/api-gateway
+    newTag: 1.0.0
+
+# Common labels
+commonLabels:
+  app.kubernetes.io/name: 1c-ai-stack
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/managed-by: kustomize
+
+# Patches
+patchesStrategicMerge:
+  - patches/resource-limits.yaml
+
+
+

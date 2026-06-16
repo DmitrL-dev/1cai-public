@@ -1,0 +1,10 @@
+# Preset: n8n-workflow
+targets:
+  - integrations/n8n/workflows/github_pr_code_review.json
+profile: n8n-workflow
+local: true
+format: json
+output: reports/n8n-workflow.json
+markdown: reports/n8n-workflow.md
+html: reports/n8n-workflow.html
+

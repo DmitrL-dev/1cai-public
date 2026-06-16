@@ -1,0 +1,31 @@
+name: Linkerd Smoke
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/service_mesh/linkerd/**'
+      - '.github/workflows/linkerd-smoke.yml'
+      - 'infrastructure/argocd/**'
+      - 'observability/chaos/**'
+  schedule:
+    - cron: '0 3 * * 1'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl jq
+          curl -Lo kind https://kind.sigs.k8s.io/dl/v0.22.0/kind-linux-amd64
+          chmod +x kind
+          sudo mv kind /usr/local/bin/kind
+      - name: Execute Linkerd smoke test
+        env:
+          PATH: ${{ runner.temp }}:$PATH
+        run: |
+          curl -sL https://run.linkerd.io/install | sh
+          export PATH=$HOME/.linkerd2/bin:$PATH
+          bash scripts/service_mesh/linkerd/ci_smoke.sh

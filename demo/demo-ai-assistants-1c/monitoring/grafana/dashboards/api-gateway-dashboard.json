@@ -1,0 +1,116 @@
+{
+  "dashboard": {
+    "title": "API Gateway Metrics",
+    "tags": ["api-gateway", "demo"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Uptime",
+        "type": "stat",
+        "targets": [
+          {"expr": "up{job=\"api-gateway\"}", "legendFormat": "API Gateway"}
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [{"color": "red", "value": 0}, {"color": "green", "value": 1}]
+            }
+          }
+        },
+        "gridPos": {"h": 6, "w": 8, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Requests per Second",
+        "type": "stat",
+        "targets": [
+          {"expr": "rate(http_requests_total{job=\"api-gateway\"}[5m])", "legendFormat": "RPS"}
+        ],
+        "gridPos": {"h": 6, "w": 8, "x": 8, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Average Response Time",
+        "type": "stat",
+        "targets": [
+          {"expr": "rate(http_request_duration_seconds_sum{job=\"api-gateway\"}[5m]) / rate(http_request_duration_seconds_count{job=\"api-gateway\"}[5m])", "legendFormat": "Avg Response Time"}
+        ],
+        "gridPos": {"h": 6, "w": 8, "x": 16, "y": 0}
+      },
+      {
+        "id": 4,
+        "title": "Request Rate by Status",
+        "type": "graph",
+        "targets": [
+          {"expr": "rate(http_requests_total{job=\"api-gateway\"}[5m])", "legendFormat": "{{status}}"}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6}
+      },
+      {
+        "id": 5,
+        "title": "Response Time Percentiles",
+        "type": "graph",
+        "targets": [
+          {"expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=\"api-gateway\"}[5m]))", "legendFormat": "50th"},
+          {"expr": "histogram_quantile(0.90, rate(http_request_duration_seconds_bucket{job=\"api-gateway\"}[5m]))", "legendFormat": "90th"},
+          {"expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"api-gateway\"}[5m]))", "legendFormat": "95th"},
+          {"expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job=\"api-gateway\"}[5m]))", "legendFormat": "99th"}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6}
+      },
+      {
+        "id": 6,
+        "title": "Error Rate by Status Code",
+        "type": "graph",
+        "targets": [
+          {"expr": "rate(http_requests_total{job=\"api-gateway\", status=~\"4..|5..\"}[5m])", "legendFormat": "{{status}}"}
+        ],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 14}
+      },
+      {
+        "id": 7,
+        "title": "Active Connections",
+        "type": "graph",
+        "targets": [
+          {"expr": "http_requests_active{job=\"api-gateway\"}", "legendFormat": "Active Requests"}
+        ],
+        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 22}
+      },
+      {
+        "id": 8,
+        "title": "Rate Limiter Stats",
+        "type": "graph",
+        "targets": [
+          {"expr": "rate(rate_limiter_requests_total{job=\"api-gateway\"}[5m])", "legendFormat": "Rate Limiter - {{result}}"}
+        ],
+        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 22}
+      },
+      {
+        "id": 9,
+        "title": "Cache Hit Rate",
+        "type": "graph",
+        "targets": [
+          {"expr": "rate(cache_hits_total{job=\"api-gateway\"}[5m]) / (rate(cache_hits_total{job=\"api-gateway\"}[5m]) + rate(cache_misses_total{job=\"api-gateway\"}[5m])) * 100", "legendFormat": "Cache Hit Rate"}
+        ],
+        "fieldConfig": {
+          "defaults": {"unit": "percent"}
+        },
+        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 28}
+      },
+      {
+        "id": 10,
+        "title": "Endpoint Performance",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"api-gateway\", endpoint!=\"\"}[5m])))",
+            "instant": true
+          }
+        ],
+        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 28}
+      }
+    ]
+  }
+}

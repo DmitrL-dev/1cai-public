@@ -1,0 +1,48 @@
+global:
+  namespace: observability
+
+prometheus:
+  image: prom/prometheus:v2.48.0
+  replicaCount: 1
+  storage:
+    enabled: false
+  scrapeInterval: 15s
+  retention: 7d
+
+loki:
+  image: grafana/loki:2.9.3
+  replicaCount: 1
+  storage:
+    enabled: false
+
+promtail:
+  image: grafana/promtail:2.9.3
+  replicaCount: 1
+  hostPath: /var/log
+
+tempo:
+  image: grafana/tempo:2.4.1
+  replicaCount: 1
+  storage:
+    enabled: false
+
+otelCollector:
+  image: otel/opentelemetry-collector:0.87.0
+  replicaCount: 1
+
+grafana:
+  image: grafana/grafana:10.1.5
+  adminUser: admin
+  adminPassword: admin
+  service:
+    type: ClusterIP
+    port: 3000
+  dashboards:
+    enabled: true
+  datasources:
+    prometheusUrl: http://observability-stack-prometheus:9090
+    lokiUrl: http://observability-stack-loki:3100
+    tempoUrl: http://observability-stack-tempo:3100
+
+serviceMonitor:
+  enabled: false

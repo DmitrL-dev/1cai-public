@@ -1,0 +1,94 @@
+# 🚀 Showcase / Use Cases
+
+Набор готовых сценариев, которые можно повторить за 30–40 минут, чтобы увидеть 1C AI Stack в деле.
+
+---
+
+## 1. Семантический поиск + оптимизация кода (15 минут)
+
+**Цель:** найти проблемную функцию в конфигурации и сгенерировать улучшенную версию.
+
+1. Запустите основное API:
+   ```bash
+   docker compose up -d
+   ```
+2. Выполните семантический поиск:
+   ```bash
+   python examples/semantic_search_demo.py "как рассчитать налог" --limit 3
+   ```
+   Получите список подходящих функций с фрагментами кода.
+3. Откройте интересующий модуль в EDT и воспользуйтесь плагином `Quick Analysis` (`Ctrl+Alt+Q`) — увидите статистику, зависимости и рекомендации.
+4. Сгенерируйте обновлённый модуль/процедуру:
+   ```bash
+   python examples/code_execution_examples.py
+   ```
+   Скрипт вызовет MCP и соберёт новый вариант функции. После проверки можно вставить его в конфигурацию.
+
+**Ожидаемый результат:** новый код, сохранённый в `examples/output/`, и insight в плагине EDT.
+
+---
+
+## 2. Полный ML-пайплайн (20 минут)
+
+**Цель:** подготовить датасет, обучить демо-модель и оценить её.
+
+1. Подготовьте окружение:
+   ```bash
+   pip install -r requirements.txt
+   pip install -r requirements-neural.txt
+   python scripts/ml/config_utils.py --info DEMO
+   ```
+2. Соберите демо-датасет (см. `docs/01-getting-started/LOCAL_MODEL_TRAINING.md`):
+   ```bash
+   python scripts/dataset/create_ml_dataset.py
+   ```
+3. Запустите тренировку и оценку через make-таргеты:
+   ```bash
+   make train-ml-demo
+   make eval-ml-demo
+   ```
+4. Отчёты лежат в `models/demo-model/` и `output/dataset/DEMO_qa.jsonl`.
+
+**Ожидаемый результат:** демо-модель + отчёт `eval_model.py` и готовый pipeline для дальнейшего обучения.
+
+---
+
+## 3. Безопасность: Security Agent Framework (25 минут)
+
+**Цель:** пробежаться по репозиторию/REST API и собрать отчёт по уязвимостям.
+
+1. Установите зависимости:
+   ```bash
+   pip install -r security/agent_framework/requirements.txt
+   ```
+2. Запустите локальную проверку репозитория:
+   ```bash
+   python -m security.agent_framework.cli run \
+     --target ./ \
+     --profile repo-static \
+     --local \
+     --markdown reports/security/repo.md
+   ```
+3. Проверку веб-API можно выполнить:
+   ```bash
+   python -m security.agent_framework.cli run \
+     --target http://localhost:8080 \
+     --profile web-api \
+     --local \
+     --markdown reports/security/web.md
+   ```
+4. Готовый отчёт откройте в `reports/security/`.
+
+**Ожидаемый результат:** отчёты с находками, готовые к загрузке в knowledge base или рассылку.
+
+---
+
+## 4. Дополнительно
+
+- **EDT Dashboard:** после `make train-ml-demo` обновите каталог `output/analysis/` и откройте `Analysis Dashboard` в плагине — увидите реальные цифры.
+- **n8n интеграция:** воспользуйтесь примером `integrations/n8n/workflows/github_pr_code_review.json` и включите security скан в workflow.
+
+---
+
+Если хотите поделиться собственным сценарием — создайте PR или issue с описанием.*** End Patch
+

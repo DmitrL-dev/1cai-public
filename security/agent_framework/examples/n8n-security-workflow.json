@@ -1,0 +1,54 @@
+{
+  "name": "Security Scan Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "cronExpression": "0 6 * * *",
+        "timezone": "Europe/Moscow"
+      },
+      "id": "trigger",
+      "name": "Every Day 06:00",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 2,
+      "position": [280, 260]
+    },
+    {
+      "parameters": {
+        "command": "python",
+        "arguments": "-m security.agent_framework.cli run --config {{ $json.config_path }}"
+      },
+      "id": "executeCommand",
+      "name": "Run Security CLI",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [520, 260]
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "rawData": "{\"text\":\"Security scan completed. See reports at https://security.example.com\"}"
+      },
+      "id": "slack",
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [760, 260],
+      "credentials": {
+        "slackApi": "Security Slack"
+      }
+    }
+  ],
+  "connections": {
+    "Every Day 06:00": {
+      "main": [
+        [{ "node": "Run Security CLI", "type": "main", "index": 0 }]
+      ]
+    },
+    "Run Security CLI": {
+      "main": [
+        [{ "node": "Slack Notification", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
+

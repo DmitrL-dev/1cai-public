@@ -1,0 +1,126 @@
+{
+  "name": "1C AI Platform Health Alert",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "minutes": 10
+            }
+          ]
+        }
+      },
+      "id": "CronHealth",
+      "name": "Every 10 Minutes",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        240,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "stats",
+        "operation": "overview"
+      },
+      "id": "OneCHealth",
+      "name": "1C AI Stack Health",
+      "type": "@onecai/n8n-nodes-onec-ai.oneCai",
+      "typeVersion": 1,
+      "position": [
+        520,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json[\"neo4j\"] && $json[\"neo4j\"].status !== \"healthy\"}}",
+              "operation": "isTrue"
+            },
+            {
+              "value1": "={{$json[\"postgresql\"] && $json[\"postgresql\"].status !== \"healthy\"}}",
+              "operation": "isTrue"
+            },
+            {
+              "value1": "={{$json[\"qdrant\"] && $json[\"qdrant\"].status !== \"healthy\"}}",
+              "operation": "isTrue"
+            }
+          ]
+        }
+      },
+      "id": "IfAlert",
+      "name": "Service Degraded?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        800,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "-1001234567890",
+        "text": "⚠️ 1C AI Stack: обнаружены проблемы\nNeo4j: ={{$node[\"1C AI Stack Health\"].json[\"neo4j\"]?.status || \"n/a\"}}\nPostgreSQL: ={{$node[\"1C AI Stack Health\"].json[\"postgresql\"]?.status || \"n/a\"}}\nQdrant: ={{$node[\"1C AI Stack Health\"].json[\"qdrant\"]?.status || \"n/a\"}}\nВремя: ={{$now()}}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "TelegramAlert",
+      "name": "Telegram Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        1080,
+        880
+      ]
+    }
+  ],
+  "connections": {
+    "Every 10 Minutes": {
+      "main": [
+        [
+          {
+            "node": "1C AI Stack Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1C AI Stack Health": {
+      "main": [
+        [
+          {
+            "node": "Service Degraded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Service Degraded?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Telegram Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Moscow"
+  },
+  "version": 2
+}
+

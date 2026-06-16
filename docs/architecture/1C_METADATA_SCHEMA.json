@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://1c-ai-stack.example.com/schemas/1c-metadata/v1",
+  "title": "1CMetadata",
+  "description": "JSON Schema для метаданных конфигурации 1C",
+  "type": "object",
+  "required": ["name", "type", "metadata_path"],
+  "properties": {
+    "name": {"type": "string"},
+    "uuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Документ",
+        "Справочник",
+        "РегистрСведений",
+        "РегистрНакопления",
+        "РегистрБухгалтерии",
+        "Отчет",
+        "Обработка",
+        "ОбщийМодуль",
+        "ПланСчетов",
+        "ПланВидовХарактеристик",
+        "ПланВидовРасчета",
+        "БизнесПроцесс",
+        "Задача",
+        "Константа",
+        "Перечисление",
+        "ВнешняяОбработка",
+        "ВнешнийОтчет",
+        "HTTPСервис",
+        "WSСсылка",
+        "ПланОбмена"
+      ]
+    },
+    "metadata_path": {"type": "string"},
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["ObjectModule", "ManagerModule", "FormModule", "CommandModule", "RecordSetModule"]
+          },
+          "name": {"type": "string"},
+          "content": {"type": "string"},
+          "loc": {"type": "integer"},
+          "complexity": {"type": "integer"}
+        }
+      }
+    },
+    "forms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "type": {"type": "string"},
+          "commands": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "handler": {"type": "string"}
+        }
+      }
+    },
+    "properties": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
+

@@ -1,0 +1,39 @@
+{{- if .Values.mcp.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "1cai-stack.fullname" . }}-mcp
+  labels:
+    app.kubernetes.io/name: {{ include "1cai-stack.name" . }}
+    app.kubernetes.io/component: mcp
+spec:
+  replicas: {{ .Values.mcp.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "1cai-stack.name" . }}
+      app.kubernetes.io/component: mcp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "1cai-stack.name" . }}
+        app.kubernetes.io/component: mcp
+    spec:
+      containers:
+        - name: mcp
+          image: "{{ .Values.mcp.image.repository }}:{{ .Values.mcp.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6001
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 6001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 6001
+            initialDelaySeconds: 20
+            periodSeconds: 10
+{{- end }}

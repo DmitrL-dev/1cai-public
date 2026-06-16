@@ -1,0 +1,341 @@
+# ===========================================
+# Prometheus Configuration для Supabase интеграции
+# ===========================================
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'ai-assistants-production'
+    environment: 'production'
+
+# ===========================================
+# Alerting Rules
+# ===========================================
+rule_files:
+  - "/etc/prometheus/rules/*.yml"
+
+# ===========================================
+# External Labels
+# ===========================================
+scrape_configs:
+  
+  # ===========================================
+  # Supabase Services Monitoring
+  # ===========================================
+  
+  # Supabase API Gateway
+  - job_name: 'supabase-api'
+    static_configs:
+      - targets: ['supabase-api:8080']
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+    honor_labels: true
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: supabase-api:8080
+      - target_label: service
+        replacement: supabase-api
+      - target_label: environment
+        replacement: production
+
+  # Supabase Auth Service
+  - job_name: 'supabase-auth'
+    static_configs:
+      - targets: ['supabase-auth:9999']
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: supabase-auth:9999
+      - target_label: service
+        replacement: supabase-auth
+      - target_label: environment
+        replacement: production
+
+  # Supabase Storage Service
+  - job_name: 'supabase-storage'
+    static_configs:
+      - targets: ['supabase-storage:5000']
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: supabase-storage:5000
+      - target_label: service
+        replacement: supabase-storage
+      - target_label: environment
+        replacement: production
+
+  # Supabase Edge Functions
+  - job_name: 'supabase-edge'
+    static_configs:
+      - targets: ['supabase-edge:54321']
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: supabase-edge:54321
+      - target_label: service
+        replacement: supabase-edge
+      - target_label: environment
+        replacement: production
+
+  # ===========================================
+  # AI Assistants API Monitoring
+  # ===========================================
+  
+  # Main AI Assistants API
+  - job_name: 'ai-assistants-api'
+    static_configs:
+      - targets: ['ai-assistants:8000']
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: ai-assistants:8000
+      - target_label: service
+        replacement: ai-assistants-api
+      - target_label: environment
+        replacement: production
+
+  # ===========================================
+  # ML System Monitoring
+  # ===========================================
+  
+  # ML System API
+  - job_name: 'ml-system'
+    static_configs:
+      - targets: ['ml-system:8080']
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: ml-system:8080
+      - target_label: service
+        replacement: ml-system
+      - target_label: environment
+        replacement: production
+
+  # ===========================================
+  # Infrastructure Monitoring
+  # ===========================================
+  
+  # Redis
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+    relabel_configs:
+      - target_label: service
+        replacement: redis
+      - target_label: environment
+        replacement: production
+
+  # PostgreSQL (Local)
+  - job_name: 'postgres-local'
+    static_configs:
+      - targets: ['postgres-local:5432']
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+    relabel_configs:
+      - target_label: service
+        replacement: postgres-local
+      - target_label: environment
+        replacement: production
+
+  # ===========================================
+  # Nginx Load Balancer Monitoring
+  # ===========================================
+  
+  # Nginx
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx:80']
+    scrape_interval: 30s
+    metrics_path: '/nginx_status'
+    scrape_timeout: 10s
+    relabel_configs:
+      - target_label: service
+        replacement: nginx
+      - target_label: environment
+        replacement: production
+
+  # ===========================================
+  # Celery Workers Monitoring
+  # ===========================================
+  
+  # Celery Workers
+  - job_name: 'celery-workers'
+    static_configs:
+      - targets: ['celery-worker:8001']
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: celery-worker:8001
+      - target_label: service
+        replacement: celery-workers
+      - target_label: environment
+        replacement: production
+
+  # ===========================================
+  # Supabase Cloud Monitoring (опционально)
+  # ===========================================
+  
+  # Если используется Supabase Cloud, можно добавить мониторинг через API
+  # Раскомментируйте для мониторинга облачной версии Supabase
+  # - job_name: 'supabase-cloud'
+  #   static_configs:
+  #     - targets: ['supabase-cloud-api']
+  #   scrape_interval: 60s
+  #   metrics_path: '/metrics'
+  #   scrape_timeout: 10s
+  #   relabel_configs:
+  #     - target_label: service
+  #       replacement: supabase-cloud
+  #     - target_label: environment
+  #       replacement: production
+
+  # ===========================================
+  # Node Exporter для системных метрик
+  # ===========================================
+  
+  # Node Exporter
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+    relabel_configs:
+      - target_label: service
+        replacement: node-exporter
+      - target_label: environment
+        replacement: production
+
+  # ===========================================
+  # Docker Container Monitoring
+  # ===========================================
+  
+  # cAdvisor для мониторинга контейнеров
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+    relabel_configs:
+      - target_label: service
+        replacement: cadvisor
+      - target_label: environment
+        replacement: production
+
+  # ===========================================
+  # Prometheus Self-Monitoring
+  # ===========================================
+  
+  # Prometheus само мониторинг
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+    scrape_timeout: 10s
+    relabel_configs:
+      - target_label: service
+        replacement: prometheus
+      - target_label: environment
+        replacement: production
+
+# ===========================================
+# Alerting Configuration
+# ===========================================
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+      scheme: http
+      timeout: 10s
+
+# ===========================================
+# Storage Configuration
+# ===========================================
+storage:
+  tsdb:
+    retention.time: 30d
+    retention.size: 10GB
+
+# ===========================================
+# Scrape Configuration Defaults
+# ===========================================
+scrape_config_defaults:
+  scrape_timeout: 10s
+  scrape_interval: 15s
+  metrics_path: /metrics
+  scheme: http
+  honor_labels: true
+  params:
+    format: ['prometheus']
+
+# ===========================================
+# Remote Write Configuration (для долгосрочного хранения)
+# ===========================================
+# Раскомментируйте для отправки метрик в удаленное хранилище
+# remote_write:
+#   - url: "https://your-remote-storage-endpoint/api/v1/write"
+#     basic_auth:
+#       username: "username"
+#       password: "password"
+#     write_relabel_configs:
+#       - source_labels: [__name__]
+#         regex: "up"
+#         action: drop
+
+# ===========================================
+# Remote Read Configuration (для чтения исторических данных)
+# ===========================================
+# Раскомментируйте для чтения исторических данных
+# remote_read:
+#   - url: "https://your-remote-storage-endpoint/api/v1/read"
+#     basic_auth:
+#       username: "username"
+#       password: "password"

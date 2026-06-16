@@ -1,0 +1,28 @@
+{
+    "mcpServers": {
+      "1c-server-direct": {
+        "url": "http://localhost/your_base_name/hs/mcp/"
+      },
+      "1c-server-stdio": {
+        "command": "d:/rep/1c_mcp/venv/Scripts/python.exe",
+        "args": ["-m", "src.py_server"],
+        "cwd": "D:/rep/1c_mcp",
+        "env": {
+          "PYTHONPATH":"D:/rep/1c_mcp",
+          "PYTHONIOENCODING":"utf-8",
+
+          "MCP_ONEC_URL":"http://localhost/cg",
+          "MCP_ONEC_USERNAME":"Администратор",
+          "MCP_ONEC_PASSWORD":"",
+          
+          "MCP_ONEC_SERVICE_ROOT":"mcp"
+        }
+      },
+      "1c-server-http": {
+        "url": "http://127.0.0.1:8000/mcp/"
+      },
+      "1c-server-http-sse": {
+        "url": "http://127.0.0.1:8000/sse"
+      }
+    }
+  }

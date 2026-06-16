@@ -1,0 +1,23 @@
+@startuml
+title Latency Budget - Quick Analysis Request
+
+skinparam backgroundColor #FFFFFF
+
+salt
+{
+{T
++ Segment | Target (p95) | Stretch Goal | Notes
+| Client (EDT Plugin) -> API Gateway | 120 ms | 80 ms | Includes TLS handshake and auth
+| API Gateway processing | 40 ms | 25 ms | Auth, validation, enqueue
+| Event routing (NATS) | 50 ms | 30 ms | NATS pub/sub latency
+| Event wait (NATS -> Workers) | 100 ms | 60 ms | Auto scales with event backlog < 200
+| Worker analysis (per module) | 800 ms | 500 ms | Parallelised; depends on module size
+| Graph persistence (Neo4j) | 120 ms | 80 ms | Batch transaction
+| Vector embedding update (Qdrant) | 90 ms | 60 ms | Asynchronous fallback allowed
+| Response aggregation | 70 ms | 40 ms | Data shaping, summarisation
+| Total round trip | 1.39 s | 0.885 s | Hard SLO: 2.0 s p95
+}
+}
+
+@enduml
+

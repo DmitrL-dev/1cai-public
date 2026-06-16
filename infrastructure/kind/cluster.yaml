@@ -1,0 +1,19 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: 1cai-devops
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.29.4
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 8080
+        protocol: TCP
+      - containerPort: 30443
+        hostPort: 8443
+        protocol: TCP
+  - role: worker
+  - role: worker
+networking:
+  disableDefaultCNI: false
+  podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.96.0.0/12

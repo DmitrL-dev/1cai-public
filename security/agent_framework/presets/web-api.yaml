@@ -1,0 +1,12 @@
+# Preset: web-api
+targets:
+  - http://localhost:8080/health
+profile: web-api
+local: true
+format: json
+output: reports/web-api.json
+markdown: reports/web-api.md
+html: reports/web-api.html
+knowledge_base: reports/security-findings.jsonl
+publish_dir: portal/security
+

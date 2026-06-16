@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 1cai-multi-env
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: 1cai-staging
+            namespace: 1cai-staging
+            revision: main
+          - name: 1cai-prod
+            namespace: 1cai-prod
+            revision: main
+  template:
+    metadata:
+      name: '{{name}}'
+    spec:
+      project: 1cai
+      source:
+        repoURL: https://github.com/DmitrL-dev/1cai.git
+        targetRevision: '{{revision}}'
+        path: infrastructure/helm/1cai-stack
+        helm:
+          valueFiles:
+            - values.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+
+

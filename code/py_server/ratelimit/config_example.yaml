@@ -1,0 +1,121 @@
+# Пример конфигурации лимитов для 1c_mcp Rate Limiting
+# Этот файл можно сохранить как config/ratelimits.yaml
+
+# Базовые лимиты по типам
+limits:
+  ip:
+    requests_per_minute: 100
+    requests_per_hour: 1000
+    requests_per_day: 10000
+    burst_allowance: 20
+    penalty_duration: 300
+  
+  user:
+    requests_per_minute: 50
+    requests_per_hour: 500
+    requests_per_day: 5000
+    burst_allowance: 10
+    penalty_duration: 600
+  
+  mcp_tool:
+    requests_per_minute: 10
+    requests_per_hour: 100
+    requests_per_day: 1000
+    burst_allowance: 5
+    penalty_duration: 900
+  
+  session:
+    requests_per_minute: 200
+    requests_per_hour: 2000
+    requests_per_day: 20000
+    burst_allowance: 30
+    penalty_duration: 300
+  
+  endpoint:
+    requests_per_minute: 1000
+    requests_per_hour: 10000
+    requests_per_day: 100000
+    burst_allowance: 50
+    penalty_duration: 60
+
+# Многоуровневая система лимитов
+tiers:
+  bronze:
+    name: "Bronze"
+    multiplier: 0.5
+    priority: 1
+    rules: {}
+  
+  silver:
+    name: "Silver"
+    multiplier: 1.0
+    priority: 2
+    rules: {}
+  
+  gold:
+    name: "Gold"
+    multiplier: 1.5
+    priority: 3
+    rules: {}
+  
+  platinum:
+    name: "Platinum"
+    multiplier: 2.0
+    priority: 4
+    rules: {}
+  
+  admin:
+    name: "Administrator"
+    multiplier: 10.0
+    priority: 10
+    rules:
+      user:
+        requests_per_minute: 10000
+        requests_per_hour: 100000
+        burst_allowance: 1000
+
+# Временные окна для динамических лимитов
+time_windows:
+  peak_hours:
+    start_time: "09:00"
+    end_time: "18:00"
+    days_of_week: [1, 2, 3, 4, 5]  # Пн-Пт
+    multiplier: 0.7  # Снижение лимитов на 30% в рабочее время
+    active: true
+  
+  night_hours:
+    start_time: "22:00"
+    end_time: "06:00"
+    days_of_week: [0, 1, 2, 3, 4, 5, 6]  # Все дни
+    multiplier: 1.5  # Увеличение лимитов на 50% ночью
+    active: true
+  
+  weekend:
+    start_time: "00:00"
+    end_time: "23:59"
+    days_of_week: [5, 6]  # Сб-Вс
+    multiplier: 2.0  # Удвоение лимитов на выходных
+    active: true
+
+# Переопределения для специальных случаев
+overrides:
+  # Импортантные API endpoints
+  "/api/import/*":
+    requests_per_minute: 500
+    requests_per_hour: 5000
+    burst_allowance: 100
+  
+  # Критические MCP tools
+  "mcp_heavy_analysis":
+    requests_per_minute: 5
+    requests_per_hour: 50
+    penalty_duration: 1800
+
+# Настройки мониторинга
+monitoring:
+  enabled: true
+  metrics_interval: 60
+  alert_thresholds:
+    violation_rate: 0.05  # 5% нарушений
+    response_time_ms: 1000
+    blocked_requests_per_minute: 100

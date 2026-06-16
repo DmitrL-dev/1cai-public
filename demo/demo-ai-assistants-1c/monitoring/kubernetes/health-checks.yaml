@@ -1,0 +1,333 @@
+# Health Checks для Kubernetes Pods
+
+# API Gateway Health Checks
+apiVersion: v1
+kind: Pod
+metadata:
+  name: api-gateway
+  namespace: demo-ai-assistants
+  labels:
+    app: api-gateway
+    service: api-gateway
+spec:
+  containers:
+  - name: api-gateway
+    image: demo-ai-assistants/api-gateway:latest
+    ports:
+    - containerPort: 8080
+      name: http
+    - containerPort: 9090
+      name: metrics
+    
+    # Liveness Probe - проверяет основную функциональность
+    livenessProbe:
+      httpGet:
+        path: /health/live
+        port: 8080
+        scheme: HTTP
+      initialDelaySeconds: 30
+      periodSeconds: 30
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      
+      # Дополнительные критерии
+      grpc:
+        port: 8080
+      exec:
+        command:
+        - sh
+        - -c
+        - |
+          # Проверка Redis соединения
+          redis-cli -h redis ping || exit 1
+          # Проверка Database соединения
+          psql -h postgres -U app_user -d app_db -c "SELECT 1;" || exit 1
+    
+    # Readiness Probe - готовность к приему трафика
+    readinessProbe:
+      httpGet:
+        path: /health/ready
+        port: 8080
+        scheme: HTTP
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 3
+      
+      # Проверка зависимостей перед готовностью
+      grpc:
+        port: 8080
+      exec:
+        command:
+        - sh
+        - -c
+        - |
+          # Проверка health check endpoints других сервисов
+          curl -f http://supabase-functions:8000/health || exit 1
+          curl -f http://postgres-exporter:9187/health || exit 1
+    
+    # Startup Probe - для медленно запускающихся приложений
+    startupProbe:
+      httpGet:
+        path: /health/startup
+        port: 8080
+        scheme: HTTP
+      initialDelaySeconds: 0
+      periodSeconds: 5
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 30  # 2.5 минуты на запуск
+      
+      grpc:
+        port: 8080
+      exec:
+        command:
+        - sh
+        - -c
+        - |
+          # Инициализация схемы БД
+          if [ ! -f /app/.initialized ]; then
+            exit 1
+          fi
+          # Миграции БД
+          psql -h postgres -U app_user -d app_db -c "SELECT current_database();" || exit 1
+
+---
+# Supabase Edge Functions Health Checks
+apiVersion: v1
+kind: Pod
+metadata:
+  name: supabase-functions
+  namespace: demo-ai-assistants
+  labels:
+    app: supabase-functions
+    service: supabase
+spec:
+  containers:
+  - name: supabase-functions
+    image: demo-ai-assistants/supabase-functions:latest
+    ports:
+    - containerPort: 8000
+      name: http
+    - containerPort: 8001
+      name: metrics
+    
+    livenessProbe:
+      httpGet:
+        path: /health/live
+        port: 8000
+        scheme: HTTP
+      initialDelaySeconds: 60  # Edge Functions могут запускаться дольше
+      periodSeconds: 30
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+      
+      exec:
+        command:
+        - deno
+        - check
+        - health.ts
+    
+    readinessProbe:
+      httpGet:
+        path: /health/ready
+        port: 8000
+        scheme: HTTP
+      initialDelaySeconds: 15
+      periodSeconds: 10
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 3
+      
+      exec:
+        command:
+        - deno
+        - test
+        - --run
+        - health.test.ts
+    
+    startupProbe:
+      httpGet:
+        path: /health/startup
+        port: 8000
+        scheme: HTTP
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      timeoutSeconds: 15
+      successThreshold: 1
+      failureFailure: 20  # 3.3 минуты
+      
+      exec:
+        command:
+        - deno
+        - run
+        - --check
+        - --allow-net
+        - --allow-env
+        - startup-check.ts
+
+---
+# Database Health Checks
+apiVersion: v1
+kind: Pod
+metadata:
+  name: postgres
+  namespace: demo-ai-assistants
+  labels:
+    app: postgres
+    service: database
+spec:
+  containers:
+  - name: postgres
+    image: postgres:15
+    ports:
+    - containerPort: 5432
+      name: postgres
+    
+    # База данных не нуждается в liveness probe
+    # Только readiness для проверки доступности
+    readinessProbe:
+      exec:
+        command:
+        - pg_isready
+        - -h
+        - localhost
+        - -p
+        - "5432"
+        - -U
+        - postgres
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 3
+    
+    livenessProbe: {}
+    startupProbe: {}
+
+---
+# Redis Health Checks
+apiVersion: v1
+kind: Pod
+metadata:
+  name: redis
+  namespace: demo-ai-assistants
+  labels:
+    app: redis
+    service: cache
+spec:
+  containers:
+  - name: redis
+    image: redis:7-alpine
+    ports:
+    - containerPort: 6379
+      name: redis
+    
+    readinessProbe:
+      exec:
+        command:
+        - redis-cli
+        - ping
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      timeoutSeconds: 3
+      successThreshold: 1
+      failureThreshold: 3
+    
+    livenessProbe:
+      exec:
+        command:
+        - redis-cli
+        - ping
+      initialDelaySeconds: 10
+      periodSeconds: 30
+      timeoutSeconds: 3
+      successThreshold: 1
+      failureThreshold: 3
+
+---
+# Elasticsearch Health Checks
+apiVersion: v1
+kind: Pod
+metadata:
+  name: elasticsearch
+  namespace: demo-ai-assistants
+  labels:
+    app: elasticsearch
+    service: logging
+spec:
+  containers:
+  - name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    ports:
+    - containerPort: 9200
+      name: http
+    - containerPort: 9300
+      name: transport
+    
+    readinessProbe:
+      httpGet:
+        path: /_cluster/health
+        port: 9200
+        scheme: HTTP
+      initialDelaySeconds: 30
+      periodSeconds: 30
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+    
+    livenessProbe:
+      httpGet:
+        path: /
+        port: 9200
+        scheme: HTTP
+      initialDelaySeconds: 60
+      periodSeconds: 60
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3
+
+---
+# Prometheus Health Checks
+apiVersion: v1
+kind: Pod
+metadata:
+  name: prometheus
+  namespace: demo-ai-assistants
+  labels:
+    app: prometheus
+    service: monitoring
+spec:
+  containers:
+  - name: prometheus
+    image: prom/prometheus:latest
+    ports:
+    - containerPort: 9090
+      name: http
+    - containerPort: 9091
+      name: metrics
+    
+    readinessProbe:
+      httpGet:
+        path: /-/ready
+        port: 9090
+        scheme: HTTP
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 3
+    
+    livenessProbe:
+      httpGet:
+        path: /-/healthy
+        port: 9090
+        scheme: HTTP
+      initialDelaySeconds: 30
+      periodSeconds: 30
+      timeoutSeconds: 10
+      successThreshold: 1
+      failureThreshold: 3

@@ -1,0 +1,19 @@
+{{- if .Values.mcp.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "1cai-stack.fullname" . }}-mcp
+  labels:
+    app.kubernetes.io/name: {{ include "1cai-stack.name" . }}
+    app.kubernetes.io/component: mcp
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6001
+      targetPort: 6001
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "1cai-stack.name" . }}
+    app.kubernetes.io/component: mcp
+{{- end }}

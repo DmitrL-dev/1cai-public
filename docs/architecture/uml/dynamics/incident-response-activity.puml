@@ -1,0 +1,48 @@
+@startuml
+title Incident Response Flow
+
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+  BackgroundColor #f6fdf3
+  BarColor #4caf50
+  DiamondBackgroundColor #fff4e6
+}
+
+start
+:Alert triggered in Prometheus/Alertmanager;
+if (Severity >= P1?) then (yes)
+  :Page on-call (Telegram/PagerDuty);
+  :Create incident channel + ticket;
+else (no)
+  :Notify Ops backlog;
+endif
+
+repeat
+  :Triage impact\nIdentify affected services;
+  if (Runbook available?) then (yes)
+    :Execute runbook actions;
+  else (no)
+    :Engage subject matter experts;
+  endif
+
+  :Capture metrics, logs, traces;
+  if (Need rollback?) then (yes)
+    :Trigger release rollback\nvia GitHub Actions;
+    :Validate service health;
+  else (no)
+    :Deploy hotfix branch\nthrough CI pipeline;
+  endif
+
+  :Update stakeholders via status page;
+  :Track SLO recovery;
+  if (Escalation required?) then (yes)
+    :Escalate to leadership;
+  endif
+repeat while (Incident resolved?) is (no)
+
+:Close alert;
+:Schedule postmortem\n(24h for P1, 72h for P2);
+:Document action items in ADR / backlog;
+stop
+@enduml
+

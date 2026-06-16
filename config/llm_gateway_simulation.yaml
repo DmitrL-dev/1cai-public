@@ -1,0 +1,46 @@
+mode: simulation
+scenarios:
+  - name: architect-diagram
+    match:
+      role: architect
+      contains:
+        - диаграмма
+        - mermaid
+    response:
+      provider: local-qwen
+      model: qwen-sim-7b
+      text: |
+        ```mermaid
+        graph TD
+          A[Client] --> B[Gateway]
+          B --> C[LLM Simulation]
+        ```
+
+        Рекомендация: в офлайн-режиме сгенерировать текстовую схему и приложить к отчёту.
+      metadata:
+        confidence: 0.65
+        notes:
+          - "Сценарий моделирования: диаграмма для архитектора"
+  - name: devops-fallback
+    match:
+      role: devops
+      contains:
+        - latency
+        - ошибка
+    response:
+      provider: gigachat
+      model: gigachat-sim
+      text: >
+        [DevOps simulation] Предлагаю переключиться на резервный провайдер,
+        запустить скрипт health-check и подготовить отчёт по задержкам.
+      metadata:
+        checklist:
+          - make check-llm BACKEND=gigachat
+          - pytest tests/integration/test_llm_gateway_simulation.py
+fallback:
+  default_chain:
+    - gigachat
+    - yandex-gpt
+
+
+

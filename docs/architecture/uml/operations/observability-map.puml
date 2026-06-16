@@ -1,0 +1,70 @@
+@startuml
+title Observability Map - Signals and Sinks
+
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+rectangle "Metrics Producers" {
+  component "Graph API" as APIMetrics
+  component "Event-Driven Workers" as WorkerMetrics
+  component "NATS Event Bus" as EventBusMetrics
+  component "ITS Scraper" as ScraperMetrics
+  component "ML Pipelines" as MLPipelineMetrics
+  component "Infrastructure Nodes" as InfraMetrics
+}
+
+rectangle "Metrics Pipeline" {
+  component "Prometheus Agents" as PromAgent
+  component "Prometheus Server" as PromServer
+  component "Recording Rules" as RecordingRules
+  component "Alert Rules" as AlertRules
+}
+
+rectangle "Logs Pipeline" {
+  component "Vector Collectors" as VectorAgents
+  component "Loki Distributor" as LokiDist
+  component "Loki Ingester" as LokiIngester
+  component "Object Storage" as LokiStorage
+}
+
+rectangle "Traces Pipeline" {
+  component "OTel SDK" as OTelSDK
+  component "Tempo Gateway" as TempoGateway
+  component "Tempo Storage" as TempoStorage
+}
+
+rectangle "Consumers" {
+  component "Grafana Dashboards" as GrafanaDash
+  component "Alertmanager" as Alertmanager
+  component "SLO Calculator" as SLOCalc
+  component "Incident Bot" as IncidentBot
+  component "Capacity Reports" as Capacity
+}
+
+APIMetrics --> PromAgent
+WorkerMetrics --> PromAgent
+ScraperMetrics --> PromAgent
+MLPipelineMetrics --> PromAgent
+InfraMetrics --> PromAgent
+
+PromAgent --> PromServer : remote write
+PromServer --> RecordingRules : aggregate
+PromServer --> AlertRules : evaluate
+RecordingRules --> GrafanaDash
+PromServer --> SLOCalc
+AlertRules --> Alertmanager
+Alertmanager --> IncidentBot : Telegram / Email
+SLOCalc --> Capacity : Weekly reports
+
+VectorAgents --> LokiDist
+LokiDist --> LokiIngester
+LokiIngester --> LokiStorage
+LokiStorage --> GrafanaDash : Log panels
+
+OTelSDK --> TempoGateway
+TempoGateway --> TempoStorage
+TempoStorage --> GrafanaDash : Trace explorer
+TempoStorage --> SLOCalc : Latency histogram
+
+@enduml
+

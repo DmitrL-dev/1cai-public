@@ -1,0 +1,49 @@
+# requirements-dev.txt - Development & Testing Dependencies
+# 1cAI / Secure Enterprise OS v4.0
+#
+# Install: pip install -r requirements-dev.txt
+# Consolidated on 2025-02-16
+
+# ===== Testing =====
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+pytest-timeout==2.2.0
+allure-pytest==2.13.2
+hypothesis>=6.92.0
+
+# ===== Mocking =====
+responses==0.24.1
+faker==20.1.0
+
+# ===== Code Quality =====
+black==24.10.0
+isort==5.12.0
+flake8==6.1.0
+pylint==3.0.3
+mypy==1.7.1
+
+# ===== Type Stubs =====
+types-redis==4.6.0.11
+types-PyYAML==6.0.12.12
+
+# ===== Documentation =====
+mkdocs==1.5.3
+mkdocs-material==9.5.2
+mkdocstrings==0.24.0
+
+# ===== Jupyter =====
+jupyter==1.0.0
+ipython==8.18.1
+
+# ===== Profiling =====
+py-spy==0.3.14
+memory-profiler==0.61.0
+
+# ===== Security Scanning =====
+bandit==1.7.5
+safety==2.3.5
+
+# ===== Schema Validation =====
+jsonschema==4.23.0

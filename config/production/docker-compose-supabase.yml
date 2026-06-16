@@ -1,0 +1,617 @@
+version: '3.8'
+
+services:
+  # ===========================================
+  # Supabase Cloud Backend Services
+  # ===========================================
+  
+  # Supabase API Gateway
+  supabase-api:
+    image: supabase/gateway:latest
+    container_name: supabase-api-prod
+    environment:
+      - ENVIRONMENT=production
+      - API_URL=${SUPABASE_API_URL}
+      - API_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - DATABASE_URL=${SUPABASE_DATABASE_URL}
+    env_file:
+      - .env.supabase
+    volumes:
+      - supabase_api_logs:/var/log/gateway
+    depends_on:
+      - supabase-auth
+      - supabase-storage
+    networks:
+      - ai-network-prod
+    restart: always
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  # Supabase Auth Service
+  supabase-auth:
+    image: supabase/auth:latest
+    container_name: supabase-auth-prod
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=${SUPABASE_DATABASE_URL}
+      - API_URL=${SUPABASE_API_URL}
+      - SITE_URL=${SUPABASE_SITE_URL}
+      - JWT_SECRET=${SUPABASE_JWT_SECRET}
+    env_file:
+      - .env.supabase
+    volumes:
+      - supabase_auth_logs:/var/log/auth
+    networks:
+      - ai-network-prod
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9999/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # Supabase Storage Service
+  supabase-storage:
+    image: supabase/storage:latest
+    container_name: supabase-storage-prod
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=${SUPABASE_DATABASE_URL}
+      - FILE_SIZE_LIMIT=${SUPABASE_FILE_SIZE_LIMIT:-52428800}
+      - STORAGE_BACKEND=${SUPABASE_STORAGE_BACKEND:-s3}
+    env_file:
+      - .env.supabase
+    volumes:
+      - supabase_storage_data:/var/lib/storage
+      - supabase_storage_logs:/var/log/storage
+    networks:
+      - ai-network-prod
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # Supabase Edge Functions Runtime
+  supabase-edge:
+    image: supabase/edge:latest
+    container_name: supabase-edge-prod
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=${SUPABASE_DATABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    env_file:
+      - .env.supabase
+    volumes:
+      - supabase_functions:/var/functions
+      - supabase_edge_logs:/var/log/edge
+    networks:
+      - ai-network-prod
+    restart: always
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:54321/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # ===========================================
+  # AI Assistants API (обновленный с Supabase)
+  # ===========================================
+  ai-assistants:
+    build:
+      context: ../../.
+      dockerfile: docker/ai-assistant/Dockerfile
+    container_name: ai-assistants-api-prod
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+      - USE_SUPABASE=true
+      - SUPABASE_URL=${SUPABASE_API_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    env_file:
+      - .env.production
+      - .env.supabase
+    volumes:
+      - /var/log/ai-assistants:/app/logs
+      - /opt/ai-assistants/data:/app/data
+    depends_on:
+      - redis
+      - postgres-local
+      - supabase-api
+    networks:
+      - ai-network-prod
+    restart: always
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  # ===========================================
+  # Local Services (дополнительно к Supabase)
+  # ===========================================
+  
+  # Redis для кэширования и очередей
+  redis:
+    image: redis:7-alpine
+    container_name: redis-prod
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - ai-network-prod
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # Локальная PostgreSQL для дополнительных данных
+  postgres-local:
+    image: postgres:15-alpine
+    container_name: postgres-local-prod
+    environment:
+      - POSTGRES_DB=${POSTGRES_LOCAL_DB}
+      - POSTGRES_USER=${POSTGRES_LOCAL_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_LOCAL_PASSWORD}
+    volumes:
+      - postgres_local_data:/var/lib/postgresql/data
+      - ./postgresql/init-local.sql:/docker-entrypoint-initdb.d/init-local.sql:ro
+    networks:
+      - ai-network-prod
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_LOCAL_USER} -d ${POSTGRES_LOCAL_DB}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # ===========================================
+  # ML System (интегрированная с Supabase)
+  # ===========================================
+  ml-system:
+    build:
+      context: ../../.
+      dockerfile: docker/ml-system/Dockerfile
+    container_name: ml-system-prod
+    environment:
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+      - USE_SUPABASE=true
+      - SUPABASE_URL=${SUPABASE_API_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+    env_file:
+      - .env.production
+      - .env.supabase
+    volumes:
+      - /var/log/ml-system:/app/logs
+      - /opt/ml-system/models:/app/models
+      - /opt/ml-system/data:/app/data
+    depends_on:
+      - redis
+      - postgres-local
+      - supabase-storage
+    networks:
+      - ai-network-prod
+    restart: always
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # ML Worker с интеграцией Supabase
+  ml-worker:
+    build:
+      context: ../../.
+      dockerfile: docker/ml-worker/Dockerfile
+    container_name: ml-worker-prod
+    command: celery -A workers.ml_tasks.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      - ENVIRONMENT=production
+      - USE_SUPABASE=true
+      - SUPABASE_URL=${SUPABASE_API_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+    env_file:
+      - .env.production
+      - .env.supabase
+    volumes:
+      - /var/log/ml-system:/app/logs
+      - /opt/ml-system/models:/app/models
+      - /opt/ml-system/data:/app/data
+    depends_on:
+      - redis
+      - postgres-local
+      - supabase-storage
+    networks:
+      - ai-network-prod
+    restart: always
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # ===========================================
+  # Load Balancer и Reverse Proxy
+  # ===========================================
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx-supabase.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/sites-available:/etc/nginx/sites-available:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - /var/log/nginx:/var/log/nginx
+      - ./static:/var/www/static:ro
+    depends_on:
+      - ai-assistants
+      - ml-system
+      - supabase-api
+    networks:
+      - ai-network-prod
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  # ===========================================
+  # Мониторинг и Логирование
+  # ===========================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-prod
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus-supabase.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      - ai-network-prod
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-prod
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - ai-network-prod
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # ===========================================
+  # Фоновые задачи
+  # ===========================================
+  celery-worker:
+    build:
+      context: ../../.
+      dockerfile: docker/ai-assistant/Dockerfile
+    container_name: celery-worker-prod
+    command: celery -A src.celery_app worker --loglevel=info --concurrency=4 --prefetch-multiplier=1
+    environment:
+      - ENVIRONMENT=production
+      - USE_SUPABASE=true
+      - SUPABASE_URL=${SUPABASE_API_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+    env_file:
+      - .env.production
+      - .env.supabase
+    volumes:
+      - /var/log/ai-assistants:/app/logs
+    depends_on:
+      - redis
+      - postgres-local
+      - supabase-api
+    networks:
+      - ai-network-prod
+    restart: always
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  celery-beat:
+    build:
+      context: ../../.
+      dockerfile: docker/ai-assistant/Dockerfile
+    container_name: celery-beat-prod
+    command: celery -A src.celery_app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    environment:
+      - ENVIRONMENT=production
+      - USE_SUPABASE=true
+      - SUPABASE_URL=${SUPABASE_API_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+    env_file:
+      - .env.production
+      - .env.supabase
+    depends_on:
+      - redis
+      - postgres-local
+      - supabase-api
+    networks:
+      - ai-network-prod
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+# ===========================================
+# Volumes для персистентности данных
+# ===========================================
+volumes:
+  # Supabase Volumes
+  supabase_api_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/supabase/logs/api
+  supabase_auth_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/supabase/logs/auth
+  supabase_storage_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/supabase/storage
+  supabase_storage_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/supabase/logs/storage
+  supabase_functions:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/supabase/functions
+  supabase_edge_logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/supabase/logs/edge
+
+  # Local Volumes
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/ai-assistants/redis
+  postgres_local_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/ai-assistants/postgres-local
+
+  # Monitoring Volumes
+  prometheus_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/ai-assistants/prometheus
+  grafana_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/ai-assistants/grafana
+
+# ===========================================
+# Сеть с фиксированным диапазоном
+# ===========================================
+networks:
+  ai-network-prod:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+          gateway: 172.22.0.1
+    driver_opts:
+      com.docker.network.bridge.name: ai-network-supabase-prod
+
+# ===========================================
+# Настройки развертывания
+# ===========================================
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "100m"
+    max-file: "5"
+
+x-restart-policy: &default-restart-policy
+  restart: always
+  delay: 5s
+  max_attempts: 3

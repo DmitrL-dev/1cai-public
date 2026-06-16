@@ -1,0 +1,43 @@
+@startuml
+title CI/CD Pipeline - From Pull Request to Production
+
+skinparam backgroundColor #FFFFFF
+skinparam ParticipantPadding 20
+skinparam BoxPadding 15
+
+participant "Developer" as Dev
+participant "GitHub\nPull Request" as PR
+participant "CI Workflow\n(GitHub Actions)" as CI
+participant "Quality Gates\n(Tests, Audits)" as Gates
+participant "Artifact Registry\n(Minio/S3)" as Registry
+participant "Kubernetes Deploy\n(ArgoCD/Terraform)" as Deploy
+participant "Monitoring\nPrometheus/Grafana" as Monitoring
+participant "Stakeholders\n(Product/Ops)" as Stakeholders
+
+Dev -> PR : Push feature branch\nOpen PR
+PR -> CI : Trigger workflow\n(on pull_request)
+CI -> Gates : Run unit, lint, security, ml tests
+Gates --> CI : Pass/Fail reports\nArtifacts + coverage
+CI -> PR : Post status checks\n(block merge if failing)
+Dev -> PR : Address review comments\nPush fixes
+
+== Main branch deployment ==
+Dev -> PR : Merge after approvals
+PR -> CI : Trigger main pipeline\n(on push main)
+CI -> Registry : Build docker images\nUpload ML models, docs
+CI -> Deploy : Apply Terraform/Helm plan\nPromote release\nSmoke tests
+Deploy --> CI : Deployment result\nRelease notes
+CI -> Monitoring : Kick synthetic checks\nRegister canary
+Monitoring -> CI : Metrics ok?\nSLO validation
+alt SLO violation
+  Monitoring -> Deploy : Rollback to previous version
+  Deploy --> Monitoring : Stable revision
+end
+CI -> Stakeholders : Notify release channel\nChangelog + dashboards
+
+== Post deployment ==
+Monitoring -> Stakeholders : Continuous alerts, KPIs
+Stakeholders -> Dev : Feedback loop / backlog
+
+@enduml
+

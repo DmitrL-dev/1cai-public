@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "observability-stack.fullname" . }}-prometheus
+  labels:
+    app.kubernetes.io/name: {{ include "observability-stack.name" . }}
+    app.kubernetes.io/component: prometheus
+spec:
+  replicas: {{ .Values.prometheus.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "observability-stack.name" . }}
+      app.kubernetes.io/component: prometheus
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "observability-stack.name" . }}
+        app.kubernetes.io/component: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: {{ .Values.prometheus.image }}
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--storage.tsdb.retention.time={{ .Values.prometheus.retention }}"
+            - "--web.listen-address=:9090"
+          ports:
+            - containerPort: 9090
+              name: http
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+            {{- if .Values.prometheus.storage.enabled }}
+            - name: data
+              mountPath: /prometheus
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "observability-stack.fullname" . }}-prometheus-config
+        {{- if .Values.prometheus.storage.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "observability-stack.fullname" . }}-prometheus-pvc
+        {{- end }}

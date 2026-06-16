@@ -1,0 +1,218 @@
+{
+  "dashboard": {
+    "title": "AI Services Monitoring",
+    "tags": ["ai", "kimi", "orchestrator"],
+    "timezone": "browser",
+    "schemaVersion": 27,
+    "version": 1,
+    "refresh": "10s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Kimi-K2-Thinking Queries",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "rate(kimi_queries_total[5m])",
+            "legendFormat": "{{mode}} - {{status}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Queries/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Kimi Response Duration",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(kimi_response_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile - {{mode}}",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(kimi_response_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile - {{mode}}",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Duration"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Kimi Tokens Used",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "rate(kimi_tokens_used_total[5m])",
+            "legendFormat": "{{mode}} - {{token_type}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Tokens/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Kimi Error Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "rate(kimi_queries_total{status=\"error\"}[5m]) / rate(kimi_queries_total[5m]) * 100",
+            "legendFormat": "Error Rate - {{mode}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "Error Rate %"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Orchestrator Query Distribution",
+        "type": "piechart",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "sum by (selected_service) (rate(orchestrator_queries_total[5m]))",
+            "legendFormat": "{{selected_service}}",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Orchestrator Cache Hit Rate",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "rate(orchestrator_cache_hits_total[5m]) / (rate(orchestrator_cache_hits_total[5m]) + rate(orchestrator_cache_misses_total[5m])) * 100",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "red"},
+              {"value": 50, "color": "yellow"},
+              {"value": 80, "color": "green"}
+            ]
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Orchestrator Fallbacks",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+        "targets": [
+          {
+            "expr": "rate(orchestrator_fallback_total[5m])",
+            "legendFormat": "{{from_service}} -> {{to_service}} ({{reason}})",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Fallbacks/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 8,
+        "title": "AI Service Availability",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 20},
+        "targets": [
+          {
+            "expr": "ai_service_available{service=\"kimi_k2\"}",
+            "legendFormat": "Kimi-K2-Thinking",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "unit": "none",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": 0, "color": "red"},
+              {"value": 1, "color": "green"}
+            ]
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "AI Errors by Type",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+        "targets": [
+          {
+            "expr": "rate(ai_errors_total[5m])",
+            "legendFormat": "{{service}} - {{error_type}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Errors/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Kimi Reasoning Steps",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(kimi_reasoning_steps_bucket[5m]))",
+            "legendFormat": "95th percentile - {{mode}}",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(kimi_reasoning_steps_bucket[5m]))",
+            "legendFormat": "50th percentile - {{mode}}",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Steps"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Kimi Tool Calls",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32},
+        "targets": [
+          {
+            "expr": "rate(kimi_tool_calls_total[5m])",
+            "legendFormat": "{{mode}} - {{tool_name}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Tool Calls/sec"},
+          {"format": "short"}
+        ]
+      }
+    ]
+  }
+}
+

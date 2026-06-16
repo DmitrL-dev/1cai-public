@@ -1,0 +1,30 @@
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosExperiment
+metadata:
+  name: pod-network-latency
+  namespace: litmus
+spec:
+  definition:
+    scope: Namespaced
+    permissions:
+      - apiGroups: [""]
+        resources: ["pods", "events", "pods/log"]
+        verbs: ["create", "delete", "get", "list", "patch", "update", "watch"]
+      - apiGroups: ["litmuschaos.io"]
+        resources: ["chaosengines", "chaosexperiments", "chaosresults"]
+        verbs: ["create", "get", "list", "patch", "update"]
+    image: "litmuschaos/go-runner:3.5.0"
+    args:
+      - "-c"
+      - ./experiments/generic/pod-network-latency
+    command:
+      - /bin/bash
+    env:
+      - name: TOTAL_CHAOS_DURATION
+        value: "90"
+      - name: NETWORK_LATENCY
+        value: "3000"
+      - name: JITTER
+        value: "500"
+      - name: TARGET_CONTAINER
+        value: "api"

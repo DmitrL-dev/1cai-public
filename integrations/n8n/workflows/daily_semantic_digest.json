@@ -1,0 +1,87 @@
+{
+  "name": "Daily Semantic Digest",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 7,
+              "minute": 0
+            }
+          ]
+        }
+      },
+      "id": "CronNode",
+      "name": "Every Weekday 07:00",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "semanticSearch",
+        "operation": "search",
+        "query": "ключевые изменения законодательства НДС",
+        "limit": 5
+      },
+      "id": "OneCSearch",
+      "name": "1C AI Semantic Search",
+      "type": "@onecai/n8n-nodes-onec-ai.oneCai",
+      "typeVersion": 1,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "subject": "Ежедневный дайджест по НДС",
+        "text": "={{$json[\"results\"].map((item, index) => (index + 1) + \". \" + item.summary).join(\"\\n\")}}",
+        "fromEmail": "n8n@example.com",
+        "toEmail": "finance-team@example.com"
+      },
+      "id": "EmailDigest",
+      "name": "Send Digest Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        800,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Every Weekday 07:00": {
+      "main": [
+        [
+          {
+            "node": "1C AI Semantic Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1C AI Semantic Search": {
+      "main": [
+        [
+          {
+            "node": "Send Digest Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "Europe/Moscow"
+  },
+  "version": 2
+}
+

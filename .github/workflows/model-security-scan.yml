@@ -1,0 +1,287 @@
+name: Model Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'models/**'
+      - 'scripts/download_*.py'
+      - '.github/workflows/model-security-scan.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'models/**'
+      - 'scripts/download_*.py'
+  schedule:
+    # Сканировать модели каждую неделю (воскресенье в 02:00 UTC)
+    - cron: '0 2 * * 0'
+  workflow_dispatch:  # Ручной запуск
+
+jobs:
+  scan-models:
+    name: Scan AI Models for Security Issues
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install modelscan
+        run: |
+          echo "Installing modelscan..."
+          pip install modelscan
+          modelscan --version
+      
+      - name: Scan local models
+        id: scan_local
+        run: |
+          echo "Scanning local model files..."
+          
+          # Создаем директорию для отчетов
+          mkdir -p security-reports
+          
+          # Сканируем все модели в директории models/
+          if [ -d "models" ]; then
+            echo "Found models directory"
+            
+            # Сканируем каждую модель
+            find models -type f \( -name "*.pt" -o -name "*.pth" -o -name "*.bin" -o -name "*.safetensors" \) | while IFS= read -r model_file; do
+              echo "Scanning: $model_file"
+              
+              # Запускаем modelscan
+              modelscan -p "$model_file" -o security-reports/$(basename "$model_file").json || {
+                echo "⚠️ SECURITY ISSUE DETECTED in $model_file"
+                exit 1
+              }
+              
+              echo "✓ $model_file is safe"
+            done
+          else
+            echo "No models directory found - skipping local scan"
+          fi
+      
+      - name: Scan HuggingFace downloaded models
+        id: scan_hf
+        run: |
+          echo "Scanning HuggingFace cache..."
+          
+          # HuggingFace кеш обычно в ~/.cache/huggingface
+          HF_CACHE="$HOME/.cache/huggingface/hub"
+          
+          if [ -d "$HF_CACHE" ]; then
+            echo "Found HuggingFace cache: $HF_CACHE"
+            
+            # Сканируем модели из кеша
+            find "$HF_CACHE" -type f \( -name "*.safetensors" -o -name "*.bin" \) | head -n 10 | while IFS= read -r model_file; do
+              echo "Scanning cached model: $model_file"
+              
+              modelscan -p "$model_file" || {
+                echo "⚠️ SECURITY ISSUE in cached model: $model_file"
+                # Не прерываем workflow для кеша (может быть старая модель)
+              }
+            done
+          else
+            echo "No HuggingFace cache found"
+          fi
+      
+      - name: Generate security report
+        if: always()
+        run: |
+          echo "Generating security report..."
+          
+          cat > security-reports/SUMMARY.md << 'EOF'
+          # Model Security Scan Report
+          
+          **Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Workflow:** ${{ github.workflow }}
+          **Run ID:** ${{ github.run_id }}
+          
+          ## Scan Results
+          
+          ### Local Models
+          EOF
+          
+          if [ -d "models" ]; then
+            echo "✅ Scanned $(find models -type f \( -name "*.pt" -o -name "*.bin" -o -name "*.safetensors" \) | wc -l) local model files" >> security-reports/SUMMARY.md
+          else
+            echo "⚠️ No local models found" >> security-reports/SUMMARY.md
+          fi
+          
+          echo "" >> security-reports/SUMMARY.md
+          echo "### HuggingFace Cache" >> security-reports/SUMMARY.md
+          
+          HF_CACHE="$HOME/.cache/huggingface/hub"
+          if [ -d "$HF_CACHE" ]; then
+            echo "✅ Scanned HuggingFace cache" >> security-reports/SUMMARY.md
+          else
+            echo "⚠️ No HuggingFace cache found" >> security-reports/SUMMARY.md
+          fi
+          
+          echo "" >> security-reports/SUMMARY.md
+          echo "## Recommendations" >> security-reports/SUMMARY.md
+          echo "" >> security-reports/SUMMARY.md
+          echo "- ✅ Only download models from verified sources" >> security-reports/SUMMARY.md
+          echo "- ✅ Check model checksums before use" >> security-reports/SUMMARY.md
+          echo "- ✅ Run models in isolated Docker containers" >> security-reports/SUMMARY.md
+          echo "- ✅ Monitor outbound network connections from models" >> security-reports/SUMMARY.md
+          
+          cat security-reports/SUMMARY.md
+      
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-security-reports
+          path: security-reports/
+          retention-days: 30
+      
+      - name: Create issue on security failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Model Security Scan Failed',
+              body: `
+              ## Security Issue Detected
+              
+              The automated model security scan has detected potential security issues.
+              
+              **Workflow:** ${context.workflow}
+              **Run ID:** ${context.runId}
+              **Branch:** ${context.ref}
+              
+              ### Action Required
+              
+              1. Review the security report in the workflow artifacts
+              2. Identify and remove malicious models
+              3. Update model download sources if needed
+              4. Re-run the security scan
+              
+              ### Resources
+              
+              - [Model Security Best Practices](https://huggingface.co/docs/hub/security)
+              - [ModeScan Documentation](https://github.com/protectai/modelscan)
+              
+              **This issue was created automatically by the CI/CD pipeline.**
+              `,
+              labels: ['security', 'ci/cd', 'critical']
+            });
+            
+            console.log(`Created issue #${issue.data.number}`);
+
+  verify-model-sources:
+    name: Verify Model Download Sources
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check model download scripts
+        run: |
+          echo "Checking model download sources..."
+          
+          # Список доверенных источников
+          TRUSTED_SOURCES=(
+            "huggingface.co"
+            "deepseek-ai"
+            "Qwen"
+            "sentence-transformers"
+            "openai"
+          )
+          
+          # Проверяем скрипты загрузки моделей
+          if ls scripts/download_*.py 1> /dev/null 2>&1; then
+            for script in scripts/download_*.py; do
+              echo "Checking $script..."
+              
+              # Проверяем наличие доверенных источников
+              trusted=false
+              for source in "${TRUSTED_SOURCES[@]}"; do
+                if grep -q "$source" "$script"; then
+                  echo "✓ $script uses trusted source: $source"
+                  trusted=true
+                  break
+                fi
+              done
+              
+              if [ "$trusted" = false ]; then
+                echo "⚠️ WARNING: $script may use untrusted sources"
+                echo "Please review manually"
+              fi
+            done
+          fi
+      
+      - name: Verify requirements.txt models
+        run: |
+          echo "Checking requirements.txt for model packages..."
+          
+          if [ -f "requirements.txt" ]; then
+            # Проверяем установку моделей через pip
+            if grep -E "(deepseek|transformers|chandra)" requirements.txt; then
+              echo "✓ Found AI model dependencies in requirements.txt"
+              
+              # Проверяем пинированные версии (для безопасности)
+              if grep -E "(deepseek|transformers|chandra).*==.*" requirements.txt; then
+                echo "✓ Model packages have pinned versions (secure)"
+              else
+                echo "⚠️ WARNING: Some model packages don't have pinned versions"
+                echo "Recommendation: Pin versions for security"
+              fi
+            fi
+          fi
+
+  test-model-isolation:
+    name: Test Model Isolation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Verify Docker isolation
+        run: |
+          echo "Checking Docker configuration for model isolation..."
+          
+          if [ -f "docker-compose.yml" ]; then
+            echo "✓ Found docker-compose.yml"
+            
+            # Проверяем network isolation
+            if grep -q "network_mode" docker-compose.yml; then
+              echo "✓ Network mode configured"
+            else
+              echo "⚠️ Consider adding network isolation for AI services"
+            fi
+            
+            # Проверяем resource limits
+            if grep -q "mem_limit\|cpus" docker-compose.yml; then
+              echo "✓ Resource limits configured"
+            else
+              echo "⚠️ Consider adding resource limits for AI services"
+            fi
+          fi
+      
+      - name: Check monitoring setup
+        run: |
+          echo "Checking monitoring for AI model activity..."
+          
+          # Проверяем наличие Prometheus/Grafana
+          if [ -f "docker-compose.monitoring.yml" ] || grep -q "prometheus\|grafana" docker-compose.yml; then
+            echo "✓ Monitoring infrastructure found"
+          else
+            echo "⚠️ Consider adding monitoring for model behavior"
+          fi
+
+
+
+
+
+

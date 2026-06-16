@@ -1,0 +1,130 @@
+# Пример Scenario DSL для полного цикла BA→Dev→QA
+# 
+# Этот пример демонстрирует:
+# 1. Описание сценария с шагами
+# 2. Использование уровней автономности
+# 3. Управление рисками
+# 4. Интеграцию с графом изменений
+
+id: "ba-dev-qa-full-cycle"
+name: "BA→Dev→QA Full Cycle"
+description: "Полный цикл от бизнес-требований до тестирования"
+required_autonomy: "A1_safe_automation"
+overall_risk: "medium"
+metadata:
+  tags: ["ba", "dev", "qa", "full-cycle"]
+  category: "development"
+  version: "1.0.0"
+
+steps:
+  # Шаг 1: Извлечение требований (BA)
+  - id: "ba-extract-requirements"
+    name: "Extract Requirements from Documents"
+    description: "Извлечение требований из документов (Word, PDF, Confluence)"
+    tool: "ba_requirements_extractor"
+    autonomy_level: "A1"
+    risk_level: "low"
+    timeout_seconds: 300
+    retry_policy:
+      max_retries: 3
+      backoff_strategy: "exponential"
+    graph_refs:
+      - kind: "requirement"
+        id: "req-feature-user-management"
+      - kind: "documentation"
+        id: "doc-requirements-spec"
+
+  # Шаг 2: Генерация BPMN модели (BA)
+  - id: "ba-generate-bpmn"
+    name: "Generate BPMN Model"
+    description: "Генерация BPMN модели процесса из требований"
+    tool: "ba_bpmn_generator"
+    autonomy_level: "A1"
+    risk_level: "low"
+    dependencies: ["ba-extract-requirements"]
+    graph_refs:
+      - kind: "bpmn_model"
+        id: "bpmn-user-management-process"
+
+  # Шаг 3: Генерация кода (Dev)
+  - id: "dev-generate-code"
+    name: "Generate BSL Code"
+    description: "Генерация BSL кода на основе требований и BPMN"
+    tool: "dev_code_generator"
+    autonomy_level: "A2"
+    risk_level: "medium"
+    dependencies: ["ba-extract-requirements", "ba-generate-bpmn"]
+    requires_approval: true
+    graph_refs:
+      - kind: "bsl_module"
+        id: "module_user_management"
+      - kind: "bsl_function"
+        id: "function_create_user"
+
+  # Шаг 4: Code Review (Dev)
+  - id: "dev-code-review"
+    name: "Code Review"
+    description: "Автоматический review сгенерированного кода"
+    tool: "dev_code_reviewer"
+    autonomy_level: "A1"
+    risk_level: "low"
+    dependencies: ["dev-generate-code"]
+    graph_refs:
+      - kind: "code_review"
+        id: "review_user_management_module"
+
+  # Шаг 5: Генерация тестов (QA)
+  - id: "qa-generate-tests"
+    name: "Generate Test Cases"
+    description: "Генерация тест-кейсов на основе требований и кода"
+    tool: "qa_test_generator"
+    autonomy_level: "A1"
+    risk_level: "low"
+    dependencies: ["ba-extract-requirements", "dev-generate-code"]
+    graph_refs:
+      - kind: "test_case"
+        id: "test_create_user"
+      - kind: "test_suite"
+        id: "suite_user_management"
+
+  # Шаг 6: Запуск тестов (QA)
+  - id: "qa-run-tests"
+    name: "Run Test Suite"
+    description: "Запуск сгенерированных тестов"
+    tool: "qa_test_runner"
+    autonomy_level: "A2"
+    risk_level: "medium"
+    dependencies: ["qa-generate-tests"]
+    graph_refs:
+      - kind: "test_result"
+        id: "result_user_management_tests"
+
+  # Шаг 7: Traceability Matrix (BA)
+  - id: "ba-build-traceability"
+    name: "Build Traceability Matrix"
+    description: "Построение матрицы прослеживаемости Requirements→Code→Tests"
+    tool: "ba_traceability_builder"
+    autonomy_level: "A1"
+    risk_level: "low"
+    dependencies: ["ba-extract-requirements", "dev-generate-code", "qa-generate-tests"]
+    graph_refs:
+      - kind: "traceability_matrix"
+        id: "matrix_user_management"
+
+# Политика выполнения
+execution_policy:
+  max_parallel_steps: 2
+  failure_action: "stop_on_critical"
+  notification_channels:
+    - "slack"
+    - "email"
+
+# Метрики успеха
+success_criteria:
+  - metric: "test_coverage"
+    threshold: 80
+    unit: "percent"
+  - metric: "code_quality_score"
+    threshold: 85
+    unit: "score"
+

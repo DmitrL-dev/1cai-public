@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:cm="http://v8.1c.ru/8.2/managed-application/cm" xmlns:ent="http://v8.1c.ru/8.1/data/enterprise" xmlns:lf="http://v8.1c.ru/8.2/managed-application/logform" xmlns:style="http://v8.1c.ru/8.1/data/ui/style" xmlns:sys="http://v8.1c.ru/8.1/data/ui/fonts/system" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:v8ui="http://v8.1c.ru/8.1/data/ui" xmlns:web="http://v8.1c.ru/8.1/data/ui/options/web" xmlns:win="http://v8.1c.ru/8.1/data/ui/options/windows" xmlns:en="http://v8.1c.ru/8.1/data/enterprise/config" app:version="2.4.2.1" cfg:version="8.3.20" style:version="2.2.0.45" sys:version="4.0.1.560" web:version="2.0.2.15" win:version="10.0.19041" en:version="2.5.0.17" form:version="2.4.0.19" en:objectVersion="12">
+	<BusinessApplication>False</BusinessApplication>
+	<Name>mcp_ГенераторыКода</Name>
+	<Extension type="Form" version="2.4.0.19">
+		<Url>http://v8.1c.ru/8.3/data/ui/style/colorpalette</Url>
+		<Properties>
+			<WindowWidth>0</WindowWidth>
+			<WindowHeight>0</WindowHeight>
+			<WindowLocation>
+				<X>0</X>
+				<Y>0</Y>
+			</WindowLocation>
+			<AutoSave>0</AutoSave>
+			<AutoSaveTop>0</AutoSaveLeft>0</AutoSaveLeft>
+			<AutoSaveWidth>0</AutoSaveWidth>
+			<AutoSaveHeight>0</AutoSaveHeight>
+			<Scale>1</Scale>
+			<FormType>Managed</FormType>
+			<AutoScroll>0</AutoScroll>
+			<AutoScrollBars>Auto</AutoScrollBars>
+			<AutoCopyPaste>1</AutoCopyPaste>
+			<UseSize>1</UseSize>
+			<MouseWheelFormPrecision>100</MouseWheelFormPrecision>
+			<MouseWheelYPrecision>100</MouseWheelYPrecision>
+			<MouseWheelXPrecision>100</MouseWheelXPrecision>
+			<MouseWheelScrollSpeed>50</MouseWheelScrollSpeed>
+			<MouseWheelIntervals>{}</MouseWheelIntervals>
+		</Properties>
+		<ChildObjects>
+			<Form xmlns="http://v8.1c.ru/8.3/data/ui/options/forms" version="2.4.0.19">
+				<Url>http://v8.1c.ru/8.3/data/ui/style/colorpalette</Url>
+				<Name>ОсновнаяФорма</Name>
+				<Representation>ListForm</Representation>
+				<WindowWidth>800</WindowWidth>
+				<WindowHeight>600</WindowHeight>
+				<AutoSave>0</AutoSave>
+				<AutoSaveTop>0</AutoSaveTop>
+				<AutoSaveLeft>0</AutoSaveLeft>
+				<AutoSaveWidth>0</AutoSaveWidth>
+				<AutoSaveHeight>0</AutoSaveHeight>
+				<Scale>1</Scale>
+				<FormType>Managed</FormType>
+				<ContextMenu>Auto</ContextMenu>
+				<Menu>Auto</Menu>
+				<Toolbar>Auto</Toolbar>
+				<ActionBar>Auto</ActionBar>
+				<TrimmedForm>0</TrimmedForm>
+				<UseSize>1</UseSize>
+				<ToolbarAlignment>Stretch</ToolbarAlignment>
+				<AutoScroll>0</AutoScroll>
+				<AutoScrollBars>Auto</AutoScrollBars>
+				<ScrollBars>Both</ScrollBars>
+				<DragForm>0</DragForm>
+				<FixForm>0</FixForm>
+				<ButtonDefault>1</ButtonDefault>
+				<ButtonsGroup>0</ButtonsGroup>
+				<SearchString>1</SearchString>
+				<Search>1</Search>
+				<HasSearch>1</HasSearch>
+				<FastSearch>1</FastSearch>
+				<CreateOnInput>1</CreateOnInput>
+				<CurrentRow>1</CurrentRow>
+				<EnableQuickSearch>1</EnableQuickSearch>
+				<ViewQuery>1</ViewQuery>
+				<UseControlPosting>0</UseControlPosting>
+				<ShowTimer>0</ShowTimer>
+				<EnableDrag>0</EnableDrag>
+				<Selection>1</Selection>
+				<SelectionType>ActiveCell</SelectionType>
+				<CreateOnInput>1</CreateOnInput>
+				<MailSend>1</MailSend>
+				<AutoSearch>1</AutoSearch>
+				<EditForm>1</EditForm>
+				<EditFormOnCreate>1</EditFormOnCreate>
+				<EditFormOnModify>1</EditFormOnModify>
+				<FormName>Form</FormName>
+				<DataPath>Object</DataPath>
+				<DataStorage>ObjectForm</DataStorage>
+				<StoreDisplayMode>0</StoreDisplayMode>
+				<Preview>0</Preview>
+				<PreviewPictureStorage>FormExtension</PreviewPictureStorage>
+				<Events>
+					<Event name="OnOpen">
+						<EventParameter>Source</EventParameter>
+					</Event>
+				</Events>
+			</Form>
+		</ChildObjects>
+		<Form>ОсновнаяФорма</Form>
+		<PrintForm/>
+		<Events>
+			<Event name="OnCreateAtServer">
+				<EventParameter>Source</EventParameter>
+				<EventParameter>Cancellation</EventParameter>
+			</Event>
+			<Event name="OnWrite">
+				<EventParameter>Source</EventParameter>
+				<EventParameter>Cancellation</EventParameter>
+			</Event>
+		</Events>
+		<Commands>
+			<Command xmlns="http://v8.1c.ru/8.2/managed-application/cm" version="1.0">
+				<Name>КомандаГенерацииКода</Name>
+				<Synonym>
+					<key>ru</key>
+					<value>Генерация кода</value>
+				</Synonym>
+				<Comment>Запуск генерации кода через MCP сервер</Comment>
+				<ToolTip>Генерация кода 1С с использованием AI</ToolTip>
+				<IncludeInHelp>1</IncludeInHelp>
+				<Representation>Auto</Representation>
+				<Group>Form</Group>
+				<Handler>ГенерацияКода</Handler>
+				<AccelerationKey>Ctrl+G</AccelerationKey>
+				<ModificationAllowed>1</ModificationAllowed>
+				<GroupContent>0</GroupContent>
+			</Command>
+		</Commands>
+	</Extension>
+	<Commands>
+		<Command name="КомандаГенерацииКода" description="Запуск генерации кода через MCP сервер" synonym="Генерация кода" comment="Запуск генерации кода через MCP сервер" priority="100" toolTip="Генерация кода 1С с использованием AI" includeInHelp="1" modificationAllowed="1">
+			<Group>Form</Group>
+			<Parameter>
+				<Name>ПараметрОписания</Name>
+				<Type>String</Type>
+				<Title>
+					<key>ru</key>
+					<value>Описание задачи</value>
+				</Title>
+				<Description>
+					<key>ru</key>
+					<value>Текстовое описание требуемого кода</value>
+				</Description>
+				<MinValue xmlns:core="http://v8.1c.ru/8.2/managed-application/core" core:type="Number">0</MinValue>
+				<MaxValue xmlns:core="http://v8.1c.ru/8.2/managed-application/core" core:type="Number">2000</MaxValue>
+				<Comment>
+					<key>ru</key>
+					<value>Детальное описание того, что нужно сгенерировать</value>
+				</Comment>
+			</Parameter>
+			<Parameter>
+				<Name>ПараметрТипаОбъекта</Name>
+				<Type>String</Type>
+				<Title>
+					<key>ru</key>
+					<value>Тип объекта</value>
+				</Title>
+				<Description>
+					<key>ru</key>
+					<value>Тип создаваемого объекта метаданных</value>
+				</Description>
+				<ChoiceMode>BothWays</ChoiceMode>
+				<Choice>
+					<Item>
+						<value>Обработка</value>
+						<presentation>Обработка</presentation>
+					</Item>
+					<Item>
+						<value>Отчет</value>
+						<presentation>Отчет</presentation>
+					</Item>
+					<Item>
+						<value>Справочник</value>
+						<presentation>Справочник</presentation>
+					</Item>
+					<Item>
+						<value>Документ</value>
+						<presentation>Документ</presentation>
+					</Item>
+					<Item>
+						<value>Регистр</value>
+						<presentation>Регистр</presentation>
+					</Item>
+				</Choice>
+				<DefaultValue>Обработка</DefaultValue>
+			</Parameter>
+			<Parameter>
+				<Name>ПараметрСтиляКода</Name>
+				<Type>String</Type>
+				<Title>
+					<key>ru</key>
+					<value>Стиль кода</value>
+				</Title>
+				<Description>
+					<key>ru</key>
+					<value>Стиль оформления генерируемого кода</value>
+				</Description>
+				<Choice>
+					<Item>
+						<value>Стандартный</value>
+						<presentation>Стандартный</presentation>
+					</Item>
+					<Item>
+						<value>Краткий</value>
+						<presentation>Краткий</presentation>
+					</Item>
+					<Item>
+						<value>Подробный</value>
+						<presentation>Подробный</presentation>
+					</Item>
+					<Item>
+						<value>Функциональный</value>
+						<presentation>Функциональный</presentation>
+					</Item>
+				</Choice>
+				<DefaultValue>Стандартный</DefaultValue>
+			</Parameter>
+		</Command>
+	</Commands>
+	<Events>
+		<Event name="OnCreateAtServer">
+			<EventParameter>Source</EventParameter>
+			<EventParameter>Cancellation</EventParameter>
+		</Event>
+		<Event name="OnWrite">
+			<EventParameter>Source</EventParameter>
+			<EventParameter>Cancellation</EventParameter>
+		</Event>
+	</Events>
+	<FullTextSearch>Use</FullTextSearch>
+	<CreateOnInput>Use</CreateOnInput>
+	<Output>Auto</Output>
+	<OutputType>Auto</OutputType>
+	<Forms>
+		<Form>
+			<Url>http://v8.1c.ru/8.3/data/ui/style/colorpalette</Url>
+			<Name>ОсновнаяФорма</Name>
+			<Synonym>
+				<key>ru</key>
+				<value>Основная форма</value>
+			</Synonym>
+			<Comment>Основная форма управления генерацией кода</Comment>
+			<AddHandler>Use</AddHandler>
+			<DeleteHandler>Use</DeleteHandler>
+			<ReadHandler>Use</ReadHandler>
+			<ExecuteHandler>Use</ExecuteHandler>
+		</Form>
+	</Forms>
+	<UsedInFormCommands>Use</UsedInFormCommands>
+	<UseInCommands>Use</UseInCommands>
+	<Presentation type="Managed">
+		<Fields>
+			<Field name="Ref" type="Catalog:mcp_ГенераторыКода" form="mcp_ГенераторыКода">
+				<Properties>
+					<MaxValue xmlns:core="http://v8.1c.ru/8.2/managed-application/core" core:type="Number">0</MaxValue>
+				</Properties>
+			</Field>
+		</Fields>
+		<Sections>
+			<Section name="Главный" columns="1">
+				<Rows>
+					<Row>
+						<Cell>
+							<Field>Ref</Field>
+						</Cell>
+					</Row>
+				</Rows>
+			</Section>
+		</Sections>
+	</Presentation>
+</MetaDataObject>

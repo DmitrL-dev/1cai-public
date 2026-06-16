@@ -1,0 +1,10 @@
+# Preset: repo-static
+targets:
+  - .
+profile: repo-static
+local: true
+format: json
+output: reports/repo-static.json
+markdown: reports/repo-static.md
+html: reports/repo-static.html
+

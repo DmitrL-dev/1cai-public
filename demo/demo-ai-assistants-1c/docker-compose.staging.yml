@@ -1,0 +1,442 @@
+# Docker Compose Override for Staging Environment
+# This file extends the base docker-compose.yml with staging-specific configurations
+
+version: '3.8'
+
+# Override environment variables for staging
+x-staging-variables: &staging-variables
+  ENV: staging
+  LOG_LEVEL: debug
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: 5432
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  SUPABASE_URL: ${SUPABASE_URL}
+  SUPABASE_KEY: ${SUPABASE_KEY}
+
+# Services with staging-specific configurations
+services:
+  # API Gateway with staging config
+  api-gateway:
+    environment:
+      <<: *staging-variables
+      API_GATEWAY_PORT: 3000
+      RATE_LIMIT: 200  # Higher rate limit for staging
+      CORS_ORIGINS: https://staging.example.com,http://localhost:3000
+    deploy:
+      replicas: 2  # Multiple replicas for load testing
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-gateway-staging.rule=Host(`staging-api.example.com`)"
+
+  # AI Assistant Service with staging config
+  ai-assistant:
+    environment:
+      <<: *staging-variables
+      AI_SERVICE_PORT: 8000
+      AI_MODEL: gpt-3.5-turbo  # Use cheaper model for staging
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      DEBUG: "true"  # Enable debug mode
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    volumes:
+      - ./logs/ai-assistant:/app/logs  # Mount logs for debugging
+
+  # 1C Integration Service with staging config
+  1c-integration:
+    environment:
+      <<: *staging-variables
+      1C_SERVICE_PORT: 8001
+      1C_SERVER_URL: ${1C_STAGING_SERVER_URL}
+      1C_USERNAME: ${1C_STAGING_USERNAME}
+      1C_PASSWORD: ${1C_STAGING_PASSWORD}
+      DEBUG_SOAP: "true"  # Enable SOAP debugging
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # User Management Service with staging config
+  user-management:
+    environment:
+      <<: *staging-variables
+      USER_SERVICE_PORT: 8002
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY_STAGING}
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRE_MINUTES: 60  # Longer sessions for staging
+      SMTP_HOST: ${SMTP_HOST_STAGING}
+      SMTP_PORT: ${SMTP_PORT_STAGING}
+      SMTP_USERNAME: ${SMTP_USERNAME_STAGING}
+      SMTP_PASSWORD: ${SMTP_PASSWORD_STAGING}
+      DEBUG_AUTH: "true"  # Enable auth debugging
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Analytics Service with staging config
+  analytics:
+    environment:
+      <<: *staging-variables
+      ANALYTICS_SERVICE_PORT: 8003
+      ANALYTICS_DB: analytics_staging_db
+      DEBUG_QUERIES: "true"  # Enable query debugging
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+  # Security Service with staging config
+  security:
+    environment:
+      <<: *staging-variables
+      SECURITY_SERVICE_PORT: 8004
+      SECURITY_LOG_LEVEL: debug
+      SECURITY_ALERT_WEBHOOK: ${SECURITY_ALERT_WEBHOOK_STAGING}
+      DEBUG_MODE: "true"
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Staging Load Balancer (Nginx)
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nginx-staging
+    ports:
+      - "8080:80"  # Different port to avoid conflicts
+      - "8443:443"
+    environment:
+      - ENVIRONMENT=staging
+    volumes:
+      - ./nginx/nginx-staging.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl-staging:/etc/nginx/ssl:ro
+      - ./nginx/logs-staging:/var/log/nginx
+    depends_on:
+      - api-gateway
+    networks:
+      - frontend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nginx-staging.rule=Host(`staging.example.com`)"
+
+  # Staging Databases with test data
+  postgres_ai:
+    environment:
+      POSTGRES_DB: ai_assistant_staging_db
+      POSTGRES_USER: ai_staging_user
+      POSTGRES_PASSWORD: ${POSTGRES_STAGING_PASSWORD}
+    volumes:
+      - postgres_ai_staging:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+      - ./test-data:/test-data:ro  # Load test data
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ai_staging_user -d ai_assistant_staging_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  postgres_1c:
+    environment:
+      POSTGRES_DB: 1c_integration_staging_db
+      POSTGRES_USER: 1c_staging_user
+      POSTGRES_PASSWORD: ${POSTGRES_STAGING_PASSWORD}
+    volumes:
+      - postgres_1c_staging:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+      - ./test-data:/test-data:ro
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U 1c_staging_user -d 1c_integration_staging_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  postgres_user:
+    environment:
+      POSTGRES_DB: user_management_staging_db
+      POSTGRES_USER: user_staging_user
+      POSTGRES_PASSWORD: ${POSTGRES_STAGING_PASSWORD}
+    volumes:
+      - postgres_user_staging:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+      - ./test-data:/test-data:ro
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user_staging_user -d user_management_staging_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  postgres_analytics:
+    environment:
+      POSTGRES_DB: analytics_staging_db
+      POSTGRES_USER: analytics_staging_user
+      POSTGRES_PASSWORD: ${POSTGRES_STAGING_PASSWORD}
+    volumes:
+      - postgres_analytics_staging:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+      - ./test-data:/test-data:ro
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U analytics_staging_user -d analytics_staging_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  postgres_security:
+    environment:
+      POSTGRES_DB: security_staging_db
+      POSTGRES_USER: security_staging_user
+      POSTGRES_PASSWORD: ${POSTGRES_STAGING_PASSWORD}
+    volumes:
+      - postgres_security_staging:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+      - ./test-data:/test-data:ro
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U security_staging_user -d security_staging_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Redis for staging with persistence
+  redis:
+    image: redis:7-alpine
+    container_name: redis-staging
+    ports:
+      - "6380:6379"  # Different port to avoid conflicts
+    volumes:
+      - redis_data_staging:/data
+      - ./redis/redis-staging.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+
+  # Enhanced monitoring for staging
+  prometheus:
+    ports:
+      - "9091:9090"  # Different port
+    volumes:
+      - ./monitoring/prometheus/prometheus-staging.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data_staging:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=72h'  # Shorter retention for staging
+      - '--web.enable-lifecycle'
+      - '--log.level=debug'
+    networks:
+      - monitoring
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  grafana:
+    ports:
+      - "3002:3000"  # Different port
+    environment:
+      GF_SECURITY_ADMIN_USER: staging-admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_STAGING_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: true  # Allow sign up for staging
+      GF_LOG_LEVEL: debug
+    volumes:
+      - grafana_data_staging:/var/lib/grafana
+      - ./monitoring/grafana/provisioning-staging:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards-staging:/var/lib/grafana/dashboards:ro
+    networks:
+      - monitoring
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+
+  # Staging-specific services
+  load-tester:
+    image: grafana/k6:latest
+    container_name: load-tester-staging
+    profiles:
+      - load-testing  # Only start with --profile load-testing
+    volumes:
+      - ./load-tests:/scripts
+    command: run /scripts/load-test.js
+    networks:
+      - backend
+    depends_on:
+      - api-gateway
+
+  db-tester:
+    image: postgres:15-alpine
+    container_name: db-tester-staging
+    profiles:
+      - database-testing
+    environment:
+      POSTGRES_DB: test_db
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+    networks:
+      - backend
+
+# Staging-specific volumes
+volumes:
+  postgres_ai_staging:
+    driver: local
+  postgres_1c_staging:
+    driver: local
+  postgres_user_staging:
+    driver: local
+  postgres_analytics_staging:
+    driver: local
+  postgres_security_staging:
+    driver: local
+  redis_data_staging:
+    driver: local
+  prometheus_data_staging:
+    driver: local
+  grafana_data_staging:
+    driver: local
+
+# Staging networks
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+  monitoring:
+    driver: bridge

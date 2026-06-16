@@ -1,0 +1,18 @@
+nodes:
+  # Wazuh indexer nodes
+  indexer:
+    - name: wazuh-indexer
+      ip: 172.20.0.10
+      dns:
+        - wazuh-indexer
+        - wazuh.indexer
+
+  # Wazuh server nodes
+  server:
+    - name: wazuh-manager
+      ip: 172.20.0.11
+
+  # Wazuh dashboard nodes
+  dashboard:
+    - name: wazuh-dashboard
+      ip: 172.20.0.12

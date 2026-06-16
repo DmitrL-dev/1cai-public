@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "observability-stack.fullname" . }}-promtail
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "namespaces"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "observability-stack.fullname" . }}-promtail
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "observability-stack.fullname" . }}-promtail
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "observability-stack.fullname" . }}-promtail
+    namespace: {{ .Release.Namespace }}

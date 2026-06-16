@@ -1,0 +1,55 @@
+# Elasticsearch конфигурация
+# Cluster и Node настройки
+cluster.name: monitoring-cluster
+node.name: monitoring-node-1
+path.data: /usr/share/elasticsearch/data
+path.logs: /usr/share/elasticsearch/logs
+
+# Network настройки
+network.host: 0.0.0.0
+http.port: 9200
+transport.tcp.port: 9300
+
+# Discovery настройки
+discovery.type: single-node
+cluster.initial_master_nodes: ["monitoring-node-1"]
+
+# Security настройки
+xpack.security.enabled: true
+xpack.security.transport.ssl.enabled: true
+xpack.security.http.ssl.enabled: false
+
+# Индекс настройки
+action.destructive_requires_name: true
+
+# Настройки JVM
+bootstrap.memory_lock: false
+
+# Сжатие и хранение
+index.number_of_shards: 1
+index.number_of_replicas: 0
+index.refresh_interval: 5s
+index.codec: best_compression
+index.number_of_routing_shards: 1
+
+# Настройки производительности
+cluster.routing.allocation.disk.threshold_enabled: true
+cluster.routing.allocation.disk.watermark.low: 85%
+cluster.routing.allocation.disk.watermark.high: 90%
+cluster.routing.allocation.disk.watermark.flood_stage: 95%
+
+# Thread pool настройки
+thread_pool.write.queue_size: 1000
+thread_pool.search.queue_size: 1000
+thread_pool.get.queue_size: 1000
+
+# Circuit breaker настройки
+indices.queries.cache.size: 10%
+indices.requests.cache.size: 2%
+indices.fielddata.cache.size: 30%
+
+# Log уровни
+logger.org.elasticsearch.discovery: WARN
+logger.org.elasticsearch.deprecation: WARN
+logger.org.elasticsearch.index.search.slowlog: WARN, index_search_slowlog_file
+logger.org.elasticsearch.index.indexing.slowlog: WARN, index_indexing_slowlog_file

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: 1cai-stack
+description: Helm chart для развёртывания 1C AI Stack (API, MCP, observability)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

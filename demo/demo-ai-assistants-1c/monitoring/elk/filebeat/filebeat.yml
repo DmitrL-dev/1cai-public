@@ -1,0 +1,168 @@
+# Filebeat конфигурация для сбора логов Docker контейнеров
+
+filebeat.inputs:
+- type: container
+  enabled: true
+  paths:
+    - /var/lib/docker/containers/*/*.log
+    - /var/log/containers/*.log
+  
+  processors:
+    # Извлечение метаданных Docker
+    - add_docker_metadata: 
+        host: "unix:///var/run/docker.sock"
+        
+    # Извлечение Kubernetes метаданных (если в K8s)
+    - add_kubernetes_metadata:
+        host: kubernetes.default.svc
+        matchers:
+        - logs_path:
+            logs_path: "/var/log/containers/"
+            
+    # Парсинг JSON логов
+    - decode_json_fields:
+        fields: ["message"]
+        target: "json"
+        overwrite_keys: true
+        add_error_key: true
+        
+    # Добавление environment метки
+    - drop_fields:
+        fields: ["agent", "ecs", "input", "log.file.path"]
+        
+    # Фильтрация логов по сервисам
+    - filter:
+        if contains kubernetes.container.name:
+            - equals:
+                kubernetes.container.name: "api-gateway"
+            - add_fields:
+                service: "api-gateway"
+                service_type: "api-gateway"
+                
+    - filter:
+        if contains kubernetes.container.name:
+            - equals:
+                kubernetes.container.name: "supabase-edge-functions"
+            - add_fields:
+                service: "supabase-functions"
+                service_type: "supabase"
+                
+    - filter:
+        if contains kubernetes.container.name:
+            - equals:
+                kubernetes.container.name: "postgres-exporter"
+            - add_fields:
+                service: "postgres"
+                service_type: "database"
+
+  # Multiline patterns для stack traces
+  multiline.pattern: '^[[:space:]]+(at|Caused by:|\\.\\.\\. [0-9]+ more)'
+  multiline.negate: false
+  multiline.match: after
+  multiline.timeout: 10s
+
+# Elasticsearch output
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  
+  # Индексы по дням
+  index: "demo-ai-assistants-logs-%{+yyyy.MM.dd}"
+  
+  # Template настройки
+  template.name: "demo-ai-assistants-logs"
+  template.pattern: "demo-ai-assistants-logs-*"
+  template.overwrite: true
+  template.settings:
+    index:
+      number_of_shards: 2
+      number_of_replicas: 1
+      refresh_interval: 30s
+      max_result_window: 50000
+      
+  # Document настройки
+  document_type: "_doc"
+  pipeline: "filebeat-%{[version]}-%{+yyyy.MM.dd}"
+  
+  # Connection настройки
+  compression_level: 3
+  worker: 2
+  bulk_max_size: 2048
+  flush_bytes: 1024
+  flush_interval: 5s
+
+# Logging
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/filebeat
+  name: filebeat
+  keepfiles: 7
+  permissions: 0600
+
+# Processors
+processors:
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+  - add_kubernetes_metadata:
+      host: kubernetes.default.svc
+
+# Monitoring
+monitoring.enabled: false
+
+# HTTP API
+http.enabled: true
+http.port: 5066
+
+# Data path
+path.data: /var/lib/filebeat
+path.config: /etc/filebeat
+
+# Автоматическая загрузка config.d
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: true
+  reload.period: 30s
+
+# Queue
+queue.mem:
+  events: 4096
+  flush.min_events: 512
+  flush.timeout: 5s
+
+# Автоматическая загрузка индексов
+setup.ilm.enabled: true
+setup.ilm.rollover_alias: "demo-ai-assistants-logs"
+setup.ilm.pattern: "{now/d}-*"
+setup.ilm.policy: "filebeat-7.0.0-policy"
+
+# ILM политика
+setup.template.settings:
+  index.number_of_shards: 2
+  index.number_of_replicas: 1
+  index.refresh_interval: 30s
+
+# Shipper settings (для мониторинга самого Filebeat)
+filebeat.registry.path: /var/lib/filebeat/registry
+
+# Задержка перед чтением файлов
+backoff: 1s
+max_backoff: 10s
+backoff_factor: 2
+
+# Максимальный размер файла
+max_file_size: 10MB
+
+# Автоматический рестарт
+filebeat.shutdown_timeout: 5s
+
+# Профили производительности
+profiling.enabled: false
+
+# Нет дополнительных файловых систем
+exclude_lines: ['^$', '^#']
+
+# Включить или отключить какие-то container'ы
+# exclude_lines: ['^$', '^#']
+# include_lines: ['^']

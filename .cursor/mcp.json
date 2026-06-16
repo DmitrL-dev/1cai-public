@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "1c-ai-assistant": {
+      "url": "http://localhost:6001/mcp",
+      "connection_id": "1c_ai_service_001",
+      "alwaysAllow": [
+        "search_metadata",
+        "search_code_semantic",
+        "generate_bsl_code",
+        "analyze_dependencies"
+      ],
+      "type": "streamable-http",
+      "timeout": 300
+    }
+  }
+}
+

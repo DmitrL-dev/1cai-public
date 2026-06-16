@@ -1,0 +1,309 @@
+# ===========================================
+# Makefile для управления Supabase-интегрированной системой
+# ===========================================
+
+# Переменные
+COMPOSE_FILE=docker-compose-supabase.yml
+ENV_FILE=.env.supabase
+PROJECT_NAME=ai-assistants-supabase
+BACKUP_DIR=./backups
+LOG_DIR=./logs
+DATA_DIR=./data
+
+# Цвета для вывода
+RED=\033[31m
+GREEN=\033[32m
+YELLOW=\033[33m
+BLUE=\033[34m
+NC=\033[0m # No Color
+
+.PHONY: help install start stop restart status logs health-check backup restore deploy clean test-monitor
+
+# ===========================================
+# Default target
+# ===========================================
+help: ## Показать справку по командам
+	@echo "$(BLUE)Доступные команды:$(NC)"
+	@echo "$(GREEN)Установка и настройка:$(NC)"
+	@echo "  $(YELLOW)install$(NC)     - Создать необходимые директории и настроить права доступа"
+	@echo "  $(YELLOW)configure$(NC)   - Настроить переменные окружения"
+	@echo "  $(YELLOW)init-db$(NC)     - Инициализировать базы данных"
+	@echo ""
+	@echo "$(GREEN)Управление сервисами:$(NC)"
+	@echo "  $(YELLOW)start$(NC)       - Запустить все сервисы с Supabase"
+	@echo "  $(YELLOW)stop$(NC)        - Остановить все сервисы"
+	@echo "  $(YELLOW)restart$(NC)     - Перезапустить все сервисы"
+	@echo "  $(YELLOW)status$(NC)      - Показать статус сервисов"
+	@echo "  $(YELLOW)logs$(NC)        - Показать логи всех сервисов"
+	@echo ""
+	@echo "$(GREEN)Мониторинг и диагностика:$(NC)"
+	@echo "  $(YELLOW)health-check$(NC)- Проверить состояние всех сервисов"
+	@echo "  $(YELLOW)metrics$(NC)     - Открыть дашборд мониторинга"
+	@echo "  $(YELLOW)test$(NC)        - Запустить тесты системы"
+	@echo ""
+	@echo "$(GREEN)Резервное копирование:$(NC)"
+	@echo "  $(YELLOW)backup$(NC)      - Создать полный backup системы"
+	@echo "  $(YELLOW)restore$(NC)     - Восстановить систему из backup"
+	@echo ""
+	@echo "$(GREEN)Обслуживание:$(NC)"
+	@echo "  $(YELLOW)clean$(NC)       - Очистить неиспользуемые ресурсы"
+	@echo "  $(YELLOW)update$(NC)      - Обновить образы и перезапустить"
+	@echo "  $(YELLOW)scale$(NC)       - Масштабировать сервисы"
+	@echo ""
+
+# ===========================================
+# Установка и настройка
+# ===========================================
+install: ## Создать необходимые директории и настроить права доступа
+	@echo "$(BLUE)Настройка окружения для Supabase интеграции...$(NC)"
+	@mkdir -p $(DATA_DIR)/{postgres,redis,grafana,prometheus,supabase/{api,auth,storage,functions,logs}}
+	@mkdir -p $(LOG_DIR)/{nginx,ai-assistants,ml-system,supabase,postgres,redis}
+	@mkdir -p $(BACKUP_DIR)/{database,redis,grafana,prometheus,supabase}
+	@mkdir -p $(ENV_FILE)/ssl
+	@chmod 755 $(DATA_DIR) $(LOG_DIR) $(BACKUP_DIR)
+	@chmod 700 $(DATA_DIR)/postgres
+	@echo "$(GREEN)Структура директорий создана!$(NC)"
+	@echo "$(YELLOW)Не забудьте настроить .env.supabase с вашими Supabase credentials!$(NC)"
+
+configure: ## Настроить переменные окружения
+	@echo "$(BLUE)Настройка переменных окружения...$(NC)"
+	@if [ ! -f $(ENV_FILE) ]; then \
+		echo "$(YELLOW)Создание файла .env.supabase...$(NC)"; \
+		cp .env.supabase.example $(ENV_FILE); \
+		echo "$(RED)ВАЖНО: Отредактируйте $(ENV_FILE) с вашими Supabase credentials!$(NC)"; \
+	else \
+		echo "$(GREEN)Файл $(ENV_FILE) уже существует$(NC)"; \
+	fi
+	@if [ ! -f .env.production ]; then \
+		echo "$(YELLOW)Создание файла .env.production...$(NC)"; \
+		cp .env.production.example .env.production; \
+		echo "$(RED)ВАЖНО: Отредактируйте .env.production с production settings!$(NC)"; \
+	else \
+		echo "$(GREEN)Файл .env.production уже существует$(NC)"; \
+	fi
+	@echo "$(GREEN)Переменные окружения настроены!$(NC)"
+
+init-db: ## Инициализировать базы данных
+	@echo "$(BLUE)Инициализация локальных баз данных...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) up -d postgres-local redis
+	@echo "$(YELLOW)Ожидание готовности баз данных...$(NC)"
+	@sleep 30
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) exec postgres-local psql -U ai_assistants_local_user -d ai_assistants_local -c "SELECT version();"
+	@echo "$(GREEN)Локальные базы данных инициализированы!$(NC)"
+
+# ===========================================
+# Управление сервисами
+# ===========================================
+start: ## Запустить все сервисы с Supabase
+	@echo "$(BLUE)Запуск системы с Supabase интеграцией...$(NC)"
+	@echo "$(YELLOW)Проверка переменных окружения...$(NC)"
+	@grep -q "SUPABASE_API_URL" $(ENV_FILE) || (echo "$(RED)Ошибка: Настройте $(ENV_FILE) с Supabase credentials!$(NC)" && exit 1)
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) up -d
+	@echo "$(GREEN)Система запущена!$(NC)"
+	@echo "$(YELLOW)Подождите 60 секунд для полной инициализации...$(NC)"
+	@sleep 60
+	@make status
+
+stop: ## Остановить все сервисы
+	@echo "$(BLUE)Остановка системы...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) down
+	@echo "$(GREEN)Система остановлена!$(NC)"
+
+restart: ## Перезапустить все сервисы
+	@echo "$(BLUE)Перезапуск системы...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) restart
+	@echo "$(GREEN)Система перезапущена!$(NC)"
+
+status: ## Показать статус сервисов
+	@echo "$(BLUE)Статус сервисов:$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) ps
+	@echo ""
+	@echo "$(GREEN)Доступные endpoints:$(NC)"
+	@echo "  AI Assistants API: http://localhost:80/api/"
+	@echo "  Supabase API:      http://localhost:80/rest/v1/"
+	@echo "  Supabase Auth:     http://localhost:80/auth/v1/"
+	@echo "  ML System:         http://localhost:80/ml/"
+	@echo "  Grafana:           http://localhost:3000"
+	@echo "  Prometheus:        http://localhost:9090"
+
+logs: ## Показать логи всех сервисов
+	@echo "$(BLUE)Логи системы (последние 100 строк):$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) logs --tail=100
+
+logs-follow: ## Следить за логами в реальном времени
+	@echo "$(BLUE)Слежение за логами в реальном времени (Ctrl+C для остановки):$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) logs -f
+
+# ===========================================
+# Мониторинг и диагностика
+# ===========================================
+health-check: ## Проверить состояние всех сервисов
+	@echo "$(BLUE)Проверка состояния сервисов...$(NC)"
+	@echo "$(YELLOW)1. Проверка Docker контейнеров:$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) ps
+	@echo ""
+	@echo "$(YELLOW)2. Проверка health check endpoints:$(NC)"
+	@curl -s http://localhost/health || echo "$(RED)Ошибка: Health check недоступен$(NC)"
+	@echo ""
+	@echo "$(YELLOW)3. Проверка AI Assistants API:$(NC)"
+	@curl -s http://localhost:80/api/health || echo "$(RED)Ошибка: AI API недоступен$(NC)"
+	@echo ""
+	@echo "$(YELLOW)4. Проверка баз данных:$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) exec postgres-local pg_isready -U ai_assistants_local_user || echo "$(RED)Ошибка: PostgreSQL недоступен$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) exec redis redis-cli ping || echo "$(RED)Ошибка: Redis недоступен$(NC)"
+	@echo ""
+	@echo "$(YELLOW)5. Проверка мониторинга:$(NC)"
+	@curl -s http://localhost:9090/-/healthy || echo "$(RED)Ошибка: Prometheus недоступен$(NC)"
+	@curl -s http://localhost:3000/api/health || echo "$(RED)Ошибка: Grafana недоступен$(NC)"
+	@echo ""
+	@echo "$(GREEN)Проверка состояния завершена!$(NC)"
+
+metrics: ## Открыть дашборд мониторинга
+	@echo "$(BLUE)Открытие дашбордов мониторинга...$(NC)"
+	@echo "  Grafana:   http://localhost:3000 (admin/$(GRAFANA_PASSWORD))"
+	@echo "  Prometheus: http://localhost:9090"
+
+test: ## Запустить тесты системы
+	@echo "$(BLUE)Запуск тестов системы...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) exec ai-assistants python -m pytest tests/ || echo "$(RED)Некоторые тесты не прошли$(NC)"
+	@echo "$(GREEN)Тесты выполнены!$(NC)"
+
+# ===========================================
+# Резервное копирование
+# ===========================================
+backup: ## Создать полный backup системы
+	@echo "$(BLUE)Создание полного backup системы...$(NC)"
+	@BACKUP_DATE=$$(date +%Y%m%d_%H%M%S); \
+	echo "Backup ID: $$BACKUP_DATE"; \
+	mkdir -p $(BACKUP_DIR)/$$BACKUP_DATE; \
+	echo "$(YELLOW)1. Backup PostgreSQL (локальная)...$(NC)"; \
+	docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) exec -T postgres-local pg_dump -U ai_assistants_local_user ai_assistants_local > $(BACKUP_DIR)/$$BACKUP_DATE/postgres_local.sql; \
+	echo "$(YELLOW)2. Backup Redis...$(NC)"; \
+	docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) exec redis redis-cli --rdb - > $(BACKUP_DIR)/$$BACKUP_DATE/redis_dump.rdb; \
+	echo "$(YELLOW)3. Backup Grafana...$(NC)"; \
+	docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) exec grafana tar czf - /var/lib/grafana > $(BACKUP_DIR)/$$BACKUP_DATE/grafana_backup.tar.gz 2>/dev/null || echo "$(YELLOW)Grafana backup пропущен$(NC)"; \
+	echo "$(YELLOW)4. Backup конфигураций...$(NC)"; \
+	tar czf $(BACKUP_DIR)/$$BACKUP_DATE/configs.tar.gz $(ENV_FILE) .env.production config/production/nginx/; \
+	echo "$(GREEN)Backup создан: $(BACKUP_DIR)/$$BACKUP_DATE$(NC)"
+	@echo "$(YELLOW)ВАЖНО: Создайте отдельный backup для Supabase данных в их dashboard!$(NC)"
+
+restore: ## Восстановить систему из backup
+	@echo "$(BLUE)Восстановление системы из backup...$(NC)"
+	@read -p "Введите ID backup (из списка в $(BACKUP_DIR)): " BACKUP_ID; \
+	if [ -d "$(BACKUP_DIR)/$$BACKUP_ID" ]; then \
+		echo "$(YELLOW)Остановка сервисов...$(NC)"; \
+		docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) down; \
+		echo "$(YELLOW)1. Восстановление PostgreSQL...$(NC)"; \
+		docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) up -d postgres-local redis; \
+		sleep 30; \
+		docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) exec -T postgres-local psql -U ai_assistants_local_user -d ai_assistants_local < $(BACKUP_DIR)/$$BACKUP_ID/postgres_local.sql; \
+		echo "$(YELLOW)2. Восстановление Redis...$(NC)"; \
+		docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) stop redis; \
+		cp $(BACKUP_DIR)/$$BACKUP_ID/redis_dump.rdb data/redis/dump.rdb; \
+		docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) start redis; \
+		echo "$(YELLOW)3. Восстановление конфигураций...$(NC)"; \
+		tar xzf $(BACKUP_DIR)/$$BACKUP_ID/configs.tar.gz; \
+		echo "$(GREEN)Восстановление завершено!$(NC)"; \
+	else \
+		echo "$(RED)Ошибка: Backup $$BACKUP_ID не найден$(NC)"; \
+	fi
+
+# ===========================================
+# Обслуживание
+# ===========================================
+clean: ## Очистить неиспользуемые ресурсы
+	@echo "$(BLUE)Очистка неиспользуемых ресурсов...$(NC)"
+	@docker system prune -f
+	@docker volume prune -f
+	@docker network prune -f
+	@echo "$(GREEN)Очистка завершена!$(NC)"
+
+update: ## Обновить образы и перезапустить
+	@echo "$(BLUE)Обновление образов...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) pull
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) up -d
+	@echo "$(GREEN)Обновление завершено!$(NC)"
+
+scale: ## Масштабировать сервисы
+	@echo "$(BLUE)Масштабирование сервисов...$(NC)"
+	@read -p "Введите сервис для масштабирования (ai-assistants, ml-worker, celery-worker): " SERVICE; \
+	read -p "Введите количество реплик: " REPLICAS; \
+	docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) up -d --scale $$SERVICE=$$REPLICAS
+	@echo "$(GREEN)Масштабирование завершено!$(NC)"
+
+# ===========================================
+# Специальные команды
+# ===========================================
+supabase-logs: ## Показать логи только Supabase сервисов
+	@echo "$(BLUE)Логи Supabase сервисов:$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) logs --tail=100 supabase-api supabase-auth supabase-storage supabase-edge
+
+supabase-rebuild: ## Пересобрать только Supabase сервисы
+	@echo "$(BLUE)Пересборка Supabase сервисов...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) up -d --force-recreate supabase-api supabase-auth supabase-storage supabase-edge
+	@echo "$(GREEN)Supabase сервисы пересобраны!$(NC)"
+
+development: ## Запустить в режиме разработки (без production настроек)
+	@echo "$(BLUE)Запуск в режиме разработки...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME)-dev up -d
+	@echo "$(GREEN)Режим разработки запущен!$(NC)"
+
+production-check: ## Проверить готовность к production
+	@echo "$(BLUE)Проверка готовности к production...$(NC)"
+	@echo "$(YELLOW)Проверка SSL сертификатов...$(NC)"
+	@test -f config/production/ssl/fullchain.pem && echo "$(GREEN)SSL сертификат найден$(NC)" || echo "$(RED)SSL сертификат не найден$(NC)"
+	@echo "$(YELLOW)Проверка переменных окружения...$(NC)"
+	@grep -q "SUPABASE_API_URL" $(ENV_FILE) && echo "$(GREEN)Supabase URL настроен$(NC)" || echo "$(RED)Supabase URL не настроен$(NC)"
+	@grep -q "SECRET_KEY" .env.production && echo "$(GREEN)SECRET_KEY настроен$(NC)" || echo "$(RED)SECRET_KEY не настроен$(NC)"
+	@echo "$(YELLOW)Проверка прав доступа...$(NC)"
+	@find config/production -type f -name "*.conf" | head -5 | xargs ls -la
+	@echo "$(GREEN)Проверка готовности завершена!$(NC)"
+
+# ===========================================
+# Информационные команды
+# ===========================================
+info: ## Показать информацию о системе
+	@echo "$(BLUE)Информация о Supabase-интегрированной системе:$(NC)"
+	@echo ""
+	@echo "$(GREEN)Версия Docker:$(NC) $$((docker version --format '{{.Server.Version}}' 2>/dev/null || echo 'Docker недоступен'))"
+	@echo "$(GREEN)Версия Docker Compose:$(NC) $$(docker-compose --version 2>/dev/null || echo 'Docker Compose недоступен')"
+	@echo ""
+	@echo "$(GREEN)Активные сервисы:$(NC)"
+	@docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) ps --services --filter "status=running" 2>/dev/null | sed 's/^/  - /'
+	@echo ""
+	@echo "$(GREEN)Использование ресурсов:$(NC)"
+	@docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}" $$(docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) ps -q 2>/dev/null) 2>/dev/null || echo "Нет активных контейнеров"
+	@echo ""
+	@echo "$(GREEN)Дисковое пространство:$(NC)"
+	@df -h | grep -E "(Filesystem|/dev/)" | head -2
+	@echo ""
+	@echo "$(GREEN)Дашборды:$(NC)"
+	@echo "  Grafana:    http://localhost:3000"
+	@echo "  Prometheus: http://localhost:9090"
+	@echo "  Health:     http://localhost/health"
+
+# ===========================================
+# Проверка зависимостей
+# ===========================================
+check-deps: ## Проверить зависимости системы
+	@echo "$(BLUE)Проверка зависимостей...$(NC)"
+	@command -v docker >/dev/null 2>&1 || { echo "$(RED)Docker не установлен!$(NC)"; exit 1; }
+	@command -v docker-compose >/dev/null 2>&1 || { echo "$(RED)Docker Compose не установлен!$(NC)"; exit 1; }
+	@test -f $(ENV_FILE) || { echo "$(RED)Файл $(ENV_FILE) не найден!$(NC)"; echo "$(YELLOW)Запустите: make configure$(NC)"; exit 1; }
+	@echo "$(GREEN)Все зависимости настроены!$(NC)"
+
+# ===========================================
+# CI/CD команды
+# ===========================================
+ci-test: check-deps ## Запуск тестов для CI/CD
+	@echo "$(BLUE)Запуск автоматических тестов...$(NC)"
+	@make health-check
+	@make test
+	@echo "$(GREEN)CI/CD тесты прошли успешно!$(NC)"
+
+ci-deploy: check-deps ## Развертывание для CI/CD
+	@echo "$(BLUE)Автоматическое развертывание...$(NC)"
+	@make stop
+	@make start
+	@make health-check
+	@echo "$(GREEN)Развертывание завершено успешно!$(NC)"

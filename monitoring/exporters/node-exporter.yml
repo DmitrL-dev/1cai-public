@@ -1,0 +1,241 @@
+# Node Exporter конфигурация
+# Порт для метрик
+web.listen-address=":9100"
+
+# Метрики
+collectors:
+  enabled: |
+    arp
+    bcache
+    bonding
+    btrfs
+    cpu
+    diskstats
+    dmi
+    drbd
+    drierstat
+    ethtool
+    exec
+    fibrechannel
+    filesystem
+    hddtemp
+    infiniband
+    ipvs
+    ksm
+    ldap
+    logind
+    mdadm
+    meminfo
+    meminfo_numa
+    mountstats
+    netclass
+    netdevice
+    netstat
+    nfs
+    nfsd
+    ntfs
+    nvme
+    os
+    perf
+    powersupplyclass
+    pressure
+    processes
+    rapl
+    schedstat
+    selinux
+    sockstat
+    stat
+    superio
+    sysctl
+    systemd
+    tape
+    textfile
+    thermal_zone
+    time
+    timex
+    udev
+    uname
+    vmstat
+    wifi
+    xfs
+    zfs
+  disabled: |
+    bonding
+    dmi
+    fibrechannel
+    infiniband
+    superio
+
+# Включить rootfs
+rootfs:
+  enabled: true
+  path: /
+
+# Включить только определенные файлы из /proc
+procfs:
+  path: /proc
+  hostfs: rootfs:/
+
+# Включить только определенные файлы из /sys
+sysfs:
+  path: /sys
+  hostfs: rootfs:/
+
+# Файловая система
+filesystem:
+  ignored-fs-types: |
+    tmpfs
+    devtmpfs
+    auto
+    tmpfs
+    devtmpfs
+    devpts
+    dev
+    cgroup
+    cgroup2
+    proc
+    sys
+    pstore
+    bpf
+    tracefs
+    debugfs
+    mqueue
+    autofs
+    binfmt_misc
+    securityfs
+    hugetlbfs
+    ramfs
+    pstore
+    mtd
+    overlay
+    rpc_pipefs
+    tracefs
+  ignored-mount-points: |
+    ^/(sys|proc|dev|host|etc)($$|/)
+  mount-points: |
+    /
+  filesystem-types: |
+    autofs
+    btrfs
+    cgroup2
+    configfs
+    debugfs
+    devpts
+    devtmpfs
+    fuse.lxcfs
+    fuse.portal
+    fuse.tmpfs
+    fusebox.fuse.lxcfs
+    fusebox.fuse.portal
+    fusebox.fuse.tmpfs
+    hugetlbfs
+    mqueue
+    overlay
+    pstore
+    rpc_pipefs
+    securityfs
+    selinuxfs
+    tracefs
+
+# Настройки временных меток
+tcollector:
+  prefix: ""
+
+# Logging
+log.level: info
+log.format: logfmt
+
+# Таймауты
+web.timeout: 5s
+
+# TLS настройки
+web.telemetry-path: /metrics
+
+# Max open files
+max-open-files: 65535
+
+# Linux specific настройки
+linux-specific: |
+  include-exclude-labels |
+  meminfo_numa_enabled: false
+
+# Logical Volume Management настройки
+lvm.cache-size: 10
+lvm.timeout: 0s
+
+# PCIe устройства
+pcie: |
+  access: sysfs
+
+# Преобразование путей
+path-allowlist: |
+  /proc
+  /sys
+  /
+
+# Логика проигнорированных метрик
+metric-allowlist: |
+  .*
+
+metric-denylist: |
+  ^$
+
+# Netclass
+netclass-collect-ports: false
+
+# Netdevice
+netdevice-collect-xdp-stats: false
+
+# Окружение
+env:
+  EXPORTERS_TEXTFILE_ENABLED: 1
+  EXPORTERS_TEXTFILE_DIRECTORY: /var/lib/node_exporter/textfile_collector
+
+# FreeIPA статистика
+freipa.collectors: |
+  backends
+
+# Ripll9 настройки для статистики Uptime
+uptime: |
+  path: /proc/uptime
+  file: /var/lib/node_exporter/uptime.prom
+
+# SMART дисков
+smart-collect: |
+  enabled: false
+  path: /var/lib/node_exporter
+  ignored-devices: ""
+
+# NTFS
+ntfs:
+  path: /var/lib/node_exporter/ntfs
+
+# ACPI Power Supply
+acpi-power-supply:
+  path: /sys/class/power_supply
+
+# Период перезапуска коллекторов
+collect-period: 60s
+
+# Log файл
+log-file: /var/log/node_exporter.log
+
+# Параметры для кэша
+cache-size-fds: 512
+cache-size-dm-caches: 16
+
+# Настройки для файловой системы Docker
+docker-info:
+  path: /var/lib/docker
+
+# Настройки для Kubernetes
+kubeconfig:
+  path: /var/lib/node_exporter/kubeconfig
+
+# RAPL (Runtime Average Power Limiting)
+rapl:
+  collect-cpu-online-offline: false
+
+# Network File System
+nfs:
+  collect-stats: false

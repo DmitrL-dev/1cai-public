@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "observability-stack.fullname" . }}-otel-collector
+  labels:
+    app.kubernetes.io/name: {{ include "observability-stack.name" . }}
+    app.kubernetes.io/component: otel-collector
+spec:
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+    - name: metrics
+      port: 9464
+      targetPort: 9464
+  selector:
+    app.kubernetes.io/name: {{ include "observability-stack.name" . }}
+    app.kubernetes.io/component: otel-collector

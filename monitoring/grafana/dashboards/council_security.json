@@ -1,0 +1,86 @@
+{
+  "dashboard": {
+    "title": "LLM Council & Security Monitoring",
+    "tags": ["council", "security", "ai"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "title": "Council Queries",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(council_queries_total[5m])",
+            "legendFormat": "{{status}}"
+          }
+        ],
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 }
+      },
+      {
+        "title": "Council Latency",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(council_latency_seconds_bucket[5m]))",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(council_latency_seconds_bucket[5m]))",
+            "legendFormat": "p50"
+          }
+        ],
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 }
+      },
+      {
+        "title": "Poetic Detections",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(rate(poetic_detections_total{is_poetic=\"true\"}[5m]))"
+          }
+        ],
+        "gridPos": { "x": 0, "y": 8, "w": 6, "h": 4 }
+      },
+      {
+        "title": "Jailbreak Attempts Blocked",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(rate(jailbreak_attempts_blocked[5m]))"
+          }
+        ],
+        "gridPos": { "x": 6, "y": 8, "w": 6, "h": 4 }
+      },
+      {
+        "title": "Security Validation Latency",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(security_validation_latency_ms_bucket[5m]))",
+            "legendFormat": "p95"
+          }
+        ],
+        "gridPos": { "x": 12, "y": 8, "w": 12, "h": 4 }
+      },
+      {
+        "title": "Council Cost Multiplier",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "avg(council_cost_multiplier)"
+          }
+        ],
+        "gridPos": { "x": 0, "y": 12, "w": 12, "h": 6 }
+      },
+      {
+        "title": "Blocked Queries by Reason",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (reason) (jailbreak_attempts_blocked)"
+          }
+        ],
+        "gridPos": { "x": 12, "y": 12, "w": 12, "h": 6 }
+      }
+    ]
+  }
+}

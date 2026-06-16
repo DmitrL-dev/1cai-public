@@ -1,0 +1,5 @@
+Baseline Performance
+===================
+Time: 0.0107 sec
+Functions: 40
+Speed: 3749.4 funcs/sec

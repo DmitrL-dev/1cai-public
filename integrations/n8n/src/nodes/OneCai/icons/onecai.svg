@@ -1,0 +1,12 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradOneCai" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0066FF"/>
+      <stop offset="100%" stop-color="#00C6FF"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="112" height="112" rx="24" fill="url(#gradOneCai)"/>
+  <path d="M40 88V40H64C78 40 88 50 88 64C88 78 78 88 64 88H40ZM56 72H64C68.4183 72 72 68.4183 72 64C72 59.5817 68.4183 56 64 56H56V72Z" fill="#FFFFFF"/>
+  <circle cx="96" cy="32" r="12" fill="#FFFFFF" opacity="0.85"/>
+</svg>
+

@@ -1,0 +1,62 @@
+---
+- name: Bootstrap DevOps toolchain for 1C AI Stack
+  hosts: all
+  become: true
+
+  vars:
+    kubectl_version: "1.29.3"
+    terraform_version: "1.6.6"
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install base packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - software-properties-common
+          - python3-pip
+        state: present
+
+    - name: Install Docker
+      include_role:
+        name: geerlingguy.docker
+      vars:
+        docker_users:
+          - "{{ ansible_user }}"
+
+    - name: Install kubectl
+      get_url:
+        url: "https://dl.k8s.io/release/v{{ kubectl_version }}/bin/linux/amd64/kubectl"
+        dest: /usr/local/bin/kubectl
+        mode: '0755'
+
+    - name: Install Helm
+      shell: curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      args:
+        creates: /usr/local/bin/helm
+
+    - name: Install Terraform
+      shell: |
+        curl -fsSL https://releases.hashicorp.com/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_amd64.zip -o /tmp/terraform.zip
+        unzip -o /tmp/terraform.zip -d /usr/local/bin
+        rm /tmp/terraform.zip
+      args:
+        creates: /usr/local/bin/terraform
+
+    - name: Install ansible-lint
+      pip:
+        name: ansible-lint
+
+    - name: Ensure /opt/1cai exists
+      file:
+        path: /opt/1cai
+        state: directory
+        mode: '0755'

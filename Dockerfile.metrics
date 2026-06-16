@@ -1,0 +1,32 @@
+# Dockerfile для Metrics API
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Установка системных зависимостей
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Установка Python зависимостей
+COPY requirements.metrics.txt .
+RUN pip install --no-cache-dir -r requirements.metrics.txt
+
+# Копирование исходного кода
+COPY src/ ./src/
+COPY config/ ./config/
+
+# Создание пользователя
+RUN useradd --create-home --shell /bin/bash metricsapp && \
+    chown -R metricsapp:metricsapp /app
+USER metricsapp
+
+# Открываем порт
+EXPOSE 8004
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8004/health || exit 1
+
+# Команда запуска
+CMD ["uvicorn", "src.api.metrics:app", "--host", "0.0.0.0", "--port", "8004", "--log-level", "info"]

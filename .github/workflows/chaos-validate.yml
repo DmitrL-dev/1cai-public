@@ -1,0 +1,23 @@
+name: Chaos Manifests Lint
+
+on:
+  pull_request:
+    paths:
+      - 'infrastructure/chaos/litmus/**'
+  push:
+    branches: [ main ]
+    paths:
+      - 'infrastructure/chaos/litmus/**'
+      - '.github/workflows/chaos-validate.yml'
+
+jobs:
+  dryrun:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Validate chaos manifests
+        run: |
+          kubectl apply --dry-run=client -f infrastructure/chaos/litmus/pod-delete.yaml
+          kubectl apply --dry-run=client -f infrastructure/chaos/litmus/chaos-engine.yaml
+          kubectl apply --dry-run=client -f infrastructure/chaos/litmus/pod-network-latency.yaml
+          kubectl apply --dry-run=client -f infrastructure/chaos/litmus/chaos-engine-network.yaml

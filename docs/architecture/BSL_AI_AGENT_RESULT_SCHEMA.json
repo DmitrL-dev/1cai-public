@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://1c-ai-stack.example.com/schemas/bsl-ai-agent-result/v1",
+  "title": "BSLAIAgentResult",
+  "description": "JSON Schema для результатов работы AI агентов с BSL кодом",
+  "type": "object",
+  "required": ["result_type"],
+  "oneOf": [
+    {
+      "title": "CodeGenerationResult",
+      "type": "object",
+      "required": ["result_type", "code", "quality_score"],
+      "properties": {
+        "result_type": {"const": "generation"},
+        "code": {"type": "string"},
+        "explanation": {"type": "string"},
+        "quality_score": {"type": "number", "minimum": 0, "maximum": 1},
+        "warnings": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "metadata_used": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "functions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "parameters": {"type": "array", "items": {"type": "string"}},
+              "return_type": {"type": "string"},
+              "description": {"type": "string"},
+              "code": {"type": "string"}
+            }
+          }
+        },
+        "queries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": {"type": "string"},
+              "type": {"type": "string", "enum": ["SELECT", "INSERT", "UPDATE", "DELETE"]},
+              "tables_used": {"type": "array", "items": {"type": "string"}}
+            }
+          }
+        },
+        "compliance": {
+          "type": "object",
+          "properties": {
+            "syntax": {"type": "boolean"},
+            "semantics": {"type": "boolean"},
+            "best_practices": {"type": "boolean"},
+            "performance": {"type": "boolean"},
+            "security": {"type": "boolean"}
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "loc": {"type": "integer"},
+            "complexity": {"type": "integer"},
+            "functions_count": {"type": "integer"},
+            "queries_count": {"type": "integer"}
+          }
+        }
+      }
+    },
+    {
+      "title": "CodeReviewResult",
+      "type": "object",
+      "required": ["result_type", "issues", "quality_score"],
+      "properties": {
+        "result_type": {"const": "review"},
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["severity", "category", "message"],
+            "properties": {
+              "severity": {"type": "string", "enum": ["critical", "high", "medium", "low"]},
+              "category": {"type": "string", "enum": ["security", "performance", "best_practices", "1c_specific"]},
+              "message": {"type": "string"},
+              "line": {"type": "integer"},
+              "suggestion": {"type": "string"},
+              "code": {"type": "string"},
+              "fixed_code": {"type": "string"}
+            }
+          }
+        },
+        "suggestions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type", "message"],
+            "properties": {
+              "type": {"type": "string", "enum": ["refactor", "optimize", "document", "test"]},
+              "message": {"type": "string"},
+              "line": {"type": "integer"},
+              "code": {"type": "string"},
+              "priority": {"type": "string", "enum": ["high", "medium", "low"]}
+            }
+          }
+        },
+        "quality_score": {"type": "number", "minimum": 0, "maximum": 1},
+        "compliance": {
+          "type": "object",
+          "properties": {
+            "security": {"type": "boolean"},
+            "performance": {"type": "boolean"},
+            "best_practices": {"type": "boolean"},
+            "1c_specific": {"type": "boolean"}
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "complexity": {"type": "integer"},
+            "loc": {"type": "integer"},
+            "functions_count": {"type": "integer"},
+            "queries_count": {"type": "integer"},
+            "issues_count": {"type": "integer"}
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}
+

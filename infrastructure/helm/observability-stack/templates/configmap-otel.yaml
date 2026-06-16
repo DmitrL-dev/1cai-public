@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "observability-stack.fullname" . }}-otel-config
+  labels:
+    app.kubernetes.io/name: {{ include "observability-stack.name" . }}
+data:
+  otel-config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+          http:
+    processors:
+      batch: {}
+      memory_limiter:
+        check_interval: 5s
+        limit_percentage: 80
+        spike_limit_percentage: 25
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:9464
+      loki:
+        endpoint: http://{{ include "observability-stack.fullname" . }}-loki:3100/loki/api/v1/push
+      otlp:
+        endpoint: {{ include "observability-stack.fullname" . }}-tempo:4317
+        tls:
+          insecure: true
+    service:
+      telemetry:
+        metrics:
+          level: detailed
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [prometheus]
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [loki]
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlp]

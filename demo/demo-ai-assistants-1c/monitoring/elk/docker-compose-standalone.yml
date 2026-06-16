@@ -1,0 +1,208 @@
+# Отдельный Docker Compose для ELK Stack
+version: '3.8'
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: elasticsearch-elk
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms2g -Xmx2g
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      - bootstrap.memory_lock=true
+      - network.host=0.0.0.0
+      - http.port=9200
+      - transport.port=9300
+      - cluster.name=demo-ai-assistants-es
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+      - es_logs:/usr/share/elasticsearch/logs
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - elk
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=50s || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: logstash-elk
+    ports:
+      - "5044:5044"  # Beats input
+      - "9600:9600"  # Monitoring
+      - "5000:5000"  # TCP input
+      - "5001:5001"  # UDP input
+      - "8080:8080"  # HTTP input
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - ./logstash/config:/usr/share/logstash/config:ro
+      - ./logs:/var/log/containers:ro
+      - ./logs/json:/var/log/containers/json:ro
+    environment:
+      - LS_JAVA_OPTS=-Xms1g -Xmx1g
+      - PATH.config=/usr/share/logstash/pipeline
+    networks:
+      - elk
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9600 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: kibana-elk
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - xpack.security.enabled=false
+      - SERVER_NAME=kibana
+      - SERVER_HOST=0.0.0.0
+      - XPACK_SECURITY_ENABLED=false
+      - XPACK_MONITORING_ENABLED=true
+    volumes:
+      - ./kibana/config:/usr/share/kibana/config:ro
+    networks:
+      - elk
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.11.0
+    container_name: filebeat-elk
+    user: root
+    volumes:
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/log:/var/log:ro
+    environment:
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+    networks:
+      - elk
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat:8.11.0
+    container_name: metricbeat-elk
+    user: root
+    volumes:
+      - ./metricbeat/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /proc:/hostfs/proc:ro
+      - /:/hostfs:ro
+    environment:
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  # Demo Nginx контейнер для генерации логов
+  demo-nginx:
+    image: nginx:alpine
+    container_name: demo-nginx-logs
+    ports:
+      - "8082:80"
+    volumes:
+      - ./demo-nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - elk
+    restart: unless-stopped
+    depends_on:
+      - filebeat
+
+  # Nginx Exporter для метрик
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:0.11.0
+    container_name: nginx-exporter
+    ports:
+      - "9113:9113"
+    command:
+      - '-nginx.scrape-uri=http://demo-nginx:80/nginx_status'
+    networks:
+      - elk
+    restart: unless-stopped
+    depends_on:
+      - demo-nginx
+
+volumes:
+  es_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./elasticsearch/data
+      o: bind
+  es_logs:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./elasticsearch/logs
+      o: bind
+
+networks:
+  elk:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+
+# Дополнительные сервисы для мониторинга ELK
+
+# Cerebro - Elasticsearch web admin tool
+  cerebro:
+    image: lmenezes/cerebro:0.9.4
+    container_name: cerebro
+    ports:
+      - "9000:9000"
+    environment:
+      - PLAY_SECRETS=false
+    networks:
+      - elk
+    restart: unless-stopped
+
+# Curator - Управление индексами Elasticsearch
+  elasticsearch-curator:
+    image: elasticsearch/curator:5.8.4
+    container_name: elasticsearch-curator
+    volumes:
+      - ./curator/config:/curator/config:ro
+      - ./curator/action_files:/curator/action_files:ro
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped

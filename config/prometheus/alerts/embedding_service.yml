@@ -1,0 +1,75 @@
+# Prometheus Alerting Rules для Embedding Service
+groups:
+  - name: embedding_service_slo
+    interval: 30s
+    rules:
+      - alert: EmbeddingServiceSLOViolation
+        expr: |
+          embedding_slo_error_budget < 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: embedding_service
+        annotations:
+          summary: "SLO violation detected for Embedding Service"
+          description: "Error budget is below 10% for {{ $labels.slo_name }}"
+      
+      - alert: EmbeddingServiceHighLatency
+        expr: |
+          embedding_slo_latency_p95{slo_name="latency_p95"} > 0.15
+        for: 5m
+        labels:
+          severity: critical
+          component: embedding_service
+        annotations:
+          summary: "High latency detected in Embedding Service"
+          description: "P95 latency is {{ $value }}s (target: 0.1s)"
+      
+      - alert: EmbeddingServiceLowAvailability
+        expr: |
+          embedding_slo_error_budget{slo_name="availability"} < 0.01
+        for: 5m
+        labels:
+          severity: critical
+          component: embedding_service
+        annotations:
+          summary: "Low availability in Embedding Service"
+          description: "Availability error budget is below 1%"
+  
+  - name: embedding_service_optimization
+    interval: 30s
+    rules:
+      - alert: EmbeddingServiceQuantizationNotCalibrated
+        expr: |
+          embedding_adaptive_quantization_calibrated == 0
+        for: 10m
+        labels:
+          severity: warning
+          component: embedding_service
+        annotations:
+          summary: "Adaptive Quantization not calibrated"
+          description: "Quantization has been enabled but not calibrated for 10 minutes"
+      
+      - alert: EmbeddingServiceANNSizeHigh
+        expr: |
+          embedding_semantic_cache_ann_size > 8000
+        for: 5m
+        labels:
+          severity: info
+          component: embedding_service
+        annotations:
+          summary: "Semantic Cache ANN approaching max size"
+          description: "ANN cache size is {{ $value }} (max: 10000)"
+      
+      - alert: EmbeddingServicePredictiveModelNotTrained
+        expr: |
+          embedding_predictive_batch_model_trained == 0
+          and embedding_predictive_batch_history_size > 100
+        for: 15m
+        labels:
+          severity: warning
+          component: embedding_service
+        annotations:
+          summary: "Predictive Batch Model not trained"
+          description: "Model has {{ $labels.history_size }} samples but is not trained"
+

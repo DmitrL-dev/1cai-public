@@ -1,0 +1,159 @@
+# Node Exporter конфигурация для системных метрик
+
+# Базовые метрики (включены по умолчанию)
+# - CPU, Memory, Disk, Network
+# - Load average, Uptime
+# - File system metrics
+
+# Дополнительные collectors
+collectors:
+  enabled:
+    - arp
+    - bcache
+    - bonding
+    - bootcharts
+    - btrfs
+    - conntrack
+    - cpu
+    - diskstats
+    - drbd
+    - drm
+    - entrop
+    - filesystem
+    - findfs
+    - hwmon
+    - infiniband
+    - ipvs
+    - juju
+    - ksmd
+    - logind
+    - MDADM
+    - meminfo
+    - meminfo_numa
+    - mountstats
+    - netclass
+    - netdev
+    - netstat
+    - nfs
+    - nfsd
+    - nvme
+    - perf
+    - pressure
+    - process
+    - qdisc
+    - rapl
+    - schedstat
+    - scsi
+    - smbios
+    - sockstat
+    - softnet
+    - supersetch遗漏_detail
+    - systemd
+    - taptype
+    - tc
+    - textfile
+    - thermal_zone
+    - time
+    - timex
+    - udp_queues
+    - uname
+    - vmstat
+    - xfs
+    - zfs
+
+# Disabled collectors (не нужны в нашем случае)
+disabled_collectors:
+  - docker
+  - containerd
+  - podman
+
+# Параметры производительности
+perf_data_source:
+  enabled: false
+
+# Textfile директория для кастомных метрик
+text_file_directory: /var/lib/node_exporter/textfile_collector
+
+# Настройки логирования
+log_format: 'logfmt'
+log_level: 'info'
+
+# Collector-specific конфигурация
+
+# CPU collector
+cpu:
+  guest_collector: true
+  irq_collector: true
+
+# Diskstats collector  
+diskstats:
+ ignored_devices: '^(ram|loop|fd|(h|s|v)d[a-z]|nvme\\d+n\\d+p)\\d+$'
+
+# Filesystem collector
+filesystem:
+  fs_types_exclude: '^(sys|proc|dev|devpts|devshm|tmp|boot|run)/.*'
+  mount_points_exclude: '^/(sys|proc|dev|devpts|devshm|tmp|boot|run)(\\/|$)'
+
+# Memory collector
+meminfo_numa:
+  enabled: true
+
+# Network collector
+netclass:
+  ignored_errors: ['^$', 'n/a']
+
+netdev:
+  ignored_devices: '^$'
+
+# Processes collector
+process:
+  procfs: '/proc'
+  sysfs: '/sys'
+
+# Systemd collector
+systemd:
+  enable_restart_metrics: true
+  notify_events: true
+
+# Textfile collector
+textfile:
+  directory: '/var/lib/node_exporter/textfile_collector'
+
+# Mountstats collector
+mountstats:
+  # Исключить временные файловые системы
+  ignored_fs_types: ['tmpfs', 'devtmpfs', 'devfs', 'iso9660', 'overlay', 'aufs', 'squashfs']
+
+# NVMe collector
+nvme:
+  ignored_devices: '^$'
+
+# Pressure collector (новые события давления в Linux)
+pressure:
+  io_pressure: true
+  cpu_pressure: false  # Может быть очень много метрик
+  memory_pressure: true
+
+# Web параметры
+web:
+  listen_address: '0.0.0.0'
+  port: 9100
+  read_timeout: 5s
+  max_connections: 0  # Неограниченно
+  enable_lifecycle: false  # Отключить перезагрузку через web
+  page_title: 'Node Exporter'
+  telemetry_path: '/metrics'
+  max_requests: 0  # Неограниченно
+
+# Дополнительные метрики для Kubernetes
+kubernetes:
+  enabled: false  # Для kubelet metrics
+
+# Основные метрики для мониторинга:
+# - CPU usage: rate(node_cpu_seconds_total{mode!="idle"}[5m]) * 100
+# - Memory usage: node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes
+# - Disk usage: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100
+# - Network IO: rate(node_network_receive_bytes_total[5m]) / rate(node_network_transmit_bytes_total[5m])
+# - Load average: node_load1, node_load5, node_load15
+# - Disk I/O: rate(node_disk_io_time_seconds_total[5m])
+# - Processes: node_procs_running, node_procs_blocked

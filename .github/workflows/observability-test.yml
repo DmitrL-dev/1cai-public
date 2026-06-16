@@ -1,0 +1,40 @@
+name: Observability Compose Test
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'observability/**'
+      - 'Makefile'
+  pull_request:
+    paths:
+      - 'observability/**'
+      - 'Makefile'
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Start observability stack
+        run: |
+          docker compose -f observability/docker-compose.observability.yml up -d
+          docker compose -f observability/docker-compose.observability.yml ps
+
+      - name: Wait for smoke-api
+        run: |
+          timeout 90s bash -c 'until curl -sf http://localhost:8080/health; do sleep 5; done'
+
+      - name: Check Prometheus endpoint
+        run: |
+          timeout 90s bash -c 'until curl -sf http://localhost:9090/metrics; do sleep 5; done'
+
+      - name: Check Grafana health API
+        run: |
+          timeout 120s bash -c 'until curl -sf http://localhost:3000/api/health; do sleep 5; done'
+
+      - name: Tear down stack
+        if: always()
+        run: docker compose -f observability/docker-compose.observability.yml down

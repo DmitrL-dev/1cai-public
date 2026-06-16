@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: 1cai
+  namespace: argocd
+spec:
+  description: 1C AI Stack applications
+  sourceRepos:
+    - https://github.com/DmitrL-dev/1cai
+    - https://github.com/DmitrL-dev/1cai-public
+  destinations:
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  namespaceResourceBlacklist:
+    - group: kube-system
+      kind: '*'

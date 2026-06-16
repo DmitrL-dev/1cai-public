@@ -1,0 +1,140 @@
+rules:
+  - id: hardcoded-credentials
+    pattern-regex: |
+      (password|passwd|pwd|secret|token|api[_-]?key)\s*[:=]\s*["'][^"']{8,}["']
+    message: Hardcoded credentials detected
+    severity: ERROR
+    languages: [javascript, typescript, python, java, go]
+    metadata:
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+
+  - id: sql-injection
+    patterns:
+      - pattern-inside: |
+          $QUERY = ...
+          ...
+          $DB.execute($QUERY, ...)
+      - pattern-either:
+          - pattern: |
+              $QUERY += ...
+          - pattern: |
+              $QUERY = "..." + ...
+    message: Potential SQL injection vulnerability
+    severity: ERROR
+    languages: [javascript, typescript, python]
+    metadata:
+      cwe: "CWE-89: SQL Injection"
+
+  - id: command-injection
+    patterns:
+      - pattern-either:
+          - pattern: |
+              child_process.exec(...)
+          - pattern: |
+              child_process.execSync(...)
+          - pattern: |
+              os.system(...)
+          - pattern: |
+              subprocess.call(...)
+    message: Potential command injection vulnerability
+    severity: ERROR
+    languages: [javascript, typescript, python]
+    metadata:
+      cwe: "CWE-78: OS Command Injection"
+
+  - id: path-traversal
+    patterns:
+      - pattern-either:
+          - pattern: |
+              fs.readFile(...)
+          - pattern: |
+              open(...)
+    metavariable-pattern:
+      metavariable: $PATH
+      pattern-regex: \.\./|\.\.\\\\
+    message: Potential path traversal vulnerability
+    severity: WARNING
+    languages: [javascript, typescript, python]
+    metadata:
+      cwe: "CWE-22: Path Traversal"
+
+  - id: xss
+    patterns:
+      - pattern-either:
+          - pattern: |
+              res.send(...)
+          - pattern: |
+              res.render(...)
+    metavariable-pattern:
+      metavariable: $CONTENT
+      pattern-regex: <script|javascript:|on\w+\s*=
+    message: Potential XSS vulnerability
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata:
+      cwe: "CWE-79: Cross-site Scripting"
+
+  - id: insecure-randomness
+    patterns:
+      - pattern-either:
+          - pattern: Math.random()
+          - pattern: random.random()
+          - pattern: SecureRandom()
+    message: Use of insecure random number generator
+    severity: WARNING
+    languages: [javascript, typescript, python, java]
+    metadata:
+      cwe: "CWE-338: Use of Cryptographically Weak PRNG"
+
+  - id: jwt-hardcoded-secret
+    patterns:
+      - pattern-either:
+          - pattern: |
+              jwt.sign(..., {secret: "..."})
+          - pattern: |
+              jwt.verify(..., "...")
+    message: JWT with hardcoded secret key
+    severity: ERROR
+    languages: [javascript, typescript]
+    metadata:
+      cwe: "CWE-798: Use of Hard-coded Credentials"
+
+  - id: cors-wildcard
+    patterns:
+      - pattern-either:
+          - pattern: |
+              cors({origin: "*"})
+          - pattern: |
+              Access-Control-Allow-Origin: *
+    message: CORS policy allows all origins
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata:
+      cwe: "CWE-942: Overly Permissive Cross-domain Whitelist"
+
+  - id: express-ssrf-vulnerability
+    patterns:
+      - pattern: |
+          app.use(express.urlencoded({extended: true}))
+      - pattern-not-inside: |
+          app.use(helmet())
+    message: Potential SSRF vulnerability - missing Helmet security headers
+    severity: WARNING
+    languages: [javascript, typescript]
+    metadata:
+      cwe: "CWE-918: Server-Side Request Forgery"
+
+  - id: debug-enabled
+    patterns:
+      - pattern-either:
+          - pattern: |
+              DEBUG=true
+          - pattern: |
+              NODE_ENV=development
+          - pattern: |
+              app.use(express.static(...))
+    message: Debug mode or development features enabled
+    severity: INFO
+    languages: [javascript, typescript]
+    metadata:
+      cwe: "CWE-489: Leftover Debug Code"

@@ -1,0 +1,476 @@
+/**
+ * Тесты для модуля multimediaGeneration
+ * Проверка функциональности генерации аудио и видео
+ */
+
+import { 
+  generateDemoAudio, 
+  generateDemoVideo, 
+  generateRoleDemo,
+  generateAllRoleDemos,
+  generateArchitectPresentationDemo,
+  generateDeveloperCodeDemo,
+  generateTesterInstructionsDemo,
+  generatePMReportsDemo,
+  generateBARequirementsDemo
+} from './multimediaGeneration';
+
+// Мок-функции для имитации API ответов
+const mockAudioKit = {
+  batch_text_to_audio: jest.fn()
+};
+
+const mockVideoKit = {
+  batch_text_to_video: jest.fn(),
+  batch_image_to_video: jest.fn()
+};
+
+// Настройка Jest mocks
+jest.mock('./audioKit', () => mockAudioKit);
+jest.mock('./videoKit', () => mockVideoKit);
+
+describe('Multimedia Generation Module', () => {
+  
+  describe('generateDemoAudio', () => {
+    
+    test('должен успешно генерировать аудио с базовыми параметрами', async () => {
+      const text = 'Тестовый текст для озвучивания';
+      
+      // Мок успешного ответа API
+      mockAudioKit.batch_text_to_audio.mockResolvedValue({
+        success: true,
+        audio_url: '/generated/audio/test.mp3'
+      });
+      
+      const result = await generateDemoAudio(text);
+      
+      expect(result.success).toBe(true);
+      expect(result.audioUrl).toBeDefined();
+      expect(result.error).toBeUndefined();
+    });
+    
+    test('должен валидировать пустой текст', async () => {
+      const result = await generateDemoAudio('');
+      
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Текст не может быть пустым');
+    });
+    
+    test('должен валидировать слишком длинный текст', async () => {
+      const longText = 'x'.repeat(1001);
+      const result = await generateDemoAudio(longText);
+      
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Текст слишком длинный');
+    });
+    
+    test('должен применять дополнительные параметры', async () => {
+      const text = 'Тестовый текст';
+      const options = {
+        voiceType: 'professional',
+        emotion: 'happy' as const,
+        speed: 1.2,
+        pitch: 2,
+        volume: 7.5
+      };
+      
+      mockAudioKit.batch_text_to_audio.mockResolvedValue({
+        success: true,
+        audio_url: '/generated/audio/custom.mp3'
+      });
+      
+      const result = await generateDemoAudio(text, options);
+      
+      expect(result.success).toBe(true);
+      expect(result.audioUrl).toBeDefined();
+    });
+    
+    test('должен обрабатывать ошибки API', async () => {
+      const text = 'Тестовый текст';
+      
+      mockAudioKit.batch_text_to_audio.mockRejectedValue(
+        new Error('Ошибка сети')
+      );
+      
+      const result = await generateDemoAudio(text);
+      
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+  });
+  
+  describe('generateDemoVideo', () => {
+    
+    test('должен успешно генерировать видео из текста', async () => {
+      const prompt = 'Описание видео для генерации';
+      
+      mockVideoKit.batch_text_to_video.mockResolvedValue({
+        success: true,
+        video_url: '/generated/video/test.mp4'
+      });
+      
+      const result = await generateDemoVideo(prompt);
+      
+      expect(result.success).toBe(true);
+      expect(result.videoUrl).toBeDefined();
+      expect(result.error).toBeUndefined();
+    });
+    
+    test('должен генерировать видео с изображениями', async () => {
+      const prompt = 'Видео на основе изображений';
+      const images = ['/images/test1.png', '/images/test2.png'];
+      
+      mockVideoKit.batch_image_to_video.mockResolvedValue({
+        success: true,
+        video_url: '/generated/video/with-images.mp4'
+      });
+      
+      const result = await generateDemoVideo(prompt, images);
+      
+      expect(result.success).toBe(true);
+      expect(result.videoUrl).toBeDefined();
+    });
+    
+    test('должен валидировать пустой промпт', async () => {
+      const result = await generateDemoVideo('');
+      
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Промпт не может быть пустым');
+    });
+    
+    test('должен валидировать слишком длинный промпт', async () => {
+      const longPrompt = 'x'.repeat(501);
+      const result = await generateDemoVideo(longPrompt);
+      
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Промпт слишком длинный');
+    });
+    
+    test('должен применять дополнительные параметры', async () => {
+      const prompt = 'Тестовый промпт';
+      const options = {
+        duration: 10,
+        resolution: '1080P' as const,
+        referenceType: 'first_frame' as const
+      };
+      
+      mockVideoKit.batch_text_to_video.mockResolvedValue({
+        success: true,
+        video_url: '/generated/video/custom.mp4'
+      });
+      
+      const result = await generateDemoVideo(prompt, [], options);
+      
+      expect(result.success).toBe(true);
+      expect(result.videoUrl).toBeDefined();
+    });
+  });
+  
+  describe('Ролевые демо функции', () => {
+    
+    test('generateArchitectPresentationDemo должен генерировать демо архитектора', async () => {
+      mockAudioKit.batch_text_to_audio.mockResolvedValue({
+        success: true,
+        audio_url: '/audio/architect-demo.mp3'
+      });
+      
+      mockVideoKit.batch_text_to_video.mockResolvedValue({
+        success: true,
+        video_url: '/video/architect-demo.mp4'
+      });
+      
+      const result = await generateArchitectPresentationDemo();
+      
+      expect(result.audio).toBeDefined();
+      expect(result.video).toBeDefined();
+    });
+    
+    test('generateDeveloperCodeDemo должен генерировать демо разработчика', async () => {
+      mockAudioKit.batch_text_to_audio.mockResolvedValue({
+        success: true,
+        audio_url: '/audio/developer-demo.mp3'
+      });
+      
+      mockVideoKit.batch_text_to_video.mockResolvedValue({
+        success: true,
+        video_url: '/video/developer-demo.mp4'
+      });
+      
+      const result = await generateDeveloperCodeDemo();
+      
+      expect(result.audio).toBeDefined();
+      expect(result.video).toBeDefined();
+    });
+    
+    test('generateTesterInstructionsDemo должен генерировать демо тестировщика', async () => {
+      mockAudioKit.batch_text_to_audio.mockResolvedValue({
+        success: true,
+        audio_url: '/audio/tester-demo.mp3'
+      });
+      
+      mockVideoKit.batch_text_to_video.mockResolvedValue({
+        success: true,
+        video_url: '/video/tester-demo.mp4'
+      });
+      
+      const result = await generateTesterInstructionsDemo();
+      
+      expect(result.audio).toBeDefined();
+      expect(result.video).toBeDefined();
+    });
+    
+    test('generatePMReportsDemo должен генерировать демо PM', async () => {
+      mockAudioKit.batch_text_to_audio.mockResolvedValue({
+        success: true,
+        audio_url: '/audio/pm-demo.mp3'
+      });
+      
+      mockVideoKit.batch_text_to_video.mockResolvedValue({
+        success: true,
+        video_url: '/video/pm-demo.mp4'
+      });
+      
+      const result = await generatePMReportsDemo();
+      
+      expect(result.audio).toBeDefined();
+      expect(result.video).toBeDefined();
+    });
+    
+    test('generateBARequirementsDemo должен генерировать демо BA', async () => {
+      mockAudioKit.batch_text_to_audio.mockResolvedValue({
+        success: true,
+        audio_url: '/audio/ba-demo.mp3'
+      });
+      
+      mockVideoKit.batch_text_to_video.mockResolvedValue({
+        success: true,
+        video_url: '/video/ba-demo.mp4'
+      });
+      
+      const result = await generateBARequirementsDemo();
+      
+      expect(result.audio).toBeDefined();
+      expect(result.video).toBeDefined();
+    });
+  });
+  
+  describe('generateRoleDemo', () => {
+    
+    test('должен генерировать демо для каждой роли', async () => {
+      const roles = ['architect', 'developer', 'tester', 'pm', 'ba'] as const;
+      
+      // Мок API для всех ролей
+      mockAudioKit.batch_text_to_audio.mockResolvedValue({
+        success: true,
+        audio_url: '/audio/role-demo.mp3'
+      });
+      
+      mockVideoKit.batch_text_to_video.mockResolvedValue({
+        success: true,
+        video_url: '/video/role-demo.mp4'
+      });
+      
+      for (const role of roles) {
+        const result = await generateRoleDemo(role);
+        expect(result.audio).toBeDefined();
+        expect(result.video).toBeDefined();
+      }
+    });
+    
+    test('должен выбрасывать ошибку для неизвестной роли', async () => {
+      await expect(generateRoleDemo('unknown' as any)).rejects.toThrow(
+        'Неизвестная роль'
+      );
+    });
+  });
+  
+  describe('generateAllRoleDemos', () => {
+    
+    test('должен генерировать демо для всех ролей', async () => {
+      // Мок API
+      mockAudioKit.batch_text_to_audio.mockResolvedValue({
+        success: true,
+        audio_url: '/audio/all-roles.mp3'
+      });
+      
+      mockVideoKit.batch_text_to_video.mockResolvedValue({
+        success: true,
+        video_url: '/video/all-roles.mp4'
+      });
+      
+      const results = await generateAllRoleDemos();
+      
+      expect(results).toHaveProperty('architect');
+      expect(results).toHaveProperty('developer');
+      expect(results).toHaveProperty('tester');
+      expect(results).toHaveProperty('pm');
+      expect(results).toHaveProperty('ba');
+      
+      // Проверяем структуру каждого результата
+      Object.values(results).forEach(result => {
+        expect(result).toHaveProperty('audio');
+        expect(result).toHaveProperty('video');
+      });
+    });
+    
+    test('должен продолжать генерацию при ошибке одной роли', async () => {
+      // Мок частичных ошибок
+      const mockResults = [
+        { success: true, audio_url: '/audio/success.mp3' },
+        { success: false, error: 'Ошибка API' },
+        { success: true, audio_url: '/audio/success2.mp3' },
+        { success: true, audio_url: '/audio/success3.mp3' },
+        { success: true, audio_url: '/audio/success4.mp3' }
+      ];
+      
+      mockAudioKit.batch_text_to_audio.mockImplementation(
+        () => Promise.resolve(mockResults.shift()!)
+      );
+      
+      const results = await generateAllRoleDemos();
+      
+      // Проверяем, что все роли имеют результат (даже с ошибками)
+      expect(results.architect.audio).toBeDefined();
+      expect(results.developer.audio).toBeDefined();
+      expect(results.tester.audio).toBeDefined();
+      expect(results.pm.audio).toBeDefined();
+      expect(results.ba.audio).toBeDefined();
+    });
+  });
+  
+  describe('Обработка ошибок', () => {
+    
+    test('должен корректно обрабатывать сетевые ошибки', async () => {
+      mockAudioKit.batch_text_to_audio.mockRejectedValue(
+        new Error('Сетевая ошибка')
+      );
+      
+      const result = await generateDemoAudio('Тестовый текст');
+      
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+    
+    test('должен корректно обрабатывать ошибки валидации', async () => {
+      const result = await generateDemoAudio('');
+      
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Текст не может быть пустым');
+    });
+  });
+});
+
+// Интеграционные тесты
+describe('Интеграционные тесты', () => {
+  
+  test('полный цикл генерации демо для архитектора', async () => {
+    // Настройка моков для полного цикла
+    mockAudioKit.batch_text_to_audio.mockResolvedValue({
+      success: true,
+      audio_url: '/integrated/architect/audio.mp3'
+    });
+    
+    mockVideoKit.batch_text_to_video.mockResolvedValue({
+      success: true,
+      video_url: '/integrated/architect/video.mp4'
+    });
+    
+    // Генерация демо
+    const result = await generateArchitectPresentationDemo();
+    
+    // Проверка результата
+    expect(result.audio).toContain('/integrated/architect/audio.mp3');
+    expect(result.video).toContain('/integrated/architect/video.mp4');
+    
+    // Проверка вызовов API
+    expect(mockAudioKit.batch_text_to_audio).toHaveBeenCalled();
+    expect(mockVideoKit.batch_text_to_video).toHaveBeenCalled();
+  });
+  
+  test('пакетная обработка с различными параметрами', async () => {
+    const testCases = [
+      {
+        name: 'Короткое видео',
+        prompt: 'Краткое описание',
+        options: { duration: 6 }
+      },
+      {
+        name: 'Длинное видео',
+        prompt: 'Детальное описание для демонстрации функционала',
+        options: { duration: 10 }
+      },
+      {
+        name: 'HD видео',
+        prompt: 'Описание для высокого разрешения',
+        options: { resolution: '1080P' }
+      }
+    ];
+    
+    mockVideoKit.batch_text_to_video.mockResolvedValue({
+      success: true,
+      video_url: '/video/test-case.mp4'
+    });
+    
+    for (const testCase of testCases) {
+      const result = await generateDemoVideo(
+        testCase.prompt,
+        [],
+        testCase.options as any
+      );
+      
+      expect(result.success).toBe(true);
+      expect(result.videoUrl).toBeDefined();
+    }
+  });
+});
+
+// Performance тесты
+describe('Performance тесты', () => {
+  
+  test('генерация аудио не должна превышать 5 секунд', async () => {
+    mockAudioKit.batch_text_to_audio.mockImplementation(
+      () => new Promise(resolve => 
+        setTimeout(() => resolve({
+          success: true,
+          audio_url: '/performance/audio.mp3'
+        }), 1000)
+      )
+    );
+    
+    const startTime = Date.now();
+    const result = await generateDemoAudio('Тестовый текст для замера производительности');
+    const endTime = Date.now();
+    
+    expect(result.success).toBe(true);
+    expect(endTime - startTime).toBeLessThan(5000);
+  });
+  
+  test('пакетная генерация для всех ролей не должна превышать 30 секунд', async () => {
+    mockAudioKit.batch_text_to_audio.mockImplementation(
+      () => new Promise(resolve => 
+        setTimeout(() => resolve({
+          success: true,
+          audio_url: '/performance/batch.mp3'
+        }), 500)
+      )
+    );
+    
+    mockVideoKit.batch_text_to_video.mockImplementation(
+      () => new Promise(resolve => 
+        setTimeout(() => resolve({
+          success: true,
+          video_url: '/performance/batch.mp4'
+        }), 1000)
+      )
+    );
+    
+    const startTime = Date.now();
+    const results = await generateAllRoleDemos();
+    const endTime = Date.now();
+    
+    expect(Object.keys(results).length).toBe(5);
+    expect(endTime - startTime).toBeLessThan(30000);
+  });
+});
+
+export {}; // Экспорт для поддержки ES modules

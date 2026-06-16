@@ -1,0 +1,48 @@
+@startuml component_integrations
+!include <C4/C4_Component>
+
+LAYOUT_LEFT_RIGHT()
+LAYOUT_WITH_LEGEND()
+
+AddElementTag("Channel","#fff4e6","")
+AddElementTag("Adapter","#f0f7ff","")
+AddElementTag("Automation","#f6fdf3","")
+
+Container(IntegrationsHub, "Integration Hub", "Python, TypeScript, Java", "Gateway for external ecosystems")
+
+Component(EDTActionHandler, "EDT Action Handler", "Java SWT", "Triggers quick analysis, call graph visualisation", "Channel")
+Component(EDTResultView, "EDT Result View", "Java SWT", "Displays dashboards, metrics returned by API", "Channel")
+Component(n8nNode, "n8n Custom Node", "TypeScript", "Reusable node packaged for workflows", "Channel")
+Component(n8nCredential, "n8n Credential", "TypeScript", "API token and validation logic", "Adapter")
+Component(TelegramBot, "Telegram Bot Handler", "Python", "Chatops notifications, commands", "Channel")
+Component(MarketplacePublisher, "Marketplace Publisher", "Python CLI", "Publishes extensions to 1C Marketplace", "Automation")
+Component(ITSWriter, "ITS Writer Plugins", "Python", "Extensible writers for ITS Scraper outputs", "Adapter")
+Component(Webhooks, "Outgoing Webhooks", "FastAPI Webhooks", "Generic integration surface for partners", "Adapter")
+
+Container(API, "Graph API", "FastAPI", "Core platform API")
+Container(EventBus, "Event Bus", "NATS", "Event-driven messaging")
+Container(EventWorkers, "Worker Tier", "Event-Driven (NATS)", "Executes long running tasks")
+Container(Postgres, "PostgreSQL", "Database", "Stores metadata, sessions")
+Container(Minio, "MinIO", "Object Storage", "Artifacts, documents")
+Container(Prometheus, "Prometheus", "Monitoring", "Metrics scraping")
+
+Rel(EDTActionHandler, API, "Calls quick_analysis, optimize_code", "REST / MCP")
+Rel(EDTResultView, API, "Fetches dashboards", "GraphQL / REST")
+Rel(n8nNode, API, "Invokes workflow actions", "REST")
+Rel(n8nCredential, API, "Performs /health validation")
+Rel(TelegramBot, API, "Executes chat commands", "REST")
+Rel(TelegramBot, Prometheus, "Consumes alerts routed from Alertmanager")
+Rel(MarketplacePublisher, Minio, "Uploads release artifacts")
+Rel(MarketplacePublisher, API, "Registers release metadata")
+Rel(ITSWriter, Minio, "Persists curated data sets")
+Rel(ITSWriter, API, "Notifies ingestion complete")
+Rel(Webhooks, EventBus, "Publish partner events", "NATS")
+Rel(EventBus, EventWorkers, "Route events", "NATS subscriptions")
+Rel(Webhooks, API, "Surface external automation")
+
+Rel(n8nNode, Postgres, "Optionally write state via API")
+Rel(EDTResultView, Prometheus, "Embeds Grafana dashboards", "iframe token")
+
+SHOW_LEGEND()
+@enduml
+

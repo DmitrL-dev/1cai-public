@@ -1,0 +1,124 @@
+# Конфигурация системы генерации кода 1C AI MCP
+# Версия: 1.0
+# Дата: 30.10.2025
+
+# Настройки LLM провайдера
+llm:
+  provider: "mock"  # mock, openai, anthropic
+  model: "gpt-4"
+  temperature: 0.3
+  max_tokens: 4000
+  timeout: 30
+  api_keys:
+    openai: ""  # Заполните в production
+    anthropic: ""  # Заполните в production
+
+# Настройки шаблонов
+templates:
+  enabled: true
+  auto_learning: true
+  cache_enabled: true
+  cache_ttl: 3600  # 1 час в секундах
+  custom_templates_path: "./custom_templates"
+  
+# Настройки валидации
+validation:
+  enabled: true
+  timeout: 10
+  enabled_checks:
+    - "syntax"
+    - "standards" 
+    - "security"
+    - "performance"
+  strict_mode: false
+  auto_fix: false
+
+# Настройки безопасности
+security:
+  enabled: true
+  timeout: 5
+  max_code_size: 50000  # байт
+  risk_thresholds:
+    low: 0.3
+    medium: 0.6
+    high: 0.8
+    critical: 0.95
+  blocked_patterns:
+    - "eval("
+    - "exec("
+    - "os.system"
+    - "subprocess"
+    - "__import__"
+  whitelist_patterns:
+    - "Справочники."
+    - "Документы."
+    - "Регистры."
+
+# Настройки аудита
+audit:
+  enabled: true
+  log_level: "INFO"
+  log_file: "./logs/audit.log"
+  retention_days: 30
+  max_file_size: 10485760  # 10MB
+
+# Настройки контекста
+context:
+  enabled: true
+  cache_enabled: true
+  cache_ttl: 1800  # 30 минут
+  include_metadata: true
+  include_performance_hints: true
+
+# Настройки производительности
+performance:
+  max_concurrent_requests: 10
+  request_queue_size: 100
+  cache_enabled: true
+  response_cache_ttl: 600  # 10 минут
+  metrics_enabled: true
+
+# Настройки интеграции с 1С
+integration:
+  mcp_server_url: "http://localhost:8080"
+  mcp_timeout: 30
+  retry_attempts: 3
+  retry_delay: 1  # секунды
+  
+  # Настройки подключения к 1С (для будущей реализации)
+  onec_connection:
+    connection_string: ""
+    username: ""
+    password: ""
+    timeout: 30
+
+# Настройки мониторинга
+monitoring:
+  enabled: true
+  metrics_endpoint: "/metrics"
+  health_endpoint: "/health"
+  
+  # Алерты
+  alerts:
+    high_error_rate: 0.05  # 5%
+    slow_response_time: 5.0  # секунд
+    memory_usage: 0.85  # 85%
+
+# Настройки разработки
+development:
+  debug_mode: true
+  mock_responses: true
+  test_mode: false
+  verbose_logging: true
+
+# Настройки production
+production:
+  debug_mode: false
+  mock_responses: false
+  test_mode: false
+  verbose_logging: false
+  
+  # Ресурсы
+  max_memory_usage: "1GB"
+  max_cpu_usage: 0.8  # 80%
+  max_request_size: "10MB"

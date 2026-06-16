@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://1c-ai-stack.example.com/schemas/autonomy-policy/v1",
+  "title": "AutonomyPolicyConfig",
+  "description": "Mapping from AutonomyLevel to policy thresholds.",
+  "type": "object",
+  "patternProperties": {
+    "^(A0_propose_only|A1_safe_automation|A2_non_prod_changes|A3_restricted_prod)$": {
+      "type": "object",
+      "required": ["max_auto_risk", "max_allowed_risk"],
+      "properties": {
+        "max_auto_risk": {
+          "type": "string",
+          "enum": [
+            "read_only",
+            "non_prod_change",
+            "prod_low",
+            "prod_high"
+          ]
+        },
+        "max_allowed_risk": {
+          "type": "string",
+          "enum": [
+            "read_only",
+            "non_prod_change",
+            "prod_low",
+            "prod_high"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
+
+

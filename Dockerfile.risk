@@ -1,0 +1,32 @@
+# Dockerfile для Risk Management API
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Установка системных зависимостей
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Установка Python зависимостей
+COPY requirements.risk.txt .
+RUN pip install --no-cache-dir -r requirements.risk.txt
+
+# Копирование исходного кода
+COPY src/ ./src/
+COPY config/ ./config/
+
+# Создание пользователя
+RUN useradd --create-home --shell /bin/bash riskapp && \
+    chown -R riskapp:riskapp /app
+USER riskapp
+
+# Открываем порт
+EXPOSE 8003
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8003/health || exit 1
+
+# Команда запуска
+CMD ["uvicorn", "src.api.risk:app", "--host", "0.0.0.0", "--port", "8003", "--log-level", "info"]

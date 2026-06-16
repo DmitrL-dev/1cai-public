@@ -1,0 +1,22 @@
+{
+  "strict_api": {
+    "limit": 10,
+    "window_seconds": 60,
+    "description": "Строгий API: 10 запросов в минуту"
+  },
+  "standard_api": {
+    "limit": 100,
+    "window_seconds": 60,
+    "description": "Стандартный API: 100 запросов в минуту"
+  },
+  "premium_api": {
+    "capacity": 500,
+    "refill_rate": 10.0,
+    "description": "Премиум API: 500 токенов, восстановление 10/сек"
+  },
+  "burst_protection": {
+    "capacity": 50,
+    "leak_rate": 2.0,
+    "description": "Защита от всплесков: 50 токенов, утечка 2/сек"
+  }
+}

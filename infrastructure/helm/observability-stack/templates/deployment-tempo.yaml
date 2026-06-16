@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "observability-stack.fullname" . }}-tempo
+  labels:
+    app.kubernetes.io/name: {{ include "observability-stack.name" . }}
+    app.kubernetes.io/component: tempo
+spec:
+  replicas: {{ .Values.tempo.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "observability-stack.name" . }}
+      app.kubernetes.io/component: tempo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "observability-stack.name" . }}
+        app.kubernetes.io/component: tempo
+    spec:
+      containers:
+        - name: tempo
+          image: {{ .Values.tempo.image }}
+          args:
+            - "-config.file=/etc/tempo/tempo.yaml"
+          ports:
+            - containerPort: 3100
+              name: http
+            - containerPort: 4317
+              name: otlp-grpc
+            - containerPort: 4318
+              name: otlp-http
+          volumeMounts:
+            - name: config
+              mountPath: /etc/tempo
+            {{- if .Values.tempo.storage.enabled }}
+            - name: data
+              mountPath: /var/tempo
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "observability-stack.fullname" . }}-tempo-config
+        {{- if .Values.tempo.storage.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "observability-stack.fullname" . }}-tempo-pvc
+        {{- end }}

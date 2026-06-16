@@ -1,0 +1,443 @@
+# Multi-stage Dockerfile Template for Microservices
+# Многоэтапный Dockerfile для микросервисов с оптимизацией
+
+# Stage 1: Base Image with Common Dependencies
+FROM node:18-alpine AS base
+
+# Install common dependencies
+RUN apk add --no-cache \
+    dumb-init \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+# Create app directory
+WORKDIR /app
+
+# Install global packages
+RUN npm install -g \
+    @nestjs/cli \
+    typescript \
+    ts-node \
+    ts-node-dev \
+    nodemon
+
+# Copy package files
+COPY services/{{ service_name }}/package*.json ./
+
+# Install all dependencies (including dev)
+RUN npm ci --only=production
+
+# Stage 2: Development Image
+FROM base AS development
+
+# Install development dependencies
+RUN npm ci --only=dev
+
+# Copy source code
+COPY services/{{ service_name }}/ ./
+
+# Expose development port
+EXPOSE {{ dev_port | default('3000') }}
+
+# Development startup command
+CMD ["npm", "run", "start:dev"]
+
+# Stage 3: Build Image
+FROM base AS build
+
+# Install build dependencies
+RUN npm ci --only=dev
+
+# Copy source code
+COPY services/{{ service_name }}/ ./
+
+# Build the application
+RUN npm run build
+
+# Stage 4: Production Image
+FROM node:18-alpine AS production
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    dumb-init \
+    curl \
+    tini \
+    && rm -rf /var/cache/apk/*
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nextjs -u 1001
+
+# Set working directory
+WORKDIR /app
+
+# Copy built application from build stage
+COPY --from=build --chown=nextjs:nodejs /app/dist ./dist
+COPY --from=build --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=build --chown=nextjs:nodejs /app/package*.json ./
+
+# Copy environment configuration
+COPY services/{{ service_name }}/docker/entrypoint.sh ./
+RUN chmod +x entrypoint.sh
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:{{ port | default('3000') }}/health || exit 1
+
+# Switch to non-root user
+USER nextjs
+
+# Expose application port
+EXPOSE {{ port | default('3000') }}
+
+# Use tini as init system
+ENTRYPOINT ["tini", "--"]
+
+# Startup command
+CMD ["./entrypoint.sh"]
+
+# Stage 5: Test Image
+FROM build AS test
+
+# Install testing dependencies
+RUN npm ci --only=dev
+
+# Copy test files
+COPY services/{{ service_name }}/tests/ ./tests/
+
+# Run tests by default
+CMD ["npm", "run", "test"]
+
+# Stage 6: Lint Image
+FROM development AS lint
+
+# Copy additional linting configs
+COPY services/{{ service_name }}/.eslintrc.js ./
+COPY services/{{ service_name }}/.prettierrc ./
+COPY services/{{ service_name }}/tsconfig.json ./
+
+# Run linting
+CMD ["npm", "run", "lint"]
+
+# Stage 7: Security Scan Image
+FROM production AS security-scan
+
+# Install security scanning tools
+RUN npm install -g \
+    npm-audit \
+    snyk
+
+# Run security audit
+RUN npm audit --audit-level=moderate
+
+# Optional: Run Snyk scan (requires SNYK_TOKEN)
+# RUN snyk test
+
+# =============================================================================
+# Production Optimized Image (Alternative)
+# =============================================================================
+
+FROM node:18-alpine AS production-optimized
+
+# Install only essential runtime dependencies
+RUN apk add --no-cache \
+    dumb-init \
+    curl \
+    ca-certificates \
+    && update-ca-certificates
+
+# Create app directory with proper permissions
+WORKDIR /usr/src/app
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 -G nodejs
+
+# Copy package files
+COPY services/{{ service_name }}/package*.json ./
+
+# Install production dependencies only
+RUN npm ci --only=production --no-audit --no-fund && \
+    npm cache clean --force
+
+# Copy source code
+COPY services/{{ service_name }}/ ./
+
+# Build application
+RUN npm run build && \
+    npm prune --production
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:{{ port | default('3000') }}/health || exit 1
+
+# Change ownership
+RUN chown -R nodejs:nodejs /usr/src/app
+USER nodejs
+
+# Expose port
+EXPOSE {{ port | default('3000') }}
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start application
+CMD ["node", "dist/main.js"]
+
+# =============================================================================
+# Security Hardened Image
+# =============================================================================
+
+FROM node:18-alpine AS security-hardened
+
+# Install security tools
+RUN apk add --no-cache \
+    dumb-init \
+    curl \
+    su-exec \
+    && rm -rf /var/cache/apk/*
+
+# Create multiple users for security
+RUN addgroup -g 1001 appgroup && \
+    adduser -u 1001 -D -s /bin/sh -G appgroup appuser && \
+    adduser -u 1002 -D -s /bin/sh -G appgroup appaux
+
+# Set up directories
+WORKDIR /app
+
+# Copy only necessary files
+COPY services/{{ service_name }}/package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production --no-audit --no-fund
+
+# Copy built application (assuming build happens in previous stage)
+COPY --from=build /app/dist ./dist
+
+# Remove unnecessary files
+RUN rm -rf /app/node_modules/.cache && \
+    find /app/node_modules -type f -name "*.md" -delete && \
+    find /app/node_modules -type f -name "*.txt" -delete
+
+# Security: Drop all capabilities
+RUN setcap cap_drop_all /usr/bin/node
+
+# Security: Disable core dumps
+RUN echo 'core' > /proc/sys/kernel/core_pattern || true
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:{{ port | default('3000') }}/health || exit 1
+
+# Use su-exec for privilege dropping
+ENTRYPOINT ["su-exec", "appuser"]
+
+CMD ["node", "dist/main.js"]
+
+# =============================================================================
+# Kubernetes Deployment Manifest Template
+# =============================================================================
+
+# Save as: services/{{ service_name }}/k8s/deployment.yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ service_name }}
+  namespace: {{ namespace | default('microservices') }}
+  labels:
+    app: {{ service_name }}
+    version: {{ version | default('latest') }}
+spec:
+  replicas: {{ replicas | default(3) }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ max_unavailable | default(1) }}
+      maxSurge: {{ max_surge | default(1) }}
+  selector:
+    matchLabels:
+      app: {{ service_name }}
+  template:
+    metadata:
+      labels:
+        app: {{ service_name }}
+        version: {{ version | default('latest') }}
+    spec:
+      containers:
+      - name: {{ service_name }}
+        image: {{ image | default('${REGISTRY}/${IMAGE_NAME}/${service_name}:${VERSION}') }}
+        imagePullPolicy: {{ image_pull_policy | default('Always') }}
+        ports:
+        - containerPort: {{ port | default('3000') }}
+          name: http
+        env:
+        - name: NODE_ENV
+          value: {{ environment | default('production') }}
+        - name: PORT
+          value: "{{ port | default('3000') }}"
+        - name: VERSION
+          value: "{{ version | default('latest') }}"
+        # Add environment-specific variables
+        {{ range env_vars }}
+        - name: {{ .name }}
+          value: "{{ .value }}"
+        {{ end }}
+        resources:
+          requests:
+            memory: "{{ memory_request | default('256Mi') }}"
+            cpu: "{{ cpu_request | default('250m') }}"
+          limits:
+            memory: "{{ memory_limit | default('512Mi') }}"
+            cpu: "{{ cpu_limit | default('500m') }}"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ port | default('3000') }}
+          initialDelaySeconds: {{ liveness_initial_delay | default(30) }}
+          periodSeconds: {{ liveness_period | default(10) }}
+          timeoutSeconds: {{ liveness_timeout | default(5) }}
+          failureThreshold: {{ liveness_failure_threshold | default(3) }}
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: {{ port | default('3000') }}
+          initialDelaySeconds: {{ readiness_initial_delay | default(5) }}
+          periodSeconds: {{ readiness_period | default(5) }}
+          timeoutSeconds: {{ readiness_timeout | default(3) }}
+          failureThreshold: {{ readiness_failure_threshold | default(3) }}
+        securityContext:
+          allowPrivilegeEscalation: {{ allow_privilege_escalation | default(false) }}
+          readOnlyRootFilesystem: {{ read_only_root_filesystem | default(true) }}
+          runAsNonRoot: {{ run_as_non_root | default(true) }}
+          runAsUser: {{ run_as_user | default(1001) }}
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: cache
+          mountPath: /app/cache
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: cache
+        emptyDir: {}
+      imagePullSecrets:
+      - name: {{ image_pull_secret | default('registry-secret') }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ service_name }}
+  namespace: {{ namespace | default('microservices') }}
+spec:
+  selector:
+    app: {{ service_name }}
+  ports:
+  - name: http
+    port: {{ port | default('80') }}
+    targetPort: {{ port | default('3000') }}
+  type: {{ service_type | default('ClusterIP') }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ service_name }}-ingress
+  namespace: {{ namespace | default('microservices') }}
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rate-limit: "{{ rate_limit | default('100') }}"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - {{ domain | default('api.example.com') }}
+    secretName: {{ service_name }}-tls
+  rules:
+  - host: {{ domain | default('api.example.com') }}
+    http:
+      paths:
+      - path: /{{ service_name }}
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ service_name }}
+            port:
+              number: {{ port | default('80') }}
+
+# =============================================================================
+# Docker Compose Template
+# =============================================================================
+
+# Save as: docker-compose.{{ service_name }}.yml
+version: '3.8'
+
+services:
+  {{ service_name }}:
+    build:
+      context: .
+      dockerfile: services/{{ service_name }}/Dockerfile
+      target: production
+    image: {{ image_name | default('${REGISTRY}/${IMAGE_NAME}/${service_name}:${VERSION}') }}
+    container_name: {{ service_name }}
+    restart: unless-stopped
+    ports:
+      - "{{ host_port | default('3000') }}:{{ port | default('3000') }}"
+    environment:
+      - NODE_ENV=production
+      - PORT={{ port | default('3000') }}
+      - DATABASE_URL=postgres://user:pass@postgres:5432/{{ service_name }}_db
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - {{ service_name }}_cache:/app/cache
+    networks:
+      - microservices
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:{{ port | default('3000') }}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: {{ service_name }}_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - microservices
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    networks:
+      - microservices
+
+volumes:
+  {{ service_name }}_cache:
+  postgres_data:
+  redis_data:
+
+networks:
+  microservices:
+    driver: bridge

@@ -1,0 +1,184 @@
+# =============================================================================
+# Crontab Configuration for AI-Assistants Production
+# =============================================================================
+
+# Настройки системы
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root@localhost
+
+# Переменные окружения
+HOME=/root
+LANG=C.UTF-8
+
+# =============================================================================
+# BACKUP TASKS
+# =============================================================================
+
+# PostgreSQL Database Backup - Daily at 3:00 AM
+# Сохраняет ежедневно, хранит 90 дней
+0 3 * * * root /opt/ai-assistants/scripts/backup_database.sh >> /var/log/ai-assistants/backup_database.log 2>&1
+
+# PostgreSQL Database Backup - Weekly Full Backup on Sunday at 2:00 AM
+# Создает полную копию для недельного архива
+0 2 * * 0 root /opt/ai-assistants/scripts/backup_database.sh --weekly >> /var/log/ai-assistants/backup_database_weekly.log 2>&1
+
+# Redis Backup - Every 6 hours
+# Более частые backup'ы для Redis, так как это кэш
+0 */6 * * * root /opt/ai-assistants/scripts/backup_redis.sh >> /var/log/ai-assistants/backup_redis.log 2>&1
+
+# =============================================================================
+# MAINTENANCE TASKS
+# =============================================================================
+
+# PostgreSQL Vacuum and Analyze - Daily at 2:00 AM
+# Оптимизация производительности БД
+0 2 * * * root docker exec postgres-prod vacuumdb -a -f -z -v >> /var/log/ai-assistants/vacuum.log 2>&1
+
+# PostgreSQL Statistics Update - Every 6 hours
+# Обновление статистики для оптимизатора запросов
+0 */6 * * * root docker exec postgres-prod psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -c "ANALYZE;" >> /var/log/ai-assistants/analyze.log 2>&1
+
+# Redis Memory Cleanup - Every 2 hours
+# Очистка истекших ключей и оптимизация памяти
+0 */2 * * * root docker exec redis-prod redis-cli FLUSHDB >> /var/log/ai-assistants/redis_cleanup.log 2>&1
+
+# =============================================================================
+# LOG ROTATION AND CLEANUP
+# =============================================================================
+
+# Log Rotation - Daily at midnight
+# Ротация логов для предотвращения переполнения диска
+0 0 * * * root /usr/sbin/logrotate /etc/logrotate.d/ai-assistants >> /var/log/ai-assistants/logrotate.log 2>&1
+
+# Cleanup old Docker logs - Every 6 hours
+# Очистка логов Docker контейнеров
+0 */6 * * * root truncate -s 0 /var/lib/docker/containers/*/*-json.log 2>/dev/null || true
+
+# Remove old backup logs - Weekly on Sunday at 1:00 AM
+# Удаление старых логов backup'ов
+0 1 * * 0 root find /var/log/ai-assistants/backup_*.log -type f -mtime +30 -delete
+
+# =============================================================================
+# SSL CERTIFICATE RENEWAL
+# =============================================================================
+
+# Let's Encrypt Certificate Renewal - Daily at 2:30 AM
+# Автоматическое обновление SSL сертификатов
+30 2 * * * root certbot renew --quiet --post-hook "systemctl reload nginx" >> /var/log/ai-assistants/certbot.log 2>&1
+
+# =============================================================================
+# MONITORING AND ALERTS
+# =============================================================================
+
+# System Health Check - Every 15 minutes
+# Проверка здоровья системы и отправка алертов
+*/15 * * * * root /opt/ai-assistants/scripts/health_check.sh >> /var/log/ai-assistants/health_check.log 2>&1
+
+# Disk Usage Check - Every hour
+# Проверка использования диска
+0 * * * * root /opt/ai-assistants/scripts/disk_check.sh >> /var/log/ai-assistants/disk_check.log 2>&1
+
+# Database Connection Check - Every 30 minutes
+# Проверка доступности БД
+*/30 * * * * root /opt/ai-assistants/scripts/db_connection_check.sh >> /var/log/ai-assistants/db_check.log 2>&1
+
+# SSL Certificate Expiry Check - Daily at 9:00 AM
+# Проверка срока действия SSL сертификатов
+0 9 * * * root /opt/ai-assistants/scripts/ssl_check.sh >> /var/log/ai-assistants/ssl_check.log 2>&1
+
+# =============================================================================
+# SECURITY TASKS
+# =============================================================================
+
+# Failed SSH Attempts Report - Daily at 8:00 AM
+# Отчет о неудачных попытках входа по SSH
+0 8 * * * root /opt/ai-assistants/scripts/ssh_attempts_report.sh >> /var/log/ai-assistants/security_report.log 2>&1
+
+# Security Updates Check - Weekly on Sunday at 4:00 AM
+# Проверка доступности обновлений безопасности
+0 4 * * 0 root /opt/ai-assistants/scripts/security_updates_check.sh >> /var/log/ai-assistants/security_updates.log 2>&1
+
+# =============================================================================
+# APPLICATION SPECIFIC TASKS
+# =============================================================================
+
+# Celery Task Queue Cleanup - Daily at 1:00 AM
+# Очистка завершенных задач Celery
+0 1 * * * root docker exec celery-worker-prod celery -A src.celery_app purge >> /var/log/ai-assistants/celery_cleanup.log 2>&1
+
+# ML Model Cleanup - Weekly on Sunday at 3:30 AM
+# Очистка старых ML моделей
+30 3 * * 0 root /opt/ai-assistants/scripts/ml_models_cleanup.sh >> /var/log/ai-assistants/ml_cleanup.log 2>&1
+
+# Cache Warming - Daily at 6:00 AM
+# Прогрев кэша перед началом рабочего дня
+0 6 * * * root /opt/ai-assistants/scripts/cache_warmup.sh >> /var/log/ai-assistants/cache_warmup.log 2>&1
+
+# =============================================================================
+# PERFORMANCE OPTIMIZATION
+# =============================================================================
+
+# Nginx Cache Cleanup - Every 12 hours
+# Очистка кэша Nginx
+0 */12 * * * root docker exec nginx-prod nginx -s reload >> /var/log/ai-assistants/nginx_reload.log 2>&1
+
+# Prometheus Data Cleanup - Weekly on Sunday at 5:00 AM
+# Очистка старых метрик Prometheus (старше 30 дней)
+0 5 * * 0 root docker exec prometheus-prod find /prometheus -type f -mtime +30 -delete
+
+# Grafana Old Dashboard Cleanup - Monthly on 1st at 4:00 AM
+# Очистка старых dashboard'ов Grafana
+0 4 1 * * root /opt/ai-assistants/scripts/grafana_cleanup.sh >> /var/log/ai-assistants/grafana_cleanup.log 2>&1
+
+# =============================================================================
+# BACKUP VERIFICATION
+# =============================================================================
+
+# Backup Integrity Check - Daily at 4:00 AM
+# Проверка целостности вчерашних backup'ов
+0 4 * * * root /opt/ai-assistants/scripts/verify_backups.sh >> /var/log/ai-assistants/backup_verification.log 2>&1
+
+# S3 Backup Sync Check - Daily at 5:00 AM
+# Проверка синхронизации backup'ов с S3
+0 5 * * * root /opt/ai-assistants/scripts/s3_sync_check.sh >> /var/log/ai-assistants/s3_sync.log 2>&1
+
+# =============================================================================
+# DOCUMENTATION AND REPORTING
+# =============================================================================
+
+# Weekly System Report - Sunday at 7:00 AM
+# Еженедельный отчет о состоянии системы
+0 7 * * 0 root /opt/ai-assistants/scripts/weekly_report.sh >> /var/log/ai-assistants/weekly_report.log 2>&1
+
+# Monthly Performance Report - 1st day of month at 6:00 AM
+# Ежемесячный отчет о производительности
+0 6 1 * * root /opt/ai-assistants/scripts/monthly_performance_report.sh >> /var/log/ai-assistants/monthly_report.log 2>&1
+
+# =============================================================================
+# EMERGENCY AND DISASTER RECOVERY
+# =============================================================================
+
+# Emergency Backup Creation - Every 2 hours during business hours
+# Экстренные backup'ы в рабочее время (9:00-18:00)
+0 9-18/2 * * 1-5 root /opt/ai-assistants/scripts/emergency_backup.sh >> /var/log/ai-assistants/emergency_backup.log 2>&1
+
+# Disaster Recovery Test - Monthly on 15th at 2:00 AM
+# Тестирование процедуры восстановления после катастрофы
+0 2 15 * * root /opt/ai-assistants/scripts/dr_test.sh >> /var/log/ai-assistants/dr_test.log 2>&1
+
+# =============================================================================
+# DEVELOPMENT AND TESTING
+# =============================================================================
+
+# Staging Environment Sync - Daily at 11:00 PM
+# Синхронизация staging окружения
+0 23 * * * root /opt/ai-assistants/scripts/staging_sync.sh >> /var/log/ai-assistants/staging_sync.log 2>&1
+
+# Load Testing - Weekly on Friday at 8:00 PM
+# Проведение нагрузочного тестирования
+0 20 * * 5 root /opt/ai-assistants/scripts/load_test.sh >> /var/log/ai-assistants/load_test.log 2>&1
+
+# =============================================================================
+# END OF CRONTAB
+# =============================================================================

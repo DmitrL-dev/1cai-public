@@ -1,0 +1,285 @@
+# Динамическая конфигурация Traefik
+# Дополнительные маршрутизации и настройки безопасности
+
+http:
+  # Дополнительные middleware
+  middlewares:
+    # Rate limiting для API endpoints
+    api-rate-limit:
+      rateLimit:
+        burst: 200
+        average: 100
+        period: "1m"
+        sourceCriterion:
+          ipStrategy:
+            depth: 1
+
+    # CORS для API
+    cors:
+      headers:
+        accessControlAllowCredentials: true
+        accessControlAllowHeaders:
+          - Content-Type
+          - Authorization
+          - X-Requested-With
+          - Accept
+          - Origin
+          - Access-Control-Request-Method
+          - Access-Control-Request-Headers
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        accessControlMaxAge: 86400
+        accessControlAllowOriginList:
+          - "https://company.com"
+          - "https://*.company.com"
+
+    # Защита от ботов
+    bot-protection:
+      headers:
+        customResponseHeaders:
+          X-Robots-Tag: "noindex,nofollow,nosnippet,noarchive"
+
+    # Глобальные заголовки безопасности
+    global-security:
+      headers:
+        frameDeny: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        forceSTSHeader: true
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        customFrameOptionsValue: "SAMEORIGIN"
+        referrerPolicy: "strict-origin-when-cross-origin"
+        permissionsPolicy: "geolocation=(), microphone=(), camera=()"
+
+    # Аутентификация для админ панелей
+    prometheus-auth:
+      basicAuth:
+        users:
+          - "prometheus:$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi"  # admin/admin
+          - "grafana:$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi"     # admin/admin
+
+    # Geolocation
+    geoip:
+      headers:
+        customRequestHeaders:
+          X-Real-IP: "X-Real-IP"
+          X-Forwarded-For: "X-Forwarded-For"
+
+  # Сервисы
+  services:
+    # Базовый балансировщик
+    api-gateway-service:
+      loadBalancer:
+        servers:
+          - url: "http://api-gateway:8080"
+        healthCheck:
+          path: "/health"
+          interval: "10s"
+          timeout: "5s"
+          retries: 3
+
+    auth-service-service:
+      loadBalancer:
+        servers:
+          - url: "http://auth-service:8080"
+        healthCheck:
+          path: "/health"
+          interval: "10s"
+          timeout: "5s"
+          retries: 3
+
+    user-service-service:
+      loadBalancer:
+        servers:
+          - url: "http://user-service:8080"
+        healthCheck:
+          path: "/health"
+          interval: "10s"
+          timeout: "5s"
+          retries: 3
+
+    product-service-service:
+      loadBalancer:
+        servers:
+          - url: "http://product-service:8080"
+        healthCheck:
+          path: "/health"
+          interval: "10s"
+          timeout: "5s"
+          retries: 3
+
+    order-service-service:
+      loadBalancer:
+        servers:
+          - url: "http://order-service:8080"
+        healthCheck:
+          path: "/health"
+          interval: "10s"
+          timeout: "5s"
+          retries: 3
+
+    payment-service-service:
+      loadBalancer:
+        servers:
+          - url: "http://payment-service:8080"
+        healthCheck:
+          path: "/health"
+          interval: "10s"
+          timeout: "5s"
+          retries: 3
+
+    notification-service-service:
+      loadBalancer:
+        servers:
+          - url: "http://notification-service:8080"
+        healthCheck:
+          path: "/health"
+          interval: "10s"
+          timeout: "5s"
+          retries: 3
+
+  # Маршрутизация
+  routers:
+    # API Gateway маршруты
+    api-gateway:
+      rule: "Host(`api.company.com`) || Host(`*.company.com`) && PathPrefix(`/api`)"
+      service: "api-gateway-service"
+      middlewares:
+        - global-security
+        - api-rate-limit
+        - compression
+        - cors
+      tls:
+        certResolver: letsencrypt
+
+    # Отдельные сервисы (по поддоменам)
+    auth-service:
+      rule: "Host(`auth.company.com`)"
+      service: "auth-service-service"
+      middlewares:
+        - global-security
+        - compression
+        - cors
+      tls:
+        certResolver: letsencrypt
+
+    user-service:
+      rule: "Host(`user.company.com`)"
+      service: "user-service-service"
+      middlewares:
+        - global-security
+        - compression
+        - cors
+      tls:
+        certResolver: letsencrypt
+
+    product-service:
+      rule: "Host(`product.company.com`)"
+      service: "product-service-service"
+      middlewares:
+        - global-security
+        - compression
+        - cors
+      tls:
+        certResolver: letsencrypt
+
+    order-service:
+      rule: "Host(`order.company.com`)"
+      service: "order-service-service"
+      middlewares:
+        - global-security
+        - compression
+        - cors
+      tls:
+        certResolver: letsencrypt
+
+    payment-service:
+      rule: "Host(`payment.company.com`)"
+      service: "payment-service-service"
+      middlewares:
+        - global-security
+        - compression
+        - cors
+      tls:
+        certResolver: letsencrypt
+
+    notification-service:
+      rule: "Host(`notification.company.com`)"
+      service: "notification-service-service"
+      middlewares:
+        - global-security
+        - compression
+        - cors
+      tls:
+        certResolver: letsencrypt
+
+# TLS конфигурация
+tls:
+  options:
+    default:
+      minVersion: "VersionTLS12"
+      cipherSuites:
+        - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+        - "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305"
+        - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+      curvePreferences:
+        - CurveP521
+        - CurveP384
+      sniStrict: true
+      alpnProtocols:
+        - "h2"
+        - "http/1.1"
+
+    modern:
+      minVersion: "VersionTLS13"
+      cipherSuites: []
+      curvePreferences:
+        - CurveP521
+        - CurveP384
+      sniStrict: true
+      alpnProtocols:
+        - "h2"
+
+    intermediate:
+      minVersion: "VersionTLS10"
+      cipherSuites:
+        - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+        - "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305"
+        - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+        - "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256"
+      curvePreferences:
+        - CurveP521
+        - CurveP384
+        - CurveP256
+      sniStrict: false
+      alpnProtocols:
+        - "h2"
+        - "http/1.1"
+
+# Certificate resolvers
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: "admin@company.com"
+      storage: "/etc/traefik/acme/acme.json"
+      httpChallenge:
+        entryPoint: "web"
+      dnsChallenge:
+        provider: "cloudflare"
+        delayBeforeCheck: 0
+        resolvers:
+          - "1.1.1.1:53"
+          - "1.0.0.1:53"
+      # Для staging раскомментируйте:
+      # caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+
+# Cluster configuration
+cluster:
+  node: "traefik-node-1"
+  storeSystemCerts: true

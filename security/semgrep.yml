@@ -1,0 +1,32 @@
+rules:
+  - id: python-dangerous-subprocess
+    message: "Avoid shell=True in subprocess calls"
+    languages: [python]
+    severity: WARNING
+    patterns:
+      - pattern: subprocess.$FUNC(..., shell=True, ...)
+    metadata:
+      cwe: CWE-78
+  - id: python-insecure-tempfile
+    message: "Use NamedTemporaryFile or mkdtemp instead of mktemp"
+    languages: [python]
+    severity: WARNING
+    pattern: tempfile.mktemp(...)
+    metadata:
+      cwe: CWE-377
+  - id: python-weak-hash
+    message: "Use hashlib.sha256+ instead of md5"
+    languages: [python]
+    severity: WARNING
+    pattern: hashlib.md5($X)
+    metadata:
+      cwe: CWE-327
+  - id: python-hardcoded-credentials
+    message: "Potential hardcoded credential"
+    languages: [python]
+    severity: ERROR
+    pattern-either:
+      - pattern: $VAR = "$$PASSWORD"
+      - pattern: $VAR = "$$SECRET"
+    metadata:
+      cwe: CWE-798

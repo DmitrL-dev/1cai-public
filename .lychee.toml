@@ -1,0 +1,11 @@
+[[exclude]]
+regex = "http://localhost.*"
+
+[[exclude]]
+regex = "https://127\\.0\\.0\\.1.*"
+
+cache = true
+max_cache_age = "1d"
+timeout = "20s"
+user_agent = "1c-ai-stack-lychee/1.0"
+

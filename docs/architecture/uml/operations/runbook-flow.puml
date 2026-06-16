@@ -1,0 +1,33 @@
+@startuml
+title Runbook Automation Flow (AI Stack)
+
+skinparam backgroundColor #FFFFFF
+skinparam node {
+  BackgroundColor #f6fdf3
+}
+
+start
+:Alert triggered\n(Prometheus Alertmanager);
+:Incident Bot references runbook ID;
+if (Automation available?) then (yes)
+  :Run GitHub Actions workflow\n`runbook-restart`;
+  :Fetch latest config from Terraform state;
+  :Execute ansible/helm tasks;
+  :Verify service readiness\nvia synthetic probe;
+else (no)
+  :Assign primary on-call;
+  :Open runbook in docs/operations/;
+endif
+
+if (Probe success?) then (yes)
+  :Close incident with summary;
+else (no)
+  :Escalate to L2;
+  :Trigger fallback workflow\n`runbook-drain-queue`;
+  :Scale workers to zero;
+  :Create backlog item\nfor permanent fix;
+endif
+
+stop
+@enduml
+

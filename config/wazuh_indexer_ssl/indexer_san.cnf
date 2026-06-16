@@ -1,0 +1,24 @@
+[ req ]
+prompt = no
+default_bits = 2048
+default_md = sha256
+distinguished_name = req_distinguished_name
+x509_extensions = v3_req
+
+[req_distinguished_name]
+C = US
+L = California
+O = Wazuh
+OU = Wazuh
+CN = wazuh-indexer
+
+[ v3_req ]
+authorityKeyIdentifier=keyid,issuer
+basicConstraints = CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+
+[alt_names]
+IP.1 = 172.20.0.10
+DNS.1 = wazuh-indexer
+DNS.2 = wazuh.indexer

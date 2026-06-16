@@ -1,0 +1,67 @@
+# === КРИТИЧНО: Не публиковать ===
+
+# Конфигурации 1С (проприетарные!)
+1c_configurations/
+
+# База знаний с кодом 1С (проприетарные!)
+knowledge_base/*.json
+knowledge_base/**/*.json
+
+# Результаты парсинга с кодом 1С (проприетарные!)
+output/edt_parser/*.json
+output/dataset/*.json
+
+# Credentials и секреты
+.env
+.env.*
+!.env.example
+
+# === Стандартные исключения ===
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node
+node_modules/
+package-lock.json
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Cache
+.pytest_cache/
+.cache/
+
+# Archives (если есть старые backups)
+archive_package_OLD*/
+
+# === Можно публиковать ===
+
+# Примеры небольших конфигураций (если есть)
+!examples/**/*.xml
+
+# Примеры dataset (небольшие)
+!output/dataset/example_*.json

@@ -1,0 +1,133 @@
+{
+  "dashboard": {
+    "title": "LLM Gateway Monitoring",
+    "tags": ["llm", "gateway", "monitoring"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "LLM Gateway Requests Total",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(llm_gateway_requests_total[5m])) by (provider, status)",
+            "legendFormat": "{{provider}} - {{status}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "LLM Gateway Latency (p95)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(llm_gateway_latency_seconds_bucket[5m])) by (le, provider))",
+            "legendFormat": "{{provider}} p95"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Provider Health Status",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "llm_provider_health",
+            "legendFormat": "{{provider}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 4,
+        "title": "Provider Latency",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "llm_provider_latency_ms",
+            "legendFormat": "{{provider}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 5,
+        "title": "Fallback Operations",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(llm_gateway_fallbacks_total[5m])) by (from_provider, to_provider)",
+            "legendFormat": "{{from_provider}} -> {{to_provider}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "id": 6,
+        "title": "Error Rate by Provider",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(llm_gateway_requests_total{status=\"error\"}[5m])) by (provider) / sum(rate(llm_gateway_requests_total[5m])) by (provider)",
+            "legendFormat": "{{provider}} error rate"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      },
+      {
+        "id": 7,
+        "title": "Cache Hit Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(rate(llm_gateway_requests_total{status=\"hit\"}[5m])) / sum(rate(llm_gateway_requests_total[5m]))",
+            "legendFormat": "Cache Hit Rate"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 24}
+      },
+      {
+        "id": 8,
+        "title": "Total Requests",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(rate(llm_gateway_requests_total[5m]))",
+            "legendFormat": "Total Requests/sec"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 24}
+      },
+      {
+        "id": 9,
+        "title": "Unhealthy Providers",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "count(llm_provider_health == 0)",
+            "legendFormat": "Unhealthy"
+          }
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 24}
+      },
+      {
+        "id": 10,
+        "title": "Requests by Role",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum(rate(llm_gateway_requests_total[5m])) by (role)",
+            "legendFormat": "{{role}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28}
+      }
+    ]
+  }
+}
+

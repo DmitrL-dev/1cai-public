@@ -1,0 +1,47 @@
+# Logstash конфигурация
+http.host: "0.0.0.0"
+path.config: /usr/share/logstash/pipeline
+
+# Pipeline настройки
+pipeline.workers: 2
+pipeline.batch.size: 125
+pipeline.batch.delay: 50
+
+# JVM настройки (через переменную окружения LS_JAVA_OPTS)
+# -Xms1g -Xmx1g
+
+# Monitoring
+xpack.monitoring.enabled: false
+
+# Log уровни
+log.level: info
+log.format: plain
+
+# Патчи для безопасности
+path.data: /usr/share/logstash/data
+
+# Dead letter queue
+dead_letter_queue.enable: true
+
+# Queue настройки
+queue.type: memory
+queue.page_capacity: 64mb
+queue.max_events: 0
+queue.max_unread_events: 0
+
+# Pipeline settings
+pipeline.ecs_compatibility: v8
+
+# Производительность
+pipeline.slowlog.threshold.warn: 1s
+pipeline.slowlog.threshold.info: 500ms
+pipeline.slowlog.threshold.debug: 100ms
+pipeline.slowlog.threshold.trace: 1ms
+
+# Contact point настроек
+path.queue: /usr/share/logstash/queue
+path.dead_letter_queue: /usr/share/logstash/dead_letter_queue
+
+# Monitoring endpoints
+http.host: "0.0.0.0"
+monitoring.enabled: false

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>1C AI Stack – Showcase / Use Cases</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 32px; line-height: 1.6; color: #1f2933; }
+    h1, h2, h3 { color: #0b7285; }
+    code { background: #f1f3f5; padding: 2px 6px; border-radius: 4px; }
+    pre { background: #f8f9fa; padding: 12px; border-radius: 6px; overflow-x: auto; }
+    ul { padding-left: 22px; }
+    .box { border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; margin-bottom: 24px; background: #ffffff; }
+  </style>
+</head>
+<body>
+  <h1>🚀 Showcase / Use Cases</h1>
+  <p>Набор сценариев «повтори и получи результат», которые демонстрируют ключевые возможности 1C AI Stack.</p>
+
+  <div class="box">
+    <h2>1. Семантический поиск + оптимизация кода (15 минут)</h2>
+    <p><strong>Цель:</strong> найти проблемную функцию и мгновенно предложить новый вариант.</p>
+    <ol>
+      <li><code>docker compose up -d</code></li>
+      <li><code>python examples/semantic_search_demo.py "как рассчитать налог" --limit 3</code></li>
+      <li>В EDT: <em>Quick Analysis</em> (Ctrl+Alt+Q), затем <code>python examples/code_execution_examples.py</code></li>
+    </ol>
+    <p><strong>Результат:</strong> сгенерированный BSL-модуль в <code>examples/output/</code> и обновлённые метрики в Analysis Dashboard.</p>
+  </div>
+
+  <div class="box">
+    <h2>2. Полный ML-пайплайн (20 минут)</h2>
+    <p><strong>Цель:</strong> подготовить dataset, обучить демо-модель и оценить её.</p>
+    <pre><code>pip install -r requirements.txt
+pip install -r requirements-neural.txt
+python scripts/ml/config_utils.py --info DEMO
+python scripts/dataset/create_ml_dataset.py
+make train-ml-demo
+make eval-ml-demo
+    </code></pre>
+    <p><strong>Результат:</strong> модель <code>models/demo-model</code> и отчёт <code>reports/eval/demo-model.json</code>.</p>
+  </div>
+
+  <div class="box">
+    <h2>3. Security Agent Framework (25 минут)</h2>
+    <p><strong>Цель:</strong> собрать отчёт по уязвимостям для репозитория и REST API.</p>
+    <pre><code>pip install -r security/agent_framework/requirements.txt
+python -m security.agent_framework.cli run --target ./ --profile repo-static --local --markdown reports/security/repo.md
+python -m security.agent_framework.cli run --target http://localhost:8080 --profile web-api --local --markdown reports/security/web.md
+    </code></pre>
+    <p><strong>Результат:</strong> Markdown отчёты в <code>reports/security/</code>.</p>
+  </div>
+
+  <div class="box">
+    <h2>Чек-лист «Готово!»</h2>
+    <ul>
+      <li>✅ Добавлен новый BSL-фрагмент и обновлены зависимости в Analysis Dashboard.</li>
+      <li>✅ В каталоге <code>models/</code> лежит свежая демо-модель, отчёт в <code>reports/eval/</code>.</li>
+      <li>✅ В <code>reports/security/</code> два свежих отчёта: repo-static и web-api.</li>
+    </ul>
+  </div>
+
+  <p>Markdown версия: <code>CASE_STUDIES.md</code></p>
+</body>
+</html>
+

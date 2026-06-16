@@ -1,0 +1,30 @@
+{
+    "language": "en",
+    "diagnostics": {
+        "computeTrigger": "onSave",
+        "parameters": {
+            "Typo": false,
+            "CanonicalSpellingKeywords": true,
+            "CodeCognitiveComplexity": {
+                "maxComplexity": 15
+            },
+            "CodeCyclomaticComplexity": {
+                "maxComplexity": 20
+            },
+            "MethodSize": {
+                "maxLines": 100
+            },
+            "ModuleSize": {
+                "maxLines": 1000
+            },
+            "LineLength": {
+                "maxLineLength": 120
+            },
+            "MagicNumber": true,
+            "UnusedVariable": true,
+            "UnusedMethod": true,
+            "EmptyMethod": true,
+            "EmptyCatch": true
+        }
+    }
+}

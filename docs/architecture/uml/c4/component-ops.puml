@@ -1,0 +1,45 @@
+@startuml component_ops
+!include <C4/C4_Component>
+
+LAYOUT_TOP_DOWN()
+LAYOUT_WITH_LEGEND()
+
+AddElementTag("Monitoring","#f6fdf3","")
+AddElementTag("Automation","#e8f4ff","")
+AddElementTag("Notification","#fff4e6","")
+
+Person(DevOps, "Ops and SRE", "Respond to incidents and maintain SLOs")
+Person_Ext(Stakeholders, "Stakeholders", "Receive status updates")
+
+Container(API, "Graph API", "FastAPI", "Instrumented service")
+Container(EventBus, "Event Bus", "NATS", "Instrumented messaging")
+Container(EventWorkers, "Analysis Workers", "Event-Driven (NATS)", "Instrumented jobs")
+Container(ITSScraper, "ITS Scraper", "Async Python", "Instrumented crawling")
+Container(MLPipelines, "ML Pipelines", "Prefect", "Instrumented ML jobs")
+
+Rel(PrometheusAgent, API, "Scrape /metrics")
+Rel(PrometheusAgent, EventBus, "Scrape /metrics")
+Rel(PrometheusAgent, EventWorkers, "Scrape /metrics")
+Rel(PrometheusAgent, ITSScraper, "Scrape /metrics")
+Rel(PrometheusAgent, MLPipelines, "Scrape /metrics")
+Rel(PrometheusAgent, Prometheus, "Remote write")
+
+Rel(Prometheus, Alertmanager, "Send alerts")
+Rel(Prometheus, Grafana, "Datasource")
+Rel(Loki, Grafana, "Datasource")
+Rel(Tempo, Grafana, "Datasource")
+Rel(Alertmanager, Notifications, "Escalate incidents")
+Rel(Notifications, StatusPage, "Update status, incident log")
+
+Rel(CIWorkflows, InfraAsCode, "Validate, apply plan")
+Rel(CIWorkflows, ReleaseManager, "Trigger release pipeline")
+Rel(CIWorkflows, Prometheus, "Synthetic probes, smoke metrics")
+Rel(InfraAsCode, Observability, "Deploy dashboards, alert rules")
+
+Rel(Grafana, DevOps, "Dashboards, SLO view")
+Rel(Notifications, DevOps, "Pager, chatops")
+Rel(StatusPage, Stakeholders, "Communicate SLA and incidents")
+
+SHOW_LEGEND()
+@enduml
+

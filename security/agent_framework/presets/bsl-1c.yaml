@@ -1,0 +1,10 @@
+# Preset: bsl-1c
+targets:
+  - code/1c_ext
+profile: bsl-1c
+local: true
+format: json
+output: reports/bsl-security.json
+markdown: reports/bsl-security.md
+html: reports/bsl-security.html
+

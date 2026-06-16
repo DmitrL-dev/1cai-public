@@ -1,0 +1,50 @@
+# Зависимости для модуля Rate Limiting и RequestTracker
+
+# Основные зависимости для RequestTracker
+PyYAML>=6.0.0
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+psutil>=5.8.0
+
+# Distributed tracking (опционально, но рекомендуется для продакшена)
+redis>=5.0.0
+
+# GeoIP для определения географического положения IP (опционально)
+geoip2>=4.7.0
+
+# Асинхронность и утилиты
+asyncio-throttle>=1.0.0
+aiofiles>=23.0.0
+python-multipart>=0.0.6
+
+# Логирование и мониторинг
+structlog>=23.0.0
+prometheus-client>=0.17.0
+
+# Аутентификация и безопасность
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# Утилиты
+python-dateutil>=2.8.0
+
+# Оптимизация производительности (опционально)
+ujson>=5.8.0
+orjson>=3.9.0
+
+# Тестирование
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0
+
+# Разработка
+black>=23.0.0
+flake8>=6.0.0
+isort>=5.12.0
+mypy>=1.5.0
+
+# Database (если используется)
+asyncpg>=0.29.0
+aioredis>=2.0.0

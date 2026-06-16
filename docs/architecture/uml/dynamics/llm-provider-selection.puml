@@ -1,0 +1,54 @@
+@startuml llm-provider-selection
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+title LLM Provider Abstraction - Provider Selection Flow
+
+actor User
+participant "AI Orchestrator" as Orchestrator
+participant "Query Classifier" as Classifier
+participant "LLM Provider Abstraction" as LLMAbstraction
+participant "Model Profiles" as Profiles
+participant "Prometheus" as Metrics
+
+User -> Orchestrator: Query: "Создай функцию для расчета НДС"
+activate Orchestrator
+
+Orchestrator -> Classifier: classify(query)
+activate Classifier
+Classifier -> Classifier: analyze query intent
+Classifier --> Orchestrator: intent: {query_type: CODE_GENERATION, suggested_tools: [...]}
+deactivate Classifier
+
+Orchestrator -> LLMAbstraction: select_provider(query_type, constraints)
+activate LLMAbstraction
+
+LLMAbstraction -> Profiles: get_profiles_by_capability(query_type)
+activate Profiles
+Profiles --> LLMAbstraction: candidates: [qwen, kimi]
+deactivate Profiles
+
+alt with cost constraint
+    LLMAbstraction -> LLMAbstraction: filter_by_cost(max_cost)
+else with compliance requirement
+    LLMAbstraction -> LLMAbstraction: filter_by_compliance(required_compliance)
+else with risk preference
+    LLMAbstraction -> LLMAbstraction: filter_by_risk_level(preferred_risk_level)
+end
+
+LLMAbstraction -> LLMAbstraction: sort_by_priority(risk, cost, latency)
+
+LLMAbstraction -> Metrics: track_llm_provider_selection(duration, provider_id, query_type, reason, cost)
+activate Metrics
+deactivate Metrics
+
+LLMAbstraction --> Orchestrator: selected_profile: {provider_id: "qwen", cost_per_1k_tokens: 0.002, ...}
+deactivate LLMAbstraction
+
+Orchestrator -> Orchestrator: use selected provider for LLM call
+Orchestrator --> User: Response from selected LLM provider
+deactivate Orchestrator
+
+@enduml
+

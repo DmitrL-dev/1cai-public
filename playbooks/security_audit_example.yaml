@@ -1,0 +1,54 @@
+id: plan-security-audit
+goal:
+  id: security-audit
+  title: "Security audit стека 1C AI"
+  description: "Запустить комплексный security-audit (скрипты/CI) и зафиксировать результаты."
+  constraints:
+    environment: "local-or-ci"
+  success_criteria:
+    - "Все проверки security-audit выполнены"
+    - "Критические находки задокументированы и заведены в трекер"
+steps:
+  - id: sec-audit-dry
+    title: "Запуск security-audit в read-only режиме"
+    description: "Запустить объединённый security-audit без изменений инфраструктуры."
+    risk_level: "read_only"
+    autonomy_required: "A1_safe_automation"
+    checks:
+      - "Скрипты/Make цели security-audit отработали без ошибок"
+      - "Отчёты сохранены локально или в CI artifacts"
+    executor: "script:security-audit"
+    metadata:
+      commands:
+        - "make security-audit"
+        - "pwsh scripts/windows/security-audit.ps1"
+  - id: sec-audit-triage
+    title: "Разбор и triage результатов"
+    description: "Проанализировать отчёты security-audit и классифицировать находки."
+    risk_level: "read_only"
+    autonomy_required: "A0_propose_only"
+    checks:
+      - "Критические/высокие инциденты выделены отдельно"
+      - "Сформированы предложения по remediation-плану"
+    executor: "agent:Security"
+    metadata:
+      output: "SECURITY_AUDIT_SUMMARY.md"
+  - id: sec-audit-followup
+    title: "Создание задач на remediation"
+    description: "Сформировать задачи в трекере/бэклоге по результатам аудита."
+    risk_level: "read_only"
+    autonomy_required: "A0_propose_only"
+    checks:
+      - "Для каждой критической находки есть задача/issue"
+      - "Связь задач с отчётом сохранена"
+    executor: "agent:BA"
+    metadata:
+      tracker: "TODO: Jira/YouTrack"
+required_autonomy: "A1_safe_automation"
+overall_risk: "read_only"
+context:
+  kind: "security-audit"
+  source: "playbook"
+
+
+

@@ -1,0 +1,67 @@
+# Alertmanager Configuration
+
+global:
+  resolve_timeout: 5m
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
+
+# Templates
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route tree
+route:
+  group_by: ['alertname', 'cluster', 'service']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'default'
+  
+  routes:
+    # Critical alerts
+    - match:
+        severity: critical
+      receiver: 'critical'
+      continue: true
+    
+    # Warning alerts
+    - match:
+        severity: warning
+      receiver: 'warning'
+
+# Receivers
+receivers:
+  - name: 'default'
+    slack_configs:
+      - channel: '#1c-ai-alerts'
+        title: '1C AI Stack Alert'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+
+  - name: 'critical'
+    slack_configs:
+      - channel: '#1c-ai-critical'
+        title: '🔴 CRITICAL: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+    
+    # Email for critical
+    email_configs:
+      - to: 'ops-team@example.com'
+        from: 'alertmanager@1c-ai.example.com'
+        smarthost: 'smtp.example.com:587'
+        auth_username: 'alerts'
+        auth_password: '${SMTP_PASSWORD}'
+        headers:
+          Subject: '🔴 CRITICAL: 1C AI Stack Alert'
+
+  - name: 'warning'
+    slack_configs:
+      - channel: '#1c-ai-warnings'
+        title: '⚠️ Warning: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+
+# Inhibition rules
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']

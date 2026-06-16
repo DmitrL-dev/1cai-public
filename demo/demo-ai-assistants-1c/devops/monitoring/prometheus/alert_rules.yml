@@ -1,0 +1,192 @@
+# Alert Rules for AI Assistants
+
+groups:
+  - name: ai-assistants.rules
+    rules:
+    
+    # Critical Alerts (SEV1)
+    - alert: ServiceDown
+      expr: up{job="ai-assistants-api"} == 0
+      for: 1m
+      labels:
+        severity: critical
+        team: devops
+      annotations:
+        summary: "AI Assistants API service is down"
+        description: "The AI Assistants API service has been down for more than 1 minute on {{ $labels.instance }}"
+        runbook_url: "https://runbooks.company.com/service-down"
+
+    - alert: DatabaseDown
+      expr: up{job="postgres"} == 0
+      for: 2m
+      labels:
+        severity: critical
+        team: database
+      annotations:
+        summary: "Database is down"
+        description: "PostgreSQL database has been unreachable for more than 2 minutes"
+
+    - alert: HighErrorRate
+      expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+      for: 2m
+      labels:
+        severity: critical
+        team: devops
+      annotations:
+        summary: "High error rate detected"
+        description: "Error rate is {{ $value }} errors per second, which is above the threshold of 0.1"
+
+    - alert: CertificateExpiry
+      expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 30
+      for: 1h
+      labels:
+        severity: critical
+        team: security
+      annotations:
+        summary: "SSL certificate expiring soon"
+        description: "SSL certificate for {{ $labels.instance }} expires in {{ $value }} days"
+
+    # Warning Alerts (SEV2)
+    - alert: HighResponseTime
+      expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.5
+      for: 5m
+      labels:
+        severity: warning
+        team: devops
+      annotations:
+        summary: "High response time"
+        description: "95th percentile response time is {{ $value }}s, which is above the threshold of 0.5s"
+
+    - alert: HighCPUUsage
+      expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+      for: 5m
+      labels:
+        severity: warning
+        team: devops
+      annotations:
+        summary: "High CPU usage"
+        description: "CPU usage is {{ $value }}% on {{ $labels.instance }}, which is above 80%"
+
+    - alert: HighMemoryUsage
+      expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+      for: 5m
+      labels:
+        severity: warning
+        team: devops
+      annotations:
+        summary: "High memory usage"
+        description: "Memory usage is {{ $value }}% on {{ $labels.instance }}, which is above 85%"
+
+    - alert: DiskSpaceLow
+      expr: (node_filesystem_size_bytes{fstype!="tmpfs"} - node_filesystem_free_bytes{fstype!="tmpfs"}) / node_filesystem_size_bytes{fstype!="tmpfs"} * 100 > 80
+      for: 5m
+      labels:
+        severity: warning
+        team: devops
+      annotations:
+        summary: "Disk space is low"
+        description: "Disk usage is {{ $value }}% on {{ $labels.instance }}:{{ $labels.mountpoint }}"
+
+    - alert: PodCrashLooping
+      expr: rate(kube_pod_container_status_restarts_total[10m]) * 60 * 10 > 3
+      for: 2m
+      labels:
+        severity: warning
+        team: devops
+      annotations:
+        summary: "Pod is crash looping"
+        description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is restarting frequently"
+
+    - alert: PodNotReady
+      expr: kube_pod_status_ready{condition="false"} == 1
+      for: 5m
+      labels:
+        severity: warning
+        team: devops
+      annotations:
+        summary: "Pod is not ready"
+        description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has been not ready for 5 minutes"
+
+    - alert: DeploymentReplicasMismatch
+      expr: kube_deployment_spec_replicas != kube_deployment_status_available_replicas
+      for: 10m
+      labels:
+        severity: warning
+        team: devops
+      annotations:
+        summary: "Deployment replica mismatch"
+        description: "Deployment {{ $labels.deployment }} has {{ $value }} available replicas, expected {{ $labels.spec_replicas }}"
+
+    # Database specific alerts
+    - alert: DatabaseConnectionsHigh
+      expr: pg_stat_database_numbackends / pg_settings_max_connections * 100 > 80
+      for: 5m
+      labels:
+        severity: warning
+        team: database
+      annotations:
+        summary: "Database connections are high"
+        description: "Database {{ $labels.datname }} has {{ $value }}% of max connections in use"
+
+    - alert: DatabaseSlowQueries
+      expr: rate(pg_stat_database_blk_read_time[5m]) > 1000
+      for: 5m
+      labels:
+        severity: warning
+        team: database
+      annotations:
+        summary: "Database slow queries detected"
+        description: "Database {{ $labels.datname }} has slow query issues"
+
+    # Infrastructure alerts
+    - alert: LoadBalancerDown
+      expr: up{job="nginx-ingress"} == 0
+      for: 3m
+      labels:
+        severity: warning
+        team: devops
+      annotations:
+        summary: "Load balancer is down"
+        description: "NGINX Ingress Controller has been unreachable for 3 minutes"
+
+    - alert: CertManagerIssues
+      expr: certmanager_certificate_ready_status == 0
+      for: 10m
+      labels:
+        severity: warning
+        team: security
+      annotations:
+        summary: "Certificate issuing issues"
+        description: "Certificate {{ $labels.name }} is not ready"
+
+    # Security alerts
+    - alert: FailedAuthenticationAttempts
+      expr: rate(authentication_failures_total[5m]) > 10
+      for: 2m
+      labels:
+        severity: warning
+        team: security
+      annotations:
+        summary: "High number of failed authentication attempts"
+        description: "Rate of failed authentication attempts is {{ $value }} per second"
+
+    # Business metrics alerts
+    - alert: LowUserEngagement
+      expr: rate(user_requests_total[1h]) < 10
+      for: 15m
+      labels:
+        severity: info
+        team: product
+      annotations:
+        summary: "Low user engagement"
+        description: "User request rate is {{ $value }} per hour, which is unusually low"
+
+    - alert: APIQuotaExceeded
+      expr: rate(api_quota_used[5m]) > 0.9
+      for: 5m
+      labels:
+        severity: warning
+        team: devops
+      annotations:
+        summary: "API quota usage is high"
+        description: "API quota usage is {{ $value | humanizePercentage }}, consider scaling"

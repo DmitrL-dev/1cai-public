@@ -1,0 +1,117 @@
+# Краткое руководство по быстрому старту
+
+**1C AI MCP Code Generation System**
+
+## 🚀 Быстрый старт за 5 минут
+
+### 1. Установка и настройка
+
+```bash
+# Клонируйте репозиторий
+git clone <repository-url>
+cd 1c_mcp_code_generation
+
+# Установите зависимости
+pip install -r requirements.txt
+
+# Настройте переменные окружения
+cp .env.example .env
+# Отредактируйте .env и добавьте ваш API ключ
+```
+
+### 2. Первый запрос
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "generate_code",
+    "arguments": {
+      "object_type": "processing",
+      "description": "Обработка для анализа продаж с фильтрами"
+    }
+  }
+}
+```
+
+### 3. Основные команды
+
+| Команда | Описание | Пример |
+|---------|----------|--------|
+| `generate_code` | Генерация кода 1С | Создать обработку |
+| `validate_code` | Валидация кода | Проверить синтаксис |
+| `security_check` | Проверка безопасности | Найти угрозы |
+| `optimize_prompt` | Оптимизация промптов | Улучшить качество |
+| `template_list` | Список шаблонов | Найти шаблон |
+
+### 4. Типичные сценарии
+
+#### Создание обработки
+```json
+{
+  "name": "generate_code",
+  "arguments": {
+    "object_type": "processing",
+    "description": "Обработка для импорта данных из Excel"
+  }
+}
+```
+
+#### Создание отчета
+```json
+{
+  "name": "generate_code", 
+  "arguments": {
+    "object_type": "report",
+    "description": "Отчет по продажам с группировкой"
+  }
+}
+```
+
+#### Создание справочника
+```json
+{
+  "name": "generate_code",
+  "arguments": {
+    "object_type": "catalog", 
+    "description": "Справочник товаров с категориями"
+  }
+}
+```
+
+### 5. Интеграция с IDE
+
+#### VS Code
+1. Установите расширение MCP
+2. Настройте подключение к серверу
+3. Используйте команду "1C: Generate Code"
+
+#### Claude Desktop
+1. Добавьте сервер в конфигурацию
+2. Используйте в диалоге: "Создай обработку 1С для..."
+
+### 6. Проверка работы
+
+```bash
+# Проверьте статус сервера
+curl -X POST http://localhost:3000/health
+
+# Получите список инструментов
+curl -X POST http://localhost:3000/tools/list
+```
+
+## 📚 Дополнительные ресурсы
+
+- **Полная документация:** [`docs/API_DOCUMENTATION.md`](./API_DOCUMENTATION.md)
+- **Примеры кода:** [`examples/`](../)
+- **Конфигурация:** [`config/generation_config.yaml`](../config/generation_config.yaml)
+- **Шаблоны:** [`templates/`](../templates/)
+
+## 🆘 Проблемы?
+
+1. Проверьте логи: `tail -f logs/audit.log`
+2. Убедитесь, что API ключ настроен правильно
+3. Проверьте подключение к интернету
+4. Обратитесь к разделу Troubleshooting в полной документации
