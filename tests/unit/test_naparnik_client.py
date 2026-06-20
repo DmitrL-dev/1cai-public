@@ -67,11 +67,28 @@ class TestNaparnikClient:
         async with client:
             assert client.is_configured is True
             # Проверяем, что сессия может быть создана
-            session = await client._get_session()
+            session = await client._get_session(use_pool=False)
             assert session is not None
 
         # После выхода из контекста сессия должна быть закрыта
         assert client._session is None or client._session.closed
+
+    @pytest.mark.asyncio
+    async def test_close_detaches_but_does_not_close_pooled_session(self) -> None:
+        from src.ai.connection_pool import close_global_pool
+
+        await close_global_pool()
+        config = NaparnikConfig(api_key="test-key")
+        client = NaparnikClient(config=config)
+
+        session = await client._get_session()
+        assert client._session is session
+
+        await client.close()
+
+        assert client._session is None
+        assert not session.closed
+        await close_global_pool()
 
     @pytest.mark.asyncio
     async def test_close(self) -> None:
@@ -79,7 +96,7 @@ class TestNaparnikClient:
         client = NaparnikClient(config=config)
 
         # Создаем сессию
-        await client._get_session()
+        await client._get_session(use_pool=False)
         assert client._session is not None
 
         # Закрываем

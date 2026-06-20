@@ -145,6 +145,22 @@ DEFAULT_DEMO_USERS = [
 ]
 
 
+def _is_production() -> bool:
+    return os.getenv("ENVIRONMENT", "").strip().lower() == "production"
+
+
+def _uses_default_demo_credentials(raw_users: List[dict]) -> bool:
+    default_credentials = {
+        (entry["username"], entry["password"]) for entry in DEFAULT_DEMO_USERS
+    }
+    return any(
+        isinstance(entry, dict)
+        and (str(entry.get("username")), str(entry.get("password")))
+        in default_credentials
+        for entry in raw_users
+    )
+
+
 class AuthService:
     """Service for authenticating users and issuing JWT tokens."""
 
@@ -159,6 +175,10 @@ class AuthService:
         self._service_tokens: Dict[str, CurrentUser] = self._load_service_tokens()
 
         if self.settings.jwt_secret == "CHANGE_ME":
+            if _is_production():
+                raise RuntimeError(
+                    "JWT_SECRET must be set to a strong non-default value in production."
+                )
             logger.warning(
                 "JWT_SECRET uses default value. Set a secure secret for production!"
             )
@@ -170,13 +190,28 @@ class AuthService:
                 raw_users = json.loads(self.settings.demo_users)
             except json.JSONDecodeError as exc:
                 logger.error("Failed to parse AUTH_DEMO_USERS JSON: %s", exc)
+                if _is_production():
+                    raise RuntimeError(
+                        "AUTH_DEMO_USERS must contain valid JSON in production."
+                    ) from exc
                 raw_users = DEFAULT_DEMO_USERS
         else:
             if os.getenv("AUTH_DEMO_USERS") is None:
+                if _is_production():
+                    raise RuntimeError(
+                        "AUTH_DEMO_USERS is required in production; "
+                        "default demo users are disabled."
+                    )
                 logger.info(
                     "Using default demo users. Configure AUTH_DEMO_USERS for production."
                 )
             raw_users = DEFAULT_DEMO_USERS
+
+        if _is_production() and _uses_default_demo_credentials(raw_users):
+            raise RuntimeError(
+                "AUTH_DEMO_USERS contains default demo credentials, which are "
+                "disabled in production."
+            )
 
         users: Dict[str, UserCredentials] = {}
         for entry in raw_users:

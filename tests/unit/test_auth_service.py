@@ -44,3 +44,26 @@ def test_service_token_auth(auth_service: AuthService) -> None:
 
 def test_invalid_service_token(auth_service: AuthService) -> None:
     assert auth_service.authenticate_service_token("bad-token") is None
+
+
+def test_legacy_auth_rejects_missing_users_in_production(monkeypatch) -> None:
+    monkeypatch.setenv("ENVIRONMENT", "production")
+    monkeypatch.delenv("AUTH_DEMO_USERS", raising=False)
+
+    with pytest.raises(RuntimeError, match="default demo users are disabled"):
+        AuthService(AuthSettings(jwt_secret="unit-test-secret"))
+
+
+def test_legacy_auth_rejects_default_credentials_in_production(monkeypatch) -> None:
+    monkeypatch.setenv("ENVIRONMENT", "production")
+
+    with pytest.raises(RuntimeError, match="default demo credentials"):
+        AuthService(
+            AuthSettings(
+                jwt_secret="unit-test-secret",
+                demo_users=(
+                    '[{"username":"admin","password":"admin123",'
+                    '"user_id":"admin-1","roles":["admin"]}]'
+                ),
+            )
+        )

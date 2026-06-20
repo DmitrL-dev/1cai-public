@@ -38,19 +38,19 @@ export default function GraphCanvas({
   const internalRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
   const fgRef = externalRef ?? internalRef;
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dims, setDims] = useState({ w: width ?? 800, h: height ?? 600 });
+  const [autoDims, setAutoDims] = useState({ w: 800, h: 600 });
+  const dims = { w: width ?? autoDims.w, h: height ?? autoDims.h };
 
   // ── Auto-size to container ──
   useEffect(() => {
     if (width !== undefined && height !== undefined) {
-      setDims({ w: width, h: height });
       return;
     }
     const el = containerRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
       const { width: cw, height: ch } = entries[0].contentRect;
-      if (cw > 0 && ch > 0) setDims({ w: cw, h: ch });
+      if (cw > 0 && ch > 0) setAutoDims({ w: cw, h: ch });
     });
     ro.observe(el);
     return () => ro.disconnect();

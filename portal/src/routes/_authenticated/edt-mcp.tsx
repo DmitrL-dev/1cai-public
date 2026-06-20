@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import type { ReactNode } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 import { useMutation, useQuery } from "@tanstack/react-query"
@@ -122,10 +122,6 @@ function EdtMcpPage() {
         decision_reason: approvalReason.trim() || undefined,
       }).then((r) => r.data),
   })
-
-  useEffect(() => {
-    if (!actor && defaultActor) setActor(defaultActor)
-  }, [actor, defaultActor])
 
   function runCall() {
     try {

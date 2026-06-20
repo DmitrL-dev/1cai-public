@@ -44,6 +44,7 @@ class NaparnikClient:
     def __init__(self, config: Optional[NaparnikConfig] = None):
         self.config = config or NaparnikConfig()
         self._session: Optional[aiohttp.ClientSession] = None
+        self._session_from_pool = False
         self._timeout = aiohttp.ClientTimeout(total=self.config.timeout_seconds)
 
     @property
@@ -53,9 +54,15 @@ class NaparnikClient:
 
     async def close(self) -> None:
         """Close the HTTP session."""
+        if self._session_from_pool:
+            self._session = None
+            self._session_from_pool = False
+            return
+
         if self._session and not self._session.closed:
             await self._session.close()
-            self._session = None
+        self._session = None
+        self._session_from_pool = False
 
     async def __aenter__(self) -> "NaparnikClient":
         return self
@@ -184,11 +191,18 @@ class NaparnikClient:
                 from src.ai.connection_pool import get_global_pool
 
                 pool = get_global_pool()
-                return await pool.get_session(self.config.base_url)
+                self._session = await pool.get_session(self.config.base_url)
+                self._session_from_pool = True
+                return self._session
             except ImportError:
                 # ConnectionPool не доступен, используем обычную сессию
                 pass
 
+        if self._session_from_pool:
+            self._session = None
+            self._session_from_pool = False
+
         if self._session is None or self._session.closed:
             self._session = aiohttp.ClientSession(timeout=self._timeout)
+            self._session_from_pool = False
         return self._session

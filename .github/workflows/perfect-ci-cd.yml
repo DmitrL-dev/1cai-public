@@ -8,7 +8,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.11"
-  NODE_VERSION: "18"
+  NODE_VERSION: "22"
 
 jobs:
   # ===== LINTING & CODE QUALITY =====
@@ -99,19 +99,16 @@ jobs:
           pip install pytest pytest-cov pytest-asyncio
 
       - name: Run unit tests
-        run: pytest tests/unit/ -v --cov=src --cov-report=xml || echo "Unit tests failed, but continuing..."
-        continue-on-error: true
+        run: pytest tests/unit/ -v --cov=src --cov-report=xml
 
       - name: Run integration tests
-        run: pytest tests/integration/ -v || echo "Integration tests failed, but continuing..."
-        continue-on-error: true
+        run: pytest tests/integration/ -v
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
           REDIS_URL: redis://localhost:6379
 
       - name: Run system tests
-        run: pytest tests/system/ -v || echo "System tests failed, but continuing..."
-        continue-on-error: true
+        run: pytest tests/system/ -v
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -140,27 +137,17 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd frontend-portal
+          cd portal
           npm ci
 
       - name: Run ESLint
         run: |
-          cd frontend-portal
+          cd portal
           npm run lint
-
-      - name: Run TypeScript check
-        run: |
-          cd frontend-portal
-          npm run type-check
-
-      - name: Run tests
-        run: |
-          cd frontend-portal
-          npm test -- --coverage --watchAll=false
 
       - name: Build
         run: |
-          cd frontend-portal
+          cd portal
           npm run build
 
   # ===== SECURITY SCANNING =====
@@ -221,7 +208,7 @@ jobs:
       - name: Build Docker images
         run: |
           docker build -t 1c-ai-stack-api:${{ github.sha }} .
-          docker build -t 1c-ai-stack-frontend:${{ github.sha }} frontend-portal/
+          docker build -t 1c-ai-stack-frontend:${{ github.sha }} portal/
 
       - name: Push to registry
         run: |

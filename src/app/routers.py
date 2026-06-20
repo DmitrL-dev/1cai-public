@@ -24,9 +24,11 @@ _AUTH_REQUIRED_DIRECT_ROUTERS = {
     "Baselines",
     "Policies",
     "Testing Evidence",
+    "Test Factory",
     "Audit",
     "Enterprise",
     "Agentic",
+    "Safe Autopilot",
     "Team Governance",
     "Requirements Impact",
     "Metadata Graph",
@@ -34,10 +36,56 @@ _AUTH_REQUIRED_DIRECT_ROUTERS = {
     "Architecture Review",
     "Offline Readiness",
     "Operations",
+    "Lock Radar",
+    "Extension Safety",
+    "Platform Doctor",
+    "Update War Room",
+    "Rights & RLS",
+    "Vendor Portfolio",
+    "Value Packs",
+    "Business Case",
+    "Board Pack",
+    "Buyer Concierge",
+    "Commercial Offer Studio",
+    "Demo Command Center",
+    "Enterprise Trust Center",
+    "Guided Demo",
+    "Killer Demo",
+    "Launch Room",
+    "Outcome Ledger",
+    "Scenario Hub",
+    "Pilot Launchpad",
+    "Evidence Bundle",
     "Management",
     "EDT MCP Bridge",
     "Productization",
 }
+
+_LEGACY_OPTIONAL_MODULE_ROUTERS = {
+    "dashboard",
+    "bpmn",
+    "oauth",
+    "analytics",
+    "knowledge_base",
+    "council",
+    "ml",
+}
+
+_PUBLIC_MODULE_ROUTERS = {
+    # Token issuance must remain public; protected endpoints inside the auth
+    # router keep their own dependencies.
+    "auth",
+    # OAuth callbacks are invoked by external providers and cannot carry our
+    # bearer token. User-initiated OAuth operations are protected inside the
+    # router with get_current_user_id.
+    "oauth",
+}
+
+
+def _dependencies_for_module_router(name: str) -> list:
+    if name in _PUBLIC_MODULE_ROUTERS:
+        return []
+    return [Depends(require_auth)]
 
 
 def get_module_routers() -> list[tuple[str, APIRouter]]:
@@ -100,7 +148,10 @@ def get_module_routers() -> list[tuple[str, APIRouter]]:
             router = getattr(module, attr_name)
             routers.append((name, router))
         except ImportError as e:
-            logger.warning(f"Router '{name}' not available: {e}")
+            if name in _LEGACY_OPTIONAL_MODULE_ROUTERS:
+                logger.info("Legacy optional router '%s' not mounted: %s", name, e)
+            else:
+                logger.warning(f"Router '{name}' not available: {e}")
         except Exception as e:
             logger.error(f"Failed to load router '{name}': {e}")
 
@@ -131,7 +182,9 @@ def register_routers(app, api_v1_router: APIRouter):
 
     for name, router in routers:
         try:
-            api_v1_router.include_router(router)
+            api_v1_router.include_router(
+                router, dependencies=_dependencies_for_module_router(name)
+            )
         except Exception as e:
             logger.warning(f"Failed to register router '{name}': {e}")
 
@@ -168,6 +221,26 @@ def register_routers(app, api_v1_router: APIRouter):
         ("Offline Readiness", "src.api.offline_readiness_api"),
         ("Team Governance", "src.api.team_governance_api"),
         ("Operations", "src.api.operations_api"),
+        ("Lock Radar", "src.api.lock_radar_api"),
+        ("Extension Safety", "src.api.extension_safety_api"),
+        ("Platform Doctor", "src.api.platform_doctor_api"),
+        ("Update War Room", "src.api.update_war_room_api"),
+        ("Rights & RLS", "src.api.rights_rls_api"),
+        ("Vendor Portfolio", "src.api.vendor_portfolio_api"),
+        ("Value Packs", "src.api.value_packs_api"),
+        ("Business Case", "src.api.business_case_api"),
+        ("Board Pack", "src.api.board_pack_api"),
+        ("Buyer Concierge", "src.api.buyer_concierge_api"),
+        ("Commercial Offer Studio", "src.api.commercial_offer_studio_api"),
+        ("Demo Command Center", "src.api.demo_command_center_api"),
+        ("Enterprise Trust Center", "src.api.enterprise_trust_center_api"),
+        ("Guided Demo", "src.api.guided_demo_api"),
+        ("Killer Demo", "src.api.killer_demo_api"),
+        ("Launch Room", "src.api.launch_room_api"),
+        ("Outcome Ledger", "src.api.outcome_ledger_api"),
+        ("Scenario Hub", "src.api.scenario_hub_api"),
+        ("Pilot Launchpad", "src.api.pilot_launchpad_api"),
+        ("Evidence Bundle", "src.api.evidence_bundle_api"),
         ("Management", "src.api.management_api"),
         ("EDT MCP Bridge", "src.api.edt_mcp_api"),
         ("Approvals", "src.api.approval_api"),
@@ -176,9 +249,11 @@ def register_routers(app, api_v1_router: APIRouter):
         ("Baselines", "src.api.baselines_api"),
         ("Policies", "src.api.policies_api"),
         ("Testing Evidence", "src.api.testing_api"),
+        ("Test Factory", "src.api.test_factory_api"),
         ("Audit", "src.api.audit_api"),
         ("Enterprise", "src.api.enterprise_api"),
         ("Agentic", "src.api.agentic_api"),
+        ("Safe Autopilot", "src.api.safe_autopilot_api"),
         ("Productization", "src.api.productization_api"),
     ):
         try:

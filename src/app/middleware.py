@@ -36,7 +36,28 @@ def setup_middleware(app: FastAPI):
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
         allow_headers=["*"],
-        expose_headers=["X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining"],
+        expose_headers=[
+            "Content-Disposition",
+            "X-Archive-Files",
+            "X-Archive-Manifest",
+            "X-Archive-Manifest-Files",
+            "X-Archive-Manifest-Sha256",
+            "X-Archive-Sha256",
+            "X-Buyer-Room-Packet-Files",
+            "X-Buyer-Room-Packet-Open-First",
+            "X-Buyer-Room-Packet-Sha256",
+            "X-Dual-Verification-Status",
+            "X-Evidence-Archive-Sha256",
+            "X-Killer-Demo-Archive-Sha256",
+            "X-Killer-Demo-Manifest",
+            "X-Killer-Demo-Manifest-Files",
+            "X-Killer-Demo-Manifest-Sha256",
+            "X-RateLimit-Limit",
+            "X-RateLimit-Remaining",
+            "X-Request-ID",
+            "X-Verification-Packet-Files",
+            "X-Verification-Packet-Sha256",
+        ],
         max_age=3600,
     )
     
@@ -61,6 +82,8 @@ def setup_middleware(app: FastAPI):
         app.add_middleware(JWTUserContextMiddleware, auth_service=auth_service)
         logger.info("JWT middleware added")
     except Exception as e:
+        if settings.environment == "production":
+            raise
         logger.warning(f"Failed to add JWT middleware: {e}")
     
     logger.info("Middleware setup completed")

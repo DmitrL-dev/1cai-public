@@ -165,12 +165,12 @@ async def test_authentication_required():
     Security: Endpoints require authentication
     """
 
-    from fastapi import Depends, FastAPI, HTTPException
+    from fastapi import Depends, FastAPI, Header, HTTPException
     from fastapi.testclient import TestClient
 
     app = FastAPI()
 
-    async def get_current_user(token: str = None):
+    async def get_current_user(token: str = Header(None)):
         if not token:
             raise HTTPException(status_code=401)
         return {"user_id": 123}
@@ -221,7 +221,7 @@ def test_input_validation():
 
     class TenantCreate(BaseModel):
         name: constr(min_length=1, max_length=100)  # type: ignore
-        email: constr(regex=r"^[\w\.-]+@[\w\.-]+\.\w+$")  # noqa: F722
+        email: constr(pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$")  # noqa: F722
 
     # Valid input
     valid = TenantCreate(name="Test Co", email="test@example.com")

@@ -28,11 +28,26 @@ function LoginPage() {
 
     try {
       const { data } = await authApi.login(username, password)
-      const meRes = await authApi.me()
+      const meRes = await authApi.me(data.access_token)
       setAuth(data.access_token, meRes.data)
       window.location.href = "/"
     } catch {
       setError("Invalid credentials")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleDevLogin() {
+    setError("")
+    setLoading(true)
+    try {
+      const { data } = await authApi.login("admin", "admin123")
+      const meRes = await authApi.me(data.access_token)
+      setAuth(data.access_token, meRes.data)
+      window.location.href = "/"
+    } catch {
+      setError("Dev login failed. Start backend with scripts/start_rentgen.ps1 or check the dev auth profile.")
     } finally {
       setLoading(false)
     }
@@ -67,7 +82,7 @@ function LoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              placeholder="admin"
+              placeholder="Username"
               required
               autoFocus
             />
@@ -84,7 +99,7 @@ function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 pr-9 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                placeholder="admin123"
+                placeholder="Password"
                 required
               />
               <button
@@ -109,20 +124,11 @@ function LoginPage() {
           {import.meta.env.DEV && (
             <button
               type="button"
-              onClick={() => {
-                setAuth("dev-token", {
-                  user_id: "1",
-                  username: "admin",
-                  roles: ["admin", "developer"],
-                  permissions: ["marketplace:approve", "marketplace:verify"],
-                  full_name: "Dev Admin",
-                  email: "admin@1cai.dev",
-                })
-                window.location.href = "/"
-              }}
+              onClick={handleDevLogin}
+              disabled={loading}
               className="flex h-9 w-full items-center justify-center rounded-md border border-border px-4 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             >
-              Dev Mode (skip auth)
+              Dev Mode
             </button>
           )}
         </form>

@@ -170,6 +170,29 @@ APIKey = "sk_test_12345";
     assert issues[0]["type"] == "HARDCODED_CREDENTIALS"
 
 
+def test_security_scanner_detects_cyrillic_bsl_security_patterns():
+    from src.ai.agents.code_review.security_scanner import SecurityScanner
+
+    scanner = SecurityScanner()
+    code = (
+        "\u0417\u0430\u043f\u0440\u043e\u0441.\u0422\u0435\u043a\u0441\u0442 = "
+        '"\u0412\u042b\u0411\u0420\u0410\u0422\u042c * \u0413\u0414\u0415 ID = " + '
+        "\u041a\u043e\u0434;\n"
+        "\u041f\u0430\u0440\u043e\u043b\u044c = \"admin123\";\n"
+        "\u0412\u044b\u043f\u043e\u043b\u043d\u0438\u0442\u044c(\"cmd\");\n"
+        "\u0417\u0430\u043f\u0440\u043e\u0441."
+        "\u0412\u044b\u043f\u043e\u043b\u043d\u0438\u0442\u044c();"
+    )
+
+    issues = scanner.scan(code, {})
+
+    issue_types = {issue["type"] for issue in issues}
+    assert "SQL_INJECTION" in issue_types
+    assert "HARDCODED_CREDENTIALS" in issue_types
+    assert "DYNAMIC_EXECUTION" in issue_types
+    assert [issue["type"] for issue in issues].count("DYNAMIC_EXECUTION") == 1
+
+
 def test_performance_analyzer_n_plus_one():
     """Test обнаружения N+1"""
     from src.ai.agents.code_review.performance_analyzer import PerformanceAnalyzer
@@ -189,6 +212,31 @@ def test_performance_analyzer_n_plus_one():
 
     assert len(issues) > 0
     assert issues[0]["severity"] == "HIGH"
+
+
+def test_performance_analyzer_detects_real_cyrillic_bsl_patterns():
+    from src.ai.agents.code_review.performance_analyzer import PerformanceAnalyzer
+
+    analyzer = PerformanceAnalyzer()
+    code = (
+        "\u0414\u043b\u044f \u041a\u0430\u0436\u0434\u043e\u0433\u043e "
+        "\u0422\u043e\u0432\u0430\u0440 \u0418\u0437 "
+        "\u0422\u043e\u0432\u0430\u0440\u044b \u0426\u0438\u043a\u043b\n"
+        "    \u0417\u0430\u043f\u0440\u043e\u0441 = "
+        "\u041d\u043e\u0432\u044b\u0439 \u0417\u0430\u043f\u0440\u043e\u0441;\n"
+        "    \u0417\u0430\u043f\u0440\u043e\u0441."
+        "\u0422\u0435\u043a\u0441\u0442 = \"\u0412\u042b\u0411\u0420\u0410\u0422\u042c * "
+        "\u0418\u0417 \u0421\u043f\u0440\u0430\u0432\u043e\u0447\u043d\u0438\u043a\";\n"
+        "    \u0417\u0430\u043f\u0440\u043e\u0441."
+        "\u0412\u044b\u043f\u043e\u043b\u043d\u0438\u0442\u044c();\n"
+        "\u041a\u043e\u043d\u0435\u0446\u0426\u0438\u043a\u043b\u0430;"
+    )
+
+    issues = analyzer.analyze(code, {})
+
+    issue_types = {issue["type"] for issue in issues}
+    assert "N_PLUS_ONE_QUERY" in issue_types
+    assert "SELECT_STAR_QUERY" in issue_types
 
 
 def test_auto_fixer_sql_injection():
@@ -247,6 +295,19 @@ async def test_multi_layer_cache():
 
     assert value == {"data": "value"}
     assert cache.hits["l1"] == 1
+
+
+@pytest.mark.asyncio
+async def test_multi_layer_cache_accepts_legacy_redis_client_arg():
+    from src.cache.multi_layer_cache import MultiLayerCache
+
+    redis_client = object()
+    cache = MultiLayerCache(redis_client)
+
+    await cache.set("legacy_key", "value", ttl_seconds=60)
+
+    assert cache.redis_client is redis_client
+    assert await cache.get("legacy_key") == "value"
 
 
 def test_performance_monitor():
