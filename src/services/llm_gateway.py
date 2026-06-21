@@ -178,7 +178,7 @@ class LLMGateway:
 
         if not provider_chain:
             logger.warning("LLMGateway: no providers available")
-            return self._build_placeholder_response(
+            return self._build_offline_fallback_response(
                 "unknown", "unknown", prompt, role, []
             )
 
@@ -367,6 +367,8 @@ class LLMGateway:
             metadata={
                 "role": role,
                 "offline": True,
+                "fallback": True,
+                "fallback_reason": "all_providers_unavailable",
                 "error": str(last_error) if last_error else "All providers unavailable",
             },
         )
@@ -436,7 +438,7 @@ class LLMGateway:
                 return first
         return "unknown-model"
 
-    def _build_placeholder_response(
+    def _build_offline_fallback_response(
         self,
         provider: str,
         model: str,
@@ -444,12 +446,24 @@ class LLMGateway:
         role: Optional[str],
         fallback: List[str],
     ) -> LLMGatewayResponse:
-        diagnostic = f"[LLM placeholder]\nprovider: {provider}\nmodel: {model}\nfallback: {', '.join(fallback) if fallback else '—'}\nprompt_preview: {prompt[:200]}"
+        diagnostic = (
+            "[LLM offline fallback]\n"
+            f"provider: {provider}\n"
+            f"model: {model}\n"
+            f"fallback_chain: {', '.join(fallback) if fallback else 'none'}\n"
+            f"prompt_preview: {prompt[:200]}"
+        )
         return LLMGatewayResponse(
             provider=provider,
             model=model,
             response=diagnostic,
-            metadata={"role": role, "fallback_chain": fallback, "placeholder": True},
+            metadata={
+                "role": role,
+                "fallback_chain": fallback,
+                "offline": True,
+                "fallback": True,
+                "fallback_reason": "no_provider_available",
+            },
         )
 
     def _load_simulation_config(self) -> Dict[str, Any]:

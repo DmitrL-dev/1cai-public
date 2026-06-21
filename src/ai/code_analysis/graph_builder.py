@@ -227,9 +227,9 @@ class OneCCodeGraphBuilder:
                     await self.backend.upsert_edge(edge)
                     edges_created += 1
                 else:
-                    # Внешний вызов - создаём узел-заглушку или ищем в других модулях
+                    # Unresolved external call: create an explicit external node until cross-module resolution is available.
                     external_node_id = f"function:external:{called_name}"
-                    # Проверяем, существует ли уже такой узел
+                    # Reuse an existing external node when the call was already observed.
                     existing = await self.backend.get_node(external_node_id)
                     if not existing:
                         external_node = Node(
@@ -574,12 +574,17 @@ class OneCCodeGraphBuilder:
             nodes = list(self.backend._nodes.values())
             edges = self.backend._edges
         else:
-            # Для других бэкендов собираем все узлы и рёбра
-            # Это упрощённая версия - в реальности нужен более сложный обход
+            # Для backend-ов без публичного edge enumeration экспортируем только узлы.
             nodes = await self.backend.find_nodes()
-            edges = []  # TODO: реализовать получение всех рёбер для других бэкендов
+            edges = []
 
         graph_export = {
+            "metadata": {
+                "node_export_coverage": "all_findable_nodes",
+                "edge_export_coverage": "in_memory_edges"
+                if hasattr(self.backend, "_edges")
+                else "not_available_from_backend_interface",
+            },
             "nodes": [
                 {
                     "id": node.id,

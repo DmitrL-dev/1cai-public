@@ -29,6 +29,13 @@ STANDARDS_CATALOG: dict[str, dict[str, Any]] = {
         "autofix": "Move query construction outside the loop or batch input values into one query.",
         "autofix_confidence": 0.25,
     },
+    "join-field-null-guard": {
+        "standard": "1c:query-left-join-null-safety",
+        "title": "Fields from left joins need ЕстьNULL or explicit NULL checks",
+        "severity": "high",
+        "autofix": "Wrap nullable fields with ЕстьNULL(<field>, <default>), add an ЕСТЬ NULL branch, or use an inner join when the related row is mandatory.",
+        "autofix_confidence": 0.45,
+    },
     "privileged-mode": {
         "standard": "1c:security-privileged-mode",
         "title": "Privileged mode needs explicit security justification",
@@ -206,6 +213,14 @@ def _markdown(report: dict[str, Any]) -> str:
                 f"- **{item['severity']}** `{item['rule_id']}`{line}: {item['message']} "
                 f"({item['standard']})"
             )
+            details = item.get("details") or {}
+            field_ref = details.get("field_ref")
+            if field_ref:
+                lines.append(f"  - Field: `{field_ref}`")
+            for option in details.get("safe_options") or []:
+                lines.append(f"  - Safe option: {option}")
+            for expectation in details.get("test_expectations") or []:
+                lines.append(f"  - Test: {expectation}")
     else:
         lines.append("No standards findings.")
     return "\n".join(lines)

@@ -3,12 +3,14 @@ Unit tests for LLMGateway resilience
 """
 
 import asyncio
+import time
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 
 from src.services.llm_gateway import LLMGateway
 from src.services.llm_provider_manager import ProviderConfig
+from src.resilience.error_recovery import CircuitState
 
 
 class TestLLMGatewayResilience:
@@ -19,10 +21,17 @@ class TestLLMGatewayResilience:
         # Mock dependencies
         mock_manager = Mock()
         mock_manager.has_configuration.return_value = True
-        mock_manager.get_active_provider.return_value = ProviderConfig(
-            name="test-provider", enabled=True
+        provider = ProviderConfig(
+            name="test-provider",
+            provider_type="remote",
+            priority=50,
+            base_url="https://example.invalid",
+            enabled=True,
         )
+        mock_manager.providers = {"test-provider": provider}
+        mock_manager.get_active_provider.return_value = provider
         mock_manager.get_fallback_chain.return_value = None
+        mock_manager.get_provider.side_effect = lambda name: mock_manager.providers.get(name)
 
         return LLMGateway(
             manager=mock_manager,
@@ -60,26 +69,42 @@ class TestLLMGatewayResilience:
         """Test circuit breaker prevents calls after failures"""
         # Manually trip the breaker
         breaker = gateway.circuit_breakers["test-provider"]
-        breaker.state._failure_count = 10  # Exceed threshold
-        breaker.state._state = "OPEN"
-        breaker.state._last_failure_time = asyncio.get_event_loop().time()
+        breaker.state.failure_count = 10
+        breaker.state.state = CircuitState.OPEN
+        breaker.state.last_failure_time = time.time()
 
-        mock_client = AsyncMock()
-        gateway.get_client = Mock(return_value=mock_client)
+        provider_client = AsyncMock()
+        gateway.get_client = Mock(
+            side_effect=lambda name: provider_client
+            if name == "test-provider"
+            else None
+        )
 
         # Call generate
         await gateway.generate("test")
 
         # Client should NOT be called
-        mock_client.generate.assert_not_called()
+        provider_client.generate.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_fallback_chain(self, gateway):
         """Test fallback to next provider on failure"""
 
         # Setup manager to return primary and secondary
-        p1 = ProviderConfig(name="primary", enabled=True)
-        p2 = ProviderConfig(name="secondary", enabled=True)
+        p1 = ProviderConfig(
+            name="primary",
+            provider_type="remote",
+            priority=50,
+            base_url="https://primary.example.invalid",
+            enabled=True,
+        )
+        p2 = ProviderConfig(
+            name="secondary",
+            provider_type="remote",
+            priority=40,
+            base_url="https://secondary.example.invalid",
+            enabled=True,
+        )
 
         gateway.manager.get_active_provider.return_value = p1
         gateway.manager.get_fallback_chain.return_value = {
@@ -109,7 +134,7 @@ class TestLLMGatewayResilience:
         gateway.circuit_breakers["primary"] = CircuitBreaker()
         gateway.circuit_breakers["secondary"] = CircuitBreaker()
 
-        response = await gateway.generate("test")
+        response = await gateway.generate("test", role="developer")
 
         assert response.provider == "secondary"
         assert response.response == "Success"

@@ -72,6 +72,10 @@ def _archive_name(profile: str) -> str:
     return f"1cai-{profile}-{stamp}.zip"
 
 
+def _display_bool(value: bool) -> str:
+    return "yes" if value else "no"
+
+
 def _canonical(payload: dict[str, Any]) -> bytes:
     copy = json.loads(json.dumps(payload, ensure_ascii=False))
     copy.pop("signature", None)
@@ -96,6 +100,199 @@ def _sign(payload: dict[str, Any], signing_key: str) -> dict[str, Any]:
 
 def _signing_key(explicit: str | None = None) -> str | None:
     return explicit or os.getenv(SIGNING_KEY_ENV) or os.getenv(LEGACY_SIGNING_KEY_ENV)
+
+
+def _signature_required(manifest: dict[str, Any]) -> bool:
+    installer_profile = manifest.get("installer_profile") if isinstance(manifest.get("installer_profile"), dict) else {}
+    return bool(installer_profile.get("requires_signed_manifest"))
+
+
+def _passport_decision(manifest: dict[str, Any]) -> dict[str, str]:
+    signature = manifest.get("signature") if isinstance(manifest.get("signature"), dict) else {}
+    readiness = manifest.get("readiness") if isinstance(manifest.get("readiness"), dict) else {}
+    summary = manifest.get("summary") if isinstance(manifest.get("summary"), dict) else {}
+    requires_signature = _signature_required(manifest)
+    if int(summary.get("missing") or 0):
+        return {
+            "status": "blocked",
+            "headline": "Offline bundle has missing files and must not be delivered.",
+        }
+    if requires_signature and not signature.get("signed"):
+        return {
+            "status": "blocked",
+            "headline": "Production or airgap delivery requires a signed manifest before handoff.",
+        }
+    if str(readiness.get("status") or "") == "fail":
+        return {
+            "status": "risk",
+            "headline": "Bundle is complete, but productization readiness has blocking findings.",
+        }
+    if str(readiness.get("status") or "") == "warn":
+        return {
+            "status": "warn",
+            "headline": "Bundle is deliverable for pilot use with visible productization caveats.",
+        }
+    return {
+        "status": "ready",
+        "headline": "Bundle is ready for closed-contour verification and buyer handoff.",
+    }
+
+
+def _verification_steps(manifest: dict[str, Any], *, archive_filename: str) -> list[dict[str, Any]]:
+    signature = manifest.get("signature") if isinstance(manifest.get("signature"), dict) else {}
+    signed = bool(signature.get("signed"))
+    return [
+        {
+            "step": 1,
+            "owner": "Operations",
+            "title": "Verify archive payload hashes",
+            "command": f"C:\\Python311\\python.exe -m src.services.offline_bundle --verify-archive {archive_filename}",
+            "pass_condition": "status is pass; warn is acceptable only for an explicitly unsigned pilot archive",
+        },
+        {
+            "step": 2,
+            "owner": "Security",
+            "title": "Check signature policy",
+            "command": "set ONECAI_BUNDLE_SIGNING_KEY=<customer-secret> before verification" if signed else "Approve unsigned pilot scope or rebuild with --sign",
+            "pass_condition": "production and airgap profiles have signature.signed=true and matching key_hint",
+        },
+        {
+            "step": 3,
+            "owner": "Release board",
+            "title": "Attach evidence pack",
+            "command": "Export Evidence Bundle ZIP and compare SHA-256 manifest before approval",
+            "pass_condition": "Evidence Bundle manifest, caveats and Productization passport are attached to the approval packet",
+        },
+    ]
+
+
+def _acceptance_gates(manifest: dict[str, Any]) -> list[dict[str, Any]]:
+    signature = manifest.get("signature") if isinstance(manifest.get("signature"), dict) else {}
+    summary = manifest.get("summary") if isinstance(manifest.get("summary"), dict) else {}
+    readiness = manifest.get("readiness") if isinstance(manifest.get("readiness"), dict) else {}
+    requires_signature = _signature_required(manifest)
+    signed = bool(signature.get("signed"))
+    signature_status = "pass" if signed else ("fail" if requires_signature else "warn")
+    return [
+        {
+            "id": "payload-integrity",
+            "owner": "Operations",
+            "status": "pass" if int(summary.get("missing") or 0) == 0 else "fail",
+            "evidence": f"{summary.get('files', 0)} files, {summary.get('missing', 0)} missing, sha256 manifest {manifest.get('manifest_sha256')}",
+            "acceptance": "All payload files exist in the archive and match manifest hashes.",
+        },
+        {
+            "id": "signature-policy",
+            "owner": "Security",
+            "status": signature_status,
+            "evidence": f"signed={_display_bool(signed)}, required={_display_bool(requires_signature)}, algorithm={signature.get('algorithm') or 'none'}",
+            "acceptance": "Pilot can be unsigned if accepted; production and airgap require a verified HMAC signature.",
+        },
+        {
+            "id": "productization-readiness",
+            "owner": "Product owner",
+            "status": str(readiness.get("status") or "warn"),
+            "evidence": f"decision={readiness.get('release_decision') or summary.get('readiness_decision')}; score={readiness.get('score', 'n/a')}",
+            "acceptance": "High findings are closed or explicitly accepted before production rollout.",
+        },
+        {
+            "id": "closed-contour-install",
+            "owner": "IT / Operations",
+            "status": "warn",
+            "evidence": "Archive is self-contained; target infrastructure validation remains customer-local.",
+            "acceptance": "Install mode, backup, rollback and network restrictions are validated in the target contour.",
+        },
+        {
+            "id": "buyer-proof-handoff",
+            "owner": "Sponsor / vendor lead",
+            "status": "pass",
+            "evidence": "Delivery passport, manifest, VERIFY.txt and payload are included in one archive.",
+            "acceptance": "Security, architect and director receive role-specific handoff notes before pilot start.",
+        },
+    ]
+
+
+def build_delivery_passport(manifest: dict[str, Any], *, archive_filename: str = "<archive.zip>") -> dict[str, Any]:
+    """Build a buyer-safe delivery passport for an offline bundle archive."""
+
+    summary = manifest.get("summary") if isinstance(manifest.get("summary"), dict) else {}
+    signature = manifest.get("signature") if isinstance(manifest.get("signature"), dict) else {}
+    installer_profile = manifest.get("installer_profile") if isinstance(manifest.get("installer_profile"), dict) else {}
+    return {
+        "schema_version": "1.0",
+        "product": manifest.get("product") or "1cAI Enterprise 1C SDLC Platform",
+        "profile": manifest.get("profile") or "pilot",
+        "generated_at": _now(),
+        "decision": _passport_decision(manifest),
+        "package": {
+            "archive_filename": archive_filename,
+            "manifest_sha256": manifest.get("manifest_sha256"),
+            "files": int(summary.get("files") or 0),
+            "missing": int(summary.get("missing") or 0),
+            "total_bytes": int(summary.get("total_bytes") or 0),
+            "signed": bool(signature.get("signed")),
+            "signature_algorithm": signature.get("algorithm") or "none",
+            "signature_key_hint": signature.get("key_hint"),
+        },
+        "install_profile": installer_profile,
+        "verification_steps": _verification_steps(manifest, archive_filename=archive_filename),
+        "acceptance_gates": _acceptance_gates(manifest),
+        "handoff_by_role": [
+            {
+                "role": "Developer / QA",
+                "opens": "payload/, manifest.json, Evidence Bundle",
+                "needs": "Run tests and compare changed artifacts against the manifest before approval.",
+            },
+            {
+                "role": "Architect / Security",
+                "opens": "DELIVERY_PASSPORT.md, VERIFY.txt, Productization report",
+                "needs": "Confirm local contour, signature policy, SBOM and rights/RLS review gates.",
+            },
+            {
+                "role": "Director / Sponsor",
+                "opens": "DELIVERY_PASSPORT.md and Evidence Bundle summary",
+                "needs": "See that the product is a local asset with repeatable verification, not a mandatory AI subscription.",
+            },
+        ],
+        "caveats": [
+            "The passport proves archive integrity and handoff gates; it is not an OS-native signed installer.",
+            "Customer-specific infrastructure, IdP handshakes and production backup drills still require local validation.",
+        ],
+    }
+
+
+def delivery_passport_markdown(passport: dict[str, Any]) -> str:
+    """Render an offline delivery passport as Markdown."""
+
+    decision = passport.get("decision") if isinstance(passport.get("decision"), dict) else {}
+    package = passport.get("package") if isinstance(passport.get("package"), dict) else {}
+    install_profile = passport.get("install_profile") if isinstance(passport.get("install_profile"), dict) else {}
+    lines = [
+        "# 1cAI Offline Delivery Passport",
+        "",
+        f"- Product: {passport.get('product')}",
+        f"- Profile: `{passport.get('profile')}`",
+        f"- Decision: `{decision.get('status')}` - {decision.get('headline')}",
+        f"- Archive: `{package.get('archive_filename')}`",
+        f"- Manifest SHA-256: `{package.get('manifest_sha256')}`",
+        f"- Files: {package.get('files')} / missing: {package.get('missing')} / signed: {_display_bool(bool(package.get('signed')))}",
+        f"- Target: {install_profile.get('target', 'n/a')}",
+        "",
+        "## Verification Steps",
+        "",
+    ]
+    for item in passport.get("verification_steps", []):
+        lines.append(f"{item['step']}. **{item['owner']}** - {item['title']}: `{item['command']}`")
+        lines.append(f"   Pass: {item['pass_condition']}")
+    lines.extend(["", "## Acceptance Gates", ""])
+    for item in passport.get("acceptance_gates", []):
+        lines.append(f"- **{item['status']}** `{item['id']}` / {item['owner']}: {item['acceptance']} Evidence: {item['evidence']}")
+    lines.extend(["", "## Role Handoff", ""])
+    for item in passport.get("handoff_by_role", []):
+        lines.append(f"- **{item['role']}** opens `{item['opens']}`: {item['needs']}")
+    lines.extend(["", "## Caveats", ""])
+    lines.extend(f"- {item}" for item in passport.get("caveats", []))
+    return "\n".join(lines)
 
 
 def _default_paths() -> list[tuple[str, str]]:
@@ -339,6 +536,8 @@ def build_offline_bundle_archive(
 
     archive_path = _safe_output_path(output_path or (DEFAULT_ARCHIVE_DIR / _archive_name(manifest["profile"])), root=base)
     archive_path.parent.mkdir(parents=True, exist_ok=True)
+    passport = build_delivery_passport(manifest, archive_filename=archive_path.name)
+    passport_markdown = delivery_passport_markdown(passport)
     verify_text = "\n".join(
         [
             "1cAI offline bundle",
@@ -346,12 +545,16 @@ def build_offline_bundle_archive(
             "Verify manifest and payload before installation:",
             "C:\\Python311\\python.exe -m src.services.offline_bundle --verify-archive <archive.zip>",
             "",
+            "Read DELIVERY_PASSPORT.md before customer handoff; it contains role-specific gates and acceptance checks.",
+            "",
             "For signed manifests, set ONECAI_BUNDLE_SIGNING_KEY before verification.",
             "",
         ]
     )
     with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
+        archive.writestr("DELIVERY_PASSPORT.json", json.dumps(passport, ensure_ascii=False, indent=2))
+        archive.writestr("DELIVERY_PASSPORT.md", passport_markdown)
         archive.writestr("VERIFY.txt", verify_text)
         for artifact in manifest["artifacts"]:
             rel_path = _safe_rel_path(artifact["path"], root=base)
@@ -362,7 +565,16 @@ def build_offline_bundle_archive(
         "archive_path": str(archive_path),
         "archive_sha256": _sha256_file(archive_path),
         "size_bytes": archive_path.stat().st_size,
+        "archive_files": [
+            "manifest.json",
+            "DELIVERY_PASSPORT.json",
+            "DELIVERY_PASSPORT.md",
+            "VERIFY.txt",
+        ]
+        + [f"payload/{artifact['path']}" for artifact in manifest["artifacts"]],
         "manifest": manifest,
+        "delivery_passport": passport,
+        "delivery_passport_markdown": passport_markdown,
     }
 
 
@@ -378,6 +590,7 @@ def verify_offline_bundle_archive(
 
     findings: list[dict[str, Any]] = []
     checked = 0
+    passport: dict[str, Any] | None = None
     with zipfile.ZipFile(archive_path, "r") as archive:
         names = set(archive.namelist())
         if "manifest.json" not in names:
@@ -391,6 +604,44 @@ def verify_offline_bundle_archive(
         manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
         if not isinstance(manifest, dict):
             raise ValueError("Archive manifest must be a JSON object")
+        if "DELIVERY_PASSPORT.json" in names:
+            passport = json.loads(archive.read("DELIVERY_PASSPORT.json").decode("utf-8"))
+            if not isinstance(passport, dict):
+                findings.append(
+                    {
+                        "severity": "high",
+                        "code": "archive-passport-invalid",
+                        "message": "DELIVERY_PASSPORT.json must be a JSON object.",
+                    }
+                )
+                passport = None
+            else:
+                package = passport.get("package") if isinstance(passport.get("package"), dict) else {}
+                if package.get("manifest_sha256") != manifest.get("manifest_sha256"):
+                    findings.append(
+                        {
+                            "severity": "high",
+                            "code": "archive-passport-manifest-mismatch",
+                            "expected": manifest.get("manifest_sha256"),
+                            "actual": package.get("manifest_sha256"),
+                        }
+                    )
+        else:
+            findings.append(
+                {
+                    "severity": "medium",
+                    "code": "archive-passport-missing",
+                    "message": "Archive has no DELIVERY_PASSPORT.json buyer handoff file.",
+                }
+            )
+        if "DELIVERY_PASSPORT.md" not in names:
+            findings.append(
+                {
+                    "severity": "medium",
+                    "code": "archive-passport-markdown-missing",
+                    "message": "Archive has no DELIVERY_PASSPORT.md buyer handoff file.",
+                }
+            )
 
         for missing in manifest.get("missing", []):
             if isinstance(missing, dict):
@@ -453,6 +704,7 @@ def verify_offline_bundle_archive(
         "archive_sha256": _sha256_file(archive_path),
         "checked_files": checked,
         "signature": signature,
+        "delivery_passport": passport,
         "summary": {
             "findings": len(findings),
             "high": severities.get("high", 0),

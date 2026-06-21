@@ -57,6 +57,10 @@ function ChangePage() {
     if (!report) return 0
     return report.modules.reduce((sum, item) => sum + findingsOf(item).length, 0)
   }, [report])
+  const unmeasuredTotal = useMemo(() => {
+    if (!report) return 0
+    return report.modules.filter((item) => !isImpactMeasured(item)).length
+  }, [report])
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-6 lg:p-8">
@@ -144,10 +148,11 @@ function ChangePage() {
 
           {report && (
             <div>
-              <div className="grid grid-cols-2 gap-0 border-b border-border sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-0 border-b border-border sm:grid-cols-5">
                 <Metric label="Модулей" value={report.changed_modules.length} icon={FileCode} />
                 <Metric label="Рёбер impact" value={report.total_impact_edges} icon={GitBranch} />
                 <Metric label="Findings" value={findingsTotal} icon={ShieldAlert} />
+                <Metric label="Не измерено" value={unmeasuredTotal} icon={AlertTriangle} />
                 <Metric
                   label="Hotspots"
                   value={report.modules.reduce((sum, item) => sum + item.impacted_hotspots.length, 0)}
@@ -230,6 +235,8 @@ function Metric({
 function ModuleReport({ item }: { item: ReportItem }) {
   const findings = findingsOf(item)
   const risk = item.quality?.risk ?? 0
+  const impactMeasured = isImpactMeasured(item)
+  const caveat = coverageCaveat(item)
 
   return (
     <li className="px-5 py-4">
@@ -247,8 +254,8 @@ function ModuleReport({ item }: { item: ReportItem }) {
           <Badge tone={risk >= 60 ? "danger" : risk >= 40 ? "warn" : "ok"}>
             риск {risk || "—"}
           </Badge>
-          <Badge tone={item.impact_total > 0 ? "warn" : "muted"}>
-            impact {nf.format(item.impact_total)}
+          <Badge tone={!impactMeasured ? "danger" : item.impact_total > 0 ? "warn" : "muted"}>
+            {impactMeasured ? `impact ${nf.format(item.impact_total)}` : "impact не измерен"}
           </Badge>
           <Badge tone={findings.length ? "danger" : "ok"}>
             findings {findings.length}
@@ -258,7 +265,12 @@ function ModuleReport({ item }: { item: ReportItem }) {
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Panel title="Blast radius" icon={GitBranch}>
-          {item.impacted_modules.length === 0 ? (
+          {!impactMeasured ? (
+            <EmptyLine
+              icon={AlertTriangle}
+              text={caveat || "Граф не покрыл этот модуль; impact нельзя считать нулевым."}
+            />
+          ) : item.impacted_modules.length === 0 ? (
             <EmptyLine icon={CheckCircle2} text="Входящих зависимостей не найдено." />
           ) : (
             <ul className="space-y-2">
@@ -319,8 +331,21 @@ function findingsOf(item: ReportItem): StandardsFinding[] {
   return "standards_findings" in item ? item.standards_findings : []
 }
 
+function isImpactMeasured(item: ReportItem): boolean {
+  return !("impact_measured" in item) || item.impact_measured !== false
+}
+
+function coverageCaveat(item: ReportItem): string | undefined {
+  if (!("coverage_caveat" in item)) return undefined
+  return item.coverage_caveat || undefined
+}
+
 function riskLines(item: ReportItem, findings: StandardsFinding[]) {
   const lines = findings.map((finding) => finding.message)
+  const caveat = coverageCaveat(item)
+  if (!isImpactMeasured(item) && caveat) {
+    lines.unshift(caveat)
+  }
   if ("performance_risks" in item) {
     lines.push(...item.performance_risks.map((risk) => risk.detail))
   }

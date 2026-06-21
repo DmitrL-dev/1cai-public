@@ -5,6 +5,7 @@ AI ассистент для бизнес-аналитиков
 """
 
 import logging
+import re
 from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
@@ -14,7 +15,58 @@ class BusinessAnalystAgent:
     """AI агент для бизнес-аналитиков"""
 
     def __init__(self):
-        self.agent_name = "gigachat"  # TODO: Replace with real GigaChat integration
+        self.agent_name = "local-business-analyst"
+
+    def _extract_items(self, text: str) -> List[str]:
+        items: List[str] = []
+        for raw_line in text.splitlines():
+            line = raw_line.strip()
+            if not line:
+                continue
+            line = re.sub(r"^[-*•]\s*", "", line)
+            line = re.sub(r"^\d+[.)]\s*", "", line)
+            if line.lower() in {"система должна:", "требования:", "критерии приемки:"}:
+                continue
+            items.append(line)
+
+        if not items and text.strip():
+            items = [
+                part.strip()
+                for part in re.split(r"(?<=[.!?])\s+", text.strip())
+                if part.strip()
+            ]
+        return items
+
+    def _extract_acceptance_criteria(self, items: List[str]) -> List[str]:
+        markers = ("критер", "приемк", "приёмк", "acceptance", "должен", "должна")
+        return [item for item in items if any(marker in item.lower() for marker in markers)]
+
+    def _is_non_functional(self, item: str) -> bool:
+        markers = (
+            "производитель",
+            "секунд",
+            "мс",
+            "пользовател",
+            "нагруз",
+            "безопас",
+            "аудит",
+            "доступ",
+            "отказоуст",
+            "availability",
+            "performance",
+            "security",
+            "sla",
+        )
+        lower = item.lower()
+        return any(marker in lower for marker in markers)
+
+    def _source_excerpt(self, text: str) -> str:
+        return " ".join(text.split())[:240]
+
+    def _markdown_list(self, items: List[str], empty: str) -> str:
+        if not items:
+            return f"- {empty}"
+        return "\n".join(f"- {item}" for item in items)
 
     async def analyze_requirements(self, text: str) -> Dict[str, Any]:
         """
@@ -26,31 +78,45 @@ class BusinessAnalystAgent:
         Returns:
             Структурированные требования
         """
-        # TODO: Интеграция с GigaChat/YandexGPT
+        items = self._extract_items(text)
+        user_stories = await self.extract_user_stories(text)
+        acceptance_criteria = self._extract_acceptance_criteria(items)
+        non_functional = [
+            item
+            for item in items
+            if self._is_non_functional(item) and item not in acceptance_criteria
+        ]
+        functional = [
+            item
+            for item in items
+            if item not in non_functional and item not in acceptance_criteria
+        ]
+        coverage = "source_text" if text.strip() else "no_source_text"
+        caveats = []
+        if not text.strip():
+            caveats.append("Не передан текст требований; нечего извлекать.")
+        if not user_stories:
+            caveats.append("Явные user stories не найдены в источнике.")
 
-        # Placeholder
         return {
-            "functional_requirements": [
-                "Реализовать модуль продаж",
-                "Добавить отчет по товарам",
-                "Интеграция с 1С:УНФ",
-            ],
-            "non_functional_requirements": [
-                "Производительность: < 2 сек на запрос",
-                "Поддержка 100+ пользователей",
-            ],
-            "user_stories": [
-                {
-                    "as_a": "Менеджер по продажам",
-                    "i_want": "Создавать заказы клиентов",
-                    "so_that": "Отслеживать продажи",
-                }
-            ],
-            "acceptance_criteria": [
-                "Заказ создается за 3 клика",
-                "Все обязательные поля проверяются",
-                "PDF печатная форма генерируется",
-            ],
+            "agent": self.agent_name,
+            "mode": "offline_evidence_extraction",
+            "coverage": coverage,
+            "functional_requirements": functional,
+            "non_functional_requirements": non_functional,
+            "user_stories": user_stories,
+            "acceptance_criteria": acceptance_criteria,
+            "source_excerpt": self._source_excerpt(text),
+            "caveats": caveats,
+            "summary": {
+                "total_requirements": len(functional)
+                + len(non_functional)
+                + len(acceptance_criteria),
+                "functional": len(functional),
+                "non_functional": len(non_functional),
+                "acceptance_criteria": len(acceptance_criteria),
+                "user_stories": len(user_stories),
+            },
         }
 
     async def generate_technical_spec(self, requirements: str) -> str:
@@ -63,61 +129,32 @@ class BusinessAnalystAgent:
         Returns:
             Техническое задание в markdown
         """
+        analysis = await self.analyze_requirements(requirements)
         spec = f"""# Техническое задание
 
 ## 1. Цель проекта
 
-{requirements}
+{self._source_excerpt(requirements) or "Источник требований не передан."}
 
 ## 2. Функциональные требования
 
-### 2.1. Основная функциональность
-- Создание заказов клиентов
-- Формирование отчетов
-- Интеграция с внешними системами
-
-### 2.2. Пользовательский интерфейс
-- Форма создания заказа
-- Список заказов
-- Отчеты по продажам
+{self._markdown_list(analysis["functional_requirements"], "В источнике не выявлены функциональные требования.")}
 
 ## 3. Нефункциональные требования
 
-### 3.1. Производительность
-- Время отклика: < 2 секунды
-- Одновременных пользователей: до 100
+{self._markdown_list(analysis["non_functional_requirements"], "В источнике не выявлены нефункциональные требования.")}
 
-### 3.2. Безопасность
-- Ролевая модель доступа
-- Аудит операций
+## 4. User stories
 
-## 4. Интеграции
+{self._markdown_list([f"Как {story['as_a']}, я хочу {story['i_want']}, чтобы {story['so_that']}" for story in analysis["user_stories"]], "В источнике не выявлены явные user stories.")}
 
-- 1С:УНФ
-- Внешние API
+## 5. Критерии приемки
 
-## 5. Сроки и этапы
+{self._markdown_list(analysis["acceptance_criteria"], "В источнике не выявлены критерии приемки.")}
 
-| Этап | Описание | Срок |
-|------|----------|------|
-| 1 | Проектирование | 2 недели |
-| 2 | Разработка | 4 недели |
-| 3 | Тестирование | 2 недели |
-| 4 | Внедрение | 1 неделя |
+## 6. Caveats
 
-## 6. Критерии приемки
-
-- [ ] Все функции работают согласно требованиям
-- [ ] Производительность соответствует нормативам
-- [ ] Пройдены все тесты
-- [ ] Документация готова
-
-## 7. Риски
-
-| Риск | Вероятность | Влияние | Митигация |
-|------|-------------|---------|-----------|
-| Задержка интеграции | Средняя | Высокое | Параллельная разработка |
-| Изменение требований | Высокая | Среднее | Agile подход |
+{self._markdown_list(analysis["caveats"], "Caveats отсутствуют для переданного источника.")}
 """
         return spec
 
@@ -131,41 +168,24 @@ class BusinessAnalystAgent:
         Returns:
             Список user stories
         """
-        return [
-            {
-                "id": "US-1",
-                "as_a": "Менеджер по продажам",
-                "i_want": "Создавать заказы клиентов через удобную форму",
-                "so_that": "Быстро оформлять продажи и избегать ошибок",
-                "acceptance_criteria": [
-                    "Форма открывается за 1 клик",
-                    "Все поля с автозаполнением",
-                    "Валидация данных в реальном времени",
-                ],
-            },
-            {
-                "id": "US-2",
-                "as_a": "Руководитель отдела",
-                "i_want": "Видеть отчет по продажам за период",
-                "so_that": "Анализировать эффективность отдела",
-                "acceptance_criteria": [
-                    "Отчет строится за < 5 секунд",
-                    "Группировка по менеджерам и товарам",
-                    "Экспорт в Excel",
-                ],
-            },
-            {
-                "id": "US-3",
-                "as_a": "Бухгалтер",
-                "i_want": "Получать данные о продажах в 1С:Бухгалтерию",
-                "so_that": "Автоматически формировать проводки",
-                "acceptance_criteria": [
-                    "Синхронизация в режиме реального времени",
-                    "Логирование всех передач",
-                    "Обработка ошибок",
-                ],
-            },
-        ]
+        pattern = re.compile(
+            r"как\s+(?P<as_a>[^,.]+)[,]?\s+я\s+хочу\s+"
+            r"(?P<i_want>.*?)(?:,\s*чтобы\s+(?P<so_that>[^.]+))?(?:\.|$)",
+            re.IGNORECASE | re.DOTALL,
+        )
+        stories = []
+        for idx, match in enumerate(pattern.finditer(requirements), 1):
+            stories.append(
+                {
+                    "id": f"US-{idx}",
+                    "as_a": " ".join(match.group("as_a").split()),
+                    "i_want": " ".join(match.group("i_want").split()),
+                    "so_that": " ".join((match.group("so_that") or "").split()),
+                    "acceptance_criteria": [],
+                    "coverage": "explicit_source_story",
+                }
+            )
+        return stories
 
     async def analyze_business_process(
         self, process_description: str
@@ -179,42 +199,30 @@ class BusinessAnalystAgent:
         Returns:
             Структурированный анализ
         """
+        items = self._extract_items(process_description)
+        stories = await self.extract_user_stories(process_description)
+        actors = sorted({story["as_a"] for story in stories if story.get("as_a")})
+        steps = [
+            {"step": idx, "actor": None, "action": item, "system": None}
+            for idx, item in enumerate(items, 1)
+        ]
+        bpmn_lines = ["```plantuml", "@startuml", "start"]
+        for item in items[:12]:
+            bpmn_lines.append(f":{item.replace(':', ' -')};")
+        bpmn_lines.extend(["stop", "@enduml", "```"])
         return {
-            "process_name": "Оформление заказа клиента",
-            "actors": ["Менеджер по продажам", "Клиент", "Склад", "Бухгалтерия"],
-            "steps": [
-                {
-                    "step": 1,
-                    "actor": "Клиент",
-                    "action": "Отправляет заявку",
-                    "system": "CRM",
-                },
-                {
-                    "step": 2,
-                    "actor": "Менеджер",
-                    "action": "Создает заказ в 1С",
-                    "system": "1С:УПП",
-                },
-                {
-                    "step": 3,
-                    "actor": "Склад",
-                    "action": "Резервирует товар",
-                    "system": "1С:WMS",
-                },
-                {
-                    "step": 4,
-                    "actor": "Бухгалтерия",
-                    "action": "Формирует счет",
-                    "system": "1С:Бухгалтерия",
-                },
+            "agent": self.agent_name,
+            "mode": "offline_evidence_extraction",
+            "coverage": "source_text" if process_description.strip() else "no_source_text",
+            "process_name": "Процесс из переданного описания",
+            "actors": actors,
+            "steps": steps,
+            "bottlenecks": [],
+            "improvements": [],
+            "bpmn_diagram": "\n".join(bpmn_lines),
+            "caveats": [
+                "Bottlenecks и improvements не вычисляются без метрик, интервью или event log."
             ],
-            "bottlenecks": ["Ручной ввод данных заказа", "Проверка наличия товара"],
-            "improvements": [
-                "Автоматический импорт заявок из CRM",
-                "Интеграция с системой управления складом",
-                "Электронная подпись документов",
-            ],
-            "bpmn_diagram": "```plantuml\n@startuml\nstart\n:Клиент отправляет заявку;\n:Менеджер создает заказ;\n:Склад резервирует товар;\n:Бухгалтерия формирует счет;\nstop\n@enduml\n```",
         }
 
     async def generate_use_cases(self, feature: str) -> str:
@@ -227,29 +235,25 @@ class BusinessAnalystAgent:
         Returns:
             PlantUML код диаграммы
         """
-        return """@startuml
-left to right direction
-actor "Менеджер" as manager
-actor "Клиент" as client
-actor "Бухгалтер" as accountant
-
-rectangle "Система продаж" {
-  usecase "Создать заказ" as UC1
-  usecase "Просмотреть заказы" as UC2
-  usecase "Сформировать счет" as UC3
-  usecase "Отправить email" as UC4
-  usecase "Оплатить заказ" as UC5
-}
-
-manager --> UC1
-manager --> UC2
-manager --> UC3
-client --> UC5
-accountant --> UC3
-UC1 ..> UC4 : <<include>>
-UC5 ..> UC3 : <<extend>>
-
-@enduml"""
+        stories = await self.extract_user_stories(feature)
+        actor_labels = [story["as_a"] for story in stories] or ["Пользователь"]
+        use_case_labels = [story["i_want"] for story in stories] or [
+            self._source_excerpt(feature) or "Уточнить сценарий"
+        ]
+        lines = [
+            "@startuml",
+            "left to right direction",
+        ]
+        for idx, actor in enumerate(actor_labels, 1):
+            lines.append(f'actor "{actor.replace(chr(34), "")}" as actor{idx}')
+        lines.append('rectangle "Граница функции из источника" {')
+        for idx, use_case in enumerate(use_case_labels, 1):
+            lines.append(f'  usecase "{use_case.replace(chr(34), "")}" as UC{idx}')
+        lines.append("}")
+        for idx in range(1, len(use_case_labels) + 1):
+            lines.append(f"actor1 --> UC{idx}")
+        lines.append("@enduml")
+        return "\n".join(lines)
 
 
 # Example usage

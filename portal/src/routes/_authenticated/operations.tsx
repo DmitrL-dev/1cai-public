@@ -1,6 +1,6 @@
 import { useState } from "react"
 import type { ReactNode } from "react"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Link } from "@tanstack/react-router"
 import { useMutation } from "@tanstack/react-query"
 import {
   Activity,
@@ -165,6 +165,12 @@ function IncidentReport({ report }: { report: IncidentReportResponse }) {
           </Badge>
           <Badge tone="muted">score {report.decision.severity_score}</Badge>
           <Badge tone="muted">risk {report.decision.max_module_risk}</Badge>
+          <Link
+            to="/lock-radar"
+            className="inline-flex h-7 items-center justify-center rounded-md border border-border bg-background px-2 text-xs font-semibold text-card-foreground transition hover:bg-accent"
+          >
+            Lock Radar
+          </Link>
         </div>
       </div>
 

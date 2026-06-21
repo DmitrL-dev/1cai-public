@@ -12,10 +12,12 @@ AI-оптимизация SQL запросов для 1С (PostgreSQL, MS SQL)
 
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+SQL_EVIDENCE_CONTRACT = "sql_optimizer_evidence_contract"
 
 
 @dataclass
@@ -29,6 +31,8 @@ class SQLOptimization:
     explanation: str
     expected_improvement: str
     source: str  # ITS, Infostart, PostgreSQL, MSSQL
+    rewrite_status: str = "guidance_only"  # rewritten, guidance_only, needs_evidence
+    evidence_required: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -86,7 +90,7 @@ class SQLOptimizer:
                 "optimized_query": "...",
                 "optimizations": [...],
                 "index_recommendations": [...],
-                "expected_improvement": "50-80% faster",
+                "expected_improvement": "requires EXPLAIN/ANALYZE validation",
                 "confidence": 0.85
             }
         """
@@ -117,15 +121,24 @@ class SQLOptimizer:
         )
 
         return {
+            "mode": SQL_EVIDENCE_CONTRACT,
+            "coverage": self._query_coverage(context),
             "original_query": query,
             "optimized_query": optimized_query,
-            "optimizations": optimizations,
-            "index_recommendations": index_recommendations,
+            "rewrite_status": self._rewrite_status(optimizations, query, optimized_query),
+            "optimizations": [asdict(item) for item in optimizations],
+            "index_recommendations": [asdict(item) for item in index_recommendations],
             "anti_patterns_found": anti_patterns_found,
             "expected_improvement": improvement["description"],
             "speedup_factor": improvement["factor"],
             "confidence": improvement["confidence"],
             "sources": self._get_sources_used(optimizations),
+            "improvement_measured": improvement["measured"],
+            "required_evidence": self._required_evidence(context),
+            "caveats": [
+                "Query rewrites are applied only when the local parser can prove a safe transformation.",
+                "Performance improvement is not claimed without EXPLAIN/ANALYZE or before/after benchmark.",
+            ],
         }
 
     # ==========================================
@@ -300,8 +313,10 @@ class SQLOptimizer:
                 current_query=query,
                 optimized_query=optimized,
                 explanation="Замените SELECT * на явный список нужных столбцов",
-                expected_improvement="10-30% меньше данных передается",
+                expected_improvement="Зависит от ширины строк и числа реально нужных колонок; подтвердить планом выполнения",
                 source="PostgreSQL Best Practices",
+                rewrite_status="guidance_only",
+                evidence_required=["table schema", "required output columns"],
             )
 
         # NO WHERE → Add filtering
@@ -312,8 +327,10 @@ class SQLOptimizer:
                 current_query=query,
                 optimized_query=query + "\nWHERE условие_фильтрации",
                 explanation="Добавьте WHERE clause для фильтрации данных",
-                expected_improvement="100x-1000x ускорение на больших таблицах",
+                expected_improvement="Требует кардинальности таблиц и селективности фильтра",
                 source="ITS + Infostart",
+                rewrite_status="needs_evidence",
+                evidence_required=["business filter", "table cardinality", "EXPLAIN ANALYZE"],
             )
 
         # N+1 → JOIN or temp table
@@ -322,23 +339,33 @@ class SQLOptimizer:
                 issue_type="N_PLUS_ONE",
                 severity="critical",
                 current_query=query,
-                optimized_query=self._convert_n_plus_one_to_join(query),
+                optimized_query=query,
                 explanation="Замените цикл с запросами на один JOIN или временную таблицу",
-                expected_improvement="N раз ускорение (N = количество итераций)",
+                expected_improvement="Зависит от числа итераций, сетевых round-trip и плана нового запроса",
                 source="ITS (its.1c.ru/db/metod8dev/)",
+                rewrite_status="needs_evidence",
+                evidence_required=[
+                    "loop body",
+                    "table relationships",
+                    "iteration count",
+                    "before/after benchmark",
+                ],
             )
 
         # MULTIPLE OR → IN
         elif pattern_type == "MULTIPLE_OR":
             optimized = self._convert_or_to_in(query)
+            rewrite_status = "rewritten" if optimized != query else "needs_evidence"
             return SQLOptimization(
                 issue_type="MULTIPLE_OR",
                 severity="medium",
                 current_query=query,
                 optimized_query=optimized,
                 explanation="Замените множественные OR на IN",
-                expected_improvement="20-40% ускорение",
+                expected_improvement="План-зависимо; проверить EXPLAIN/ANALYZE на продуктивной статистике",
                 source="PostgreSQL + MS SQL",
+                rewrite_status=rewrite_status,
+                evidence_required=[] if rewrite_status == "rewritten" else ["SQL AST or normalized predicate"],
             )
 
         # FUNCTION IN WHERE → Computed column or materialized view
@@ -347,10 +374,12 @@ class SQLOptimizer:
                 issue_type="FUNCTION_IN_WHERE",
                 severity="high",
                 current_query=query,
-                optimized_query=self._remove_function_from_where(query),
+                optimized_query=query,
                 explanation="Вычисляйте функции заранее или используйте computed columns",
-                expected_improvement="10x-100x (индексы станут работать)",
+                expected_improvement="Требует индекса, статистики и сравнения плана выполнения",
                 source="PostgreSQL Best Practices",
+                rewrite_status="needs_evidence",
+                evidence_required=["table schema", "index definitions", "EXPLAIN ANALYZE"],
             )
 
         # NOT IN → NOT EXISTS
@@ -360,43 +389,55 @@ class SQLOptimizer:
                 issue_type="NOT_IN_WITH_NULLS",
                 severity="high",
                 current_query=query,
-                optimized_query=optimized,
+                optimized_query=query,
                 explanation="Замените NOT IN на NOT EXISTS для безопасности и производительности",
-                expected_improvement="Корректные результаты + 30% ускорение",
+                expected_improvement="Корректность при NULL важнее; производительность зависит от плана",
                 source="PostgreSQL Best Practices",
+                rewrite_status="needs_evidence",
+                evidence_required=["subquery schema", "NULL policy", "EXPLAIN ANALYZE"],
             )
 
         return None
 
     def _convert_n_plus_one_to_join(self, query: str) -> str:
         """Конвертация N+1 в JOIN"""
-        # Simplified example
-        return """
--- ОПТИМИЗИРОВАННО: Один запрос вместо N
-SELECT
-    t1.колонка,
-    t2.связанная_колонка
-FROM таблица1 t1
-JOIN таблица2 t2 ON t1.id = t2.foreign_id
-WHERE t1.условие
-        """.strip()
+        return query
 
     def _convert_or_to_in(self, query: str) -> str:
         """Конвертация множественных OR в IN"""
-        # Pattern: WHERE column = val1 OR column = val2 OR ...
-        # Replace with: WHERE column IN (val1, val2, ...)
+        where_match = re.search(
+            r"\bWHERE\b\s+(?P<where>.*?)(?P<suffix>\bGROUP\s+BY\b|\bORDER\s+BY\b|\bLIMIT\b|$)",
+            query,
+            re.IGNORECASE | re.DOTALL,
+        )
+        if not where_match:
+            return query
 
-        # Simplified - в реальности нужен парсинг AST
-        or_pattern = r"(\w+)\s*=\s*([^O]+?)\s+OR\s+\1\s*=\s*([^O]+?)\s+OR"
+        where_clause = where_match.group("where").strip()
+        terms = [term.strip().strip("()") for term in re.split(r"\s+OR\s+", where_clause, flags=re.IGNORECASE)]
+        if len(terms) < 2:
+            return query
 
-        match = re.search(or_pattern, query)
-        if match:
-            match.group(1)
-            # Собираем все значения
-            optimized = query  # TODO: Real conversion
-            return optimized
+        column = None
+        values = []
+        for term in terms:
+            match = re.fullmatch(
+                r"(?P<column>(?:\w+\.)?\w+)\s*=\s*(?P<value>'[^']*'|\"[^\"]*\"|:[A-Za-z_]\w*|[A-Za-z0-9_.-]+)",
+                term,
+                re.IGNORECASE,
+            )
+            if not match:
+                return query
+            term_column = match.group("column")
+            if column is None:
+                column = term_column
+            elif term_column.lower() != column.lower():
+                return query
+            values.append(match.group("value"))
 
-        return query + "\n-- TODO: Конвертировать OR в IN"
+        in_clause = f"{column} IN ({', '.join(values)})"
+        start, end = where_match.span("where")
+        return f"{query[:start]}{in_clause} {query[end:]}".rstrip()
 
     def _remove_function_from_where(self, query: str) -> str:
         """Убрать функцию из WHERE"""
@@ -445,7 +486,7 @@ WHERE t1.условие
                 columns=[join_info["column"]],
                 index_type="btree",
                 rationale=f"JOIN на {join_info['column']} будет использовать индекс",
-                estimated_speedup="5x-50x для JOIN operations",
+                estimated_speedup="requires EXPLAIN/ANALYZE validation",
                 create_statement=f"CREATE INDEX idx_{join_info['table']}_{join_info['column']} ON {join_info['table']}({join_info['column']});",
             )
             recommendations.append(rec)
@@ -464,7 +505,7 @@ WHERE t1.условие
                     columns=columns,
                     index_type="btree",
                     rationale="Composite index для множественных WHERE условий",
-                    estimated_speedup="10x-100x",
+                    estimated_speedup="requires EXPLAIN/ANALYZE validation",
                     create_statement=f"CREATE INDEX idx_{table}_composite ON {table}({', '.join(columns)});",
                 )
                 recommendations.append(rec)
@@ -496,7 +537,7 @@ WHERE t1.условие
             columns=columns,
             index_type=index_type,
             rationale=rationale,
-            estimated_speedup="10x-1000x (зависит от размера таблицы)",
+            estimated_speedup="requires EXPLAIN/ANALYZE validation",
             create_statement=f"CREATE INDEX idx_{table}_{'_'.join(columns)} ON {table} USING {index_type} ({', '.join(columns)});",
         )
 
@@ -515,7 +556,7 @@ WHERE t1.условие
         where_clause = where_match.group(1)
 
         # Ищем паттерн: table.column operator value
-        pattern = r"(\w+)\.(\w+)\s*(=|>|<|>=|<=|LIKE|IN)\s*"
+        pattern = r"(\w+)\.(\w+)\s*(>=|<=|=|>|<|LIKE|IN)\s*"
         matches = re.findall(pattern, where_clause, re.IGNORECASE)
 
         return [
@@ -692,9 +733,11 @@ WHERE t1.условие
 
         for opt in optimizations:
             # Применяем оптимизацию
-            # В реальности нужен SQL AST parser и rewriter
-            # Пока просто берем optimized_query из первой оптимизации
-            if opt.optimized_query and opt.optimized_query != query:
+            if (
+                opt.rewrite_status == "rewritten"
+                and opt.optimized_query
+                and opt.optimized_query != query
+            ):
                 optimized = opt.optimized_query
                 break  # Берем первую существенную оптимизацию
 
@@ -719,30 +762,54 @@ WHERE t1.условие
             severity_impact.get(ap["severity"], 1.0) for ap in anti_patterns
         )
 
-        # Speedup factor estimation
-        if total_impact >= 15:
-            factor = "10x-100x"
-            description = "Критические оптимизации, ожидается 10-100x ускорение"
-            confidence = 0.9
-        elif total_impact >= 8:
-            factor = "3x-10x"
-            description = "Существенные оптимизации, ожидается 3-10x ускорение"
-            confidence = 0.8
-        elif total_impact >= 3:
-            factor = "2x-3x"
-            description = "Умеренные оптимизации, ожидается 2-3x ускорение"
-            confidence = 0.7
-        else:
-            factor = "1.2x-2x"
-            description = "Небольшие улучшения, ожидается 20-100% ускорение"
-            confidence = 0.6
+        has_plan = bool(context and (context.get("explain_plan") or context.get("explain_analyze")))
+        has_stats = bool(context and context.get("table_stats"))
+        confidence = 0.45 if has_plan and has_stats else 0.25 if has_plan else 0.0
+        description = (
+            "Potential impact detected from SQL anti-patterns; speedup requires EXPLAIN/ANALYZE or before/after benchmark."
+        )
 
         return {
-            "factor": factor,
+            "factor": "not_measured",
             "description": description,
             "confidence": confidence,
             "total_impact_score": total_impact,
+            "measured": False,
         }
+
+    def _query_coverage(self, context: Optional[Dict]) -> str:
+        if not context:
+            return "query_text_only"
+        parts = ["query_text"]
+        if context.get("explain_plan") or context.get("explain_analyze"):
+            parts.append("execution_plan")
+        if context.get("table_stats"):
+            parts.append("table_stats")
+        if context.get("indexes"):
+            parts.append("index_metadata")
+        return "+".join(parts)
+
+    def _rewrite_status(
+        self, optimizations: List[SQLOptimization], query: str, optimized_query: str
+    ) -> str:
+        if optimized_query != query:
+            return "rewritten"
+        if any(item.rewrite_status == "needs_evidence" for item in optimizations):
+            return "needs_evidence"
+        if optimizations:
+            return "guidance_only"
+        return "no_change"
+
+    def _required_evidence(self, context: Optional[Dict]) -> List[str]:
+        required = []
+        context = context or {}
+        if not (context.get("explain_plan") or context.get("explain_analyze")):
+            required.append("EXPLAIN/ANALYZE plan")
+        if not context.get("table_stats"):
+            required.append("table cardinality and statistics")
+        if not context.get("indexes"):
+            required.append("current index definitions")
+        return required
 
     def _get_sources_used(self, optimizations: List[SQLOptimization]) -> List[str]:
         """Список использованных источников"""
@@ -768,6 +835,19 @@ WHERE t1.условие
         Returns:
             Рекомендованные параметры конфигурации
         """
+        required = [key for key in ("ram_gb", "cpu_cores") if key not in system_resources]
+        if required:
+            return {
+                "status": "needs_evidence",
+                "mode": SQL_EVIDENCE_CONTRACT,
+                "database": database_type,
+                "recommended_config": {},
+                "required_evidence": required,
+                "caveats": [
+                    "Database configuration is not generated from default hardware assumptions."
+                ],
+            }
+
         if database_type == "postgresql":
             return await self._recommend_postgresql_config(system_resources)
         elif database_type == "mssql":
@@ -781,8 +861,8 @@ WHERE t1.условие
 
         Source: postgrespro.ru + PostgreSQL docs
         """
-        ram_gb = resources.get("ram_gb", 8)
-        cpu_cores = resources.get("cpu_cores", 4)
+        ram_gb = resources["ram_gb"]
+        cpu_cores = max(int(resources["cpu_cores"]), 1)
         is_ssd = resources.get("ssd", False)
 
         # Расчет параметров по формулам из PostgreSQL wiki
@@ -818,6 +898,8 @@ WHERE t1.условие
         )
 
         return {
+            "status": "success",
+            "mode": SQL_EVIDENCE_CONTRACT,
             "database": "PostgreSQL",
             "system_resources": resources,
             "recommended_config": config,
@@ -826,7 +908,10 @@ WHERE t1.условие
                 "https://postgrespro.ru/education/courses/QPT",
                 "https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server",
             ],
-            "estimated_improvement": "30-50% overall performance improvement",
+            "estimated_improvement": "not_measured_requires_benchmark",
+            "caveats": [
+                "Configuration formula uses supplied hardware only; validate with production workload."
+            ],
         }
 
     def _generate_postgresql_conf(self, config: Dict) -> str:
@@ -841,7 +926,7 @@ WHERE t1.условие
 
     async def _recommend_mssql_config(self, resources: Dict) -> Dict[str, Any]:
         """Рекомендации по MS SQL конфигурации"""
-        ram_gb = resources.get("ram_gb", 8)
+        ram_gb = resources["ram_gb"]
 
         # MS SQL settings
         max_server_memory_mb = int(ram_gb * 1024 * 0.8)  # 80% RAM for SQL Server
@@ -855,10 +940,16 @@ WHERE t1.условие
         }
 
         return {
+            "status": "success",
+            "mode": SQL_EVIDENCE_CONTRACT,
             "database": "MS SQL Server",
+            "system_resources": resources,
             "recommended_config": config,
             "sources": ["Microsoft Learn - SQL Server Performance"],
-            "estimated_improvement": "20-40% overall performance",
+            "estimated_improvement": "not_measured_requires_benchmark",
+            "caveats": [
+                "Configuration formula uses supplied hardware only; validate with production workload."
+            ],
         }
 
     # ==========================================

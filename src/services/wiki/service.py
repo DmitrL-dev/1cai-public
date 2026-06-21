@@ -3,11 +3,13 @@ Wiki Service Implementation
 Handles logic for page management, versioning, rendering, and advanced features (Blueprints, AI)
 """
 
+import inspect
+import re
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-from src.database import get_db_connection
+from src.infrastructure.db.connection import get_db_connection
 from src.utils.structured_logging import StructuredLogger
 
 # Import DTOs
@@ -19,6 +21,8 @@ from .renderer import WikiRenderer
 
 logger = StructuredLogger(__name__).logger
 
+_WORD_RE = re.compile(r"[A-Za-zА-Яа-я0-9_]{3,}", re.IGNORECASE)
+
 
 class WikiService:
     """
@@ -27,7 +31,7 @@ class WikiService:
 
     def __init__(self, db_session=None):
         self.renderer = WikiRenderer()
-        # Stub Qdrant integration for now
+        # Optional semantic index. When absent, Wiki answers stay lexical and caveated.
         self.qdrant = None
 
     async def get_page(
@@ -38,7 +42,7 @@ class WikiService:
         """
         query = """
             SELECT
-                p.id, p.slug, p.title, p.namespace_id, p.version, p.created_at, p.updated_at,
+                p.id, p.slug, p.title, p.namespace_id, p.current_revision_id, p.version, p.created_at, p.updated_at,
                 r.content
             FROM wiki_pages p
             LEFT JOIN wiki_revisions r ON p.current_revision_id = r.id
@@ -49,7 +53,7 @@ class WikiService:
         if version:
             query = """
                 SELECT
-                    p.id, p.slug, p.title, p.namespace_id, p.version, p.created_at, p.updated_at,
+                    p.id, p.slug, p.title, p.namespace_id, p.current_revision_id, p.version, p.created_at, p.updated_at,
                     r.content
                 FROM wiki_pages p
                 JOIN wiki_revisions r ON r.page_id = p.id
@@ -72,9 +76,9 @@ class WikiService:
             page_dto = PageDTO(
                 id=row["id"],
                 slug=row["slug"],
-                namespace="default",  # STUB
+                namespace=row["namespace_id"] or "default",
                 title=row["title"],
-                current_revision_id="stub",
+                current_revision_id=str(row["current_revision_id"] or ""),
                 version=row["version"],
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
@@ -96,14 +100,12 @@ class WikiService:
         page_id = str(uuid.uuid4())
         revision_id = str(uuid.uuid4())
 
-        # If namespace is not a valid UUID (e.g. "default"), treat it as a name or handle properly
-        # For now, if it looks like a UUID, use it; otherwise generate a stub ID or lookup.
+        # Resolve human namespace names to deterministic IDs for offline/local usage.
         try:
             uuid.UUID(data.namespace)
             namespace_id = data.namespace
         except (ValueError, AttributeError):
-            # Fallback for legacy/test calls
-            namespace_id = str(uuid.uuid4())
+            namespace_id = str(uuid.uuid5(uuid.NAMESPACE_URL, f"wiki:{data.namespace}"))
 
         async with get_db_connection() as conn:
             async with conn.transaction():
@@ -133,10 +135,14 @@ class WikiService:
                     author_id,
                 )
 
-                # 3. Index in Qdrant (Stub)
                 if self.qdrant:
-                    # await self.qdrant.index_page(...)
-                    logger.debug("Qdrant indexing skipped (not configured)")
+                    index_page = getattr(self.qdrant, "index_page", None)
+                    if index_page:
+                        result = index_page(page_id, data.title, content)
+                        if inspect.isawaitable(result):
+                            await result
+                    else:
+                        logger.debug("Wiki semantic index adapter has no index_page method")
 
         logger.info(f"Created wiki page: {data.title}", extra={"author_id": author_id})
 
@@ -221,7 +227,7 @@ class WikiService:
         """
         query = """
             SELECT
-                id, slug, title, namespace_id, version, created_at, updated_at
+                id, slug, title, namespace_id, current_revision_id, version, created_at, updated_at
             FROM wiki_pages
             WHERE is_deleted = FALSE
             ORDER BY updated_at DESC
@@ -235,9 +241,9 @@ class WikiService:
                 PageDTO(
                     id=row["id"],
                     slug=row["slug"],
-                    namespace="default",  # Stub
+                    namespace=row["namespace_id"] or "default",
                     title=row["title"],
-                    current_revision_id="stub",
+                    current_revision_id=str(row["current_revision_id"] or ""),
                     version=row["version"],
                     created_at=row["created_at"],
                     updated_at=row["updated_at"],
@@ -251,12 +257,125 @@ class WikiService:
         """
         return self.renderer.render(markdown)
 
-    async def ask_wiki(self, query: str) -> Dict[str, str]:
-        """
-        AI RAG Chatbot stub (Ask Wiki).
-        """
-        logger.info("Asking Wiki: %s", query)
+    async def ask_wiki(self, query: str) -> Dict[str, Any]:
+        """Answer from local wiki evidence without inventing missing facts."""
+        clean_query = " ".join(str(query or "").split())[:500]
+        logger.info("Asking Wiki: %s", clean_query)
+
+        if not clean_query:
+            return {
+                "answer": "Ask Wiki needs a non-empty question before it can search local evidence.",
+                "sources": [],
+                "evidence": [],
+                "mode": "offline-evidence-search",
+                "coverage": "no_query",
+                "caveats": ["No query text was provided."],
+            }
+
+        caveats: list[str] = []
+        try:
+            evidence = await self._search_local_pages(clean_query, limit=5)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Wiki evidence search failed: %s", exc)
+            evidence = []
+            caveats.append(f"Wiki evidence search failed: {exc}")
+
+        if not evidence:
+            caveats.append(
+                "No local wiki pages matched the question; answer is intentionally not invented."
+            )
+            return {
+                "answer": (
+                    "No local wiki evidence was found for this question. "
+                    "I will not invent a RAG answer; add or sync a wiki page, then ask again."
+                ),
+                "sources": [],
+                "evidence": [],
+                "mode": "offline-evidence-search",
+                "coverage": "no_local_evidence",
+                "caveats": caveats,
+            }
+
         return {
-            "answer": "This is a stub answer from the AI RAG system based on your query.",
-            "sources": ["/wiki/pages/architecture-overview", "/wiki/pages/api-docs"],
+            "answer": self._build_evidence_answer(clean_query, evidence),
+            "sources": [item["source"] for item in evidence],
+            "evidence": evidence,
+            "mode": "offline-evidence-search",
+            "coverage": "local_wiki_evidence",
+            "caveats": caveats,
         }
+
+    async def _search_local_pages(self, query: str, limit: int = 5) -> list[dict[str, Any]]:
+        terms = self._tokens(query)
+        if not terms:
+            return []
+
+        sql = """
+            SELECT p.slug, p.title, p.namespace_id, p.updated_at, r.content
+            FROM wiki_pages p
+            LEFT JOIN wiki_revisions r ON p.current_revision_id = r.id
+            WHERE p.is_deleted = FALSE
+            ORDER BY p.updated_at DESC
+            LIMIT 200
+        """
+        async with get_db_connection() as conn:
+            rows = await conn.fetch(sql)
+
+        scored: list[dict[str, Any]] = []
+        for row in rows:
+            content = row["content"] or ""
+            haystack = f"{row['title']} {row['slug']} {content}"
+            score = self._score_text(terms, haystack)
+            if score <= 0:
+                continue
+            scored.append(
+                {
+                    "title": row["title"],
+                    "slug": row["slug"],
+                    "namespace": row["namespace_id"] or "default",
+                    "score": score,
+                    "snippet": self._snippet(content or row["title"], terms),
+                    "source": f"/wiki/pages/{row['slug']}",
+                    "updated_at": row["updated_at"].isoformat()
+                    if row["updated_at"]
+                    else None,
+                }
+            )
+
+        scored.sort(key=lambda item: item["score"], reverse=True)
+        return scored[:limit]
+
+    def _build_evidence_answer(self, query: str, evidence: list[dict[str, Any]]) -> str:
+        lead = (
+            f"Found {len(evidence)} local wiki source(s) for: {query}. "
+            "Use this as an evidence map, not as an invented summary."
+        )
+        lines = [
+            f"- {item['title']}: {item['snippet']} ({item['source']})"
+            for item in evidence[:3]
+        ]
+        return "\n".join([lead, *lines])
+
+    def _tokens(self, text: str) -> set[str]:
+        return {token.lower() for token in _WORD_RE.findall(text or "")}
+
+    def _score_text(self, terms: set[str], text: str) -> float:
+        haystack = " ".join(_WORD_RE.findall(text or "")).lower()
+        if not haystack:
+            return 0.0
+        matches = sum(1 for term in terms if term in haystack)
+        return round(matches / max(len(terms), 1), 3)
+
+    def _snippet(self, content: str, terms: set[str], limit: int = 220) -> str:
+        compact = " ".join(str(content or "").split())
+        if not compact:
+            return ""
+        lower = compact.lower()
+        first_hit = min((lower.find(term) for term in terms if term in lower), default=0)
+        start = max(first_hit - 70, 0)
+        snippet = compact[start : start + limit].strip()
+        if start > 0:
+            snippet = "..." + snippet
+        if start + limit < len(compact):
+            snippet += "..."
+        return snippet

@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from src.api._rentgen_store import store_or_none
 from src.services.bsl_diagnostics import analyze_bsl
+from src.services.rentgen.change_plan import COVERAGE_IN_GRAPH, impact_coverage
 from src.services.rentgen.standards_review import (
     STANDARDS_CATALOG,
     list_standards_findings,
@@ -101,6 +102,9 @@ class ReviewDiffItem(BaseModel):
     impacted_modules: list[dict]
     impacted_hotspots: list[dict]
     standards_findings: list[StandardsFinding] = Field(default_factory=list)
+    impact_measured: bool = True
+    coverage: str = "in_graph"
+    coverage_caveat: str | None = None
 
 
 class ReviewDiffResponse(BaseModel):
@@ -355,6 +359,7 @@ def review_diff(req: ReviewDiffRequest):
     items: list[ReviewDiffItem] = []
     total_edges = 0
     total_findings = 0
+    unmeasured_modules: list[str] = []
 
     for module_path in changed_modules:
         quality = store.get_module_risk(module_path)
@@ -363,6 +368,10 @@ def review_diff(req: ReviewDiffRequest):
             max_depth=req.max_depth,
             max_edges=req.max_edges,
         )
+        coverage, coverage_caveat = impact_coverage(impact)
+        impact_measured = coverage == COVERAGE_IN_GRAPH
+        if not impact_measured:
+            unmeasured_modules.append(module_path)
         impacted_module_names = [m["module"] for m in impact["impacted_modules"]]
         impacted_hotspots = store.hotspots_for_graph_modules(
             impacted_module_names,
@@ -391,7 +400,20 @@ def review_diff(req: ReviewDiffRequest):
                 impacted_modules=impact["impacted_modules"][:50],
                 impacted_hotspots=impacted_hotspots,
                 standards_findings=findings,
+                impact_measured=impact_measured,
+                coverage=coverage,
+                coverage_caveat=coverage_caveat,
             )
+        )
+
+    caveats = [
+        "Diff review uses added lines only for Micro-Swarm; full-file review needs source checkout access.",
+        "Impact is based on the high-precision Rentgen graph and may miss dynamic calls.",
+    ]
+    if unmeasured_modules:
+        caveats.append(
+            "Impact was not measured for "
+            f"{len(unmeasured_modules)} changed module(s); impact_total=0 means no graph data, not safe."
         )
 
     return ReviewDiffResponse(
@@ -399,10 +421,7 @@ def review_diff(req: ReviewDiffRequest):
         modules=items,
         total_impact_edges=total_edges,
         total_findings=total_findings,
-        caveats=[
-            "Diff review uses added lines only for Micro-Swarm; full-file review needs source checkout access.",
-            "Impact is based on the high-precision Рентген graph and may miss dynamic calls.",
-        ],
+        caveats=caveats,
     )
 
 

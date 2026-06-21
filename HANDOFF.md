@@ -8,6 +8,41 @@
 
 ## 0. TL;DR
 
+> **Current truth, 2026-06-19.** Этот handoff ниже содержит исторические записи 2026-06-15. Живой
+> репозиторий сейчас на ветке `public-snapshot` (commit `6b4bc99b`), а не на старой
+> `feat/rentgen-sqlite-engine`. P0 hardening начат: dev-start задает локальный JWT secret,
+> `GET /health` стал быстрым liveness, deep probe переехал на `/health/deep`, Dev Mode в портале
+> получает настоящий JWT через `/api/v1/auth/token`, а Change Impact/diff-review/Test Factory/Release Readiness
+> протаскивают `impact_measured`, `coverage` и `coverage_caveat`, поэтому непокрытый impact больше не выглядит
+> безопасным нулем. `GET /api/v1/rentgen/build` совпадает с portal `rentgenApi.build` и остается lightweight
+> проверкой готовности prebuilt SQLite store. Следующий слой уже в коде: role-based Home с complete demo
+> story, markdown role reports, Buyer Brief/Buyer Pulse room bridges для buyer/deal/value/trust маршрутов,
+> `GET /api/v1/management/demo`, `GET /api/v1/management/role-report/{role}`,
+> `POST /api/v1/management/intake/plan` и Query Surgeon правило `join-field-null-guard` для LEFT JOIN
+> полей без `ЕстьNULL`/`ЕСТЬ NULL`. Platform Doctor v1 добавлен как `/platform-doctor` и
+> `GET /api/v1/platform-doctor/analyze`: локальный inventory версии платформы, совместимости, СУБД,
+> техжурнала, OpenMetrics, лицензий, расширений и upgrade checklist. Lock Radar v1 добавлен как
+> `/lock-radar` и `POST /api/v1/lock-radar/analyze`: `TLOCK`/`TTIMEOUT`/`TDEADLOCK`, affected modules,
+> test gaps, actions и runbook; Evidence Bundle может включать его как опциональный артефакт. Extension Safety v1 добавлен как
+> `/extension-safety` и `POST /api/v1/extension-safety/analyze`: CFE/EDT-расширения, права,
+> privileged mode, write hooks, borrowed objects, impact и test gaps; Evidence Bundle может включать его как
+> опциональный артефакт. Vendor Portfolio v1 добавлен как
+> `/vendor-portfolio` и `GET /api/v1/vendor-portfolio/audit`: pre-sale audit pack для клиента с
+> executive risk, intake, platform readiness, work packages, caveats и markdown; `POST /api/v1/vendor-portfolio/portfolio`
+> добавляет multi-client portfolio mode для франчайзи/вендора. Update War Room v1
+> добавлен как `/update-war-room` и `POST /api/v1/update-war-room/plan`: план обновления с platform,
+> extension safety, release impact, tests, rollback/evidence и caveats. Rights & RLS Simulator v1
+> добавлен как `/rights-rls` и `GET /api/v1/rights-rls/analyze`: role/object/action matrix,
+> dangerous rights, conservative RLS detection и release security gate. Value Packs Center v1 добавлен
+> как `/value-packs` и `GET /api/v1/value-packs/catalog`: покупаемые role/product packs с deliverables,
+> proof, route links, maturity и licensing story без обязательной токенной подписки. Business Case v1
+> добавлен как `/business-case` и `POST /api/v1/business-case/build`: money map, AI subscription
+> displacement, buyer committee, objections, offer stack и 30/60/90 rollout. Productization Console v1
+> добавлен как `/productization`: readiness, SBOM, offline manifest/archive build and verify поверх
+> `/api/v1/productization`. Evidence Bundle v1
+> добавлен как `/evidence-bundle` и `POST /api/v1/evidence-bundle/build`: JSON/Markdown артефакты,
+> caveats и SHA-256 manifest для approval, КП и внутреннего аудита.
+
 - **Что это.** AI-платформа для разработки на 1С. Продуктовый фронтир — **1С:Рентген**: token-free
   «рентген» конфигурации (граф вызовов всей конфигурации + оценки качества + объяснимый риск),
   работающий **внутри закрытого контура без интернета**. Это и есть стратегический ров: туда не
@@ -59,13 +94,24 @@ C:\Python311\python.exe -m pytest tests/unit/test_rentgen_store.py -q
 - **Питон = `C:\Python311\python.exe`** (3.11.9, все зависимости есть). `.venv` СЛОМАН (pyvenv.cfg
   указывает на несуществующий базовый интерпретатор). Всегда `IGNORE_PY_VERSION_CHECK=1`.
 - **Docker/Neo4j НЕТ.** Любая фича — без внешних сервисов. Стор = SQLite (`data/rentgen.db`).
-- **Liveness = `GET /api/v1/health`.** Корневой `GET /health` ВИСНЕТ без сервисов (глубокий probe).
+- **Baseline deps = `requirements.txt`.** OpenAI, Qdrant, sentence-transformers и Neo4j вынесены в
+  `requirements-optional.txt`; PyTorch/sklearn/mlflow остаются в `requirements-ml.txt`.
+- **Liveness = `GET /health`.** Глубокий probe внешних/legacy сервисов — `GET /health/deep`.
 - **POST flow/impact требуют UTF-8 тела.** PowerShell 5.1 ломает кириллицу в Latin-1 → 0 результатов
   (браузер/axios — ок). В PS слать тело как `[System.Text.Encoding]::UTF8.GetBytes($json)`.
 - **Bash-тул (Git Bash) ломает пути `C:\`** (exit 127) → используй PowerShell или `/c/Python311/python.exe`.
 - **Portal:** реальный фронт — `portal/`, НЕ `frontend-portal/` (тот мёртвый). Dev-вход — кнопка
-  «Dev Mode (skip auth)» (пишет токен в localStorage `1cai-auth`). `portal/.env` `VITE_API_BASE_URL`
-  пуст → идём через прокси.
+  «Dev Mode»; она получает настоящий JWT через demo user `admin/admin123`, а не кладет фиктивный
+  токен в localStorage. `portal/.env` `VITE_API_BASE_URL` пуст → идём через прокси.
+- **Первый экран продукта:** <http://localhost:3000> — role-based рабочий пульт с demo story и
+  скачиваемыми markdown-отчетами. Подключение источника: <http://localhost:3000/configurations>.
+  Проверка платформы: <http://localhost:3000/platform-doctor>. План обновления:
+  <http://localhost:3000/update-war-room>. Права/RLS: <http://localhost:3000/rights-rls>.
+  Пакеты продукта: <http://localhost:3000/value-packs>. Business Case:
+  <http://localhost:3000/business-case>. Productization:
+  <http://localhost:3000/productization>. Evidence export:
+  <http://localhost:3000/evidence-bundle>. Портфельный audit pack:
+  <http://localhost:3000/vendor-portfolio>.
 - **Скриншоты preview-тула виснут** на страницах с force-graph (бесконечный rAF) — проверяй через
   `preview_snapshot` (a11y-дерево) + `preview_eval`, не через `preview_screenshot`.
 
@@ -208,7 +254,7 @@ KPI + таблица очагов риска с раскрытием `reasons` +
 
 The roadmap above is the original handoff. After the autonomous product-readiness pass, the live enterprise Copilot coverage is complete:
 
-- `GET /api/v1/copilot-coverage` reports 17/17 items done, 100% total coverage, 100% P0 coverage, and no next actions.
+- `GET /api/v1/copilot-coverage` is intentionally honest: current code reports 17 tracked items, 14 ready and 3 partial, with about 92% total coverage / 89% P0 coverage.
 - Track 1 is connected: Performer, ITS-RAG, whole-config review, API, MCP and UI are mounted and smoke-tested.
 - Track 2 is connected: change-impact, test coverage matrix, release readiness and standards/security review form a change-driven workflow.
 - Additional layers are connected: local graph-grounded generation, metadata/data governance, requirements traceability, security posture, managed-form blueprint, offline readiness, team governance, and operations incident-to-code workflow.

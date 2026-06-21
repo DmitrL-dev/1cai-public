@@ -166,43 +166,43 @@ class CodeGraphBackend:
     """
 
     async def upsert_node(self, node: Node) -> None:  # pragma: no cover - интерфейс
-        """TODO: Описать функцию upsert_node.
+        """Create or replace a graph node.
         
         Args:
-            node: TODO: Описать параметр.
+            node: Node payload with stable id, kind, labels and properties.
         """
         raise NotImplementedError
 
     async def upsert_edge(self, edge: Edge) -> None:  # pragma: no cover - интерфейс
-        """TODO: Описать функцию upsert_edge.
+        """Create or replace a directed edge between existing nodes.
         
         Args:
-            edge: TODO: Описать параметр.
+            edge: Directed relationship payload.
         """
         raise NotImplementedError
 
     async def get_node(self, node_id: str) -> Optional[Node]:  # pragma: no cover
-        """TODO: Описать функцию get_node.
+        """Return a node by id when it exists.
         
         Args:
-            node_id: TODO: Описать параметр.
+            node_id: Stable node identifier.
         
         Returns:
-            TODO: Описать возвращаемое значение.
+            Matching node or None.
         """
         raise NotImplementedError
 
     async def neighbors(
         self, node_id: str, *, kinds: Optional[Iterable[EdgeKind]] = None
     ) -> List[Node]:  # pragma: no cover
-        """TODO: Описать функцию neighbors.
+        """Return outbound neighbor nodes for a node.
         
         Args:
-            node_id: TODO: Описать параметр.
-            kinds: TODO: Описать параметр.
+            node_id: Source node identifier.
+            kinds: Optional edge-kind filter.
         
         Returns:
-            TODO: Описать возвращаемое значение.
+            Neighbor nodes reachable through matching outbound edges.
         """
         raise NotImplementedError
 
@@ -213,10 +213,10 @@ class CodeGraphBackend:
         label: Optional[str] = None,
         prop_equals: Optional[Dict[str, Any]] = None,
     ) -> List[Node]:  # pragma: no cover
-        """TODO: Описать функцию find_nodes.
+        """Find nodes by kind, label and exact property matches.
         
         Returns:
-            TODO: Описать возвращаемое значение.
+            Nodes matching all supplied filters.
         """
         raise NotImplementedError
 
@@ -231,23 +231,23 @@ class InMemoryCodeGraphBackend(CodeGraphBackend):
     """
 
     def __init__(self) -> None:
-        """TODO: Описать функцию __init__."""
+        """Initialize an empty in-memory graph."""
         self._nodes: Dict[str, Node] = {}
         self._edges: List[Edge] = []
 
     async def upsert_node(self, node: Node) -> None:
-        """TODO: Описать функцию upsert_node.
+        """Create or replace a node by id.
         
         Args:
-            node: TODO: Описать параметр.
+            node: Node payload to store.
         """
         self._nodes[node.id] = node
 
     async def upsert_edge(self, edge: Edge) -> None:
-        """TODO: Описать функцию upsert_edge.
+        """Add an edge when both endpoint nodes are present.
         
         Args:
-            edge: TODO: Описать параметр.
+            edge: Directed relationship payload.
         """
         if edge.source not in self._nodes or edge.target not in self._nodes:
             # В простом бэкенде тихо игнорируем связи к несуществующим узлам
@@ -255,27 +255,27 @@ class InMemoryCodeGraphBackend(CodeGraphBackend):
         self._edges.append(edge)
 
     async def get_node(self, node_id: str) -> Optional[Node]:
-        """TODO: Описать функцию get_node.
+        """Return a node by id when it exists.
         
         Args:
-            node_id: TODO: Описать параметр.
+            node_id: Stable node identifier.
         
         Returns:
-            TODO: Описать возвращаемое значение.
+            Matching node or None.
         """
         return self._nodes.get(node_id)
 
     async def neighbors(
         self, node_id: str, *, kinds: Optional[Iterable[EdgeKind]] = None
     ) -> List[Node]:
-        """TODO: Описать функцию neighbors.
+        """Return outbound neighbors for a node.
         
         Args:
-            node_id: TODO: Описать параметр.
-            kinds: TODO: Описать параметр.
+            node_id: Source node identifier.
+            kinds: Optional edge-kind filter.
         
         Returns:
-            TODO: Описать возвращаемое значение.
+            Neighbor nodes stored in this graph.
         """
         if kinds is not None:
             kinds_set = set(kinds)
@@ -293,10 +293,10 @@ class InMemoryCodeGraphBackend(CodeGraphBackend):
         label: Optional[str] = None,
         prop_equals: Optional[Dict[str, Any]] = None,
     ) -> List[Node]:
-        """TODO: Описать функцию find_nodes.
+        """Find nodes by kind, label and exact property filters.
         
         Returns:
-            TODO: Описать возвращаемое значение.
+            Nodes matching all supplied filters.
         """
         result: List[Node] = []
         for node in self._nodes.values():

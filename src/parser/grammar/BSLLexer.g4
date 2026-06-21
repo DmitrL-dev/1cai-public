@@ -79,7 +79,7 @@ FALSE: 'ЛОЖЬ' | 'FALSE';
 UNDEFINED: 'НЕОПРЕДЕЛЕНО' | 'UNDEFINED';
 NULL: 'NULL';
 DECIMAL: DIGIT+;
-DATETIME: SQUOTE(~['\n\r])*SQUOTE?; // TODO: Честная регулярка
+DATETIME: SQUOTE(~['\n\r])*SQUOTE?; // Permissive datetime literal; semantic validation is outside the lexer.
 
 FLOAT : DIGIT+ '.' DIGIT*;
 STRING: '"' (~[\r\n"] | '""')* '"';

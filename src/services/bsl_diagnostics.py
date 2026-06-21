@@ -26,6 +26,14 @@ _SOURCE = "bsl-diagnostics:fallback"
 
 _PROC_RE = re.compile(r"^\s*(Процедура|Функция)\s+([A-Za-zА-Яа-яЁё0-9_]+)", re.IGNORECASE)
 _SELECT_STAR_RE = re.compile(r"\bВЫБРАТЬ\s+\*", re.IGNORECASE)
+_LEFT_JOIN_ALIAS_RE = re.compile(
+    r"\bЛЕВОЕ(?:\s+ВНЕШНЕЕ)?\s+СОЕДИНЕНИЕ\b[\s\S]{0,240}?\bКАК\s+([A-Za-zА-Яа-яЁё_][\wА-Яа-яЁё]*)",
+    re.IGNORECASE,
+)
+_EN_LEFT_JOIN_ALIAS_RE = re.compile(
+    r"\bLEFT(?:\s+OUTER)?\s+JOIN\b[\s\S]{0,240}?\bAS\s+([A-Za-z_][A-Za-z0-9_]*)",
+    re.IGNORECASE,
+)
 _DYNAMIC_EXEC_RE = re.compile(r"(?<![.\wА-Яа-яЁё])Выполнить\s*\(", re.IGNORECASE)
 _PRIVILEGED_MODE_RE = re.compile(
     r"УстановитьПривилегированныйРежим\s*\(\s*Истина\s*\)", re.IGNORECASE
@@ -43,6 +51,26 @@ _OBJECT_REF_RE = re.compile(
 )
 _MAGIC_NUMBER_RE = re.compile(r"(?<![\w.])(\d{2,})(?![\w.])")
 _COMMENT_RE = re.compile(r"^\s*//")
+_QUERY_SEPARATOR_RE = re.compile(r"^\s*\|?\s*;\s*$")
+# A new query starts at a ВЫБРАТЬ / SELECT that opens a statement. We allow the
+# usual 1C query-text noise before the keyword: leading whitespace, the ``|``
+# query-text continuation prefix, and the opening quote of ``Новый Запрос("…``.
+# The trailing ``\b`` keeps ВЫБОР (CASE) from being mistaken for ВЫБРАТЬ. The
+# optional РАЗРЕШЕННЫЕ / ALLOWED modifier is tolerated so it stays part of the
+# same query region. Used to scope LEFT JOIN aliases per query (not per method)
+# so an alias from one query cannot bleed into the next one assembled in the
+# same string region.
+_QUERY_START_RE = re.compile(
+    r"^\s*[\"|]?\s*\|?\s*(?:ВЫБРАТЬ|SELECT)\b(?:\s+(?:РАЗРЕШЕННЫЕ|ALLOWED)\b)?",
+    re.IGNORECASE,
+)
+_NULL_GUARD_RE = re.compile(
+    r"(ЕстьNULL|ЕСТЬNULL|ISNULL|COALESCE|\bЕСТЬ\s+NULL\b|\bНЕ\s+ЕСТЬ\s+NULL\b|\bIS\s+NULL\b|\bIS\s+NOT\s+NULL\b)",
+    re.IGNORECASE,
+)
+_NULL_FUNC_TOKENS = r"(?:ЕстьNULL|ЕСТЬNULL|ISNULL|COALESCE)"
+_NULL_CHECK_TOKENS = r"(?:ЕСТЬ\s+NULL|НЕ\s+ЕСТЬ\s+NULL|IS\s+NULL|IS\s+NOT\s+NULL)"
+_FIELD_NAME_RE = r"[A-Za-zА-Яа-яЁё_][\wА-Яа-яЁё]*"
 _EN_PROC_RE = re.compile(r"^\s*(Procedure|Function)\s+([A-Za-z][A-Za-z0-9_]*)", re.IGNORECASE)
 _EN_SELECT_STAR_RE = re.compile(r"\bSELECT\s+\*", re.IGNORECASE)
 _EN_DYNAMIC_EXEC_RE = re.compile(r"(?<![.\w])Execute\s*\(", re.IGNORECASE)
@@ -293,6 +321,257 @@ def _magic_numbers(lines: list[str], diagnostics: list[BSLDiagnostic]) -> None:
             )
 
 
+def _field_ref_pattern(alias: str, field: str) -> str:
+    return rf"(?<![\wА-Яа-яЁё.]){re.escape(alias)}\s*\.\s*{re.escape(field)}(?![\wА-Яа-яЁё])"
+
+
+def _field_has_null_guard(line: str, alias: str, field: str) -> bool:
+    field_ref = _field_ref_pattern(alias, field)
+    return bool(
+        re.search(rf"{_NULL_FUNC_TOKENS}\s*\(\s*{field_ref}", line, re.IGNORECASE)
+        or re.search(rf"{field_ref}\s+{_NULL_CHECK_TOKENS}", line, re.IGNORECASE)
+        or re.search(rf"\bНЕ\s+{field_ref}\s+ЕСТЬ\s+NULL\b", line, re.IGNORECASE)
+        or re.search(rf"\bNOT\s+{field_ref}\s+IS\s+NULL\b", line, re.IGNORECASE)
+    )
+
+
+def _field_has_case_null_guard(lines: list[str], line_number: int, alias: str, field: str) -> bool:
+    window: list[str] = []
+    saw_case = False
+    for cursor in range(line_number - 1, max(0, line_number - 9), -1):
+        previous = lines[cursor - 1]
+        if _QUERY_SEPARATOR_RE.match(previous.strip()):
+            break
+        window.insert(0, previous)
+        if re.search(r"\b(ВЫБОР|CASE)\b", previous, re.IGNORECASE):
+            saw_case = True
+            break
+    if not saw_case:
+        return False
+    for cursor in range(line_number, min(len(lines), line_number + 8) + 1):
+        current = lines[cursor - 1]
+        window.append(current)
+        if re.search(r"\b(КОНЕЦ|END)\b", current, re.IGNORECASE):
+            break
+    text = "\n".join(window)
+    return bool(re.search(r"\b(КОГДА|WHEN)\b", text, re.IGNORECASE)) and _field_has_null_guard(text, alias, field)
+
+
+def _same_query_block(lines: list[str], left_line: int, right_line: int) -> bool:
+    """Whether two lines belong to the same individual query.
+
+    A method may assemble two or more separate queries as text and run them in a
+    batch. The LEFT JOIN alias of one query must not be allowed to satisfy or
+    trigger the rule in another, so query boundaries are detected per query, not
+    per method. A boundary is either the existing ``;`` separator (a ``;`` alone
+    on a line) or the start of a new query (a ``ВЫБРАТЬ`` / ``SELECT`` that opens
+    a statement). The first line of the scanned range is the region header, so a
+    query-start there is skipped — only a separator or a *new* query-start that
+    appears strictly after it splits the two lines into different queries.
+    """
+
+    start = min(left_line, right_line)
+    end = max(left_line, right_line)
+    for offset, line in enumerate(lines[start - 1 : end]):
+        if _QUERY_SEPARATOR_RE.match(line.strip()):
+            return False
+        if offset > 0 and _QUERY_START_RE.match(line):
+            return False
+    return True
+
+
+def _query_region_is_anchored(lines: list[str], line_number: int) -> bool:
+    """Whether ``line_number`` sits inside a confidently bounded query region.
+
+    The rule is deliberately conservative on ambiguity: it only raises when the
+    query the field belongs to can be located. Scanning upward from the field we
+    must reach a ``ВЫБРАТЬ`` / ``SELECT`` that opens the query before hitting a
+    ``;`` separator or the top of the source. If a region cannot be anchored to a
+    query head — e.g. a fragment of a dynamically assembled query whose
+    ``ВЫБРАТЬ`` is concatenated elsewhere — we prefer NOT to flag rather than risk
+    a false HIGH on text that may not even be one query.
+    """
+
+    for cursor in range(line_number, 0, -1):
+        line = lines[cursor - 1]
+        if _QUERY_START_RE.match(line):
+            return True
+        # A separator above the field with no query head in between means the
+        # region opened outside this textual span; treat it as unanchored.
+        if cursor < line_number and _QUERY_SEPARATOR_RE.match(line.strip()):
+            return False
+    return False
+
+
+def _is_join_condition_continuation(lines: list[str], line_number: int) -> bool:
+    ru_and = "\u0418"
+    ru_on = "\u041f\u041e"
+    ru_left = "\u041b\u0415\u0412\u041e\u0415"
+    ru_where = "\u0413\u0414\u0415"
+    ru_group = "\u0421\u0413\u0420\u0423\u041f\u041f\u0418\u0420\u041e\u0412\u0410\u0422\u042c"
+    ru_select = "\u0412\u042b\u0411\u0420\u0410\u0422\u042c"
+    ru_from = "\u0418\u0417"
+    line = lines[line_number - 1]
+    if not re.search(rf"^\s*\|?\s*({ru_and}|AND|ИЛИ|OR)\b", line, re.IGNORECASE):
+        return False
+    for previous in reversed(lines[: line_number - 1]):
+        if _QUERY_SEPARATOR_RE.match(previous.strip()):
+            return False
+        if re.search(rf"\b({ru_on}|ON)\b", previous, re.IGNORECASE):
+            return True
+        if re.search(
+            rf"\b({ru_left}|LEFT|{ru_where}|WHERE|{ru_group}|GROUP|{ru_select}|SELECT|{ru_from}|FROM)\b",
+            previous,
+            re.IGNORECASE,
+        ):
+            return False
+    return False
+
+
+def _line_at_pos(code: str, pos: int) -> str:
+    start = code.rfind("\n", 0, pos) + 1
+    end = code.find("\n", pos)
+    if end == -1:
+        end = len(code)
+    return code[start:end]
+
+
+def _line_is_comment_at_pos(code: str, pos: int) -> bool:
+    return _line_at_pos(code, pos).lstrip().startswith("//")
+
+
+def _alias_field_matches(line: str, alias: str) -> list[re.Match[str]]:
+    return list(
+        re.finditer(
+            rf"(?<![\wА-Яа-яЁё.]){re.escape(alias)}\.({_FIELD_NAME_RE})",
+            line,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _emit_join_field_null_guard(
+    diagnostics: list[BSLDiagnostic],
+    *,
+    line: int,
+    alias: str,
+    field: str,
+    join_line: int,
+) -> None:
+    _add(
+        diagnostics,
+        severity="high",
+        code="join-field-null-guard",
+        message=(
+            "Field from LEFT JOIN is used without an explicit NULL guard. "
+            "Use ЕстьNULL(), an ЕСТЬ NULL branch, or make the join inner if absence is impossible."
+        ),
+        line=line,
+        details={
+            "alias": alias,
+            "field": field,
+            "field_ref": f"{alias}.{field}",
+            "join_line": join_line,
+            "risk": (
+                "If the joined row is missing, this field becomes NULL and can change totals, "
+                "grouping, filters or presentation."
+            ),
+            "safe_options": [
+                f"ЕстьNULL({alias}.{field}, <default>)",
+                f"ВЫБОР КОГДА {alias}.{field} ЕСТЬ NULL ТОГДА <when_missing> ИНАЧЕ {alias}.{field} КОНЕЦ",
+                "ВНУТРЕННЕЕ СОЕДИНЕНИЕ, если отсутствие связанной строки недопустимо",
+            ],
+            "test_expectations": [
+                "Case with a missing joined row returns the agreed default or branch result.",
+                "Case with an existing joined row keeps the previous value.",
+                "Before/after comparison confirms row count, grouping and totals did not change unexpectedly.",
+            ],
+            "caveat": (
+                "Heuristic, line- and query-scoped within a single method: LEFT JOIN "
+                "aliases are bounded to the individual query they appear in (split on "
+                "ВЫБРАТЬ/SELECT and ';'), so this is not a definitive 1C verdict and may "
+                "under-report across complex, dynamically assembled queries. Confirm "
+                "against the actual query the field belongs to."
+            ),
+        },
+    )
+
+
+def _mixed_left_join_null_guard_line(
+    line: str,
+    line_number: int,
+    aliases: dict[str, int],
+    lines: list[str],
+    diagnostics: list[BSLDiagnostic],
+) -> None:
+    emitted: set[tuple[str, str]] = set()
+    for alias, join_line in aliases.items():
+        if not _same_query_block(lines, line_number, join_line):
+            continue
+        if not _query_region_is_anchored(lines, line_number):
+            continue
+        field_matches = _alias_field_matches(line, alias)
+        for field_match in field_matches:
+            field = field_match.group(1)
+            key = (alias.casefold(), field.casefold())
+            if (
+                key in emitted
+                or _field_has_null_guard(line, alias, field)
+                or _field_has_case_null_guard(lines, line_number, alias, field)
+            ):
+                continue
+            emitted.add(key)
+            _emit_join_field_null_guard(
+                diagnostics,
+                line=line_number,
+                alias=alias,
+                field=field,
+                join_line=join_line,
+            )
+
+
+def _left_join_null_guards(code: str, lines: list[str], diagnostics: list[BSLDiagnostic]) -> None:
+    aliases: dict[str, int] = {}
+    for pattern in (_LEFT_JOIN_ALIAS_RE, _EN_LEFT_JOIN_ALIAS_RE):
+        for match in pattern.finditer(code):
+            if _line_is_comment_at_pos(code, match.start()):
+                continue
+            aliases.setdefault(match.group(1), _line_number(code, match.start()))
+    if not aliases:
+        return
+
+    emitted: set[tuple[str, int]] = set()
+    for idx, line in enumerate(lines, start=1):
+        if re.search(r"\b(ЛЕВОЕ|LEFT)\b", line, re.IGNORECASE):
+            continue
+        if re.search(r"\b(ПО|ON)\b", line, re.IGNORECASE):
+            continue
+        if _is_join_condition_continuation(lines, idx):
+            continue
+        if _NULL_GUARD_RE.search(line):
+            _mixed_left_join_null_guard_line(line, idx, aliases, lines, diagnostics)
+            continue
+        for alias, join_line in aliases.items():
+            if not _same_query_block(lines, idx, join_line):
+                continue
+            if not _query_region_is_anchored(lines, idx):
+                continue
+            field_match = next(iter(_alias_field_matches(line, alias)), None)
+            if not field_match or (alias.casefold(), idx) in emitted:
+                continue
+            field = field_match.group(1)
+            if _field_has_case_null_guard(lines, idx, alias, field):
+                continue
+            emitted.add((alias.casefold(), idx))
+            _emit_join_field_null_guard(
+                diagnostics,
+                line=idx,
+                alias=alias,
+                field=field,
+                join_line=join_line,
+            )
+
+
 def _is_procedure_decl(line: str) -> bool:
     return bool(
         re.match(r"^\s*Процедура\b", line, re.IGNORECASE)
@@ -363,6 +642,7 @@ def analyze_bsl(
     _undocumented_exports(lines, diagnostics)
     _undocumented_exports_english(lines, diagnostics)
     _magic_numbers(lines, diagnostics)
+    _left_join_null_guards(code, lines, diagnostics)
 
     diagnostics = sorted(
         diagnostics,

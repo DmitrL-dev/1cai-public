@@ -15,14 +15,17 @@ from typing import Any, Dict, List, Optional
 
 from src.security.ai_security_layer import AgentRuleOfTwoConfig, AISecurityLayer
 
+DEVELOPER_SECURE_CONTRACT = "developer_secure_evidence_contract"
+
 
 class DeveloperAISecure:
     """
     Secure Developer AI - требует human approval для всех изменений
     """
 
-    def __init__(self, ai_model=None):
+    def __init__(self, ai_model=None, repository_writer=None):
         self.ai_model = ai_model
+        self.repository_writer = repository_writer
         self.security = AISecurityLayer()
 
         # Конфигурация Rule of Two
@@ -67,7 +70,7 @@ class DeveloperAISecure:
                 "details": input_check.details,
             }
 
-        # Генерация кода с AI
+        # Генерация кода с AI или честный offline contract
         try:
             suggestion = self._generate_with_ai(prompt, context)
         except Exception as e:
@@ -101,17 +104,22 @@ class DeveloperAISecure:
             "context": context,
             "safety": safety_analysis,
             "approved": False,
+            "generation_mode": self._generation_mode(),
         }
 
         return {
             "success": True,
+            "mode": DEVELOPER_SECURE_CONTRACT,
+            "generation_mode": self._generation_mode(),
             "suggestion": final_suggestion,
             "token": token,
             "safety": safety_analysis,
             "requires_approval": True,
-            "can_auto_apply": safety_analysis["score"] > 0.95,
+            "can_auto_apply": bool(self.ai_model) and safety_analysis["score"] > 0.95,
             "preview_url": f"/api/code-review/preview/{token}",
             "redacted": output_check.details.get("redacted", False),
+            "required_evidence": self._generation_required_evidence(),
+            "caveats": self._generation_caveats(),
         }
 
     def apply_suggestion(
@@ -128,6 +136,9 @@ class DeveloperAISecure:
         Returns:
             Result of application
         """
+        if not approved_by_user:
+            raise ValueError("Human approver is required")
+
         # Проверка токена
         if token not in self._pending_suggestions:
             return {"error": "Invalid or expired token", "blocked": True}
@@ -166,6 +177,14 @@ class DeveloperAISecure:
             result = self._write_to_repository(
                 code=final_code, author=approved_by_user, co_author="AI-Assistant"
             )
+            if not result.get("applied", False):
+                return {
+                    "success": False,
+                    "applied": False,
+                    "blocked": True,
+                    "result": result,
+                    "error": result.get("reason", "Repository writer is not configured"),
+                }
 
             # Удаляем из pending
             del self._pending_suggestions[token]
@@ -213,13 +232,24 @@ class DeveloperAISecure:
         return results
 
     def _generate_with_ai(self, prompt: str, context: Dict[str, Any]) -> str:
-        """Генерация кода с AI (placeholder)"""
-        # В продакшене: вызов OpenAI/Qwen
+        """Generate code with the configured model or return an offline contract."""
         if self.ai_model:
             return self.ai_model.generate(prompt, context)
 
-        # Mock для тестирования
-        return f"# Generated code for: {prompt}\n\ndef example_function():\n    pass"
+        sanitized_prompt = " ".join(prompt.split())[:200]
+        return "\n".join(
+            [
+                "# Offline developer generation contract",
+                f"# Requested change: {sanitized_prompt}",
+                "# No AI model is configured for code synthesis in this runtime.",
+                "# Provide a model adapter or an explicit patch before repository apply.",
+                "",
+                "def generated_change_requires_model(*args, **kwargs):",
+                "    raise RuntimeError(",
+                '        "No code synthesis model is configured; review the request and provide an explicit patch."',
+                "    )",
+            ]
+        )
 
     def _analyze_code_safety(self, code: str) -> Dict[str, Any]:
         """Анализ безопасности сгенерированного кода"""
@@ -337,12 +367,46 @@ class DeveloperAISecure:
     def _write_to_repository(
         self, code: str, author: str, co_author: str = "AI-Assistant"
     ) -> Dict[str, Any]:
-        """Запись в репозиторий (placeholder)"""
-        # В продакшене: Git commit
-        return {
-            "success": True,
-            "commit_sha": "abc123",
-            "author": author,
-            "co_author": co_author,
-            "timestamp": datetime.now().isoformat(),
-        }
+        """Write to repository through an explicitly configured adapter."""
+        if not self.repository_writer:
+            return {
+                "success": False,
+                "applied": False,
+                "mode": DEVELOPER_SECURE_CONTRACT,
+                "reason": "repository_writer_not_configured",
+                "commit_sha": None,
+                "author": author,
+                "co_author": co_author,
+                "timestamp": datetime.now().isoformat(),
+                "required_evidence": ["repository writer adapter", "target branch", "change set"],
+                "caveats": ["No synthetic commit SHA is produced without a repository adapter."],
+            }
+
+        result = self.repository_writer.write(
+            code=code, author=author, co_author=co_author
+        )
+        result.setdefault("success", True)
+        result.setdefault("applied", True)
+        result.setdefault("mode", DEVELOPER_SECURE_CONTRACT)
+        return result
+
+    def _generation_mode(self) -> str:
+        return "model_generation" if self.ai_model else "offline_generation_contract"
+
+    def _generation_required_evidence(self) -> List[str]:
+        required = []
+        if not self.ai_model:
+            required.append("AI code synthesis model adapter")
+        if not self.repository_writer:
+            required.append("repository writer adapter for apply")
+        return required
+
+    def _generation_caveats(self) -> List[str]:
+        caveats = [
+            "Human approval is required before any repository write.",
+        ]
+        if not self.ai_model:
+            caveats.append("The returned suggestion is an offline contract, not synthesized implementation code.")
+        if not self.repository_writer:
+            caveats.append("Apply will not create a commit until a repository writer adapter is configured.")
+        return caveats

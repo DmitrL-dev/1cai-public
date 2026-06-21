@@ -86,19 +86,30 @@ async def get_owner_dashboard() -> OwnerDashboardResponse:
         OwnerDashboardResponse: Метрики выручки, клиентов и роста.
     """
     return OwnerDashboardResponse(
-        revenue=RevenueData(this_month=150000.0, last_month=120000.0,
-                            change_percent=25.0, trend="up"),
-        customers=CustomersData(total=1250, new_this_month=45),
-        growth_percent=12.0,
-        system_status="healthy",
-        recent_activities=[
-            {
-                "id": "1",
-                "type": "deployment",
-                "message": "VLM Server deployed successfully",
-                "timestamp": datetime.now().isoformat(),
-                "status": "success",
-            },
+        revenue=RevenueData(
+            this_month=0.0,
+            last_month=0.0,
+            change_percent=0.0,
+            trend="unknown",
+            measured=False,
+            caveat="Revenue source is not connected.",
+        ),
+        customers=CustomersData(
+            total=0,
+            new_this_month=0,
+            measured=False,
+            caveat="Customer source is not connected.",
+        ),
+        growth_percent=0.0,
+        system_status="not_measured",
+        recent_activities=[],
+        data_contract={
+            "mode": "analytics_dashboard_evidence_contract",
+            "coverage": "no_business_sources",
+            "generated_at": datetime.utcnow().isoformat(),
+        },
+        caveats=[
+            "Owner dashboard avoids synthetic revenue, customer and activity data."
         ],
     )
 
@@ -110,21 +121,45 @@ async def get_executive_dashboard(db_pool: asyncpg.Pool = Depends(get_db_pool)) 
     Returns:
         ExecutiveDashboardResponse: KPI, ROI и метрики здоровья системы.
     """
-    # Simplified implementation migrating from dashboard_api.py
     return ExecutiveDashboardResponse(
         id="exec",
-        health={"status": "good", "message": "All systems operational"},
-        roi=MetricData(value=150.0, change=10.0, trend="up", status="good"),
-        users=MetricData(value=5000.0, change=500.0, trend="up", status="good"),
-        growth=MetricData(value=15.0, change=2.0, trend="up", status="good"),
-        revenue_trend=[
-            {"month": "Jan", "revenue": 100000},
-            {"month": "Feb", "revenue": 120000},
-            {"month": "Mar", "revenue": 150000},
-        ],
+        health={"status": "unknown", "message": "Health source is not connected"},
+        roi=MetricData(
+            value=0.0,
+            change=0.0,
+            trend="unknown",
+            status="not_measured",
+            measured=False,
+            caveat="ROI requires cost and value evidence.",
+        ),
+        users=MetricData(
+            value=0.0,
+            change=0.0,
+            trend="unknown",
+            status="not_measured",
+            measured=False,
+            caveat="User analytics source is not connected.",
+        ),
+        growth=MetricData(
+            value=0.0,
+            change=0.0,
+            trend="unknown",
+            status="not_measured",
+            measured=False,
+            caveat="Growth requires historical snapshots.",
+        ),
+        revenue_trend=[],
         alerts=[],
         objectives=[],
-        metrics={"active_users": 5000},
+        metrics={},
+        data_contract={
+            "mode": "analytics_dashboard_evidence_contract",
+            "coverage": "no_executive_sources",
+            "generated_at": datetime.utcnow().isoformat(),
+        },
+        caveats=[
+            "Executive analytics endpoint avoids synthetic KPI, ROI, user and revenue values."
+        ],
     )
 
 
@@ -138,17 +173,22 @@ async def get_pm_dashboard() -> PMDashboardResponse:
     return PMDashboardResponse(
         id="pm",
         projects=[],
-        projects_summary={"total": 3, "completed": 2},
+        projects_summary={"total": 0, "completed": 0, "measured": False},
         timeline=[],
         team_workload=[],
         sprint_progress=SprintProgress(
-            sprint_number=42,
-            tasks_done=11,
-            tasks_total=11,
-            progress=100.0,
+            sprint_number=0,
+            tasks_done=0,
+            tasks_total=0,
+            progress=0.0,
             blockers=0,
-            end_date=datetime.now().isoformat(),
+            end_date="",
         ),
+        data_contract={
+            "mode": "analytics_dashboard_evidence_contract",
+            "coverage": "no_project_sources",
+        },
+        caveats=["PM dashboard requires project tracker evidence."],
     )
 
 
@@ -164,7 +204,12 @@ async def get_developer_dashboard() -> DeveloperDashboardResponse:
         name="Developer Dashboard",
         assigned_tasks=[],
         code_reviews=[],
-        build_status={"status": "success",
-            "last_build": datetime.now().isoformat(), "duration": "2m 30s"},
-        code_quality={"coverage": 85.0, "bugs": 0},
+        build_status={"status": "not_measured", "measured": False},
+        code_quality={"coverage": 0.0, "coverage_measured": False, "bugs": 0},
+        ai_suggestions=[],
+        data_contract={
+            "mode": "analytics_dashboard_evidence_contract",
+            "coverage": "no_developer_sources",
+        },
+        caveats=["Developer analytics endpoint requires issue, VCS, CI and quality evidence."],
     )

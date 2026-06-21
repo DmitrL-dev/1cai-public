@@ -66,7 +66,7 @@ class FeedbackCollector(EventHandler):
         state = State(
             context_summary=f"Query Type: {payload.get('query_type')}",
             open_files=[],
-            last_error=None,  # Placeholder
+            last_error=None,  # Error details are absent from this event payload.
         )
 
         # 2. Reconstruct Action

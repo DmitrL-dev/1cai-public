@@ -5,16 +5,95 @@ AI Code Reviewer - главный orchestrator
 """
 
 import os
+import re
 from datetime import datetime
 from typing import Any, Dict, List
 
-from src.ai.agents.code_review.best_practices_checker import BestPracticesChecker
 from src.ai.agents.code_review.bsl_parser import BSLParser
-from src.ai.agents.code_review.performance_analyzer import PerformanceAnalyzer
-from src.ai.agents.code_review.security_scanner import SecurityScanner
 from src.utils.structured_logging import StructuredLogger
 
+try:
+    from src.ai.agents.code_review.best_practices_checker import BestPracticesChecker
+except ImportError:
+
+    class BestPracticesChecker:
+        def check(self, code: str, ast: Dict[str, Any]) -> List[Dict[str, Any]]:
+            issues = []
+            for item in ast.get("functions", []) + ast.get("procedures", []):
+                if item.get("is_export") and not item.get("has_documentation"):
+                    issues.append(
+                        {
+                            "severity": "LOW",
+                            "category": "best_practices",
+                            "issue": "Exported method lacks nearby documentation",
+                            "line": item.get("start_line"),
+                            "rule_id": "exported-method-doc",
+                            "source": "local_fallback_scanner",
+                        }
+                    )
+            return issues
+
+
+try:
+    from src.ai.agents.code_review.performance_analyzer import PerformanceAnalyzer
+except ImportError:
+
+    class PerformanceAnalyzer:
+        def analyze(self, code: str, ast: Dict[str, Any]) -> List[Dict[str, Any]]:
+            issues = []
+            for query in ast.get("queries", []):
+                if "SELECT *" in query.get("text", "").upper() or "ВЫБРАТЬ *" in query.get("text", "").upper():
+                    issues.append(
+                        {
+                            "severity": "MEDIUM",
+                            "category": "performance",
+                            "issue": "Query selects all fields",
+                            "line": query.get("line"),
+                            "rule_id": "select-star",
+                            "source": "local_fallback_scanner",
+                        }
+                    )
+            return issues
+
+
+try:
+    from src.ai.agents.code_review.security_scanner import SecurityScanner
+except ImportError:
+
+    class SecurityScanner:
+        def scan(self, code: str, ast: Dict[str, Any]) -> List[Dict[str, Any]]:
+            issues = []
+            if re.search(r"Запрос\.Текст\s*=.*\+", code, re.IGNORECASE | re.DOTALL):
+                issues.append(
+                    {
+                        "severity": "CRITICAL",
+                        "category": "security",
+                        "issue": "Dynamic query text concatenation can lead to injection",
+                        "line": self._line_of(code, "Запрос.Текст"),
+                        "rule_id": "bsl-dynamic-query-concat",
+                        "source": "local_fallback_scanner",
+                    }
+                )
+            if re.search(r"\bВыполнить\s*\(", code, re.IGNORECASE):
+                issues.append(
+                    {
+                        "severity": "HIGH",
+                        "category": "security",
+                        "issue": "Dynamic execution requires explicit review",
+                        "line": self._line_of(code, "Выполнить"),
+                        "rule_id": "bsl-dynamic-execute",
+                        "source": "local_fallback_scanner",
+                    }
+                )
+            return issues
+
+        def _line_of(self, code: str, needle: str) -> int:
+            index = code.lower().find(needle.lower())
+            return code[:index].count("\n") + 1 if index >= 0 else 1
+
 logger = StructuredLogger(__name__).logger
+
+CODE_REVIEW_CONTRACT = "code_review_evidence_contract"
 
 
 class AICodeReviewer:
@@ -28,21 +107,22 @@ class AICodeReviewer:
     - AI-powered suggestions
     """
 
-    def __init__(self):
+    def __init__(self, llm_client=None):
         self.parser = BSLParser()
         self.security_scanner = SecurityScanner()
         self.performance_analyzer = PerformanceAnalyzer()
         self.best_practices_checker = BestPracticesChecker()
+        self.llm_client = llm_client
 
         # LLM для глубокого анализа (опционально)
-        self.llm_available = False
+        self.llm_configured = False
+        self.llm_available = bool(llm_client)
         try:
-            # TODO: Integration with OpenAI or local LLM
             self.llm_api_key = os.getenv("OPENAI_API_KEY", "")
             if self.llm_api_key:
-                self.llm_available = True
+                self.llm_configured = True
         except (OSError, Exception):
-            pass
+            self.llm_api_key = ""
 
         logger.info("AI Code Reviewer initialized")
 
@@ -99,6 +179,8 @@ class AICodeReviewer:
         summary = self._generate_summary(all_issues, metrics, overall_status)
 
         return {
+            "mode": CODE_REVIEW_CONTRACT,
+            "coverage": self._coverage(ai_suggestions),
             "filename": filename,
             "overall_status": overall_status,
             "summary": summary,
@@ -108,6 +190,20 @@ class AICodeReviewer:
                 "performance": performance_issues,
                 "best_practices": bp_issues,
                 "ai_suggestions": ai_suggestions,
+            },
+            "ai_review": {
+                "status": "executed" if ai_suggestions else "not_configured",
+                "measured": bool(ai_suggestions),
+                "llm_adapter_available": self.llm_available,
+                "llm_credentials_present": self.llm_configured,
+                "required_evidence": []
+                if self.llm_available
+                else ["LLM review adapter"] if self.llm_configured else ["LLM review adapter and credentials"],
+                "caveats": []
+                if self.llm_available
+                else [
+                    "Deep LLM review is not executed without an injected adapter; deterministic scanners still run."
+                ],
             },
             "total_issues": len(all_issues),
             "reviewed_at": datetime.now().isoformat(),
@@ -173,6 +269,8 @@ class AICodeReviewer:
         )
 
         return {
+            "mode": CODE_REVIEW_CONTRACT,
+            "coverage": "deterministic_bsl_scanners",
             "overall_status": overall_status,
             "summary": pr_summary,
             "file_reviews": file_reviews,
@@ -182,9 +280,21 @@ class AICodeReviewer:
 
     async def _ai_deep_review(self, code: str, ast: Dict) -> List[Dict]:
         """AI глубокий анализ (опционально, требует LLM)"""
-        # Placeholder для LLM integration
-        # TODO: Integrate with OpenAI GPT-4 or local LLM
-        return []
+        if not self.llm_client:
+            return []
+        if hasattr(self.llm_client, "review_code"):
+            result = self.llm_client.review_code(code=code, ast=ast)
+        else:
+            result = self.llm_client.review(code, ast)
+        if hasattr(result, "__await__"):
+            result = await result
+        return result if isinstance(result, list) else []
+
+    def _coverage(self, ai_suggestions: List[Dict]) -> str:
+        parts = ["deterministic_bsl_scanners"]
+        if ai_suggestions:
+            parts.append("llm_deep_review")
+        return "+".join(parts)
 
     def _calculate_metrics(self, issues: List[Dict], ast: Dict) -> Dict:
         """Расчет метрик качества кода"""

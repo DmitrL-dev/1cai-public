@@ -85,10 +85,9 @@ class SecurityAgent(BaseAgent):
             can_change_state=False,      # [C] - НЕ может изменять код
         )
 
-        # CVE Database integration (stub)
-        self.cve_database = None  # Will be initialized with real CVE API
+        self.cve_database = None
 
-        # SAST/DAST tools integration (stubs)
+        # Optional SAST/DAST integrations are injected by deployment profile.
         self.sast_tools = {
             "bandit": None,  # Python SAST
             "semgrep": None,  # Multi-language SAST
@@ -183,21 +182,34 @@ class SecurityAgent(BaseAgent):
             name = dep.get("name", "")
             version = dep.get("version", "")
 
-            # Check against known vulnerabilities (placeholder)
-            # В production: интеграция с CVE database, Snyk, etc.
-            if self._is_vulnerable_version(name, version):
+            cve_results = []
+            if self.cve_database:
+                cve_results = await self.cve_database.check_vulnerability(name, version)
+
+            if cve_results:
                 vulnerable_deps.append({
                     "name": name,
                     "version": version,
                     "vulnerability": "Known CVE",
-                    "severity": "high",
+                    "cves": [
+                        getattr(cve, "cve_id", str(cve)) for cve in cve_results
+                    ],
+                    "severity": getattr(cve_results[0], "severity", "unknown"),
                     "recommendation": f"Update {name} to latest version",
                 })
 
         return {
+            "mode": "offline_dependency_audit",
+            "coverage": "cve_database" if self.cve_database else "no_cve_database",
+            "vulnerability_measured": bool(self.cve_database),
             "vulnerable_dependencies": vulnerable_deps,
             "total_dependencies": len(dependencies),
             "vulnerable_count": len(vulnerable_deps),
+            "caveats": []
+            if self.cve_database
+            else [
+                "CVE database is not configured; empty vulnerable_dependencies is not proof of safety."
+            ],
             "audit_timestamp": datetime.utcnow().isoformat(),
         }
 
@@ -345,16 +357,12 @@ class SecurityAgent(BaseAgent):
             self.logger.warning("CVE database not available")
             return False
 
-        # TODO: Implement real CVE database integration
-        # Example: query NVD, Snyk, GitHub Security Advisories
-        try:
-            # Placeholder for CVE API call
-            # cve_results = self.cve_database.check_vulnerability(name, version)
-            # return len(cve_results) > 0
-            return False
-        except Exception as e:
-            self.logger.error("CVE check failed: %s", e)
-            return False
+        self.logger.warning(
+            "Synchronous CVE check requested for %s@%s; use _audit_dependencies",
+            name,
+            version,
+        )
+        return False
 
     async def check_cve_database(
         self,
@@ -371,27 +379,30 @@ class SecurityAgent(BaseAgent):
         Returns:
             CVE information
         """
-        # TODO: Integrate with real CVE databases:
-        # - NVD (National Vulnerability Database)
-        # - Snyk Vulnerability DB
-        # - GitHub Security Advisories
-        # - OSV (Open Source Vulnerabilities)
-
         if not self.cve_database:
             return {
                 "package": package_name,
                 "version": version,
                 "cves": [],
-                "status": "cve_database_not_available",
-                "recommendation": "Configure CVE database integration"
+                "status": "needs_configuration",
+                "mode": "offline_security_contract",
+                "coverage": "no_cve_database",
+                "vulnerability_measured": False,
+                "recommendation": "Configure CVE database integration",
+                "caveats": [
+                    "No CVE source is configured; empty cves is not proof of safety."
+                ],
             }
 
-        # Placeholder response
+        cves = await self.cve_database.check_vulnerability(package_name, version)
         return {
             "package": package_name,
             "version": version,
-            "cves": [],
-            "status": "pending_implementation"
+            "cves": cves,
+            "status": "success",
+            "mode": "configured_cve_lookup",
+            "coverage": "configured_cve_database",
+            "vulnerability_measured": True,
         }
 
     async def run_sast_scan(
@@ -416,19 +427,34 @@ class SecurityAgent(BaseAgent):
 
         if not self.sast_tools[tool]:
             self.logger.warning("SAST tool %s not configured", tool)
-            # Fallback to regex-based scanning
-            return await self._scan_vulnerabilities(code)
-
-        # TODO: Integrate with real SAST tools
-        # Example for Semgrep:
-        # results = await self.sast_tools[tool].scan(code, language)
+            scan = await self._scan_vulnerabilities(code)
+            scan.update(
+                {
+                    "tool": tool,
+                    "language": language,
+                    "status": "success",
+                    "mode": "local_regex_security_scan",
+                    "coverage": "regex_patterns_only",
+                    "external_tool_configured": False,
+                    "caveats": [
+                        f"{tool} is not configured; results are limited to local regex rules."
+                    ],
+                }
+            )
+            return scan
 
         return {
             "tool": tool,
             "language": language,
             "findings": [],
-            "status": "pending_implementation",
-            "recommendation": f"Configure {tool} integration"
+            "status": "needs_adapter",
+            "mode": "offline_security_contract",
+            "coverage": "sast_adapter_missing",
+            "external_tool_configured": True,
+            "recommendation": f"Wire {tool}.scan(code, language) adapter",
+            "caveats": [
+                "SAST tool object is configured but this adapter does not expose a scan contract."
+            ],
         }
 
     async def run_dast_scan(
@@ -454,19 +480,27 @@ class SecurityAgent(BaseAgent):
                 "tool": tool,
                 "target": target_url,
                 "findings": [],
-                "status": "dast_tool_not_configured",
-                "recommendation": f"Configure {tool} integration"
+                "status": "needs_configuration",
+                "mode": "offline_security_contract",
+                "coverage": "no_dast_tool",
+                "findings_measured": False,
+                "recommendation": f"Configure {tool} integration",
+                "caveats": [
+                    "DAST was not run; empty findings is not proof of runtime safety."
+                ],
             }
-
-        # TODO: Integrate with real DAST tools
-        # Example for OWASP ZAP:
-        # results = await self.dast_tools[tool].scan(target_url)
 
         return {
             "tool": tool,
             "target": target_url,
             "findings": [],
-            "status": "pending_implementation"
+            "status": "needs_adapter",
+            "mode": "offline_security_contract",
+            "coverage": "dast_adapter_missing",
+            "findings_measured": False,
+            "caveats": [
+                "DAST tool object is configured but this adapter does not expose a scan contract."
+            ],
         }
 
     async def detect_prompt_injection(
@@ -504,7 +538,7 @@ class SecurityAgent(BaseAgent):
                 })
 
         # Use LLM for advanced detection if available
-        if self.llm_selector:
+        if self.llm_selector and getattr(self.llm_selector, "available", True):
             try:
                 llm_analysis = await self.llm_selector.generate(
                     task_type=TaskType.SECURITY_ANALYSIS,
@@ -561,10 +595,16 @@ class SecurityAgent(BaseAgent):
         Returns:
             LLM-based security analysis
         """
-        if not self.llm_selector:
+        if not self.llm_selector or not getattr(self.llm_selector, "available", True):
             return {
-                "status": "llm_not_available",
-                "recommendation": "Configure LLM integration"
+                "status": "llm_offline_fallback",
+                "mode": "offline_security_contract",
+                "coverage": "no_llm_provider",
+                "findings": [],
+                "recommendation": "Configure LLM integration",
+                "caveats": [
+                    "Advanced LLM security analysis was not run; use regex/SAST findings as bounded evidence."
+                ],
             }
 
         try:
@@ -614,7 +654,7 @@ class SecurityAgent(BaseAgent):
         framework: str
     ) -> List[Dict]:
         """Map vulnerabilities to compliance framework"""
-        # Placeholder mapping
+        # Deterministic mapping for locally detected issues.
         return [
             {
                 **vuln,

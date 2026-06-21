@@ -5,6 +5,7 @@ AI ассистент для тестировщиков
 """
 
 import logging
+import re
 from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
@@ -14,7 +15,17 @@ class QAEngineerAgent:
     """AI агент для QA инженеров"""
 
     def __init__(self):
-        self.agent_name = "qwen3-coder"
+        self.agent_name = "local-qa-engineer"
+
+    def _extract_bsl_routines(self, code: str) -> List[str]:
+        return [
+            match.group(2)
+            for match in re.finditer(
+                r"\b(Функция|Процедура)\s+([A-Za-zА-Яа-я_][\wА-Яа-я]*)",
+                code,
+                re.IGNORECASE,
+            )
+        ]
 
     async def generate_vanessa_tests(
         self, module_name: str, functions: List[str]
@@ -71,43 +82,40 @@ class QAEngineerAgent:
         Returns:
             Список smoke-тестов
         """
+        target = configuration or "переданная конфигурация"
         return [
             {
-                "name": "Проверка запуска конфигурации",
+                "name": f"Smoke: запуск {target}",
                 "steps": [
                     "Запустить 1С",
-                    "Открыть конфигурацию",
+                    f"Открыть {target}",
                     "Проверить отсутствие ошибок в логе",
                 ],
-                "expected": "Конфигурация запускается без ошибок",
+                "expected": "Старт проходит без критических ошибок",
+                "coverage": "generic_smoke_shell",
+                "caveat": "Критичные бизнес-сценарии не переданы, поэтому smoke-тест не делает вид, что покрывает домен.",
             },
             {
-                "name": "Проверка создания документа Заказ",
+                "name": f"Smoke: открытие основных разделов {target}",
                 "steps": [
-                    "Открыть форму списка Заказы",
-                    "Нажать кнопку Создать",
-                    "Заполнить обязательные реквизиты",
-                    "Нажать Провести",
+                    "Открыть главную форму",
+                    "Последовательно открыть доступные подсистемы",
+                    "Зафиксировать ошибки открытия форм и прав доступа",
                 ],
-                "expected": "Документ проводится успешно",
+                "expected": "Доступные разделы открываются без исключений",
+                "coverage": "generic_smoke_shell",
+                "caveat": "Список подсистем должен быть уточнен из EDT/XML метаданных.",
             },
             {
-                "name": "Проверка формирования отчета",
+                "name": f"Smoke: журнал ошибок {target}",
                 "steps": [
-                    "Открыть отчет Продажи",
-                    "Установить период: текущий месяц",
-                    "Нажать Сформировать",
+                    "Выполнить короткий пользовательский проход",
+                    "Собрать технологический журнал и журнал регистрации",
+                    "Проверить критические исключения, блокировки и таймауты",
                 ],
-                "expected": "Отчет формируется < 5 сек",
-            },
-            {
-                "name": "Проверка обмена данными",
-                "steps": [
-                    "Открыть обработку Обмен данными",
-                    "Выполнить выгрузку",
-                    "Выполнить загрузку",
-                ],
-                "expected": "Обмен выполнен без ошибок",
+                "expected": "Критические ошибки отсутствуют либо приложены как evidence",
+                "coverage": "generic_smoke_shell",
+                "caveat": "Без tech journal результат нельзя считать доказанным.",
             },
         ]
 
@@ -121,36 +129,32 @@ class QAEngineerAgent:
         Returns:
             Анализ покрытия
         """
-        # Простой анализ (в реальности нужен парсинг BSL)
         lines = module_code.split("\n")
         total_lines = len(
             [l for l in lines if l.strip() and not l.strip().startswith("//")]
         )
-
-        # TODO: Реальный анализ покрытия
+        routines = self._extract_bsl_routines(module_code)
+        recommendations = [
+            f"Добавить unit/BDD тест для {routine}" for routine in routines
+        ] or ["Передать код функций и существующие тесты для расчета покрытия."]
 
         return {
+            "agent": self.agent_name,
+            "mode": "offline_static_coverage_triage",
+            "coverage_measured": False,
+            "coverage": "unknown_no_test_evidence",
             "total_lines": total_lines,
-            "covered_lines": int(total_lines * 0.65),
-            "coverage_percent": 65.0,
-            "uncovered_functions": [
-                "РассчитатьСумму",
-                "ПроверитьДоступность",
-                "СформироватьОтчет",
-            ],
-            "recommendations": [
-                "Добавить тесты для функции РассчитатьСумму",
-                "Протестировать граничные случаи",
-                "Добавить negative testing",
-            ],
+            "covered_lines": 0,
+            "coverage_percent": 0.0,
+            "coverage_caveat": (
+                "Покрытие не измерено: передан код модуля без карты выполненных "
+                "тестов, поэтому 0% не является доказательством отсутствия покрытия."
+            ),
+            "uncovered_functions": routines,
+            "recommendations": recommendations,
             "complexity_analysis": {
-                "high_complexity_functions": [
-                    {
-                        "name": "ОбработатьДокумент",
-                        "complexity": 15,
-                        "recommendation": "Упростить логику, разбить на меньшие функции",
-                    }
-                ]
+                "high_complexity_functions": [],
+                "caveat": "Cyclomatic complexity не считается без BSL parser AST.",
             },
         }
 
@@ -204,30 +208,119 @@ class QAEngineerAgent:
         Returns:
             Анализ и рекомендации
         """
-        # TODO: AI анализ с использованием Qwen3-Coder
-
+        evidence = "\n".join(part for part in [bug_description, stacktrace] if part)
+        affected_modules = sorted(
+            set(re.findall(r"(?:ОбщийМодуль|Документ|Справочник)\.[A-Za-zА-Яа-я0-9_]+", evidence))
+        )
+        lower = evidence.lower()
+        severity = "unknown"
+        if any(marker in lower for marker in ("critical", "критич", "падение", "исключение")):
+            severity = "high"
+        elif any(marker in lower for marker in ("warning", "предупреж", "медлен")):
+            severity = "medium"
         return {
-            "severity": "High",
-            "category": "Runtime Error",
-            "root_cause": "Обращение к несуществующему элементу массива",
-            "affected_modules": ["ОбщийМодуль.РаботаСМассивами"],
-            "recommended_fix": """
-Добавить проверку границ массива:
-
-```bsl
-Если Индекс >= 0 И Индекс < Массив.Количество() Тогда
-    Результат = Массив[Индекс];
-Иначе
-    Результат = Неопределено;
-КонецЕсли;
-```
-""",
-            "regression_tests": [
-                "Проверить с пустым массивом",
-                "Проверить с индексом -1",
-                "Проверить с индексом > размера массива",
+            "agent": self.agent_name,
+            "mode": "offline_bug_triage",
+            "coverage": "source_bug_text" if evidence.strip() else "no_bug_evidence",
+            "severity": severity,
+            "category": "runtime_or_quality_signal" if evidence.strip() else "unknown",
+            "root_cause": "not_determined_from_evidence",
+            "affected_modules": affected_modules,
+            "recommended_fix": [
+                "Приложить минимальные шаги воспроизведения.",
+                "Привязать stacktrace/tech journal к модулю и строке кода.",
+                "Добавить regression test до исправления.",
             ],
-            "related_bugs": ["BUG-123: Аналогичная проблема в другом модуле"],
+            "regression_tests": [
+                "Проверить воспроизведение по исходным шагам.",
+                "Проверить негативный сценарий из stacktrace.",
+                "Проверить отсутствие новой ошибки в журнале после исправления.",
+            ],
+            "related_bugs": [],
+            "caveats": [
+                "Причина не выводится без кода, данных и воспроизводимого журнала."
+            ],
+        }
+
+    async def generate_tests(self, function_code: str, function_name: str) -> Dict[str, Any]:
+        """Контракт, ожидаемый RoleBasedRouter для генерации тестов."""
+        routines = self._extract_bsl_routines(function_code) or [function_name]
+        yaxunit = await self.generate_yaxunit_tests(function_name, routines)
+        return {
+            "agent": self.agent_name,
+            "mode": "offline_test_blueprint",
+            "coverage": "source_code" if function_code.strip() else "no_source_code",
+            "tests": {
+                "framework": "YAxUnit",
+                "module": function_name,
+                "routines": routines,
+                "source": yaxunit,
+            },
+            "test_cases": [
+                {
+                    "name": f"Тест_{routine}",
+                    "target": routine,
+                    "status": "blueprint_requires_expected_values",
+                }
+                for routine in routines
+            ],
+            "caveats": [
+                "Ожидаемые значения и fixture-данные должны быть подтверждены владельцем домена."
+            ],
+        }
+
+    async def analyze_coverage(self, config_name: str) -> Dict[str, Any]:
+        """Контракт, ожидаемый RoleBasedRouter для анализа покрытия."""
+        return {
+            "agent": self.agent_name,
+            "mode": "offline_coverage_inventory_request",
+            "coverage": "no_test_run_evidence",
+            "configuration": config_name,
+            "coverage_measured": False,
+            "coverage_percent": 0.0,
+            "coverage_caveat": (
+                "Покрытие конфигурации нельзя измерить по имени конфигурации; "
+                "нужны результаты YAxUnit/Vanessa или карта тестов."
+            ),
+            "required_evidence": ["test_run_report", "changed_modules", "test_mapping"],
+        }
+
+    async def analyze_bugs(self, bug_history: List[Any]) -> Dict[str, Any]:
+        """Агрегирует историю дефектов без выдуманных hotspot-ов."""
+        normalized = [str(item) for item in bug_history if str(item).strip()]
+        return {
+            "agent": self.agent_name,
+            "mode": "offline_bug_history_triage",
+            "coverage": "bug_history" if normalized else "no_bug_history",
+            "total_bugs": len(normalized),
+            "patterns": [],
+            "recommendations": [
+                "Передать defect id, модуль, stacktrace и дату для поиска повторяемых зон."
+            ],
+            "caveats": [
+                "Паттерны дефектов не строятся без структурированной истории."
+            ],
+        }
+
+    async def generate_performance_test(
+        self, endpoints: List[Any], load_profile: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Создает безопасный blueprint нагрузочного теста."""
+        return {
+            "agent": self.agent_name,
+            "mode": "offline_performance_test_blueprint",
+            "coverage": "endpoints_and_profile" if endpoints and load_profile else "partial_input",
+            "endpoints": endpoints,
+            "load_profile": load_profile,
+            "script_outline": [
+                "warmup",
+                "steady_load",
+                "error_budget_check",
+                "tech_journal_collection",
+            ],
+            "caveats": [
+                "Без SLA, тестовых данных и стенда blueprint нельзя считать готовым к запуску."
+            ],
         }
 
     async def generate_yaxunit_tests(

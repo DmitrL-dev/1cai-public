@@ -9,6 +9,7 @@ from src.api.approval_api import router
 from src.middleware.jwt_user_context import JWTUserContextMiddleware, require_auth
 from src.modules.auth.application.service import AuthService
 from src.modules.auth.infrastructure.config import AuthSettings
+from src.services import audit_log
 from src.services.rentgen import approval_workflow as approvals
 
 
@@ -120,6 +121,7 @@ def test_approval_api_requires_auth(tmp_path, monkeypatch):
 
 def test_approval_api_create_approve_and_validate(tmp_path, monkeypatch):
     monkeypatch.setattr(approvals, "STORE_PATH", tmp_path / "approvals.json")
+    monkeypatch.setattr(audit_log, "LOG_PATH", tmp_path / "audit_log.ndjson")
     service = _auth_service()
 
     app = FastAPI()
@@ -177,3 +179,6 @@ def test_approval_api_create_approve_and_validate(tmp_path, monkeypatch):
 
     listed = client.get("/api/v1/approvals?kind=edt_mcp_call", headers=dev_auth)
     assert listed.json()["total"] == 1
+    events = audit_log.list_events(category="approval", path=tmp_path / "audit_log.ndjson", limit=10)
+    actions = {item["action"] for item in events["items"]}
+    assert {"approval.requested", "approval.approved"} <= actions

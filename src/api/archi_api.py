@@ -5,14 +5,16 @@ Provides REST API for Archi integration with proper dependency injection.
 """
 
 import asyncio
+import inspect
 import os
 import re
 import time
+import xml.etree.ElementTree as ET
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from prometheus_client import Counter, Histogram
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from src.api.dependencies import (
     get_archi_exporter,
@@ -26,7 +28,7 @@ from src.utils.structured_logging import StructuredLogger
 
 logger = StructuredLogger(__name__).logger
 
-router = APIRouter(prefix="/api/v1/archi", tags=["archi"])
+router = APIRouter(prefix="/archi", tags=["archi"])
 
 # Prometheus metrics
 archi_exports_total = Counter("archi_exports_total", "Total Archi exports", ["status"])
@@ -48,7 +50,8 @@ class ExportRequest(BaseModel):
     max_nodes: int = Field(default=1000, ge=1, le=10000, description="Maximum nodes to export")
     max_relationships: int = Field(default=2000, ge=1, le=20000, description="Maximum relationships to export")
 
-    @validator("output_filename")
+    @field_validator("output_filename")
+    @classmethod
     def validate_filename(cls, v):
         """Validate filename for security"""
         if ".." in v or "/" in v or "\\" in v:
@@ -86,6 +89,21 @@ class ImportResponse(BaseModel):
     relationships_created: int
 
 
+def _local_xml_name(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1] if "}" in tag else tag
+
+
+def _archimate_counts(file_path: str) -> tuple[int, int]:
+    try:
+        root = ET.parse(file_path).getroot()
+    except Exception as exc:
+        logger.warning("Unable to count ArchiMate export file %s: %s", file_path, exc)
+        return 0, 0
+    elements_count = sum(1 for node in root.iter() if _local_xml_name(node.tag) == "element")
+    relationships_count = sum(1 for node in root.iter() if _local_xml_name(node.tag) == "relationship")
+    return elements_count, relationships_count
+
+
 @router.post("/export", response_model=ExportResponse)
 async def export_to_archimate(
     request: ExportRequest,
@@ -117,16 +135,14 @@ async def export_to_archimate(
 
         output_path = os.path.join(exports_dir, request.output_filename)
 
-        # Export in background thread to avoid blocking
-        loop = asyncio.get_event_loop()
-        result_path = await loop.run_in_executor(
-            None,
-            exporter.export_to_archimate,
-            output_path,
-            request.filters,
-            request.max_nodes,
-            request.max_relationships,
-        )
+        export_args = (output_path, request.filters, request.max_nodes, request.max_relationships)
+        if inspect.iscoroutinefunction(exporter.export_to_archimate):
+            result_path = await exporter.export_to_archimate(*export_args)
+        else:
+            # Legacy exporters may still be synchronous; keep them off the event loop.
+            loop = asyncio.get_running_loop()
+            result_path = await loop.run_in_executor(None, exporter.export_to_archimate, *export_args)
+        elements_count, relationships_count = _archimate_counts(result_path)
 
         duration = time.time() - start_time
         archi_export_duration.observe(duration)
@@ -137,8 +153,8 @@ async def export_to_archimate(
         return ExportResponse(
             status="success",
             file_path=result_path,
-            elements_count=0,  # TODO: Return actual counts
-            relationships_count=0,
+            elements_count=elements_count,
+            relationships_count=relationships_count,
         )
     except Exception as e:
         archi_exports_total.labels(status="error").inc()
@@ -215,13 +231,17 @@ async def health_check(graph_service=Depends(get_graph_service)):
         logger.warning("Neo4j health check failed: %s", e)
         neo4j_status = f"error: {str(e)}"
 
-    is_healthy = neo4j_status == "connected"
+    is_available = neo4j_status == "connected"
 
     status = {
-        "status": "healthy" if is_healthy else "unhealthy",
+        "status": "legacy_optional_ready" if is_available else "legacy_optional_unavailable",
+        "core": False,
+        "mode": "legacy_optional",
+        "requires": ["Neo4j GraphService"],
         "neo4j": neo4j_status,
         "exporter": "ready",
         "importer": "ready",
+        "caveat": "ArchiMate bridge is kept for legacy GraphService users and is not part of the SQLite Rentgen core.",
     }
 
     # Update cache

@@ -3,26 +3,29 @@ import { useAuthStore } from "@/stores/auth-store"
 import { useUIStore } from "@/stores/ui-store"
 import {
   LayoutDashboard,
-  Code,
-  Code2,
-  Compass,
+  Bot,
   Database,
-  ClipboardList,
-  Sparkles,
-  Store,
   ShieldCheck,
-  ShieldAlert,
   Workflow,
-  BookOpen,
-  GitBranch,
   FileDiff,
+  Flame,
   Activity,
   AlertTriangle,
+  Archive,
+  Boxes,
+  Briefcase,
+  Compass,
+  ClipboardCheck,
+  DollarSign,
+  Landmark,
+  LineChart,
+  PlayCircle,
+  Map,
+  Mic2,
   Rocket,
   Network,
-  LockKeyhole,
+  ScrollText,
   TestTube2,
-  Users,
   Settings,
   LogOut,
   Sun,
@@ -43,30 +46,43 @@ export const Route = createFileRoute("/_authenticated")({
 })
 
 const navItems = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/workbench", label: "Workbench", icon: Workflow },
-  { to: "/code-review", label: "Code Review", icon: Code2 },
-  { to: "/standards-review", label: "Standards", icon: ShieldAlert },
-  { to: "/security", label: "Security", icon: ShieldCheck },
-  { to: "/copilot", label: "Copilot", icon: Sparkles },
-  { to: "/copilot-coverage", label: "Copilot Map", icon: Compass },
-  { to: "/edt-mcp", label: "EDT MCP", icon: Workflow },
-  { to: "/team-governance", label: "Governance", icon: Users },
-  { to: "/requirements", label: "Requirements", icon: ClipboardList },
-  { to: "/metadata", label: "Metadata", icon: Database },
-  { to: "/forms", label: "Forms", icon: ClipboardList },
-  { to: "/marketplace", label: "Marketplace", icon: Store },
-  { to: "/bpmn", label: "BPMN", icon: Workflow },
-  { to: "/wiki", label: "Wiki", icon: BookOpen },
-  { to: "/quality", label: "Рентген качества", icon: Activity },
-  { to: "/change", label: "Change Impact", icon: FileDiff },
-  { to: "/testing", label: "Testing", icon: TestTube2 },
-  { to: "/release-readiness", label: "Release", icon: Rocket },
-  { to: "/operations", label: "Operations", icon: AlertTriangle },
-  { to: "/architecture", label: "Architecture", icon: Network },
-  { to: "/rentgen", label: "Рентген", icon: GitBranch },
-  { to: "/offline-readiness", label: "Offline", icon: LockKeyhole },
-  { to: "/ide", label: "IDE", icon: Code },
+  { to: "/launch-room", label: "Launch", icon: Rocket },
+  { to: "/killer-demo", label: "Killer Demo", icon: Flame },
+  { to: "/board-pack", label: "Board Pack", icon: Landmark },
+  { to: "/outcome-ledger", label: "Outcomes", icon: LineChart },
+  { to: "/buyer-concierge", label: "Concierge", icon: Compass },
+  { to: "/demo-command-center", label: "Demo Center", icon: Mic2 },
+  { to: "/enterprise-trust-center", label: "Trust Center", icon: ShieldCheck },
+  { to: "/commercial-offer-studio", label: "Offer Studio", icon: DollarSign },
+  { to: "/guided-demo", label: "Guided Demo", icon: PlayCircle },
+  { to: "/scenario-hub", label: "Scenario Hub", icon: Map },
+  { to: "/pilot-launchpad", label: "Pilot Launchpad", icon: Rocket },
+  { to: "/", label: "Главная", icon: LayoutDashboard },
+  { to: "/configurations", label: "Конфигурации", icon: Database },
+  { to: "/quality", label: "Риски", icon: Activity },
+  { to: "/change", label: "Изменения", icon: FileDiff },
+  { to: "/testing", label: "Тесты", icon: TestTube2 },
+  { to: "/release-readiness", label: "Релизы", icon: Rocket },
+  { to: "/architecture", label: "Архитектура", icon: Network },
+  { to: "/operations", label: "Эксплуатация", icon: AlertTriangle },
+  { to: "/lock-radar", label: "Lock Radar", icon: Activity },
+  { to: "/extension-safety", label: "Extensions", icon: Workflow },
+  { to: "/value-packs", label: "Value Packs", icon: Boxes },
+  { to: "/vendor-portfolio", label: "Vendor", icon: Briefcase },
+  { to: "/business-case", label: "Business Case", icon: DollarSign },
+  { to: "/productization", label: "Productization", icon: Archive },
+  { to: "/edt-mcp", label: "AI-штаб", icon: Workflow },
+] as const
+
+const safeAutopilotNavItem = { to: "/safe-autopilot", label: "Safe Autopilot", icon: Bot } as const
+const approvalsNavItem = { to: "/approvals", label: "Approvals", icon: ClipboardCheck } as const
+const auditNavItem = { to: "/audit", label: "Audit Log", icon: ScrollText } as const
+
+const navSections = [
+  { label: "Start", items: [navItems[11], navItems[1], navItems[0]] },
+  { label: "Deal", items: [navItems[4], navItems[9], navItems[5], navItems[8], navItems[21], navItems[22], navItems[7], navItems[23], navItems[2], navItems[3], navItems[10]] },
+  { label: "Engineering", items: [navItems[12], navItems[14], safeAutopilotNavItem, navItems[13], navItems[15], navItems[16], navItems[17], navItems[25]] },
+  { label: "Trust & Ops", items: [navItems[6], approvalsNavItem, auditNavItem, navItems[24], navItems[18], navItems[19], navItems[20]] },
 ] as const
 
 const adminItems = [
@@ -82,6 +98,9 @@ function AuthenticatedLayout() {
   const themeIcons = { light: Sun, dark: Moon, system: Monitor }
   const nextTheme = { light: "dark", dark: "system", system: "light" } as const
   const ThemeIcon = themeIcons[theme]
+  const isRouteActive = (to: string) => to === "/"
+    ? location.pathname === "/"
+    : location.pathname === to || location.pathname.startsWith(`${to}/`)
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -109,35 +128,16 @@ function AuthenticatedLayout() {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 space-y-1 p-2">
-          {navItems.map((item) => {
-            const isActive = item.to === "/"
-              ? location.pathname === "/"
-              : location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/50",
-                  !sidebarOpen && "justify-center px-0",
-                )}
-                title={!sidebarOpen ? item.label : undefined}
-              >
-                <item.icon size={18} />
-                {sidebarOpen && <span className="hidden sm:inline">{item.label}</span>}
-              </Link>
-            )
-          })}
-
-          {isAdmin && (
-            <>
-              <div className="my-2 border-t border-sidebar-border" />
-              {adminItems.map((item) => {
-                const isActive = location.pathname.startsWith(item.to)
+        <nav className="flex-1 space-y-4 overflow-y-auto p-2">
+          {navSections.map((section) => (
+            <div key={section.label} className="space-y-1">
+              {sidebarOpen && (
+                <div className="hidden px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-sidebar-foreground/45 sm:block">
+                  {section.label}
+                </div>
+              )}
+              {section.items.map((item) => {
+                const isActive = isRouteActive(item.to)
                 return (
                   <Link
                     key={item.to}
@@ -152,8 +152,34 @@ function AuthenticatedLayout() {
                     title={!sidebarOpen ? item.label : undefined}
                   >
                     <item.icon size={18} />
-                      {sidebarOpen && <span className="hidden sm:inline">{item.label}</span>}
-                    </Link>
+                    {sidebarOpen && <span className="hidden sm:inline">{item.label}</span>}
+                  </Link>
+                )
+              })}
+            </div>
+          ))}
+
+          {isAdmin && (
+            <>
+              <div className="my-2 border-t border-sidebar-border" />
+              {adminItems.map((item) => {
+                const isActive = isRouteActive(item.to)
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={cn(
+                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent/50",
+                      !sidebarOpen && "justify-center px-0",
+                    )}
+                    title={!sidebarOpen ? item.label : undefined}
+                  >
+                    <item.icon size={18} />
+                    {sidebarOpen && <span className="hidden sm:inline">{item.label}</span>}
+                  </Link>
                 )
               })}
             </>

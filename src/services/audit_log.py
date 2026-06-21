@@ -65,6 +65,10 @@ def _compute_id(event: dict[str, Any]) -> str:
     return "aud_" + hashlib.sha256(encoded).hexdigest()[:40]
 
 
+def _sha256_text(content: str) -> str:
+    return hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+
 def _parse_dt(value: str | None) -> datetime | None:
     if not value:
         return None
@@ -243,3 +247,97 @@ def export_events(*, output_format: str = "jsonl", path: Path | None = None) -> 
     else:
         raise ValueError(f"Unsupported audit export format: {output_format}")
     return {"format": fmt, "events": len(items), "content": content, "path": str(path or LOG_PATH)}
+
+
+def _siem_event(event: dict[str, Any], *, chain_valid: bool) -> dict[str, Any]:
+    actor = _clean(event.get("actor"), limit=160) or "system"
+    action = _clean(event.get("action"), limit=200)
+    category = _clean(event.get("category"), limit=80) or "governance"
+    outcome = _clean(event.get("outcome"), limit=80) or "success"
+    target = _clean(event.get("target"), limit=300) or None
+    correlation_id = _clean(event.get("correlation_id"), limit=160) or None
+    payload: dict[str, Any] = {
+        "@timestamp": event.get("timestamp"),
+        "message": f"Rentgen audit event {action} by {actor}",
+        "event": {
+            "module": "rentgen.audit",
+            "dataset": "rentgen.audit",
+            "kind": "event",
+            "category": [category],
+            "action": action,
+            "outcome": outcome,
+            "id": event.get("id"),
+        },
+        "observer": {
+            "vendor": "1C Rentgen",
+            "product": "1C Rentgen",
+            "type": "local-product-audit",
+        },
+        "user": {"name": actor},
+        "related": {"user": [actor]},
+        "labels": {
+            "target": target or "",
+            "audit_chain_valid": str(bool(chain_valid)).lower(),
+        },
+        "rentgen": {
+            "audit": {
+                "id": event.get("id"),
+                "prev_hash": event.get("prev_hash"),
+                "chain_valid": bool(chain_valid),
+                "metadata": _safe_json(event.get("metadata") or {}),
+            }
+        },
+    }
+    if target:
+        payload["target"] = {"name": target}
+    if correlation_id:
+        payload["trace"] = {"id": correlation_id}
+    return payload
+
+
+def export_siem_events(
+    *,
+    output_format: str = "jsonl",
+    limit: int = 1000,
+    path: Path | None = None,
+) -> dict[str, Any]:
+    """Return a SIEM-ready audit handoff with hash-chain verification context."""
+
+    target = path or LOG_PATH
+    fmt = _clean(output_format, limit=20).lower() or "jsonl"
+    if fmt not in {"json", "jsonl"}:
+        raise ValueError(f"Unsupported SIEM export format: {output_format}")
+    max_events = max(1, min(int(limit or 1000), 5000))
+    verify = verify_chain(path=target)
+    items = _read(target)[-max_events:]
+    mapped = [_siem_event(item, chain_valid=bool(verify.get("valid"))) for item in items]
+    package = {
+        "schema": "rentgen.audit.siem.v1",
+        "generated_at": _now(),
+        "source": "product-audit-log",
+        "path": str(target),
+        "chain": verify,
+        "events": mapped,
+        "ingestion": {
+            "recommended_filename": "rentgen-audit-siem.jsonl" if fmt == "jsonl" else "rentgen-audit-siem.json",
+            "format": fmt,
+            "time_field": "@timestamp",
+            "event_id_field": "event.id",
+            "chain_valid_field": "rentgen.audit.chain_valid",
+            "message": "Import as newline-delimited JSON or JSON document; keep original audit log for hash-chain verification.",
+        },
+    }
+    if fmt == "jsonl":
+        content = "\n".join(json.dumps(item, ensure_ascii=False) for item in mapped)
+    else:
+        content = json.dumps(package, ensure_ascii=False, indent=2)
+    return {
+        "format": fmt,
+        "schema": package["schema"],
+        "events": len(mapped),
+        "content": content,
+        "content_sha256": _sha256_text(content),
+        "path": str(target),
+        "chain": verify,
+        "ingestion": package["ingestion"],
+    }

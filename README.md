@@ -11,9 +11,20 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![No Cloud](https://img.shields.io/badge/AI-token--free%20%C2%B7%20on--prem-success.svg)]()
 
-**24 страницы портала · 30+ областей API · 1 SQLite-файл вместо Neo4j/Docker**
+**32 страницы портала · 30+ областей API · 1 SQLite-файл вместо Neo4j/Docker**
 
 </div>
+
+> **Текущий статус на 2026-06-19:** ядро Рентгена и основные lifecycle-страницы работают как
+> pilot-ready продукт. Запуск в dev-профиле выполняется через `scripts/start_rentgen.ps1`, который
+> сам задает локальный `ENVIRONMENT=development` и процессный `JWT_SECRET`. `GET /health` — быстрый
+> liveness, глубокая диагностика внешних/legacy сервисов вынесена в `GET /health/deep`. ArchiMate
+> endpoint доступен по `/api/v1/archi`, но остается legacy-интеграцией поверх старого GraphService,
+> поэтому не считается частью Neo4j-free ядра. Главная страница теперь является role-based рабочим
+> пультом с demo story, markdown-отчетами по ролям, wizard pre-flight для EDT/Git/XML источников,
+> Platform Doctor v1, Lock Radar v1, Extension Safety v1, Update War Room v1, Rights & RLS Simulator v1, Value Packs Center v1,
+> Evidence Bundle v1, Enterprise Trust Center Security Questionnaire и Vendor Portfolio audit pack для pre-sale/франчайзи сценариев.
+> Change Impact false-safe-zero guard now reaches diff-review, Test Factory and Release Readiness: every zero impact is either measured or carries `coverage_caveat`.
 
 > **Не ещё один копайлот для 1С.** Генеративные ассистенты пишут код; Рентген отвечает на вопросы,
 > которые они не закрывают: **что сломается, если я изменю этот модуль? что в конфигурации мёртвое?
@@ -92,6 +103,7 @@
 | **Code Review** | анализ BSL, code smells, авто-фиксы | `/code-review` | 🟢 |
 | **Standards Review** | стандарты разработки 1С + диагностики на дифф | `/standards-review` · `/api/v1/quality/review-diff` | 🟢 |
 | **Security Posture** | RLS, права, секреты, поверхность атаки | `/security` | 🟡 |
+| **Rights & RLS** | матрица роль → объект → действие, опасные права, RLS-сигналы, security gate | `/rights-rls` · `/api/v1/rights-rls/analyze` | 🟡 |
 | **Micro-Swarm** | zero-dependency ML-детекторы антипаттернов BSL | `/api/v1/swarm` | 🟢 |
 
 #### ⏱️ Производительность
@@ -108,21 +120,33 @@
 | Модуль | Что делает | UI · API | |
 |---|---|---|:--:|
 | **Release Readiness** | гейты готовности к релизу | `/release-readiness` · `/api/v1/release-readiness` | 🟡 |
+| **Update War Room** | план обновления: платформа, расширения, impact, тесты, rollback, evidence | `/update-war-room` · `/api/v1/update-war-room/plan` | 🟡 |
 | **Operations / Incident** | операционная панель, инциденты | `/operations` · `/api/v1/operations` | 🟡 |
+| **Lock Radar** | ТЖ-блокировки, TTIMEOUT/TDEADLOCK, affected modules, test gaps и runbook | `/lock-radar` · `/api/v1/lock-radar/analyze` | 🟡 |
+| **Extension Safety** | CFE/EDT-расширения, права, privileged mode, write hooks, borrowed objects, impact | `/extension-safety` · `/api/v1/extension-safety/analyze` | 🟡 |
 | **Offline Readiness** | готовность к работе в закрытом контуре | `/offline-readiness` · `/api/v1/offline-readiness` | 🟡 |
-| **Productization** | SBOM, offline-bundle, чек-листы выпуска | `/api/v1/productization` | 🟡 |
+| **Productization** | SBOM, offline-bundle, delivery passport, signed manifest/archive verification, release checklists | `/productization` · `/api/v1/productization` | 🟡 |
 | **Monitoring** | Prometheus-метрики | `/monitoring` | 🟢 |
 
 #### 👥 Управление (governance)
 | Модуль | Что делает | UI · API | |
 |---|---|---|:--:|
 | **Policy Engine** | политики и гейты с waiver | `/api/v1/policies` | 🟡 |
-| **Approvals** | согласования с разделением полномочий (SoD) | `/api/v1/approvals` | 🟢 |
-| **Audit** | tamper-evident hash-chain журнал + проверка цепочки | `/api/v1/audit` | 🟢 |
+| **Approvals** | согласования с разделением полномочий (SoD), constraints и approve/reject UI | `/approvals` · `/api/v1/approvals` | 🟢 |
+| **Audit** | tamper-evident hash-chain журнал, проверка цепочки и export UI | `/audit` · `/api/v1/audit` | 🟢 |
 | **Enterprise / IAM** | тенанты, проекты, границы доступа | `/api/v1/enterprise` | 🟡 |
 | **Team Governance** | команда, роли, доступы | `/team-governance` · `/api/v1/team-governance` | 🟡 |
 | **Artifact Graph** | граф артефактов (требования, тесты, waiver'ы) | `/api/v1/artifacts` | 🟡 |
 | **Agentic Workflows** | оркестрация шагов/агентов | `/api/v1/agentic` | 🟡 |
+| **Value Packs** | покупаемые пакеты продукта: Developer, Architect, Release/QA, Platform, Vendor, Offline | `/value-packs` · `/api/v1/value-packs/catalog` | 🟡 |
+| **Killer Demo Path** | buyer-ready route with role sparks, objection router, proof packet, commercial close packet and approval/audit checkout gates | `/killer-demo` · `/api/v1/killer-demo/build` | 🟡 |
+| **Board Pack** | director buying motion with value, risks, board close packet and governance checkout gates | `/board-pack` · `/api/v1/board-pack/build` | 🟡 |
+| **Pilot Launchpad** | paid activation plan with Day 0/7/30 milestones, buyer commitments, acceptance register and approval/audit gates | `/pilot-launchpad` · `/api/v1/pilot-launchpad/build` | 🟡 |
+| **Outcome Ledger** | post-purchase adoption proof with 7/30/60/90 outcomes, acceptance rollup and governance refresh | `/outcome-ledger` · `/api/v1/outcome-ledger/build` | 🟡 |
+| **Launch Room** | single buyer cockpit with next action, role paths, buyer journey, acceptance signals and approval/audit proof gates | `/launch-room` · `/api/v1/launch-room/build` | 🟡 |
+| **Business Case** | director money map: first-year visible value, AI subscription displacement, buyer committee, objections, 30/60/90 | `/business-case` · `/api/v1/business-case/build` | 🟡 |
+| **Evidence Bundle** | единый export/procurement pack: JSON/Markdown артефакты, caveats, governance proof, SHA-256 manifest, ZIP proof archive and buyer handoff | `/evidence-bundle` · `/api/v1/evidence-bundle/build` · `/archive` | 🟡 |
+| **Vendor Portfolio** | pre-sale audit pack и multi-client portfolio mode: риск, платформа, work packages, markdown для КП | `/vendor-portfolio` · `/api/v1/vendor-portfolio/audit` · `/portfolio` | 🟡 |
 
 #### 📚 Знания и доставка
 | Модуль | Что делает | UI · API | |
@@ -131,7 +155,7 @@
 | **MCP-сервер** | аналитика Рентгена как MCP-инструменты для Cursor/Claude/EDT | `/mcp` | 🟢 |
 | **EDT MCP Bridge** | мост к 1С:EDT, online/offline | `/edt-mcp` · `/api/v1/edt-mcp` | 🟡 |
 | **Telegram-бот** | ChatOps-интерфейс | — | 🟢 |
-| **Archi (ArchiMate)** | экспорт/импорт TOGAF | `/api/v1/archi` | 🟢 |
+| **Archi (ArchiMate)** | экспорт/импорт TOGAF; legacy GraphService bridge, не часть SQLite-ядра | `/api/v1/archi` | ⚪ |
 | **Marketplace · BPMN · Wiki** | плагины · диаграммы · база знаний | `/marketplace` `/bpmn` `/wiki` | ⚪ |
 
 > Всё перечисленное — **on-prem**: ни одна функция не требует облака. Встроены аутентификация **JWT + RBAC**, **tamper-evident аудит** и **разделение полномочий**; раннеры тестов изолированы (allow-list + kill-switch).
@@ -225,7 +249,7 @@ flowchart LR
     BUILD["build_store.py<br/>3-уровневое разрешение вызовов"]
     DB[("data/rentgen.db<br/>SQLite — единое хранилище")]
     API["FastAPI<br/>30+ роутеров (/api/v1)"]
-    UI["React-портал<br/>24 страницы"]
+    UI["React-портал<br/>32 страницы"]
     MCP["MCP-сервер /mcp"]
 
     BSL --> GO --> NDJSON --> BUILD
@@ -254,6 +278,8 @@ git clone https://github.com/DmitrL-dev/1cai-public.git
 cd 1cai-public
 python -m venv .venv && . .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+# Опционально: AI/RAG/legacy Archi GraphService integrations
+# pip install -r requirements-optional.txt
 
 # 1) Граф вызовов (соберите бинарь: cd go && go build -o bsl-scan.exe ./cmd/bsl-scan)
 go/bsl-scan.exe -mode callgraph /path/to/edt-config > data/rentgen_callgraph.ndjson
@@ -267,7 +293,7 @@ python -m uvicorn src.main:app --host 127.0.0.1 --port 8000
 cd portal && npm install && npm run dev          # http://localhost:3000
 ```
 
-- Дашборд рисков: <http://localhost:3000/quality> · Граф: <http://localhost:3000/rentgen> · Swagger: <http://127.0.0.1:8000/docs>
+- Рабочий пульт: <http://localhost:3000> · Конфигурации: <http://localhost:3000/configurations> · Platform Doctor: <http://localhost:3000/platform-doctor> · Lock Radar: <http://localhost:3000/lock-radar> · Extension Safety: <http://localhost:3000/extension-safety> · Update War Room: <http://localhost:3000/update-war-room> · Rights/RLS: <http://localhost:3000/rights-rls> · Value Packs: <http://localhost:3000/value-packs> · Business Case: <http://localhost:3000/business-case> · Productization: <http://localhost:3000/productization> · Evidence Bundle: <http://localhost:3000/evidence-bundle> · Vendor Portfolio: <http://localhost:3000/vendor-portfolio> · Дашборд рисков: <http://localhost:3000/quality> · Swagger: <http://127.0.0.1:8000/docs>
 - Windows, одной командой: `powershell -ExecutionPolicy Bypass -File scripts\start_rentgen.ps1`.
 
 Подробности и грабли — [`docs/RENTGEN.md`](docs/RENTGEN.md), [`HANDOFF.md`](HANDOFF.md).
@@ -278,8 +304,26 @@ cd portal && npm install && npm run dev          # http://localhost:3000
 
 Всё под `/api/v1` (тела POST с кириллицей — UTF-8). Полный список — в Swagger (`/docs`). Главное:
 
-**`/quality`** — `summary`, `hotspots`, `worst`, `search`, `module`, `stats`, `review-diff`
+**`/quality`** — `summary`, `hotspots`, `worst`, `search`, `module`, `stats`, `review-diff`, `standards-review` с Query Surgeon правилом `join-field-null-guard`
 **`/rentgen`** — `flow`, `impact`, `change-impact`, `dead-code`, `module-neighbors`, `stats`, `health`
+**`/management`** — `executive`, `demo`, `role-report/{role}`, `intake/plan`
+**`/platform-doctor`** — локальный inventory платформы 1С, compatibility/DBMS/TJ/OpenMetrics checks и upgrade checklist
+**`/lock-radar`** — TLOCK/TTIMEOUT/TDEADLOCK из технологического журнала, affected modules, test gaps, actions и runbook
+**`/extension-safety`** — CFE/EDT-расширения, права, privileged mode, write hooks, borrowed objects, impact и update checklist
+**`/update-war-room`** — update/upgrade план: platform, extension safety, release impact, tests, rollback/evidence
+**`/rights-rls`** — role/object/action matrix, dangerous rights, conservative RLS detection, security gate
+**`/value-packs`** — role/product packs, deliverables, proof, routes and no-mandatory-token licensing story
+**`/business-case`** — director money map: visible first-year value, AI subscription displacement, buyer committee, objections and 30/60/90 rollout
+**`/killer-demo`** — buyer-ready route with role sparks, proof packet, commercial close packet and approval/audit checkout gates
+**`/board-pack`** — director buying motion with value, risks, board close packet and governance checkout gates
+**`/pilot-launchpad`** — paid activation plan with Day 0/7/30 milestones, buyer commitments and approval/audit gates
+**`/outcome-ledger`** — post-purchase adoption proof with 7/30/60/90 outcomes and governance refresh
+**`/commercial-offer-studio`** — buyable packages, procurement dossier, close packet, checkout gates and local-vs-AI-rent purchase story
+**`/productization`** — enterprise delivery console: readiness, SBOM, offline manifest/archive build, delivery passport and verification
+**`/evidence-bundle`** — hashed JSON/Markdown/ZIP export pack with SHA-256 manifest, governance proof and approval/audit evidence
+**`/approvals`** — scoped EDT-MCP approval records with create/approve/reject and argument constraints
+**`/audit`** — audit-chain verification, recent events and JSONL/JSON export
+**`/vendor-portfolio`** — pre-sale audit pack и multi-client portfolio mode для вендора: executive risk, intake, platform readiness, work packages, markdown
 **`/performer`** · **`/its`** · **`/metadata`** · **`/requirements`** · **`/change-sets`** · **`/baselines`** · **`/testing`** · **`/release-readiness`** · **`/offline-readiness`** · **`/operations`** · **`/policies`** · **`/approvals`** · **`/audit`** · **`/enterprise`** · **`/team-governance`** · **`/architecture`** · **`/agentic`** · **`/edt-mcp`** · **`/productization`**
 
 ---
@@ -307,7 +351,8 @@ cd portal && npm install && npm run dev          # http://localhost:3000
 | Портал | **React 19**, **Vite 7**, TanStack Router/Query, Tailwind v4, `react-force-graph-2d`, Monaco |
 | Интеграции | MCP, EDT-мост, Telegram, ТЖ-парсер, ITS-RAG, Archi (ArchiMate) |
 
-В ядре нет зависимостей от Neo4j / Docker / облачных LLM.
+В ядре Рентгена нет зависимостей от Neo4j / Docker / облачных LLM. Некоторые legacy/optional-интеграции
+в репозитории могут еще ссылаться на старые сервисы; они не входят в baseline-профиль SQLite-ядра.
 
 ---
 
@@ -322,7 +367,7 @@ src/services/rentgen/   # change_plan, metadata_graph, policy/approval/audit, re
 src/services/tj_parser/ # Перформер — парсер технологического журнала
 src/ai/mcp/             # MCP-сервер
 src/micro_swarm/        # Zero-dependency ML (детекторы антипаттернов BSL)
-portal/                 # React-портал (24 страницы)
+portal/                 # React-портал (32 страницы)
 tests/unit/             # Юнит-тесты
 docs/RENTGEN.md         # Подробная документация продукта · HANDOFF.md — хендовер
 ```
@@ -340,6 +385,7 @@ docs/RENTGEN.md         # Подробная документация проду
 | 🟡 **Тесты · Релиз · Эксплуатация** — testing, readiness, operations | бета |
 | 🟡 **Governance** — policy, approvals, audit, IAM, team | бета (безопасность закрыта ревью) |
 | 🟢 **Доставка** — MCP, портал, Telegram, ITS-RAG, EDT-мост | работает |
+| ⚪ **Legacy optional** — ArchiMate/старые GraphService-модули | доступны частично, не входят в Neo4j-free ядро |
 
 **Ближайшее:** связать Перформер с графом (query-хотспот → место вызова → impact); внести диагностики BSL Language Server в «причины риска»; risk-driven выбор тестов из графа impact.
 

@@ -20,7 +20,7 @@ from src.micro_swarm.router import RouterDecision, SwarmRouter
 logger = logging.getLogger(__name__)
 
 
-# ── LLM provider protocol (stub for future integration) ──────────
+# ── LLM provider protocol (optional adapter) ─────────────────────
 
 
 class LLMProvider(Protocol):

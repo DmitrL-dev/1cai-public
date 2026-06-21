@@ -92,6 +92,7 @@ class RASMonitor:
 
         except Exception as e:
             logger.error(f"Failed to connect to RAS: {e}")
+            self.connected = False
             return False
 
     async def _get_cluster_info(self, cluster_name: Optional[str]) -> ClusterInfo:
@@ -119,24 +120,31 @@ class RASMonitor:
             )
         except Exception as e:
             logger.error(f"Error getting cluster info: {e}")
-            # Fallback to mock for safety if RAC fails
-            return ClusterInfo("mock", "Mock Cluster (Error)", 1541, 0, 0, 0.0)
+            return ClusterInfo("unavailable", "RAS unavailable", 0, 0, 0, 0.0)
 
     async def _get_active_sessions(self, cluster_name: Optional[str]) -> List[SessionInfo]:
         """Получение активных сессий"""
         try:
             # We need cluster ID first
             cluster = await self._get_cluster_info(cluster_name)
-            if cluster.cluster_id == "mock":
+            if cluster.cluster_id == "unavailable":
                 return []
 
             raw_sessions = self.client.get_sessions(cluster.cluster_id)
             sessions = []
 
             for s in raw_sessions:
-                # Parse duration (format depends on locale, simplified here)
-                # Assuming started-at is ISO or similar
-                start_time = datetime.now()  # Placeholder
+                raw_started_at = (
+                    s.get("started-at") or s.get("started_at") or s.get("started")
+                )
+                try:
+                    start_time = (
+                        datetime.fromisoformat(raw_started_at)
+                        if raw_started_at
+                        else datetime.utcnow()
+                    )
+                except ValueError:
+                    start_time = datetime.utcnow()
 
                 sessions.append(
                     SessionInfo(
@@ -144,7 +152,9 @@ class RASMonitor:
                         user=s.get("user-name", "Unknown"),
                         application=s.get("app-id", "Unknown"),
                         started_at=start_time,
-                        duration_minutes=0,  # Calc from start_time
+                        duration_minutes=max(
+                            0, int((datetime.utcnow() - start_time).total_seconds() / 60)
+                        ),
                         memory_mb=0,  # Not always available in simple list
                         cpu_time_seconds=0,
                         db_connection_mode="Unknown",
@@ -163,6 +173,7 @@ class RASMonitor:
     async def _get_working_processes_info(self, cluster_name: Optional[str]) -> Dict:
         """Информация о рабочих процессах"""
         return {
+            "coverage": "not_available_from_basic_ras_cluster_list",
             "total_processes": 0,
             "available_processes": 0,
             "avg_memory_per_process_mb": 0,
@@ -264,7 +275,10 @@ class RASMonitor:
         for issue in issues:
             if issue["type"] == "insufficient_working_processes":
                 current = cluster.working_processes
-                recommended = len(sessions) // 15  # 15 sessions per process
+                recommended = max(1, len(sessions) // 15)  # 15 sessions per process
+                improvement = None
+                if current > 0:
+                    improvement = f"{(recommended/current - 1)*100:.0f}% больше capacity"
 
                 recommendations.append(
                     {
@@ -272,11 +286,80 @@ class RASMonitor:
                         "priority": "high",
                         "current_value": current,
                         "recommended_value": recommended,
-                        "improvement": f"{(recommended/current - 1)*100:.0f}% больше capacity",
+                        "improvement": improvement,
+                        "caveat": None
+                        if current > 0
+                        else "Текущее число рабочих процессов не измерено.",
                     }
                 )
 
         return recommendations
+
+    async def get_cluster_health(
+        self, cluster_name: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Возвращает health contract по RAS без фиктивного кластера."""
+        cluster = await self._get_cluster_info(cluster_name)
+        if cluster.cluster_id == "unavailable":
+            return {
+                "status": "not_connected",
+                "mode": "offline_ras_contract",
+                "coverage": "no_ras_connection",
+                "connected": False,
+                "cluster_info": cluster,
+                "working_processes": 0,
+                "active_sessions": 0,
+                "cpu_usage": 0.0,
+                "total_memory_mb": 0,
+                "health_status": "unknown",
+                "issues": [
+                    {
+                        "type": "ras_unavailable",
+                        "severity": "warning",
+                        "details": "RAS cluster data was not read.",
+                        "action": "Configure RAC/RAS connection and retry.",
+                    }
+                ],
+                "recommendations": [],
+                "caveats": [
+                    "No live RAS evidence is available; empty sessions/locks are not proof of health."
+                ],
+            }
+
+        sessions = await self._get_active_sessions(cluster_name)
+        locks = await self._get_locks(cluster_name)
+        processes = await self._get_working_processes_info(cluster_name)
+        issues = await self._analyze_cluster_health(
+            cluster, sessions, locks, processes
+        )
+        recommendations = await self._generate_cluster_recommendations(
+            cluster, sessions, issues
+        )
+        caveats = []
+        if processes.get("coverage") != "ras_process_evidence":
+            caveats.append(
+                "Working process metrics are partial; basic RAS cluster list does not prove capacity."
+            )
+        if cluster.total_memory_mb == 0:
+            caveats.append("Cluster memory was not reported by the current RAS read.")
+
+        return {
+            "status": "success",
+            "mode": "ras_monitor",
+            "coverage": "ras_cluster_list_partial" if caveats else "ras_cluster_evidence",
+            "connected": True,
+            "cluster_info": cluster,
+            "working_processes": cluster.working_processes,
+            "active_sessions": len(sessions),
+            "locks_count": len(locks),
+            "cpu_usage": cluster.cpu_usage,
+            "total_memory_mb": cluster.total_memory_mb,
+            "health_status": self._determine_health_status(issues),
+            "issues": issues,
+            "recommendations": recommendations,
+            "processes": processes,
+            "caveats": caveats,
+        }
 
 
 # Example usage

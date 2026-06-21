@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from src.api._rentgen_store import store_or_none
+from src.services.rentgen.path_safety import confine_path
 
 router = APIRouter(prefix="/api/v1/performer", tags=["performer"])
 
@@ -87,10 +88,17 @@ async def analyze_tj(req: TJAnalyzeRequest):
     """Analyze Technology Journal logs for performance bottlenecks."""
     from src.services.tj_parser.analyzer import TJPerformanceAnalyzer
 
+    # Confine the caller-supplied path to the allowed data roots before the
+    # analyzer reads it (arbitrary-file-read / traversal guard).
+    try:
+        log_path = str(confine_path(req.log_path, label="log_path"))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
     analyzer = TJPerformanceAnalyzer(
         min_duration_ms=req.min_duration_ms,
     )
-    report = analyzer.analyze(req.log_path, top_n=req.top_n)
+    report = analyzer.analyze(log_path, top_n=req.top_n)
     return _report_response(report)
 
 
@@ -99,6 +107,13 @@ async def analyze_tj_impact(req: TJImpactRequest):
     """Analyze TJ logs and map query hotspots to Рентген blast radius."""
     from src.services.tj_parser.analyzer import TJPerformanceAnalyzer
 
+    # Confine the caller-supplied path to the allowed data roots before the
+    # analyzer reads it (arbitrary-file-read / traversal guard).
+    try:
+        log_path = str(confine_path(req.log_path, label="log_path"))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
     store = store_or_none()
     if store is None:
         raise HTTPException(503, _NO_STORE)
@@ -106,7 +121,7 @@ async def analyze_tj_impact(req: TJImpactRequest):
     analyzer = TJPerformanceAnalyzer(
         min_duration_ms=req.min_duration_ms,
     )
-    report = analyzer.analyze(req.log_path, top_n=req.top_n)
+    report = analyzer.analyze(log_path, top_n=req.top_n)
     base = _report_response(report)
 
     impacts = []

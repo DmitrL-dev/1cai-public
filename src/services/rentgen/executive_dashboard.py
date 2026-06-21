@@ -6,6 +6,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from typing import Any, Callable
 
+from src.services.rentgen.coverage_ledger import build_coverage_ledger
 from src.services.rentgen.offline_readiness import build_offline_readiness
 from src.services.rentgen.team_governance import build_team_governance
 
@@ -140,7 +141,7 @@ def _workstreams(
         },
         {
             "id": "coverage",
-            "title": "Copilot coverage",
+            "title": "Subscription escape coverage",
             "score": coverage_score,
             "status": coverage_status,
             "signal": "Internal workflow coverage map",
@@ -343,5 +344,6 @@ def build_executive_dashboard(
             "Scores are deterministic management signals, not a substitute for formal release approval.",
         ],
     }
+    report["coverage_ledger"] = build_coverage_ledger(executive=report)
     report["markdown"] = _markdown(report)
     return report

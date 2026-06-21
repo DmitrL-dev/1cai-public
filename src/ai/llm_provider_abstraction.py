@@ -189,7 +189,7 @@ class LLMProviderAbstraction:
                 },
                 risk_level=RiskLevel.MEDIUM,
                 cost_per_1k_tokens=0.004,
-                avg_latency_ms=1600,
+                avg_latency_ms=1500,
                 max_tokens=4096,
                 supports_streaming=True,
                 compliance=["152-ФЗ", "GDPR"],

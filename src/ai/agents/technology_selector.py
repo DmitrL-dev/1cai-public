@@ -10,6 +10,8 @@ from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 
+TECH_SELECTOR_CONTRACT = "technology_selector_evidence_contract"
+
 
 @dataclass
 class TechnologyOption:
@@ -214,6 +216,8 @@ class TechnologySelector:
         architecture_pattern = self._recommend_architecture_pattern(requirements)
 
         return {
+            "mode": TECH_SELECTOR_CONTRACT,
+            "coverage": "local_technology_catalog",
             "recommended_stack": recommendations,
             "architecture_pattern": architecture_pattern,
             "estimated_cost": self._estimate_total_cost(recommendations),
@@ -221,6 +225,10 @@ class TechnologySelector:
             "migration_plan": self._generate_migration_plan(recommendations),
             "risks": self._assess_technology_risks(recommendations),
             "alternatives": self._generate_alternatives(recommendations),
+            "required_evidence": self._required_evidence(requirements, constraints),
+            "caveats": [
+                "Recommendation is based on the local catalog; validate licensing, benchmarks and team skills before purchase.",
+            ],
         }
 
     def _score_integration_options(
@@ -354,17 +362,18 @@ class TechnologySelector:
 
     def _estimate_total_cost(self, recommendations: Dict) -> str:
         """Оценка общей стоимости"""
-        # Упрощенная оценка
         cost_map = {"low": 1, "medium": 2, "high": 3}
 
-        total = 0
-        count = 0
+        costs = []
         for tech in recommendations.values():
-            # TODO: Get cost from tech catalog
-            total += 2
-            count += 1
+            option = self._catalog_option_by_display_name(tech.get("option"))
+            if option:
+                costs.append(cost_map.get(option.cost, 2))
 
-        avg = total / count if count > 0 else 2
+        if not costs:
+            return "Unknown"
+
+        avg = sum(costs) / len(costs)
 
         if avg < 1.5:
             return "Low"
@@ -375,10 +384,20 @@ class TechnologySelector:
 
     def _estimate_complexity(self, recommendations: Dict) -> str:
         """Оценка сложности внедрения"""
-        # TODO: More sophisticated calculation
-        if len(recommendations) > 4:
+        complexity_map = {"low": 1, "medium": 2, "high": 3}
+        complexities = []
+        for tech in recommendations.values():
+            option = self._catalog_option_by_display_name(tech.get("option"))
+            if option:
+                complexities.append(complexity_map.get(option.complexity, 2))
+
+        if not complexities:
+            return "Unknown"
+
+        avg = sum(complexities) / len(complexities)
+        if avg >= 2.5 or len(recommendations) > 4:
             return "High"
-        elif len(recommendations) > 2:
+        elif avg >= 1.5 or len(recommendations) > 2:
             return "Medium"
         else:
             return "Low"
@@ -427,10 +446,44 @@ class TechnologySelector:
         alternatives = {}
 
         for category, tech in recommendations.items():
-            # TODO: Generate real alternatives from catalog
-            alternatives[category] = [tech["option"]]
+            selected = self._catalog_option_by_display_name(tech.get("option"))
+            if not selected:
+                alternatives[category] = []
+                continue
+            alternatives[category] = [
+                option.name
+                for option in self.tech_catalog.values()
+                if option.category == selected.category and option.name != selected.name
+            ]
 
         return alternatives
+
+    def _catalog_option_by_display_name(
+        self, display_name: str | None
+    ) -> TechnologyOption | None:
+        if not display_name:
+            return None
+        normalized = display_name.lower()
+        for option in self.tech_catalog.values():
+            if option.name.lower() == normalized:
+                return option
+        return None
+
+    def _required_evidence(
+        self, requirements: Dict[str, Any], constraints: Dict[str, Any]
+    ) -> List[str]:
+        required = []
+        if not requirements.get("scale"):
+            required.append("target scale")
+        if not requirements.get("load"):
+            required.append("load profile")
+        if not constraints.get("budget"):
+            required.append("budget constraints")
+        if not constraints.get("team_skills"):
+            required.append("team skill matrix")
+        if not constraints.get("existing_tech"):
+            required.append("existing technology inventory")
+        return required
 
 
 # Example usage

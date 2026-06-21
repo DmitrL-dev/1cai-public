@@ -33,7 +33,7 @@ def get_openai_analyzer() -> "OpenAICodeAnalyzer":
 
 def set_openai_analyzer(analyzer: Optional["OpenAICodeAnalyzer"]) -> None:
     """
-    Allow tests to inject a fake analyzer implementation.
+    Allow tests to inject a local analyzer implementation.
     """
     global _OPENAI_ANALYZER
     _OPENAI_ANALYZER = analyzer

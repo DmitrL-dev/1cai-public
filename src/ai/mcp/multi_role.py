@@ -5,7 +5,7 @@ Extended MCP Server with Multi-Role Support
 """
 
 import asyncio
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from src.ai.agents.business_analyst_agent import BusinessAnalystAgent
 from src.ai.agents.qa_engineer_agent import QAEngineerAgent
@@ -31,6 +31,33 @@ class MultiRoleMCPServer:
 
         # Регистрация tools для всех ролей
         self.tools = self._register_tools()
+
+    def _offline_contract(
+        self,
+        *,
+        tool: str,
+        role: str,
+        summary: str,
+        context: Dict[str, Any],
+        required_evidence: List[str],
+        data: Dict[str, Any] | None = None,
+        status: str = "needs_evidence",
+    ) -> Dict[str, Any]:
+        context = context or {}
+        return {
+            "status": status,
+            "tool": tool,
+            "role": role,
+            "mode": "offline_mcp_contract",
+            "coverage": "context_evidence" if context else "no_project_evidence",
+            "summary": summary,
+            "data": data or {},
+            "context_keys": sorted(str(key) for key in context.keys()),
+            "required_evidence": required_evidence,
+            "caveats": [
+                "MCP tool returned an evidence contract instead of fabricated analysis."
+            ],
+        }
 
     def _register_tools(self) -> Dict[str, callable]:
         """Регистрирует все MCP tools"""
@@ -84,13 +111,34 @@ class MultiRoleMCPServer:
 
     async def _dev_search_code(self, query: str, context: Dict) -> Dict:
         """Семантический поиск кода"""
-        # Use existing search implementation
-        return {"results": []}
+        return self._offline_contract(
+            tool="dev:search_code",
+            role="developer",
+            summary=f"Поиск кода требует подключенного индекса или переданного code_index: {query}",
+            context=context,
+            required_evidence=["code_index", "repository_path", "semantic_index"],
+        )
 
     async def _dev_analyze_dependencies(self, object_name: str, context: Dict) -> Dict:
         """Анализ зависимостей"""
-        # Use existing dependencies implementation
-        return {"dependencies": []}
+        dependencies = context.get("dependencies") if context else None
+        if dependencies is not None:
+            return self._offline_contract(
+                tool="dev:analyze_dependencies",
+                role="developer",
+                summary=f"Зависимости для {object_name} взяты из переданного контекста.",
+                context=context,
+                required_evidence=[],
+                data={"object_name": object_name, "dependencies": dependencies},
+                status="success",
+            )
+        return self._offline_contract(
+            tool="dev:analyze_dependencies",
+            role="developer",
+            summary=f"Для {object_name} не передан граф зависимостей.",
+            context=context,
+            required_evidence=["metadata_graph", "dependencies", "repository_path"],
+        )
 
     # ===== Business Analyst Tools =====
 
@@ -160,134 +208,188 @@ class MultiRoleMCPServer:
 
     async def _arch_analyze_architecture(self, config_name: str, context: Dict) -> Dict:
         """Анализ архитектуры"""
-        # TODO: Implement architecture analysis using Neo4j
-        return {
-            "status": "success",
-            "analysis": {
-                "modules_count": 45,
-                "coupling": "Medium",
-                "cohesion": "High",
-                "issues": [
-                    "Циклические зависимости в модулях Продажи ↔ Склад",
-                    "God Object: ОбщегоНазначения (слишком много ответственностей)",
-                ],
+        modules = context.get("modules", []) if context else []
+        dependencies = context.get("dependencies", []) if context else []
+        status = "success" if modules or dependencies else "needs_evidence"
+        return self._offline_contract(
+            tool="arch:analyze_architecture",
+            role="architect",
+            summary=f"Архитектурный анализ {config_name} строится только по переданному графу.",
+            context=context,
+            required_evidence=[] if status == "success" else ["metadata_graph", "modules", "dependencies"],
+            data={
+                "config_name": config_name,
+                "modules_count": len(modules),
+                "dependencies_count": len(dependencies),
+                "issues": [],
             },
-        }
+            status=status,
+        )
 
     async def _arch_check_patterns(self, code: str, context: Dict) -> Dict:
         """Проверка паттернов"""
-        return {
-            "status": "success",
-            "patterns_found": ["Singleton", "Factory"],
-            "recommendations": ["Рассмотреть использование Dependency Injection"],
-        }
+        return self._offline_contract(
+            tool="arch:check_patterns",
+            role="architect",
+            summary="Проверка паттернов требует исходного кода и правил архитектуры.",
+            context={**(context or {}), "code_provided": bool(code.strip())},
+            required_evidence=[] if code.strip() else ["code"],
+            data={"patterns_found": [], "recommendations": []},
+            status="success" if code.strip() else "needs_evidence",
+        )
 
     async def _arch_detect_anti_patterns(self, code: str, context: Dict) -> Dict:
         """Поиск anti-patterns"""
-        return {
-            "status": "success",
-            "anti_patterns": [
-                {
-                    "name": "God Object",
-                    "location": "ОбщегоНазначения",
-                    "severity": "High",
-                }
-            ],
-        }
+        return self._offline_contract(
+            tool="arch:detect_anti_patterns",
+            role="architect",
+            summary="Anti-patterns не называются без анализа AST/метрик по переданному коду.",
+            context={**(context or {}), "code_provided": bool(code.strip())},
+            required_evidence=[] if code.strip() else ["code", "metadata_graph"],
+            data={"anti_patterns": []},
+            status="success" if code.strip() else "needs_evidence",
+        )
 
     async def _arch_calculate_tech_debt(self, config_name: str, context: Dict) -> Dict:
         """Расчет технического долга"""
-        return {
-            "status": "success",
-            "tech_debt": {
-                "total_days": 45,
-                "by_category": {
-                    "code_smells": 15,
-                    "duplications": 10,
-                    "complexity": 12,
-                    "documentation": 8,
-                },
-            },
-        }
+        return self._offline_contract(
+            tool="arch:calculate_tech_debt",
+            role="architect",
+            summary=f"Технический долг {config_name} требует метрик, правил оценки и истории дефектов.",
+            context=context,
+            required_evidence=["quality_metrics", "duplication_report", "complexity_report", "bug_history"],
+            data={"tech_debt": {"measured": False, "total_days": None, "by_category": {}}},
+        )
 
     # ===== DevOps Tools =====
 
     async def _devops_optimize_cicd(self, pipeline: str, context: Dict) -> Dict:
         """Оптимизация CI/CD"""
-        return {
-            "status": "success",
-            "recommendations": [
-                "Добавить кеширование зависимостей",
-                "Параллельный запуск тестов",
-                "Использовать Docker layer caching",
-            ],
-        }
+        recommendations = []
+        lower = pipeline.lower()
+        if pipeline.strip():
+            if "cache" not in lower:
+                recommendations.append("Проверить кеширование зависимостей/build artifacts.")
+            if "test" not in lower and "тест" not in lower:
+                recommendations.append("Добавить явный test gate перед deploy.")
+            if "approval" not in lower and "approve" not in lower:
+                recommendations.append("Добавить approval gate для deploy/apply шагов.")
+        return self._offline_contract(
+            tool="devops:optimize_cicd",
+            role="devops",
+            summary="CI/CD рекомендации построены только по переданному pipeline text.",
+            context=context,
+            required_evidence=[] if pipeline.strip() else ["pipeline_config"],
+            data={"recommendations": recommendations},
+            status="success" if pipeline.strip() else "needs_evidence",
+        )
 
     async def _devops_analyze_performance(self, metrics: Dict, context: Dict) -> Dict:
         """Анализ производительности"""
-        return {
-            "status": "success",
-            "analysis": {
-                "bottlenecks": ["Медленные SQL запросы", "Избыточные HTTP requests"],
-                "recommendations": [
-                    "Добавить индексы",
-                    "Использовать batch processing",
-                ],
-            },
-        }
+        bottlenecks = []
+        for key, value in (metrics or {}).items():
+            if isinstance(value, (int, float)) and value >= 80:
+                bottlenecks.append({"metric": key, "value": value, "reason": ">= 80 threshold"})
+        return self._offline_contract(
+            tool="devops:analyze_performance",
+            role="devops",
+            summary="Performance triage использует только переданные числовые метрики.",
+            context={**(context or {}), "metrics_keys": sorted((metrics or {}).keys())},
+            required_evidence=[] if metrics else ["metrics", "tech_journal", "slow_query_log"],
+            data={"bottlenecks": bottlenecks, "recommendations": []},
+            status="success" if metrics else "needs_evidence",
+        )
 
     async def _devops_analyze_logs(self, logs: str, context: Dict) -> Dict:
         """Анализ логов"""
-        return {
-            "status": "success",
-            "errors": 12,
-            "warnings": 45,
-            "patterns": [
-                "Timeout errors в 18:00-19:00",
-                "Memory leaks в модуле Отчеты",
-            ],
-        }
+        lines = [line for line in logs.splitlines() if line.strip()]
+        error_lines = [
+            line for line in lines if any(marker in line.lower() for marker in ("error", "ошиб", "exception"))
+        ]
+        warning_lines = [
+            line for line in lines if any(marker in line.lower() for marker in ("warn", "предупреж"))
+        ]
+        return self._offline_contract(
+            tool="devops:analyze_logs",
+            role="devops",
+            summary="Логи просканированы локально без выдуманных паттернов.",
+            context=context,
+            required_evidence=[] if logs.strip() else ["logs", "tech_journal_path"],
+            data={
+                "total_lines": len(lines),
+                "errors": len(error_lines),
+                "warnings": len(warning_lines),
+                "patterns": [],
+                "sample_errors": error_lines[:5],
+            },
+            status="success" if logs.strip() else "needs_evidence",
+        )
 
     async def _devops_capacity_planning(self, usage_data: Dict, context: Dict) -> Dict:
         """Планирование мощностей"""
-        return {
-            "status": "success",
-            "forecast": {
-                "current_capacity": "75%",
-                "predicted_in_3_months": "95%",
-                "recommendation": "Увеличить ресурсы на 30%",
-            },
-        }
+        current = usage_data.get("current_capacity") or usage_data.get("utilization")
+        data = {"forecast": {"measured": bool(current), "current_capacity": current}}
+        return self._offline_contract(
+            tool="devops:capacity_planning",
+            role="devops",
+            summary="Capacity planning требует фактической утилизации и тренда.",
+            context={**(context or {}), "usage_keys": sorted((usage_data or {}).keys())},
+            required_evidence=[] if current else ["usage_data.current_capacity", "trend_history"],
+            data=data,
+            status="success" if current else "needs_evidence",
+        )
 
     # ===== Technical Writer Tools =====
 
     async def _tw_generate_api_docs(self, module_name: str, context: Dict) -> Dict:
         """Генерация API документации"""
-        return {
-            "status": "success",
-            "documentation": f"# API Documentation: {module_name}\n\n## Functions\n\n...",
-        }
+        code = (context or {}).get("code", "")
+        return self._offline_contract(
+            tool="tw:generate_api_docs",
+            role="technical_writer",
+            summary=f"API docs для {module_name} требуют кода, OpenAPI или списка endpoints.",
+            context=context,
+            required_evidence=[] if code else ["code", "openapi", "endpoints"],
+            data={"documentation": f"# API Documentation: {module_name}\n\nИсточник: переданный код.\n" if code else ""},
+            status="success" if code else "needs_evidence",
+        )
 
     async def _tw_generate_user_guide(self, feature: str, context: Dict) -> Dict:
         """Генерация user guide"""
-        return {
-            "status": "success",
-            "guide": f"# User Guide: {feature}\n\n## Introduction\n\n...",
-        }
+        return self._offline_contract(
+            tool="tw:generate_user_guide",
+            role="technical_writer",
+            summary=f"User guide для {feature} требует сценариев и аудитории.",
+            context=context,
+            required_evidence=["feature_scenarios", "audience", "screenshots_or_steps"],
+            data={"guide": ""},
+        )
 
     async def _tw_document_function(self, code: str, context: Dict) -> Dict:
         """Документирование функции"""
-        return {
-            "status": "success",
-            "documentation": "// Описание функции\n// Параметры: ...\n// Возвращаемое значение: ...",
-        }
+        has_code = bool(code.strip())
+        return self._offline_contract(
+            tool="tw:document_function",
+            role="technical_writer",
+            summary="Документирование функции требует исходного кода.",
+            context={**(context or {}), "code_provided": has_code},
+            required_evidence=[] if has_code else ["code"],
+            data={"documentation": "Описание должно быть сформировано из сигнатуры и комментариев переданного кода." if has_code else ""},
+            status="success" if has_code else "needs_evidence",
+        )
 
     async def _tw_generate_release_notes(self, version: str, context: Dict) -> Dict:
         """Генерация release notes"""
-        return {
-            "status": "success",
-            "release_notes": f"# Release Notes v{version}\n\n## New Features\n\n## Bug Fixes\n\n...",
-        }
+        commits = (context or {}).get("commits", [])
+        return self._offline_contract(
+            tool="tw:generate_release_notes",
+            role="technical_writer",
+            summary=f"Release notes v{version} требуют commits/change set.",
+            context=context,
+            required_evidence=[] if commits else ["commits", "change_set", "fixed_bugs"],
+            data={"release_notes": f"# Release Notes v{version}\n\n" + "\n".join(f"- {commit}" for commit in commits)},
+            status="success" if commits else "needs_evidence",
+        )
 
     async def handle_request(self, tool_name: str, args: Dict) -> Dict:
         """
@@ -329,13 +431,12 @@ class MultiRoleMCPServer:
             "Registered tools", extra={"tools_count": len(self.tools), "roles_count": 6}
         )
 
-        # TODO: Implement actual MCP protocol server
-        # For now, this is a placeholder
+        # Embedded registry mode: protocol hosting is provided by src.ai.mcp.server.
 
         print(
             f"""
 ╔══════════════════════════════════════════════════════════════╗
-║       Multi-Role MCP Server Started                          ║
+║       Multi-Role MCP Tool Registry Ready                     ║
 ║       Port: {self.port}                                              ║
 ║       Roles: 6                                                ║
 ║       Tools: {len(self.tools)}                                              ║

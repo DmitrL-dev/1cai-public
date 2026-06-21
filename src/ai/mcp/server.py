@@ -927,7 +927,7 @@ BASE_TOOLS = [
     ),
     MCPTool(
         name="offline_bundle_archive",
-        description="Build a portable offline ZIP bundle containing payload files, manifest.json and VERIFY.txt.",
+        description="Build a portable offline ZIP bundle containing payload files, manifest.json, DELIVERY_PASSPORT and VERIFY.txt.",
         input_schema={
             "type": "object",
             "properties": {

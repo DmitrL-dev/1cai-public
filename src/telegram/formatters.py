@@ -1,28 +1,26 @@
-
 """
-Форматирование ответов для Telegram
-Markdown formatting, code blocks, красивый вывод
+Telegram response formatting helpers.
+
+The bot may run in consoles, containers and customer environments with mixed
+encodings, so user-facing fallback text is kept in ASCII.
 """
 
 from typing import Dict
 
 
 class TelegramFormatter:
-    """Форматирование ответов для Telegram"""
+    """Format Telegram bot responses."""
 
     @staticmethod
     def format_search_results(results: Dict) -> str:
-        """Форматирование результатов поиска"""
+        """Format semantic search results."""
         if not results or not results.get("results"):
-            return "🔍 Ничего не найдено. Попробуйте другой запрос."
+            return "No results found. Try a more specific query."
 
         items = results.get("results", [])
         count = len(items)
+        text = f"**Found {count} result(s)**\n\n"
 
-        # Заголовок
-        text = f"✨ **Найдено: {count} результатов**\n\n"
-
-        # Показываем топ-5 результатов
         for i, item in enumerate(items[:5], 1):
             name = item.get("name", "Unknown")
             module = item.get("module", "")
@@ -32,171 +30,148 @@ class TelegramFormatter:
             text += f"**{i}. {name}**\n"
 
             if module:
-                text += f"📁 `{module}`\n"
+                text += f"`{module}`\n"
 
             if description:
-                # Ограничиваем длину описания
-                desc_short = (
-                    description[:150] + "..." if len(description) > 150 else description
-                )
-                text += f"💬 {desc_short}\n"
+                desc_short = description[:150] + "..." if len(description) > 150 else description
+                text += f"{desc_short}\n"
 
             if score:
-                text += f"🎯 Релевантность: {score:.1%}\n"
+                text += f"Relevance: {score:.1%}\n"
 
             text += "\n"
 
-        # Если результатов больше 5
         if count > 5:
-            text += f"_...и ещё {count - 5} результатов_\n\n"
+            text += f"_...and {count - 5} more result(s)_\n\n"
 
-        # Подсказка
-        text += "💡 Хотите увидеть код? Используйте /show <номер>"
-
+        text += "Need code? Use /show <number>."
         return text
 
     @staticmethod
     def format_code(code: str, language: str = "bsl") -> str:
-        """Форматирование кода с syntax highlighting"""
-        # Telegram поддерживает markdown code blocks
+        """Format code with Telegram Markdown code fences."""
         return f"```{language}\n{code}\n```"
 
     @staticmethod
     def format_generated_code(result: Dict) -> str:
-        """Форматирование сгенерированного кода"""
+        """Format generated code response."""
         code = result.get("code", "")
         explanation = result.get("explanation", "")
         function_name = result.get("function_name", "")
 
-        text = "✨ **Сгенерирован код**\n\n"
+        text = "**Generated code**\n\n"
 
         if function_name:
-            text += f"📝 Функция: `{function_name}`\n\n"
+            text += f"Function: `{function_name}`\n\n"
 
         if explanation:
-            text += f"💡 **Описание:**\n{explanation}\n\n"
+            text += f"**Explanation:**\n{explanation}\n\n"
 
-        text += f"**Код:**\n{TelegramFormatter.format_code(code)}\n\n"
-
-        text += "⚠️ _Не забудьте проверить и протестировать код перед использованием!_"
-
+        text += f"**Code:**\n{TelegramFormatter.format_code(code)}\n\n"
+        text += "_Review and test this code before use._"
         return text
 
     @staticmethod
     def format_dependencies(result: Dict) -> str:
-        """Форматирование анализа зависимостей"""
+        """Format dependency analysis response."""
         function_name = result.get("function", "")
         module_name = result.get("module", "")
 
-        text = "🔗 **Анализ зависимостей**\n\n"
-        text += f"📌 Функция: `{function_name}`\n"
-        text += f"📁 Модуль: `{module_name}`\n\n"
+        text = "**Dependency analysis**\n\n"
+        text += f"Function: `{function_name}`\n"
+        text += f"Module: `{module_name}`\n\n"
 
-        # Используемые функции
         uses = result.get("uses", [])
         if uses:
-            text += f"**Использует ({len(uses)}):**\n"
+            text += f"**Uses ({len(uses)}):**\n"
             for func in uses[:10]:
-                text += f"  → `{func}`\n"
+                text += f"  -> `{func}`\n"
             if len(uses) > 10:
-                text += f"  _...и ещё {len(uses) - 10}_\n"
+                text += f"  _...and {len(uses) - 10} more_\n"
             text += "\n"
 
-        # Где используется
         used_by = result.get("used_by", [])
         if used_by:
-            text += f"**Используется в ({len(used_by)}):**\n"
+            text += f"**Used by ({len(used_by)}):**\n"
             for func in used_by[:10]:
-                text += f"  ← `{func}`\n"
+                text += f"  <- `{func}`\n"
             if len(used_by) > 10:
-                text += f"  _...и ещё {len(used_by) - 10}_\n"
+                text += f"  _...and {len(used_by) - 10} more_\n"
             text += "\n"
 
-        # Граф (если есть)
         if result.get("graph_url"):
-            text += f"📊 [Визуализация графа]({result['graph_url']})\n"
+            text += f"[Graph visualization]({result['graph_url']})\n"
 
         return text
 
     @staticmethod
     def format_error(error: str) -> str:
-        """Форматирование ошибки"""
-        return f"❌ **Ошибка:**\n\n{error}\n\n💡 Попробуйте переформулировать запрос или используйте /help"
+        """Format an error response."""
+        return f"**Error:**\n\n{error}\n\nTry rephrasing the request or use /help."
 
     @staticmethod
     def format_help() -> str:
-        """Справка по командам"""
-        return """🤖 **1C AI Assistant**
+        """Return command help."""
+        return """**1C AI Assistant**
 
-**Команды:**
+**Commands:**
 
-🔍 `/search <запрос>` — семантический поиск кода
-Пример: `/search расчет НДС`
+`/search <query>` - semantic code search
+Example: `/search VAT calculation`
 
-💻 `/generate <описание>` — генерация BSL кода
-Пример: `/generate функция для расчета скидки`
+`/generate <description>` - generate BSL code
+Example: `/generate discount calculation function`
 
-🔗 `/deps <модуль> <функция>` — анализ зависимостей
-Пример: `/deps РасчетыСервер РассчитатьНДС`
+`/deps <module> <function>` - dependency analysis
+Example: `/deps SalesServer CalculateVAT`
 
-📊 `/stats` — ваша статистика
-🎁 `/premium` — информация о Premium
-❓ `/help` — эта справка
+`/stats` - your usage statistics
+`/premium` - Premium information
+`/help` - this help
 
-**Естественные запросы:**
-Просто напишите вопрос, и я постараюсь помочь!
+**Natural questions:**
+Send a question in plain text and the bot will try to help.
 
-Пример: "Где в коде мы работаем с налогами?"
-
-**Подсказки:**
-• Используйте конкретные термины
-• Можете отправлять BSL файлы для анализа
-• 🎤 Можете отправлять голосовые сообщения!
-• Premium дает безлимитные запросы
-
-🚀 Начните с `/search` или просто задайте вопрос!
+You can also upload `.bsl`, `.os` or `.txt` files for local BSL diagnostics.
 """
 
     @staticmethod
     def format_stats(stats: Dict) -> str:
-        """Форматирование статистики пользователя"""
+        """Format user usage statistics."""
         requests_today = stats.get("requests_today", 0)
         requests_total = stats.get("requests_total", 0)
         limit_today = stats.get("limit_today", 100)
         is_premium = stats.get("is_premium", False)
 
-        text = "📊 **Ваша статистика**\n\n"
+        text = "**Your statistics**\n\n"
 
         if is_premium:
-            text += "⭐ **Premium аккаунт** — безлимит!\n\n"
+            text += "**Premium account** - unlimited.\n\n"
         else:
-            text += f"📈 Запросов сегодня: {requests_today}/{limit_today}\n"
             remaining = max(0, limit_today - requests_today)
-            text += f"✅ Осталось: {remaining}\n\n"
+            text += f"Requests today: {requests_today}/{limit_today}\n"
+            text += f"Remaining: {remaining}\n\n"
 
-        text += f"📊 Всего запросов: {requests_total}\n"
+        text += f"Total requests: {requests_total}\n"
 
         if not is_premium and requests_today >= limit_today * 0.8:
-            text += f"\n⚠️ Вы использовали {requests_today}/{limit_today} запросов!\n"
-            text += "💎 Попробуйте Premium для безлимитных запросов: /premium"
+            text += f"\nYou have used {requests_today}/{limit_today} requests today.\n"
+            text += "Use /premium to discuss higher limits."
 
         return text
 
     @staticmethod
     def format_premium_info() -> str:
-        """Информация о Premium"""
-        return """💎 **Premium возможности**
+        """Return Premium information."""
+        return """**Premium capabilities**
 
-**Расширенные функции:**
-✅ Повышенный лимит запросов
-✅ Приоритетная обработка
-✅ Расширенный анализ кода
-✅ API для интеграции
-✅ Экспорт результатов
-✅ Дополнительные AI агенты
+- Higher request limits
+- Priority processing
+- Extended code analysis
+- API integration
+- Result export
+- Additional AI agents
 
-**Интересует Premium доступ?**
-Создайте [Issue на GitHub](https://github.com/DmitrL-dev/1cai-public/issues) с описанием ваших задач.
-
-Мы обсудим возможности интеграции для вашего случая.
+Interested in Premium access? Create a GitHub issue with your use case:
+https://github.com/DmitrL-dev/1cai-public/issues
 """

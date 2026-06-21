@@ -95,3 +95,31 @@ async def test_get_plugin_stats_trend_stable():
     stats = await repo.get_plugin_stats("test-plugin")
     
     assert stats["downloads_trend"] == "stable"
+
+
+@pytest.mark.asyncio
+async def test_get_plugin_stats_rating_trend_up():
+    mock_pool = MagicMock()
+    mock_conn = AsyncMock()
+    mock_pool.acquire.return_value.__aenter__.return_value = mock_conn
+    repo = MarketplaceRepository(pool=mock_pool)
+
+    mock_row = {
+        "plugin_id": "test-plugin",
+        "downloads": 100,
+        "installs_active": 50,
+        "avg_rating": 4.5,
+        "avg_rating_30d": 4.8,
+        "avg_rating_prev_30d": 4.4,
+        "rating": 4.5,
+        "rating_dist": None,
+        "reviews_count": 12,
+        "favorites_count": 5,
+        "downloads_30d": 10,
+        "downloads_prev_30d": 10,
+    }
+    mock_conn.fetchrow.return_value = mock_row
+
+    stats = await repo.get_plugin_stats("test-plugin")
+
+    assert stats["rating_trend"] == "up"

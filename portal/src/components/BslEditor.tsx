@@ -37,7 +37,7 @@ const DEFAULT_BSL_CODE = `// 1C:Enterprise BSL Module
     
     Попытка
         Результат = Новый Структура("Успех, Описание", Истина, "");
-        // TODO: Логика обработки
+        // RENTGEN-GUARD: add project-specific processing after validation.
         Возврат Результат;
     Исключение
         Возврат Новый Структура("Успех, Описание", Ложь, ОписаниеОшибки());

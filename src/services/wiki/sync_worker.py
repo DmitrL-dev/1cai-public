@@ -9,7 +9,7 @@ import uuid
 from pathlib import Path
 from typing import List, Optional, Set
 
-from src.database import get_db_connection
+from src.infrastructure.db.connection import get_db_connection
 from src.services.wiki.models import WikiPageCreate, WikiPageUpdate
 from src.services.wiki.service import WikiService
 from src.utils.structured_logging import StructuredLogger
@@ -204,9 +204,7 @@ class CodeSyncService:
     async def _get_or_create_namespace(
         self, name: str, path: str, parent_id: Optional[str] = None
     ) -> str:
-        """
-        Stub for namespace management.
-        """
+        """Create or reuse a deterministic namespace for a repository path."""
         # Deterministic ID based on path
         ns_uuid = str(uuid.uuid5(uuid.NAMESPACE_URL, f"namespace:{path}"))
 

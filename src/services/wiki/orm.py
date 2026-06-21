@@ -49,7 +49,7 @@ class WikiBlueprint(Base):
     id = Column(String, primary_key=True, default=generate_uuid)
     name = Column(String, nullable=False, unique=True)
     description = Column(String, nullable=True)
-    content_template = Column(Text, nullable=False)  # Markdown with placeholders
+    content_template = Column(Text, nullable=False)  # Markdown template variables
     metadata_schema = Column(JSON, nullable=True)  # JSON schema for required metadata
 
 

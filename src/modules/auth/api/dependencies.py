@@ -5,6 +5,7 @@ API зависимости для модуля аутентификации.
 
 from functools import lru_cache
 from typing import Optional
+from zlib import crc32
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
@@ -104,15 +105,8 @@ async def get_current_user_id(current_user: CurrentUser = Depends(get_current_us
     Returns:
         int: ID пользователя.
     """
-    # Временная заглушка или реальная логика конвертации
-    # Если user_id в CurrentUser это строка (например UUID), а в OAuth нужен int,
-    # то здесь нужна логика.
-    # В оригинальном коде OAuth user_id был int, а в Auth - str.
-    # Предположим пока что мы можем использовать hash или int conversion если это число.
-
     try:
         return int(current_user.user_id)
-    except ValueError:
-        # Если user_id не число (например "admin-1"), возвращаем хэш или фиктивный ID для совместимости
-        # В реальном проекте нужно привести типы ID к общему знаменателю.
-        return 1
+    except (TypeError, ValueError):
+        raw_user_id = str(current_user.user_id).encode("utf-8", errors="ignore")
+        return (crc32(raw_user_id) % 2_000_000_000) or 1

@@ -15,11 +15,12 @@
 - Project/tenant boundaries for scoped actions.
 - Policy-as-code gates for impact, tests, release, security and standards.
 - Dry-run default for external test runner execution.
-- Audit events for artifact, policy, testing, metadata, IAM and agentic workflows.
+- Tamper-evident hash-chain audit events for artifact, policy, testing, metadata, IAM and agentic workflows.
+- Audit verification endpoint: `GET /api/v1/audit/verify`.
 
 ## Current Gaps
 
-- Audit log is not yet hash-chained.
+- Live SIEM streaming is not implemented yet; export and hash-chain verification are local.
 - Live OIDC/SAML handshakes are adapter-ready, not fully implemented.
 - Path boundaries must be enforced before broad file import/run features are exposed to untrusted users.
 

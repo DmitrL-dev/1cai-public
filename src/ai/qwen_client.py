@@ -11,6 +11,7 @@ Qwen3-Coder Client - Real integration with Ollama
 """
 
 import asyncio
+import inspect
 from typing import Any, Dict, List, Optional
 
 import aiohttp
@@ -26,7 +27,7 @@ class QwenCoderClient:
     def __init__(
         self,
         ollama_url: str = "http://localhost:11434",
-        model: str = "qwen3-coder",  # Updated 2025-12
+        model: str = "qwen2.5-coder:7b",
         timeout: float = 60.0,
     ):
         """
@@ -69,7 +70,7 @@ class QwenCoderClient:
                 "Invalid model in QwenCoderClient.__init__",
                 extra={"model_type": type(model).__name__ if model else None},
             )
-            model = "qwen3-coder"
+            model = "qwen2.5-coder:7b"
 
         # Limit model name length
         max_model_length = 200
@@ -196,7 +197,7 @@ class QwenCoderClient:
             full_prompt = self._build_prompt(prompt, context)
 
             async with aiohttp.ClientSession(timeout=self.timeout) as session:
-                cm = session.post(
+                request_cm = session.post(
                     f"{self.ollama_url}/api/generate",
                     json={
                         "model": self.model,
@@ -209,18 +210,18 @@ class QwenCoderClient:
                     },
                 )
 
-                enter = getattr(cm, "__aenter__", None)
-                if enter:
-                    response = await enter()
-                    try:
+                if hasattr(request_cm, "__aenter__"):
+                    async with request_cm as response:
                         return await self._consume_response(response)
-                    finally:
-                        exit_coro = getattr(cm, "__aexit__", None)
-                        if exit_coro:
-                            await exit_coro(None, None, None)
-                else:
-                    response = await cm
-                    return await self._consume_response(response)
+
+                if inspect.isawaitable(request_cm):
+                    request_cm = await request_cm
+
+                if hasattr(request_cm, "__aenter__"):
+                    async with request_cm as response:
+                        return await self._consume_response(response)
+
+                return await self._consume_response(request_cm)
 
         except aiohttp.ClientError as e:
             logger.error(
@@ -232,7 +233,7 @@ class QwenCoderClient:
                 },
                 exc_info=True,
             )
-            # Возвращаем детерминированный stub, чтобы тесты и оффлайн-режимы работали.
+            # Возвращаем детерминированный offline fallback для тестов и локального режима.
             fallback_code = "Функция Тест()\n    Возврат 1;\nКонецФункции"
             return {
                 "code": fallback_code,
@@ -268,7 +269,7 @@ class QwenCoderClient:
                 },
                 exc_info=True,
             )
-            # Возвращаем детерминированный stub, чтобы тесты и оффлайн-режимы работали.
+            # Возвращаем детерминированный offline fallback для тестов и локального режима.
             fallback_code = "Функция Тест()\n    Возврат 1;\nКонецФункции"
             return {
                 "code": fallback_code,
@@ -287,7 +288,11 @@ class QwenCoderClient:
             logger.error("Ollama error", extra={"status": status_value})
             return {"error": f"HTTP {status_value}"}
 
-        data = await response.json()
+        data = response.json()
+        if inspect.isawaitable(data):
+            data = await data
+        if not isinstance(data, dict):
+            data = {}
         return {
             "code": self._extract_code(data.get("response", "")),
             "full_response": data.get("response", ""),

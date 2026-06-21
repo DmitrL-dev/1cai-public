@@ -1,10 +1,4 @@
-"""Модуль llm_providers.
-
-TODO: Добавить подробное описание модуля.
-
-Этот docstring был автоматически сгенерирован.
-Пожалуйста, обновите его с правильным описанием.
-"""
+"""LLM provider strategies with explicit offline-not-configured contracts."""
 
 from typing import Any, Dict
 
@@ -19,16 +13,26 @@ from src.utils.structured_logging import StructuredLogger
 logger = StructuredLogger(__name__).logger
 
 
+def _not_configured(service_name: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    """Return a bounded contract when a cloud/local provider lacks credentials."""
+    return {
+        "status": "llm_provider_not_configured",
+        "mode": "offline_provider_contract",
+        "provider": service_name,
+        "coverage": "no_credentials",
+        "response": "",
+        "context_keys": sorted(str(key) for key in (context or {}).keys()),
+        "caveats": [
+            f"{service_name} credentials or endpoint are not configured; no LLM call was made."
+        ],
+    }
+
+
 class GigaChatStrategy(AIStrategy):
-    """Класс GigaChatStrategy.
-    
-    TODO: Добавить описание класса.
-    
-    Attributes:
-        TODO: Описать атрибуты класса.
-    """
+    """Strategy adapter for configured GigaChat calls."""
+
     def __init__(self):
-        """TODO: Описать функцию __init__."""
+        """Initialize the client without failing baseline startup."""
         try:
             self.client = GigaChatClient(config=GigaChatConfig())
             self.is_available = self.client.is_configured
@@ -37,25 +41,13 @@ class GigaChatStrategy(AIStrategy):
 
     @property
     def service_name(self) -> str:
-        """TODO: Описать функцию service_name.
-        
-        Returns:
-            TODO: Описать возвращаемое значение.
-        """
+        """Provider identifier used by the orchestrator."""
         return "gigachat"
 
     async def execute(self, query: str, context: Dict[str, Any]) -> Dict[str, Any]:
-        """TODO: Описать функцию execute.
-        
-        Args:
-            query: TODO: Описать параметр.
-            context: TODO: Описать параметр.
-        
-        Returns:
-            TODO: Описать возвращаемое значение.
-        """
+        """Execute a GigaChat request or return an offline provider contract."""
         if not self.is_available:
-            return {"status": "skipped", "message": "GigaChat not configured"}
+            return _not_configured(self.service_name, context)
 
         system_prompt = context.get(
             "system_prompt", "Вы — эксперт-аналитик. Отвечайте на русском языке."
@@ -69,15 +61,10 @@ class GigaChatStrategy(AIStrategy):
 
 
 class YandexGPTStrategy(AIStrategy):
-    """Класс YandexGPTStrategy.
-    
-    TODO: Добавить описание класса.
-    
-    Attributes:
-        TODO: Описать атрибуты класса.
-    """
+    """Strategy adapter for configured YandexGPT calls."""
+
     def __init__(self):
-        """TODO: Описать функцию __init__."""
+        """Initialize the client without failing baseline startup."""
         try:
             self.client = YandexGPTClient(config=YandexGPTConfig())
             self.is_available = self.client.is_configured
@@ -86,25 +73,13 @@ class YandexGPTStrategy(AIStrategy):
 
     @property
     def service_name(self) -> str:
-        """TODO: Описать функцию service_name.
-        
-        Returns:
-            TODO: Описать возвращаемое значение.
-        """
+        """Provider identifier used by the orchestrator."""
         return "yandexgpt"
 
     async def execute(self, query: str, context: Dict[str, Any]) -> Dict[str, Any]:
-        """TODO: Описать функцию execute.
-        
-        Args:
-            query: TODO: Описать параметр.
-            context: TODO: Описать параметр.
-        
-        Returns:
-            TODO: Описать возвращаемое значение.
-        """
+        """Execute a YandexGPT request or return an offline provider contract."""
         if not self.is_available:
-            return {"status": "skipped", "message": "YandexGPT not configured"}
+            return _not_configured(self.service_name, context)
 
         system_prompt = context.get(
             "system_prompt", "Вы — эксперт-аналитик. Отвечайте на русском языке."
@@ -118,15 +93,10 @@ class YandexGPTStrategy(AIStrategy):
 
 
 class NaparnikStrategy(AIStrategy):
-    """Класс NaparnikStrategy.
-    
-    TODO: Добавить описание класса.
-    
-    Attributes:
-        TODO: Описать атрибуты класса.
-    """
+    """Strategy adapter for configured 1C Naparnik calls."""
+
     def __init__(self):
-        """TODO: Описать функцию __init__."""
+        """Initialize the client without failing baseline startup."""
         try:
             self.client = NaparnikClient(config=NaparnikConfig())
             self.is_available = self.client.is_configured
@@ -135,25 +105,13 @@ class NaparnikStrategy(AIStrategy):
 
     @property
     def service_name(self) -> str:
-        """TODO: Описать функцию service_name.
-        
-        Returns:
-            TODO: Описать возвращаемое значение.
-        """
+        """Provider identifier used by the orchestrator."""
         return "naparnik"
 
     async def execute(self, query: str, context: Dict[str, Any]) -> Dict[str, Any]:
-        """TODO: Описать функцию execute.
-        
-        Args:
-            query: TODO: Описать параметр.
-            context: TODO: Описать параметр.
-        
-        Returns:
-            TODO: Описать возвращаемое значение.
-        """
+        """Execute a Naparnik request or return an offline provider contract."""
         if not self.is_available:
-            return {"status": "skipped", "message": "Naparnik not configured"}
+            return _not_configured(self.service_name, context)
 
         system_prompt = context.get(
             "system_prompt", "Вы — эксперт-помощник для разработчиков 1С:Enterprise."
@@ -167,15 +125,10 @@ class NaparnikStrategy(AIStrategy):
 
 
 class OllamaStrategy(AIStrategy):
-    """Класс OllamaStrategy.
-    
-    TODO: Добавить описание класса.
-    
-    Attributes:
-        TODO: Описать атрибуты класса.
-    """
+    """Strategy adapter for configured local Ollama calls."""
+
     def __init__(self):
-        """TODO: Описать функцию __init__."""
+        """Initialize the client without failing baseline startup."""
         try:
             self.client = OllamaClient(config=OllamaConfig())
             self.is_available = self.client.is_configured
@@ -184,25 +137,13 @@ class OllamaStrategy(AIStrategy):
 
     @property
     def service_name(self) -> str:
-        """TODO: Описать функцию service_name.
-        
-        Returns:
-            TODO: Описать возвращаемое значение.
-        """
+        """Provider identifier used by the orchestrator."""
         return "ollama"
 
     async def execute(self, query: str, context: Dict[str, Any]) -> Dict[str, Any]:
-        """TODO: Описать функцию execute.
-        
-        Args:
-            query: TODO: Описать параметр.
-            context: TODO: Описать параметр.
-        
-        Returns:
-            TODO: Описать возвращаемое значение.
-        """
+        """Execute an Ollama request or return an offline provider contract."""
         if not self.is_available:
-            return {"status": "skipped", "message": "Ollama not configured"}
+            return _not_configured(self.service_name, context)
 
         model_name = context.get("ollama_model", "llama3")
         system_prompt = context.get("system_prompt", "You are a helpful AI assistant.")
@@ -216,15 +157,10 @@ class OllamaStrategy(AIStrategy):
 
 
 class TabnineStrategy(AIStrategy):
-    """Класс TabnineStrategy.
-    
-    TODO: Добавить описание класса.
-    
-    Attributes:
-        TODO: Описать атрибуты класса.
-    """
+    """Strategy adapter for configured Tabnine calls."""
+
     def __init__(self):
-        """TODO: Описать функцию __init__."""
+        """Initialize the client without failing baseline startup."""
         try:
             self.client = TabnineClient(config=TabnineConfig())
             self.is_available = self.client.is_configured
@@ -233,25 +169,13 @@ class TabnineStrategy(AIStrategy):
 
     @property
     def service_name(self) -> str:
-        """TODO: Описать функцию service_name.
-        
-        Returns:
-            TODO: Описать возвращаемое значение.
-        """
+        """Provider identifier used by the orchestrator."""
         return "tabnine"
 
     async def execute(self, query: str, context: Dict[str, Any]) -> Dict[str, Any]:
-        """TODO: Описать функцию execute.
-        
-        Args:
-            query: TODO: Описать параметр.
-            context: TODO: Описать параметр.
-        
-        Returns:
-            TODO: Описать возвращаемое значение.
-        """
+        """Execute a Tabnine request or return an offline provider contract."""
         if not self.is_available:
-            return {"status": "skipped", "message": "Tabnine not configured"}
+            return _not_configured(self.service_name, context)
 
         system_prompt = context.get(
             "system_prompt",

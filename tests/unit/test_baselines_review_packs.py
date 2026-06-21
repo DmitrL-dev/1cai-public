@@ -9,7 +9,15 @@ from src.ai.mcp.server import (
     handle_review_pack_decide,
 )
 from src.api.baselines_api import router
+from src.middleware.jwt_user_context import require_auth
 from src.services.rentgen import artifact_graph, baselines
+
+
+def _principal(username: str):
+    """Stand-in authenticated principal (principal_actor reads .username/.user_id)."""
+    from types import SimpleNamespace
+
+    return SimpleNamespace(username=username, user_id=username, roles=[])
 
 
 def _seed_artifacts(path):
@@ -110,6 +118,9 @@ def test_baselines_api_exposes_workflow(tmp_path, monkeypatch):
 
     app = FastAPI()
     app.include_router(router)
+    # Owner/actor come from the authenticated principal; approve as a different
+    # principal than the author so the separation-of-duties check passes.
+    app.dependency_overrides[require_auth] = lambda: _principal("dev")
     client = TestClient(app)
 
     baseline = client.post(
@@ -127,11 +138,13 @@ def test_baselines_api_exposes_workflow(tmp_path, monkeypatch):
     )
     comment = client.post(
         "/api/v1/review-packs/RP-API/comment",
-        json={"actor": "architect", "message": "Ready.", "artifact_id": chg["id"]},
+        json={"message": "Ready.", "artifact_id": chg["id"]},
     )
+    # Approver differs from the "dev" author (SoD).
+    app.dependency_overrides[require_auth] = lambda: _principal("architect")
     approve = client.post(
         "/api/v1/review-packs/RP-API/approve",
-        json={"actor": "architect", "reason": "Accepted."},
+        json={"reason": "Accepted."},
     )
     baselines_list = client.get("/api/v1/baselines")
     packs_list = client.get("/api/v1/review-packs?status=approved")
@@ -143,6 +156,11 @@ def test_baselines_api_exposes_workflow(tmp_path, monkeypatch):
     assert approve.json()["status"] == "approved"
     assert baselines_list.json()["total"] == 1
     assert packs_list.json()["total"] == 1
+
+    # SoD proof: the review-pack author ("dev") cannot self-approve.
+    app.dependency_overrides[require_auth] = lambda: _principal("dev")
+    self_approve = client.post("/api/v1/review-packs/RP-API/approve", json={"reason": "self"})
+    assert self_approve.status_code == 403
 
 
 @pytest.mark.asyncio

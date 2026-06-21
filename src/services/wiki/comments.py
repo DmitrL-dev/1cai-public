@@ -9,7 +9,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from src.database import get_db_connection
+from src.infrastructure.db.connection import get_db_connection
 from src.utils.structured_logging import StructuredLogger
 
 logger = StructuredLogger(__name__).logger

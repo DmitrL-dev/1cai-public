@@ -59,6 +59,12 @@ _AUTH_REQUIRED_DIRECT_ROUTERS = {
     "Management",
     "EDT MCP Bridge",
     "Productization",
+    # Read caller-supplied filesystem paths / disclose ITS docs / run local
+    # compute — must not be anonymous (closes the unauth LFI on Performer and
+    # IP-disclosure on ITS RAG). Copilot Coverage stays public (static GET catalog).
+    "Performer",
+    "ITS RAG",
+    "Swarm",
 }
 
 _LEGACY_OPTIONAL_MODULE_ROUTERS = {

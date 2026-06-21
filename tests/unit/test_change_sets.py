@@ -11,7 +11,15 @@ from src.ai.mcp.server import (
 )
 from src.api import change_sets_api
 from src.api.change_sets_api import router
+from src.middleware.jwt_user_context import require_auth
 from src.services.rentgen import artifact_graph, change_sets, policy_engine
+
+
+def _principal(username: str):
+    """Stand-in authenticated principal (principal_actor reads .username/.user_id)."""
+    from types import SimpleNamespace
+
+    return SimpleNamespace(username=username, user_id=username, roles=[])
 
 
 MODULE = "Documents/Order/Ext/ObjectModule.bsl"
@@ -116,6 +124,11 @@ def test_change_sets_api_exposes_workflow(tmp_path, monkeypatch):
 
     app = FastAPI()
     app.include_router(router)
+    # Governance endpoints derive actor/owner from the authenticated principal,
+    # never the request body. Inject a known principal via require_auth, and switch
+    # identity so the approver differs from the author — otherwise the separation-
+    # of-duties check (correctly) blocks self-approval.
+    app.dependency_overrides[require_auth] = lambda: _principal("dev")
     client = TestClient(app)
 
     created = client.post(
@@ -130,15 +143,18 @@ def test_change_sets_api_exposes_workflow(tmp_path, monkeypatch):
     analyzed = client.post("/api/v1/change-sets/CHG-API/analyze", json={})
     tests = client.post("/api/v1/change-sets/CHG-API/select-tests", json={})
     release = client.post("/api/v1/change-sets/CHG-API/release-readiness", json={"include_forms": False})
+
+    # Approver differs from the "dev" author so SoD passes; the 400 is the policy
+    # gate failing, and the override path then approves.
+    app.dependency_overrides[require_auth] = lambda: _principal("architect")
     transitioned = client.post(
         "/api/v1/change-sets/CHG-API/transition",
-        json={"status": "approved", "actor": "architect", "reason": "Ready."},
+        json={"status": "approved", "reason": "Ready."},
     )
     transitioned_override = client.post(
         "/api/v1/change-sets/CHG-API/transition",
         json={
             "status": "approved",
-            "actor": "architect",
             "reason": "Ready with explicit override.",
             "allow_policy_failure": True,
         },
@@ -153,6 +169,14 @@ def test_change_sets_api_exposes_workflow(tmp_path, monkeypatch):
     assert transitioned_override.json()["status"] == "approved"
     assert transitioned_override.json()["policy_evaluation"]["status"] == "fail"
     assert listing.json()["total"] == 1
+
+    # SoD proof: the author ("dev") cannot self-approve.
+    app.dependency_overrides[require_auth] = lambda: _principal("dev")
+    self_approve = client.post(
+        "/api/v1/change-sets/CHG-API/transition",
+        json={"status": "approved", "reason": "self-approval attempt"},
+    )
+    assert self_approve.status_code == 403
 
 
 @pytest.mark.asyncio

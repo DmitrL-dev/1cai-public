@@ -73,34 +73,27 @@ class CVEDatabaseClient:
         # NVD Client
         if self.nvd_api_key:
             try:
-                # TODO: Initialize real NVD client
-                self.logger.info("NVD client initialized")
+                self.logger.info("NVD API key configured; HTTP adapter is not wired")
             except Exception as e:
                 self.logger.error("Failed to init NVD client: %s", e)
 
         # Snyk Client
         if self.snyk_api_key:
             try:
-                # TODO: Initialize real Snyk client
-                self.logger.info("Snyk client initialized")
+                self.logger.info("Snyk API key configured; HTTP adapter is not wired")
             except Exception as e:
                 self.logger.error("Failed to init Snyk client: %s", e)
 
         # GitHub Client
         if self.github_token:
             try:
-                # TODO: Initialize real GitHub client
-                self.logger.info("GitHub Security client initialized")
+                self.logger.info(
+                    "GitHub token configured; security advisory adapter is not wired"
+                )
             except Exception as e:
                 self.logger.error("Failed to init GitHub client: %s", e)
 
-        # OSV Client (no auth required)
-        try:
-            # TODO: Initialize real OSV client
-            self.osv_client = True  # Placeholder
-            self.logger.info("OSV client initialized")
-        except Exception as e:
-            self.logger.error("Failed to init OSV client: %s", e)
+        self.logger.info("OSV adapter is not wired in the baseline profile")
 
     async def check_vulnerability(
         self,
@@ -120,6 +113,15 @@ class CVEDatabaseClient:
             List of CVEs found
         """
         all_cves = []
+        if not any(
+            [self.nvd_client, self.snyk_client, self.github_client, self.osv_client]
+        ):
+            self.logger.warning(
+                "No CVE sources configured for %s@%s; vulnerability lookup not measured",
+                package_name,
+                version,
+            )
+            return []
 
         # Check NVD
         if self.nvd_client:
@@ -163,9 +165,8 @@ class CVEDatabaseClient:
         version: str
     ) -> List[CVE]:
         """Check NVD database"""
-        # TODO: Implement real NVD API call
         # https://nvd.nist.gov/developers/vulnerabilities
-        self.logger.debug("Checking NVD for %s@{version}", package_name)
+        self.logger.debug("NVD adapter not wired for %s@%s", package_name, version)
         return []
 
     async def _check_snyk(
@@ -175,9 +176,8 @@ class CVEDatabaseClient:
         ecosystem: str
     ) -> List[CVE]:
         """Check Snyk database"""
-        # TODO: Implement real Snyk API call
         # https://snyk.io/api/
-        self.logger.debug("Checking Snyk for %s@{version}", package_name)
+        self.logger.debug("Snyk adapter not wired for %s@%s", package_name, version)
         return []
 
     async def _check_github(
@@ -187,11 +187,8 @@ class CVEDatabaseClient:
         ecosystem: str
     ) -> List[CVE]:
         """Check GitHub Security Advisories"""
-        # TODO: Implement real GitHub API call
         # https://docs.github.com/en/rest/security-advisories
-        self.logger.debug(
-            f"Checking GitHub for {package_name}@{version}"
-        )
+        self.logger.debug("GitHub advisory adapter not wired for %s@%s", package_name, version)
         return []
 
     async def _check_osv(
@@ -201,9 +198,8 @@ class CVEDatabaseClient:
         ecosystem: str
     ) -> List[CVE]:
         """Check OSV database"""
-        # TODO: Implement real OSV API call
         # https://osv.dev/
-        self.logger.debug("Checking OSV for %s@{version}", package_name)
+        self.logger.debug("OSV adapter not wired for %s@%s", package_name, version)
         return []
 
     def _deduplicate_cves(self, cves: List[CVE]) -> List[CVE]:
@@ -251,22 +247,22 @@ class CVEDatabaseClient:
 
     async def _get_nvd_details(self, cve_id: str) -> Optional[CVE]:
         """Get CVE details from NVD"""
-        # TODO: Implement
+        self.logger.debug("NVD details adapter not wired for %s", cve_id)
         return None
 
     async def _get_snyk_details(self, cve_id: str) -> Optional[CVE]:
         """Get CVE details from Snyk"""
-        # TODO: Implement
+        self.logger.debug("Snyk details adapter not wired for %s", cve_id)
         return None
 
     async def _get_github_details(self, cve_id: str) -> Optional[CVE]:
         """Get CVE details from GitHub"""
-        # TODO: Implement
+        self.logger.debug("GitHub advisory details adapter not wired for %s", cve_id)
         return None
 
     async def _get_osv_details(self, cve_id: str) -> Optional[CVE]:
         """Get CVE details from OSV"""
-        # TODO: Implement
+        self.logger.debug("OSV details adapter not wired for %s", cve_id)
         return None
 
 

@@ -3,7 +3,8 @@
 # Python 3.11+ (tested on 3.11.9)
 #
 # Install:    pip install -r requirements.txt
-# Full stack: pip install -r requirements.txt -r requirements-ml.txt
+# Optional:   pip install -r requirements.txt -r requirements-optional.txt
+# Full stack: pip install -r requirements.txt -r requirements-optional.txt -r requirements-ml.txt
 # Dev:        pip install -r requirements-dev.txt
 #
 # Phase 4.5: Split into core + optional (2026-02-16)
@@ -39,8 +40,7 @@ requests>=2.31.0
 beautifulsoup4==4.12.2
 antlr4-python3-runtime==4.13.2
 
-# ===== AI/ML (lightweight) =====
-openai>=1.58.0
+# ===== Analytics / data processing =====
 numpy>=1.24.0
 pandas>=2.0.0
 
@@ -67,10 +67,3 @@ urllib3>=2.2.0
 
 # ===== Logging =====
 python-json-logger==2.0.7
-
-# ===== RAG / Vector Search =====
-qdrant-client>=1.7.0
-sentence-transformers>=2.2.0
-
-# ===== Graph Database =====
-neo4j>=5.0.0

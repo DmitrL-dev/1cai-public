@@ -101,7 +101,7 @@ DELIVERABLES: list[dict[str, Any]] = [
     {
         "id": "coverage-map",
         "category": "strategy",
-        "title": "1C Copilot coverage map",
+        "title": "Rentgen subscription escape coverage map",
         "path": "docs/COPILOT_COVERAGE.md",
         "required": True,
         "min_bytes": 3000,
@@ -181,7 +181,7 @@ DELIVERABLES: list[dict[str, Any]] = [
     {
         "id": "audit-log",
         "category": "enterprise",
-        "title": "Append-only product audit log",
+        "title": "Tamper-evident product audit log",
         "path": "src/services/audit_log.py",
         "required": True,
         "min_bytes": 2500,
@@ -296,6 +296,7 @@ NON_AI_VALUE = [
     "Requirements-to-implementation-to-test traceability for BA and architects.",
     "Risk-driven test selection and persisted test evidence.",
     "Enterprise audit, project boundaries and approval evidence.",
+    "Offline delivery passport with manifest, verification steps and role handoff.",
     "Management workbench for readiness, blockers, coverage and residual risk.",
 ]
 
@@ -303,7 +304,7 @@ KNOWN_PRODUCT_GAPS = [
     {
         "severity": "medium",
         "code": "signed-offline-installer-missing",
-        "message": "Docs define packaging, but a signed offline installer or artifact bundle is not produced by this slice.",
+        "message": "Offline archive, manifest and delivery passport are produced; OS-native signed installer packaging remains a hardening step.",
     },
     {
         "severity": "medium",
@@ -317,8 +318,8 @@ KNOWN_PRODUCT_GAPS = [
     },
     {
         "severity": "low",
-        "code": "audit-hash-chain-missing",
-        "message": "Audit is append-only NDJSON, but tamper-evident hash chaining and SIEM streaming are still future hardening.",
+        "code": "audit-siem-streaming-missing",
+        "message": "Audit is a tamper-evident NDJSON hash chain with verification; live SIEM streaming remains future hardening.",
     },
     {
         "severity": "low",

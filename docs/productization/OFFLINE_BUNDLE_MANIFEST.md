@@ -56,8 +56,14 @@ C:\Python311\python.exe -m src.services.offline_bundle --archive --profile produ
 The archive contains:
 
 - `manifest.json`;
+- `DELIVERY_PASSPORT.json`;
+- `DELIVERY_PASSPORT.md`;
 - `VERIFY.txt`;
 - `payload/<repo-relative-path>` files.
+
+The delivery passport is the buyer handoff layer. It summarizes the profile,
+signature policy, manifest SHA-256, verification commands, acceptance gates and
+role-specific instructions for developer/QA, architect/security and director.
 
 ## Verify ZIP Bundle
 
@@ -87,3 +93,7 @@ The API never accepts signing secrets in request bodies. Signing uses the local 
 For pilots, an unsigned manifest is acceptable as engineering evidence.
 
 For production and air-gapped delivery, the manifest must be signed, stored with the release artifacts, and verified before installation.
+
+For buyer handoff, attach `DELIVERY_PASSPORT.md` together with the Evidence
+Bundle ZIP so security and the sponsor can verify what is being installed and
+which gates remain open.

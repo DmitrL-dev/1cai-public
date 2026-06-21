@@ -13,6 +13,8 @@ from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
+CICD_EVIDENCE_CONTRACT = "cicd_evidence_contract"
+
 
 class CIPlatform(Enum):
     """CI/CD platforms"""
@@ -158,18 +160,39 @@ class CICDClient:
                 
                 async with session.get(url, headers=headers) as resp:
                     if resp.status == 404:
-                        return {"total": 0, "error": "No test report found"}
+                        return {
+                            "status": "not_found",
+                            "mode": CICD_EVIDENCE_CONTRACT,
+                            "coverage": "gitlab_test_report_missing",
+                            "total": None,
+                            "measured": False,
+                            "required_evidence": ["GitLab pipeline test_report artifact"],
+                            "caveats": ["No test report was available for this pipeline."],
+                        }
                     resp.raise_for_status()
-                    return await resp.json()
+                    data = await resp.json()
+                    data.setdefault("status", "success")
+                    data.setdefault("mode", CICD_EVIDENCE_CONTRACT)
+                    data.setdefault("coverage", "gitlab_test_report")
+                    data.setdefault("measured", True)
+                    return data
 
             elif self.platform == CIPlatform.GITHUB:
-                # GitHub doesn't have a direct "test report" API for runs.
-                # We would need to parse logs or artifacts.
-                # Returning stub for now.
                 return {
-                    "total": 0,
-                    "status": "not_supported_for_github",
-                    "note": "GitHub Actions requires artifact parsing for test results"
+                    "status": "needs_evidence",
+                    "mode": CICD_EVIDENCE_CONTRACT,
+                    "coverage": "github_actions_run_metadata_only",
+                    "total": None,
+                    "measured": False,
+                    "required_evidence": [
+                        "GitHub Actions test report artifact",
+                        "JUnit XML artifact",
+                        "workflow log parser",
+                    ],
+                    "caveats": [
+                        "GitHub Actions does not expose normalized test totals from the run endpoint.",
+                        "A zero total is not returned unless an artifact has been parsed.",
+                    ],
                 }
         return {}
 
@@ -194,4 +217,4 @@ def get_cicd_client(
     return CICDClient(platform_enum, api_token, base_url)
 
 
-__all__ = ["CIPlatform", "CICDClient", "get_cicd_client"]
+__all__ = ["CIPlatform", "CICDClient", "CICD_EVIDENCE_CONTRACT", "get_cicd_client"]

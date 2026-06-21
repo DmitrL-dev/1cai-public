@@ -15,8 +15,8 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
-  rentgenApi,
-  type TestCoverageMatrixResponse,
+  testFactoryApi,
+  type TestFactoryResponse,
 } from "@/lib/api-client"
 
 export const Route = createFileRoute("/_authenticated/testing")({
@@ -36,8 +36,8 @@ function TestingPage() {
   const mutation = useMutation({
     mutationFn: async () => {
       if (mode === "modules") {
-        return rentgenApi
-          .testCoverageMatrix({
+        return testFactoryApi
+          .build({
             changed_modules: text
               .split(/\r?\n/)
               .map((line) => line.trim())
@@ -46,7 +46,7 @@ function TestingPage() {
           })
           .then((r) => r.data)
       }
-      return rentgenApi.testCoverageMatrix({ diff: text, match_limit: matchLimit }).then((r) => r.data)
+      return testFactoryApi.build({ diff: text, match_limit: matchLimit }).then((r) => r.data)
     },
   })
 
@@ -59,11 +59,11 @@ function TestingPage() {
               <TestTube2 size={20} className="text-primary sm:h-[22px] sm:w-[22px]" />
             </div>
             <h1 className="min-w-0 break-words text-xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl">
-              Test Coverage Matrix
+              Test Factory
             </h1>
           </div>
           <p className="mt-2 break-words text-sm text-muted-foreground sm:text-base">
-            Changed modules to exact tests, planned selectors, gaps, commands and test data.
+            Changed modules to run-now tests, generated YAxUnit/Vanessa skeletons, manual checks and evidence.
           </p>
         </div>
 
@@ -101,7 +101,7 @@ function TestingPage() {
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {mutation.isPending ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
-              Build Matrix
+              Build Test Factory
             </button>
           </div>
         </section>
@@ -121,14 +121,16 @@ function TestingPage() {
             </div>
           )}
 
-          {mutation.data && <CoverageReport report={mutation.data} />}
+          {mutation.data && <FactoryReport report={mutation.data} />}
         </section>
       </div>
     </div>
   )
 }
 
-function CoverageReport({ report }: { report: TestCoverageMatrixResponse }) {
+function FactoryReport({ report }: { report: TestFactoryResponse }) {
+  const matrix = report.matrix
+
   return (
     <div>
       <div className="flex flex-col gap-4 border-b border-border p-5 lg:flex-row lg:items-start lg:justify-between">
@@ -136,44 +138,90 @@ function CoverageReport({ report }: { report: TestCoverageMatrixResponse }) {
           <div className="flex items-center gap-2">
             <TestTube2 size={24} className={report.summary.gaps ? "text-amber-500" : "text-emerald-500"} />
             <h2 className="min-w-0 break-words text-lg font-bold text-card-foreground sm:text-xl">
-              Risk-Driven Test Coverage
+              Executable Test Factory
             </h2>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            {report.inventory.summary.test_cases} local test cases - YAxUnit {report.inventory.summary.yaxunit_available ? "available" : "missing"}
+            {matrix.inventory.summary.test_cases} local test cases - YAxUnit {matrix.inventory.summary.yaxunit_available ? "available" : "missing"}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Badge tone={report.summary.gaps ? "warn" : "ok"}>{report.summary.gaps} gaps</Badge>
+          <Badge tone={(matrix.summary.unmeasured_impact ?? 0) > 0 ? "danger" : "muted"}>
+            {matrix.summary.unmeasured_impact ?? 0} unknown impact
+          </Badge>
           <Badge tone="muted">{report.summary.exact_tests} exact</Badge>
-          <Badge tone="muted">{report.summary.planned_tests} planned</Badge>
+          <Badge tone="muted">{report.summary.generation_tasks} generated</Badge>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 border-b border-border sm:grid-cols-2 md:grid-cols-4">
-        <Metric label="Covered" value={report.summary.covered} icon={CheckCircle2} />
-        <Metric label="Planned" value={report.summary.planned} icon={FileDiff} />
+      <div className="grid grid-cols-1 border-b border-border sm:grid-cols-2 md:grid-cols-6">
+        <Metric label="Run Now" value={report.summary.run_now} icon={CheckCircle2} />
+        <Metric label="Regression" value={report.summary.regression_tests} icon={FileDiff} />
         <Metric label="Gaps" value={report.summary.gaps} icon={AlertTriangle} />
-        <Metric label="Impact" value={report.summary.total_impact_edges} icon={GitBranch} />
+        <Metric label="Unknown" value={report.summary.unmeasured_impact ?? matrix.summary.unmeasured_impact ?? 0} icon={AlertTriangle} />
+        <Metric label="Generate" value={report.summary.generation_tasks} icon={FileCode} />
+        <Metric label="Manual" value={report.summary.manual_checks} icon={GitBranch} />
       </div>
 
       <div className="space-y-5 p-5">
-        <Panel title="Matrix" icon={TestTube2}>
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <Panel title="Run Now" icon={CheckCircle2}>
+            <div className="space-y-3">
+              {report.run_now.map((item) => (
+                <div key={`${item.module_path}-${item.command}`} className="rounded-lg border border-border bg-card p-3">
+                  <div className="flex flex-wrap gap-2">
+                    <Badge tone={item.priority === "high" ? "warn" : "muted"}>{item.priority}</Badge>
+                    <Badge tone={item.coverage_status === "gap" ? "danger" : item.coverage_status === "planned" ? "warn" : "ok"}>
+                      {item.coverage_status}
+                    </Badge>
+                  </div>
+                  <p className="mt-3 break-all font-mono text-xs text-card-foreground">{item.module_path}</p>
+                  <p className="mt-2 break-words text-sm text-muted-foreground">{item.reason}</p>
+                  <p className="mt-2 break-all rounded-md bg-muted p-2 font-mono text-xs text-muted-foreground">{item.command}</p>
+                </div>
+              ))}
+              {report.run_now.length === 0 && <p className="text-sm text-muted-foreground">No urgent run-now tests.</p>}
+            </div>
+          </Panel>
+
+          <Panel title="Generate" icon={FileCode}>
+            <div className="space-y-3">
+              {report.generation_tasks.map((item) => (
+                <div key={item.module_path} className="rounded-lg border border-border bg-card p-3">
+                  <div className="flex flex-wrap gap-2">
+                    <Badge tone={item.priority === "high" ? "warn" : "muted"}>{item.priority}</Badge>
+                    <Badge tone="muted">{item.frameworks.join(" + ")}</Badge>
+                  </div>
+                  <p className="mt-3 break-all font-mono text-xs text-card-foreground">{item.module_path}</p>
+                  <p className="mt-2 break-words text-sm text-muted-foreground">{item.reason}</p>
+                  <pre className="mt-2 max-h-36 overflow-auto whitespace-pre-wrap rounded-md bg-muted p-2 text-xs text-muted-foreground">
+                    {item.yaxunit_skeleton}
+                  </pre>
+                </div>
+              ))}
+              {report.generation_tasks.length === 0 && <p className="text-sm text-muted-foreground">No generated skeletons needed.</p>}
+            </div>
+          </Panel>
+        </div>
+
+        <Panel title="Coverage Matrix" icon={TestTube2}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[840px] text-left text-sm">
+            <table className="w-full min-w-[960px] text-left text-sm">
               <thead className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="py-2 pr-3 font-semibold">Module</th>
                   <th className="px-3 py-2 font-semibold">Status</th>
                   <th className="px-3 py-2 font-semibold">Priority</th>
                   <th className="px-3 py-2 font-semibold">Risk</th>
+                  <th className="px-3 py-2 font-semibold">Impact</th>
                   <th className="px-3 py-2 font-semibold">Exact</th>
                   <th className="px-3 py-2 font-semibold">Planned</th>
                   <th className="py-2 pl-3 font-semibold">Command</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {report.modules.map((row) => (
+                {matrix.modules.map((row) => (
                   <tr key={row.module_path}>
                     <td className="py-3 pr-3">
                       <p className="max-w-[260px] break-all font-mono text-xs text-card-foreground">{row.module_path}</p>
@@ -186,6 +234,16 @@ function CoverageReport({ report }: { report: TestCoverageMatrixResponse }) {
                     </td>
                     <td className="px-3 py-3 text-muted-foreground">{row.priority}</td>
                     <td className="px-3 py-3 tabular-nums text-card-foreground">{row.risk}</td>
+                    <td className="px-3 py-3">
+                      <Badge tone={row.impact_measured === false ? "danger" : row.impact_total >= 300 ? "warn" : "muted"}>
+                        {row.impact_measured === false ? "unknown" : nf.format(row.impact_total)}
+                      </Badge>
+                      {row.impact_measured === false && (
+                        <p className="mt-1 max-w-[220px] break-words text-xs text-amber-600 dark:text-amber-400">
+                          {row.coverage_caveat ?? "Not measured"}
+                        </p>
+                      )}
+                    </td>
                     <td className="px-3 py-3 tabular-nums text-card-foreground">{row.exact_tests.length}</td>
                     <td className="px-3 py-3 tabular-nums text-card-foreground">{row.planned_tests.length}</td>
                     <td className="py-3 pl-3">
@@ -199,23 +257,46 @@ function CoverageReport({ report }: { report: TestCoverageMatrixResponse }) {
         </Panel>
 
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-          <Panel title="Test Data" icon={FileCode}>
-            <ul className="space-y-3">
-              {report.modules.flatMap((row) =>
-                row.test_data_blueprint.slice(0, 2).map((item, index) => (
-                  <li key={`${row.module_path}-${index}`} className="text-sm">
-                    <p className="font-semibold text-card-foreground">{String(item.name)}</p>
-                    <p className="text-muted-foreground">{String(item.purpose)}</p>
-                  </li>
-                )),
-              )}
-            </ul>
+          <Panel title="Manual Checks" icon={AlertTriangle}>
+            <div className="space-y-3">
+              {report.manual_checks.map((item) => (
+                <div key={`${item.module_path}-${item.title}`} className="rounded-lg border border-border bg-card p-3">
+                  <p className="break-words text-sm font-semibold text-card-foreground">{item.title}</p>
+                  <p className="mt-1 break-words text-xs text-muted-foreground">{item.reason}</p>
+                  <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                    {item.steps.map((step) => <li key={step}>{step}</li>)}
+                  </ul>
+                </div>
+              ))}
+              {report.manual_checks.length === 0 && <p className="text-sm text-muted-foreground">No manual checks required by current matrix.</p>}
+            </div>
+          </Panel>
+
+          <Panel title="Evidence" icon={FileCode}>
+            <div className="space-y-3">
+              {report.evidence_packet.map((item) => (
+                <div key={item.filename} className="rounded-lg border border-border bg-card p-3">
+                  <p className="break-words text-sm font-semibold text-card-foreground">{item.title}</p>
+                  <p className="mt-1 break-all font-mono text-xs text-muted-foreground">{item.filename}</p>
+                </div>
+              ))}
+            </div>
           </Panel>
 
           <Panel title="Markdown" icon={FileCode}>
             <pre className="max-h-[360px] overflow-auto whitespace-pre-wrap rounded-lg bg-muted p-3 text-xs text-muted-foreground">
               {report.markdown}
             </pre>
+          </Panel>
+
+          <Panel title="Commands" icon={GitBranch}>
+            <ul className="space-y-2">
+              {report.commands.map((command) => (
+                <li key={command} className="break-all rounded-md bg-muted p-2 font-mono text-xs text-muted-foreground">
+                  {command}
+                </li>
+              ))}
+            </ul>
           </Panel>
         </div>
       </div>

@@ -840,7 +840,16 @@ class MarketplaceRepository:
                     SELECT
                         COUNT(*) AS reviews_count,
                         AVG(rating) AS avg_rating,
-                        json_object_agg(rating, count) FILTER (WHERE rating IS NOT NULL) AS rating_dist
+                        AVG(rating) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days') AS avg_rating_30d,
+                        AVG(rating) FILTER (
+                            WHERE created_at >= NOW() - INTERVAL '60 days'
+                              AND created_at < NOW() - INTERVAL '30 days'
+                        ) AS avg_rating_prev_30d
+                    FROM marketplace_reviews
+                    WHERE plugin_id = $1
+                ),
+                review_distribution AS (
+                    SELECT json_object_agg(rating, count) FILTER (WHERE rating IS NOT NULL) AS rating_dist
                     FROM (
                         SELECT rating, COUNT(*) AS count
                         FROM marketplace_reviews
@@ -864,13 +873,16 @@ class MarketplaceRepository:
                     p.*,
                     COALESCE(r.reviews_count, 0) AS reviews_count,
                     COALESCE(r.avg_rating, 0) AS avg_rating,
-                    r.rating_dist,
+                    COALESCE(r.avg_rating_30d, 0) AS avg_rating_30d,
+                    COALESCE(r.avg_rating_prev_30d, 0) AS avg_rating_prev_30d,
+                    rd.rating_dist,
                     c.favorites_count,
                     c.installs_active,
                     d.downloads_30d,
                     d.downloads_prev_30d
                 FROM plugin_data p
                 CROSS JOIN review_stats r
+                CROSS JOIN review_distribution rd
                 CROSS JOIN counts c
                 CROSS JOIN download_stats d
                 """,
@@ -907,6 +919,17 @@ class MarketplaceRepository:
             else:
                 trend = "stable"
 
+            rating_30d = float(plugin.get("avg_rating_30d") or 0)
+            rating_prev = float(plugin.get("avg_rating_prev_30d") or 0)
+            if rating_prev <= 0:
+                rating_trend = "stable"
+            elif rating_30d > rating_prev + 0.1:
+                rating_trend = "up"
+            elif rating_30d < rating_prev - 0.1:
+                rating_trend = "down"
+            else:
+                rating_trend = "stable"
+
             stats = {
                 "plugin_id": plugin_id,
                 "downloads_total": plugin["downloads"],
@@ -917,7 +940,7 @@ class MarketplaceRepository:
                 "reviews_count": plugin["reviews_count"],
                 "favorites_count": plugin["favorites_count"],
                 "downloads_trend": trend,
-                "rating_trend": "stable",  # TODO: Calculate rating trend similarly if needed
+                "rating_trend": rating_trend,
             }
             return stats
 

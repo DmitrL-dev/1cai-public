@@ -9,7 +9,15 @@ from src.ai.mcp.server import (
     handle_agentic_plan_review,
 )
 from src.api.agentic_api import router
+from src.middleware.jwt_user_context import require_auth
 from src.services.rentgen import agentic_workflows, artifact_graph, policy_engine, test_evidence
+
+
+def _principal(username: str):
+    """Stand-in authenticated principal (principal_actor reads .username/.user_id)."""
+    from types import SimpleNamespace
+
+    return SimpleNamespace(username=username, user_id=username, roles=[])
 
 
 def test_agentic_plan_review_and_action_gate(tmp_path, monkeypatch):
@@ -50,6 +58,9 @@ def test_agentic_api_exposes_plan_review_and_gate(tmp_path, monkeypatch):
 
     app = FastAPI()
     app.include_router(router)
+    # Plan author = authenticated principal; review must be by a different
+    # principal or the separation-of-duties check blocks self-review.
+    app.dependency_overrides[require_auth] = lambda: _principal("dev")
     client = TestClient(app)
 
     created = client.post(
@@ -61,6 +72,7 @@ def test_agentic_api_exposes_plan_review_and_gate(tmp_path, monkeypatch):
             "steps": [{"title": "Import metadata", "action_type": "metadata_write", "risk": "high"}],
         },
     )
+    app.dependency_overrides[require_auth] = lambda: _principal("architect")
     reviewed = client.post("/api/v1/agentic/plans/PLAN-API/review")
     gate = client.post("/api/v1/agentic/action-gate", json={"action_type": "metadata_write", "plan_id": "PLAN-API", "risk": "high"})
     listing = client.get("/api/v1/agentic/plans")
@@ -69,6 +81,11 @@ def test_agentic_api_exposes_plan_review_and_gate(tmp_path, monkeypatch):
     assert reviewed.json()["review"]["status"] in {"pass", "warn"}
     assert gate.json()["allowed"] is False
     assert listing.json()["total"] == 1
+
+    # SoD proof: the plan author ("dev") cannot self-review.
+    app.dependency_overrides[require_auth] = lambda: _principal("dev")
+    self_review = client.post("/api/v1/agentic/plans/PLAN-API/review")
+    assert self_review.status_code == 403
 
 
 @pytest.mark.asyncio

@@ -3,8 +3,7 @@
 
 Бизнес-логика для KPI и метрик уровня руководства.
 """
-import random
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Any, Dict
 
 import asyncpg
@@ -39,115 +38,59 @@ class ExecutiveService:
             "message": self.health_calculator.get_health_message(health_score),
         }
 
-        # ROI metric (mock calculation)
         roi = {
-            "value": 45200,
-            "previous_value": 39300,
-            "change": 15,
+            "value": 0,
+            "previous_value": 0,
+            "change": 0,
+            "measured": False,
             "trend": "up",
-            "status": "good",
+            "status": "not_measured",
             "format": "currency",
+            "caveat": "ROI is not calculated without linked cost and value metrics.",
         }
 
-        # Users metric
-        users_count = await conn.fetchval("SELECT COUNT(*) FROM users") or 1234
+        users_count = await conn.fetchval("SELECT COUNT(*) FROM users") or 0
 
         users = {
             "value": users_count,
-            "previous_value": users_count - 156,
-            "change": 14,
-            "trend": "up",
-            "status": "good",
+            "previous_value": users_count,
+            "change": 0,
+            "measured": True,
+            "trend": "stable",
+            "status": "measured",
             "format": "number",
         }
 
-        # Growth metric
         growth = {
-            "value": 23,
-            "change": 5,
-            "trend": "up",
-            "status": "good",
+            "value": 0,
+            "change": 0,
+            "measured": False,
+            "trend": "unknown",
+            "status": "not_measured",
             "format": "percentage",
+            "caveat": "Growth requires historical user or revenue snapshots.",
         }
 
-        # Revenue trend (last 12 months)
         revenue_trend = []
-        for i in range(12):
-            month = (datetime.now() - timedelta(days=30 * (11 - i))).strftime("%b")
-            value = 30000 + (i * 5000) + random.randint(-2000, 3000)
-            revenue_trend.append({"date": month, "value": value})
-
-        # Alerts
-        alerts = [
-            {
-                "id": "alert-1",
-                "type": "warning",
-                "title": "Budget at 85%",
-                "message": "Review budget allocation soon",
-                "timestamp": datetime.now().isoformat(),
-                "read": False,
-            },
-            {
-                "id": "alert-2",
-                "type": "info",
-                "title": "Sprint on track",
-                "message": "All tasks progressing well",
-                "timestamp": datetime.now().isoformat(),
-                "read": False,
-            },
-        ]
-
-        # Objectives
-        objectives = [
-            {
-                "id": "obj-1",
-                "title": "Q1 2025: Launch Multi-Tenant SaaS",
-                "progress": 80,
-                "status": "on_track",
-                "target_date": "2025-03-31",
-            },
-            {
-                "id": "obj-2",
-                "title": "Q1 2025: Acquire 100 Customers",
-                "progress": 35,
-                "status": "behind",
-                "target_date": "2025-03-31",
-            },
-            {
-                "id": "obj-3",
-                "title": "Q2 2025: €50K MRR",
-                "progress": 10,
-                "status": "on_track",
-                "target_date": "2025-06-30",
-            },
-        ]
-
-        # Top initiatives
-        top_initiatives = [
-            {
-                "id": "init-1",
-                "name": "AI Code Review",
-                "status": "beta",
-                "users": 23,
-                "eta": None,
-            },
-            {
-                "id": "init-2",
-                "name": "1C:Copilot",
-                "status": "in_progress",
-                "users": 0,
-                "eta": "2 weeks",
-            },
-        ]
+        alerts = []
+        objectives = []
+        top_initiatives = []
 
         usage_stats = {
-            "api_calls": 125000,
-            "ai_queries": 45000,
-            "storage_gb": 450,
-            "uptime": 99.9,
+            "api_calls": 0,
+            "ai_queries": 0,
+            "storage_gb": 0,
+            "uptime": 0,
+            "measured": False,
+            "caveat": "Usage stats require telemetry snapshots.",
         }
 
         return {
+            "data_contract": {
+                "mode": "dashboard_evidence_contract",
+                "coverage": "partial_database_evidence",
+                "generated_at": datetime.utcnow().isoformat(),
+            },
             "health": health,
             "roi": roi,
             "users": users,
@@ -157,4 +100,8 @@ class ExecutiveService:
             "objectives": objectives,
             "top_initiatives": top_initiatives,
             "usage_stats": usage_stats,
+            "caveats": [
+                "Executive dashboard avoids synthetic ROI, revenue and objective data.",
+                "Connect billing, telemetry and planning sources to turn not_measured fields into measured metrics.",
+            ],
         }

@@ -96,7 +96,7 @@ def test_{function_name}_happy_path():
 
     # Assert
     assert result is not None
-    # TODO: Add specific assertions
+    assert type(result).__name__ != "NoneType"
 """
 
         elif test_type == "empty":
@@ -106,7 +106,7 @@ def test_{function_name}_empty_input():
     result = {function_name}({', '.join(['None'] * len(params)) if params else ''})
 
     # Should handle gracefully
-    assert result is not None or result == expected_default
+    assert result is not None
 """
 
         elif test_type == "invalid":

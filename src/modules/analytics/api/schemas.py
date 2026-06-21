@@ -21,6 +21,8 @@ class RevenueData(BaseModel):
     last_month: float
     change_percent: float
     trend: str  # "up" or "down"
+    measured: bool = True
+    caveat: Optional[str] = None
 
 
 class CustomersData(BaseModel):
@@ -32,6 +34,8 @@ class CustomersData(BaseModel):
     """
     total: int
     new_this_month: int
+    measured: bool = True
+    caveat: Optional[str] = None
 
 
 class MetricData(BaseModel):
@@ -47,6 +51,8 @@ class MetricData(BaseModel):
     change: float
     trend: str
     status: str
+    measured: bool = True
+    caveat: Optional[str] = None
 
 
 class OwnerDashboardResponse(BaseModel):
@@ -64,6 +70,8 @@ class OwnerDashboardResponse(BaseModel):
     growth_percent: float
     system_status: str  # "healthy", "warning", "critical"
     recent_activities: List[Dict[str, Any]]
+    data_contract: Optional[Dict[str, Any]] = None
+    caveats: List[str] = []
 
 
 class ExecutiveDashboardResponse(BaseModel):
@@ -89,6 +97,8 @@ class ExecutiveDashboardResponse(BaseModel):
     alerts: List[Dict[str, Any]]
     objectives: List[Dict[str, Any]]
     metrics: Dict[str, Any]
+    data_contract: Optional[Dict[str, Any]] = None
+    caveats: List[str] = []
 
 
 class SprintProgress(BaseModel):
@@ -127,6 +137,8 @@ class PMDashboardResponse(BaseModel):
     timeline: List[Dict[str, Any]]
     team_workload: List[Dict[str, Any]]
     sprint_progress: SprintProgress
+    data_contract: Optional[Dict[str, Any]] = None
+    caveats: List[str] = []
 
 
 class DeveloperDashboardResponse(BaseModel):
@@ -148,6 +160,8 @@ class DeveloperDashboardResponse(BaseModel):
     build_status: Dict[str, Any]
     code_quality: Dict[str, Any]
     ai_suggestions: Optional[List[Dict[str, Any]]] = None
+    data_contract: Optional[Dict[str, Any]] = None
+    caveats: List[str] = []
 
 
 # --- Analytics Report Schemas ---

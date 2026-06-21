@@ -48,6 +48,30 @@ class FakeStore:
         return []
 
 
+class NoGraphStore(FakeStore):
+    def get_module_risk(self, module_path):
+        return {
+            "module_path": module_path,
+            "risk": 10,
+            "maintainability_score": 80,
+            "has_n_plus_one": False,
+            "has_select_star": False,
+        }
+
+    def module_impact(self, module_path, max_depth=5, max_edges=600):
+        return {
+            "canonical": {
+                "object_name": "OrderForm",
+                "module_kind": "FormModule",
+                "source": "fake",
+            },
+            "graph_modules": [],
+            "entry_subroutines": 0,
+            "total": 0,
+            "impacted_modules": [],
+        }
+
+
 def _make_test_inventory(tmp_path, monkeypatch):
     tests_root = tmp_path / "tests" / "bsl"
     tests_root.mkdir(parents=True)
@@ -103,3 +127,19 @@ async def test_mcp_test_coverage_matrix_tool_is_registered(tmp_path, monkeypatch
     assert "rentgen_test_coverage_matrix" in {tool.name for tool in TOOLS}
     assert result["store"] is True
     assert result["summary"]["covered"] == 1
+
+
+def test_test_coverage_matrix_keeps_unmeasured_impact_visible():
+    report = build_test_coverage_matrix(
+        NoGraphStore(),
+        changed_modules=["Documents/Order/Forms/Main/Ext/Form/Module.bsl"],
+    )
+    row = report["modules"][0]
+
+    assert row["impact_total"] == 0
+    assert row["impact_measured"] is False
+    assert row["coverage"] == "no_graph_data"
+    assert row["priority"] == "high"
+    assert report["summary"]["unmeasured_impact"] == 1
+    assert any(gap["kind"] == "unmeasured_impact" for gap in row["gaps"])
+    assert "NOT MEASURED" in report["markdown"]

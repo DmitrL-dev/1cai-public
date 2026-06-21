@@ -14,28 +14,53 @@ import { Route as AuthenticatedRouteImport } from "./routes/_authenticated"
 import { Route as AuthenticatedIndexRouteImport } from "./routes/_authenticated/index"
 import { Route as AuthenticatedWorkbenchRouteImport } from "./routes/_authenticated/workbench"
 import { Route as AuthenticatedWikiRouteImport } from "./routes/_authenticated/wiki"
+import { Route as AuthenticatedVendorPortfolioRouteImport } from "./routes/_authenticated/vendor-portfolio"
+import { Route as AuthenticatedValuePacksRouteImport } from "./routes/_authenticated/value-packs"
+import { Route as AuthenticatedUpdateWarRoomRouteImport } from "./routes/_authenticated/update-war-room"
 import { Route as AuthenticatedTestingRouteImport } from "./routes/_authenticated/testing"
 import { Route as AuthenticatedTeamGovernanceRouteImport } from "./routes/_authenticated/team-governance"
 import { Route as AuthenticatedStandardsReviewRouteImport } from "./routes/_authenticated/standards-review"
 import { Route as AuthenticatedSettingsRouteImport } from "./routes/_authenticated/settings"
 import { Route as AuthenticatedSecurityRouteImport } from "./routes/_authenticated/security"
+import { Route as AuthenticatedScenarioHubRouteImport } from "./routes/_authenticated/scenario-hub"
+import { Route as AuthenticatedSafeAutopilotRouteImport } from "./routes/_authenticated/safe-autopilot"
+import { Route as AuthenticatedRightsRlsRouteImport } from "./routes/_authenticated/rights-rls"
 import { Route as AuthenticatedRequirementsRouteImport } from "./routes/_authenticated/requirements"
 import { Route as AuthenticatedRentgenRouteImport } from "./routes/_authenticated/rentgen"
 import { Route as AuthenticatedReleaseReadinessRouteImport } from "./routes/_authenticated/release-readiness"
 import { Route as AuthenticatedQualityRouteImport } from "./routes/_authenticated/quality"
+import { Route as AuthenticatedProductizationRouteImport } from "./routes/_authenticated/productization"
+import { Route as AuthenticatedPlatformDoctorRouteImport } from "./routes/_authenticated/platform-doctor"
+import { Route as AuthenticatedPilotLaunchpadRouteImport } from "./routes/_authenticated/pilot-launchpad"
+import { Route as AuthenticatedOutcomeLedgerRouteImport } from "./routes/_authenticated/outcome-ledger"
 import { Route as AuthenticatedOperationsRouteImport } from "./routes/_authenticated/operations"
 import { Route as AuthenticatedOfflineReadinessRouteImport } from "./routes/_authenticated/offline-readiness"
 import { Route as AuthenticatedMetadataRouteImport } from "./routes/_authenticated/metadata"
 import { Route as AuthenticatedMarketplaceRouteImport } from "./routes/_authenticated/marketplace"
+import { Route as AuthenticatedLockRadarRouteImport } from "./routes/_authenticated/lock-radar"
+import { Route as AuthenticatedLaunchRoomRouteImport } from "./routes/_authenticated/launch-room"
+import { Route as AuthenticatedKillerDemoRouteImport } from "./routes/_authenticated/killer-demo"
 import { Route as AuthenticatedIdeRouteImport } from "./routes/_authenticated/ide"
+import { Route as AuthenticatedGuidedDemoRouteImport } from "./routes/_authenticated/guided-demo"
 import { Route as AuthenticatedFormsRouteImport } from "./routes/_authenticated/forms"
+import { Route as AuthenticatedExtensionSafetyRouteImport } from "./routes/_authenticated/extension-safety"
+import { Route as AuthenticatedEvidenceBundleRouteImport } from "./routes/_authenticated/evidence-bundle"
+import { Route as AuthenticatedEnterpriseTrustCenterRouteImport } from "./routes/_authenticated/enterprise-trust-center"
 import { Route as AuthenticatedEdtMcpRouteImport } from "./routes/_authenticated/edt-mcp"
+import { Route as AuthenticatedDemoCommandCenterRouteImport } from "./routes/_authenticated/demo-command-center"
 import { Route as AuthenticatedCopilotCoverageRouteImport } from "./routes/_authenticated/copilot-coverage"
 import { Route as AuthenticatedCopilotRouteImport } from "./routes/_authenticated/copilot"
+import { Route as AuthenticatedConfigurationsRouteImport } from "./routes/_authenticated/configurations"
+import { Route as AuthenticatedCommercialOfferStudioRouteImport } from "./routes/_authenticated/commercial-offer-studio"
 import { Route as AuthenticatedCodeReviewRouteImport } from "./routes/_authenticated/code-review"
 import { Route as AuthenticatedChangeRouteImport } from "./routes/_authenticated/change"
+import { Route as AuthenticatedBuyerConciergeRouteImport } from "./routes/_authenticated/buyer-concierge"
+import { Route as AuthenticatedBusinessCaseRouteImport } from "./routes/_authenticated/business-case"
 import { Route as AuthenticatedBpmnRouteImport } from "./routes/_authenticated/bpmn"
+import { Route as AuthenticatedBoardPackRouteImport } from "./routes/_authenticated/board-pack"
+import { Route as AuthenticatedAuditRouteImport } from "./routes/_authenticated/audit"
 import { Route as AuthenticatedArchitectureRouteImport } from "./routes/_authenticated/architecture"
+import { Route as AuthenticatedApprovalsRouteImport } from "./routes/_authenticated/approvals"
 import { Route as AuthenticatedAdminRouteImport } from "./routes/_authenticated/admin"
 
 const LoginRoute = LoginRouteImport.update({
@@ -62,6 +87,23 @@ const AuthenticatedWikiRoute = AuthenticatedWikiRouteImport.update({
   path: "/wiki",
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedVendorPortfolioRoute =
+  AuthenticatedVendorPortfolioRouteImport.update({
+    id: "/vendor-portfolio",
+    path: "/vendor-portfolio",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedValuePacksRoute = AuthenticatedValuePacksRouteImport.update({
+  id: "/value-packs",
+  path: "/value-packs",
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedUpdateWarRoomRoute =
+  AuthenticatedUpdateWarRoomRouteImport.update({
+    id: "/update-war-room",
+    path: "/update-war-room",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedTestingRoute = AuthenticatedTestingRouteImport.update({
   id: "/testing",
   path: "/testing",
@@ -89,6 +131,23 @@ const AuthenticatedSecurityRoute = AuthenticatedSecurityRouteImport.update({
   path: "/security",
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedScenarioHubRoute =
+  AuthenticatedScenarioHubRouteImport.update({
+    id: "/scenario-hub",
+    path: "/scenario-hub",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSafeAutopilotRoute =
+  AuthenticatedSafeAutopilotRouteImport.update({
+    id: "/safe-autopilot",
+    path: "/safe-autopilot",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedRightsRlsRoute = AuthenticatedRightsRlsRouteImport.update({
+  id: "/rights-rls",
+  path: "/rights-rls",
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedRequirementsRoute =
   AuthenticatedRequirementsRouteImport.update({
     id: "/requirements",
@@ -111,6 +170,30 @@ const AuthenticatedQualityRoute = AuthenticatedQualityRouteImport.update({
   path: "/quality",
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedProductizationRoute =
+  AuthenticatedProductizationRouteImport.update({
+    id: "/productization",
+    path: "/productization",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPlatformDoctorRoute =
+  AuthenticatedPlatformDoctorRouteImport.update({
+    id: "/platform-doctor",
+    path: "/platform-doctor",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPilotLaunchpadRoute =
+  AuthenticatedPilotLaunchpadRouteImport.update({
+    id: "/pilot-launchpad",
+    path: "/pilot-launchpad",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedOutcomeLedgerRoute =
+  AuthenticatedOutcomeLedgerRouteImport.update({
+    id: "/outcome-ledger",
+    path: "/outcome-ledger",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedOperationsRoute = AuthenticatedOperationsRouteImport.update({
   id: "/operations",
   path: "/operations",
@@ -133,9 +216,29 @@ const AuthenticatedMarketplaceRoute =
     path: "/marketplace",
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedLockRadarRoute = AuthenticatedLockRadarRouteImport.update({
+  id: "/lock-radar",
+  path: "/lock-radar",
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedLaunchRoomRoute = AuthenticatedLaunchRoomRouteImport.update({
+  id: "/launch-room",
+  path: "/launch-room",
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedKillerDemoRoute = AuthenticatedKillerDemoRouteImport.update({
+  id: "/killer-demo",
+  path: "/killer-demo",
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedIdeRoute = AuthenticatedIdeRouteImport.update({
   id: "/ide",
   path: "/ide",
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedGuidedDemoRoute = AuthenticatedGuidedDemoRouteImport.update({
+  id: "/guided-demo",
+  path: "/guided-demo",
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedFormsRoute = AuthenticatedFormsRouteImport.update({
@@ -143,11 +246,35 @@ const AuthenticatedFormsRoute = AuthenticatedFormsRouteImport.update({
   path: "/forms",
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedExtensionSafetyRoute =
+  AuthenticatedExtensionSafetyRouteImport.update({
+    id: "/extension-safety",
+    path: "/extension-safety",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedEvidenceBundleRoute =
+  AuthenticatedEvidenceBundleRouteImport.update({
+    id: "/evidence-bundle",
+    path: "/evidence-bundle",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedEnterpriseTrustCenterRoute =
+  AuthenticatedEnterpriseTrustCenterRouteImport.update({
+    id: "/enterprise-trust-center",
+    path: "/enterprise-trust-center",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedEdtMcpRoute = AuthenticatedEdtMcpRouteImport.update({
   id: "/edt-mcp",
   path: "/edt-mcp",
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDemoCommandCenterRoute =
+  AuthenticatedDemoCommandCenterRouteImport.update({
+    id: "/demo-command-center",
+    path: "/demo-command-center",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCopilotCoverageRoute =
   AuthenticatedCopilotCoverageRouteImport.update({
     id: "/copilot-coverage",
@@ -159,6 +286,18 @@ const AuthenticatedCopilotRoute = AuthenticatedCopilotRouteImport.update({
   path: "/copilot",
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedConfigurationsRoute =
+  AuthenticatedConfigurationsRouteImport.update({
+    id: "/configurations",
+    path: "/configurations",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedCommercialOfferStudioRoute =
+  AuthenticatedCommercialOfferStudioRouteImport.update({
+    id: "/commercial-offer-studio",
+    path: "/commercial-offer-studio",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCodeReviewRoute = AuthenticatedCodeReviewRouteImport.update({
   id: "/code-review",
   path: "/code-review",
@@ -169,9 +308,31 @@ const AuthenticatedChangeRoute = AuthenticatedChangeRouteImport.update({
   path: "/change",
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedBuyerConciergeRoute =
+  AuthenticatedBuyerConciergeRouteImport.update({
+    id: "/buyer-concierge",
+    path: "/buyer-concierge",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedBusinessCaseRoute =
+  AuthenticatedBusinessCaseRouteImport.update({
+    id: "/business-case",
+    path: "/business-case",
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedBpmnRoute = AuthenticatedBpmnRouteImport.update({
   id: "/bpmn",
   path: "/bpmn",
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedBoardPackRoute = AuthenticatedBoardPackRouteImport.update({
+  id: "/board-pack",
+  path: "/board-pack",
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
+  id: "/audit",
+  path: "/audit",
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedArchitectureRoute =
@@ -180,6 +341,11 @@ const AuthenticatedArchitectureRoute =
     path: "/architecture",
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
+  id: "/approvals",
+  path: "/approvals",
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: "/admin",
   path: "/admin",
@@ -190,56 +356,106 @@ export interface FileRoutesByFullPath {
   "/": typeof AuthenticatedIndexRoute
   "/login": typeof LoginRoute
   "/admin": typeof AuthenticatedAdminRoute
+  "/approvals": typeof AuthenticatedApprovalsRoute
   "/architecture": typeof AuthenticatedArchitectureRoute
+  "/audit": typeof AuthenticatedAuditRoute
+  "/board-pack": typeof AuthenticatedBoardPackRoute
   "/bpmn": typeof AuthenticatedBpmnRoute
+  "/business-case": typeof AuthenticatedBusinessCaseRoute
+  "/buyer-concierge": typeof AuthenticatedBuyerConciergeRoute
   "/change": typeof AuthenticatedChangeRoute
   "/code-review": typeof AuthenticatedCodeReviewRoute
+  "/commercial-offer-studio": typeof AuthenticatedCommercialOfferStudioRoute
+  "/configurations": typeof AuthenticatedConfigurationsRoute
   "/copilot": typeof AuthenticatedCopilotRoute
   "/copilot-coverage": typeof AuthenticatedCopilotCoverageRoute
+  "/demo-command-center": typeof AuthenticatedDemoCommandCenterRoute
   "/edt-mcp": typeof AuthenticatedEdtMcpRoute
+  "/enterprise-trust-center": typeof AuthenticatedEnterpriseTrustCenterRoute
+  "/evidence-bundle": typeof AuthenticatedEvidenceBundleRoute
+  "/extension-safety": typeof AuthenticatedExtensionSafetyRoute
   "/forms": typeof AuthenticatedFormsRoute
+  "/guided-demo": typeof AuthenticatedGuidedDemoRoute
   "/ide": typeof AuthenticatedIdeRoute
+  "/killer-demo": typeof AuthenticatedKillerDemoRoute
+  "/launch-room": typeof AuthenticatedLaunchRoomRoute
+  "/lock-radar": typeof AuthenticatedLockRadarRoute
   "/marketplace": typeof AuthenticatedMarketplaceRoute
   "/metadata": typeof AuthenticatedMetadataRoute
   "/offline-readiness": typeof AuthenticatedOfflineReadinessRoute
   "/operations": typeof AuthenticatedOperationsRoute
+  "/outcome-ledger": typeof AuthenticatedOutcomeLedgerRoute
+  "/pilot-launchpad": typeof AuthenticatedPilotLaunchpadRoute
+  "/platform-doctor": typeof AuthenticatedPlatformDoctorRoute
+  "/productization": typeof AuthenticatedProductizationRoute
   "/quality": typeof AuthenticatedQualityRoute
   "/release-readiness": typeof AuthenticatedReleaseReadinessRoute
   "/rentgen": typeof AuthenticatedRentgenRoute
   "/requirements": typeof AuthenticatedRequirementsRoute
+  "/rights-rls": typeof AuthenticatedRightsRlsRoute
+  "/safe-autopilot": typeof AuthenticatedSafeAutopilotRoute
+  "/scenario-hub": typeof AuthenticatedScenarioHubRoute
   "/security": typeof AuthenticatedSecurityRoute
   "/settings": typeof AuthenticatedSettingsRoute
   "/standards-review": typeof AuthenticatedStandardsReviewRoute
   "/team-governance": typeof AuthenticatedTeamGovernanceRoute
   "/testing": typeof AuthenticatedTestingRoute
+  "/update-war-room": typeof AuthenticatedUpdateWarRoomRoute
+  "/value-packs": typeof AuthenticatedValuePacksRoute
+  "/vendor-portfolio": typeof AuthenticatedVendorPortfolioRoute
   "/wiki": typeof AuthenticatedWikiRoute
   "/workbench": typeof AuthenticatedWorkbenchRoute
 }
 export interface FileRoutesByTo {
   "/login": typeof LoginRoute
   "/admin": typeof AuthenticatedAdminRoute
+  "/approvals": typeof AuthenticatedApprovalsRoute
   "/architecture": typeof AuthenticatedArchitectureRoute
+  "/audit": typeof AuthenticatedAuditRoute
+  "/board-pack": typeof AuthenticatedBoardPackRoute
   "/bpmn": typeof AuthenticatedBpmnRoute
+  "/business-case": typeof AuthenticatedBusinessCaseRoute
+  "/buyer-concierge": typeof AuthenticatedBuyerConciergeRoute
   "/change": typeof AuthenticatedChangeRoute
   "/code-review": typeof AuthenticatedCodeReviewRoute
+  "/commercial-offer-studio": typeof AuthenticatedCommercialOfferStudioRoute
+  "/configurations": typeof AuthenticatedConfigurationsRoute
   "/copilot": typeof AuthenticatedCopilotRoute
   "/copilot-coverage": typeof AuthenticatedCopilotCoverageRoute
+  "/demo-command-center": typeof AuthenticatedDemoCommandCenterRoute
   "/edt-mcp": typeof AuthenticatedEdtMcpRoute
+  "/enterprise-trust-center": typeof AuthenticatedEnterpriseTrustCenterRoute
+  "/evidence-bundle": typeof AuthenticatedEvidenceBundleRoute
+  "/extension-safety": typeof AuthenticatedExtensionSafetyRoute
   "/forms": typeof AuthenticatedFormsRoute
+  "/guided-demo": typeof AuthenticatedGuidedDemoRoute
   "/ide": typeof AuthenticatedIdeRoute
+  "/killer-demo": typeof AuthenticatedKillerDemoRoute
+  "/launch-room": typeof AuthenticatedLaunchRoomRoute
+  "/lock-radar": typeof AuthenticatedLockRadarRoute
   "/marketplace": typeof AuthenticatedMarketplaceRoute
   "/metadata": typeof AuthenticatedMetadataRoute
   "/offline-readiness": typeof AuthenticatedOfflineReadinessRoute
   "/operations": typeof AuthenticatedOperationsRoute
+  "/outcome-ledger": typeof AuthenticatedOutcomeLedgerRoute
+  "/pilot-launchpad": typeof AuthenticatedPilotLaunchpadRoute
+  "/platform-doctor": typeof AuthenticatedPlatformDoctorRoute
+  "/productization": typeof AuthenticatedProductizationRoute
   "/quality": typeof AuthenticatedQualityRoute
   "/release-readiness": typeof AuthenticatedReleaseReadinessRoute
   "/rentgen": typeof AuthenticatedRentgenRoute
   "/requirements": typeof AuthenticatedRequirementsRoute
+  "/rights-rls": typeof AuthenticatedRightsRlsRoute
+  "/safe-autopilot": typeof AuthenticatedSafeAutopilotRoute
+  "/scenario-hub": typeof AuthenticatedScenarioHubRoute
   "/security": typeof AuthenticatedSecurityRoute
   "/settings": typeof AuthenticatedSettingsRoute
   "/standards-review": typeof AuthenticatedStandardsReviewRoute
   "/team-governance": typeof AuthenticatedTeamGovernanceRoute
   "/testing": typeof AuthenticatedTestingRoute
+  "/update-war-room": typeof AuthenticatedUpdateWarRoomRoute
+  "/value-packs": typeof AuthenticatedValuePacksRoute
+  "/vendor-portfolio": typeof AuthenticatedVendorPortfolioRoute
   "/wiki": typeof AuthenticatedWikiRoute
   "/workbench": typeof AuthenticatedWorkbenchRoute
   "/": typeof AuthenticatedIndexRoute
@@ -249,28 +465,53 @@ export interface FileRoutesById {
   "/_authenticated": typeof AuthenticatedRouteWithChildren
   "/login": typeof LoginRoute
   "/_authenticated/admin": typeof AuthenticatedAdminRoute
+  "/_authenticated/approvals": typeof AuthenticatedApprovalsRoute
   "/_authenticated/architecture": typeof AuthenticatedArchitectureRoute
+  "/_authenticated/audit": typeof AuthenticatedAuditRoute
+  "/_authenticated/board-pack": typeof AuthenticatedBoardPackRoute
   "/_authenticated/bpmn": typeof AuthenticatedBpmnRoute
+  "/_authenticated/business-case": typeof AuthenticatedBusinessCaseRoute
+  "/_authenticated/buyer-concierge": typeof AuthenticatedBuyerConciergeRoute
   "/_authenticated/change": typeof AuthenticatedChangeRoute
   "/_authenticated/code-review": typeof AuthenticatedCodeReviewRoute
+  "/_authenticated/commercial-offer-studio": typeof AuthenticatedCommercialOfferStudioRoute
+  "/_authenticated/configurations": typeof AuthenticatedConfigurationsRoute
   "/_authenticated/copilot": typeof AuthenticatedCopilotRoute
   "/_authenticated/copilot-coverage": typeof AuthenticatedCopilotCoverageRoute
+  "/_authenticated/demo-command-center": typeof AuthenticatedDemoCommandCenterRoute
   "/_authenticated/edt-mcp": typeof AuthenticatedEdtMcpRoute
+  "/_authenticated/enterprise-trust-center": typeof AuthenticatedEnterpriseTrustCenterRoute
+  "/_authenticated/evidence-bundle": typeof AuthenticatedEvidenceBundleRoute
+  "/_authenticated/extension-safety": typeof AuthenticatedExtensionSafetyRoute
   "/_authenticated/forms": typeof AuthenticatedFormsRoute
+  "/_authenticated/guided-demo": typeof AuthenticatedGuidedDemoRoute
   "/_authenticated/ide": typeof AuthenticatedIdeRoute
+  "/_authenticated/killer-demo": typeof AuthenticatedKillerDemoRoute
+  "/_authenticated/launch-room": typeof AuthenticatedLaunchRoomRoute
+  "/_authenticated/lock-radar": typeof AuthenticatedLockRadarRoute
   "/_authenticated/marketplace": typeof AuthenticatedMarketplaceRoute
   "/_authenticated/metadata": typeof AuthenticatedMetadataRoute
   "/_authenticated/offline-readiness": typeof AuthenticatedOfflineReadinessRoute
   "/_authenticated/operations": typeof AuthenticatedOperationsRoute
+  "/_authenticated/outcome-ledger": typeof AuthenticatedOutcomeLedgerRoute
+  "/_authenticated/pilot-launchpad": typeof AuthenticatedPilotLaunchpadRoute
+  "/_authenticated/platform-doctor": typeof AuthenticatedPlatformDoctorRoute
+  "/_authenticated/productization": typeof AuthenticatedProductizationRoute
   "/_authenticated/quality": typeof AuthenticatedQualityRoute
   "/_authenticated/release-readiness": typeof AuthenticatedReleaseReadinessRoute
   "/_authenticated/rentgen": typeof AuthenticatedRentgenRoute
   "/_authenticated/requirements": typeof AuthenticatedRequirementsRoute
+  "/_authenticated/rights-rls": typeof AuthenticatedRightsRlsRoute
+  "/_authenticated/safe-autopilot": typeof AuthenticatedSafeAutopilotRoute
+  "/_authenticated/scenario-hub": typeof AuthenticatedScenarioHubRoute
   "/_authenticated/security": typeof AuthenticatedSecurityRoute
   "/_authenticated/settings": typeof AuthenticatedSettingsRoute
   "/_authenticated/standards-review": typeof AuthenticatedStandardsReviewRoute
   "/_authenticated/team-governance": typeof AuthenticatedTeamGovernanceRoute
   "/_authenticated/testing": typeof AuthenticatedTestingRoute
+  "/_authenticated/update-war-room": typeof AuthenticatedUpdateWarRoomRoute
+  "/_authenticated/value-packs": typeof AuthenticatedValuePacksRoute
+  "/_authenticated/vendor-portfolio": typeof AuthenticatedVendorPortfolioRoute
   "/_authenticated/wiki": typeof AuthenticatedWikiRoute
   "/_authenticated/workbench": typeof AuthenticatedWorkbenchRoute
   "/_authenticated/": typeof AuthenticatedIndexRoute
@@ -281,56 +522,106 @@ export interface FileRouteTypes {
     | "/"
     | "/login"
     | "/admin"
+    | "/approvals"
     | "/architecture"
+    | "/audit"
+    | "/board-pack"
     | "/bpmn"
+    | "/business-case"
+    | "/buyer-concierge"
     | "/change"
     | "/code-review"
+    | "/commercial-offer-studio"
+    | "/configurations"
     | "/copilot"
     | "/copilot-coverage"
+    | "/demo-command-center"
     | "/edt-mcp"
+    | "/enterprise-trust-center"
+    | "/evidence-bundle"
+    | "/extension-safety"
     | "/forms"
+    | "/guided-demo"
     | "/ide"
+    | "/killer-demo"
+    | "/launch-room"
+    | "/lock-radar"
     | "/marketplace"
     | "/metadata"
     | "/offline-readiness"
     | "/operations"
+    | "/outcome-ledger"
+    | "/pilot-launchpad"
+    | "/platform-doctor"
+    | "/productization"
     | "/quality"
     | "/release-readiness"
     | "/rentgen"
     | "/requirements"
+    | "/rights-rls"
+    | "/safe-autopilot"
+    | "/scenario-hub"
     | "/security"
     | "/settings"
     | "/standards-review"
     | "/team-governance"
     | "/testing"
+    | "/update-war-room"
+    | "/value-packs"
+    | "/vendor-portfolio"
     | "/wiki"
     | "/workbench"
   fileRoutesByTo: FileRoutesByTo
   to:
     | "/login"
     | "/admin"
+    | "/approvals"
     | "/architecture"
+    | "/audit"
+    | "/board-pack"
     | "/bpmn"
+    | "/business-case"
+    | "/buyer-concierge"
     | "/change"
     | "/code-review"
+    | "/commercial-offer-studio"
+    | "/configurations"
     | "/copilot"
     | "/copilot-coverage"
+    | "/demo-command-center"
     | "/edt-mcp"
+    | "/enterprise-trust-center"
+    | "/evidence-bundle"
+    | "/extension-safety"
     | "/forms"
+    | "/guided-demo"
     | "/ide"
+    | "/killer-demo"
+    | "/launch-room"
+    | "/lock-radar"
     | "/marketplace"
     | "/metadata"
     | "/offline-readiness"
     | "/operations"
+    | "/outcome-ledger"
+    | "/pilot-launchpad"
+    | "/platform-doctor"
+    | "/productization"
     | "/quality"
     | "/release-readiness"
     | "/rentgen"
     | "/requirements"
+    | "/rights-rls"
+    | "/safe-autopilot"
+    | "/scenario-hub"
     | "/security"
     | "/settings"
     | "/standards-review"
     | "/team-governance"
     | "/testing"
+    | "/update-war-room"
+    | "/value-packs"
+    | "/vendor-portfolio"
     | "/wiki"
     | "/workbench"
     | "/"
@@ -339,28 +630,53 @@ export interface FileRouteTypes {
     | "/_authenticated"
     | "/login"
     | "/_authenticated/admin"
+    | "/_authenticated/approvals"
     | "/_authenticated/architecture"
+    | "/_authenticated/audit"
+    | "/_authenticated/board-pack"
     | "/_authenticated/bpmn"
+    | "/_authenticated/business-case"
+    | "/_authenticated/buyer-concierge"
     | "/_authenticated/change"
     | "/_authenticated/code-review"
+    | "/_authenticated/commercial-offer-studio"
+    | "/_authenticated/configurations"
     | "/_authenticated/copilot"
     | "/_authenticated/copilot-coverage"
+    | "/_authenticated/demo-command-center"
     | "/_authenticated/edt-mcp"
+    | "/_authenticated/enterprise-trust-center"
+    | "/_authenticated/evidence-bundle"
+    | "/_authenticated/extension-safety"
     | "/_authenticated/forms"
+    | "/_authenticated/guided-demo"
     | "/_authenticated/ide"
+    | "/_authenticated/killer-demo"
+    | "/_authenticated/launch-room"
+    | "/_authenticated/lock-radar"
     | "/_authenticated/marketplace"
     | "/_authenticated/metadata"
     | "/_authenticated/offline-readiness"
     | "/_authenticated/operations"
+    | "/_authenticated/outcome-ledger"
+    | "/_authenticated/pilot-launchpad"
+    | "/_authenticated/platform-doctor"
+    | "/_authenticated/productization"
     | "/_authenticated/quality"
     | "/_authenticated/release-readiness"
     | "/_authenticated/rentgen"
     | "/_authenticated/requirements"
+    | "/_authenticated/rights-rls"
+    | "/_authenticated/safe-autopilot"
+    | "/_authenticated/scenario-hub"
     | "/_authenticated/security"
     | "/_authenticated/settings"
     | "/_authenticated/standards-review"
     | "/_authenticated/team-governance"
     | "/_authenticated/testing"
+    | "/_authenticated/update-war-room"
+    | "/_authenticated/value-packs"
+    | "/_authenticated/vendor-portfolio"
     | "/_authenticated/wiki"
     | "/_authenticated/workbench"
     | "/_authenticated/"
@@ -408,6 +724,27 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthenticatedWikiRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    "/_authenticated/vendor-portfolio": {
+      id: "/_authenticated/vendor-portfolio"
+      path: "/vendor-portfolio"
+      fullPath: "/vendor-portfolio"
+      preLoaderRoute: typeof AuthenticatedVendorPortfolioRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/value-packs": {
+      id: "/_authenticated/value-packs"
+      path: "/value-packs"
+      fullPath: "/value-packs"
+      preLoaderRoute: typeof AuthenticatedValuePacksRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/update-war-room": {
+      id: "/_authenticated/update-war-room"
+      path: "/update-war-room"
+      fullPath: "/update-war-room"
+      preLoaderRoute: typeof AuthenticatedUpdateWarRoomRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     "/_authenticated/testing": {
       id: "/_authenticated/testing"
       path: "/testing"
@@ -443,6 +780,27 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthenticatedSecurityRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    "/_authenticated/scenario-hub": {
+      id: "/_authenticated/scenario-hub"
+      path: "/scenario-hub"
+      fullPath: "/scenario-hub"
+      preLoaderRoute: typeof AuthenticatedScenarioHubRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/safe-autopilot": {
+      id: "/_authenticated/safe-autopilot"
+      path: "/safe-autopilot"
+      fullPath: "/safe-autopilot"
+      preLoaderRoute: typeof AuthenticatedSafeAutopilotRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/rights-rls": {
+      id: "/_authenticated/rights-rls"
+      path: "/rights-rls"
+      fullPath: "/rights-rls"
+      preLoaderRoute: typeof AuthenticatedRightsRlsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     "/_authenticated/requirements": {
       id: "/_authenticated/requirements"
       path: "/requirements"
@@ -469,6 +827,34 @@ declare module "@tanstack/react-router" {
       path: "/quality"
       fullPath: "/quality"
       preLoaderRoute: typeof AuthenticatedQualityRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/productization": {
+      id: "/_authenticated/productization"
+      path: "/productization"
+      fullPath: "/productization"
+      preLoaderRoute: typeof AuthenticatedProductizationRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/platform-doctor": {
+      id: "/_authenticated/platform-doctor"
+      path: "/platform-doctor"
+      fullPath: "/platform-doctor"
+      preLoaderRoute: typeof AuthenticatedPlatformDoctorRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/pilot-launchpad": {
+      id: "/_authenticated/pilot-launchpad"
+      path: "/pilot-launchpad"
+      fullPath: "/pilot-launchpad"
+      preLoaderRoute: typeof AuthenticatedPilotLaunchpadRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/outcome-ledger": {
+      id: "/_authenticated/outcome-ledger"
+      path: "/outcome-ledger"
+      fullPath: "/outcome-ledger"
+      preLoaderRoute: typeof AuthenticatedOutcomeLedgerRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     "/_authenticated/operations": {
@@ -499,11 +885,39 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthenticatedMarketplaceRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    "/_authenticated/lock-radar": {
+      id: "/_authenticated/lock-radar"
+      path: "/lock-radar"
+      fullPath: "/lock-radar"
+      preLoaderRoute: typeof AuthenticatedLockRadarRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/launch-room": {
+      id: "/_authenticated/launch-room"
+      path: "/launch-room"
+      fullPath: "/launch-room"
+      preLoaderRoute: typeof AuthenticatedLaunchRoomRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/killer-demo": {
+      id: "/_authenticated/killer-demo"
+      path: "/killer-demo"
+      fullPath: "/killer-demo"
+      preLoaderRoute: typeof AuthenticatedKillerDemoRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     "/_authenticated/ide": {
       id: "/_authenticated/ide"
       path: "/ide"
       fullPath: "/ide"
       preLoaderRoute: typeof AuthenticatedIdeRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/guided-demo": {
+      id: "/_authenticated/guided-demo"
+      path: "/guided-demo"
+      fullPath: "/guided-demo"
+      preLoaderRoute: typeof AuthenticatedGuidedDemoRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     "/_authenticated/forms": {
@@ -513,11 +927,39 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthenticatedFormsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    "/_authenticated/extension-safety": {
+      id: "/_authenticated/extension-safety"
+      path: "/extension-safety"
+      fullPath: "/extension-safety"
+      preLoaderRoute: typeof AuthenticatedExtensionSafetyRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/evidence-bundle": {
+      id: "/_authenticated/evidence-bundle"
+      path: "/evidence-bundle"
+      fullPath: "/evidence-bundle"
+      preLoaderRoute: typeof AuthenticatedEvidenceBundleRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/enterprise-trust-center": {
+      id: "/_authenticated/enterprise-trust-center"
+      path: "/enterprise-trust-center"
+      fullPath: "/enterprise-trust-center"
+      preLoaderRoute: typeof AuthenticatedEnterpriseTrustCenterRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     "/_authenticated/edt-mcp": {
       id: "/_authenticated/edt-mcp"
       path: "/edt-mcp"
       fullPath: "/edt-mcp"
       preLoaderRoute: typeof AuthenticatedEdtMcpRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/demo-command-center": {
+      id: "/_authenticated/demo-command-center"
+      path: "/demo-command-center"
+      fullPath: "/demo-command-center"
+      preLoaderRoute: typeof AuthenticatedDemoCommandCenterRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     "/_authenticated/copilot-coverage": {
@@ -534,6 +976,20 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthenticatedCopilotRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    "/_authenticated/configurations": {
+      id: "/_authenticated/configurations"
+      path: "/configurations"
+      fullPath: "/configurations"
+      preLoaderRoute: typeof AuthenticatedConfigurationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/commercial-offer-studio": {
+      id: "/_authenticated/commercial-offer-studio"
+      path: "/commercial-offer-studio"
+      fullPath: "/commercial-offer-studio"
+      preLoaderRoute: typeof AuthenticatedCommercialOfferStudioRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     "/_authenticated/code-review": {
       id: "/_authenticated/code-review"
       path: "/code-review"
@@ -548,6 +1004,20 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthenticatedChangeRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    "/_authenticated/buyer-concierge": {
+      id: "/_authenticated/buyer-concierge"
+      path: "/buyer-concierge"
+      fullPath: "/buyer-concierge"
+      preLoaderRoute: typeof AuthenticatedBuyerConciergeRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/business-case": {
+      id: "/_authenticated/business-case"
+      path: "/business-case"
+      fullPath: "/business-case"
+      preLoaderRoute: typeof AuthenticatedBusinessCaseRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     "/_authenticated/bpmn": {
       id: "/_authenticated/bpmn"
       path: "/bpmn"
@@ -555,11 +1025,32 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AuthenticatedBpmnRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    "/_authenticated/board-pack": {
+      id: "/_authenticated/board-pack"
+      path: "/board-pack"
+      fullPath: "/board-pack"
+      preLoaderRoute: typeof AuthenticatedBoardPackRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/audit": {
+      id: "/_authenticated/audit"
+      path: "/audit"
+      fullPath: "/audit"
+      preLoaderRoute: typeof AuthenticatedAuditRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     "/_authenticated/architecture": {
       id: "/_authenticated/architecture"
       path: "/architecture"
       fullPath: "/architecture"
       preLoaderRoute: typeof AuthenticatedArchitectureRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    "/_authenticated/approvals": {
+      id: "/_authenticated/approvals"
+      path: "/approvals"
+      fullPath: "/approvals"
+      preLoaderRoute: typeof AuthenticatedApprovalsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     "/_authenticated/admin": {
@@ -574,28 +1065,53 @@ declare module "@tanstack/react-router" {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
   AuthenticatedArchitectureRoute: typeof AuthenticatedArchitectureRoute
+  AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
+  AuthenticatedBoardPackRoute: typeof AuthenticatedBoardPackRoute
   AuthenticatedBpmnRoute: typeof AuthenticatedBpmnRoute
+  AuthenticatedBusinessCaseRoute: typeof AuthenticatedBusinessCaseRoute
+  AuthenticatedBuyerConciergeRoute: typeof AuthenticatedBuyerConciergeRoute
   AuthenticatedChangeRoute: typeof AuthenticatedChangeRoute
   AuthenticatedCodeReviewRoute: typeof AuthenticatedCodeReviewRoute
+  AuthenticatedCommercialOfferStudioRoute: typeof AuthenticatedCommercialOfferStudioRoute
+  AuthenticatedConfigurationsRoute: typeof AuthenticatedConfigurationsRoute
   AuthenticatedCopilotRoute: typeof AuthenticatedCopilotRoute
   AuthenticatedCopilotCoverageRoute: typeof AuthenticatedCopilotCoverageRoute
+  AuthenticatedDemoCommandCenterRoute: typeof AuthenticatedDemoCommandCenterRoute
   AuthenticatedEdtMcpRoute: typeof AuthenticatedEdtMcpRoute
+  AuthenticatedEnterpriseTrustCenterRoute: typeof AuthenticatedEnterpriseTrustCenterRoute
+  AuthenticatedEvidenceBundleRoute: typeof AuthenticatedEvidenceBundleRoute
+  AuthenticatedExtensionSafetyRoute: typeof AuthenticatedExtensionSafetyRoute
   AuthenticatedFormsRoute: typeof AuthenticatedFormsRoute
+  AuthenticatedGuidedDemoRoute: typeof AuthenticatedGuidedDemoRoute
   AuthenticatedIdeRoute: typeof AuthenticatedIdeRoute
+  AuthenticatedKillerDemoRoute: typeof AuthenticatedKillerDemoRoute
+  AuthenticatedLaunchRoomRoute: typeof AuthenticatedLaunchRoomRoute
+  AuthenticatedLockRadarRoute: typeof AuthenticatedLockRadarRoute
   AuthenticatedMarketplaceRoute: typeof AuthenticatedMarketplaceRoute
   AuthenticatedMetadataRoute: typeof AuthenticatedMetadataRoute
   AuthenticatedOfflineReadinessRoute: typeof AuthenticatedOfflineReadinessRoute
   AuthenticatedOperationsRoute: typeof AuthenticatedOperationsRoute
+  AuthenticatedOutcomeLedgerRoute: typeof AuthenticatedOutcomeLedgerRoute
+  AuthenticatedPilotLaunchpadRoute: typeof AuthenticatedPilotLaunchpadRoute
+  AuthenticatedPlatformDoctorRoute: typeof AuthenticatedPlatformDoctorRoute
+  AuthenticatedProductizationRoute: typeof AuthenticatedProductizationRoute
   AuthenticatedQualityRoute: typeof AuthenticatedQualityRoute
   AuthenticatedReleaseReadinessRoute: typeof AuthenticatedReleaseReadinessRoute
   AuthenticatedRentgenRoute: typeof AuthenticatedRentgenRoute
   AuthenticatedRequirementsRoute: typeof AuthenticatedRequirementsRoute
+  AuthenticatedRightsRlsRoute: typeof AuthenticatedRightsRlsRoute
+  AuthenticatedSafeAutopilotRoute: typeof AuthenticatedSafeAutopilotRoute
+  AuthenticatedScenarioHubRoute: typeof AuthenticatedScenarioHubRoute
   AuthenticatedSecurityRoute: typeof AuthenticatedSecurityRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStandardsReviewRoute: typeof AuthenticatedStandardsReviewRoute
   AuthenticatedTeamGovernanceRoute: typeof AuthenticatedTeamGovernanceRoute
   AuthenticatedTestingRoute: typeof AuthenticatedTestingRoute
+  AuthenticatedUpdateWarRoomRoute: typeof AuthenticatedUpdateWarRoomRoute
+  AuthenticatedValuePacksRoute: typeof AuthenticatedValuePacksRoute
+  AuthenticatedVendorPortfolioRoute: typeof AuthenticatedVendorPortfolioRoute
   AuthenticatedWikiRoute: typeof AuthenticatedWikiRoute
   AuthenticatedWorkbenchRoute: typeof AuthenticatedWorkbenchRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -603,28 +1119,55 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedApprovalsRoute: AuthenticatedApprovalsRoute,
   AuthenticatedArchitectureRoute: AuthenticatedArchitectureRoute,
+  AuthenticatedAuditRoute: AuthenticatedAuditRoute,
+  AuthenticatedBoardPackRoute: AuthenticatedBoardPackRoute,
   AuthenticatedBpmnRoute: AuthenticatedBpmnRoute,
+  AuthenticatedBusinessCaseRoute: AuthenticatedBusinessCaseRoute,
+  AuthenticatedBuyerConciergeRoute: AuthenticatedBuyerConciergeRoute,
   AuthenticatedChangeRoute: AuthenticatedChangeRoute,
   AuthenticatedCodeReviewRoute: AuthenticatedCodeReviewRoute,
+  AuthenticatedCommercialOfferStudioRoute:
+    AuthenticatedCommercialOfferStudioRoute,
+  AuthenticatedConfigurationsRoute: AuthenticatedConfigurationsRoute,
   AuthenticatedCopilotRoute: AuthenticatedCopilotRoute,
   AuthenticatedCopilotCoverageRoute: AuthenticatedCopilotCoverageRoute,
+  AuthenticatedDemoCommandCenterRoute: AuthenticatedDemoCommandCenterRoute,
   AuthenticatedEdtMcpRoute: AuthenticatedEdtMcpRoute,
+  AuthenticatedEnterpriseTrustCenterRoute:
+    AuthenticatedEnterpriseTrustCenterRoute,
+  AuthenticatedEvidenceBundleRoute: AuthenticatedEvidenceBundleRoute,
+  AuthenticatedExtensionSafetyRoute: AuthenticatedExtensionSafetyRoute,
   AuthenticatedFormsRoute: AuthenticatedFormsRoute,
+  AuthenticatedGuidedDemoRoute: AuthenticatedGuidedDemoRoute,
   AuthenticatedIdeRoute: AuthenticatedIdeRoute,
+  AuthenticatedKillerDemoRoute: AuthenticatedKillerDemoRoute,
+  AuthenticatedLaunchRoomRoute: AuthenticatedLaunchRoomRoute,
+  AuthenticatedLockRadarRoute: AuthenticatedLockRadarRoute,
   AuthenticatedMarketplaceRoute: AuthenticatedMarketplaceRoute,
   AuthenticatedMetadataRoute: AuthenticatedMetadataRoute,
   AuthenticatedOfflineReadinessRoute: AuthenticatedOfflineReadinessRoute,
   AuthenticatedOperationsRoute: AuthenticatedOperationsRoute,
+  AuthenticatedOutcomeLedgerRoute: AuthenticatedOutcomeLedgerRoute,
+  AuthenticatedPilotLaunchpadRoute: AuthenticatedPilotLaunchpadRoute,
+  AuthenticatedPlatformDoctorRoute: AuthenticatedPlatformDoctorRoute,
+  AuthenticatedProductizationRoute: AuthenticatedProductizationRoute,
   AuthenticatedQualityRoute: AuthenticatedQualityRoute,
   AuthenticatedReleaseReadinessRoute: AuthenticatedReleaseReadinessRoute,
   AuthenticatedRentgenRoute: AuthenticatedRentgenRoute,
   AuthenticatedRequirementsRoute: AuthenticatedRequirementsRoute,
+  AuthenticatedRightsRlsRoute: AuthenticatedRightsRlsRoute,
+  AuthenticatedSafeAutopilotRoute: AuthenticatedSafeAutopilotRoute,
+  AuthenticatedScenarioHubRoute: AuthenticatedScenarioHubRoute,
   AuthenticatedSecurityRoute: AuthenticatedSecurityRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStandardsReviewRoute: AuthenticatedStandardsReviewRoute,
   AuthenticatedTeamGovernanceRoute: AuthenticatedTeamGovernanceRoute,
   AuthenticatedTestingRoute: AuthenticatedTestingRoute,
+  AuthenticatedUpdateWarRoomRoute: AuthenticatedUpdateWarRoomRoute,
+  AuthenticatedValuePacksRoute: AuthenticatedValuePacksRoute,
+  AuthenticatedVendorPortfolioRoute: AuthenticatedVendorPortfolioRoute,
   AuthenticatedWikiRoute: AuthenticatedWikiRoute,
   AuthenticatedWorkbenchRoute: AuthenticatedWorkbenchRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,

@@ -60,7 +60,7 @@ class CacheManager:
         )
         self._semantic_cache: Dict[str, List[float]] = {}  # text_hash -> embedding
 
-        # Advanced components (placeholders for now, injected via setters if needed)
+        # Optional advanced components, injected via setters when configured.
         self._adaptive_quantizer = None
         self._semantic_cache_ann = None
         self._semantic_cache_ann_type = os.getenv(

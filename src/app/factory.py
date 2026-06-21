@@ -97,9 +97,19 @@ def create_app() -> FastAPI:
     # Static files
     _mount_static(app)
 
-    # Health endpoint
-    @app.get("/health", tags=["Health"], summary="Health check endpoint")
+    # Fast liveness endpoint. Deep dependency checks live under /health/deep so
+    # local UI and orchestrators do not look broken when optional services are off.
+    @app.get("/health", tags=["Health"], summary="Liveness check endpoint")
     async def health_check():
+        return {
+            "status": "healthy",
+            "service": "1C AI Stack API",
+            "version": app.version,
+            "environment": settings.environment,
+        }
+
+    @app.get("/health/deep", tags=["Health"], summary="Deep dependency health check")
+    async def deep_health_check():
         health_checker = get_health_checker()
         return await health_checker.check_all()
 

@@ -99,6 +99,38 @@ class CompletionService:
         suggestions = []
         line_lower = current_line.lower()
 
+        if "для каждого" in line_lower:
+            suggestions.append(
+                {
+                    "text": " Элемент Из Коллекция Цикл\n        // RENTGEN-GUARD: validate row before side effects.\n    КонецЦикла;",
+                    "description": "Цикл по коллекции",
+                    "score": 0.96,
+                }
+            )
+
+        if "если" in line_lower and "тогда" not in line_lower:
+            suggestions.append(
+                {
+                    "text": " Тогда\n        // RENTGEN-GUARD: handle the confirmed branch explicitly.\n    КонецЕсли;",
+                    "description": "Условие с явной веткой",
+                    "score": 0.95,
+                }
+            )
+
+        if "запрос" in line_lower:
+            suggestions.append(
+                {
+                    "text": ".Выполнить()",
+                    "description": "Выполнить запрос",
+                    "score": 0.9,
+                }
+            )
+
+        if "результат" in line_lower:
+            suggestions.append(
+                {"text": " = ", "description": "Присвоение значения", "score": 0.82}
+            )
+
         # Pattern 1: Для Каждого
         if "для каждого" in line_lower or "для каждого" in current_line:
             suggestions.append(
@@ -160,7 +192,7 @@ class CompletionService:
         if "если" in line_lower and "тогда" not in line_lower:
             suggestions.append(
                 {
-                    "text": " Тогда\n        // TODO\n    КонецЕсли;",
+                    "text": " Тогда\n        // RENTGEN-GUARD: handle the confirmed branch explicitly.\n    КонецЕсли;",
                     "description": "Условие",
                     "score": 0.93,
                 }

@@ -8,8 +8,8 @@ from src.services.rentgen.change_plan import build_change_plan, dedupe, extract_
 from src.services.rentgen.test_inventory import inventory_summary, match_tests_for_module
 
 
-def _priority(risk: int, impact: int, status: str) -> str:
-    if status == "gap" or risk >= 70 or impact >= 300:
+def _priority(risk: int, impact: int, status: str, impact_measured: bool) -> str:
+    if not impact_measured or status == "gap" or risk >= 70 or impact >= 300:
         return "high"
     if risk >= 40 or impact >= 100:
         return "medium"
@@ -65,11 +65,16 @@ def _markdown(report: dict[str, Any]) -> str:
         f"Covered: **{report['summary']['covered']}**",
         f"Planned: **{report['summary']['planned']}**",
         f"Gaps: **{report['summary']['gaps']}**",
+        f"Unmeasured impact: **{report['summary'].get('unmeasured_impact', 0)}**",
         "",
         "## Modules",
         "",
     ]
     for item in report["modules"]:
+        if item.get("impact_measured") is False:
+            impact_line = f"- Impact edges: NOT MEASURED - {item.get('coverage_caveat') or 'coverage is incomplete'}"
+        else:
+            impact_line = f"- Impact edges: {item['impact_total']}"
         lines.extend(
             [
                 f"### `{item['module_path']}`",
@@ -77,7 +82,7 @@ def _markdown(report: dict[str, Any]) -> str:
                 f"- Status: {item['coverage_status']}",
                 f"- Priority: {item['priority']}",
                 f"- Risk: {item['risk']}",
-                f"- Impact edges: {item['impact_total']}",
+                impact_line,
                 f"- Exact tests: {len(item['exact_tests'])}",
                 f"- Planned tests: {len(item['planned_tests'])}",
                 "",
@@ -123,25 +128,39 @@ def build_test_coverage_matrix(
         status = _status(exact, planned)
         risk = int((item.get("quality") or {}).get("risk") or 0)
         impact = int(item.get("impact_total") or 0)
+        impact_measured = item.get("impact_measured") is not False
+        gaps = [] if status == "covered" else [
+            {
+                "kind": "missing_exact_mapping",
+                "severity": "high" if status == "gap" else "medium",
+                "message": "No exact local test mapping was found for the changed module/object.",
+            }
+        ]
+        if not impact_measured:
+            gaps.append(
+                {
+                    "kind": "unmeasured_impact",
+                    "severity": "high",
+                    "message": item.get("coverage_caveat")
+                    or "Blast radius is not measured; impact_total=0 must not be read as safe.",
+                }
+            )
         rows.append(
             {
                 "module_path": module_path,
                 "canonical": canonical,
                 "risk": risk,
                 "impact_total": impact,
+                "impact_measured": impact_measured,
+                "coverage": item.get("coverage") or "in_graph",
+                "coverage_caveat": item.get("coverage_caveat"),
                 "coverage_status": status,
-                "priority": _priority(risk, impact, status),
+                "priority": _priority(risk, impact, status, impact_measured),
                 "exact_tests": exact,
                 "planned_tests": planned,
                 "commands": _commands(exact, planned, module_path),
                 "test_data_blueprint": _test_data_blueprint(module_path, canonical, status),
-                "gaps": [] if status == "covered" else [
-                    {
-                        "kind": "missing_exact_mapping",
-                        "severity": "high" if status == "gap" else "medium",
-                        "message": "No exact local test mapping was found for the changed module/object.",
-                    }
-                ],
+                "gaps": gaps,
             }
         )
 
@@ -155,6 +174,7 @@ def build_test_coverage_matrix(
         "planned_tests": sum(len(row["planned_tests"]) for row in rows),
         "total_impact_edges": plan.get("total_impact_edges", 0),
         "total_impacted_modules": plan.get("total_impacted_modules", 0),
+        "unmeasured_impact": sum(1 for row in rows if row["impact_measured"] is False),
     }
     report = {
         "changed_modules": modules,

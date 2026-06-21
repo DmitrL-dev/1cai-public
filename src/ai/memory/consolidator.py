@@ -45,18 +45,29 @@ class Consolidator:
         if len(active_memories) < 2:
             return
 
+        if not self.llm_service:
+            self.logger.info(
+                "Dream cycle skipped: llm_service is not configured",
+                extra={"active_memories": len(active_memories)},
+            )
+            return
+
         # Выбираем пару случайных воспоминаний для синтеза
         # В будущем здесь будет умная логика выбора (Clustering)
         sample = random.sample(active_memories, min(3, len(active_memories)))
         
         context_str = "\n".join([f"- {m.content}" for m in sample])
         
-        # Эмуляция генерации инсайта (здесь должен быть вызов LLM)
-        # prompt = f"Analyze these facts and generate a generalized insight:\n{context_str}"
-        # insight = await self.llm_service.generate(prompt)
-        
-        # Mock insight
-        insight = f"Synthetic insight based on {len(sample)} facts. Pattern detected in user behavior."
+        prompt = f"Analyze these facts and generate a generalized insight:\n{context_str}"
+        insight = self.llm_service.generate(prompt)
+        if hasattr(insight, "__await__"):
+            self.logger.warning(
+                "Dream cycle skipped: async llm_service is not supported by sync consolidator"
+            )
+            return
+        if not insight:
+            self.logger.info("Dream cycle produced no insight")
+            return
         
         # Сохраняем инсайт как новое воспоминание с типом DREAM
         self.memorizer.remember(

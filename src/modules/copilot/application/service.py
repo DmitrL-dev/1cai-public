@@ -192,6 +192,38 @@ class CopilotService:
         suggestions = []
         line_lower = current_line.lower()
 
+        if "для каждого" in line_lower:
+            suggestions.append(
+                {
+                    "text": " Элемент Из Коллекция Цикл\n        // RENTGEN-GUARD: validate row before side effects.\n    КонецЦикла;",
+                    "description": "Цикл по коллекции",
+                    "score": 0.96,
+                }
+            )
+
+        if "если" in line_lower and "тогда" not in line_lower:
+            suggestions.append(
+                {
+                    "text": " Тогда\n        // RENTGEN-GUARD: handle the confirmed branch explicitly.\n    КонецЕсли;",
+                    "description": "Условие с явной веткой",
+                    "score": 0.95,
+                }
+            )
+
+        if "запрос" in line_lower:
+            suggestions.append(
+                {
+                    "text": ".Выполнить()",
+                    "description": "Выполнить запрос",
+                    "score": 0.9,
+                }
+            )
+
+        if "результат" in line_lower:
+            suggestions.append(
+                {"text": " = ", "description": "Присвоение значения", "score": 0.82}
+            )
+
         # Pattern 1: Для Каждого
         if "для каждого" in line_lower or "для каждого" in current_line:
             suggestions.append(
@@ -253,7 +285,7 @@ class CopilotService:
         if "если" in line_lower and "тогда" not in line_lower:
             suggestions.append(
                 {
-                    "text": " Тогда\n        // TODO\n    КонецЕсли;",
+                    "text": " Тогда\n        // RENTGEN-GUARD: handle the confirmed branch explicitly.\n    КонецЕсли;",
                     "description": "Условие",
                     "score": 0.93,
                 }
@@ -392,7 +424,18 @@ class CopilotService:
         elif code_type == "procedure":
             return self._generate_procedure_template(prompt)
         else:
-            return f"// Generated code for: {prompt}\n// Implementation needed"
+            return self._generate_guarded_unknown_template(prompt, code_type)
+
+    def _generate_guarded_unknown_template(self, prompt: str, code_type: str) -> str:
+        safe_prompt = " ".join(prompt.split())[:200]
+        safe_type = re.sub(r"[^\wА-Яа-я-]+", "_", code_type or "unknown")
+        return f"""// RENTGEN-GUARD: offline_generation_contract
+// Request: {safe_prompt}
+// Unsupported code_type: {safe_type}
+Процедура ТребуетсяЯвныйТипГенерации() Экспорт
+    ВызватьИсключение "Укажите поддерживаемый code_type: function, procedure или test.";
+КонецПроцедуры
+"""
 
     def _generate_function_template(self, prompt: str) -> str:
         """Generate function template with smart naming"""

@@ -1,4 +1,4 @@
-"""Enterprise coverage map for the 1C Copilot product strategy."""
+"""Enterprise coverage map for Rentgen subscription-escape positioning."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from fastapi import APIRouter
 
 from src.api._rentgen_store import store_or_none
 
-router = APIRouter(prefix="/api/v1/copilot-coverage", tags=["Copilot Coverage"])
+router = APIRouter(prefix="/api/v1/copilot-coverage", tags=["Subscription Escape Coverage"])
 
 
 STAGES: list[dict[str, str]] = [
@@ -98,7 +98,7 @@ COVERAGE_ITEMS: list[dict[str, Any]] = [
         "title": "Автодополнение и генерация BSL",
         "personas": ["developer"],
         "naparnik": "Сильная зона: автопродолжение, генерация кода по описанию, исправление и модификация кода.",
-        "ours": "Базовые endpoint-ы Copilot есть, но им нужен зрелый локальный BSL provider и контекст графа.",
+        "ours": "Базовые coding-assistant endpoint-ы есть, но им нужен зрелый локальный BSL provider и контекст графа.",
         "target": "Локальный агент кодогенерации с BSL LS, ITS-RAG и Рентген-context.",
         "status": "partial",
         "priority": "P0",
@@ -231,7 +231,7 @@ COVERAGE_ITEMS: list[dict[str, Any]] = [
     {
         "id": "performance-tj",
         "stage": "performance",
-        "title": "Performance Copilot по ТЖ",
+        "title": "Performance evidence по ТЖ",
         "personas": ["developer", "architect", "ops", "manager"],
         "naparnik": "Публично не фокусируется на технологическом журнале, N+1 и lock analysis.",
         "ours": "Перформер подключен: ТЖ -> query hotspots/N+1/locks -> impact по графу.",
@@ -472,7 +472,7 @@ def _next_actions(items: list[dict[str, Any]]) -> list[dict[str, str]]:
 
 @router.get("")
 async def get_copilot_coverage() -> dict[str, Any]:
-    """Return the product coverage map for enterprise 1C Copilot parity-plus."""
+    """Return the local-asset coverage map for Rentgen subscription escape."""
 
     # NOTE: status/ours are taken verbatim from COVERAGE_ITEMS (the single source
     # of truth). We deliberately do NOT overwrite any item's status to "done"
@@ -480,8 +480,8 @@ async def get_copilot_coverage() -> dict[str, Any]:
     # reported number reflects real (partial) delivery, never a hardcoded 100.
     items = [dict(item) for item in COVERAGE_ITEMS]
     return {
-        "product": "1cAI Enterprise 1C Copilot",
-        "positioning": "Не только IDE-помощник, а on-prem система полного цикла: граф, impact, review, performance, tests, delivery.",
+        "product": "1C Rentgen Subscription Escape Map",
+        "positioning": "Не еще одна AI-подписка, а on-prem система полного цикла: граф, impact, review, performance, tests, delivery.",
         "stages": STAGES,
         "personas": PERSONAS,
         "competitor": {

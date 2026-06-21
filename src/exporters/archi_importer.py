@@ -21,24 +21,39 @@ class ArchiImporter:
     # Mapping from ArchiMate element types to Neo4j labels
     ELEMENT_LABEL_MAP = {
         "ApplicationComponent": "Module",
+        "application-component": "Module",
         "ApplicationFunction": "Function",
+        "application-function": "Function",
         "BusinessProcess": "Process",
+        "business-process": "Process",
         "DataObject": "Document",
+        "data-object": "Document",
         "ApplicationInterface": "Interface",
+        "application-interface": "Interface",
         "ApplicationService": "Service",
+        "application-service": "Service",
     }
 
     # Mapping from ArchiMate relationship types to Neo4j types
     RELATIONSHIP_TYPE_MAP = {
         "Composition": "CONTAINS",
+        "composition-relationship": "CONTAINS",
         "Aggregation": "HAS",
+        "aggregation-relationship": "HAS",
         "Assignment": "ASSIGNED_TO",
+        "assignment-relationship": "ASSIGNED_TO",
         "Realization": "IMPLEMENTS",
+        "realization-relationship": "IMPLEMENTS",
         "Serving": "SERVES",
+        "serving-relationship": "SERVES",
         "Access": "ACCESSES",
+        "access-relationship": "ACCESSES",
         "Flow": "FLOWS_TO",
+        "flow-relationship": "FLOWS_TO",
         "Triggering": "TRIGGERS",
+        "triggering-relationship": "TRIGGERS",
         "Association": "RELATED_TO",
+        "association-relationship": "RELATED_TO",
     }
 
     def __init__(self, graph_service: GraphService):

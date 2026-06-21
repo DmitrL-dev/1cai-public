@@ -162,8 +162,11 @@ class ArchiExporter:
         result = await self.graph_service.execute_query(query, {"limit": limit})
         return result
 
-    def _generate_id(self) -> str:
+    def _generate_id(self, prefix: str | None = None) -> str:
         """Generate unique identifier"""
+        if prefix:
+            safe_prefix = "".join(ch if ch.isalnum() or ch == "_" else "_" for ch in prefix).strip("_")
+            return f"{safe_prefix or 'id'}_{uuid.uuid4()}"
         return f"id-{uuid.uuid4()}"
 
     def _add_metadata(self, root: ET.Element):

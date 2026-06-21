@@ -216,6 +216,9 @@ async def test_qdrant_connection():
 
 
 # Test MCP Server Integration
+@pytest.mark.skip(
+    reason="imports module deleted in phase-7 cleanup (src.ai.mcp_server); obsolete test-rot"
+)
 @pytest.mark.asyncio
 async def test_mcp_server_tools():
     """Test MCP Server инструментов"""

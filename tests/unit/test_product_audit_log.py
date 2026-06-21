@@ -55,6 +55,29 @@ def test_product_audit_log_records_lists_and_exports(tmp_path):
     assert "resource-1" in exported["content"]
 
 
+def test_product_audit_log_exports_siem_handoff(tmp_path):
+    path = tmp_path / "audit_log.ndjson"
+
+    audit_log.record_event(
+        action="approval.requested",
+        actor="security-user",
+        target="approval-1",
+        category="approval",
+        metadata={"risk": "high"},
+        correlation_id="corr-1",
+        path=path,
+    )
+    exported = audit_log.export_siem_events(output_format="json", path=path)
+
+    assert exported["schema"] == "rentgen.audit.siem.v1"
+    assert exported["events"] == 1
+    assert exported["chain"]["valid"] is True
+    assert exported["content_sha256"]
+    assert "rentgen.audit.chain_valid" == exported["ingestion"]["chain_valid_field"]
+    assert "approval.requested" in exported["content"]
+    assert "security-user" in exported["content"]
+
+
 def test_governance_services_write_product_audit_events(tmp_path):
     artifacts = tmp_path / "artifact_graph.json"
     evaluations = tmp_path / "policy_evaluations.json"
@@ -156,6 +179,13 @@ def test_audit_api_records_lists_and_exports(tmp_path, monkeypatch):
 
     exported = client.get("/api/v1/audit/export?format=jsonl", headers=auth)
     assert exported.json()["events"] == 1
+
+    siem = client.get("/api/v1/audit/siem-export?format=json&limit=10", headers=auth)
+    assert siem.status_code == 200
+    assert siem.json()["schema"] == "rentgen.audit.siem.v1"
+    assert siem.json()["events"] == 1
+    assert siem.json()["chain"]["valid"] is True
+    assert "api.audit" in siem.json()["content"]
 
     # The new verify endpoint reports an intact chain.
     verified = client.get("/api/v1/audit/verify", headers=auth)

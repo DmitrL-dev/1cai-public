@@ -81,14 +81,45 @@ def test_grounded_codegen_is_deterministic_and_context_rich():
     assert "Function GeneratedFunctionSalesOrderDocumentsSalesOrder" in first["code"]
     assert "Document.SalesOrder" in first["code"]
     assert "edges=325" in first["code"]
+    assert "TODO" not in first["code"]
+    assert 'Result.Insert("status", "guarded-review-ready")' in first["code"]
+    assert 'Result.Insert("requiresOwnerDecision", True)' in first["code"]
     assert first["artifact"]["language"] == "bsl"
     assert any(control["id"] == "rentgen-risk" for control in first["risk_controls"])
     assert any(action["selector"] == "SalesOrderPosting" for action in first["test_actions"])
+    assert first["test_actions"][0]["status"] == "guarded-contract"
 
     diagnostics = analyze_bsl(first["code"], module_path=kwargs["module_path"])
     assert diagnostics["metrics"]["functions"] == 1
     assert diagnostics["metrics"]["procedures"] == 0
     assert not diagnostics["diagnostics"]
+
+
+def test_grounded_codegen_never_returns_todo_scaffolds():
+    prompt = "Create posting command with audit"
+
+    procedure = generate_grounded_bsl(
+        prompt=prompt,
+        code_type="procedure",
+        module_path="Documents/SalesOrder/Ext/ObjectModule.bsl",
+        metadata_obj=_metadata_object(),
+        change_plan=_change_plan(),
+    )
+    test = generate_grounded_bsl(
+        prompt=prompt,
+        code_type="test",
+        module_path="Documents/SalesOrder/Ext/ObjectModule.bsl",
+        metadata_obj=_metadata_object(),
+        change_plan=_change_plan(),
+    )
+
+    for generated in (procedure, test):
+        assert "TODO" not in generated["code"]
+        assert "guarded-review-ready" in generated["code"]
+        assert "RENTGEN-GUARD" in generated["code"]
+
+    assert 'OperationContract.Insert("requiresRightsReview", True)' in procedure["code"]
+    assert "Assert(Result <> Undefined);" in test["code"]
 
 
 def test_bsl_diagnostics_supports_english_aliases():

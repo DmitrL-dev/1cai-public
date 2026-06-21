@@ -377,26 +377,200 @@ class RoleBasedRouter:
         else:
             return {"error": f"Unknown role: {role}"}
 
+    def _local_role_response(
+        self,
+        *,
+        role: UserRole,
+        config: RoleConfig,
+        query: str,
+        context: Optional[Dict[str, Any]],
+        specialization: str,
+        unavailable_integrations: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Возвращает честный полезный ответ без внешнего AI-агента."""
+        context = context or {}
+        unavailable_integrations = unavailable_integrations or []
+        guidance = self._role_guidance(role, query, context)
+        required_evidence = self._required_evidence(role, context)
+        coverage = "local_router_with_context" if context else "local_router_no_project_evidence"
+        caveats = []
+        if unavailable_integrations:
+            caveats.append(
+                "Внешний специализированный агент недоступен; ответ подготовлен "
+                "детерминированным локальным маршрутизатором."
+            )
+        if required_evidence:
+            caveats.append(
+                "Для доказательного вывода передайте недостающие артефакты из "
+                "`required_evidence`; без них вывод является triage-планом."
+            )
+
+        return {
+            "role": role.value,
+            "agent": "local-role-router",
+            "mode": "offline_role_router",
+            "coverage": coverage,
+            "specialization": specialization,
+            "response": guidance["summary"],
+            "recommended_actions": guidance["actions"],
+            "required_evidence": required_evidence,
+            "context_keys": sorted(str(key) for key in context.keys()),
+            "unavailable_integrations": unavailable_integrations,
+            "caveats": caveats,
+            "router": {
+                "configured_primary_agent": config.primary_agent,
+                "configured_fallback_agents": config.fallback_agents,
+            },
+        }
+
+    def _role_guidance(
+        self, role: UserRole, query: str, context: Dict[str, Any]
+    ) -> Dict[str, List[str] | str]:
+        trimmed_query = " ".join(query.split())[:160]
+        role_guidance = {
+            UserRole.DEVELOPER: {
+                "summary": (
+                    "Запрос отнесён к разработке 1С. Локальный режим готовит "
+                    f"review-ready разбор без изменения кода: {trimmed_query}"
+                ),
+                "actions": [
+                    "Передать модуль, запрос или diff для анализа ошибок и safe-fix.",
+                    "Проверить NULL/ЕстьNULL, опасные соединения, права и покрытие тестами.",
+                    "Сформировать patch/test plan только после evidence и approval gate.",
+                ],
+            },
+            UserRole.BUSINESS_ANALYST: {
+                "summary": (
+                    "Запрос отнесён к бизнес-анализу. Локальный режим строит "
+                    f"карту требований и gaps по доступным артефактам: {trimmed_query}"
+                ),
+                "actions": [
+                    "Передать ТЗ, user stories или описание текущего/целевого процесса.",
+                    "Разложить требования на acceptance criteria, риски и владельцев.",
+                    "Связать требования с BPMN, тестами и доказательным пакетом.",
+                ],
+            },
+            UserRole.QA_ENGINEER: {
+                "summary": (
+                    "Запрос отнесён к QA. Локальный режим готовит тестовую рамку "
+                    f"и список недостающих доказательств: {trimmed_query}"
+                ),
+                "actions": [
+                    "Передать функцию, модуль, feature-файл или историю дефектов.",
+                    "Разделить проверки на unit, Vanessa/BDD, smoke и regression.",
+                    "Показать coverage caveat, если нет графа изменений или тестовых данных.",
+                ],
+            },
+            UserRole.ARCHITECT: {
+                "summary": (
+                    "Запрос отнесён к архитектуре. Локальный режим фиксирует "
+                    f"архитектурный triage без выдуманных выводов: {trimmed_query}"
+                ),
+                "actions": [
+                    "Передать EDT/XML выгрузку, граф метаданных или список изменённых объектов.",
+                    "Проверить зависимости, циклы, shared-state, права и границы расширений.",
+                    "Сформировать ADR/decision record с evidence, affected scope и caveats.",
+                ],
+            },
+            UserRole.DEVOPS: {
+                "summary": (
+                    "Запрос отнесён к эксплуатации/DevOps. Локальный режим готовит "
+                    f"операционный triage и безопасный план действий: {trimmed_query}"
+                ),
+                "actions": [
+                    "Передать tech journal, pipeline config, compose/k8s/IaC или метрики.",
+                    "Отделить read-only диагностику от apply/execute шагов через approval gate.",
+                    "Связать инциденты с модулями, тестами, rollback и audit trail.",
+                ],
+            },
+            UserRole.TECHNICAL_WRITER: {
+                "summary": (
+                    "Запрос отнесён к документации. Локальный режим готовит "
+                    f"структуру документа с явными источниками: {trimmed_query}"
+                ),
+                "actions": [
+                    "Передать код, API-схему, release notes или пользовательский сценарий.",
+                    "Собрать документ по аудитории: developer, architect, director, QA или ops.",
+                    "Пометить разделы без источников как caveat вместо генерации уверенного текста.",
+                ],
+            },
+        }
+
+        guidance = role_guidance[role]
+        if context:
+            guidance = {
+                "summary": guidance["summary"],
+                "actions": [
+                    *guidance["actions"],
+                    "Учесть уже переданный контекст: "
+                    + ", ".join(sorted(str(key) for key in context.keys())),
+                ],
+            }
+        return guidance
+
+    def _required_evidence(
+        self, role: UserRole, context: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        evidence_contract = {
+            UserRole.DEVELOPER: [
+                ("source_or_diff", ["code", "function_code", "module_text", "diff"]),
+                ("location", ["current_file", "module_path", "object_name"]),
+            ],
+            UserRole.BUSINESS_ANALYST: [
+                ("requirements_source", ["document_text", "document_path", "requirements"]),
+                ("process_context", ["current_state", "desired_state", "process"]),
+            ],
+            UserRole.QA_ENGINEER: [
+                ("test_target", ["function_code", "module_path", "changed_files"]),
+                ("quality_signal", ["coverage", "bug_history", "test_cases"]),
+            ],
+            UserRole.ARCHITECT: [
+                ("metadata_graph", ["metadata_path", "graph", "objects", "dependencies"]),
+                ("change_scope", ["changed_files", "modules", "extension_manifest"]),
+            ],
+            UserRole.DEVOPS: [
+                ("operational_signal", ["tech_journal", "logs", "metrics"]),
+                ("deployment_context", ["pipeline_config", "compose", "kubernetes", "iac"]),
+            ],
+            UserRole.TECHNICAL_WRITER: [
+                ("source_material", ["code", "openapi", "commits", "feature"]),
+                ("audience", ["audience", "role", "recipient"]),
+            ],
+        }
+
+        missing = []
+        for evidence_name, accepted_keys in evidence_contract[role]:
+            if not any(context.get(key) for key in accepted_keys):
+                missing.append({"name": evidence_name, "accepted_keys": accepted_keys})
+        return missing
+
     async def _handle_developer(
         self, query: str, config: RoleConfig, context: Optional[Dict]
     ) -> Dict[str, Any]:
         """Обработка запросов разработчика"""
         if self.qwen_client:
             # Используем Qwen3-Coder для генерации кода
-            response = await self.qwen_client.generate_code(query, context or {})
-            return {
-                "role": "developer",
-                "agent": "qwen3-coder",
-                "response": response,
-                "specialization": "code_generation",
-            }
-        else:
-            return {
-                "role": "developer",
-                "agent": "placeholder",
-                "response": f"[Developer AI] Обработка запроса: {query}",
-                "note": "Qwen3-Coder not available",
-            }
+            try:
+                response = await self.qwen_client.generate_code(query, context or {})
+                return {
+                    "role": UserRole.DEVELOPER.value,
+                    "agent": "qwen3-coder",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
+                    "response": response,
+                    "specialization": "code_generation",
+                }
+            except Exception as e:
+                logger.warning("QwenClient generate_code failed: %s", e)
+
+        return self._local_role_response(
+            role=UserRole.DEVELOPER,
+            config=config,
+            query=query,
+            context=context,
+            specialization="developer_triage",
+            unavailable_integrations=["qwen3-coder"],
+        )
 
     async def _handle_business_analyst(
         self, query: str, config: RoleConfig, context: Optional[Dict]
@@ -426,7 +600,9 @@ class RoleBasedRouter:
                     )
                 return {
                     "role": "business_analyst",
-                    "agent": "ba_agent_extended",
+                    "agent": "business_analyst_agent",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
                     "function": "extract_requirements",
                     "result": result,
                     "specialization": "requirements_extraction",
@@ -440,7 +616,9 @@ class RoleBasedRouter:
                 result = await self.ba_agent.generate_bpmn(query)
                 return {
                     "role": "business_analyst",
-                    "agent": "ba_agent_extended",
+                    "agent": "business_analyst_agent",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
                     "function": "generate_bpmn",
                     "result": result,
                     "specialization": "bpmn_generation",
@@ -453,7 +631,9 @@ class RoleBasedRouter:
                 result = await self.ba_agent.analyze_gap(current_state, desired_state)
                 return {
                     "role": "business_analyst",
-                    "agent": "ba_agent_extended",
+                    "agent": "business_analyst_agent",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
                     "function": "analyze_gap",
                     "result": result,
                     "specialization": "gap_analysis",
@@ -470,19 +650,23 @@ class RoleBasedRouter:
                 )
                 return {
                     "role": "business_analyst",
-                    "agent": "ba_agent_extended",
+                    "agent": "business_analyst_agent",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
                     "function": "generate_traceability_matrix",
                     "result": result,
                     "specialization": "traceability_matrix",
                 }
 
-        # Fallback
-        return {
-            "role": "business_analyst",
-            "agent": "placeholder",
-            "response": f"[Business Analyst AI] Анализ: {query}",
-            "note": "BA Agent Extended not available",
-        }
+        unavailable = [] if self.ba_agent else ["business_analyst_agent"]
+        return self._local_role_response(
+            role=UserRole.BUSINESS_ANALYST,
+            config=config,
+            query=query,
+            context=context,
+            specialization="business_analysis_triage",
+            unavailable_integrations=unavailable,
+        )
 
     async def _handle_qa_engineer(
         self, query: str, config: RoleConfig, context: Optional[Dict]
@@ -504,7 +688,9 @@ class RoleBasedRouter:
                 )
                 return {
                     "role": "qa_engineer",
-                    "agent": "qa_agent_extended",
+                    "agent": "qa_engineer_agent",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
                     "function": "generate_tests",
                     "result": result,
                     "specialization": "smart_test_generation",
@@ -518,7 +704,9 @@ class RoleBasedRouter:
                 result = await self.qa_agent.analyze_coverage(config_name)
                 return {
                     "role": "qa_engineer",
-                    "agent": "qa_agent_extended",
+                    "agent": "qa_engineer_agent",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
                     "function": "analyze_coverage",
                     "result": result,
                     "specialization": "coverage_analysis",
@@ -530,7 +718,9 @@ class RoleBasedRouter:
                 result = await self.qa_agent.analyze_bugs(bug_history)
                 return {
                     "role": "qa_engineer",
-                    "agent": "qa_agent_extended",
+                    "agent": "qa_engineer_agent",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
                     "function": "analyze_bugs",
                     "result": result,
                     "specialization": "bug_pattern_analysis",
@@ -547,19 +737,23 @@ class RoleBasedRouter:
                 )
                 return {
                     "role": "qa_engineer",
-                    "agent": "qa_agent_extended",
+                    "agent": "qa_engineer_agent",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
                     "function": "generate_performance_test",
                     "result": result,
                     "specialization": "performance_testing",
                 }
 
-        # Fallback
-        return {
-            "role": "qa_engineer",
-            "agent": "placeholder",
-            "response": f"[QA Engineer AI] Генерация тестов: {query}",
-            "note": "QA Agent Extended not available",
-        }
+        unavailable = [] if self.qa_agent else ["qa_engineer_agent"]
+        return self._local_role_response(
+            role=UserRole.QA_ENGINEER,
+            config=config,
+            query=query,
+            context=context,
+            specialization="qa_triage",
+            unavailable_integrations=unavailable,
+        )
 
     async def _handle_architect(
         self, query: str, config: RoleConfig, context: Optional[Dict]
@@ -577,12 +771,15 @@ class RoleBasedRouter:
 Используй знания о 1С best practices и паттернах проектирования."""
 
         return {
-            "role": "architect",
-            "agent": "openai-gpt4",
-            "response": f"[Architect AI] Архитектурный анализ: {query}",
+            **self._local_role_response(
+                role=UserRole.ARCHITECT,
+                config=config,
+                query=query,
+                context=context,
+                specialization="architecture_triage",
+                unavailable_integrations=["architect_agent"],
+            ),
             "system_prompt": system_prompt,
-            "specialization": "architecture_analysis",
-            "note": "OpenAI GPT-4 integration pending",
         }
 
     async def _handle_devops(
@@ -604,7 +801,9 @@ class RoleBasedRouter:
                 )
                 return {
                     "role": "devops",
-                    "agent": "devops_agent_extended",
+                    "agent": "devops_agent",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
                     "function": "optimize_pipeline",
                     "result": result,
                     "specialization": "cicd_optimization",
@@ -621,7 +820,9 @@ class RoleBasedRouter:
                 result = await self.devops_agent.analyze_logs(log_source, log_type)
                 return {
                     "role": "devops",
-                    "agent": "devops_agent_extended",
+                    "agent": "devops_agent",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
                     "function": "analyze_logs",
                     "result": result,
                     "specialization": "log_analysis",
@@ -637,7 +838,9 @@ class RoleBasedRouter:
                 result = await self.devops_agent.optimize_costs(infrastructure, metrics)
                 return {
                     "role": "devops",
-                    "agent": "devops_agent_extended",
+                    "agent": "devops_agent",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
                     "function": "optimize_costs",
                     "result": result,
                     "specialization": "cost_optimization",
@@ -652,19 +855,23 @@ class RoleBasedRouter:
                 result = await self.devops_agent.generate_iac(requirements)
                 return {
                     "role": "devops",
-                    "agent": "devops_agent_extended",
+                    "agent": "devops_agent",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
                     "function": "generate_iac",
                     "result": result,
                     "specialization": "iac_generation",
                 }
 
-        # Fallback
-        return {
-            "role": "devops",
-            "agent": "placeholder",
-            "response": f"[DevOps AI] Анализ: {query}",
-            "note": "DevOps Agent Extended not available",
-        }
+        unavailable = [] if self.devops_agent else ["devops_agent"]
+        return self._local_role_response(
+            role=UserRole.DEVOPS,
+            config=config,
+            query=query,
+            context=context,
+            specialization="devops_triage",
+            unavailable_integrations=unavailable,
+        )
 
     async def _handle_technical_writer(
         self, query: str, config: RoleConfig, context: Optional[Dict]
@@ -686,7 +893,9 @@ class RoleBasedRouter:
                 result = await self.tw_agent.generate_api_docs(code, module_type)
                 return {
                     "role": "technical_writer",
-                    "agent": "tw_agent_extended",
+                    "agent": "technical_writer_agent",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
                     "function": "generate_api_docs",
                     "result": result,
                     "specialization": "api_documentation",
@@ -704,7 +913,9 @@ class RoleBasedRouter:
                 result = await self.tw_agent.generate_user_guide(feature, audience)
                 return {
                     "role": "technical_writer",
-                    "agent": "tw_agent_extended",
+                    "agent": "technical_writer_agent",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
                     "function": "generate_user_guide",
                     "result": result,
                     "specialization": "user_guide_generation",
@@ -719,7 +930,9 @@ class RoleBasedRouter:
                 result = await self.tw_agent.generate_release_notes(commits, version)
                 return {
                     "role": "technical_writer",
-                    "agent": "tw_agent_extended",
+                    "agent": "technical_writer_agent",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
                     "function": "generate_release_notes",
                     "result": result,
                     "specialization": "release_notes_generation",
@@ -735,19 +948,23 @@ class RoleBasedRouter:
                 result = await self.tw_agent.document_code(code, language)
                 return {
                     "role": "technical_writer",
-                    "agent": "tw_agent_extended",
+                    "agent": "technical_writer_agent",
+                    "mode": "role_agent",
+                    "coverage": "agent_result",
                     "function": "document_code",
                     "result": result,
                     "specialization": "code_documentation",
                 }
 
-        # Fallback
-        return {
-            "role": "technical_writer",
-            "agent": "placeholder",
-            "response": f"[Technical Writer AI] Генерация документации: {query}",
-            "note": "TW Agent Extended not available",
-        }
+        unavailable = [] if self.tw_agent else ["technical_writer_agent"]
+        return self._local_role_response(
+            role=UserRole.TECHNICAL_WRITER,
+            config=config,
+            query=query,
+            context=context,
+            specialization="technical_writing_triage",
+            unavailable_integrations=unavailable,
+        )
 
 
 # Example usage
@@ -773,6 +990,9 @@ if __name__ == "__main__":
             result = await router.route_query(query)
             print(f"Role: {result['role']}")
             print(f"Agent: {result['agent']}")
-            print(f"Response: {result['response'][:100]}...")
+            response_preview = result["response"]
+            if not isinstance(response_preview, str):
+                response_preview = str(response_preview)
+            print(f"Response: {response_preview[:100]}...")
 
     asyncio.run(test())

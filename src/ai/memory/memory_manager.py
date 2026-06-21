@@ -17,9 +17,9 @@ class Memorizer:
     def __init__(self, storage_adapter=None):
         """
         Args:
-            storage_adapter: Адаптер к БД (Qdrant/Neo4j). Пока используем in-memory dict для прототипа.
+            storage_adapter: Адаптер к БД (Qdrant/Neo4j). Если не передан, используется in-memory хранилище.
         """
-        self.storage = storage_adapter if storage_adapter else {} # Mock storage: id -> MemoryItem
+        self.storage = storage_adapter if storage_adapter else {}  # In-memory storage: id -> MemoryItem
         self.logger = logger
 
     def remember(self, content: str, source: MemorySource, confidence: float = 1.0, metadata: Dict = None) -> str:

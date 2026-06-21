@@ -3,269 +3,264 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1C AI Stack Wiki</title>
+    <title>1C:Rentgen Evidence Wiki</title>
     <style>
         :root {
-            --primary-color: #0078d4;
-            --bg-color: #f3f2f1;
+            --primary-color: #0b6f6a;
+            --accent-color: #a83f2d;
+            --bg-color: #f6f7f4;
             --card-bg: #ffffff;
-            --text-color: #323130;
+            --text-color: #242424;
+            --muted-color: #626b64;
+            --border-color: #d8ded6;
         }
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            display: flex;
-            height: 100vh;
-            background-color: var(--bg-color);
+            min-height: 100vh;
+            background: var(--bg-color);
             color: var(--text-color);
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         }
-        #sidebar {
-            width: 250px;
+        header {
+            border-bottom: 1px solid var(--border-color);
             background: var(--card-bg);
-            border-right: 1px solid #e1dfdd;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
         }
-        #main {
-            flex: 1;
-            padding: 40px;
-            overflow-y: auto;
-        }
-        h1, h2, h3 { margin-top: 0; }
-        input, button, textarea {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #8a8886;
-            border-radius: 4px;
-        }
-        button {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover { background: #005a9e; }
-        .page-content {
-            background: var(--card-bg);
-            padding: 40px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            max-width: 900px;
+        .shell {
+            width: min(1120px, calc(100vw - 32px));
             margin: 0 auto;
         }
-        .wiki-link { color: var(--primary-color); text-decoration: none; }
-        .wiki-link:hover { text-decoration: underline; }
-        .code-transclusion {
-            background: #f4f4f4;
-            border-left: 4px solid #0078d4;
-            padding: 10px;
-            margin: 10px 0;
-            font-family: monospace;
-        }
-        #editor-container {
+        .topbar {
             display: flex;
+            align-items: center;
+            justify-content: space-between;
             gap: 20px;
-            height: 600px;
+            padding: 18px 0;
         }
-        #editor, #preview {
+        .brand {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .brand strong { font-size: 18px; }
+        .brand span { color: var(--muted-color); font-size: 13px; }
+        main { padding: 34px 0 48px; }
+        .grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+            gap: 18px;
+        }
+        .panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 22px;
+        }
+        h1 {
+            margin: 0 0 10px;
+            font-size: 30px;
+            line-height: 1.15;
+            letter-spacing: 0;
+        }
+        h2 {
+            margin: 0 0 14px;
+            font-size: 17px;
+            letter-spacing: 0;
+        }
+        p { line-height: 1.55; }
+        .muted { color: var(--muted-color); }
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border-radius: 999px;
+            background: #e8f2f0;
+            color: #084b48;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .status.warning {
+            background: #fff2df;
+            color: #774300;
+        }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 18px;
+        }
+        a.button, button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+            padding: 9px 13px;
+            border: 1px solid var(--primary-color);
+            border-radius: 6px;
+            background: var(--primary-color);
+            color: #ffffff;
+            font: inherit;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        a.button.secondary, button.secondary {
+            background: transparent;
+            color: var(--primary-color);
+        }
+        .route-list {
+            display: grid;
+            gap: 10px;
+            margin: 18px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+        .route-list li {
+            display: grid;
+            gap: 3px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #fbfcfa;
+        }
+        .route-list a {
+            color: var(--primary-color);
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .search-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        input {
             flex: 1;
-            height: 100%;
+            min-width: 0;
+            padding: 10px 11px;
+            border: 1px solid #9aa59f;
+            border-radius: 6px;
+            font: inherit;
         }
-        #preview {
-            border: 1px solid #e1dfdd;
-            padding: 20px;
-            background: white;
-            overflow-y: auto;
+        #result {
+            margin-top: 16px;
+            padding: 14px;
+            border-radius: 6px;
+            background: #f7faf8;
+            border: 1px solid var(--border-color);
+            min-height: 78px;
+            white-space: pre-wrap;
         }
-        .hidden { display: none; }
+        @media (max-width: 760px) {
+            .topbar { align-items: flex-start; flex-direction: column; }
+            .grid { grid-template-columns: 1fr; }
+            .search-row { flex-direction: column; }
+            a.button, button { width: 100%; }
+            h1 { font-size: 24px; }
+        }
     </style>
 </head>
 <body>
-    <div id="sidebar">
-        <h2>📚 Wiki</h2>
-        <input type="text" id="search-input" placeholder="Search..." onkeyup="if(event.key === 'Enter') search()">
-        <button onclick="search()">Search</button>
-        <button onclick="showCreate()">+ New Page</button>
-        <hr>
-        <div id="recent-pages">
-            <!-- Recent pages stub -->
-            <div><a href="#" onclick="loadPage('home')">Home</a></div>
-            <div><a href="#" onclick="loadPage('architecture')">Architecture</a></div>
-        </div>
-    </div>
-
-    <div id="main">
-        <!-- View Mode -->
-        <div id="view-mode" class="hidden">
-            <div class="page-content">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h1 id="page-title">Page Title</h1>
-                    <button onclick="editCurrentPage()" style="width: auto;">Edit</button>
-                </div>
-                <div id="page-body"></div>
-                <hr>
-                <h3>Comments</h3>
-                <div id="comments-section"></div>
-                <textarea id="new-comment" placeholder="Write a comment..."></textarea>
-                <button onclick="postComment()">Post Comment</button>
+    <header>
+        <div class="shell topbar">
+            <div class="brand">
+                <strong>1C:Rentgen Evidence Wiki</strong>
+                <span>Legacy static shell for local documentation evidence</span>
             </div>
+            <span id="api-status" class="status warning">Checking wiki API</span>
         </div>
+    </header>
 
-        <!-- Edit Mode -->
-        <div id="edit-mode" class="hidden">
-            <div class="page-content" style="max-width: 1200px;">
-                <h2>Edit Page</h2>
-                <input type="text" id="edit-slug" placeholder="Slug (e.g. architecture-overview)">
-                <input type="text" id="edit-title" placeholder="Page Title">
-                <div id="editor-container">
-                    <textarea id="markdown-input" oninput="updatePreview()" placeholder="# Write Markdown here..."></textarea>
-                    <div id="preview"></div>
+    <main class="shell">
+        <section class="grid">
+            <article class="panel">
+                <h1>Use evidence routes first</h1>
+                <p class="muted">
+                    This static wiki shell stays available for closed-contour documentation, but the buyer-ready
+                    proof flow now lives in the Evidence Bundle, Launch Room and Killer Demo archives.
+                </p>
+                <div class="actions">
+                    <a class="button" href="/evidence-bundle">Evidence Bundle</a>
+                    <a class="button secondary" href="/killer-demo">Killer Demo</a>
+                    <a class="button secondary" href="/launch-room">Launch Room</a>
                 </div>
-                <input type="text" id="commit-message" placeholder="Commit message">
-                <button onclick="savePage()">Save Page</button>
-                <button onclick="cancelEdit()" style="background: #666;">Cancel</button>
-            </div>
-        </div>
-        
-        <!-- Search Results -->
-        <div id="search-mode" class="hidden">
-             <h2>Search Results</h2>
-             <div id="search-results"></div>
-        </div>
-    </div>
+
+                <h2 style="margin-top: 26px;">Local Wiki Evidence Check</h2>
+                <p class="muted">
+                    Search uses the mounted wiki API only when it is available. If the API is not mounted, the page
+                    reports that state instead of showing fabricated pages.
+                </p>
+                <div class="search-row">
+                    <input type="text" id="search-input" value="platform upgrade readiness" aria-label="Wiki evidence query">
+                    <button onclick="searchEvidence()">Search Evidence</button>
+                </div>
+                <div id="result">Run a search to check local wiki evidence.</div>
+            </article>
+
+            <aside class="panel">
+                <h2>Buyer-forwardable proof files</h2>
+                <ul class="route-list">
+                    <li>
+                        <a href="/evidence-bundle">Evidence Bundle</a>
+                        <span class="muted">Hashable archive, procurement handoff and role packets.</span>
+                    </li>
+                    <li>
+                        <a href="/killer-demo">Killer Demo Archive</a>
+                        <span class="muted">Meeting close receipt, activation handoff and manifest.</span>
+                    </li>
+                    <li>
+                        <a href="/outcome-ledger">Outcome Ledger</a>
+                        <span class="muted">Day 0/7/30/90 proof spine and adoption evidence.</span>
+                    </li>
+                </ul>
+            </aside>
+        </section>
+    </main>
 
     <script>
-        const API_BASE = '/api/v1/wiki';
-        let currentPage = null;
+        const API_BASE = "/api/v1/wiki";
 
-        async function loadPage(slug) {
+        async function checkApi() {
+            const badge = document.getElementById("api-status");
             try {
-                const res = await fetch(`${API_BASE}/pages/${slug}`);
-                if (!res.ok) throw new Error('Page not found');
-                const page = await res.json();
-                currentPage = page;
-                renderPage(page);
-            } catch (e) {
-                alert(e.message);
-                showCreate(slug);
+                const response = await fetch(`${API_BASE}/health`, { method: "GET" });
+                if (!response.ok) throw new Error("Wiki API is not mounted");
+                badge.textContent = "Wiki API available";
+                badge.classList.remove("warning");
+            } catch (error) {
+                badge.textContent = "Wiki API not mounted";
+                badge.classList.add("warning");
             }
         }
 
-        async function renderPage(page) {
-            document.getElementById('view-mode').classList.remove('hidden');
-            document.getElementById('edit-mode').classList.add('hidden');
-            document.getElementById('search-mode').classList.add('hidden');
-
-            document.getElementById('page-title').innerText = page.title;
-            
-            // Render markdown using backend preview API for accuracy
-            const previewRes = await fetch(`${API_BASE}/preview?content=${encodeURIComponent(page.content || "")}`, { method: 'POST' });
-            const previewData = await previewRes.json();
-            document.getElementById('page-body').innerHTML = previewData.html;
-
-            loadComments(page.id);
-        }
-
-        function showCreate(slug = '') {
-            document.getElementById('view-mode').classList.add('hidden');
-            document.getElementById('edit-mode').classList.remove('hidden');
-            document.getElementById('search-mode').classList.add('hidden');
-
-            document.getElementById('edit-slug').value = slug;
-            document.getElementById('edit-title').value = '';
-            document.getElementById('markdown-input').value = '';
-            document.getElementById('preview').innerHTML = '';
-            currentPage = null;
-        }
-
-        function editCurrentPage() {
-            if (!currentPage) return;
-            showCreate(currentPage.slug);
-            document.getElementById('edit-title').value = currentPage.title;
-            document.getElementById('markdown-input').value = currentPage.content || ""; // Assuming content is in DTO
-            updatePreview();
-        }
-
-        async function updatePreview() {
-            const content = document.getElementById('markdown-input').value;
-            // Optimization: Debounce this in real app
-            const res = await fetch(`${API_BASE}/preview?content=${encodeURIComponent(content)}`, { method: 'POST' });
-            const data = await res.json();
-            document.getElementById('preview').innerHTML = data.html;
-        }
-
-        async function savePage() {
-            const slug = document.getElementById('edit-slug').value;
-            const title = document.getElementById('edit-title').value;
-            const content = document.getElementById('markdown-input').value;
-            const message = document.getElementById('commit-message').value;
-
-            const payload = {
-                slug,
-                title,
-                content,
-                namespace: 'default',
-                commit_message: message || 'Update',
-                version: currentPage ? currentPage.version : 0
-            };
-
-            let res;
-            if (currentPage) {
-                // Update
-                 res = await fetch(`${API_BASE}/pages/${slug}`, {
-                    method: 'PUT',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        content,
-                        version: currentPage.version,
-                        commit_message: message
-                    })
+        async function searchEvidence() {
+            const query = document.getElementById("search-input").value.trim();
+            const result = document.getElementById("result");
+            if (!query) {
+                result.textContent = "Enter a question before searching local wiki evidence.";
+                return;
+            }
+            result.textContent = "Checking local wiki evidence...";
+            try {
+                const response = await fetch(`${API_BASE}/ask`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query }),
                 });
-            } else {
-                // Create
-                res = await fetch(`${API_BASE}/pages`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(payload)
-                });
-            }
-
-            if (res.ok) {
-                loadPage(slug);
-            } else {
-                const err = await res.json();
-                alert('Error: ' + JSON.stringify(err));
+                if (!response.ok) throw new Error("Wiki evidence API is unavailable");
+                const data = await response.json();
+                const sources = (data.sources || []).join("\n");
+                result.textContent = `${data.coverage || "unknown"}\n\n${data.answer || ""}\n\n${sources}`;
+            } catch (error) {
+                result.textContent = [
+                    "No local wiki evidence API is mounted for this static shell.",
+                    "Use Evidence Bundle, Killer Demo or Launch Room for buyer-ready proof.",
+                    `Detail: ${error.message}`,
+                ].join("\n");
             }
         }
-        
-        async function search() {
-            const query = document.getElementById('search-input').value;
-            const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`);
-            const results = await res.json();
-            
-            document.getElementById('view-mode').classList.add('hidden');
-            document.getElementById('edit-mode').classList.add('hidden');
-            document.getElementById('search-mode').classList.remove('hidden');
-            
-            const container = document.getElementById('search-results');
-            container.innerHTML = results.map(r => `
-                <div style="padding: 10px; border-bottom: 1px solid #eee;">
-                    <h3><a href="#" onclick="loadPage('${r.page_id}')">${r.title}</a> <small>(${Math.round(r.score*100)}%)</small></h3>
-                    <p>${r.snippet}</p>
-                </div>
-            `).join('');
-        }
 
-        async function loadComments(pageId) {
-            // Stub
-            document.getElementById('comments-section').innerHTML = "<i>Comments loading...</i>";
-        }
-
-        // Init
-        loadPage('home');
+        checkApi();
     </script>
 </body>
 </html>
-

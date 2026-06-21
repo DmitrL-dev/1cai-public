@@ -75,11 +75,35 @@ class CopilotService:
     async def _get_completions_internal(self, code: str, current_line: str, max_suggestions: int) -> List[Dict]:
         """Internal method for getting completions."""
         suggestions = []
+        line_lower = current_line.lower()
+
+        if "для каждого" in line_lower:
+            suggestions.append(
+                {
+                    "text": " Элемент Из Коллекция Цикл\\n    // RENTGEN-GUARD: validate row before side effects.\\nКонецЦикла;",
+                    "description": "Цикл по коллекции",
+                    "score": 0.92,
+                }
+            )
+
+        if "запрос" in line_lower:
+            suggestions.append(
+                {
+                    "text": ".Выполнить()",
+                    "description": "Выполнить запрос",
+                    "score": 0.87,
+                }
+            )
+
+        if "результат" in line_lower:
+            suggestions.append(
+                {"text": " = ", "description": "Присвоение значения", "score": 0.82}
+            )
 
         if "Для Каждого" in current_line or "для каждого" in current_line.lower():
             suggestions.append(
                 {
-                    "text": " Строка Из КоллекцияСтрок Цикл\\n    // TODO\\nКонецЦикла;",
+                    "text": " Строка Из КоллекцияСтрок Цикл\\n    // RENTGEN-GUARD: validate row before side effects.\\nКонецЦикла;",
                     "description": "Цикл по коллекции",
                     "score": 0.9,
                 }

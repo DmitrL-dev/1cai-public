@@ -11,6 +11,7 @@ Enhanced Health Checker Service
 
 import asyncio
 import os
+import time
 from datetime import datetime
 from typing import Dict
 
@@ -200,6 +201,8 @@ class HealthChecker:
                         "error": "PostgreSQL password not provided",
                     }
 
+            started_at = time.perf_counter()
+
             # Use context manager for proper connection cleanup (best practice)
             async with asyncpg.connect(
                 host=host,
@@ -221,7 +224,7 @@ class HealthChecker:
 
             return {
                 "status": "healthy",
-                "response_time_ms": 50,  # TODO: measure actual
+                "response_time_ms": round((time.perf_counter() - started_at) * 1000, 2),
                 "tables": table_count,
                 "connection_method": "direct_asyncpg",
             }

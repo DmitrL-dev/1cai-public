@@ -153,15 +153,15 @@ function Header({
             <Compass size={22} className="text-primary" />
           </div>
           <h1 className="break-words text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl">
-            1С Copilot Coverage
+            Rentgen Subscription Escape Map
           </h1>
         </div>
         <p className="mt-2 max-w-3xl text-muted-foreground">
-          {data?.positioning ?? "Карта покрытия полного enterprise-цикла разработки 1С."}
+          {data?.positioning ?? "Карта, где Rentgen заменяет вечную AI-подписку локальными evidence, gates and buyer-ready artifacts."}
         </p>
       </div>
       <div className="rounded-lg border border-border bg-card px-4 py-3">
-        <p className="text-xs font-medium text-muted-foreground">Enterprise coverage</p>
+        <p className="text-xs font-medium text-muted-foreground">Local asset coverage</p>
         <p className="mt-1 text-2xl font-bold tabular-nums text-card-foreground">
           {isLoading ? "—" : `${data?.summary.coverage_score ?? 0}%`}
         </p>
@@ -393,8 +393,8 @@ function CoverageTable({
               </div>
               <div className="min-w-0 space-y-3">
                 <DeltaBlock title="1С:Напарник" text={item.naparnik} />
-                <DeltaBlock title="1cAI сейчас" text={item.ours} />
-                <DeltaBlock title="Первенство" text={item.target} strong />
+                <DeltaBlock title="Rentgen сейчас" text={item.ours} />
+                <DeltaBlock title="Local asset edge" text={item.target} strong />
                 <div className="lg:col-span-3">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">
                     Следующая сборка

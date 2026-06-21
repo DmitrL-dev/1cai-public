@@ -222,14 +222,15 @@ function ReleaseReport({ report }: { report: ReleaseReadinessResponse }) {
             {status.toUpperCase()}
           </Badge>
           <Badge tone="muted">score {report.decision.score}</Badge>
-          <Badge tone={report.gate.status === "fail" ? "danger" : "ok"}>
+          <Badge tone={report.gate.status === "fail" ? "danger" : report.gate.status === "warn" ? "warn" : "ok"}>
             gate {report.gate.status}
           </Badge>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 border-b border-border md:grid-cols-4">
-        <Metric label="Impact" value={report.summary.total_impact_edges} icon={GitBranch} />
+      <div className="grid grid-cols-2 border-b border-border md:grid-cols-5">
+        <Metric label="Measured Impact" value={report.summary.total_impact_edges} icon={GitBranch} />
+        <Metric label="Unknown Impact" value={report.summary.unmeasured_impact_modules ?? report.change_plan.unmeasured_modules.length} icon={AlertTriangle} />
         <Metric label="Violations" value={report.summary.gate_violations} icon={ShieldAlert} />
         <Metric label="Tests" value={report.summary.test_actions} icon={TestTube2} />
         <Metric label="Metadata" value={report.summary.metadata_objects} icon={ClipboardList} />
@@ -281,11 +282,16 @@ function ReleaseReport({ report }: { report: ReleaseReadinessResponse }) {
                       <Badge tone={(item.quality?.risk ?? 0) >= 70 ? "danger" : "muted"}>
                         risk {item.quality?.risk ?? 0}
                       </Badge>
-                      <Badge tone={item.impact_total >= 300 ? "warn" : "muted"}>
-                        impact {nf.format(item.impact_total)}
+                      <Badge tone={item.impact_measured === false ? "danger" : item.impact_total >= 300 ? "warn" : "muted"}>
+                        {item.impact_measured === false ? "impact unknown" : `impact ${nf.format(item.impact_total)}`}
                       </Badge>
                     </div>
                   </div>
+                  {item.impact_measured === false && (
+                    <p className="mt-2 break-words text-xs text-amber-600 dark:text-amber-400">
+                      {item.coverage_caveat ?? "Impact is not measured; do not read impact_total=0 as safe."}
+                    </p>
+                  )}
                 </li>
               ))}
             </ul>

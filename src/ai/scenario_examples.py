@@ -328,7 +328,7 @@ def example_empty_execution_report(plan: ScenarioPlan) -> ScenarioExecutionRepor
     """
 
     trust = TrustScore(
-        score=0.5, level="medium", reasons=["Пример-заглушка, без реальных метрик"]
+        score=0.5, level="medium", reasons=["Reference dry-run report; runtime metrics are not attached."]
     )
 
     return ScenarioExecutionReport(
@@ -336,7 +336,7 @@ def example_empty_execution_report(plan: ScenarioPlan) -> ScenarioExecutionRepor
         goal=plan.goal,
         trust_before=trust,
         trust_after=trust,
-        summary="Пример отчёта: здесь будет краткое резюме выполнения сценария.",
-        timeline=["Сценарий ещё не был выполнен (пример-заглушка)."],
+        summary="Reference dry-run report: execution summary will be attached after the scenario runs.",
+        timeline=["Scenario has not been executed; no runtime evidence has been attached."],
         artifacts={},
     )

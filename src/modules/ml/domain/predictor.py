@@ -1,8 +1,8 @@
 ﻿# [NEXUS IDENTITY] ID: 3135880199165626437 | DATE: 2025-11-19
 
 """
-Р‘Р°Р·РѕРІС‹Р№ РєР»Р°СЃСЃ РґР»СЏ ML РјРѕРґРµР»РµР№ РїСЂРµРґСЃРєР°Р·Р°РЅРёСЏ.
-РРЅС‚РµРіСЂР°С†РёСЏ СЃ TensorFlow/PyTorch Рё scikit-learn РґР»СЏ СЂР°Р·Р»РёС‡РЅС‹С… С‚РёРїРѕРІ РјРѕРґРµР»РµР№.
+Base classes for ML prediction models.
+Integration layer for scikit-learn prediction types.
 """
 
 import pickle
@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
-# ML РјРѕРґРµР»Рё
+# ML models
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import (
     accuracy_score,
@@ -34,7 +34,7 @@ logger = StructuredLogger(__name__).logger
 
 
 class PredictionType:
-    """РўРёРїС‹ РїСЂРµРґСЃРєР°Р·Р°РЅРёР№"""
+    """Prediction type constants."""
 
     CLASSIFICATION = "classification"
     REGRESSION = "regression"
@@ -43,7 +43,7 @@ class PredictionType:
 
 
 class MLPredictor(ABC):
-    """РђР±СЃС‚СЂР°РєС‚РЅС‹Р№ Р±Р°Р·РѕРІС‹Р№ РєР»Р°СЃСЃ РґР»СЏ РІСЃРµС… ML РјРѕРґРµР»РµР№"""
+    """Abstract base class for ML predictors."""
 
     def __init__(
         self,
@@ -61,7 +61,7 @@ class MLPredictor(ABC):
         self.model = None
         self.is_trained = False
 
-        # РљРѕРЅС„РёРіСѓСЂР°С†РёСЏ РјРѕРґРµР»Рё
+        # Model configuration
         self.config = {
             "model_name": model_name,
             "prediction_type": prediction_type,
@@ -70,8 +70,7 @@ class MLPredictor(ABC):
             "created_at": datetime.utcnow().isoformat(),
         }
 
-        logger.info("РРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅ MLPredictor",
-                    extra={"model_name": model_name})
+        logger.info("Initialized MLPredictor", extra={"model_name": model_name})
 
     @abstractmethod
     def fit(
@@ -79,18 +78,18 @@ class MLPredictor(ABC):
         X: Union[pd.DataFrame, np.ndarray],
         y: Optional[Union[pd.Series, np.ndarray]] = None,
     ) -> "MLPredictor":
-        """РћР±СѓС‡РµРЅРёРµ РјРѕРґРµР»Рё"""
+        """Train the model."""
 
     @abstractmethod
     def predict(self, X: Union[pd.DataFrame, np.ndarray]) -> Union[np.ndarray, pd.DataFrame]:
-        """РџСЂРµРґСЃРєР°Р·Р°РЅРёРµ"""
+        """Run prediction."""
 
     @abstractmethod
     def predict_proba(self, X: Union[pd.DataFrame, np.ndarray]) -> Optional[np.ndarray]:
-        """РџСЂРµРґСЃРєР°Р·Р°РЅРёРµ РІРµСЂРѕСЏС‚РЅРѕСЃС‚РµР№ (РґР»СЏ РєР»Р°СЃСЃРёС„РёРєР°С†РёРё)"""
+        """Run probability prediction for classifiers."""
 
     def save_model(self, filepath: str):
-        """РЎРѕС…СЂР°РЅРµРЅРёРµ РјРѕРґРµР»Рё"""
+        """Save model to disk."""
         try:
             model_data = {
                 "config": self.config,
@@ -104,13 +103,13 @@ class MLPredictor(ABC):
                 pickle.dump(model_data, f)
 
             logger.info(
-                "РњРѕРґРµР»СЊ СЃРѕС…СЂР°РЅРµРЅР°",
+                "Model saved",
                 extra={"model_name": self.model_name, "filepath": filepath},
             )
 
         except Exception as e:
             logger.error(
-                "РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ РјРѕРґРµР»Рё",
+                "Model save failed",
                 extra={
                     "model_name": self.model_name,
                     "filepath": filepath,
@@ -122,7 +121,7 @@ class MLPredictor(ABC):
             raise
 
     def load_model(self, filepath: str):
-        """Р—Р°РіСЂСѓР·РєР° РјРѕРґРµР»Рё"""
+        """Load model from disk."""
         try:
             with open(filepath, "rb") as f:
                 model_data = pickle.load(f)
@@ -134,13 +133,13 @@ class MLPredictor(ABC):
             self.target = model_data["target"]
 
             logger.info(
-                "РњРѕРґРµР»СЊ Р·Р°РіСЂСѓР¶РµРЅР°",
+                "Model loaded",
                 extra={"model_name": self.model_name, "filepath": filepath},
             )
 
         except Exception as e:
             logger.error(
-                "РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё РјРѕРґРµР»Рё",
+                "Model load failed",
                 extra={
                     "model_name": self.model_name,
                     "filepath": filepath,
@@ -152,10 +151,10 @@ class MLPredictor(ABC):
             raise
 
     def evaluate(self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]) -> Dict[str, float]:
-        """РћС†РµРЅРєР° РјРѕРґРµР»Рё"""
+        """Evaluate model quality."""
 
         if not self.is_trained:
-            raise ValueError("РњРѕРґРµР»СЊ РЅРµ РѕР±СѓС‡РµРЅР°")
+            raise ValueError("Model is not trained")
 
         predictions = self.predict(X)
 
@@ -180,19 +179,18 @@ class MLPredictor(ABC):
                 }
             )
 
-        logger.info("РћС†РµРЅРєР° РјРѕРґРµР»Рё", extra={
-                    "model_name": self.model_name, "metrics": metrics})
+        logger.info("Model evaluated", extra={"model_name": self.model_name, "metrics": metrics})
 
         return metrics
 
     def log_model_metrics_to_mlflow(self, metrics: Dict[str, float], run_id: Optional[str] = None):
-        """Р›РѕРіРёСЂРѕРІР°РЅРёРµ РјРµС‚СЂРёРє РІ MLflow"""
+        """Log metrics to MLflow when a manager is configured."""
 
         if self.mlflow_manager:
             self.mlflow_manager.log_metrics(metrics)
 
     def get_feature_importance(self) -> Optional[Dict[str, float]]:
-        """РџРѕР»СѓС‡РµРЅРёРµ РІР°Р¶РЅРѕСЃС‚Рё РїСЂРёР·РЅР°РєРѕРІ (РµСЃР»Рё РїРѕРґРґРµСЂР¶РёРІР°РµС‚СЃСЏ)"""
+        """Return feature importance when the underlying model exposes it."""
 
         if hasattr(self.model, "feature_importances_"):
             return dict(zip(self.features, self.model.feature_importances_))
@@ -206,17 +204,17 @@ class MLPredictor(ABC):
         return None
 
     def explain_prediction(self, X: Union[pd.DataFrame, np.ndarray], index: int = 0) -> Dict[str, Any]:
-        """РћР±СЉСЏСЃРЅРµРЅРёРµ РїСЂРµРґСЃРєР°Р·Р°РЅРёСЏ"""
+        """Explain one prediction using available feature importance."""
 
         if not self.is_trained:
-            raise ValueError("РњРѕРґРµР»СЊ РЅРµ РѕР±СѓС‡РµРЅР°")
+            raise ValueError("Model is not trained")
 
         if isinstance(X, pd.DataFrame):
             sample = X.iloc[index].to_dict()
         else:
             sample = dict(zip(self.features, X[index]))
 
-        # Р‘Р°Р·РѕРІР°СЏ РёРЅС‚РµСЂРїСЂРµС‚Р°С†РёСЏ РЅР° РѕСЃРЅРѕРІРµ РІР°Р¶РЅРѕСЃС‚Рё РїСЂРёР·РЅР°РєРѕРІ
+        # Basic interpretation based on feature importance.
         importance = self.get_feature_importance()
 
         explanation = {
@@ -229,14 +227,14 @@ class MLPredictor(ABC):
         if importance:
             sorted_features = sorted(
                 importance.items(), key=lambda x: x[1], reverse=True)
-            # РўРѕРї-5 С„РёС‡
+            # Top 5 features
             explanation["contributing_features"] = sorted_features[:5]
 
         return explanation
 
 
 class SklearnPredictor(MLPredictor):
-    """Р РµР°Р»РёР·Р°С†РёСЏ РїСЂРµРґРёРєС‚РѕСЂР° РЅР° РѕСЃРЅРѕРІРµ scikit-learn"""
+    """scikit-learn predictor implementation."""
 
     def __init__(
         self,
@@ -255,13 +253,13 @@ class SklearnPredictor(MLPredictor):
         self.model_params = model_params or {}
 
         logger.info(
-            "РРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅ SklearnPredictor",
+            "Initialized SklearnPredictor",
             extra={"model_name": model_name,
                    "model_class": self.model_class.__name__},
         )
 
     def _get_default_model_class(self, prediction_type: str) -> type:
-        """РџРѕР»СѓС‡РµРЅРёРµ РєР»Р°СЃСЃР° РјРѕРґРµР»Рё РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ"""
+        """Return default model class for a prediction type."""
 
         if prediction_type == PredictionType.CLASSIFICATION:
             return RandomForestClassifier
@@ -275,23 +273,23 @@ class SklearnPredictor(MLPredictor):
         X: Union[pd.DataFrame, np.ndarray],
         y: Optional[Union[pd.Series, np.ndarray]] = None,
     ) -> "SklearnPredictor":
-        """РћР±СѓС‡РµРЅРёРµ РјРѕРґРµР»Рё"""
+        """Train the model."""
 
         try:
-            # РџСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ РґР°РЅРЅС‹С…
+            # Prepare input data.
             if isinstance(X, pd.DataFrame):
                 X_processed = X[self.features].fillna(0)
             else:
                 X_processed = pd.DataFrame(X, columns=self.features).fillna(0)
 
-            # РЎРѕР·РґР°РЅРёРµ Рё РѕР±СѓС‡РµРЅРёРµ РјРѕРґРµР»Рё
+            # Create and train the model.
             self.model = self.model_class(**self.model_params)
             self.model.fit(X_processed, y)
 
             self.is_trained = True
 
             logger.info(
-                "РњРѕРґРµР»СЊ РѕР±СѓС‡РµРЅР°",
+                "Model trained",
                 extra={
                     "model_name": self.model_name,
                     "samples_count": len(X_processed),
@@ -302,7 +300,7 @@ class SklearnPredictor(MLPredictor):
 
         except Exception as e:
             logger.error(
-                "РћС€РёР±РєР° РѕР±СѓС‡РµРЅРёСЏ РјРѕРґРµР»Рё",
+                "Model training failed",
                 extra={
                     "model_name": self.model_name,
                     "error": str(e),
@@ -313,13 +311,13 @@ class SklearnPredictor(MLPredictor):
             raise
 
     def predict(self, X: Union[pd.DataFrame, np.ndarray]) -> Union[np.ndarray, pd.DataFrame]:
-        """РџСЂРµРґСЃРєР°Р·Р°РЅРёРµ"""
+        """Run prediction."""
 
         if not self.is_trained:
-            raise ValueError("РњРѕРґРµР»СЊ РЅРµ РѕР±СѓС‡РµРЅР°")
+            raise ValueError("Model is not trained")
 
         try:
-            # РџСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ РґР°РЅРЅС‹С…
+            # Prepare input data.
             if isinstance(X, pd.DataFrame):
                 X_processed = X[self.features].fillna(0)
             else:
@@ -327,27 +325,26 @@ class SklearnPredictor(MLPredictor):
 
             predictions = self.model.predict(X_processed)
 
-            logger.debug("Р’С‹РїРѕР»РЅРµРЅРѕ РїСЂРµРґСЃРєР°Р·Р°РЅРёРµ", extra={
-                         "samples_count": len(X_processed)})
+            logger.debug("Prediction completed", extra={"samples_count": len(X_processed)})
 
             return predictions
 
         except Exception as e:
             logger.error(
-                "РћС€РёР±РєР° РїСЂРµРґСЃРєР°Р·Р°РЅРёСЏ",
+                "Prediction failed",
                 extra={"error": str(e), "error_type": type(e).__name__},
                 exc_info=True,
             )
             raise
 
     def predict_proba(self, X: Union[pd.DataFrame, np.ndarray]) -> Optional[np.ndarray]:
-        """РџСЂРµРґСЃРєР°Р·Р°РЅРёРµ РІРµСЂРѕСЏС‚РЅРѕСЃС‚РµР№"""
+        """Run probability prediction."""
 
         if not self.is_trained or not hasattr(self.model, "predict_proba"):
             return None
 
         try:
-            # РџСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ РґР°РЅРЅС‹С…
+            # Prepare input data.
             if isinstance(X, pd.DataFrame):
                 X_processed = X[self.features].fillna(0)
             else:
@@ -355,34 +352,33 @@ class SklearnPredictor(MLPredictor):
 
             probabilities = self.model.predict_proba(X_processed)
 
-            logger.debug("Р’С‹С‡РёСЃР»РµРЅС‹ РІРµСЂРѕСЏС‚РЅРѕСЃС‚Рё", extra={
-                         "samples_count": len(X_processed)})
+            logger.debug("Probabilities computed", extra={"samples_count": len(X_processed)})
 
             return probabilities
 
         except Exception as e:
             logger.error(
-                "РћС€РёР±РєР° РІС‹С‡РёСЃР»РµРЅРёСЏ РІРµСЂРѕСЏС‚РЅРѕСЃС‚РµР№",
+                "Probability computation failed",
                 extra={"error": str(e), "error_type": type(e).__name__},
                 exc_info=True,
             )
             return None
 
 
-# TensorFlowPredictor removed вЂ” tensorflow was never in requirements.txt
+# TensorFlowPredictor removed - tensorflow was never in requirements.txt
 # 230 lines of dead code deleted. Use SklearnPredictor instead.
 #
 # To restore: git checkout v4.0-pre-cleanup -- src/modules/ml/domain/predictor.py
 
 class ModelEnsemble:
-    """Ансамбль ML моделей для улучшения предсказаний"""
+    """Ensemble of ML models for stronger predictions."""
 
     def __init__(self, models: List[MLPredictor], ensemble_method: str = "average"):
         self.models = models
         self.ensemble_method = ensemble_method
 
         logger.info(
-            "РЎРѕР·РґР°РЅ Р°РЅСЃР°РјР±Р»СЊ РјРѕРґРµР»РµР№",
+            "Model ensemble created",
             extra={"models_count": len(
                 models), "ensemble_method": ensemble_method},
         )
@@ -392,16 +388,16 @@ class ModelEnsemble:
         X: Union[pd.DataFrame, np.ndarray],
         y: Optional[Union[pd.Series, np.ndarray]] = None,
     ) -> "ModelEnsemble":
-        """РћР±СѓС‡РµРЅРёРµ РІСЃРµС… РјРѕРґРµР»РµР№ РІ Р°РЅСЃР°РјР±Р»Рµ"""
+        """Train all models in the ensemble."""
 
         for model in self.models:
             model.fit(X, y)
 
-        logger.info("Р’СЃРµ РјРѕРґРµР»Рё РІ Р°РЅСЃР°РјР±Р»Рµ РѕР±СѓС‡РµРЅС‹")
+        logger.info("All ensemble models trained")
         return self
 
     def predict(self, X: Union[pd.DataFrame, np.ndarray]) -> Union[np.ndarray, pd.DataFrame]:
-        """РџСЂРµРґСЃРєР°Р·Р°РЅРёРµ Р°РЅСЃР°РјР±Р»СЏ"""
+        """Run ensemble prediction."""
 
         predictions = []
 
@@ -409,11 +405,11 @@ class ModelEnsemble:
             pred = model.predict(X)
             predictions.append(pred)
 
-        # РћР±СЉРµРґРёРЅРµРЅРёРµ РїСЂРµРґСЃРєР°Р·Р°РЅРёР№
+        # Combine predictions.
         if self.ensemble_method == "average":
             ensemble_pred = np.mean(predictions, axis=0)
         elif self.ensemble_method == "majority_vote":
-            # Р”Р»СЏ РєР»Р°СЃСЃРёС„РёРєР°С†РёРё - РіРѕР»РѕСЃРѕРІР°РЅРёРµ Р±РѕР»СЊС€РёРЅСЃС‚РІРѕРј
+            # Classification uses a majority-vote approximation.
             if self.models[0].prediction_type == PredictionType.CLASSIFICATION:
                 ensemble_pred = np.round(np.mean(predictions, axis=0))
             else:
@@ -424,7 +420,7 @@ class ModelEnsemble:
         return ensemble_pred
 
     def predict_with_uncertainty(self, X: Union[pd.DataFrame, np.ndarray]) -> Tuple[np.ndarray, np.ndarray]:
-        """РџСЂРµРґСЃРєР°Р·Р°РЅРёРµ СЃ РѕС†РµРЅРєРѕР№ РЅРµРѕРїСЂРµРґРµР»РµРЅРЅРѕСЃС‚Рё"""
+        """Return ensemble prediction with uncertainty estimate."""
 
         predictions = []
 
@@ -434,10 +430,10 @@ class ModelEnsemble:
 
         predictions = np.array(predictions)
 
-        # РЎСЂРµРґРЅРµРµ РїСЂРµРґСЃРєР°Р·Р°РЅРёРµ
+        # Mean prediction.
         mean_pred = np.mean(predictions, axis=0)
 
-        # РЎС‚Р°РЅРґР°СЂС‚РЅРѕРµ РѕС‚РєР»РѕРЅРµРЅРёРµ (РєР°Рє РјРµСЂР° РЅРµРѕРїСЂРµРґРµР»РµРЅРЅРѕСЃС‚Рё)
+        # Standard deviation as uncertainty measure.
         uncertainty = np.std(predictions, axis=0)
 
         return mean_pred, uncertainty
@@ -445,19 +441,19 @@ class ModelEnsemble:
     def evaluate_ensemble(
         self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]
     ) -> Dict[str, float]:
-        """РћС†РµРЅРєР° Р°РЅСЃР°РјР±Р»СЏ"""
+        """Evaluate ensemble quality."""
 
         ensemble_metrics = {}
         individual_metrics = {}
 
-        # РћС†РµРЅРєР° РѕС‚РґРµР»СЊРЅС‹С… РјРѕРґРµР»РµР№
+        # Evaluate individual models.
         for i, model in enumerate(self.models):
             try:
                 metrics = model.evaluate(X, y)
                 individual_metrics[f"model_{i}"] = metrics
             except Exception as e:
                 logger.warning(
-                    "РћС€РёР±РєР° РѕС†РµРЅРєРё РјРѕРґРµР»Рё",
+                    "Model evaluation failed",
                     extra={
                         "model_index": i,
                         "error": str(e),
@@ -465,7 +461,7 @@ class ModelEnsemble:
                     },
                 )
 
-        # РћС†РµРЅРєР° Р°РЅСЃР°РјР±Р»СЏ
+        # Evaluate ensemble.
         try:
             ensemble_pred = self.predict(X)
 
@@ -479,12 +475,12 @@ class ModelEnsemble:
 
         except Exception as e:
             logger.error(
-                "РћС€РёР±РєР° РѕС†РµРЅРєРё Р°РЅСЃР°РјР±Р»СЏ",
+                "Ensemble evaluation failed",
                 extra={"error": str(e), "error_type": type(e).__name__},
                 exc_info=True,
             )
 
-        # РЎСЂР°РІРЅРµРЅРёРµ СЃ Р»СѓС‡С€РµР№ РёРЅРґРёРІРёРґСѓР°Р»СЊРЅРѕР№ РјРѕРґРµР»СЊСЋ
+        # Compare with the best individual model.
         if individual_metrics:
             best_model_name = max(
                 individual_metrics.keys(),
@@ -495,7 +491,7 @@ class ModelEnsemble:
         return ensemble_metrics
 
 
-# Р¤Р°Р±СЂРёРєР° РґР»СЏ СЃРѕР·РґР°РЅРёСЏ РјРѕРґРµР»РµР№
+# Factory for creating models.
 def create_model(
     model_type: str,
     model_name: str,
@@ -505,7 +501,7 @@ def create_model(
     model_params: Optional[Dict] = None,
     mlflow_manager: Optional[MLFlowManager] = None,
 ) -> MLPredictor:
-    """Р¤Р°Р±СЂРёРєР° РґР»СЏ СЃРѕР·РґР°РЅРёСЏ ML РјРѕРґРµР»РµР№"""
+    """Create an ML predictor."""
 
     if model_type.lower() in ["sklearn", "scikit-learn", "random_forest", "rf"]:
         model_class_map = {
@@ -525,9 +521,8 @@ def create_model(
         )
 
     elif model_type.lower() in ["tensorflow", "keras", "tf", "neural_network", "nn"]:
-        # TensorFlow support removed вЂ” use sklearn fallback
-        logger.warning(
-            "TensorFlow models not supported, falling back to sklearn")
+        # TensorFlow support removed - use sklearn fallback.
+        logger.warning("TensorFlow models not supported, falling back to sklearn")
         return SklearnPredictor(
             model_name=model_name,
             prediction_type=prediction_type,

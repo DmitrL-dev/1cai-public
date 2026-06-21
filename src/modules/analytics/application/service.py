@@ -124,28 +124,26 @@ class AnalyticsService:
         recent = [m for m in metrics if datetime.fromisoformat(
             m["timestamp"]) >= cutoff]
 
-        # Calculate improvements
         performance_improvement = self._calculate_improvement(
             recent, MetricType.PERFORMANCE)
         quality_improvement = self._calculate_improvement(recent, MetricType.QUALITY)
-
-        # Estimate costs (Simplified)
-        cost_savings = self._estimate_cost_savings(
-            performance_improvement, quality_improvement)
-
-        # ROI = (Benefits - Costs) / Costs * 100%
-        estimated_costs = period_days * 100  # Mock cost
-        roi = (cost_savings - estimated_costs) / \
-               estimated_costs * 100 if estimated_costs > 0 else 0
+        cost_metrics = [m for m in recent if m["type"] == MetricType.COST.value]
+        estimated_costs = sum(m["value"] for m in cost_metrics)
 
         return {
             "component": component,
             "period_days": period_days,
+            "roi_measured": False,
+            "coverage": "missing_value_model",
             "performance_improvement": performance_improvement,
             "quality_improvement": quality_improvement,
-            "cost_savings": cost_savings,
+            "cost_savings": 0.0,
             "estimated_costs": estimated_costs,
-            "roi_percent": roi,
+            "roi_percent": 0.0,
+            "caveat": (
+                "ROI is not monetized without a calibrated value model; "
+                "performance/quality changes are reported separately."
+            ),
         }
 
     def _calculate_improvement(self, metrics: List[Dict[str, Any]], metric_type: MetricType) -> float:
@@ -168,19 +166,12 @@ class AnalyticsService:
 
     def _estimate_cost_savings(self, performance_improvement: float, quality_improvement: float) -> float:
         """Оценивает экономию затрат на основе улучшений."""
-        # Simplified model:
-        # Performance improvement = less time = less cost
-        # Quality improvement = fewer bugs = less fix cost
-
-        time_savings = performance_improvement * 1000  # Mock: hours
-        bug_reduction = quality_improvement * 50  # Mock: bug count
-
-        cost_per_hour = 50  # Mock: hourly rate
-        cost_per_bug = 200  # Mock: fix cost
-
-        savings = (time_savings * cost_per_hour) + (bug_reduction * cost_per_bug)
-
-        return max(0.0, savings)
+        logger.warning(
+            "Cost savings requested without calibrated value model: perf=%s quality=%s",
+            performance_improvement,
+            quality_improvement,
+        )
+        return 0.0
 
     def generate_report(
         self, title: str, period_days: int = 7, components: Optional[List[str]] = None

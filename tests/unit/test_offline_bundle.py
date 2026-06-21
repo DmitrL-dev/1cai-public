@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+import json
 import pytest
 import zipfile
 
@@ -69,6 +70,9 @@ def test_offline_bundle_archive_verifies_and_detects_payload_tamper(tmp_path):
         root=tmp_path,
     )
     verified = verify_offline_bundle_archive(archive_path=archive_path, signing_key="secret")
+    with zipfile.ZipFile(archive_path, "r") as built:
+        names = set(built.namelist())
+        passport = json.loads(built.read("DELIVERY_PASSPORT.json").decode("utf-8"))
 
     tampered_path = tmp_path / "data" / "offline_bundles" / "tampered.zip"
     with zipfile.ZipFile(archive_path, "r") as source, zipfile.ZipFile(tampered_path, "w", compression=zipfile.ZIP_DEFLATED) as target:
@@ -80,6 +84,12 @@ def test_offline_bundle_archive_verifies_and_detects_payload_tamper(tmp_path):
     tampered = verify_offline_bundle_archive(archive_path=tampered_path, signing_key="secret")
 
     assert archive["status"] == "created"
+    assert "DELIVERY_PASSPORT.json" in names
+    assert "DELIVERY_PASSPORT.md" in names
+    assert "VERIFY.txt" in names
+    assert archive["delivery_passport"]["package"]["manifest_sha256"] == archive["manifest"]["manifest_sha256"]
+    assert passport["decision"]["status"] in {"ready", "warn", "risk"}
+    assert verified["delivery_passport"]["package"]["manifest_sha256"] == archive["manifest"]["manifest_sha256"]
     assert verified["status"] == "pass"
     assert tampered["status"] == "fail"
     assert any(item["code"] == "archive-payload-hash-mismatch" for item in tampered["findings"])

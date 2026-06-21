@@ -24,13 +24,18 @@ export const Route = createFileRoute("/_authenticated/standards-review")({
   component: StandardsReviewPage,
 })
 
-const sampleCode = `Function UnsafeQuery(Rows) Export
-    For Each Row In Rows Do
-        Query = New Query("SELECT * FROM Catalog.Products");
-        Query.Execute();
-    EndDo;
-    Execute("Message('x')");
-EndFunction`
+const sampleCode = `Процедура Сформировать() Экспорт
+    Запрос = Новый Запрос(
+    "ВЫБРАТЬ
+    |   Заказы.Ссылка,
+    |   ЕстьNULL(Скидки.Процент, 0) КАК ПроцентСкидки,
+    |   Скидки.Сумма КАК СуммаСкидки
+    |ИЗ
+    |   Документ.ЗаказПокупателя КАК Заказы
+    |   ЛЕВОЕ СОЕДИНЕНИЕ РегистрСведений.Скидки КАК Скидки
+    |   ПО Скидки.Номенклатура = Заказы.Номенклатура");
+    Запрос.Выполнить();
+КонецПроцедуры`
 
 const nf = new Intl.NumberFormat("ru-RU")
 
@@ -238,24 +243,65 @@ function StandardsReport({ report }: { report: StandardsReviewResponse }) {
 function FindingList({ findings }: { findings: StandardsFinding[] }) {
   return (
     <ul className="space-y-3">
-      {findings.map((finding, index) => (
-        <li key={`${finding.rule_id}-${finding.line}-${index}`} className="rounded-lg border border-border bg-background/50 p-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={finding.severity === "high" ? "danger" : finding.severity === "medium" ? "warn" : "muted"}>
-              {finding.rule_id || finding.code}
-            </Badge>
-            <span className="text-sm font-semibold text-card-foreground">{finding.standard}</span>
-            {finding.line && <span className="text-xs text-muted-foreground">line {finding.line}</span>}
-          </div>
-          <p className="mt-2 text-sm text-card-foreground">{finding.message}</p>
-          {finding.autofix && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              {String(finding.autofix.description ?? "Review manually.")}
-            </p>
-          )}
-        </li>
-      ))}
+      {findings.map((finding, index) => {
+        const safeOptions = detailsList(finding.details, "safe_options")
+        const testExpectations = detailsList(finding.details, "test_expectations")
+        const fieldRef = detailsString(finding.details, "field_ref")
+        const risk = detailsString(finding.details, "risk")
+        return (
+          <li key={`${finding.rule_id}-${finding.line}-${index}`} className="rounded-lg border border-border bg-background/50 p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone={finding.severity === "high" ? "danger" : finding.severity === "medium" ? "warn" : "muted"}>
+                {finding.rule_id || finding.code}
+              </Badge>
+              <span className="text-sm font-semibold text-card-foreground">{finding.standard}</span>
+              {finding.line && <span className="text-xs text-muted-foreground">line {finding.line}</span>}
+            </div>
+            <p className="mt-2 text-sm text-card-foreground">{finding.message}</p>
+            {fieldRef && (
+              <p className="mt-2 break-all font-mono text-xs text-primary">
+                {fieldRef}
+              </p>
+            )}
+            {risk && (
+              <p className="mt-2 text-xs text-muted-foreground">{risk}</p>
+            )}
+            {finding.autofix && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {String(finding.autofix.description ?? "Review manually.")}
+              </p>
+            )}
+            {safeOptions.length > 0 && <DetailList title="Safe options" values={safeOptions} />}
+            {testExpectations.length > 0 && <DetailList title="Tests" values={testExpectations} />}
+          </li>
+        )
+      })}
     </ul>
+  )
+}
+
+function detailsList(details: Record<string, unknown> | undefined, key: string) {
+  const value = details?.[key]
+  return Array.isArray(value) ? value.map((item) => String(item)).filter(Boolean) : []
+}
+
+function detailsString(details: Record<string, unknown> | undefined, key: string) {
+  const value = details?.[key]
+  return value === undefined || value === null ? "" : String(value)
+}
+
+function DetailList({ title, values }: { title: string; values: string[] }) {
+  return (
+    <div className="mt-3 rounded-lg border border-border bg-card/70 p-3">
+      <p className="text-xs font-semibold uppercase text-muted-foreground">{title}</p>
+      <ul className="mt-2 space-y-1">
+        {values.map((value) => (
+          <li key={value} className="break-words text-xs text-card-foreground">
+            {value}
+          </li>
+        ))}
+      </ul>
+    </div>
   )
 }
 

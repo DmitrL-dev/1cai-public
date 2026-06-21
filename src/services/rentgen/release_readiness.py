@@ -219,10 +219,11 @@ def _recommended_actions(
     actions: list[dict[str, Any]] = []
 
     for violation in gate.get("violations", [])[:20]:
+        severity = "medium" if violation.get("severity") == "warning" else str(violation.get("severity") or "high")
         actions.append(
             {
                 "owner": "lead",
-                "severity": "high",
+                "severity": severity,
                 "kind": "gate",
                 "title": "Resolve release gate violation",
                 "target": violation.get("module_path"),
@@ -357,6 +358,9 @@ def _persona_summaries(
                 "module_path": item["module_path"],
                 "risk": int(quality.get("risk") or 0),
                 "impact_total": int(item.get("impact_total") or 0),
+                "impact_measured": item.get("impact_measured") is not False,
+                "coverage": item.get("coverage") or "in_graph",
+                "coverage_caveat": item.get("coverage_caveat"),
                 "hotspots": len(item.get("impacted_hotspots") or []),
             }
         )
@@ -371,6 +375,7 @@ def _persona_summaries(
         "architect": {
             "total_impact_edges": plan.get("total_impact_edges", 0),
             "total_impacted_modules": plan.get("total_impacted_modules", 0),
+            "unmeasured_impact_modules": len(plan.get("unmeasured_modules") or []),
             "metadata_objects": metadata.get("summary", {}).get("found", 0),
             "form_findings": form_reviews.get("summary", {}).get("findings", 0),
         },
@@ -406,8 +411,9 @@ def render_release_markdown(report: dict[str, Any]) -> str:
         "## Summary",
         "",
         f"- Changed modules: {report['summary']['changed_modules']}",
-        f"- Impact edges: {report['summary']['total_impact_edges']}",
+        f"- Impact edges (measured): {report['summary']['total_impact_edges']}",
         f"- Impacted modules: {report['summary']['total_impacted_modules']}",
+        f"- Unmeasured impact modules: {report['summary'].get('unmeasured_impact_modules', 0)}",
         f"- Gate violations: {report['summary']['gate_violations']}",
         f"- Standards findings: {report['summary']['standards_findings']}",
         f"- Form findings: {report['summary']['form_findings']}",
@@ -512,6 +518,7 @@ def build_release_readiness(
             "changed_modules": len(plan.get("changed_modules", [])),
             "total_impact_edges": plan.get("total_impact_edges", 0),
             "total_impacted_modules": plan.get("total_impacted_modules", 0),
+            "unmeasured_impact_modules": len(plan.get("unmeasured_modules") or []),
             "gate_violations": int((gate.get("summary") or {}).get("violation_count") or 0),
             "standards_findings": len(standards_findings),
             "form_findings": len(form_findings),

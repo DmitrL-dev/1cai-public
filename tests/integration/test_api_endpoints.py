@@ -6,6 +6,14 @@ Integration tests for API endpoints
 import pytest
 from fastapi.testclient import TestClient
 
+# Both test classes below target FastAPI apps from modules that were removed in
+# the phase-7 cleanup (src.api.graph_api and src.ai.mcp_server). Those imports
+# live inside fixtures, so collection still succeeds, but the fixtures raise
+# ModuleNotFoundError at run time. Skip the whole module as obsolete test-rot.
+pytestmark = pytest.mark.skip(
+    reason="imports modules deleted in phase-7 cleanup (src.api.graph_api, src.ai.mcp_server); obsolete test-rot"
+)
+
 
 @pytest.mark.integration
 class TestGraphAPI:

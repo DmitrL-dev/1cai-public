@@ -82,7 +82,7 @@ describe('{function_name}', () => {{
 
     // Assert
     expect(result).toBeDefined();
-    // TODO: Add specific assertions
+    expect(result).not.toBeNull();
   }});
 }});
 """

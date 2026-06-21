@@ -2,6 +2,11 @@
 
 Быстрая навигация по основным блокам документации. Используйте этот индекс как стартовую точку (а [`research/README_LOCAL.md`](./research/README_LOCAL.md) — для ежедневных статусов).
 
+> **Current truth, 2026-06-18:** часть нижнего индекса является историческим слоем 2025 года и
+> может переоценивать production readiness. Для актуального направления продукта см. корневой
+> [`README.md`](../README.md) и новый roadmap
+> [`MEGA_REALIZATION_PLAN_2026-06-18.md`](./roadmap/MEGA_REALIZATION_PLAN_2026-06-18.md).
+
 ## 1. Setup & Runtime
 - [Установка Python 3.11](./setup/python_311.md) — установка Python 3.11.
 - [Проверка runtime](../scripts/setup/check_runtime.py) + `make check-runtime` — автоматическая проверка версии Python.
@@ -80,7 +85,7 @@
 
 **Версия:** 5.1.0  
 **Обновлено:** 17 ноября 2025  
-**Статус:** Production Ready ✅
+**Статус:** Legacy documentation snapshot; актуальный статус продукта — pilot-ready P0 hardening, см. верхний current-truth блок.
 
 ---
 

@@ -14,8 +14,10 @@ from aiogram.filters import Command
 from aiogram.types import Message
 
 from src.ai.orchestrator import get_orchestrator
+from src.services.bsl_diagnostics import analyze_bsl
 from src.services.ocr_service import DocumentType, get_ocr_service
 from src.services.speech_to_text_service import get_stt_service
+from src.telegram.bsl_upload_report import decode_uploaded_text, format_bsl_upload_report
 from src.telegram.config import config
 from src.telegram.formatters import TelegramFormatter
 from src.telegram.rate_limiter import RateLimiter
@@ -56,25 +58,23 @@ async def cmd_start(message: Message):
     """Команда /start"""
     user_name = message.from_user.first_name
 
-    welcome = f"""👋 Привет, **{user_name}**!
+    welcome = f"""Hello, **{user_name}**!
 
-Я — AI-помощник для 1С разработчиков.
+I am the 1C AI assistant for local code search, BSL diagnostics and dependency analysis.
 
-Могу:
-🔍 Искать код по смыслу (не только по тексту!)
-💻 Генерировать BSL код
-🔗 Анализировать зависимости
-💡 Отвечать на вопросы о вашей конфигурации
-🎤 Понимать голосовые сообщения!
+What I can do:
+- Search code semantically with `/search <query>`
+- Generate guarded BSL drafts with `/generate <description>` when enabled
+- Analyze dependencies with `/deps <module> <function>` when enabled
+- Analyze uploaded `.bsl`, `.os` and `.txt` files with local diagnostics
+- Process voice messages and OCR images/documents when services are configured
 
-**Попробуйте:**
-• `/search расчет НДС`
-• Или просто спросите: "Где мы работаем с документами?"
-• 🎤 Или отправьте голосовое сообщение!
+Try:
+- `/search VAT calculation`
+- upload a `.bsl` file for local diagnostics
+- send a plain question about your configuration
 
-Полный список команд: /help
-
-🚀 **Начнем?**
+Full command list: /help
 """
 
     await message.reply(welcome, parse_mode=ParseMode.MARKDOWN)
@@ -532,9 +532,11 @@ async def handle_document(message: Message):
         return
 
     document = message.document
+    file_name = document.file_name or "uploaded-file"
+    suffix = Path(file_name).suffix.lower()
 
     # Проверка: PDF для OCR или BSL для анализа
-    if document.file_name.endswith((".pdf", ".png", ".jpg", ".jpeg")):
+    if suffix in {".pdf", ".png", ".jpg", ".jpeg"}:
         # OCR обработка
         await message.answer("📄 Распознаю документ через OCR...")
 
@@ -545,7 +547,7 @@ async def handle_document(message: Message):
             doc_file = await message.bot.get_file(document.file_id)
 
             with tempfile.NamedTemporaryFile(
-                delete=False, suffix=Path(document.file_name).suffix
+                delete=False, suffix=suffix
             ) as tmp_file:
                 await message.bot.download_file(doc_file.file_path, tmp_file)
                 tmp_path = tmp_file.name
@@ -588,36 +590,38 @@ async def handle_document(message: Message):
         return
 
     # BSL файлы
-    if not document.file_name.endswith((".bsl", ".os", ".txt")):
-        await message.reply(
-            "❌ Поддерживаются файлы:\n"
-            "• .bsl, .os, .txt - для анализа кода\n"
-            "• .pdf, .jpg, .png - для OCR распознавания"
-        )
+    if suffix in {".bsl", ".os", ".txt"}:
+        await message.answer("Analyzing BSL code with local diagnostics...")
+        tmp_path = None
+        try:
+            doc_file = await message.bot.get_file(document.file_id)
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
+                await message.bot.download_file(doc_file.file_path, tmp_file)
+                tmp_path = tmp_file.name
+
+            code = decode_uploaded_text(Path(tmp_path).read_bytes())
+            result = analyze_bsl(code, module_path=file_name)
+            await message.reply(format_bsl_upload_report(file_name, result))
+        except Exception as e:
+            logger.error(
+                "BSL file diagnostics error",
+                extra={
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                    "user_id": message.from_user.id if message.from_user else None,
+                },
+                exc_info=True,
+            )
+            await message.reply(formatter.format_error(str(e)))
+        finally:
+            if tmp_path:
+                os.unlink(tmp_path)
         return
 
-    await message.answer("📄 Анализирую BSL код...")
-
-    try:
-        # TODO: Скачать файл и проанализировать
-        await message.reply(
-            "✅ Файл получен!\n\n"
-            "🚧 Анализ BSL файлов в разработке...\n"
-            "Скоро будет доступно: code review, поиск проблем, рефакторинг",
-            parse_mode=ParseMode.MARKDOWN,
-        )
-
-    except Exception as e:
-        logger.error(
-            "File handling error",
-            extra={
-                "error": str(e),
-                "error_type": type(e).__name__,
-                "user_id": message.from_user.id if message.from_user else None,
-            },
-            exc_info=True,
-        )
-        await message.reply(formatter.format_error(str(e)))
+    await message.reply(
+        "Unsupported file type.\n"
+        "Supported: .bsl, .os, .txt for local diagnostics; .pdf, .jpg, .jpeg, .png for OCR."
+    )
 
 
 @router.message(F.text)

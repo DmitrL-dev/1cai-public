@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from src.middleware.jwt_user_context import principal_actor, require_auth
+from src.services.audit_log import record_event
 from src.services.edt_mcp_bridge import classify_edt_mcp_tool
 from src.services.rentgen.approval_workflow import (
     create_approval_record,
@@ -49,6 +50,24 @@ def _require_actor(principal: Any) -> str:
     return actor
 
 
+def _audit_approval(action: str, *, actor: str, record: dict[str, Any]) -> None:
+    record_event(
+        action=action,
+        actor=actor,
+        target=str(record.get("id") or ""),
+        category="approval",
+        metadata={
+            "tool_name": record.get("tool_name"),
+            "risk": record.get("risk"),
+            "status": record.get("status"),
+            "requested_by": record.get("requested_by"),
+            "approved_by": record.get("approved_by"),
+            "linked_record": record.get("linked_record") or {},
+            "argument_constraints": record.get("argument_constraints") or {},
+        },
+    )
+
+
 @router.post("/edt-mcp")
 async def create_edt_mcp_approval(
     req: EdtMcpApprovalRequest,
@@ -70,6 +89,7 @@ async def create_edt_mcp_approval(
         argument_constraints=req.argument_constraints,
         expires_in_hours=req.expires_in_hours,
     )
+    _audit_approval("approval.requested", actor=actor, record=record)
     return {"record": record, "classification": classification}
 
 
@@ -93,6 +113,7 @@ async def approve_record(
         raise HTTPException(404, str(exc)) from exc
     except PermissionError as exc:
         raise HTTPException(403, str(exc)) from exc
+    _audit_approval("approval.approved", actor=actor, record=record)
     return {"record": record}
 
 
@@ -114,6 +135,7 @@ async def reject_record(
         )
     except KeyError as exc:
         raise HTTPException(404, str(exc)) from exc
+    _audit_approval("approval.rejected", actor=actor, record=record)
     return {"record": record}
 
 
@@ -147,6 +169,11 @@ def approvals(
     return list_approval_records(status=status, kind=kind, limit=limit)
 
 
+@router.get("/health/status")
+def health() -> dict[str, Any]:
+    return {"status": "ok", "store": "data/approval_records.json"}
+
+
 @router.get("/{approval_id}")
 def approval_details(approval_id: str) -> dict[str, Any]:
     """Return one approval record."""
@@ -155,8 +182,3 @@ def approval_details(approval_id: str) -> dict[str, Any]:
     if not record:
         raise HTTPException(404, f"Approval record not found: {approval_id}")
     return record
-
-
-@router.get("/health/status")
-def health() -> dict[str, Any]:
-    return {"status": "ok", "store": "data/approval_records.json"}

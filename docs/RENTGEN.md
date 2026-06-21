@@ -44,12 +44,182 @@
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\start_rentgen.ps1
 ```
-Скрипт собирает `data/rentgen.db` при первом запуске (~30с), поднимает бэкенд (:8000) и портал (:3000).
+Скрипт собирает `data/rentgen.db` при первом запуске (~30с), поднимает бэкенд (:8000) и портал (:3000, либо ближайший свободный порт вроде :3001).
 
+- Рабочий пульт и demo story: <http://localhost:3000>
+- Pre-flight конфигурации EDT/Git/XML: <http://localhost:3000/configurations>
+- Platform Doctor: <http://localhost:3000/platform-doctor>
+- Lock Radar: <http://localhost:3000/lock-radar>
+- Extension Safety: <http://localhost:3000/extension-safety>
+- Update War Room: <http://localhost:3000/update-war-room>
+- Rights/RLS: <http://localhost:3000/rights-rls>
+- Value Packs: <http://localhost:3000/value-packs>
+- Business Case: <http://localhost:3000/business-case>
+- Productization: <http://localhost:3000/productization>
+- Evidence Bundle: <http://localhost:3000/evidence-bundle>
+- Vendor Portfolio: <http://localhost:3000/vendor-portfolio>
 - Очаги риска: <http://localhost:3000/quality>
 - Граф вызовов: <http://localhost:3000/rentgen>
 - API-доки: <http://127.0.0.1:8000/docs>
-- Вход в dev: кнопка «Dev Mode (skip auth)» на экране логина.
+- Вход в dev: кнопка «Dev Mode» на экране логина. Она получает настоящий JWT через demo user
+  `admin/admin123`, а не кладет фиктивный токен в localStorage.
+
+## Demo path и Query Surgeon
+
+Главная страница показывает complete demo story: ERP-заказ, риск LEFT JOIN без `ЕстьNULL`, blast radius,
+тест-план, go/no-go для релиза и markdown-отчеты для разработчика, архитектора, директора, QA,
+эксплуатации и вендора. API: `GET /api/v1/management/demo`, `GET /api/v1/management/role-report/{role}`.
+
+Pre-flight wizard `POST /api/v1/management/intake/plan` проверяет локальный EDT/Git/XML источник без
+мутаций: считает BSL/XML/Form/Rights/Test файлы, показывает coverage/caveats и следующие действия.
+
+Fallback standards review теперь содержит 1С-правило `join-field-null-guard`: поля из левого соединения
+должны быть защищены через `ЕстьNULL(...)`, явную проверку `ЕСТЬ NULL` или замену на внутреннее
+соединение, если отсутствие связанной строки невозможно по бизнес-правилу.
+
+## Platform Doctor v1
+
+`GET /api/v1/platform-doctor/analyze` и страница `/platform-doctor` собирают локальный inventory:
+версия платформы, целевая версия, режим совместимости, СУБД, кластер/режим инфобазы, техжурнал,
+OpenMetrics, события лицензирования и расширения. V1 не делает сетевых probe и не выдумывает
+безопасность: неизвестные факты становятся warning/checklist.
+
+Полезные env-поля для стенда:
+
+- `ONEC_PLATFORM_VERSION`
+- `ONEC_TARGET_PLATFORM_VERSION`
+- `ONEC_COMPATIBILITY_MODE`
+- `ONEC_DBMS`
+- `ONEC_CLUSTER` / `ONEC_INFOBASE_MODE`
+- `ONEC_TECH_JOURNAL_PATH`
+- `ONEC_OPENMETRICS_URL`
+- `ONEC_LICENSE_EVENTS_PATH`
+
+## Lock Radar v1
+
+`POST /api/v1/lock-radar/analyze` и страница `/lock-radar` разбирают локальный технологический журнал по
+операционным событиям `TLOCK`, `TTIMEOUT` и `TDEADLOCK`. Отчет показывает decision/risk score, цепочки
+событий, пользователей/процессы, затронутые модули, impact через `data/rentgen.db`, test gaps, actions и
+runbook. Если путь к ТЖ не передан или срез пустой, это явно остается caveat, а не тихий зеленый ноль.
+
+## Extension Safety v1
+
+`POST /api/v1/extension-safety/analyze` и страница `/extension-safety` проверяют локальные CFE/EDT-расширения:
+inventory, BSL/XML/rights-файлы, заимствованные объекты, привилегированный режим, явные транзакции, write hooks,
+фоновые задания, risky query-сигналы, impact по графу и test gaps. V1 не обещает семантический merge как EDT,
+но превращает расширения в отдельный release-gate и evidence-артефакт.
+
+## Vendor Portfolio v1
+
+`GET /api/v1/vendor-portfolio/audit` и страница `/vendor-portfolio` собирают pre-sale audit pack
+для вендора/франчайзи: executive score, риск конфигурации, готовность подключения EDT/Git/XML,
+Platform Doctor, top risks, work packages и markdown для КП/письма клиенту. V1 честно ограничен
+одной текущей конфигурацией и не выдает коммерческие оценки как фиксированное обязательство.
+
+`POST /api/v1/vendor-portfolio/portfolio` добавляет portfolio mode: несколько клиентов/путей превращаются
+в агрегированный pipeline с average score, ready/watch/risk counts, opportunity work packages и markdown.
+
+## Value Packs Center v1
+
+`GET /api/v1/value-packs/catalog` и страница `/value-packs` превращают набор возможностей в
+покупаемые пакеты: Developer, Architect, Release/QA, Platform Doctor/Lock Radar/Extension Safety, Vendor Portfolio и Enterprise
+Offline. Каждый пакет содержит audience, outcome, deliverables, proof points, route links, maturity и
+licensing story: локальный анализ и evidence не завязаны на обязательный расход токенов.
+
+## Business Case v1
+
+`POST /api/v1/business-case/build` и страница `/business-case` собирают директорский deal-room report:
+first-year visible value, displacement обязательной AI-подписки, ручное review effort, release queue/risk exposure,
+buyer committee, objections, offer stack и 30/60/90 rollout. Отчет не обещает гарантированную экономию:
+все денежные рычаги строятся из явных assumptions и локальных Rentgen evidence.
+
+Business Case now also includes `subscription_escape_plan`: three-year AI-rent baseline, local-license anchor,
+break-even months, stakeholder lines and guardrails that keep core value separate from optional AI credits.
+
+Fast health endpoints for `/business-case`, `/vendor-portfolio`, `/value-packs` and `/enterprise-trust-center`
+now use the shared buyer pulse instead of deep report builders. Dashboards get instant `purchase_status`,
+three-year AI-rent and source fields; full proof remains behind explicit build/audit/catalog actions.
+
+## Productization Console v1
+
+Страница `/productization` выводит enterprise delivery console поверх `/api/v1/productization`:
+readiness score, deliverables/findings, SBOM generation, offline manifest, ZIP archive, delivery passport and verification.
+Подпись manifest/archive остается env-based через `ONECAI_BUNDLE_SIGNING_KEY`; секреты не передаются через UI/API body.
+ZIP archive contains `DELIVERY_PASSPORT.json` and `DELIVERY_PASSPORT.md` with signature policy, verification commands,
+acceptance gates and role handoff for developer/QA, architect/security and director.
+
+## Governance Center UI
+
+`/approvals` shows local EDT-MCP approval records with status filters, scoped create flow, approve/reject
+actions, linked records and argument constraints. `/audit` shows hash-chain verification, recent audit events,
+broken entries if any, and JSONL/JSON export. These pages make approval/audit proof visible before the same
+evidence is packed into Evidence Bundle.
+
+## Commercial Offer Close Packet
+
+`/commercial-offer-studio` now includes a `close_packet`: primary paid ask, one-page order, mutual action
+plan, buyer commitments, proof requirements and checkout gates through `/approvals`, `/audit` and
+`/evidence-bundle`. If trust/productization is risky, the ask becomes paid hardening before rollout instead
+of pretending the enterprise license is safe to sell.
+
+## Killer Demo Commercial Close
+
+`/killer-demo` now projects the same commercial close packet into the buyer-ready demo route. The report
+shows close readiness, checkout gates, approval/audit/evidence requirements and the one-page paid ask next
+to Deal Readiness, so the presenter can end with a purchase, paid proof sprint, pilot or hardening motion.
+
+## Board Pack Close Packet
+
+`/board-pack` now carries a `board_close_packet`: the director-facing paid ask, one-page order, approval/audit
+checkout gates, buyer commitments, evidence requirements and close script. Its proof packet includes
+Governance Proof and Audit routes, so the board artifact can move to procurement without losing trust proof.
+
+## Pilot Activation Contract
+
+`/pilot-launchpad` now includes an `activation_contract`: selected paid offer, primary ask, invoice trigger,
+Day 0/7/30 milestones, buyer commitments and approval/audit/evidence gates. It turns a signed interest into
+a concrete paid start with owner, date, proof recipient and governance routes.
+
+## Outcome Governance Refresh
+
+`/outcome-ledger` now includes `governance_refresh`: approval, audit, Evidence Bundle and trust gates for
+Day 7/30/60/90 proof refresh. Outcome proof now carries Governance Proof and Audit routes into rollout,
+renewal, expansion or hardening decisions.
+
+## Launch Room Buyer Journey
+
+`/launch-room` now connects the buyer path as Close -> Activate -> Govern -> Realize. The cockpit shows
+board checkout gates, paid pilot activation gates, governance proof gates and the next route when something
+is not ready. `/approvals` and `/audit` are part of the proof packet, so procurement and security can verify
+who approved the action and whether the audit chain is intact before the buyer receives final artifacts.
+
+## Evidence Bundle v1
+
+`POST /api/v1/evidence-bundle/build` и страница `/evidence-bundle` собирают единый переносимый
+пакет доказательств: Platform Doctor, Configuration Intake, Demo Story, Value Packs, Vendor Portfolio,
+Update War Room, опциональные Lock Radar по ТЖ и Extension Safety по расширениям, Rights/RLS. Каждый артефакт возвращается как JSON/Markdown с SHA-256, а общий
+manifest можно приложить к approval, КП или внутреннему аудиту. V1 также отдает unsigned ZIP proof archive
+через `/api/v1/evidence-bundle/archive`; подписанный offline bundle остается зоной Productization.
+Governance proof добавляет `governance-proof.json/.md`: approval records, Safe Autopilot linkage,
+audit-chain verification and recent audit events travel inside the same archive.
+The Audit page and API also expose SIEM-ready handoff through `/api/v1/audit/siem-export`: normalized
+JSONL/JSON events with chain-valid context and export SHA-256, while live SIEM streaming remains adapter work.
+
+## Update War Room v1
+
+`POST /api/v1/update-war-room/plan` и страница `/update-war-room` отвечают на вопрос “можно ли
+обновлять”: источник конфигурации, целевая платформа, Platform Doctor, расширения, impact релиза,
+affected tests, rollback/evidence и workstreams для архитектора, эксплуатации, релиза и директора.
+Если change set или `data/rentgen.db` не доступны, это явно выводится как caveat, а не как зелёный
+статус.
+
+## Rights & RLS Simulator v1
+
+`GET /api/v1/rights-rls/analyze` и страница `/rights-rls` строят локальную матрицу
+роль → объект → действие по `Roles/*/Ext/Rights.xml`, показывают dangerous rights
+(`Delete`, `Update`, `Administration` и близкие), консервативно фиксируют RLS/condition
+сигналы и дают security gate для релиза. V1 не утверждает runtime-доступы: параметры сеанса,
+привилегированный код и whitelist admin/service ролей остаются отдельными проверками.
 
 Ручная сборка хранилища: `C:\Python311\python.exe tools\rentgen\build_store.py`.
 

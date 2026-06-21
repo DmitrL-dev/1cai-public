@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from src.middleware.jwt_user_context import principal_actor, require_auth
 from src.services.audit_log import (
     export_events,
+    export_siem_events,
     list_events,
     record_event,
     verify_chain,
@@ -48,6 +49,19 @@ def export(format: str = Query(default="jsonl", pattern="^(jsonl|json)$")) -> di
 
     try:
         return export_events(output_format=format)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@router.get("/siem-export")
+def siem_export(
+    format: str = Query(default="jsonl", pattern="^(jsonl|json)$"),
+    limit: int = Query(default=1000, ge=1, le=5000),
+) -> dict[str, Any]:
+    """Export SIEM-ready audit events with hash-chain verification context."""
+
+    try:
+        return export_siem_events(output_format=format, limit=limit)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
 

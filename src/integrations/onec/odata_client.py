@@ -90,6 +90,5 @@ class OneCODataClient:
         Executes a query via a custom HTTP service (if available).
         This requires the 'QueryConsole' pattern to be implemented on 1C side.
         """
-        # Placeholder for future integration with QueryConsole
-        logger.warning("execute_query is not yet implemented on 1C side")
+        logger.warning("execute_query requires a configured QueryConsole HTTP service on 1C side")
         return []
