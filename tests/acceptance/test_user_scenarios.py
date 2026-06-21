@@ -3,12 +3,19 @@
 Acceptance Tests - Пользовательские сценарии
 """
 
+import os
 import sys
 from pathlib import Path
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+# Path of the optional 1C:Copilot completion model. When absent, CopilotService
+# falls back to a small keyword-pattern engine that yields no suggestions for
+# arbitrary input (e.g. an assignment line), so model-dependent acceptance
+# assertions cannot be satisfied serviceless.
+_COPILOT_MODEL_PATH = Path(__file__).parent.parent.parent / "models" / "qwen-bsl-lora"
 
 
 @pytest.mark.asyncio
@@ -320,6 +327,11 @@ async def test_scenario_team_collaboration():
         pytest.skip(f"Database not available: {e}", allow_module_level=False)
 
 
+@pytest.mark.skipif(
+    not _COPILOT_MODEL_PATH.exists(),
+    reason="1C:Copilot completion model (models/qwen-bsl-lora) not present; "
+    "heuristic fallback yields no completions for non-keyword input",
+)
 @pytest.mark.asyncio
 async def test_scenario_copilot_assists_development():
     """
@@ -333,7 +345,9 @@ async def test_scenario_copilot_assists_development():
     5. Генерирует тесты для функции
     """
 
-    from src.api.copilot_api import CopilotService
+    # Import path updated: src.api.copilot_api was removed in cleanup; the
+    # service now lives in src.modules.copilot.services.copilot_service.
+    from src.modules.copilot.services.copilot_service import CopilotService
 
     service = CopilotService()
 

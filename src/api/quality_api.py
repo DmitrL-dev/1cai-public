@@ -25,6 +25,27 @@ _NO_STORE = (
     "(needs data/rentgen_callgraph.ndjson + gabriel_runs/scores.json)."
 )
 
+# --------------------------------------------------------------------------- #
+#  Honesty labels (audit finding: a transparent heuristic must not read like a
+#  validated rating). These are additive response fields — existing keys/tests
+#  are untouched. See docs/RENTGEN.md "Что факт, что эвристика".
+# --------------------------------------------------------------------------- #
+RISK_BASIS = "explainable_heuristic"
+RISK_CAVEAT = (
+    "Risk = expert-weighted maintainability×complexity×antipatterns, scaled by "
+    "fan-in blast radius. Explainable prioritization, NOT a validated probability "
+    "of defect (no backtest against labeled defects). The call graph, impact/"
+    "blast-radius and dead-code ARE structural facts."
+)
+# The GBR `code_quality` field is statistically near-useless (CV R²≈-0.06 on 611
+# labeled samples) and ranks nothing — disclose that instead of returning a bare 50.
+CODE_QUALITY_BASIS = "deprecated_uncalibrated"
+CODE_QUALITY_CAVEAT = (
+    "GBR-predicted code_quality is near-useless (CV R²≈-0.06) and is NOT used in "
+    "ranking. Prioritization relies on the formula scores + explainable risk. "
+    "Treat code_quality as deprecated/uncalibrated; absent => no prediction."
+)
+
 
 class ModuleScore(BaseModel):
     module_path: str
@@ -38,6 +59,8 @@ class ModuleScore(BaseModel):
     has_empty_catch: bool = False
     has_deep_nesting: bool = False
     code_quality: int | None = None
+    code_quality_basis: str = CODE_QUALITY_BASIS
+    code_quality_caveat: str = CODE_QUALITY_CAVEAT
 
 
 class QualitySummary(BaseModel):
@@ -47,6 +70,8 @@ class QualitySummary(BaseModel):
     avg_maintainability: float
     modules_with_issues: int
     by_domain: list[dict]
+    risk_basis: str = RISK_BASIS
+    risk_caveat: str = RISK_CAVEAT
 
 
 class RiskReason(BaseModel):
@@ -64,11 +89,15 @@ class Hotspot(BaseModel):
     documentation_score: int = 0
     maintainability_score: int = 0
     code_quality: int | None = None
+    code_quality_basis: str = CODE_QUALITY_BASIS
+    code_quality_caveat: str = CODE_QUALITY_CAVEAT
     risk: int
     quality_risk: int
     fan_in: int = 0
     fan_out: int = 0
     reasons: list[RiskReason] = []
+    risk_basis: str = RISK_BASIS
+    risk_caveat: str = RISK_CAVEAT
 
 
 class ReviewDiffRequest(BaseModel):
@@ -284,6 +313,9 @@ class PredictRequest(BaseModel):
 
 class PredictResponse(BaseModel):
     code_quality: int
+    code_quality_basis: str = CODE_QUALITY_BASIS
+    code_quality_caveat: str = CODE_QUALITY_CAVEAT
+    code_quality_predicted: bool = True
     complexity_score: int
     documentation_score: int
     maintainability_score: int
@@ -524,8 +556,12 @@ def predict(req: PredictRequest):
         avg_identifier_length=req.avg_identifier_length,
     )
     cq = predict_quality(features)
+    # Do NOT silently pass off a fallback 50 as a real prediction: the GBR model
+    # is near-useless (CV R²≈-0.06) and ranks nothing. Flag whether it actually
+    # produced a value; the basis/caveat fields explain the de-emphasis.
     return PredictResponse(
         code_quality=cq if cq is not None else 50,
+        code_quality_predicted=cq is not None,
         complexity_score=cx,
         documentation_score=doc,
         maintainability_score=mi,

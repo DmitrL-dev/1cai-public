@@ -143,7 +143,9 @@ def test_evidence_bundle_builds_hashed_manifest(tmp_path, monkeypatch):
     assert "archive-acceptance-receipt.md" in buyer_pulse_report["buyer_pulse"]["purchase_path"]["send_files"]
     assert "archive-verification-packet.zip" in buyer_pulse_report["buyer_pulse"]["purchase_path"]["send_files"]
     assert "archive-acceptance-receipt.md" in buyer_pulse_artifact["markdown"]
-    assert buyer_pulse_report["summary"]["proof_routes"] == 12
+    # proof_routes is now the real count of distinct routes the fast pulse emits
+    # in its purchase path (previously a hardcoded 12 that never reflected reality).
+    assert buyer_pulse_report["summary"]["proof_routes"] == 6
     assert "Buyer Pulse" in buyer_pulse_artifact["markdown"]
     buyer_brief_artifact = next(item for item in report["artifacts"] if item["id"] == "buyer-brief")
     buyer_brief_report = json.loads(buyer_brief_artifact["json"])

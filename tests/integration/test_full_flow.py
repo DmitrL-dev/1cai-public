@@ -1,8 +1,11 @@
 import asyncio
+import importlib.util
 import logging
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch, AsyncMock
+
+import pytest
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
@@ -12,6 +15,16 @@ sys.path.insert(0, str(project_root))
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger("IntegrationTest")
 
+
+# The richer ``AdvancedAIOrchestrator`` (with ``event_bus`` / ``evolving_ai`` /
+# ``evolve()``) was removed during cleanup; only ``src.ai.orchestrator.
+# AIOrchestrator`` remains, which lacks those capabilities. This end-to-end test
+# exercised the removed orchestrator, so it is obsolete rather than merely
+# mis-imported — skip honestly instead of faking a pass.
+@pytest.mark.skipif(
+    importlib.util.find_spec("src.ai.advanced_orchestrator") is None,
+    reason="src.ai.advanced_orchestrator (AdvancedAIOrchestrator) removed in cleanup; test obsolete",
+)
 async def test_full_flow():
     print("\n🚀 Начало интеграционного теста: Проверка полного цикла")
     

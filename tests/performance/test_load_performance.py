@@ -126,10 +126,16 @@ async def test_cache_performance():
     avg_hit = statistics.mean(hit_times)
     avg_miss = statistics.mean(miss_times)
 
+    # On fast machines an in-memory cache hit can be faster than the clock
+    # resolution, so avg_hit measures as exactly 0.0ms. Guard the speedup
+    # division (it is diagnostic output only) to keep the test deterministic
+    # instead of raising ZeroDivisionError.
+    speedup = (avg_miss / avg_hit) if avg_hit > 0 else float("inf")
+
     print("\nCache Performance:")
     print(f"  Avg HIT: {avg_hit:.3f}ms")
     print(f"  Avg MISS: {avg_miss:.3f}ms")
-    print(f"  Speedup: {avg_miss/avg_hit:.1f}x")
+    print(f"  Speedup: {speedup:.1f}x")
 
     assert avg_hit < 1.0, f"Cache hit too slow: {avg_hit:.3f}ms"
 

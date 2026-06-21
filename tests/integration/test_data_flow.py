@@ -3,6 +3,12 @@ import logging
 import unittest
 import time
 
+import os as _os
+import sys as _sys
+
+_sys.path.insert(0, _os.path.dirname(__file__))
+from service_probe import skip_if_unreachable
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -10,6 +16,7 @@ logger = logging.getLogger(__name__)
 class TestDataFlow(unittest.TestCase):
     def check_url(self, name, url, expected_codes=[200]):
         """Helper to check if a URL is reachable and returns expected status code."""
+        skip_if_unreachable(url, name)
         logger.info(f"Checking {name} at {url}...")
         try:
             response = requests.get(url, timeout=5)

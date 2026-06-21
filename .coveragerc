@@ -3,10 +3,11 @@ branch = True
 source = src
 
 [report]
-include =
-    src/services/embedding_service.py
-    src/ai/orchestrator.py
+# The previous config whitelisted just two files (embedding_service, ai/orchestrator),
+# so `--cov=src` was silently narrowed to ~2 files and a "10%" gate passed trivially —
+# a dishonest number. Removed: coverage now reflects the whole src/ tree.
+# Real unit-suite coverage of src/ is ~60%; the floor below is an honest gate.
 skip_empty = True
-fail_under = 10
+fail_under = 50
 
 

@@ -30,6 +30,66 @@ ASSUMPTION_BOUNDS: dict[str, int] = {
     "release_windows_per_month": 100,
 }
 
+# Human-readable disclosure of every operator-overridable input assumption.
+# Order is presentation order; labels are buyer-facing.
+ASSUMPTION_LABELS: dict[str, dict[str, str]] = {
+    "monthly_ai_subscription_cost": {"label": "Assumed current AI subscription / rent", "unit": "RUB per month"},
+    "hourly_rate": {"label": "Assumed loaded hourly rate of a 1C specialist", "unit": "RUB per hour"},
+    "manual_review_hours_month": {"label": "Assumed manual review / audit-prep effort", "unit": "hours per month"},
+    "incident_cost": {"label": "Assumed cost of one production incident", "unit": "RUB per incident"},
+    "release_delay_hours_per_item": {"label": "Assumed delay per queued review item", "unit": "hours per item"},
+    "release_windows_per_month": {"label": "Assumed release windows", "unit": "per month"},
+}
+
+# Derived multipliers / clamps applied on top of the raw assumptions.
+# Each is an arbitrary commercial default, not a measured value.
+DERIVED_ASSUMPTIONS: list[dict[str, Any]] = [
+    {"key": "hotspot_exposure_factor", "label": "Share of incident cost attributed to each high-risk hotspot", "value": 0.35, "unit": "fraction"},
+    {"key": "platform_exposure_factor", "label": "Share of incident cost attributed to each failing platform check", "value": 0.25, "unit": "fraction"},
+    {"key": "local_license_anchor_pct", "label": "Local-license anchor as a share of first-year visible value", "value": 0.22, "unit": "fraction"},
+    {"key": "local_license_anchor_floor", "label": "Local-license anchor floor (minimum shown regardless of value)", "value": 1_800_000, "unit": "RUB"},
+    {"key": "local_license_anchor_ceiling", "label": "Local-license anchor ceiling (maximum shown regardless of value)", "value": 12_000_000, "unit": "RUB"},
+]
+
+ASSUMPTIONS_DISCLAIMER = (
+    "These are DEFAULT ASSUMPTIONS, operator-overridable, NOT measured values. "
+    "Every RUB headline is (real KPI count) x (assumed rate), then clamped by the floors/ceilings below. "
+    "Counts are observed from the analysed configuration; rates, percentages, floors and ceilings are assumed."
+)
+
+
+def _assumptions_disclosure(normalized: dict[str, Any]) -> dict[str, Any]:
+    """Human-readable disclosure of every rate / percentage / floor / ceiling used.
+
+    Additive: lives inside the existing ``assumptions`` block so the buyer can
+    see that a number is ``real_count x assumed_rate``, not a measurement.
+    """
+
+    inputs = [
+        {
+            "key": key,
+            "label": ASSUMPTION_LABELS.get(key, {}).get("label", key),
+            "value": int(normalized.get(key, 0)),
+            "unit": ASSUMPTION_LABELS.get(key, {}).get("unit", ""),
+            "default": int(DEFAULT_ASSUMPTIONS[key]),
+            "overridden": int(normalized.get(key, 0)) != int(DEFAULT_ASSUMPTIONS[key]),
+        }
+        for key in DEFAULT_ASSUMPTIONS
+    ]
+    return {
+        "note": ASSUMPTIONS_DISCLAIMER,
+        "kind": "default_assumptions",
+        "overridable": True,
+        "measured": False,
+        "currency": str(normalized.get("currency") or "RUB"),
+        "inputs": inputs,
+        "derived": [dict(item) for item in DERIVED_ASSUMPTIONS],
+    }
+
+
+def _basis_money(currency: str) -> str:
+    return currency or "RUB"
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -96,8 +156,15 @@ def _money(
         * hourly_rate
     )
     incident_cost = int(assumptions["incident_cost"])
-    red_area_exposure = int(kpis.get("red_areas") or 0) * incident_cost
-    hotspot_exposure = round(int(risk.get("high_hotspots") or 0) * incident_cost * 0.35)
+    red_areas = int(kpis.get("red_areas") or 0)
+    high_hotspots = int(risk.get("high_hotspots") or 0)
+    review_queue = int(kpis.get("review_queue") or 0)
+    manual_hours = int(assumptions["manual_review_hours_month"])
+    delay_per_item = int(assumptions["release_delay_hours_per_item"])
+    windows = int(assumptions["release_windows_per_month"])
+    monthly_ai = int(assumptions["monthly_ai_subscription_cost"])
+    red_area_exposure = red_areas * incident_cost
+    hotspot_exposure = round(high_hotspots * incident_cost * 0.35)
     platform_exposure = round(failed_platform * incident_cost * 0.25)
     risk_exposure = red_area_exposure + hotspot_exposure + platform_exposure
     first_year_visible_value = (
@@ -106,6 +173,22 @@ def _money(
         + release_delay_exposure
         + risk_exposure
     )
+    # Each entry exposes the derivation: (observed count) x (assumed rate).
+    # The counts are real; the rates/percentages are DEFAULT ASSUMPTIONS.
+    basis = {
+        "manual_review_month": f"{manual_hours} h/month (assumed) x {hourly_rate} RUB/h (assumed)",
+        "manual_review_year": f"{manual_hours} h/month (assumed) x {hourly_rate} RUB/h (assumed) x 12 months",
+        "ai_subscription_year": f"{monthly_ai} RUB/month (assumed AI rent) x 12 months",
+        "release_delay_exposure": (
+            f"review_queue={review_queue} (observed) x {delay_per_item} h/item (assumed) "
+            f"x {windows} windows/month (assumed) x {hourly_rate} RUB/h (assumed)"
+        ),
+        "red_area_exposure": f"red_areas={red_areas} (observed) x {incident_cost} RUB/incident (assumed)",
+        "hotspot_exposure": f"high_hotspots={high_hotspots} (observed) x {incident_cost} RUB (assumed) x 0.35 (assumed factor)",
+        "platform_exposure": f"failed_platform_checks={failed_platform} (observed) x {incident_cost} RUB (assumed) x 0.25 (assumed factor)",
+        "risk_exposure": "red_area + hotspot + platform exposure (all assumption-scaled, see above)",
+        "first_year_visible_value": "manual_review_year + ai_subscription_year + release_delay_exposure + risk_exposure (sum of assumption-scaled figures)",
+    }
     return {
         "manual_review_month": manual_review_month,
         "manual_review_year": manual_review_year,
@@ -117,6 +200,7 @@ def _money(
         "platform_exposure": platform_exposure,
         "first_year_visible_value": first_year_visible_value,
         "failed_platform_checks": failed_platform,
+        "_basis": basis,
     }
 
 
@@ -126,15 +210,45 @@ def _ceil_div(left: int, right: int) -> int:
     return (left + right - 1) // right
 
 
+LOCAL_LICENSE_ANCHOR_PCT = 0.22
+LOCAL_LICENSE_ANCHOR_FLOOR = 1_800_000
+LOCAL_LICENSE_ANCHOR_CEILING = 12_000_000
+
+
 def _local_license_anchor(first_year_visible_value: int) -> int:
-    return max(1_800_000, min(12_000_000, round(first_year_visible_value * 0.22)))
+    raw = round(first_year_visible_value * LOCAL_LICENSE_ANCHOR_PCT)
+    return max(LOCAL_LICENSE_ANCHOR_FLOOR, min(LOCAL_LICENSE_ANCHOR_CEILING, raw))
+
+
+def _local_license_anchor_detail(first_year_visible_value: int) -> dict[str, Any]:
+    """Anchor plus disclosure of the percentage and which clamp (if any) bound it."""
+
+    raw = round(first_year_visible_value * LOCAL_LICENSE_ANCHOR_PCT)
+    if raw <= LOCAL_LICENSE_ANCHOR_FLOOR:
+        clamped: str | None = "floor"
+    elif raw >= LOCAL_LICENSE_ANCHOR_CEILING:
+        clamped = "ceiling"
+    else:
+        clamped = None
+    value = max(LOCAL_LICENSE_ANCHOR_FLOOR, min(LOCAL_LICENSE_ANCHOR_CEILING, raw))
+    basis = (
+        f"{int(LOCAL_LICENSE_ANCHOR_PCT * 100)}% (assumed) of first-year visible value "
+        f"{first_year_visible_value} = {raw}; floored at {LOCAL_LICENSE_ANCHOR_FLOOR} (assumption), "
+        f"capped at {LOCAL_LICENSE_ANCHOR_CEILING} (assumption)"
+    )
+    if clamped == "floor":
+        basis += "; shown value is the assumed FLOOR, not a computed anchor"
+    elif clamped == "ceiling":
+        basis += "; shown value is the assumed CEILING, not a computed anchor"
+    return {"value": value, "raw": raw, "clamped": clamped, "basis": basis}
 
 
 def _subscription_escape_plan(money: dict[str, int], assumptions: dict[str, Any]) -> dict[str, Any]:
     monthly_ai_rent = int(assumptions["monthly_ai_subscription_cost"])
     annual_ai_rent = money["ai_subscription_year"]
     three_year_ai_rent = annual_ai_rent * 3
-    local_anchor = _local_license_anchor(money["first_year_visible_value"])
+    anchor_detail = _local_license_anchor_detail(money["first_year_visible_value"])
+    local_anchor = anchor_detail["value"]
     visible_value_month = round(money["first_year_visible_value"] / 12)
     break_even_months = _ceil_div(local_anchor, visible_value_month)
     ai_rent_months = _ceil_div(local_anchor, monthly_ai_rent)
@@ -154,6 +268,8 @@ def _subscription_escape_plan(money: dict[str, int], assumptions: dict[str, Any]
         "annual_ai_rent": annual_ai_rent,
         "three_year_ai_rent": three_year_ai_rent,
         "local_license_anchor": local_anchor,
+        "local_license_anchor_basis": anchor_detail["basis"],
+        "local_license_anchor_clamped": anchor_detail["clamped"],
         "visible_value_month": visible_value_month,
         "break_even_months": break_even_months,
         "ai_rent_equivalent_months": ai_rent_months,
@@ -209,6 +325,7 @@ def _levers(
     platform_decision = platform.get("decision") or {}
     intake_decision = intake.get("decision") or {}
     currency = assumptions["currency"]
+    basis = money.get("_basis") or {}
     return [
         {
             "id": "subscription-displacement",
@@ -216,6 +333,7 @@ def _levers(
             "audience": "CIO / director",
             "annual_value": money["ai_subscription_year"],
             "currency": currency,
+            "basis": basis.get("ai_subscription_year", ""),
             "evidence": f"{assumptions['monthly_ai_subscription_cost']} per month is moved from recurring AI rent to optional add-on budget.",
             "route": "/offline-readiness",
             "confidence": "medium",
@@ -227,6 +345,7 @@ def _levers(
             "audience": "delivery lead / QA",
             "annual_value": money["manual_review_year"],
             "currency": currency,
+            "basis": basis.get("manual_review_year", ""),
             "evidence": f"{assumptions['manual_review_hours_month']} hours/month at {assumptions['hourly_rate']} are replaced by repeatable evidence.",
             "route": "/release-readiness",
             "confidence": "high",
@@ -238,6 +357,7 @@ def _levers(
             "audience": "director / release manager",
             "annual_value": money["release_delay_exposure"],
             "currency": currency,
+            "basis": basis.get("release_delay_exposure", ""),
             "evidence": f"Review queue: {kpis.get('review_queue', 0)} items; release policy is {((executive.get('decision') or {}).get('release_policy') or 'configured locally')}.",
             "route": "/team-governance",
             "confidence": "medium",
@@ -249,6 +369,7 @@ def _levers(
             "audience": "architect / operations",
             "annual_value": money["risk_exposure"],
             "currency": currency,
+            "basis": basis.get("risk_exposure", ""),
             "evidence": f"Red areas: {kpis.get('red_areas', 0)}, high-risk hotspots: {risk.get('high_hotspots', 0)}, platform checks needing attention: {money['failed_platform_checks']}.",
             "route": "/quality",
             "confidence": "medium",
@@ -260,6 +381,7 @@ def _levers(
             "audience": "architect / platform owner",
             "annual_value": money["platform_exposure"],
             "currency": currency,
+            "basis": basis.get("platform_exposure", ""),
             "evidence": f"Platform status: {platform_decision.get('status', 'unknown')} / {platform_decision.get('score', 0)}; intake: {intake_decision.get('status', 'unknown')} / {intake_decision.get('score', 0)}.",
             "route": "/platform-doctor",
             "confidence": "medium",
@@ -271,6 +393,7 @@ def _levers(
             "audience": "vendor / franchisee",
             "annual_value": 0,
             "currency": currency,
+            "basis": "Scoped per engagement; no assumed RUB figure attached.",
             "evidence": "Vendor audit, value packs and evidence bundle form the commercial proposal path.",
             "route": "/vendor-portfolio",
             "confidence": "high",
@@ -577,14 +700,20 @@ def _markdown(report: dict[str, Any]) -> str:
     for item in report["business_levers"]:
         value = item["annual_value"]
         suffix = f" ({value} {currency})" if value else ""
-        lines.append(f"- **{item['title']}**{suffix}: {item['why_buy_now']}")
+        basis = item.get("basis")
+        basis_note = f" _Basis: {basis}_" if basis else ""
+        lines.append(f"- **{item['title']}**{suffix}: {item['why_buy_now']}{basis_note}")
     escape = report.get("subscription_escape_plan") or {}
     if escape:
         lines.extend(["", "## Subscription escape", ""])
         lines.append(str(escape.get("headline") or ""))
         lines.append(f"- Annual AI rent: **{escape.get('annual_ai_rent', 0)} {currency}**")
         lines.append(f"- Three-year AI rent: **{escape.get('three_year_ai_rent', 0)} {currency}**")
-        lines.append(f"- Local license anchor: **{escape.get('local_license_anchor', 0)} {currency}**")
+        clamp = escape.get("local_license_anchor_clamped")
+        clamp_tag = f" _(clamped: {clamp})_" if clamp else ""
+        lines.append(f"- Local license anchor: **{escape.get('local_license_anchor', 0)} {currency}**{clamp_tag}")
+        if escape.get("local_license_anchor_basis"):
+            lines.append(f"  - Basis: {escape['local_license_anchor_basis']}")
         lines.append(f"- Break-even by visible value: **{escape.get('break_even_months', 0)} months**")
         lines.append(f"- Decision line: {escape.get('decision_line', '')}")
         lines.extend(["", "### Guardrails", ""])
@@ -611,6 +740,16 @@ def _markdown(report: dict[str, Any]) -> str:
     lines.extend(["", "## 30/60/90 plan", ""])
     for item in report["plan_30_60_90"]:
         lines.append(f"- **{item['stage']}**: {item['goal']} Exit: {item['exit_criteria']}")
+    disclosed = (report.get("assumptions") or {}).get("disclosed") or {}
+    if disclosed:
+        lines.extend(["", "## Assumptions (default, operator-overridable)", ""])
+        lines.append(f"_{disclosed.get('note', ASSUMPTIONS_DISCLAIMER)}_")
+        lines.append("")
+        for item in disclosed.get("inputs", []):
+            flag = " (overridden)" if item.get("overridden") else ""
+            lines.append(f"- **{item['label']}**: {item['value']} {item['unit']} _(assumption; default {item['default']}{flag})_")
+        for item in disclosed.get("derived", []):
+            lines.append(f"- **{item['label']}**: {item['value']} {item['unit']} _(assumption)_")
     lines.extend(["", "## Caveats", ""])
     lines.extend(f"- {item}" for item in report["caveats"])
     return "\n".join(lines)
@@ -679,9 +818,16 @@ def build_business_case(
                 else "Business case is usable, but the buyer should see caveats and red areas before commercial commitment."
             ),
         },
-        "assumptions": normalized,
+        "assumptions": {
+            **normalized,
+            "note": ASSUMPTIONS_DISCLAIMER,
+            "disclosed": _assumptions_disclosure(normalized),
+        },
         "summary": {
-            **money,
+            **{key: value for key, value in money.items() if key != "_basis"},
+            "money_basis": money.get("_basis") or {},
+            "local_license_anchor_basis": subscription_escape_plan["local_license_anchor_basis"],
+            "local_license_anchor_clamped": subscription_escape_plan["local_license_anchor_clamped"],
             "work_packages": len((vendor or {}).get("work_packages", [])),
             "value_packs": len((value_packs or {}).get("packs", [])),
             "modules": int(kpis.get("modules") or 0),

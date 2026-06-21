@@ -44,8 +44,88 @@ def _money(value: Any, currency: str) -> str:
     return f"{_int(value):,}".replace(",", " ") + f" {currency}"
 
 
+# Price anchors are (first-year visible value) x (assumed percentage), then
+# clamped to an assumed floor/ceiling. Percentages, floors and ceilings are all
+# arbitrary commercial DEFAULT ASSUMPTIONS, not measured values. On a small or
+# empty configuration the offer collapses to the floor; that case is marked so a
+# hardcoded floor is never silently presented as a computed anchor.
+PRICE_TIERS: dict[str, dict[str, Any]] = {
+    "proof": {"label": "24-hour proof sprint", "percent": 0.04, "floor": 180_000, "ceiling": 900_000},
+    "local_pilot": {"label": "30-day local license pilot", "percent": 0.10, "floor": 600_000, "ceiling": 2_400_000},
+    "enterprise": {"label": "Enterprise local license", "percent": 0.22, "floor": 1_800_000, "ceiling": 12_000_000},
+    "vendor": {"label": "Vendor portfolio rollout", "percent": 0.30, "floor": 2_400_000, "ceiling": 18_000_000},
+}
+
+# Hardening pack is a derived fraction of the (already clamped) enterprise anchor,
+# floored separately. Also an assumption.
+HARDENING_PACK_FACTOR = 0.35
+HARDENING_PACK_FLOOR = 450_000
+
+PRICE_ASSUMPTIONS_DISCLAIMER = (
+    "Price anchors are DEFAULT ASSUMPTIONS, operator-overridable, NOT a quote or a measured value. "
+    "Each anchor = (first-year visible value) x (assumed %), clamped to an assumed floor/ceiling. "
+    "When the visible value is small or empty, the anchor collapses to the assumed floor "
+    "(marked clamped=floor); the floor is a hardcoded assumption, not a computed price."
+)
+
+
 def _price(value: int, percent: float, *, floor: int, ceiling: int) -> int:
     return max(floor, min(ceiling, round(value * percent)))
+
+
+def _price_detail(value: int, percent: float, *, floor: int, ceiling: int) -> dict[str, Any]:
+    """Clamped price plus disclosure of the %, the floor/ceiling and which bound it."""
+
+    raw = round(value * percent)
+    if raw <= floor:
+        clamped: str | None = "floor"
+    elif raw >= ceiling:
+        clamped = "ceiling"
+    else:
+        clamped = None
+    priced = max(floor, min(ceiling, raw))
+    basis = (
+        f"{int(round(percent * 100))}% (assumed) of first-year visible value {value} = {raw}; "
+        f"floored at {floor} (assumption), capped at {ceiling} (assumption)"
+    )
+    if clamped == "floor":
+        basis += "; shown value is the assumed FLOOR, not a computed anchor"
+    elif clamped == "ceiling":
+        basis += "; shown value is the assumed CEILING, not a computed anchor"
+    return {"value": priced, "raw": raw, "clamped": clamped, "basis": basis, "percent": percent, "floor": floor, "ceiling": ceiling}
+
+
+def _price_assumptions_disclosure() -> dict[str, Any]:
+    """Buyer-readable disclosure of every percentage / floor / ceiling used for pricing."""
+
+    tiers = [
+        {
+            "key": key,
+            "label": tier["label"],
+            "percent": tier["percent"],
+            "percent_label": f"{int(round(tier['percent'] * 100))}% of first-year visible value (assumption)",
+            "floor": tier["floor"],
+            "ceiling": tier["ceiling"],
+        }
+        for key, tier in PRICE_TIERS.items()
+    ]
+    tiers.append(
+        {
+            "key": "hardening_pack",
+            "label": "Platform and trust hardening pack",
+            "percent": HARDENING_PACK_FACTOR,
+            "percent_label": f"{int(round(HARDENING_PACK_FACTOR * 100))}% of the (clamped) enterprise anchor (assumption)",
+            "floor": HARDENING_PACK_FLOOR,
+            "ceiling": None,
+        }
+    )
+    return {
+        "note": PRICE_ASSUMPTIONS_DISCLAIMER,
+        "kind": "default_assumptions",
+        "overridable": True,
+        "measured": False,
+        "tiers": tiers,
+    }
 
 
 def _business_value(business_case: dict[str, Any]) -> tuple[int, str]:
@@ -68,16 +148,28 @@ def _offers(
     work_packages = [item.get("title") for item in vendor_portfolio.get("work_packages", []) if item.get("title")]
     pilot_summary = pilot_launchpad.get("summary") or {}
     trust_summary = enterprise_trust_center.get("summary") or {}
-    proof_price = _price(value, 0.04, floor=180_000, ceiling=900_000)
-    local_pilot = _price(value, 0.10, floor=600_000, ceiling=2_400_000)
-    enterprise = _price(value, 0.22, floor=1_800_000, ceiling=12_000_000)
-    vendor = _price(value, 0.30, floor=2_400_000, ceiling=18_000_000)
+    proof = _price_detail(value, PRICE_TIERS["proof"]["percent"], floor=PRICE_TIERS["proof"]["floor"], ceiling=PRICE_TIERS["proof"]["ceiling"])
+    local_pilot = _price_detail(value, PRICE_TIERS["local_pilot"]["percent"], floor=PRICE_TIERS["local_pilot"]["floor"], ceiling=PRICE_TIERS["local_pilot"]["ceiling"])
+    enterprise = _price_detail(value, PRICE_TIERS["enterprise"]["percent"], floor=PRICE_TIERS["enterprise"]["floor"], ceiling=PRICE_TIERS["enterprise"]["ceiling"])
+    vendor = _price_detail(value, PRICE_TIERS["vendor"]["percent"], floor=PRICE_TIERS["vendor"]["floor"], ceiling=PRICE_TIERS["vendor"]["ceiling"])
+    hardening_raw = round(enterprise["value"] * HARDENING_PACK_FACTOR)
+    hardening_value = max(HARDENING_PACK_FLOOR, hardening_raw)
+    hardening_clamped = "floor" if hardening_raw <= HARDENING_PACK_FLOOR else None
+    hardening_basis = (
+        f"{int(round(HARDENING_PACK_FACTOR * 100))}% (assumed) of enterprise anchor {enterprise['value']} = {hardening_raw}; "
+        f"floored at {HARDENING_PACK_FLOOR} (assumption)"
+    )
+    if hardening_clamped == "floor":
+        hardening_basis += "; shown value is the assumed FLOOR, not a computed anchor"
     return [
         {
             "id": "proof-sprint",
             "title": "24-hour proof sprint",
             "buyer": "director + tech lead",
-            "commercial_frame": f"fixed proof from {_money(proof_price, currency)}, credited into license",
+            "commercial_frame": f"fixed proof from {_money(proof['value'], currency)}, credited into license",
+            "price": proof["value"],
+            "price_basis": proof["basis"],
+            "price_clamped": proof["clamped"],
             "route": "/scenario-hub",
             "why_buy": "Buyer sees one concrete 1C pain, one proof route and one artifact pack before procurement starts.",
             "includes": [
@@ -92,7 +184,10 @@ def _offers(
             "id": "local-license-pilot",
             "title": "30-day local license pilot",
             "buyer": "CIO + security + architecture board",
-            "commercial_frame": f"paid local pilot from {_money(local_pilot, currency)}",
+            "commercial_frame": f"paid local pilot from {_money(local_pilot['value'], currency)}",
+            "price": local_pilot["value"],
+            "price_basis": local_pilot["basis"],
+            "price_clamped": local_pilot["clamped"],
             "route": "/pilot-launchpad",
             "why_buy": "The customer buys a local evidence system, not another mandatory AI token subscription.",
             "includes": [
@@ -108,7 +203,10 @@ def _offers(
             "id": "enterprise-local-license",
             "title": "Enterprise local license",
             "buyer": "director / CIO",
-            "commercial_frame": f"annual local license anchor {_money(enterprise, currency)}",
+            "commercial_frame": f"annual local license anchor {_money(enterprise['value'], currency)}",
+            "price": enterprise["value"],
+            "price_basis": enterprise["basis"],
+            "price_clamped": enterprise["clamped"],
             "route": "/commercial-offer-studio",
             "why_buy": "Visible first-year value anchors the price while optional AI credits remain separate.",
             "includes": packs[:5] or [
@@ -125,7 +223,10 @@ def _offers(
             "id": "platform-trust-pack",
             "title": "Platform and trust hardening pack",
             "buyer": "architect + security",
-            "commercial_frame": f"scoped hardening package from {_money(max(450_000, round(enterprise * 0.35)), currency)}",
+            "commercial_frame": f"scoped hardening package from {_money(hardening_value, currency)}",
+            "price": hardening_value,
+            "price_basis": hardening_basis,
+            "price_clamped": hardening_clamped,
             "route": "/enterprise-trust-center",
             "why_buy": "The painful 1C platform/update/security part becomes a named package instead of expert anxiety.",
             "includes": [
@@ -141,7 +242,10 @@ def _offers(
             "id": "vendor-portfolio-rollout",
             "title": "Vendor portfolio rollout",
             "buyer": "franchisee / implementation partner",
-            "commercial_frame": f"partner rollout anchor {_money(vendor, currency)}",
+            "commercial_frame": f"partner rollout anchor {_money(vendor['value'], currency)}",
+            "price": vendor["value"],
+            "price_basis": vendor["basis"],
+            "price_clamped": vendor["clamped"],
             "route": "/vendor-portfolio",
             "why_buy": "A partner can sell paid audits, modernization packages and repeatable proof without custom deck work.",
             "includes": work_packages[:5] or [
@@ -159,28 +263,40 @@ def _offers(
 def _pricing_ladder(business_case: dict[str, Any]) -> list[dict[str, Any]]:
     value, currency = _business_value(business_case)
     ai_year = _int((business_case.get("summary") or {}).get("ai_subscription_year"))
+    proof = _price_detail(value, PRICE_TIERS["proof"]["percent"], floor=PRICE_TIERS["proof"]["floor"], ceiling=PRICE_TIERS["proof"]["ceiling"])
+    local_pilot = _price_detail(value, PRICE_TIERS["local_pilot"]["percent"], floor=PRICE_TIERS["local_pilot"]["floor"], ceiling=PRICE_TIERS["local_pilot"]["ceiling"])
+    enterprise = _price_detail(value, PRICE_TIERS["enterprise"]["percent"], floor=PRICE_TIERS["enterprise"]["floor"], ceiling=PRICE_TIERS["enterprise"]["ceiling"])
+    vendor = _price_detail(value, PRICE_TIERS["vendor"]["percent"], floor=PRICE_TIERS["vendor"]["floor"], ceiling=PRICE_TIERS["vendor"]["ceiling"])
     return [
         {
             "tier": "Proof",
-            "anchor": _money(_price(value, 0.04, floor=180_000, ceiling=900_000), currency),
+            "anchor": _money(proof["value"], currency),
+            "basis": proof["basis"],
+            "clamped": proof["clamped"],
             "logic": "low-friction proof that is credited into the local license",
             "replaces": "first paid discovery and demo-prep uncertainty",
         },
         {
             "tier": "Local Pilot",
-            "anchor": _money(_price(value, 0.10, floor=600_000, ceiling=2_400_000), currency),
+            "anchor": _money(local_pilot["value"], currency),
+            "basis": local_pilot["basis"],
+            "clamped": local_pilot["clamped"],
             "logic": "priced below first-year visible value, tied to acceptance checks",
             "replaces": "manual review tax and another generic AI pilot",
         },
         {
             "tier": "Enterprise License",
-            "anchor": _money(_price(value, 0.22, floor=1_800_000, ceiling=12_000_000), currency),
+            "anchor": _money(enterprise["value"], currency),
+            "basis": enterprise["basis"],
+            "clamped": enterprise["clamped"],
             "logic": "local product asset with optional AI credits separated from core value",
             "replaces": f"recurring AI rent baseline: {_money(ai_year, currency)} per year",
         },
         {
             "tier": "Partner Rollout",
-            "anchor": _money(_price(value, 0.30, floor=2_400_000, ceiling=18_000_000), currency),
+            "anchor": _money(vendor["value"], currency),
+            "basis": vendor["basis"],
+            "clamped": vendor["clamped"],
             "logic": "portfolio license plus packaged audits and modernization work",
             "replaces": "one-off expert audits and bespoke proposal decks",
         },
@@ -370,6 +486,8 @@ def _procurement_dossier(
             "title": str(recommended.get("title") or "24-hour proof sprint"),
             "route": str(recommended.get("route") or "/commercial-offer-studio"),
             "commercial_frame": str(recommended.get("commercial_frame") or "fixed paid next step"),
+            "price_basis": str(recommended.get("price_basis") or ""),
+            "price_clamped": recommended.get("price_clamped"),
             "acceptance": str(recommended.get("acceptance") or "Buyer names owner, acceptance and proof packet."),
         },
         "subscription_escape": {
@@ -377,9 +495,12 @@ def _procurement_dossier(
             "three_year_ai_rent": _money(three_year_ai_rent, currency),
             "local_value_anchor": _money(value, currency),
             "local_license_anchor": _money(local_license_anchor, currency),
+            "local_license_anchor_basis": str(escape_plan.get("local_license_anchor_basis") or ""),
+            "local_license_anchor_clamped": escape_plan.get("local_license_anchor_clamped"),
             "break_even_months": break_even_months,
             "ai_rent_equivalent_months": ai_rent_months,
             "line": "Core value is local analysis, governance, tests and hashed evidence; AI credits stay optional and separately budgeted.",
+            "note": "AI rent, local value and the license anchor are derived from operator-overridable DEFAULT ASSUMPTIONS, not measured values.",
             "decision_line": str(escape_plan.get("decision_line") or ""),
             "proof_route": "/business-case",
             "guardrails": list(escape_plan.get("guardrails") or [])[:4],
@@ -866,10 +987,29 @@ def _markdown(report: dict[str, Any]) -> str:
         "",
     ]
     for item in report["offers"]:
-        lines.append(f"- **{item['title']}** ({item['buyer']}, `{item['route']}`): {item['commercial_frame']}. {item['why_buy']}")
+        clamp = item.get("price_clamped")
+        clamp_tag = f" _(clamped: {clamp})_" if clamp else ""
+        basis = item.get("price_basis")
+        basis_note = f" _Basis: {basis}_" if basis else ""
+        lines.append(f"- **{item['title']}** ({item['buyer']}, `{item['route']}`): {item['commercial_frame']}{clamp_tag}. {item['why_buy']}{basis_note}")
     lines.extend(["", "## Pricing ladder", ""])
     for item in report["pricing_ladder"]:
-        lines.append(f"- **{item['tier']}**: {item['anchor']} - {item['logic']}")
+        clamp = item.get("clamped")
+        clamp_tag = f" _(clamped: {clamp})_" if clamp else ""
+        lines.append(f"- **{item['tier']}**: {item['anchor']}{clamp_tag} - {item['logic']}")
+        if item.get("basis"):
+            lines.append(f"  - Basis: {item['basis']}")
+    pricing_assumptions = report.get("pricing_assumptions") or {}
+    if pricing_assumptions:
+        lines.extend(["", "## Pricing assumptions (default, operator-overridable)", ""])
+        lines.append(f"_{pricing_assumptions.get('note', PRICE_ASSUMPTIONS_DISCLAIMER)}_")
+        lines.append("")
+        for tier in pricing_assumptions.get("tiers", []):
+            ceiling = tier.get("ceiling")
+            ceiling_txt = f", ceiling {ceiling}" if ceiling is not None else ", no ceiling"
+            lines.append(
+                f"- **{tier['label']}**: {tier['percent_label']}; floor {tier['floor']}{ceiling_txt} _(all assumptions)_"
+            )
     dossier = report.get("procurement_dossier") or {}
     lines.extend(["", "## Procurement Dossier", ""])
     lines.append(f"- **{dossier.get('headline', 'Procurement dossier')}**")
@@ -1064,6 +1204,7 @@ def build_commercial_offer_studio(
         },
         "offers": offers,
         "pricing_ladder": pricing_ladder,
+        "pricing_assumptions": _price_assumptions_disclosure(),
         "procurement_dossier": procurement_dossier,
         "subscription_escape_plan": business_case.get("subscription_escape_plan") or procurement_dossier["subscription_escape"],
         "offer_room_bridge": offer_room_bridge,

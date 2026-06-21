@@ -3,6 +3,7 @@
 System Tests - End-to-End сценарии
 """
 
+import importlib.util
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -26,7 +27,10 @@ async def test_full_code_review_flow():
     """
 
     from src.ai.agents.code_review.ai_reviewer import AICodeReviewer
-    from src.api.github_integration import GitHubIntegration
+    # GitHubIntegration.post_pr_comment was refactored into
+    # src.modules.github_integration.GitHubClient.post_comment (token is now a
+    # constructor arg; the client POSTs via httpx.AsyncClient.request).
+    from src.modules.github_integration import GitHubClient
 
     # Step 1: Webhook received (mocked)
     pr_data = {
@@ -63,23 +67,27 @@ async def test_full_code_review_flow():
 """
 
     # Step 4: Post to GitHub (mocked)
-    response_mock = SimpleNamespace(status_code=201, text="ok")
+    response_mock = SimpleNamespace(
+        status_code=201,
+        text="ok",
+        raise_for_status=lambda: None,
+        json=lambda: {"id": 1},
+    )
     client_mock = AsyncMock()
     client_mock.__aenter__.return_value = client_mock
     client_mock.__aexit__.return_value = False
-    client_mock.post = AsyncMock(return_value=response_mock)
+    client_mock.request = AsyncMock(return_value=response_mock)
 
     with patch("httpx.AsyncClient", return_value=client_mock):
-        gh = GitHubIntegration()
-        posted = await gh.post_pr_comment(
+        gh = GitHubClient(github_token="test")
+        posted = await gh.post_comment(
             repo=pr_data["repository"],
             pr_number=pr_data["number"],
             comment=comment,
-            github_token="test",
         )
 
     assert posted is True
-    client_mock.post.assert_awaited_once()
+    client_mock.request.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -149,6 +157,10 @@ async def test_multi_tenant_isolation_flow():
         pytest.skip(f"Database not available: {e}")
 
 
+@pytest.mark.skipif(
+    importlib.util.find_spec("src.api.billing_webhooks") is None,
+    reason="src.api.billing_webhooks (BillingWebhookHandler) removed in cleanup; test obsolete",
+)
 @pytest.mark.asyncio
 async def test_full_billing_flow():
     """
@@ -270,7 +282,10 @@ async def test_copilot_completion_flow():
     4. Suggestions returned
     """
 
-    from src.api.copilot_api import CopilotService
+    # Import path updated: copilot service moved from the removed
+    # ``src.api.copilot_api`` to ``src.modules.copilot.services.copilot_service``
+    # (same ``get_completions(code, current_line, max_suggestions)`` API).
+    from src.modules.copilot.services.copilot_service import CopilotService
 
     service = CopilotService()
 

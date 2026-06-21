@@ -19,6 +19,15 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+# These property/fuzzing tests target subsystems removed in cleanup
+# (src.infrastructure.event_bus, src.ai.self_healing_code,
+# src.ai.distributed_agent_network, src.ai.code_dna). They are obsolete test-rot,
+# not part of the 1С:Рентген product — skipped so the CI gate reflects real state.
+pytestmark = pytest.mark.skip(
+    reason="targets modules removed in cleanup (event_bus / self_healing_code / "
+    "distributed_agent_network / code_dna); obsolete test-rot"
+)
+
 
 # Property-based тесты для Event Bus
 @pytest.mark.asyncio

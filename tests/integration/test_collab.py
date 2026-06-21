@@ -6,10 +6,18 @@ import websockets
 
 # Add project root to path
 sys.path.append(os.getcwd())
+sys.path.insert(0, os.path.dirname(__file__))
+
+from service_probe import skip_if_unreachable
+
 
 async def test_collab_service():
     print("Starting Collab Service WebSocket Test...")
     uri = "ws://localhost:8002/ws/test-room"
+
+    # Serviceless CI has no collab WebSocket server on :8002 — skip rather than
+    # hard-fail with ConnectionRefusedError.
+    skip_if_unreachable("http://localhost:8002", "Collab WebSocket service")
 
     async with websockets.connect(uri) as client1:
         print("Client 1 connected.")

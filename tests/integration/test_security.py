@@ -4,6 +4,12 @@ import time
 import logging
 import urllib3
 
+import os as _os
+import sys as _sys
+
+_sys.path.insert(0, _os.path.dirname(__file__))
+from service_probe import skip_if_unreachable
+
 # Suppress insecure request warnings for self-signed certs
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -17,6 +23,7 @@ class TestSecurityLayer(unittest.TestCase):
 
     def test_wazuh_dashboard_availability(self):
         """Test if Wazuh Dashboard is reachable."""
+        skip_if_unreachable(self.wazuh_url, "Wazuh Dashboard")
         logger.info(f"Checking Wazuh Dashboard at {self.wazuh_url}...")
         try:
             # Wazuh uses self-signed certs by default
@@ -29,6 +36,7 @@ class TestSecurityLayer(unittest.TestCase):
 
     def test_opa_availability(self):
         """Test if OPA is reachable."""
+        skip_if_unreachable(self.opa_url, "OPA")
         logger.info(f"Checking OPA at {self.opa_url}...")
         try:
             # OPA health check endpoint

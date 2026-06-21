@@ -222,6 +222,45 @@ def _procurement_handoff(*, purchase_status: str) -> dict[str, Any]:
     }
 
 
+# Floor used to anchor a local-license conversation in the fast pulse. The deep
+# builder (business_case._local_license_anchor) computes the real figure as
+# max(1_800_000, min(12_000_000, round(first_year_visible_value * 0.22))); the
+# fast path has no money map, so this is the FLOOR of that band, never a computed
+# result. It is surfaced as an explicit assumption, not as analysis output.
+LOCAL_LICENSE_ANCHOR_FLOOR = 1_800_000
+
+
+def _purchase_path_proof_routes(purchase_path: dict[str, Any]) -> list[str]:
+    """Collect the distinct routes the pulse actually emits in its purchase path.
+
+    This counts a real structure the fast pulse builds (purchase-path steps,
+    artifacts and the procurement handoff) instead of a hardcoded integer, so the
+    number tracks the routes that are genuinely present in the response.
+    """
+
+    routes: set[str] = set()
+
+    def _add(value: Any) -> None:
+        if isinstance(value, str) and value.startswith("/"):
+            routes.add(value)
+
+    _add(purchase_path.get("primary_route"))
+    for step in purchase_path.get("steps") or []:
+        _add(step.get("route"))
+    for key in ("buyer_room_packet_artifact", "verification_packet_artifact"):
+        _add((purchase_path.get(key) or {}).get("route"))
+
+    handoff = purchase_path.get("procurement_handoff") or {}
+    for step in handoff.get("open_order") or []:
+        _add(step.get("route"))
+    for item in handoff.get("attachments") or []:
+        _add(item.get("route"))
+    for route in handoff.get("routes") or []:
+        _add(route)
+
+    return sorted(routes)
+
+
 def build_buyer_pulse(
     *,
     executive: dict[str, Any],
@@ -238,8 +277,30 @@ def build_buyer_pulse(
     purchase_status = _pulse_status(status, score)
     annual_ai_rent = monthly_ai_subscription_cost * 12
     three_year_ai_rent = annual_ai_rent * 3
-    local_license_anchor = 1_800_000
     purchase_path = _purchase_path(purchase_status=purchase_status)
+
+    # Imported lazily: buyer_concierge -> open_first_path -> buyer_pulse is a module
+    # import cycle, so a top-level import here would fail to initialize. By call
+    # time every module is fully loaded.
+    from src.services.rentgen.buyer_concierge import _persona_cards, _shortest_paths
+
+    # Honest counts derived from the real structures they claim to count, so they
+    # update automatically if those structures change.
+    persona_card_count = len(
+        _persona_cards(
+            business_case={},
+            enterprise_trust_center={},
+            commercial_offer_studio={},
+            scenario_hub={},
+        )
+    )
+    shortest_path_count = len(_shortest_paths())
+    journey_steps = purchase_path.get("steps") or []
+    journey_step_count = len(journey_steps)
+    journey_ready_count = journey_step_count if purchase_status == "ready" else 0
+    proof_route_list = _purchase_path_proof_routes(purchase_path)
+    proof_route_count = len(proof_route_list)
+
     return {
         "status": status,
         "score": score,
@@ -250,34 +311,46 @@ def build_buyer_pulse(
             "status": status,
             "score": score,
             "purchase_spine_status": purchase_status,
-            "journey_ready": 4 if purchase_status == "ready" else 2,
-            "journey_steps": 4,
-            "governance_gates": 4,
-            "proof_routes": 12,
+            # Counted from the real purchase-path steps this pulse emits (not the
+            # deep Launch Room buyer_journey, which the fast path never builds).
+            "journey_ready": journey_ready_count,
+            "journey_steps": journey_step_count,
+            # The deep builders count len(governance["gates"]); the fast pulse has
+            # no governance gate list, so report it as not measured rather than a
+            # fabricated integer.
+            "governance_gates": None,
+            "proof_routes": proof_route_count,
             "route": "/launch-room",
         },
         "concierge": {
             "status": status,
             "score": score,
             "purchase_router_status": purchase_status,
-            "persona_cards": 7,
-            "shortest_paths": 4,
+            "persona_cards": persona_card_count,
+            "shortest_paths": shortest_path_count,
             "route": "/buyer-concierge",
         },
         "commercial": {
             "monthly_ai_rent": _money(monthly_ai_subscription_cost, currency),
             "annual_ai_rent": _money(annual_ai_rent, currency),
             "three_year_ai_rent": _money(three_year_ai_rent, currency),
-            "local_license_anchor": _money(local_license_anchor, currency),
+            # Key kept stable for the 11 consumers, but it is the floor of the
+            # local-license band, not a computed money-map figure. The
+            # "_basis" sibling and the buyer_line make that explicit.
+            "local_license_anchor": _money(LOCAL_LICENSE_ANCHOR_FLOOR, currency),
+            "local_license_anchor_basis": "assumption-floor",
             "buyer_line": (
                 f"Baseline AI rent is {_money(monthly_ai_subscription_cost, currency)}/month; "
-                f"three-year AI rent is {_money(three_year_ai_rent, currency)} before local-license anchoring."
+                f"three-year AI rent is {_money(three_year_ai_rent, currency)}. "
+                f"Local-license anchor floor is {_money(LOCAL_LICENSE_ANCHOR_FLOOR, currency)} "
+                "(assumption floor; the computed anchor is materialized in Business Case / Offer Studio)."
             ),
             "route": "/commercial-offer-studio",
         },
         "evidence": {
-            "proof_routes": 12,
-            "governance_gates": 4,
+            "proof_routes": proof_route_count,
+            # Not measured in the fast pulse (see launch.governance_gates note).
+            "governance_gates": None,
             "route": "/evidence-bundle",
         },
         "executive": {
@@ -285,5 +358,24 @@ def build_buyer_pulse(
             "review_queue": _int(kpis.get("review_queue")),
             "high_hotspots": _int(risk_summary.get("high_hotspots")),
             "headline": str(decision.get("headline") or ""),
+        },
+        "assumptions": {
+            "basis": "management-fast-pulse",
+            "computed": [
+                "persona_cards (len of buyer_concierge persona roster)",
+                "shortest_paths (len of buyer_concierge shortest paths)",
+                "journey_steps / journey_ready (from real purchase-path steps)",
+                "proof_routes (distinct routes emitted in purchase_path)",
+                "commercial AI-rent figures (from monthly_ai_subscription_cost)",
+            ],
+            "assumption_floors": [
+                "commercial.local_license_anchor is the floor of the local-license band "
+                "(local_license_anchor_basis=assumption-floor), not a computed money-map "
+                "figure (deep value lives in Business Case / Offer Studio)",
+            ],
+            "not_measured": [
+                "governance_gates (no governance gate list exists in the fast path; "
+                "the deep Launch Room / Outcome Ledger reports count the real gates)",
+            ],
         },
     }

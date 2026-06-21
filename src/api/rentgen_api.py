@@ -23,6 +23,20 @@ _NO_STORE = (
     "(needs data/rentgen_callgraph.ndjson + gabriel_runs/scores.json)."
 )
 
+# --------------------------------------------------------------------------- #
+#  Honesty labels — the graph / impact / blast-radius / dead-code are facts,
+#  but the `risk` score riding along is an unvalidated explainable heuristic.
+#  Additive fields only; existing keys/tests untouched. See docs/RENTGEN.md
+#  "Что факт, что эвристика".
+# --------------------------------------------------------------------------- #
+RISK_BASIS = "explainable_heuristic"
+RISK_CAVEAT = (
+    "Risk = expert-weighted maintainability×complexity×antipatterns, scaled by "
+    "fan-in blast radius. Explainable prioritization, NOT a validated probability "
+    "of defect (no backtest against labeled defects). The call graph, impact/"
+    "blast-radius and dead-code ARE structural facts."
+)
+
 
 class FlowRequest(BaseModel):
     entry_point: str
@@ -91,12 +105,16 @@ class ChangeImpactResponse(BaseModel):
     total_impacted_modules: int
     caveats: list[str]
     unmeasured_modules: list[str] = Field(default_factory=list)
+    risk_basis: str = RISK_BASIS
+    risk_caveat: str = RISK_CAVEAT
 
 
 class TestSelectorResponse(BaseModel):
     changed_modules: list[str]
     modules: list[dict]
     caveats: list[str]
+    risk_basis: str = RISK_BASIS
+    risk_caveat: str = RISK_CAVEAT
 
 
 class TestInventoryMatchRequest(BaseModel):
@@ -121,6 +139,8 @@ class CIGateResponse(BaseModel):
     violations: list[dict]
     summary: dict
     markdown: str | None = None
+    risk_basis: str = RISK_BASIS
+    risk_caveat: str = RISK_CAVEAT
 
 
 @router.post("/flow", response_model=FlowResponse)

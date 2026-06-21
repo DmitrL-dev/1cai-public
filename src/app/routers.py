@@ -139,8 +139,13 @@ def get_module_routers() -> list[tuple[str, APIRouter]]:
         # ("sql_optimizer", ...) — DELETED Phase 7
         # Other
         ("tenant", "src.modules.tenant_management.api.routes", "router"),
-        ("orchestrator", "src.api.orchestrator_api", "router"),
-        ("council", "src.api.council_api", "router"),
+        # orchestrator_api / council_api UNMOUNTED (rc0 audit): legacy pre-Рентген
+        # AI-orchestration HTTP surface, NOT called by the product portal (the
+        # token-free path uses copilot/swarm/coverage only). Implementations are
+        # retained under src/ai/ but no longer exposed as live routes — this shrinks
+        # the attack surface the audit flagged. Re-enable by uncommenting if needed.
+        # ("orchestrator", "src.api.orchestrator_api", "router"),
+        # ("council", "src.api.council_api", "router"),
         ("ml", "src.modules.ml.api.routes", "router"),
         # Graph & Analysis — rentgen is mounted directly on app (see below)
         # to avoid gateway catch-all /{service}/{path:path} interception

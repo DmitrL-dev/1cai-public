@@ -67,6 +67,27 @@ class PoeticFormDetector:
         poetic_score = rhyme_score * 0.3 + meter_score * \
             0.2 + verse_score * 0.3 + metaphor_score * 0.2
 
+        # Adversarial-poetry jailbreaks frequently arrive as *short* couplets or
+        # tercets, where the linear weighting above never crosses threshold even
+        # though the text is unmistakably a poem. Two corroborated overrides close
+        # that gap without flagging ordinary line-wrapped prose:
+        #
+        #  1) A clear end-rhyme across 2-3 short lines is the canonical "poem"
+        #     shape; prose almost never end-rhymes.
+        #  2) Deliberate verse structure (stanza/short lines) *with* rhythmic
+        #     consistency AND at least one poetic-content signal (rhyme or
+        #     figurative imagery). Requiring both structure and content keeps
+        #     plain multi-line prompts (which have neither rhyme nor imagery)
+        #     below threshold.
+        if rhyme_score >= 0.5 and self._is_short_verse(text):
+            poetic_score = max(poetic_score, self.threshold + 0.05)
+        if (
+            verse_score >= 0.6
+            and meter_score >= 0.35
+            and (rhyme_score >= 0.5 or metaphor_score >= 0.6)
+        ):
+            poetic_score = max(poetic_score, self.threshold + 0.05)
+
         # Detect patterns
         patterns = []
         if rhyme_score > 0.5:
@@ -96,11 +117,36 @@ class PoeticFormDetector:
             detected_patterns=patterns,
         )
 
+    @staticmethod
+    def _rhyme_endings(word: str) -> set:
+        """
+        Candidate rhyme endings for a word (perfect + light slant rhyme).
+
+        Returns the 2- and 3-char tails plus vowel-anchored rimes (from the last
+        and penultimate vowel group to the end). Two words "rhyme" when any of
+        these candidate endings coincide, which catches both perfect rhymes
+        (fade/made) and common slant rhymes without resorting to a full
+        phonetic dictionary.
+        """
+        w = re.sub(r"[^a-z]", "", word.lower())
+        if len(w) < 2:
+            return {w} if w else set()
+
+        keys = {w[-2:], w[-3:]}
+        vowel_groups = list(re.finditer(r"[aeiouy]+", w))
+        if vowel_groups:
+            keys.add(w[vowel_groups[-1].start():])
+            if len(vowel_groups) >= 2:
+                keys.add(w[vowel_groups[-2].start():])
+
+        return {k for k in keys if k}
+
     def _detect_rhymes(self, text: str) -> float:
         """
         Detect rhyme schemes.
 
-        Simple heuristic: check if line endings sound similar.
+        Simple heuristic: check if line endings sound similar (perfect or slant
+        rhyme via shared vowel-anchored / suffix endings).
         """
         lines = [line.strip() for line in text.split("\n") if line.strip()]
 
@@ -119,7 +165,7 @@ class PoeticFormDetector:
         if len(last_words) < 2:
             return 0.0
 
-        # Check for rhyming patterns (simple suffix matching)
+        # Check for rhyming patterns (suffix + vowel-anchored matching)
         rhyme_count = 0
         total_pairs = 0
 
@@ -128,15 +174,20 @@ class PoeticFormDetector:
                 total_pairs += 1
                 word1, word2 = last_words[i], last_words[j]
 
-                # Check if last 2-3 characters match (simple rhyme)
                 if len(word1) >= 2 and len(word2) >= 2:
-                    if word1[-2:] == word2[-2:] or word1[-3:] == word2[-3:]:
+                    if self._rhyme_endings(word1) & self._rhyme_endings(word2):
                         rhyme_count += 1
 
         if total_pairs == 0:
             return 0.0
 
         return min(1.0, rhyme_count / total_pairs * 2)  # Amplify signal
+
+    @staticmethod
+    def _is_short_verse(text: str) -> bool:
+        """True for a short (2-3 line) block of short lines — a couplet/tercet."""
+        lines = [line.strip() for line in text.split("\n") if line.strip()]
+        return 2 <= len(lines) <= 3 and all(len(line) < 70 for line in lines)
 
     def _detect_meter(self, text: str) -> float:
         """
@@ -208,10 +259,11 @@ class PoeticFormDetector:
 
         Heuristic: check for poetic keywords and figurative language.
         """
-        text_lower = text.lower()
-
-        # Poetic keywords
-        poetic_keywords = [
+        # Poetic / figurative vocabulary. The first block is the original set;
+        # the second adds literary-imagery words that recur in adversarial-poetry
+        # jailbreak samples (e.g. "the path where danger grows / what secrets can
+        # a seeker find").
+        poetic_keywords = {
             "like",
             "as",
             "metaphor",
@@ -242,17 +294,42 @@ class PoeticFormDetector:
             "rhyme",
             "poetry",
             "stanza",
-        ]
+            # figurative imagery seen in poetic jailbreaks
+            "path",
+            "danger",
+            "secret",
+            "secrets",
+            "seeker",
+            "seek",
+            "silent",
+            "silence",
+            "whisper",
+            "grace",
+            "fade",
+            "faded",
+            "grows",
+            "grow",
+            "grew",
+            "river",
+            "stream",
+            "wild",
+            "trace",
+            "veil",
+            "echo",
+            "wander",
+        }
 
-        # Count keyword occurrences
-        keyword_count = sum(1 for keyword in poetic_keywords if keyword in text_lower)
-
-        # Normalize by text length
-        words = text_lower.split()
-        if not words:
+        # Tokenize on word boundaries. Substring matching (the previous approach)
+        # produced false positives — e.g. "as"/"soft"/"light" match inside
+        # unrelated words ("phrase", "softly"→ok, "delight") — which inflated the
+        # metaphor score on ordinary prose. Whole-word matching avoids that.
+        tokens = re.findall(r"[a-z']+", text.lower())
+        if not tokens:
             return 0.0
 
-        keyword_density = keyword_count / len(words)
+        keyword_count = sum(1 for token in tokens if token in poetic_keywords)
+
+        keyword_density = keyword_count / len(tokens)
 
         # Amplify signal
         score = min(1.0, keyword_density * 20)

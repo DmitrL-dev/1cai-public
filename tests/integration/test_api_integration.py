@@ -105,27 +105,38 @@ async def test_role_based_router_integration():
 # Test GitHub Integration
 @pytest.mark.asyncio
 async def test_github_pr_comment():
-    """Test комментирования PR в GitHub"""
-    from src.api.github_integration import GitHubIntegration
+    """Test комментирования PR в GitHub.
 
-    response_mock = SimpleNamespace(status_code=201, text="ok")
+    The old ``src.api.github_integration.GitHubIntegration.post_pr_comment`` API
+    was refactored into ``src.modules.github_integration`` as
+    ``GitHubClient.post_comment``. This test targets the current API: the token
+    is a constructor argument and the client issues a single POST via
+    ``httpx.AsyncClient.request`` under an async-context-manager.
+    """
+    from src.modules.github_integration import GitHubClient
+
+    # Response returned by the mocked httpx client.
+    response_mock = Mock()
+    response_mock.status_code = 201
+    response_mock.raise_for_status = Mock(return_value=None)
+    response_mock.json = Mock(return_value={"id": 1})
+
     client_mock = AsyncMock()
     client_mock.__aenter__.return_value = client_mock
     client_mock.__aexit__.return_value = False
-    client_mock.post = AsyncMock(return_value=response_mock)
+    client_mock.request = AsyncMock(return_value=response_mock)
 
     with patch("httpx.AsyncClient", return_value=client_mock):
-        gh = GitHubIntegration()
+        gh = GitHubClient(github_token="test_token")
 
-        result = await gh.post_pr_comment(
+        result = await gh.post_comment(
             repo="test/repo",
             pr_number=1,
             comment="Test comment",
-            github_token="test_token",
         )
 
     assert result is True
-    client_mock.post.assert_awaited_once()
+    client_mock.request.assert_awaited_once()
 
 
 # Test Stripe Integration

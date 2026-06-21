@@ -88,10 +88,14 @@ async def test_connection_pool_eviction_performance():
 @pytest.mark.asyncio
 async def test_connection_pool_memory_efficiency():
     """Тест эффективности использования памяти (проверка утечек)."""
-    import sys
+    import gc
 
+    # Object enumeration lives in `gc`, not `sys` (the original `sys.get_objects`
+    # does not exist and raised AttributeError). Collect first so previously
+    # created-but-unreferenced pools don't inflate the baseline.
+    gc.collect()
     initial_size = len(
-        [obj for obj in sys.get_objects() if isinstance(obj, ConnectionPool)]
+        [obj for obj in gc.get_objects() if isinstance(obj, ConnectionPool)]
     )
 
     # Создаем и закрываем много пулов
@@ -104,8 +108,9 @@ async def test_connection_pool_memory_efficiency():
 
     # Проверяем, что пулы корректно удаляются (нет утечек)
     # (Упрощенная проверка - в реальности нужны более сложные инструменты)
+    gc.collect()
     final_size = len(
-        [obj for obj in sys.get_objects() if isinstance(obj, ConnectionPool)]
+        [obj for obj in gc.get_objects() if isinstance(obj, ConnectionPool)]
     )
     # Глобальный пул остается
     assert final_size <= initial_size + 1

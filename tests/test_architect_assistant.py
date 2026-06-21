@@ -9,6 +9,13 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+# Targets src.ai_assistants.architect_assistant, removed in cleanup — obsolete
+# test-rot (legacy AI-assistant, not the token-free Рентген product). Skipped so
+# the CI gate reflects real state rather than failing on a deleted module.
+pytestmark = pytest.mark.skip(
+    reason="targets src.ai_assistants (removed in cleanup); obsolete test-rot"
+)
+
 # Тестовые данные
 SAMPLE_REQUIREMENTS = """
 Необходимо создать систему управления складскими запасами для компании ООО "Тест".
