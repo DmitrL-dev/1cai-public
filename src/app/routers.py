@@ -225,6 +225,10 @@ def register_routers(app, api_v1_router: APIRouter):
         ("ITS RAG", "src.api.its_rag_api"),
         ("Swarm", "src.api.swarm_api"),
         ("Copilot Coverage", "src.api.copilot_coverage_api"),
+        # Public read-only operability (no secrets): cache stats + optional LLM
+        # generation-layer provider status. Health-style, intentionally unauthenticated.
+        ("Cache Metrics", "src.api.cache_api"),
+        ("LLM Providers", "src.api.llm_api"),
         ("Requirements Impact", "src.api.requirements_api"),
         ("Metadata Graph", "src.api.metadata_api"),
         ("Release Readiness", "src.api.release_readiness_api"),
