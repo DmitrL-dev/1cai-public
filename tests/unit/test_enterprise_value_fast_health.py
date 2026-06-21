@@ -95,7 +95,6 @@ def test_value_packs_health_is_fast(monkeypatch):
 def test_enterprise_trust_center_health_is_fast(monkeypatch):
     monkeypatch.setattr(enterprise_trust_center_api, "store_or_none", lambda: None)
     monkeypatch.setattr(enterprise_trust_center_api, "build_executive_dashboard", lambda *args, **kwargs: _executive())
-    monkeypatch.setattr(enterprise_trust_center_api, "_quick_health_report", _fail_deep_build)
     monkeypatch.setattr(enterprise_trust_center_api, "_build_report", _fail_deep_build)
 
     response = _client(enterprise_trust_center_api).get("/api/v1/enterprise-trust-center/health")

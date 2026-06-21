@@ -294,45 +294,6 @@ def _build_report(req: EnterpriseTrustCenterRequest) -> dict[str, Any]:
     )
 
 
-def _quick_health_report() -> dict[str, Any]:
-    decision = {"decision": {"status": "ready", "score": 90, "headline": "health"}}
-    productization = {
-        "status": "pass",
-        "score": 90,
-        "summary": {"findings": 0, "deliverables": 4},
-        "deliverables": [
-            {"id": "sbom-inventory-guide", "status": "pass"},
-            {"id": "sbom-inventory-service", "status": "pass"},
-            {"id": "offline-bundle-guide", "status": "pass"},
-            {"id": "offline-bundle-service", "status": "pass"},
-        ],
-        "findings": [],
-    }
-    return build_enterprise_trust_center(
-        executive=decision,
-        platform={**decision, "checks": []},
-        business_case=decision,
-        productization=productization,
-        offline_readiness={"decision": {"status": "pass", "score": 90}, "summary": {"external_env": 0}},
-        security_posture={
-            "decision": {"status": "pass", "score": 90},
-            "summary": {"findings": 0, "external_exposure": 0},
-            "recommendations": [],
-        },
-        rights_rls={
-            "decision": {"status": "ready", "score": 90},
-            "summary": {"dangerous_rights": 0, "findings": 0},
-            "findings": [],
-        },
-        demo_command_center=decision,
-        pilot_launchpad=decision,
-        scenario_hub=decision,
-        vendor_portfolio={"decision": {"status": "ready", "score": 90}, "work_packages": []},
-        evidence_artifacts=[{"id": "enterprise-trust-center"}],
-        client_name="Health",
-    )
-
-
 @router.post("/build")
 def build(req: EnterpriseTrustCenterRequest) -> dict[str, Any]:
     """Build enterprise trust controls, security answers and procurement proof."""

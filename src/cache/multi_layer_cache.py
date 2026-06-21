@@ -12,9 +12,16 @@ def generate_cache_key(namespace: str, **parts: Any) -> str:
 
 
 class MultiLayerCache:
-    """L1-only async cache that preserves the historical test contract."""
+    """L1-only async cache that preserves the historical test contract.
+
+    ``redis_client`` is accepted for backwards-compatibility with call sites that
+    still pass one, but it is intentionally NOT consulted — this is a pure
+    in-process L1 cache. The ``hits["l2"]`` counter is likewise retained for the
+    historical contract and stays 0 (there is no L2 layer in this shim).
+    """
 
     def __init__(self, redis_client: Any = None) -> None:
+        # Stored for the legacy contract / introspection only; never read.
         self.redis_client = redis_client
         self._l1: Dict[str, Tuple[Any, Optional[float]]] = {}
         self.hits = {"l1": 0, "l2": 0, "miss": 0}

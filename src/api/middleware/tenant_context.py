@@ -5,8 +5,6 @@ Tenant Context Middleware
 """
 
 import os
-import time
-from collections import defaultdict, deque
 
 import jwt
 from fastapi import HTTPException, Request
@@ -15,29 +13,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from src.utils.structured_logging import StructuredLogger
 
 logger = StructuredLogger(__name__).logger
-
-
-class RateLimiter:
-    """Small in-memory fixed-window limiter for local/security tests."""
-
-    def __init__(self, max_requests: int, window_seconds: int):
-        self.max_requests = max(1, int(max_requests))
-        self.window_seconds = max(1, int(window_seconds))
-        self._requests = defaultdict(deque)
-
-    def check_limit(self, key: str) -> bool:
-        now = time.monotonic()
-        window_start = now - self.window_seconds
-        bucket = self._requests[str(key)]
-
-        while bucket and bucket[0] <= window_start:
-            bucket.popleft()
-
-        if len(bucket) >= self.max_requests:
-            return False
-
-        bucket.append(now)
-        return True
 
 
 class TenantContextMiddleware(BaseHTTPMiddleware):
