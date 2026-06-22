@@ -105,7 +105,8 @@ def get_module_routers() -> list[tuple[str, APIRouter]]:
         ("copilot", "src.modules.copilot.api.routes", "router"),
         ("marketplace", "src.modules.marketplace.api.routes", "router"),
         ("code_review", "src.modules.code_review.api.routes", "router"),
-        ("test_generation", "src.modules.test_generation.api.routes", "router"),
+        # ("test_generation", ...) — UNMOUNTED (rc0 audit): legacy pre-Рентген module
+        # off the token-free product path; module retained, re-enable if needed.
         ("websocket", "src.modules.websocket.api.routes", "router"),
         ("bpmn", "src.modules.bpmn_api.api.routes", "router"),
         # Auth & Admin
@@ -116,8 +117,8 @@ def get_module_routers() -> list[tuple[str, APIRouter]]:
         ("admin_roles", "src.api.admin_roles", "router"),
         # AI & Analytics
         ("analytics", "src.modules.analytics.api.routes", "router"),
-        ("assistants", "src.modules.assistants.api.routes", "router"),
-        ("ba_sessions", "src.modules.ba_sessions.api.routes", "router"),
+        # ("assistants", ...) and ("ba_sessions", ...) — UNMOUNTED (rc0 audit): legacy
+        # pre-Рентген AI modules off the token-free path; modules retained.
         # DevOps & Infra
         ("devops", "src.modules.devops_api.api.routes", "router"),
         ("monitoring", "src.api.monitoring", "router"),
@@ -130,12 +131,12 @@ def get_module_routers() -> list[tuple[str, APIRouter]]:
         ("knowledge_base", "src.modules.knowledge_base.api.routes", "router"),
         # ("technical_writer", ...) — DELETED Phase 7
         # Integration
-        ("github", "src.modules.github_integration.api.routes", "router"),
+        # ("github", ...) — UNMOUNTED (rc0 audit): legacy integration off the token-free path
         # (\"graph\", ...) — DELETED: broken imports (neo4j/qdrant removed from stack)
         # Project & Code
         # ("project_manager", ...) — DELETED Phase 7
         # ("scenario_hub", ...) — DELETED Phase 7 (no __init__, dead)
-        ("code_approval", "src.modules.code_approval.api.routes", "router"),
+        # ("code_approval", ...) — UNMOUNTED (rc0 audit): legacy off the token-free path
         ("code_analyzers", "src.modules.code_analyzers.api.routes", "router"),
         # ("sql_optimizer", ...) — DELETED Phase 7
         # Other
