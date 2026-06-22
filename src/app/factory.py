@@ -91,7 +91,7 @@ def create_app() -> FastAPI:
     )
     register_routers(app, api_v1_router)
 
-    # MCP Server mount
+    # MCP Server mount — DISABLED (see _mount_mcp rationale below).
     _mount_mcp(app)
 
     # Static files
@@ -199,16 +199,27 @@ def _add_legacy_redirect(app: FastAPI):
 
 
 def _mount_mcp(app: FastAPI):
-    """Монтирует MCP сервер."""
-    try:
-        from src.ai.mcp.server import app as mcp_app
+    """Legacy AI MCP server mount — INTENTIONALLY DISABLED (rc0 security hardening).
 
-        app.mount("/mcp", mcp_app)
-        logger.info("MCP server mounted at /mcp")
-    except ImportError:
-        logger.info("MCP server not available")
-    except Exception as e:
-        logger.warning(f"Failed to mount MCP server: {e}")
+    SECURITY (P0): ``app.mount("/mcp", mcp_app)`` mounted the quarantined legacy
+    ``src.ai.mcp.server`` FastAPI sub-app. A mounted sub-app bypasses the parent
+    router's ``require_auth``, so this re-exposed — with NO authentication —
+    governance writes (``artifact_create`` / ``change_set_create`` that persist),
+    an arbitrary host-file read (``rentgen_performer_analyze``, e.g. C:\\Windows\\
+    win.ini), and the legacy LLM orchestrator. That single mount silently undid
+    the rc0 auth-on-mount hardening.
+
+    The product portal never calls ``/mcp`` (verified); the real, supported MCP
+    feature is the separate EDT-MCP bridge (``edt_mcp_api``), which is already
+    authenticated and path-confined. The legacy ``src.ai`` MCP server therefore
+    receives the same treatment as the quarantined orchestrator/council: it is
+    NOT mounted. The import is deliberately omitted so the legacy AI module (and
+    its orchestrator import chain) is not pulled in at app boot.
+
+    Re-enable ONLY behind real authentication + filesystem confinement.
+    """
+    logger.info("Legacy /mcp sub-app mount is disabled (quarantined legacy AI; see _mount_mcp docstring)")
+    return
 
 
 def _mount_static(app: FastAPI):

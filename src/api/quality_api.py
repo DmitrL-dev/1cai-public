@@ -5,10 +5,11 @@ scoring pipeline output (gabriel_runs/scores.json) and the Go call graph. No
 Neo4j required.
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from src.api._rentgen_store import store_or_none
+from src.middleware.jwt_user_context import require_auth
 from src.services.bsl_diagnostics import analyze_bsl
 from src.services.rentgen.change_plan import COVERAGE_IN_GRAPH, impact_coverage
 from src.services.rentgen.standards_review import (
@@ -584,11 +585,25 @@ class ScoreConfigResponse(BaseModel):
 
 
 @router.post("/score-config", response_model=ScoreConfigResponse)
-def score_config(req: ScoreConfigRequest):
-    """Run the scoring pipeline on a config dir: extract → classify → score."""
+def score_config(req: ScoreConfigRequest, principal=Depends(require_auth)):
+    """Run the scoring pipeline on a config dir: extract → classify → score.
+
+    Privileged: walks the caller-supplied filesystem path, so it requires auth
+    (``require_auth``) and confines the path under the allowed data roots
+    (``confine_path``) — unlike the read-only diagnostics endpoints, which stay
+    public. Without this an unauthenticated caller could traverse the filesystem
+    (LFI-shaped arbitrary-tree walk).
+    """
     import sys
     import tempfile
     from pathlib import Path as _Path
+
+    from src.services.rentgen.path_safety import confine_path
+
+    try:
+        config = confine_path(req.config_path, label="config_path")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     tools = str(_Path(__file__).resolve().parents[2] / "tools")
     if tools not in sys.path:
@@ -597,7 +612,6 @@ def score_config(req: ScoreConfigRequest):
     from bsl_scoring.extract import run_extraction
     from bsl_scoring.score import run_scoring
 
-    config = _Path(req.config_path)
     if not config.exists():
         raise HTTPException(404, f"Config path not found: {req.config_path}")
 
