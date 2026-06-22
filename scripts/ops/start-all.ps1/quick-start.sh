@@ -50,7 +50,7 @@ pip install -r requirements-stage1.txt
 # Установка Frontend зависимостей
 echo ""
 echo "📦 Установка Frontend зависимостей..."
-cd frontend-portal
+cd portal
 npm install
 cd ..
 
@@ -75,7 +75,7 @@ echo "   2. Запустить backend:"
 echo "      python -m uvicorn src.main:app --reload"
 echo ""
 echo "   3. Запустить frontend:"
-echo "      cd frontend-portal && npm run dev"
+echo "      cd portal && npm run dev"
 echo ""
 echo "📖 Подробнее: TESTING_VERIFICATION_GUIDE.md"
 echo "============================================================"

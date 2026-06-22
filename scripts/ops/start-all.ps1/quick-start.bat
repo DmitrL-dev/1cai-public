@@ -49,7 +49,7 @@ pip install -r requirements-stage1.txt
 
 echo.
 echo Installing Frontend dependencies...
-cd frontend-portal
+cd portal
 call npm install
 cd ..
 
@@ -73,7 +73,7 @@ echo   2. Start backend:
 echo      python -m uvicorn src.main:app --reload
 echo.
 echo   3. Start frontend:
-echo      cd frontend-portal ^&^& npm run dev
+echo      cd portal ^&^& npm run dev
 echo.
 echo See TESTING_VERIFICATION_GUIDE.md for details
 echo ============================================================

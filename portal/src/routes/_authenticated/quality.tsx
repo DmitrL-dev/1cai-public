@@ -72,6 +72,18 @@ function middleTruncate(path: string, max = 56) {
   return `${path.slice(0, keep)}…${path.slice(path.length - keep)}`
 }
 
+/**
+ * Derive the source/config label from the store meta instead of hardcoding.
+ * The build meta carries only counts + artifact paths (no friendly config name
+ * today), so we use a name-like meta key if one ever appears, else a neutral
+ * fallback — never a fabricated product name.
+ */
+function sourceLabel(meta: Record<string, string> | undefined) {
+  const name =
+    meta?.config_name ?? meta?.config ?? meta?.source_name ?? meta?.source
+  return name && name.trim() ? name.trim() : "конфигурация"
+}
+
 /* ── Page ─────────────────────────────────────────────────── */
 
 function QualityPage() {
@@ -105,6 +117,13 @@ function QualityPage() {
 
   const stats = statsQ.data
   const summary = summaryQ.data
+
+  // The store endpoints answer 503 when the graph hasn't been built. Treat a
+  // settled error on the core stats/summary queries as "store missing" so we
+  // can show a banner instead of letting widgets render blank.
+  const storeMissing =
+    (statsQ.isError && !statsQ.isLoading) ||
+    (summaryQ.isError && !summaryQ.isLoading)
 
   const kpis = useMemo(
     () => [
@@ -173,9 +192,27 @@ function QualityPage() {
           </p>
         </div>
         <p className="text-xs text-muted-foreground tabular-nums">
-          Источник: 1С:ERP · {fmt(stats?.modules)} модулей
+          Источник: {sourceLabel(stats?.meta)} · {fmt(stats?.modules)} модулей
         </p>
       </div>
+
+      {/* ── Missing-store banner ──
+          When the Рентген store isn't built, the stats/summary endpoints answer
+          503 and the widgets below would silently render "—"/blank — looking
+          like sparse data rather than "no data". Surface it explicitly. */}
+      {storeMissing && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-4 text-amber-700 dark:text-amber-300">
+          <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+          <div className="text-sm">
+            <p className="font-semibold">Хранилище Рентгена не построено</p>
+            <p className="mt-0.5 text-amber-700/90 dark:text-amber-300/90">
+              Метрики качества пока недоступны. Постройте граф вызовов
+              (rentgen build), чтобы заполнить карту рисков — пустые виджеты ниже
+              означают отсутствие данных, а не их нехватку.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ── KPI Cards ── */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">

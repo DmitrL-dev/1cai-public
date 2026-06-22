@@ -7,7 +7,6 @@
 import os
 import secrets
 import string
-from pathlib import Path
 
 
 def generate_secret(length=32):
@@ -100,32 +99,6 @@ ENABLE_XML_PARSER=true
     return env_content
 
 
-def create_frontend_env():
-    """Создание .env.local для frontend"""
-    env_content = """# ============================================================================
-# 1C AI Stack - Frontend Configuration
-# ============================================================================
-
-# API CONFIGURATION
-VITE_API_URL=http://localhost:8000
-
-# OAUTH2 CONFIGURATION
-VITE_GITHUB_REDIRECT_URI=http://localhost:3001/oauth/callback/github
-VITE_GITLAB_REDIRECT_URI=http://localhost:3001/oauth/callback/gitlab
-VITE_JIRA_REDIRECT_URI=http://localhost:3001/oauth/callback/jira
-
-# FEATURE FLAGS
-VITE_ENABLE_OAUTH2=true
-VITE_ENABLE_INTEGRATIONS=true
-
-# DEVELOPMENT CONFIGURATION
-VITE_PORT=3001
-VITE_HMR=true
-"""
-
-    return env_content
-
-
 def create_docker_env():
     """Создание .env для Docker Compose"""
     postgres_password = generate_password()
@@ -177,15 +150,6 @@ def main():
         f.write(backend_env)
     print("✅ Backend .env создан")
 
-    # Создать .env.local для frontend
-    print("\n📝 Создание frontend/.env.local...")
-    frontend_env = create_frontend_env()
-    frontend_path = Path("frontend-portal/.env.local")
-    frontend_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(frontend_path, "w", encoding="utf-8") as f:
-        f.write(frontend_env)
-    print("✅ Frontend .env.local создан")
-
     # Создать .env для Docker
     print("\n📝 Создание .env для Docker Compose...")
     docker_env = create_docker_env()
@@ -201,7 +165,7 @@ def main():
     print("\n📖 См. TESTING_VERIFICATION_GUIDE.md для инструкций")
     print("\n🚀 Запуск:")
     print("   Backend:  python -m uvicorn src.main:app --reload")
-    print("   Frontend: cd frontend-portal && npm run dev")
+    print("   Frontend: cd portal && npm run dev")
     print("   Docker:   docker-compose --env-file .env.docker up -d")
 
 

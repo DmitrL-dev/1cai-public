@@ -148,7 +148,7 @@ docker-compose -f docker-compose.yml -f docker-compose.stage1.yml run --rm minio
 
 ```bash
 # Переходим в frontend папку
-cd frontend-portal
+cd portal
 
 # Устанавливаем зависимости
 npm install
@@ -422,7 +422,7 @@ curl http://localhost:8000/api/dashboard/developer
 
 ### **Frontend:**
 - [ ] Node.js 18+ установлен
-- [ ] `cd frontend-portal` выполнено
+- [ ] `cd portal` выполнено
 - [ ] `npm install` выполнен успешно
 - [ ] `.env` файл создан
 - [ ] `npm run dev` запущен
@@ -446,7 +446,7 @@ curl http://localhost:8000/api/dashboard/developer
 python src/main.py
 
 # Terminal 2: Frontend
-cd frontend-portal && npm run dev
+cd portal && npm run dev
 
 # Terminal 3: Проверка
 curl http://localhost:8000/health
@@ -683,7 +683,7 @@ docker-compose up -d postgres redis
 python src/main.py
 
 # 3. Start frontend (new terminal)
-cd frontend-portal
+cd portal
 npm install
 npm run dev
 

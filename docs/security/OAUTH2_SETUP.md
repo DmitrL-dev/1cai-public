@@ -117,7 +117,7 @@ alembic upgrade head
 #### Frontend (TypeScript)
 
 ```typescript
-// frontend-portal/src/services/api-integration-service.ts
+// portal/src/services/api-integration-service.ts
 
 async function initiateOAuth(
   provider: "github" | "gitlab" | "jira"

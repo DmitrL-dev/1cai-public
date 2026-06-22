@@ -14,7 +14,7 @@
 - [ ] **Нет ошибок TypeScript**
 
   ```bash
-  cd frontend-portal
+  cd portal
   npx tsc --noEmit
   # 0 ошибок
   ```

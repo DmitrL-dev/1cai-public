@@ -78,7 +78,7 @@
 5. Создать .env файл
 6. docker-compose up -d
 7. python src/main.py
-8. cd frontend-portal && npm install && npm run dev
+8. cd portal && npm install && npm run dev
 
 ЭТО 8 ШАГОВ! Я НЕ ЗНАЮ КАК!
 ```

@@ -26,14 +26,12 @@ REQUIREMENT_FILES = [
 PACKAGE_FILES = [
     "package.json",
     "portal/package.json",
-    "frontend-portal/package.json",
     "demo/demo-ai-assistants-1c/package.json",
 ]
 
 PACKAGE_LOCK_FILES = [
     "package-lock.json",
     "portal/package-lock.json",
-    "frontend-portal/package-lock.json",
 ]
 
 DOCKERFILES = [

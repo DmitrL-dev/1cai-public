@@ -6,7 +6,7 @@
 
 **Симптомы:**
 
-- VS Code зависает при открытии `frontend-portal`
+- VS Code зависает при открытии `portal`
 - Невозможно удалить папку `node_modules`
 - Docker volume mount вызывает экстремальную медлительность
 - Операции с файлами завершаются по таймауту
@@ -29,7 +29,7 @@ docker-compose down
 #### Шаг 2: Ручная очистка (PowerShell от Администратора)
 
 ```powershell
-cd c:\1cAI\frontend-portal
+cd c:\1cAI\portal
 
 # Принудительно удалить проблемные папки
 Remove-Item -Path "node_modules" -Recurse -Force -ErrorAction SilentlyContinue
@@ -47,7 +47,7 @@ Remove-Item -Path "package-lock.json" -Force -ErrorAction SilentlyContinue
 #### Шаг 3: Установка зависимостей на хосте (НЕ в Docker)
 
 ```bash
-# В директории frontend-portal
+# В директории portal
 npm install
 
 # Проверить установку
@@ -180,7 +180,7 @@ Docker Desktop → Settings → Resources:
 ```yaml
 # Вместо:
 volumes:
-  - ./frontend-portal:/app
+  - ./portal:/app
 
 # Использовать:
 volumes:
@@ -203,7 +203,7 @@ volumes:
 #### Очистить кэш TypeScript
 
 ```bash
-cd frontend-portal
+cd portal
 
 # Удалить кэш
 rm -rf node_modules/.cache

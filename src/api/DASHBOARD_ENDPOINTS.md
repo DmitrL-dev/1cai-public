@@ -126,6 +126,6 @@ console.log(response.data);
 ## Next Steps
 
 1. Start backend server: `python src/main.py`
-2. Start frontend: `cd frontend-portal && npm run dev`
+2. Start frontend: `cd portal && npm run dev`
 3. Test endpoints in browser console
 4. Verify data display in dashboards
