@@ -1,4 +1,3 @@
-
 """
 AI Code Review Agent
 Автоматический reviewer для BSL кода

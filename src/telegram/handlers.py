@@ -1,4 +1,3 @@
-
 """
 Telegram Bot Handlers
 Обработчики команд и сообщений
@@ -17,7 +16,10 @@ from src.ai.orchestrator import get_orchestrator
 from src.services.bsl_diagnostics import analyze_bsl
 from src.services.ocr_service import DocumentType, get_ocr_service
 from src.services.speech_to_text_service import get_stt_service
-from src.telegram.bsl_upload_report import decode_uploaded_text, format_bsl_upload_report
+from src.telegram.bsl_upload_report import (
+    decode_uploaded_text,
+    format_bsl_upload_report,
+)
 from src.telegram.config import config
 from src.telegram.formatters import TelegramFormatter
 from src.telegram.rate_limiter import RateLimiter
@@ -317,9 +319,7 @@ async def handle_voice(message: Message):
             text = transcription["text"].strip()
 
             if not text:
-                await message.reply(
-                    "🤔 Не удалось распознать речь. Попробуйте еще раз."
-                )
+                await message.reply("🤔 Не удалось распознать речь. Попробуйте еще раз.")
                 return
 
             # Показываем что распознали
@@ -546,9 +546,7 @@ async def handle_document(message: Message):
             # Скачиваем файл
             doc_file = await message.bot.get_file(document.file_id)
 
-            with tempfile.NamedTemporaryFile(
-                delete=False, suffix=suffix
-            ) as tmp_file:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
                 await message.bot.download_file(doc_file.file_path, tmp_file)
                 tmp_path = tmp_file.name
 

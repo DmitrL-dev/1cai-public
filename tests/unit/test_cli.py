@@ -11,8 +11,8 @@ import pytest
 
 from src.micro_swarm.cli import format_report, run_bsl_review
 
-
 # --- format_report tests ---
+
 
 class TestFormatReport:
     """Test Russian report formatting."""
@@ -28,10 +28,14 @@ class TestFormatReport:
         assert "module.bsl" in report
 
     def test_template_file_shown_with_warning(self):
-        results = [_make_result(
-            "bad.bsl", "template", loc=100,
-            response="⚠️ N+1 запрос",
-        )]
+        results = [
+            _make_result(
+                "bad.bsl",
+                "template",
+                loc=100,
+                response="⚠️ N+1 запрос",
+            )
+        ]
         report = format_report(results)
         assert "⚠️" in report or "🔶" in report
         assert "bad.bsl" in report
@@ -65,6 +69,7 @@ class TestFormatReport:
 
 # --- run_bsl_review tests ---
 
+
 class TestRunBslReview:
     """Test the main CLI entry point."""
 
@@ -94,8 +99,7 @@ class TestRunBslReview:
     def test_prints_report_to_stdout(self, mock_bridge_cls, capsys):
         bridge = MagicMock()
         bridge.scan_and_review.return_value = [
-            _make_result("test.bsl", "template", loc=50,
-                         response="⚠️ Тест"),
+            _make_result("test.bsl", "template", loc=50, response="⚠️ Тест"),
         ]
         mock_bridge_cls.return_value = bridge
 
@@ -115,10 +119,11 @@ class TestRunBslReview:
 
 # --- helpers ---
 
-def _make_result(path: str, decision: str, loc: int = 0,
-                 response: str | None = None):
+
+def _make_result(path: str, decision: str, loc: int = 0, response: str | None = None):
     """Create a BridgeResult-like object for testing."""
     from src.micro_swarm.go_bridge import BridgeResult
+
     return BridgeResult(
         path=path,
         loc=loc,

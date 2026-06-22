@@ -1,4 +1,3 @@
-
 """
 Tests for 1C Code Graph Builder (OneCCodeGraphBuilder).
 """

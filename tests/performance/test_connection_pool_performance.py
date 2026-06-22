@@ -1,4 +1,3 @@
-
 """
 Performance tests for ConnectionPool.
 """

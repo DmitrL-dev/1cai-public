@@ -86,7 +86,8 @@ class ProxyService:
                 },
             )
             raise HTTPException(
-                status_code=404, detail=f"Service '{service}' not found")
+                status_code=404, detail=f"Service '{service}' not found"
+            )
 
         service_config = SERVICES_CONFIG[service]
 
@@ -110,7 +111,8 @@ class ProxyService:
         # Prepare headers
         request_headers = headers or {}
         request_headers.update(
-            {"X-Gateway-Request": "true", "X-Forwarded-For": "1C-AI-Gateway"})
+            {"X-Gateway-Request": "true", "X-Forwarded-For": "1C-AI-Gateway"}
+        )
 
         # Proxy request with improved error handling
         try:
@@ -137,7 +139,8 @@ class ProxyService:
                 },
             )
             raise HTTPException(
-                status_code=504, detail=f"Timeout calling service '{service}'")
+                status_code=504, detail=f"Timeout calling service '{service}'"
+            )
         except httpx.ConnectError as e:
             logger.error(
                 f"Connection error calling service '{service}': {e}",
@@ -150,7 +153,8 @@ class ProxyService:
                 },
             )
             raise HTTPException(
-                status_code=503, detail=f"Service '{service}' unavailable")
+                status_code=503, detail=f"Service '{service}' unavailable"
+            )
         except httpx.HTTPStatusError as e:
             logger.warning(
                 f"HTTP error {e.response.status_code} from service '{service}'",
@@ -182,4 +186,5 @@ class ProxyService:
                 exc_info=True,
             )
             raise HTTPException(
-                status_code=500, detail=f"Error proxying to service '{service}'")
+                status_code=500, detail=f"Error proxying to service '{service}'"
+            )

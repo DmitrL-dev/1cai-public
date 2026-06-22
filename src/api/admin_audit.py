@@ -1,4 +1,3 @@
-
 """Admin endpoints for viewing security audit log."""
 
 from __future__ import annotations

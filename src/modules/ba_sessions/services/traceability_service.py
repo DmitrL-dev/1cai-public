@@ -21,15 +21,14 @@ class TraceabilityService:
     ) -> Dict[str, Any]:
         """Build traceability matrix"""
         try:
-            from src.ai.agents.business_analyst_agent import (
-                BusinessAnalystAgent,
-            )
+            from src.ai.agents.business_analyst_agent import BusinessAnalystAgent
 
             agent = BusinessAnalystAgent()
 
             # Format requirements for compatibility
-            requirements = [{"id": req_id, "title": req_id}
-                for req_id in requirement_ids]
+            requirements = [
+                {"id": req_id, "title": req_id} for req_id in requirement_ids
+            ]
             test_cases = []  # Found via graph
 
             return await agent.build_traceability_and_risks(
@@ -41,7 +40,9 @@ class TraceabilityService:
             logger.error(f"Error building traceability matrix: {e}", exc_info=True)
             raise
 
-    async def build_risk_register(self, requirement_ids: List[str], include_incidents: bool = True) -> Dict[str, Any]:
+    async def build_risk_register(
+        self, requirement_ids: List[str], include_incidents: bool = True
+    ) -> Dict[str, Any]:
         """Build risk register"""
         try:
             from src.ai.agents.traceability_with_graph import TraceabilityWithGraph
@@ -58,7 +59,9 @@ class TraceabilityService:
             logger.error(f"Error building risk register: {e}", exc_info=True)
             raise
 
-    async def build_full_traceability_report(self, requirement_ids: List[str]) -> Dict[str, Any]:
+    async def build_full_traceability_report(
+        self, requirement_ids: List[str]
+    ) -> Dict[str, Any]:
         """Build full traceability report"""
         try:
             from src.ai.agents.traceability_with_graph import TraceabilityWithGraph

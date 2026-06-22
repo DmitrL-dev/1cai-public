@@ -11,7 +11,6 @@ from src.services.rentgen.open_first_path import (
     open_first_path_markdown_lines,
 )
 
-
 DEFAULT_ASSUMPTIONS: dict[str, int] = {
     "monthly_ai_subscription_cost": 120_000,
     "hourly_rate": 2_500,
@@ -33,22 +32,65 @@ ASSUMPTION_BOUNDS: dict[str, int] = {
 # Human-readable disclosure of every operator-overridable input assumption.
 # Order is presentation order; labels are buyer-facing.
 ASSUMPTION_LABELS: dict[str, dict[str, str]] = {
-    "monthly_ai_subscription_cost": {"label": "Assumed current AI subscription / rent", "unit": "RUB per month"},
-    "hourly_rate": {"label": "Assumed loaded hourly rate of a 1C specialist", "unit": "RUB per hour"},
-    "manual_review_hours_month": {"label": "Assumed manual review / audit-prep effort", "unit": "hours per month"},
-    "incident_cost": {"label": "Assumed cost of one production incident", "unit": "RUB per incident"},
-    "release_delay_hours_per_item": {"label": "Assumed delay per queued review item", "unit": "hours per item"},
-    "release_windows_per_month": {"label": "Assumed release windows", "unit": "per month"},
+    "monthly_ai_subscription_cost": {
+        "label": "Assumed current AI subscription / rent",
+        "unit": "RUB per month",
+    },
+    "hourly_rate": {
+        "label": "Assumed loaded hourly rate of a 1C specialist",
+        "unit": "RUB per hour",
+    },
+    "manual_review_hours_month": {
+        "label": "Assumed manual review / audit-prep effort",
+        "unit": "hours per month",
+    },
+    "incident_cost": {
+        "label": "Assumed cost of one production incident",
+        "unit": "RUB per incident",
+    },
+    "release_delay_hours_per_item": {
+        "label": "Assumed delay per queued review item",
+        "unit": "hours per item",
+    },
+    "release_windows_per_month": {
+        "label": "Assumed release windows",
+        "unit": "per month",
+    },
 }
 
 # Derived multipliers / clamps applied on top of the raw assumptions.
 # Each is an arbitrary commercial default, not a measured value.
 DERIVED_ASSUMPTIONS: list[dict[str, Any]] = [
-    {"key": "hotspot_exposure_factor", "label": "Share of incident cost attributed to each high-risk hotspot", "value": 0.35, "unit": "fraction"},
-    {"key": "platform_exposure_factor", "label": "Share of incident cost attributed to each failing platform check", "value": 0.25, "unit": "fraction"},
-    {"key": "local_license_anchor_pct", "label": "Local-license anchor as a share of first-year visible value", "value": 0.22, "unit": "fraction"},
-    {"key": "local_license_anchor_floor", "label": "Local-license anchor floor (minimum shown regardless of value)", "value": 1_800_000, "unit": "RUB"},
-    {"key": "local_license_anchor_ceiling", "label": "Local-license anchor ceiling (maximum shown regardless of value)", "value": 12_000_000, "unit": "RUB"},
+    {
+        "key": "hotspot_exposure_factor",
+        "label": "Share of incident cost attributed to each high-risk hotspot",
+        "value": 0.35,
+        "unit": "fraction",
+    },
+    {
+        "key": "platform_exposure_factor",
+        "label": "Share of incident cost attributed to each failing platform check",
+        "value": 0.25,
+        "unit": "fraction",
+    },
+    {
+        "key": "local_license_anchor_pct",
+        "label": "Local-license anchor as a share of first-year visible value",
+        "value": 0.22,
+        "unit": "fraction",
+    },
+    {
+        "key": "local_license_anchor_floor",
+        "label": "Local-license anchor floor (minimum shown regardless of value)",
+        "value": 1_800_000,
+        "unit": "RUB",
+    },
+    {
+        "key": "local_license_anchor_ceiling",
+        "label": "Local-license anchor ceiling (maximum shown regardless of value)",
+        "value": 12_000_000,
+        "unit": "RUB",
+    },
 ]
 
 ASSUMPTIONS_DISCLAIMER = (
@@ -95,7 +137,9 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _as_int(value: Any, default: int, *, min_value: int = 0, max_value: int = 50_000_000) -> int:
+def _as_int(
+    value: Any, default: int, *, min_value: int = 0, max_value: int = 50_000_000
+) -> int:
     try:
         parsed = int(float(value))
     except (TypeError, ValueError):
@@ -122,7 +166,11 @@ def _decision_status(
     red_areas: int,
     failed_platform_checks: int,
 ) -> str:
-    if executive_status in {"blocked", "critical"} or red_areas >= 3 or failed_platform_checks >= 4:
+    if (
+        executive_status in {"blocked", "critical"}
+        or red_areas >= 3
+        or failed_platform_checks >= 4
+    ):
         return "risk"
     if case_score >= 78:
         return "ready"
@@ -243,7 +291,9 @@ def _local_license_anchor_detail(first_year_visible_value: int) -> dict[str, Any
     return {"value": value, "raw": raw, "clamped": clamped, "basis": basis}
 
 
-def _subscription_escape_plan(money: dict[str, int], assumptions: dict[str, Any]) -> dict[str, Any]:
+def _subscription_escape_plan(
+    money: dict[str, int], assumptions: dict[str, Any]
+) -> dict[str, Any]:
     monthly_ai_rent = int(assumptions["monthly_ai_subscription_cost"])
     annual_ai_rent = money["ai_subscription_year"]
     three_year_ai_rent = annual_ai_rent * 3
@@ -259,9 +309,7 @@ def _subscription_escape_plan(money: dict[str, int], assumptions: dict[str, Any]
             "but creates reusable 1C evidence, approvals, tests and archives that stay valuable without mandatory token spend."
         )
     else:
-        decision_line = (
-            "No current AI rent was entered; anchor the purchase on local review effort, release delay and risk evidence instead."
-        )
+        decision_line = "No current AI rent was entered; anchor the purchase on local review effort, release delay and risk evidence instead."
     return {
         "headline": "Buy a local 1C evidence asset; keep AI credits optional.",
         "monthly_ai_rent": monthly_ai_rent,
@@ -304,10 +352,26 @@ def _subscription_escape_plan(money: dict[str, int], assumptions: dict[str, Any]
             },
         ],
         "evidence_files": [
-            {"title": "Business Case", "filename": "business-case.md", "route": "/business-case"},
-            {"title": "Commercial Offer Studio", "filename": "commercial-offer-studio.md", "route": "/commercial-offer-studio"},
-            {"title": "Enterprise Trust Center", "filename": "enterprise-trust-center.md", "route": "/enterprise-trust-center"},
-            {"title": "Evidence Bundle", "filename": "OPEN_FIRST.md", "route": "/evidence-bundle"},
+            {
+                "title": "Business Case",
+                "filename": "business-case.md",
+                "route": "/business-case",
+            },
+            {
+                "title": "Commercial Offer Studio",
+                "filename": "commercial-offer-studio.md",
+                "route": "/commercial-offer-studio",
+            },
+            {
+                "title": "Enterprise Trust Center",
+                "filename": "enterprise-trust-center.md",
+                "route": "/enterprise-trust-center",
+            },
+            {
+                "title": "Evidence Bundle",
+                "filename": "OPEN_FIRST.md",
+                "route": "/evidence-bundle",
+            },
         ],
     }
 
@@ -442,9 +506,19 @@ def _buyer_committee(money: dict[str, int]) -> list[dict[str, str]]:
     ]
 
 
-def _offer_stack(value_packs: dict[str, Any] | None, vendor: dict[str, Any] | None) -> list[dict[str, Any]]:
-    packs = [item.get("title") for item in (value_packs or {}).get("packs", []) if item.get("title")]
-    work_packages = [item.get("title") for item in (vendor or {}).get("work_packages", []) if item.get("title")]
+def _offer_stack(
+    value_packs: dict[str, Any] | None, vendor: dict[str, Any] | None
+) -> list[dict[str, Any]]:
+    packs = [
+        item.get("title")
+        for item in (value_packs or {}).get("packs", [])
+        if item.get("title")
+    ]
+    work_packages = [
+        item.get("title")
+        for item in (vendor or {}).get("work_packages", [])
+        if item.get("title")
+    ]
     return [
         {
             "id": "closed-contour-pilot",
@@ -456,22 +530,40 @@ def _offer_stack(value_packs: dict[str, Any] | None, vendor: dict[str, Any] | No
                 "developer and release cockpit",
                 "first evidence bundle",
             ],
-            "routes": ["/configurations", "/change", "/release-readiness", "/evidence-bundle"],
+            "routes": [
+                "/configurations",
+                "/change",
+                "/release-readiness",
+                "/evidence-bundle",
+            ],
             "commercial_note": "Sold as fast proof on the customer's own 1C code, not as generic code chat.",
         },
         {
             "id": "enterprise-license",
             "title": "Enterprise local license",
             "target_buyer": "director / CIO / architecture board",
-            "includes": packs[:5] or ["Developer Pack", "Architect Pack", "Release / QA Pack", "Platform Doctor Pack"],
-            "routes": ["/value-packs", "/productization", "/offline-readiness", "/team-governance", "/platform-doctor"],
+            "includes": packs[:5]
+            or [
+                "Developer Pack",
+                "Architect Pack",
+                "Release / QA Pack",
+                "Platform Doctor Pack",
+            ],
+            "routes": [
+                "/value-packs",
+                "/productization",
+                "/offline-readiness",
+                "/team-governance",
+                "/platform-doctor",
+            ],
             "commercial_note": "Core deterministic analysis works locally; external AI remains optional.",
         },
         {
             "id": "vendor-rollout",
             "title": "Vendor portfolio rollout",
             "target_buyer": "franchisee / implementation partner",
-            "includes": work_packages[:4] or ["pre-sale audit", "platform upgrade estimate", "release gate"],
+            "includes": work_packages[:4]
+            or ["pre-sale audit", "platform upgrade estimate", "release gate"],
             "routes": ["/vendor-portfolio", "/business-case", "/evidence-bundle"],
             "commercial_note": "Every audit can become a scoped paid modernization or support package.",
         },
@@ -562,8 +654,14 @@ def _business_room_bridge(
         "label": "Show subscription escape",
         "route": "/business-case",
         "status": str(primary.get("status") or "watch"),
-        "ask": str(subscription_escape_plan.get("decision_line") or "Show why local product value beats mandatory AI rent."),
-        "reason": str(subscription_escape_plan.get("headline") or "Business Case keeps the purchase grounded in explicit assumptions."),
+        "ask": str(
+            subscription_escape_plan.get("decision_line")
+            or "Show why local product value beats mandatory AI rent."
+        ),
+        "reason": str(
+            subscription_escape_plan.get("headline")
+            or "Business Case keeps the purchase grounded in explicit assumptions."
+        ),
     }
 
     role_cards = list(brief.get("role_cards") or [])
@@ -588,7 +686,10 @@ def _business_room_bridge(
                 "title": "Business Case",
                 "route": "/business-case",
                 "status": str(primary.get("status") or "watch"),
-                "signal": str(subscription_escape_plan.get("decision_line") or "Money map and assumptions are explicit."),
+                "signal": str(
+                    subscription_escape_plan.get("decision_line")
+                    or "Money map and assumptions are explicit."
+                ),
                 "file": "rentgen-business-case.md",
             },
             {
@@ -620,10 +721,30 @@ def _business_room_bridge(
     meeting_flow = list(brief.get("meeting_flow") or [])
     if not meeting_flow:
         meeting_flow = [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Pick the room role and pain first."},
-            {"step": 2, "label": "Value", "route": "/business-case", "line": "Show AI rent, visible value and local-license anchor."},
-            {"step": 3, "label": "Offer", "route": "/commercial-offer-studio", "line": "Convert value into a paid package and approval path."},
-            {"step": 4, "label": "Forward", "route": "/evidence-bundle", "line": "Forward buyer brief, business case and proof archive."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Pick the room role and pain first.",
+            },
+            {
+                "step": 2,
+                "label": "Value",
+                "route": "/business-case",
+                "line": "Show AI rent, visible value and local-license anchor.",
+            },
+            {
+                "step": 3,
+                "label": "Offer",
+                "route": "/commercial-offer-studio",
+                "line": "Convert value into a paid package and approval path.",
+            },
+            {
+                "step": 4,
+                "label": "Forward",
+                "route": "/evidence-bundle",
+                "line": "Forward buyer brief, business case and proof archive.",
+            },
         ]
     open_first_path = build_open_first_path(
         existing_path=brief.get("open_first_path"),
@@ -634,13 +755,20 @@ def _business_room_bridge(
         orient_title="Business Case",
         orient_route="/business-case",
         orient_line="Show AI rent, visible value and local-license anchor.",
-        orient_status=str(primary.get("status") or business_motion.get("status") or "watch"),
-        prove_line=str(subscription_escape_plan.get("decision_line") or "Money map and assumptions are explicit."),
+        orient_status=str(
+            primary.get("status") or business_motion.get("status") or "watch"
+        ),
+        prove_line=str(
+            subscription_escape_plan.get("decision_line")
+            or "Money map and assumptions are explicit."
+        ),
         close_title="Commercial Offer",
         close_route="/commercial-offer-studio",
         close_line="Convert value into a paid package and approval path.",
         close_file="rentgen-commercial-offer-studio.md",
-        close_status=str(primary.get("status") or business_motion.get("status") or "watch"),
+        close_status=str(
+            primary.get("status") or business_motion.get("status") or "watch"
+        ),
         verify_line="Forward buyer brief, business case and proof archive.",
     )
 
@@ -653,8 +781,14 @@ def _business_room_bridge(
             *[str(item.get("route") or "") for item in proof_readiness],
             *[str(item.get("route") or "") for item in meeting_flow],
             *[str(item.get("route") or "") for item in open_first_path],
-            *[str(item.get("route") or "") for item in subscription_escape_plan.get("stakeholder_lines", [])],
-            *[str(item.get("route") or "") for item in subscription_escape_plan.get("evidence_files", [])],
+            *[
+                str(item.get("route") or "")
+                for item in subscription_escape_plan.get("stakeholder_lines", [])
+            ],
+            *[
+                str(item.get("route") or "")
+                for item in subscription_escape_plan.get("evidence_files", [])
+            ],
         }
         - {""}
     )
@@ -671,14 +805,24 @@ def _business_room_bridge(
             "route": str(primary.get("route") or "/business-case"),
             "status": str(primary.get("status") or "watch"),
             "ask": str(primary.get("ask") or "Show the money map and paid next step."),
-            "reason": str(primary.get("reason") or "Business Case turns evidence into a finance-readable purchase."),
+            "reason": str(
+                primary.get("reason")
+                or "Business Case turns evidence into a finance-readable purchase."
+            ),
         },
         "business_motion": business_motion,
         "role_cards": role_cards[:5],
         "proof_readiness": proof_readiness[:4],
         "meeting_flow": meeting_flow[:4],
         "open_first_path": open_first_path[:4],
-        "files": ["buyer-brief.md", "buyer-pulse.md", OPEN_FIRST_PATH_FILE, "rentgen-business-case.md", "rentgen-commercial-offer-studio.md", "OPEN_FIRST.md"],
+        "files": [
+            "buyer-brief.md",
+            "buyer-pulse.md",
+            OPEN_FIRST_PATH_FILE,
+            "rentgen-business-case.md",
+            "rentgen-commercial-offer-studio.md",
+            "OPEN_FIRST.md",
+        ],
         "routes": routes,
         "close_question": "Does the room accept local product value as the paid buying motion?",
     }
@@ -702,44 +846,74 @@ def _markdown(report: dict[str, Any]) -> str:
         suffix = f" ({value} {currency})" if value else ""
         basis = item.get("basis")
         basis_note = f" _Basis: {basis}_" if basis else ""
-        lines.append(f"- **{item['title']}**{suffix}: {item['why_buy_now']}{basis_note}")
+        lines.append(
+            f"- **{item['title']}**{suffix}: {item['why_buy_now']}{basis_note}"
+        )
     escape = report.get("subscription_escape_plan") or {}
     if escape:
         lines.extend(["", "## Subscription escape", ""])
         lines.append(str(escape.get("headline") or ""))
-        lines.append(f"- Annual AI rent: **{escape.get('annual_ai_rent', 0)} {currency}**")
-        lines.append(f"- Three-year AI rent: **{escape.get('three_year_ai_rent', 0)} {currency}**")
+        lines.append(
+            f"- Annual AI rent: **{escape.get('annual_ai_rent', 0)} {currency}**"
+        )
+        lines.append(
+            f"- Three-year AI rent: **{escape.get('three_year_ai_rent', 0)} {currency}**"
+        )
         clamp = escape.get("local_license_anchor_clamped")
         clamp_tag = f" _(clamped: {clamp})_" if clamp else ""
-        lines.append(f"- Local license anchor: **{escape.get('local_license_anchor', 0)} {currency}**{clamp_tag}")
+        lines.append(
+            f"- Local license anchor: **{escape.get('local_license_anchor', 0)} {currency}**{clamp_tag}"
+        )
         if escape.get("local_license_anchor_basis"):
             lines.append(f"  - Basis: {escape['local_license_anchor_basis']}")
-        lines.append(f"- Break-even by visible value: **{escape.get('break_even_months', 0)} months**")
+        lines.append(
+            f"- Break-even by visible value: **{escape.get('break_even_months', 0)} months**"
+        )
         lines.append(f"- Decision line: {escape.get('decision_line', '')}")
         lines.extend(["", "### Guardrails", ""])
         lines.extend(f"- {item}" for item in escape.get("guardrails", []))
     bridge = report.get("business_room_bridge") or {}
     if bridge:
         lines.extend(["", "## Business Room Bridge", ""])
-        lines.append(f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**")
+        lines.append(
+            f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**"
+        )
         lines.append(f"- Room line: {bridge.get('room_line', '')}")
         motion = bridge.get("primary_motion") or {}
-        lines.append(f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/business-case')}`): {motion.get('ask', '')}")
+        lines.append(
+            f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/business-case')}`): {motion.get('ask', '')}"
+        )
         business_motion = bridge.get("business_motion") or {}
-        lines.append(f"- Business motion: **{business_motion.get('label', 'n/a')}** (`{business_motion.get('route', '/business-case')}`): {business_motion.get('ask', '')}")
-        lines.extend(open_first_path_markdown_lines(bridge.get("open_first_path"), default_route="/business-case"))
+        lines.append(
+            f"- Business motion: **{business_motion.get('label', 'n/a')}** (`{business_motion.get('route', '/business-case')}`): {business_motion.get('ask', '')}"
+        )
+        lines.extend(
+            open_first_path_markdown_lines(
+                bridge.get("open_first_path"), default_route="/business-case"
+            )
+        )
         for item in bridge.get("role_cards", []):
-            lines.append(f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}")
+            lines.append(
+                f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}"
+            )
         for item in bridge.get("proof_readiness", []):
-            lines.append(f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}")
+            lines.append(
+                f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}"
+            )
         for item in bridge.get("meeting_flow", []):
-            lines.append(f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}")
+            lines.append(
+                f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}"
+            )
     lines.extend(["", "## Buyer committee", ""])
     for item in report["buyer_committee"]:
-        lines.append(f"- **{item['role']}**: {item['decision_trigger']} (`{item['route']}`)")
+        lines.append(
+            f"- **{item['role']}**: {item['decision_trigger']} (`{item['route']}`)"
+        )
     lines.extend(["", "## 30/60/90 plan", ""])
     for item in report["plan_30_60_90"]:
-        lines.append(f"- **{item['stage']}**: {item['goal']} Exit: {item['exit_criteria']}")
+        lines.append(
+            f"- **{item['stage']}**: {item['goal']} Exit: {item['exit_criteria']}"
+        )
     disclosed = (report.get("assumptions") or {}).get("disclosed") or {}
     if disclosed:
         lines.extend(["", "## Assumptions (default, operator-overridable)", ""])
@@ -747,9 +921,13 @@ def _markdown(report: dict[str, Any]) -> str:
         lines.append("")
         for item in disclosed.get("inputs", []):
             flag = " (overridden)" if item.get("overridden") else ""
-            lines.append(f"- **{item['label']}**: {item['value']} {item['unit']} _(assumption; default {item['default']}{flag})_")
+            lines.append(
+                f"- **{item['label']}**: {item['value']} {item['unit']} _(assumption; default {item['default']}{flag})_"
+            )
         for item in disclosed.get("derived", []):
-            lines.append(f"- **{item['label']}**: {item['value']} {item['unit']} _(assumption)_")
+            lines.append(
+                f"- **{item['label']}**: {item['value']} {item['unit']} _(assumption)_"
+            )
     lines.extend(["", "## Caveats", ""])
     lines.extend(f"- {item}" for item in report["caveats"])
     return "\n".join(lines)
@@ -826,18 +1004,28 @@ def build_business_case(
         "summary": {
             **{key: value for key, value in money.items() if key != "_basis"},
             "money_basis": money.get("_basis") or {},
-            "local_license_anchor_basis": subscription_escape_plan["local_license_anchor_basis"],
-            "local_license_anchor_clamped": subscription_escape_plan["local_license_anchor_clamped"],
+            "local_license_anchor_basis": subscription_escape_plan[
+                "local_license_anchor_basis"
+            ],
+            "local_license_anchor_clamped": subscription_escape_plan[
+                "local_license_anchor_clamped"
+            ],
             "work_packages": len((vendor or {}).get("work_packages", [])),
             "value_packs": len((value_packs or {}).get("packs", [])),
             "modules": int(kpis.get("modules") or 0),
             "modules_with_issues": int(kpis.get("modules_with_issues") or 0),
             "red_areas": int(kpis.get("red_areas") or 0),
             "review_queue": int(kpis.get("review_queue") or 0),
-            "three_year_ai_subscription": subscription_escape_plan["three_year_ai_rent"],
+            "three_year_ai_subscription": subscription_escape_plan[
+                "three_year_ai_rent"
+            ],
             "local_license_anchor": subscription_escape_plan["local_license_anchor"],
-            "subscription_escape_months": subscription_escape_plan["ai_rent_equivalent_months"],
-            "subscription_break_even_months": subscription_escape_plan["break_even_months"],
+            "subscription_escape_months": subscription_escape_plan[
+                "ai_rent_equivalent_months"
+            ],
+            "subscription_break_even_months": subscription_escape_plan[
+                "break_even_months"
+            ],
             "business_room_roles": len(business_room_bridge["role_cards"]),
             "business_room_proofs": len(business_room_bridge["proof_readiness"]),
             "business_room_steps": len(business_room_bridge["meeting_flow"]),
@@ -873,7 +1061,13 @@ def build_business_case(
             *[
                 {"label": f"Buyer Brief: {route}", "to": route}
                 for route in business_room_bridge["routes"]
-                if route not in {"/business-case", "/commercial-offer-studio", "/enterprise-trust-center", "/evidence-bundle"}
+                if route
+                not in {
+                    "/business-case",
+                    "/commercial-offer-studio",
+                    "/enterprise-trust-center",
+                    "/evidence-bundle",
+                }
             ],
         ],
         "caveats": [

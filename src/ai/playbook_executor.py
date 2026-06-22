@@ -1,4 +1,3 @@
-
 """
 Playbook Executor (experimental)
 --------------------------------

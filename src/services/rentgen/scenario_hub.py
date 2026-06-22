@@ -34,7 +34,9 @@ def _score(report: dict[str, Any] | None, default: int = 0) -> int:
 def _status(report: dict[str, Any] | None, default: str = "watch") -> str:
     if not report:
         return default
-    return str((report.get("decision") or {}).get("status") or report.get("status") or default)
+    return str(
+        (report.get("decision") or {}).get("status") or report.get("status") or default
+    )
 
 
 def _evidence(label: str, to: str) -> dict[str, str]:
@@ -141,7 +143,11 @@ def _scenarios(
                 _evidence("Change Impact", "/change"),
                 _evidence("Testing", "/testing"),
             ],
-            outputs=["deterministic rule finding", "safe rewrite", "regression test expectation"],
+            outputs=[
+                "deterministic rule finding",
+                "safe rewrite",
+                "regression test expectation",
+            ],
             why_buy_now="This is a visible bug class that generic code chat usually explains only after the damage is known.",
         ),
         _scenario(
@@ -350,13 +356,41 @@ def _scenarios(
 
 def _role_lenses(scenarios: list[dict[str, Any]]) -> list[dict[str, Any]]:
     roles = [
-        ("Developer", "Fix real 1C defects and understand blast radius before commit.", "/quality"),
-        ("Architect", "Turn configuration, platform, extensions and rights into governed architecture.", "/architecture"),
-        ("Director", "See money, go/no-go and enterprise proof without reading code.", "/business-case"),
-        ("QA / Release", "Convert release faith into gates, tests and portable evidence.", "/release-readiness"),
-        ("Operations", "Connect runtime pain with platform, code and runbooks.", "/lock-radar"),
-        ("Vendor", "Convert scans into paid audits, packages and buyer-safe reports.", "/vendor-portfolio"),
-        ("Security", "Check locality, rights, productization and exportable evidence.", "/enterprise-trust-center"),
+        (
+            "Developer",
+            "Fix real 1C defects and understand blast radius before commit.",
+            "/quality",
+        ),
+        (
+            "Architect",
+            "Turn configuration, platform, extensions and rights into governed architecture.",
+            "/architecture",
+        ),
+        (
+            "Director",
+            "See money, go/no-go and enterprise proof without reading code.",
+            "/business-case",
+        ),
+        (
+            "QA / Release",
+            "Convert release faith into gates, tests and portable evidence.",
+            "/release-readiness",
+        ),
+        (
+            "Operations",
+            "Connect runtime pain with platform, code and runbooks.",
+            "/lock-radar",
+        ),
+        (
+            "Vendor",
+            "Convert scans into paid audits, packages and buyer-safe reports.",
+            "/vendor-portfolio",
+        ),
+        (
+            "Security",
+            "Check locality, rights, productization and exportable evidence.",
+            "/enterprise-trust-center",
+        ),
     ]
     result: list[dict[str, Any]] = []
     for role, outcome, first_route in roles:
@@ -412,7 +446,11 @@ def _objection_map() -> list[dict[str, Any]]:
         {
             "objection": "I do not understand what to open first.",
             "answer": "Start from Scenario Hub, pick the pain, then follow the linked proof route.",
-            "scenario_ids": ["release-go-no-go", "left-join-null", "local-enterprise-proof"],
+            "scenario_ids": [
+                "release-go-no-go",
+                "left-join-null",
+                "local-enterprise-proof",
+            ],
             "proof_route": "/scenario-hub",
         },
         {
@@ -424,7 +462,11 @@ def _objection_map() -> list[dict[str, Any]]:
         {
             "objection": "Developers already have AI coding assistants.",
             "answer": "Rentgen proves 1C-specific risks around joins, impact, tests, platform and release gates locally.",
-            "scenario_ids": ["left-join-null", "change-blast-radius", "platform-upgrade"],
+            "scenario_ids": [
+                "left-join-null",
+                "change-blast-radius",
+                "platform-upgrade",
+            ],
             "proof_route": "/quality",
         },
         {
@@ -446,16 +488,56 @@ def _exports() -> list[dict[str, str]]:
     return [
         {"title": "Buyer Brief markdown", "filename": "buyer-brief.md", "route": "/"},
         {"title": "Buyer Pulse markdown", "filename": "buyer-pulse.md", "route": "/"},
-        {"title": "Buyer Concierge markdown", "filename": "rentgen-buyer-concierge.md", "route": "/buyer-concierge"},
-        {"title": "Demo Command Center markdown", "filename": "rentgen-demo-command-center.md", "route": "/demo-command-center"},
-        {"title": "Commercial Offer Studio markdown", "filename": "rentgen-commercial-offer-studio.md", "route": "/commercial-offer-studio"},
-        {"title": "Pilot Launchpad markdown", "filename": "rentgen-pilot-launchpad.md", "route": "/pilot-launchpad"},
-        {"title": "Scenario Hub markdown", "filename": "rentgen-scenario-hub.md", "route": "/scenario-hub"},
-        {"title": "Guided Demo markdown", "filename": "rentgen-guided-demo.md", "route": "/guided-demo"},
-        {"title": "Business Case markdown", "filename": "rentgen-business-case.md", "route": "/business-case"},
-        {"title": "Evidence Bundle manifest", "filename": "evidence-bundle-manifest.json", "route": "/evidence-bundle"},
-        {"title": "Enterprise Trust Center", "filename": "rentgen-enterprise-trust-center.md", "route": "/enterprise-trust-center"},
-        {"title": "Productization readiness", "filename": "productization-readiness.md", "route": "/productization"},
+        {
+            "title": "Buyer Concierge markdown",
+            "filename": "rentgen-buyer-concierge.md",
+            "route": "/buyer-concierge",
+        },
+        {
+            "title": "Demo Command Center markdown",
+            "filename": "rentgen-demo-command-center.md",
+            "route": "/demo-command-center",
+        },
+        {
+            "title": "Commercial Offer Studio markdown",
+            "filename": "rentgen-commercial-offer-studio.md",
+            "route": "/commercial-offer-studio",
+        },
+        {
+            "title": "Pilot Launchpad markdown",
+            "filename": "rentgen-pilot-launchpad.md",
+            "route": "/pilot-launchpad",
+        },
+        {
+            "title": "Scenario Hub markdown",
+            "filename": "rentgen-scenario-hub.md",
+            "route": "/scenario-hub",
+        },
+        {
+            "title": "Guided Demo markdown",
+            "filename": "rentgen-guided-demo.md",
+            "route": "/guided-demo",
+        },
+        {
+            "title": "Business Case markdown",
+            "filename": "rentgen-business-case.md",
+            "route": "/business-case",
+        },
+        {
+            "title": "Evidence Bundle manifest",
+            "filename": "evidence-bundle-manifest.json",
+            "route": "/evidence-bundle",
+        },
+        {
+            "title": "Enterprise Trust Center",
+            "filename": "rentgen-enterprise-trust-center.md",
+            "route": "/enterprise-trust-center",
+        },
+        {
+            "title": "Productization readiness",
+            "filename": "productization-readiness.md",
+            "route": "/productization",
+        },
     ]
 
 
@@ -473,7 +555,10 @@ def _scenario_room_bridge(
         "label": str(first_recommended.get("title") or "Pick buyer pain"),
         "route": str(first_recommended.get("route") or "/scenario-hub"),
         "status": "ready" if recommended_path else "watch",
-        "ask": str(first_recommended.get("why") or "Pick one pain, show one proof route and forward the packet."),
+        "ask": str(
+            first_recommended.get("why")
+            or "Pick one pain, show one proof route and forward the packet."
+        ),
         "reason": "Scenario Hub turns the product map into buyer-recognizable pains.",
     }
     if not primary:
@@ -517,10 +602,30 @@ def _scenario_room_bridge(
     meeting_flow = list(brief.get("meeting_flow") or [])
     if not meeting_flow:
         meeting_flow = [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Pick the role in the room."},
-            {"step": 2, "label": "Choose", "route": "/scenario-hub", "line": "Let the buyer choose the pain they recognize."},
-            {"step": 3, "label": "Prove", "route": "/killer-demo", "line": "Compress the chosen pain into the buyer-ready demo path."},
-            {"step": 4, "label": "Forward", "route": "/evidence-bundle", "line": "Forward buyer brief, scenario and proof artifacts."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Pick the role in the room.",
+            },
+            {
+                "step": 2,
+                "label": "Choose",
+                "route": "/scenario-hub",
+                "line": "Let the buyer choose the pain they recognize.",
+            },
+            {
+                "step": 3,
+                "label": "Prove",
+                "route": "/killer-demo",
+                "line": "Compress the chosen pain into the buyer-ready demo path.",
+            },
+            {
+                "step": 4,
+                "label": "Forward",
+                "route": "/evidence-bundle",
+                "line": "Forward buyer brief, scenario and proof artifacts.",
+            },
         ]
     open_first_path = build_open_first_path(
         existing_path=brief.get("open_first_path"),
@@ -531,13 +636,17 @@ def _scenario_room_bridge(
         orient_title="Scenario Hub",
         orient_route="/scenario-hub",
         orient_line="Let the buyer choose the pain they recognize.",
-        orient_status=str(primary.get("status") or scenario_motion.get("status") or "watch"),
+        orient_status=str(
+            primary.get("status") or scenario_motion.get("status") or "watch"
+        ),
         prove_line="Compress the chosen pain into the buyer-ready demo path.",
         close_title="Launch Room",
         close_route="/launch-room",
         close_line="Name paid proof or pilot from the selected pain.",
         close_file="launch-room.md",
-        close_status=str(primary.get("status") or scenario_motion.get("status") or "watch"),
+        close_status=str(
+            primary.get("status") or scenario_motion.get("status") or "watch"
+        ),
         verify_line="Forward buyer brief, scenario and proof artifacts.",
     )
 
@@ -567,14 +676,23 @@ def _scenario_room_bridge(
             "route": str(primary.get("route") or "/scenario-hub"),
             "status": str(primary.get("status") or "watch"),
             "ask": str(primary.get("ask") or "Choose a scenario and prove it."),
-            "reason": str(primary.get("reason") or "Pain-led entry prevents menu overload."),
+            "reason": str(
+                primary.get("reason") or "Pain-led entry prevents menu overload."
+            ),
         },
         "scenario_motion": scenario_motion,
         "role_cards": role_cards[:5],
         "proof_readiness": proof_readiness[:4],
         "meeting_flow": meeting_flow[:4],
         "open_first_path": open_first_path[:4],
-        "files": ["buyer-brief.md", "buyer-pulse.md", OPEN_FIRST_PATH_FILE, "rentgen-scenario-hub.md", "rentgen-guided-demo.md", "OPEN_FIRST.md"],
+        "files": [
+            "buyer-brief.md",
+            "buyer-pulse.md",
+            OPEN_FIRST_PATH_FILE,
+            "rentgen-scenario-hub.md",
+            "rentgen-guided-demo.md",
+            "OPEN_FIRST.md",
+        ],
         "routes": routes,
         "close_question": "Which pain is strong enough to open the paid proof or pilot?",
     }
@@ -592,7 +710,9 @@ def _markdown(report: dict[str, Any]) -> str:
         "",
     ]
     for item in report["recommended_path"]:
-        lines.append(f"- **{item['step']}. {item['title']}** (`{item['route']}`): {item['why']}")
+        lines.append(
+            f"- **{item['step']}. {item['title']}** (`{item['route']}`): {item['why']}"
+        )
     lines.extend(["", "## Scenarios", ""])
     for item in report["scenarios"]:
         lines.append(
@@ -601,23 +721,41 @@ def _markdown(report: dict[str, Any]) -> str:
         )
     lines.extend(["", "## Role lenses", ""])
     for item in report["role_lenses"]:
-        lines.append(f"- **{item['role']}**: {item['outcome']} (`{item['first_route']}`)")
+        lines.append(
+            f"- **{item['role']}**: {item['outcome']} (`{item['first_route']}`)"
+        )
     bridge = report.get("scenario_room_bridge") or {}
     if bridge:
         lines.extend(["", "## Scenario Room Bridge", ""])
-        lines.append(f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**")
+        lines.append(
+            f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**"
+        )
         lines.append(f"- Room line: {bridge.get('room_line', '')}")
         motion = bridge.get("primary_motion") or {}
-        lines.append(f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/scenario-hub')}`): {motion.get('ask', '')}")
+        lines.append(
+            f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/scenario-hub')}`): {motion.get('ask', '')}"
+        )
         scenario_motion = bridge.get("scenario_motion") or {}
-        lines.append(f"- Scenario motion: **{scenario_motion.get('label', 'n/a')}** (`{scenario_motion.get('route', '/scenario-hub')}`): {scenario_motion.get('ask', '')}")
-        lines.extend(open_first_path_markdown_lines(bridge.get("open_first_path"), default_route="/scenario-hub"))
+        lines.append(
+            f"- Scenario motion: **{scenario_motion.get('label', 'n/a')}** (`{scenario_motion.get('route', '/scenario-hub')}`): {scenario_motion.get('ask', '')}"
+        )
+        lines.extend(
+            open_first_path_markdown_lines(
+                bridge.get("open_first_path"), default_route="/scenario-hub"
+            )
+        )
         for item in bridge.get("role_cards", []):
-            lines.append(f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}")
+            lines.append(
+                f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}"
+            )
         for item in bridge.get("proof_readiness", []):
-            lines.append(f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}")
+            lines.append(
+                f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}"
+            )
         for item in bridge.get("meeting_flow", []):
-            lines.append(f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}")
+            lines.append(
+                f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}"
+            )
     lines.extend(["", "## Caveats", ""])
     lines.extend(f"- {item}" for item in report["caveats"])
     return "\n".join(lines)
@@ -674,7 +812,13 @@ def build_scenario_hub(
         _status(productization),
         _status(vendor_portfolio),
     }
-    status = "risk" if statuses & {"blocked", "critical", "fail"} else "ready" if score >= 82 else "watch"
+    status = (
+        "risk"
+        if statuses & {"blocked", "critical", "fail"}
+        else "ready"
+        if score >= 82
+        else "watch"
+    )
     proof_routes = sorted(
         {
             route["to"]
@@ -703,9 +847,13 @@ def build_scenario_hub(
         },
         "summary": {
             "scenarios": len(scenarios),
-            "killer_scenarios": sum(1 for item in scenarios if _int(item.get("severity")) >= 5),
+            "killer_scenarios": sum(
+                1 for item in scenarios if _int(item.get("severity")) >= 5
+            ),
             "roles": len(role_lenses),
-            "total_minutes": round(sum(float(item["minutes"]) for item in scenarios), 1),
+            "total_minutes": round(
+                sum(float(item["minutes"]) for item in scenarios), 1
+            ),
             "proof_routes": len(proof_routes),
             "value_packs": len(value_packs.get("packs") or []),
             "scenario_room_roles": len(scenario_room_bridge["role_cards"]),

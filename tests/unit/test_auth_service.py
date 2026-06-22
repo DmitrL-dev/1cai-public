@@ -1,4 +1,3 @@
-
 """Unit tests for the JWT AuthService."""
 
 from datetime import timedelta

@@ -28,7 +28,9 @@ from src.services.rentgen.security_posture import build_security_posture
 from src.services.rentgen.value_packs import build_value_packs
 from src.services.rentgen.vendor_portfolio import build_vendor_portfolio
 
-router = APIRouter(prefix="/api/v1/enterprise-trust-center", tags=["Enterprise Trust Center"])
+router = APIRouter(
+    prefix="/api/v1/enterprise-trust-center", tags=["Enterprise Trust Center"]
+)
 
 
 class EnterpriseTrustCenterAssumptions(BaseModel):
@@ -114,12 +116,23 @@ def _preview_rights_rls(req: EnterpriseTrustCenterRequest) -> dict[str, Any]:
 
 def _score_floor(report: dict[str, Any], floor: int) -> int:
     try:
-        return max(floor, int(float((report.get("decision") or {}).get("score") or report.get("score") or 0)))
+        return max(
+            floor,
+            int(
+                float(
+                    (report.get("decision") or {}).get("score")
+                    or report.get("score")
+                    or 0
+                )
+            ),
+        )
     except (TypeError, ValueError):
         return floor
 
 
-def _soften_preview_risk(report: dict[str, Any], *, headline: str, score_floor: int = 60) -> dict[str, Any]:
+def _soften_preview_risk(
+    report: dict[str, Any], *, headline: str, score_floor: int = 60
+) -> dict[str, Any]:
     decision = dict(report.get("decision") or {})
     status = str(decision.get("status") or report.get("status") or "")
     if status not in {"risk", "fail", "critical", "blocked"}:
@@ -130,7 +143,9 @@ def _soften_preview_risk(report: dict[str, Any], *, headline: str, score_floor: 
     decision["headline"] = headline
     softened["decision"] = decision
     caveats = list(softened.get("caveats") or [])
-    caveats.append("Preview depth surfaces missing facts as watch; run standard or deep depth to confirm hard blockers.")
+    caveats.append(
+        "Preview depth surfaces missing facts as watch; run standard or deep depth to confirm hard blockers."
+    )
     softened["caveats"] = caveats
     return softened
 
@@ -155,10 +170,14 @@ def _build_report(req: EnterpriseTrustCenterRequest) -> dict[str, Any]:
             score_floor=60,
         )
     intake = build_intake_plan(source_path=req.config_path, source_type="auto")
-    assumptions = req.assumptions.model_dump(exclude_none=True) if req.assumptions else None
+    assumptions = (
+        req.assumptions.model_dump(exclude_none=True) if req.assumptions else None
+    )
     buyer_brief = build_buyer_brief(
         executive=executive,
-        monthly_ai_subscription_cost=int((assumptions or {}).get("monthly_ai_subscription_cost") or 120_000),
+        monthly_ai_subscription_cost=int(
+            (assumptions or {}).get("monthly_ai_subscription_cost") or 120_000
+        ),
         currency=str((assumptions or {}).get("currency") or "RUB"),
     )
     value_packs = build_value_packs(executive, buyer_brief=buyer_brief)
@@ -317,7 +336,9 @@ def health() -> dict[str, Any]:
         "score": pulse["score"],
         "controls": 9,
         "failed_controls": questionnaire_blocked,
-        "questionnaire_status": "ready" if pulse["purchase_status"] == "ready" else "watch",
+        "questionnaire_status": "ready"
+        if pulse["purchase_status"] == "ready"
+        else "watch",
         "questionnaire_blocked": questionnaire_blocked,
         "purchase_status": pulse["purchase_status"],
         "three_year_ai_rent": pulse["commercial"]["three_year_ai_rent"],

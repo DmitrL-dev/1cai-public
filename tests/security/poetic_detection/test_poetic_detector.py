@@ -3,6 +3,7 @@ Tests for Poetic Form Detector
 """
 
 import pytest
+
 from src.security.poetic_detection.poetic_detector import PoeticFormDetector
 
 

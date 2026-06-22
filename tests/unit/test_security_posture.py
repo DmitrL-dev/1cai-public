@@ -66,7 +66,9 @@ def test_security_posture_links_rights_code_and_integrations(tmp_path):
     _write_config(tmp_path)
     _clear_caches()
 
-    report = build_security_posture(config_path=str(tmp_path), limit=20, module_limit=20)
+    report = build_security_posture(
+        config_path=str(tmp_path), limit=20, module_limit=20
+    )
 
     assert report["available"] is True
     assert report["summary"]["roles"] == 1
@@ -77,13 +79,17 @@ def test_security_posture_links_rights_code_and_integrations(tmp_path):
     assert report["summary"]["exchange_objects"] == 1
     assert report["decision"]["status"] == "warn"
     assert report["privileged_code_paths"][0]["module_path"].endswith("Module.bsl")
-    assert report["integration_exposure"]["metadata_objects"][0]["type"] == "HTTPService"
+    assert (
+        report["integration_exposure"]["metadata_objects"][0]["type"] == "HTTPService"
+    )
     assert "Security Posture" in report["markdown"]
 
 
 def test_security_posture_api_exposes_report(tmp_path, monkeypatch):
     _write_config(tmp_path)
-    monkeypatch.setattr("src.services.rentgen.security_posture.DEFAULT_CONFIG_PATH", tmp_path)
+    monkeypatch.setattr(
+        "src.services.rentgen.security_posture.DEFAULT_CONFIG_PATH", tmp_path
+    )
     _clear_caches()
 
     app = FastAPI()
@@ -101,7 +107,9 @@ def test_security_posture_api_exposes_report(tmp_path, monkeypatch):
 @pytest.mark.asyncio
 async def test_mcp_security_posture_tool_is_registered(tmp_path, monkeypatch):
     _write_config(tmp_path)
-    monkeypatch.setattr("src.services.rentgen.security_posture.DEFAULT_CONFIG_PATH", tmp_path)
+    monkeypatch.setattr(
+        "src.services.rentgen.security_posture.DEFAULT_CONFIG_PATH", tmp_path
+    )
     _clear_caches()
 
     names = {tool.name for tool in TOOLS}

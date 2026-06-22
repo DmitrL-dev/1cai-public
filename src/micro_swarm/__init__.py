@@ -14,28 +14,28 @@ BSL Domains (Phase 3.5):
     ERROR_PREDICTOR_DOMAIN, CONFIG_SIMILARITY_DOMAIN
 """
 
-from src.micro_swarm.engine import Value
-from src.micro_swarm.model import MicroModel, MicroModelConfig
-from src.micro_swarm.domains import (
-    DomainConfig,
-    FeatureSpec,
-    NormMethod,
-    QUERY_INTENT_DOMAIN,
-    ROLE_DETECTION_DOMAIN,
-    ANOMALY_DETECTION_DOMAIN,
-)
 from src.micro_swarm.bsl_domains import (
     BSL_PATTERN_DOMAIN,
     BSL_QUALITY_DOMAIN,
-    QUERY_OPTIMIZER_DOMAIN,
-    ERROR_PREDICTOR_DOMAIN,
     CONFIG_SIMILARITY_DOMAIN,
+    ERROR_PREDICTOR_DOMAIN,
+    QUERY_OPTIMIZER_DOMAIN,
     extract_bsl_pattern_features,
     extract_bsl_quality_features,
-    extract_query_optimizer_features,
-    extract_error_features,
     extract_config_features,
+    extract_error_features,
+    extract_query_optimizer_features,
 )
+from src.micro_swarm.domains import (
+    ANOMALY_DETECTION_DOMAIN,
+    QUERY_INTENT_DOMAIN,
+    ROLE_DETECTION_DOMAIN,
+    DomainConfig,
+    FeatureSpec,
+    NormMethod,
+)
+from src.micro_swarm.engine import Value
+from src.micro_swarm.model import MicroModel, MicroModelConfig
 from src.micro_swarm.router import (
     RouterDecision,
     RouterResult,

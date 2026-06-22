@@ -10,7 +10,6 @@ Inspired by Nested Learning paradigm.
 import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-
 if TYPE_CHECKING:
     from src.modules.copilot.services.copilot_service import CopilotService
 
@@ -91,7 +90,8 @@ class NestedCopilotService:
 
         # 1. Get suggestions from all levels
         level_suggestions = self.code_memory.get_suggestions(
-            code, context=context, k=max_suggestions)
+            code, context=context, k=max_suggestions
+        )
 
         # 2. Merge and score suggestions
         merged = self._merge_suggestions(level_suggestions, code, context)
@@ -100,7 +100,8 @@ class NestedCopilotService:
         if len(merged) < max_suggestions:
             try:
                 base_completions = self.base.get_completions(
-                    code, max_completions=max_suggestions - len(merged))
+                    code, max_completions=max_suggestions - len(merged)
+                )
 
                 # Add base completions with lower confidence
                 for comp in base_completions:
@@ -129,14 +130,19 @@ class NestedCopilotService:
 
         logger.debug(
             "Generated nested completions",
-            extra={"num_suggestions": len(merged[:max_suggestions]), "levels_used": list(
-                level_suggestions.keys())},
+            extra={
+                "num_suggestions": len(merged[:max_suggestions]),
+                "levels_used": list(level_suggestions.keys()),
+            },
         )
 
         return merged[:max_suggestions]
 
     def _merge_suggestions(
-        self, level_suggestions: Dict[str, List[Tuple[str, float, Any]]], code: str, context: Dict
+        self,
+        level_suggestions: Dict[str, List[Tuple[str, float, Any]]],
+        code: str,
+        context: Dict,
     ) -> List[Dict[str, Any]]:
         """
         Merge suggestions from multiple levels with confidence scoring
@@ -206,17 +212,37 @@ class NestedCopilotService:
 
         if code_type == "platform":
             # Platform code: rely on platform knowledge
-            return {"char": 0.1, "token": 0.1, "function": 0.2, "project": 0.1, "platform": 0.5}
+            return {
+                "char": 0.1,
+                "token": 0.1,
+                "function": 0.2,
+                "project": 0.1,
+                "platform": 0.5,
+            }
 
         elif code_type == "new":
             # New code: rely on fast levels
-            return {"char": 0.4, "token": 0.3, "function": 0.2, "project": 0.05, "platform": 0.05}
+            return {
+                "char": 0.4,
+                "token": 0.3,
+                "function": 0.2,
+                "project": 0.05,
+                "platform": 0.05,
+            }
 
         else:
             # Default: balanced
-            return {"char": 0.25, "token": 0.25, "function": 0.25, "project": 0.15, "platform": 0.1}
+            return {
+                "char": 0.25,
+                "token": 0.25,
+                "function": 0.25,
+                "project": 0.15,
+                "platform": 0.1,
+            }
 
-    def learn_from_acceptance(self, completion_id: str, accepted: bool, selected_index: Optional[int] = None):
+    def learn_from_acceptance(
+        self, completion_id: str, accepted: bool, selected_index: Optional[int] = None
+    ):
         """
         Learn from user acceptance/rejection
 
@@ -250,7 +276,11 @@ class NestedCopilotService:
             self.stats["acceptance_rate"] = self.stats["total_acceptances"] / total
 
         # Learn from feedback
-        if accepted and selected_index is not None and selected_index < len(suggestions):
+        if (
+            accepted
+            and selected_index is not None
+            and selected_index < len(suggestions)
+        ):
             # Accepted suggestion
             selected = suggestions[selected_index]
             code = history["code"] + selected["text"]

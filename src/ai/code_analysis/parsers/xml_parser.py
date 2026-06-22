@@ -124,11 +124,15 @@ class OneCXMLParser:
 
         # Generate ID (using Name as stable identifier for now, or UUID if present)
         uuid = props.get("Uuid")
-        node_id = f"{kind.value}:{name}" if name != "Unknown" else f"{kind.value}:{uuid}"
+        node_id = (
+            f"{kind.value}:{name}" if name != "Unknown" else f"{kind.value}:{uuid}"
+        )
 
         # Extract nested collections
         attributes = self._extract_collection(element, "Attributes", "Attribute")
-        tabular_sections = self._extract_collection(element, "TabularSections", "TabularSection")
+        tabular_sections = self._extract_collection(
+            element, "TabularSections", "TabularSection"
+        )
         forms = self._extract_collection(element, "Forms", "Form")
         templates = self._extract_collection(element, "Templates", "Template")
         commands = self._extract_collection(element, "Commands", "Command")
@@ -178,7 +182,9 @@ class OneCXMLParser:
                 props[child.tag] = child.text
         return props
 
-    def _extract_collection(self, element: ET.Element, collection_tag: str, item_tag: str) -> List[Dict[str, Any]]:
+    def _extract_collection(
+        self, element: ET.Element, collection_tag: str, item_tag: str
+    ) -> List[Dict[str, Any]]:
         """Extract a list of items from a child collection element."""
         items = []
 

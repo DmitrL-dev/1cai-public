@@ -31,7 +31,10 @@ def test_platform_doctor_uses_env_and_config(tmp_path, monkeypatch):
     assert report["inventory"]["target_platform_version"] == "8.3.26.1000"
     assert report["inventory"]["dbms"] == "PostgreSQL"
     assert report["decision"]["score"] >= 70
-    assert any(item["id"] == "openmetrics-8325" and item["available"] for item in report["capabilities"])
+    assert any(
+        item["id"] == "openmetrics-8325" and item["available"]
+        for item in report["capabilities"]
+    )
     assert "Platform Doctor" in report["markdown"]
 
 
@@ -48,7 +51,9 @@ def test_platform_doctor_keeps_unknowns_as_warnings(tmp_path, monkeypatch):
     assert check_by_id["platform-version"]["status"] == "warn"
     assert check_by_id["compatibility-mode"]["status"] == "warn"
     assert "Unknown platform facts" in "\n".join(report["caveats"])
-    assert any("ONEC_PLATFORM_VERSION" in item for item in report["upgrade"]["checklist"])
+    assert any(
+        "ONEC_PLATFORM_VERSION" in item for item in report["upgrade"]["checklist"]
+    )
 
 
 def test_platform_doctor_rejects_path_outside_data_roots():

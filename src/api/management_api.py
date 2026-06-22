@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from io import BytesIO
 import hashlib
 import json
+from io import BytesIO
 from typing import Any
-from zipfile import BadZipFile, ZIP_DEFLATED, ZipFile
+from zipfile import ZIP_DEFLATED, BadZipFile, ZipFile
 
 from fastapi import APIRouter, Query, Response
 from pydantic import BaseModel, Field
@@ -46,7 +46,9 @@ BUYER_ROOM_PACKET_REQUIRED_FILES = {
 
 
 def _json_bytes(payload: Any) -> bytes:
-    return json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True, default=str).encode("utf-8")
+    return json.dumps(
+        payload, ensure_ascii=False, indent=2, sort_keys=True, default=str
+    ).encode("utf-8")
 
 
 def _markdown_bytes(markdown: str) -> bytes:
@@ -103,7 +105,10 @@ def _buyer_room_plan_markdown(plan: dict[str, Any]) -> str:
         "",
         f"## {_text(plan.get('title'), 'Open buyer route')}",
         "",
-        _text(plan.get("start_with"), "Open one buyer route before deep workbench navigation."),
+        _text(
+            plan.get("start_with"),
+            "Open one buyer route before deep workbench navigation.",
+        ),
         "",
         f"Close question: {_text(plan.get('close_question'), 'What is the next paid step?')}",
         "",
@@ -135,7 +140,9 @@ def _procurement_handoff_markdown(handoff: dict[str, Any]) -> str:
         "",
     ]
     for item in handoff.get("open_order") or []:
-        lines.append(f"### {_text(item.get('step'), '?')}. {_text(item.get('label'), 'Artifact')}")
+        lines.append(
+            f"### {_text(item.get('step'), '?')}. {_text(item.get('label'), 'Artifact')}"
+        )
         lines.append("")
         lines.append(f"- Route: {_text(item.get('route'), '/')}")
         if item.get("endpoint"):
@@ -147,7 +154,9 @@ def _procurement_handoff_markdown(handoff: dict[str, Any]) -> str:
         lines.append("")
     lines.extend(["## Attachments", ""])
     for item in handoff.get("attachments") or []:
-        lines.append(f"- `{_text(item.get('file'), '')}` - {_text(item.get('why'), '')}")
+        lines.append(
+            f"- `{_text(item.get('file'), '')}` - {_text(item.get('why'), '')}"
+        )
         if item.get("endpoint"):
             lines.append(f"  Endpoint: {_text(item.get('endpoint'))}")
         if item.get("hash_header"):
@@ -184,7 +193,9 @@ def _purchase_path_markdown(path: dict[str, Any]) -> str:
     ]:
         artifact = path.get(key) or {}
         if artifact:
-            lines.append(f"- {_text(artifact.get('title'), key)}: `{_text(artifact.get('file'), '')}`")
+            lines.append(
+                f"- {_text(artifact.get('title'), key)}: `{_text(artifact.get('file'), '')}`"
+            )
             if artifact.get("endpoint"):
                 lines.append(f"  Endpoint: {_text(artifact.get('endpoint'))}")
             if artifact.get("hash_header"):
@@ -203,7 +214,9 @@ def _open_first_path_markdown(path: list[dict[str, Any]]) -> str:
         "",
     ]
     for item in path:
-        lines.append(f"## {_text(item.get('step'), '?')}. {_text(item.get('label'), 'Step')}")
+        lines.append(
+            f"## {_text(item.get('step'), '?')}. {_text(item.get('label'), 'Step')}"
+        )
         lines.append("")
         lines.append(f"- Stage: {_text(item.get('stage'), '')}")
         lines.append(f"- Title: {_text(item.get('title'), '')}")
@@ -258,8 +271,8 @@ def _buyer_brief_markdown(brief: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
-        "## Role Cards",
-        "",
+            "## Role Cards",
+            "",
         ]
     )
     for item in brief.get("role_cards") or []:
@@ -327,19 +340,28 @@ def _buyer_room_packet_archive(brief: dict[str, Any]) -> tuple[bytes, list[str]]
     path = brief.get("purchase_path") or {}
     handoff = path.get("procurement_handoff") or {}
     files: list[tuple[str, bytes]] = [
-        (BUYER_ROOM_PACKET_OPEN_FIRST, _markdown_bytes(_open_first_buyer_room_markdown(brief))),
+        (
+            BUYER_ROOM_PACKET_OPEN_FIRST,
+            _markdown_bytes(_open_first_buyer_room_markdown(brief)),
+        ),
         ("buyer-brief.json", _json_bytes(brief)),
         ("buyer-brief.md", _markdown_bytes(_buyer_brief_markdown(brief))),
         ("buyer-pulse.json", _json_bytes(pulse)),
         ("buyer-pulse.md", _markdown_bytes(_buyer_pulse_markdown(pulse))),
         ("open-first-path.json", _json_bytes(open_first_path)),
-        ("open-first-path.md", _markdown_bytes(_open_first_path_markdown(open_first_path))),
+        (
+            "open-first-path.md",
+            _markdown_bytes(_open_first_path_markdown(open_first_path)),
+        ),
         ("buyer-room-plan.json", _json_bytes(plan)),
         ("buyer-room-plan.md", _markdown_bytes(_buyer_room_plan_markdown(plan))),
         ("purchase-path.json", _json_bytes(path)),
         ("purchase-path.md", _markdown_bytes(_purchase_path_markdown(path))),
         ("procurement-handoff.json", _json_bytes(handoff)),
-        ("procurement-handoff.md", _markdown_bytes(_procurement_handoff_markdown(handoff))),
+        (
+            "procurement-handoff.md",
+            _markdown_bytes(_procurement_handoff_markdown(handoff)),
+        ),
     ]
     hash_entries = [
         {"file": filename, "sha256": _sha256_bytes(content), "bytes": len(content)}
@@ -377,7 +399,9 @@ def _verify_finding_summary(findings: list[dict[str, Any]]) -> dict[str, int]:
     }
 
 
-def _verify_buyer_room_packet_payload(content: bytes, *, filename: str = BUYER_ROOM_PACKET_FILENAME) -> dict[str, Any]:
+def _verify_buyer_room_packet_payload(
+    content: bytes, *, filename: str = BUYER_ROOM_PACKET_FILENAME
+) -> dict[str, Any]:
     archive_sha256 = _sha256_bytes(content)
     findings: list[dict[str, Any]] = []
     names: set[str] = set()
@@ -448,7 +472,9 @@ def _verify_buyer_room_packet_payload(content: bytes, *, filename: str = BUYER_R
                     entry_file = str(item.get("file") or "")
                     if entry_file not in names:
                         continue
-                    if _sha256_bytes(archive.read(entry_file)) != str(item.get("sha256") or ""):
+                    if _sha256_bytes(archive.read(entry_file)) != str(
+                        item.get("sha256") or ""
+                    ):
                         bad_hashes.append(entry_file)
                 if bad_hashes:
                     findings.append(
@@ -464,9 +490,17 @@ def _verify_buyer_room_packet_payload(content: bytes, *, filename: str = BUYER_R
                 else:
                     hash_table_status = "fail"
     except BadZipFile:
-        findings.append({"severity": "high", "code": "zip-invalid", "message": "Payload is not a readable ZIP archive."})
+        findings.append(
+            {
+                "severity": "high",
+                "code": "zip-invalid",
+                "message": "Payload is not a readable ZIP archive.",
+            }
+        )
     except (UnicodeDecodeError, json.JSONDecodeError, TypeError) as exc:
-        findings.append({"severity": "high", "code": "packet-json-invalid", "message": str(exc)})
+        findings.append(
+            {"severity": "high", "code": "packet-json-invalid", "message": str(exc)}
+        )
 
     summary = _verify_finding_summary(findings)
     status = "fail" if summary["high"] else "warn" if findings else "pass"
@@ -624,7 +658,9 @@ def verify_buyer_room_packet(
         monthly_ai_subscription_cost=monthly_ai_subscription_cost,
     )
     content, _filenames = _buyer_room_packet_archive(brief)
-    return _verify_buyer_room_packet_payload(content, filename=BUYER_ROOM_PACKET_FILENAME)
+    return _verify_buyer_room_packet_payload(
+        content, filename=BUYER_ROOM_PACKET_FILENAME
+    )
 
 
 @router.get("/role-report/{role}")
@@ -655,4 +691,7 @@ def intake_plan(req: IntakePlanRequest) -> dict[str, Any]:
 @router.get("/health")
 def health() -> dict[str, Any]:
     store = store_or_none()
-    return {"status": "ok" if store is not None else "store_not_built", "store": store is not None}
+    return {
+        "status": "ok" if store is not None else "store_not_built",
+        "store": store is not None,
+    }

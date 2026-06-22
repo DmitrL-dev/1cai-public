@@ -1,4 +1,3 @@
-
 """
 PostgreSQL Saver for 1C Configurations
 Версия: 2.1.0
@@ -50,6 +49,7 @@ class PostgreSQLSaver:
         if database_url:
             try:
                 from urllib.parse import urlparse
+
                 parsed = urlparse(database_url)
                 host = host or parsed.hostname or "localhost"
                 port = port or parsed.port or 5432
@@ -83,7 +83,8 @@ class PostgreSQLSaver:
 
         if not password:
             raise ValueError(
-                "PostgreSQL password not provided (set POSTGRES_PASSWORD or DATABASE_URL)")
+                "PostgreSQL password not provided (set POSTGRES_PASSWORD or DATABASE_URL)"
+            )
 
         self.conn_params = {
             "host": host,

@@ -1,4 +1,3 @@
-
 """
 Extended MCP Server with Multi-Role Support
 Расширенный MCP Server с поддержкой множественных ролей
@@ -216,7 +215,9 @@ class MultiRoleMCPServer:
             role="architect",
             summary=f"Архитектурный анализ {config_name} строится только по переданному графу.",
             context=context,
-            required_evidence=[] if status == "success" else ["metadata_graph", "modules", "dependencies"],
+            required_evidence=[]
+            if status == "success"
+            else ["metadata_graph", "modules", "dependencies"],
             data={
                 "config_name": config_name,
                 "modules_count": len(modules),
@@ -257,8 +258,15 @@ class MultiRoleMCPServer:
             role="architect",
             summary=f"Технический долг {config_name} требует метрик, правил оценки и истории дефектов.",
             context=context,
-            required_evidence=["quality_metrics", "duplication_report", "complexity_report", "bug_history"],
-            data={"tech_debt": {"measured": False, "total_days": None, "by_category": {}}},
+            required_evidence=[
+                "quality_metrics",
+                "duplication_report",
+                "complexity_report",
+                "bug_history",
+            ],
+            data={
+                "tech_debt": {"measured": False, "total_days": None, "by_category": {}}
+            },
         )
 
     # ===== DevOps Tools =====
@@ -269,7 +277,9 @@ class MultiRoleMCPServer:
         lower = pipeline.lower()
         if pipeline.strip():
             if "cache" not in lower:
-                recommendations.append("Проверить кеширование зависимостей/build artifacts.")
+                recommendations.append(
+                    "Проверить кеширование зависимостей/build artifacts."
+                )
             if "test" not in lower and "тест" not in lower:
                 recommendations.append("Добавить явный test gate перед deploy.")
             if "approval" not in lower and "approve" not in lower:
@@ -289,13 +299,17 @@ class MultiRoleMCPServer:
         bottlenecks = []
         for key, value in (metrics or {}).items():
             if isinstance(value, (int, float)) and value >= 80:
-                bottlenecks.append({"metric": key, "value": value, "reason": ">= 80 threshold"})
+                bottlenecks.append(
+                    {"metric": key, "value": value, "reason": ">= 80 threshold"}
+                )
         return self._offline_contract(
             tool="devops:analyze_performance",
             role="devops",
             summary="Performance triage использует только переданные числовые метрики.",
             context={**(context or {}), "metrics_keys": sorted((metrics or {}).keys())},
-            required_evidence=[] if metrics else ["metrics", "tech_journal", "slow_query_log"],
+            required_evidence=[]
+            if metrics
+            else ["metrics", "tech_journal", "slow_query_log"],
             data={"bottlenecks": bottlenecks, "recommendations": []},
             status="success" if metrics else "needs_evidence",
         )
@@ -304,10 +318,14 @@ class MultiRoleMCPServer:
         """Анализ логов"""
         lines = [line for line in logs.splitlines() if line.strip()]
         error_lines = [
-            line for line in lines if any(marker in line.lower() for marker in ("error", "ошиб", "exception"))
+            line
+            for line in lines
+            if any(marker in line.lower() for marker in ("error", "ошиб", "exception"))
         ]
         warning_lines = [
-            line for line in lines if any(marker in line.lower() for marker in ("warn", "предупреж"))
+            line
+            for line in lines
+            if any(marker in line.lower() for marker in ("warn", "предупреж"))
         ]
         return self._offline_contract(
             tool="devops:analyze_logs",
@@ -333,8 +351,13 @@ class MultiRoleMCPServer:
             tool="devops:capacity_planning",
             role="devops",
             summary="Capacity planning требует фактической утилизации и тренда.",
-            context={**(context or {}), "usage_keys": sorted((usage_data or {}).keys())},
-            required_evidence=[] if current else ["usage_data.current_capacity", "trend_history"],
+            context={
+                **(context or {}),
+                "usage_keys": sorted((usage_data or {}).keys()),
+            },
+            required_evidence=[]
+            if current
+            else ["usage_data.current_capacity", "trend_history"],
             data=data,
             status="success" if current else "needs_evidence",
         )
@@ -350,7 +373,11 @@ class MultiRoleMCPServer:
             summary=f"API docs для {module_name} требуют кода, OpenAPI или списка endpoints.",
             context=context,
             required_evidence=[] if code else ["code", "openapi", "endpoints"],
-            data={"documentation": f"# API Documentation: {module_name}\n\nИсточник: переданный код.\n" if code else ""},
+            data={
+                "documentation": f"# API Documentation: {module_name}\n\nИсточник: переданный код.\n"
+                if code
+                else ""
+            },
             status="success" if code else "needs_evidence",
         )
 
@@ -374,7 +401,11 @@ class MultiRoleMCPServer:
             summary="Документирование функции требует исходного кода.",
             context={**(context or {}), "code_provided": has_code},
             required_evidence=[] if has_code else ["code"],
-            data={"documentation": "Описание должно быть сформировано из сигнатуры и комментариев переданного кода." if has_code else ""},
+            data={
+                "documentation": "Описание должно быть сформировано из сигнатуры и комментариев переданного кода."
+                if has_code
+                else ""
+            },
             status="success" if has_code else "needs_evidence",
         )
 
@@ -386,8 +417,13 @@ class MultiRoleMCPServer:
             role="technical_writer",
             summary=f"Release notes v{version} требуют commits/change set.",
             context=context,
-            required_evidence=[] if commits else ["commits", "change_set", "fixed_bugs"],
-            data={"release_notes": f"# Release Notes v{version}\n\n" + "\n".join(f"- {commit}" for commit in commits)},
+            required_evidence=[]
+            if commits
+            else ["commits", "change_set", "fixed_bugs"],
+            data={
+                "release_notes": f"# Release Notes v{version}\n\n"
+                + "\n".join(f"- {commit}" for commit in commits)
+            },
             status="success" if commits else "needs_evidence",
         )
 

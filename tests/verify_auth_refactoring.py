@@ -1,6 +1,7 @@
-import sys
-import os
 import asyncio
+import os
+import sys
+
 from fastapi import FastAPI
 
 # Add project root to path
@@ -13,11 +14,11 @@ async def verify_auth_refactoring():
     try:
         # 1. Verify Imports
         print("1. Verifying Imports...")
-        from src.modules.auth.application.service import AuthService
-        from src.modules.auth.application.oauth_service import OAuthService
-        from src.modules.auth.infrastructure.config import AuthSettings
-        from src.modules.auth.api.routes import router as auth_router
         from src.modules.auth.api.oauth_routes import router as oauth_router
+        from src.modules.auth.api.routes import router as auth_router
+        from src.modules.auth.application.oauth_service import OAuthService
+        from src.modules.auth.application.service import AuthService
+        from src.modules.auth.infrastructure.config import AuthSettings
 
         print("   Imports successful.")
 
@@ -60,12 +61,16 @@ async def verify_auth_refactoring():
         if found_auth:
             print("   Auth router found in main app.")
         else:
-            print("   WARNING: Auth router NOT found in main app (might be under /api/v1).")
+            print(
+                "   WARNING: Auth router NOT found in main app (might be under /api/v1)."
+            )
 
         if found_oauth:
             print("   OAuth router found in main app.")
         else:
-            print("   WARNING: OAuth router NOT found in main app (might be under /api/v1).")
+            print(
+                "   WARNING: OAuth router NOT found in main app (might be under /api/v1)."
+            )
 
         print("Verification Complete: SUCCESS")
 

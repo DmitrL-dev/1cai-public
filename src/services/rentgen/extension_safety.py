@@ -12,7 +12,6 @@ from src.services.rentgen.metadata_graph import DEFAULT_CONFIG_PATH
 from src.services.rentgen.path_safety import collect_files, confine_path
 from src.services.rentgen.test_coverage_matrix import build_test_coverage_matrix
 
-
 EXTENSION_ROOTS = ("Extensions", "Расширения")
 OBJECT_MARKERS = {
     "commonmodules",
@@ -28,11 +27,35 @@ OBJECT_MARKERS = {
 }
 TEXT_SUFFIXES = {".bsl", ".xml", ".txt", ".json", ".md"}
 RISK_PATTERNS = (
-    ("privileged-mode", "high", ("setprivilegedmode", "установитьпривилегированныйрежим", "привилегированныйрежим")),
-    ("explicit-transaction", "medium", ("begintransaction", "начатьтранзакцию", "зафиксироватьтранзакцию")),
-    ("write-event", "medium", ("передзаписью", "призаписи", "обработкапроведения", "приwrite", "beforewrite")),
-    ("background-job", "medium", ("регламентноезадание", "scheduledjob", "backgroundjob")),
-    ("unsafe-query", "medium", ("левое соединение", "left join", "полное соединение", "full join")),
+    (
+        "privileged-mode",
+        "high",
+        (
+            "setprivilegedmode",
+            "установитьпривилегированныйрежим",
+            "привилегированныйрежим",
+        ),
+    ),
+    (
+        "explicit-transaction",
+        "medium",
+        ("begintransaction", "начатьтранзакцию", "зафиксироватьтранзакцию"),
+    ),
+    (
+        "write-event",
+        "medium",
+        ("передзаписью", "призаписи", "обработкапроведения", "приwrite", "beforewrite"),
+    ),
+    (
+        "background-job",
+        "medium",
+        ("регламентноезадание", "scheduledjob", "backgroundjob"),
+    ),
+    (
+        "unsafe-query",
+        "medium",
+        ("левое соединение", "left join", "полное соединение", "full join"),
+    ),
 )
 
 
@@ -55,7 +78,9 @@ def _safe_text(path: Path, limit: int = 250_000) -> str:
         return ""
 
 
-def _discover_extension_paths(config_path: Path, limit: int) -> tuple[list[Path], list[str]]:
+def _discover_extension_paths(
+    config_path: Path, limit: int
+) -> tuple[list[Path], list[str]]:
     items: list[Path] = []
     caveats: list[str] = []
     for root in _extension_roots(config_path):
@@ -70,7 +95,9 @@ def _discover_extension_paths(config_path: Path, limit: int) -> tuple[list[Path]
             if item.is_dir() or item.suffix.casefold() in {".cfe", ".xml"}:
                 items.append(item)
     try:
-        for item in sorted(config_path.glob("*.cfe"), key=lambda value: value.name.casefold()):
+        for item in sorted(
+            config_path.glob("*.cfe"), key=lambda value: value.name.casefold()
+        ):
             if len(items) >= limit:
                 break
             items.append(item)
@@ -125,7 +152,11 @@ def _signals_for_file(path: Path, extension_path: Path) -> list[dict[str, Any]]:
     haystack = f"{path.as_posix()}\n{text}".casefold().replace(" ", "")
     signals = []
 
-    if "roles/" in path.as_posix().casefold() or "rights" in path.name.casefold() or "права" in path.name.casefold():
+    if (
+        "roles/" in path.as_posix().casefold()
+        or "rights" in path.name.casefold()
+        or "права" in path.name.casefold()
+    ):
         signals.append(
             {
                 "id": "rights-surface",
@@ -161,7 +192,9 @@ def _signals_for_file(path: Path, extension_path: Path) -> list[dict[str, Any]]:
 def _extension_item(path: Path, *, max_files: int) -> dict[str, Any]:
     files, truncated = _iter_files(path, max_files=max_files)
     suffix_counts = Counter(item.suffix.casefold() or "<none>" for item in files)
-    bsl_modules = dedupe([ref for item in files if (ref := _canonical_module_ref(item, path))])
+    bsl_modules = dedupe(
+        [ref for item in files if (ref := _canonical_module_ref(item, path))]
+    )
     objects = dedupe([ref for item in files if (ref := _object_ref(item, path))])
     signals: list[dict[str, Any]] = []
     for item in files:
@@ -201,10 +234,14 @@ def _module_impact(
     caveats = []
     for module in modules[:30]:
         try:
-            impact = store.module_impact(module, max_depth=max_depth, max_edges=max_edges)
+            impact = store.module_impact(
+                module, max_depth=max_depth, max_edges=max_edges
+            )
             quality = store.get_module_risk(module)
         except Exception as exc:  # pragma: no cover - defensive integration guard
-            caveats.append(f"Impact analysis failed for extension module {module}: {exc}")
+            caveats.append(
+                f"Impact analysis failed for extension module {module}: {exc}"
+            )
             continue
         rows.append(
             {
@@ -236,14 +273,17 @@ def _test_matrix(
     if store is None or not modules:
         return None, []
     try:
-        return build_test_coverage_matrix(
-            store,
-            changed_modules=modules[:30],
-            max_depth=max_depth,
-            max_edges=max_edges,
-            hotspot_limit=8,
-            match_limit=8,
-        ), []
+        return (
+            build_test_coverage_matrix(
+                store,
+                changed_modules=modules[:30],
+                max_depth=max_depth,
+                max_edges=max_edges,
+                hotspot_limit=8,
+                match_limit=8,
+            ),
+            [],
+        )
     except Exception as exc:  # pragma: no cover - defensive integration guard
         return None, [f"Test coverage matrix failed for extension modules: {exc}"]
 
@@ -276,7 +316,10 @@ def _decision(
         severity.update(item.get("severity_counts") or {})
         signal_counts.update(item.get("signal_counts") or {})
 
-    max_module_risk = max((int((row.get("quality") or {}).get("risk") or 0) for row in impact_rows), default=0)
+    max_module_risk = max(
+        (int((row.get("quality") or {}).get("risk") or 0) for row in impact_rows),
+        default=0,
+    )
     impact_total = sum(int(row.get("impact_total") or 0) for row in impact_rows)
     test_gaps = int(((test_matrix or {}).get("summary") or {}).get("gaps") or 0)
     risk_score = 0
@@ -295,7 +338,9 @@ def _decision(
         headline = f"Extension safety needs owner review: {len(extensions)} extensions, risk {risk_score}."
     elif risk_score >= 25:
         status = "watch"
-        headline = f"Extensions are present and need release-gate checks: risk {risk_score}."
+        headline = (
+            f"Extensions are present and need release-gate checks: risk {risk_score}."
+        )
     else:
         status = "ready"
         headline = "Extensions are inventoried with no high-risk deterministic signals."
@@ -405,7 +450,10 @@ def _markdown(report: dict[str, Any]) -> str:
             f"{len(item['signals'])} signals"
         )
     lines.extend(["", "## Actions", ""])
-    lines.extend(f"- **{item['severity']}** {item['owner']}: {item['title']}" for item in report["recommended_actions"])
+    lines.extend(
+        f"- **{item['severity']}** {item['owner']}: {item['title']}"
+        for item in report["recommended_actions"]
+    )
     if report["caveats"]:
         lines.extend(["", "## Caveats", ""])
         lines.extend(f"- {item}" for item in report["caveats"])
@@ -444,11 +492,7 @@ def build_extension_safety(
         for path in extension_paths
     ]
     extension_modules = dedupe(
-        [
-            module
-            for item in extensions
-            for module in item.get("modules", [])
-        ]
+        [module for item in extensions for module in item.get("modules", [])]
     )
     modules = dedupe([*(changed_modules or []), *extension_modules])
     impact_rows, impact_caveats = _module_impact(
@@ -466,9 +510,13 @@ def build_extension_safety(
     caveats.extend(impact_caveats)
     caveats.extend(test_caveats)
     if source.exists() and not extensions:
-        caveats.append("No Extensions/Расширения folders or root .cfe files were found.")
+        caveats.append(
+            "No Extensions/Расширения folders or root .cfe files were found."
+        )
     if store is None and modules:
-        caveats.append("Rentgen store is unavailable; extension impact and test links are skipped.")
+        caveats.append(
+            "Rentgen store is unavailable; extension impact and test links are skipped."
+        )
 
     severity = Counter()
     signal_counts = Counter()

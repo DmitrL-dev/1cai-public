@@ -7,9 +7,10 @@ Supports:
 """
 
 import logging
-import aiohttp
 from enum import Enum
 from typing import Any, Dict, Optional
+
+import aiohttp
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ CICD_EVIDENCE_CONTRACT = "cicd_evidence_contract"
 
 class CIPlatform(Enum):
     """CI/CD platforms"""
+
     GITLAB = "gitlab"
     GITHUB = "github"
 
@@ -30,10 +32,7 @@ class CICDClient:
     """
 
     def __init__(
-        self,
-        platform: CIPlatform,
-        api_token: str,
-        base_url: Optional[str] = None
+        self, platform: CIPlatform, api_token: str, base_url: Optional[str] = None
     ):
         """
         Initialize CI/CD client
@@ -60,7 +59,7 @@ class CICDClient:
         self,
         project_id: str,
         ref: str = "main",
-        variables: Optional[Dict[str, str]] = None
+        variables: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """
         Trigger CI/CD pipeline
@@ -78,7 +77,7 @@ class CICDClient:
                 if variables:
                     for k, v in variables.items():
                         data[f"variables[{k}]"] = v
-                
+
                 async with session.post(url, headers=headers, data=data) as resp:
                     if resp.status >= 400:
                         text = await resp.text()
@@ -88,16 +87,22 @@ class CICDClient:
 
             elif self.platform == CIPlatform.GITHUB:
                 # GitHub requires workflow_id. For now, we assume 'main.yml' or passed in variables
-                workflow_id = variables.get("workflow_id", "main.yml") if variables else "main.yml"
+                workflow_id = (
+                    variables.get("workflow_id", "main.yml")
+                    if variables
+                    else "main.yml"
+                )
                 url = f"{self.base_url}/repos/{project_id}/actions/workflows/{workflow_id}/dispatches"
                 headers = {
                     "Authorization": f"Bearer {self.api_token}",
-                    "Accept": "application/vnd.github.v3+json"
+                    "Accept": "application/vnd.github.v3+json",
                 }
                 data = {"ref": ref}
                 if variables:
                     # GitHub inputs must be strings
-                    inputs = {k: str(v) for k, v in variables.items() if k != "workflow_id"}
+                    inputs = {
+                        k: str(v) for k, v in variables.items() if k != "workflow_id"
+                    }
                     if inputs:
                         data["inputs"] = inputs
 
@@ -106,25 +111,23 @@ class CICDClient:
                         text = await resp.text()
                         self.logger.error(f"GitHub API Error: {text}")
                         resp.raise_for_status()
-                    
+
                     # GitHub returns 204 No Content on success
                     return {
-                        "status": "triggered", 
-                        "web_url": f"https://github.com/{project_id}/actions"
+                        "status": "triggered",
+                        "web_url": f"https://github.com/{project_id}/actions",
                     }
         return {}
 
     async def get_pipeline_status(
-        self,
-        project_id: str,
-        pipeline_id: str
+        self, project_id: str, pipeline_id: str
     ) -> Dict[str, Any]:
         """Get pipeline status"""
         async with aiohttp.ClientSession() as session:
             if self.platform == CIPlatform.GITLAB:
                 url = f"{self.base_url}/projects/{project_id}/pipelines/{pipeline_id}"
                 headers = {"PRIVATE-TOKEN": self.api_token}
-                
+
                 async with session.get(url, headers=headers) as resp:
                     resp.raise_for_status()
                     return await resp.json()
@@ -133,9 +136,9 @@ class CICDClient:
                 url = f"{self.base_url}/repos/{project_id}/actions/runs/{pipeline_id}"
                 headers = {
                     "Authorization": f"Bearer {self.api_token}",
-                    "Accept": "application/vnd.github.v3+json"
+                    "Accept": "application/vnd.github.v3+json",
                 }
-                
+
                 async with session.get(url, headers=headers) as resp:
                     resp.raise_for_status()
                     data = await resp.json()
@@ -143,21 +146,19 @@ class CICDClient:
                         "id": str(data.get("id")),
                         "status": data.get("status"),
                         "conclusion": data.get("conclusion"),
-                        "web_url": data.get("html_url")
+                        "web_url": data.get("html_url"),
                     }
         return {}
 
     async def get_test_results(
-        self,
-        project_id: str,
-        pipeline_id: str
+        self, project_id: str, pipeline_id: str
     ) -> Dict[str, Any]:
         """Get test results from pipeline"""
         async with aiohttp.ClientSession() as session:
             if self.platform == CIPlatform.GITLAB:
                 url = f"{self.base_url}/projects/{project_id}/pipelines/{pipeline_id}/test_report"
                 headers = {"PRIVATE-TOKEN": self.api_token}
-                
+
                 async with session.get(url, headers=headers) as resp:
                     if resp.status == 404:
                         return {
@@ -166,8 +167,12 @@ class CICDClient:
                             "coverage": "gitlab_test_report_missing",
                             "total": None,
                             "measured": False,
-                            "required_evidence": ["GitLab pipeline test_report artifact"],
-                            "caveats": ["No test report was available for this pipeline."],
+                            "required_evidence": [
+                                "GitLab pipeline test_report artifact"
+                            ],
+                            "caveats": [
+                                "No test report was available for this pipeline."
+                            ],
                         }
                     resp.raise_for_status()
                     data = await resp.json()
@@ -198,9 +203,7 @@ class CICDClient:
 
 
 def get_cicd_client(
-    platform: str,
-    api_token: str,
-    base_url: Optional[str] = None
+    platform: str, api_token: str, base_url: Optional[str] = None
 ) -> CICDClient:
     """
     Create CI/CD client

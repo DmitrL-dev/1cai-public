@@ -1,4 +1,3 @@
-
 """
 WebSocket Manager for Real-Time Updates
 Версия: 2.1.0

@@ -1,6 +1,6 @@
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-import pytest
 
 from src.ai.mcp.server import TOOLS, handle_productization_readiness
 from src.api.productization_api import router
@@ -15,8 +15,14 @@ def test_productization_readiness_reports_repo_state():
     assert report["summary"]["deliverables"] >= 20
     assert report["summary"]["tests_missing"] == 0
     assert report["summary"]["reviews_missing"] == 0
-    assert any(item["code"] == "signed-offline-installer-missing" for item in report["findings"])
-    assert "Configuration and metadata inventory with graph traceability." in report["non_ai_value"]
+    assert any(
+        item["code"] == "signed-offline-installer-missing"
+        for item in report["findings"]
+    )
+    assert (
+        "Configuration and metadata inventory with graph traceability."
+        in report["non_ai_value"]
+    )
 
 
 def test_productization_readiness_fails_when_required_files_are_missing(tmp_path):

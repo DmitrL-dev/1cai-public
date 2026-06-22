@@ -1,5 +1,6 @@
-import asyncpg
 from typing import Any, Dict
+
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.modules.tenant_management.domain.models import TenantRegistrationRequest
@@ -37,7 +38,9 @@ async def register_tenant(
 
 
 @router.get("/{tenant_id}/usage")
-async def get_tenant_usage(tenant_id: str, service: TenantManagementService = Depends(get_tenant_service)) -> Dict[str, Any]:
+async def get_tenant_usage(
+    tenant_id: str, service: TenantManagementService = Depends(get_tenant_service)
+) -> Dict[str, Any]:
     """Get tenant usage metrics."""
     usage = await service.get_tenant_usage(tenant_id)
     if not usage:

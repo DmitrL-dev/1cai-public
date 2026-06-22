@@ -7,7 +7,6 @@ from typing import Any
 
 from src.services.rentgen.open_first_path import build_open_first_path
 
-
 BUYER_ROOM_PACKET_ZIP = "rentgen-buyer-room-packet.zip"
 BUYER_ROOM_PACKET_ENDPOINT = "/api/v1/management/buyer-room-packet"
 BUYER_ROOM_PACKET_HASH_HEADER = "X-Buyer-Room-Packet-Sha256"
@@ -16,7 +15,9 @@ POST_DEMO_ACTIVATION_MD = "POST_DEMO_ACTIVATION_HANDOFF.md"
 ARCHIVE_ACCEPTANCE_RECEIPT_MD = "archive-acceptance-receipt.md"
 ARCHIVE_ACCEPTANCE_RECEIPT_JSON = "archive-acceptance-receipt.json"
 ARCHIVE_VERIFICATION_PACKET_ZIP = "archive-verification-packet.zip"
-ARCHIVE_VERIFICATION_PACKET_ENDPOINT = "/api/v1/evidence-bundle/archive/verification-packet"
+ARCHIVE_VERIFICATION_PACKET_ENDPOINT = (
+    "/api/v1/evidence-bundle/archive/verification-packet"
+)
 ARCHIVE_VERIFICATION_PACKET_HASH_HEADER = "X-Verification-Packet-Sha256"
 KILLER_DEMO_MANIFEST_JSON = "killer-demo-manifest.json"
 
@@ -43,7 +44,9 @@ def _score(report: dict[str, Any] | None, default: int = 0) -> int:
 def _status(report: dict[str, Any] | None, default: str = "watch") -> str:
     if not report:
         return default
-    return str((report.get("decision") or {}).get("status") or report.get("status") or default)
+    return str(
+        (report.get("decision") or {}).get("status") or report.get("status") or default
+    )
 
 
 def _money(value: Any, currency: str) -> str:
@@ -94,15 +97,25 @@ def _value_realization(
         "currency": currency,
         "value_anchor": _money(first_year_value, currency),
         "ai_subscription_year": ai_year,
-        "ai_subscription_baseline": _money(ai_year, currency) if ai_year else "not provided",
+        "ai_subscription_baseline": _money(ai_year, currency)
+        if ai_year
+        else "not provided",
         "manual_review_year": manual_review_year,
         "manual_review_baseline": _money(manual_review_year, currency),
         "release_delay_exposure": release_exposure,
         "release_delay_baseline": _money(release_exposure, currency),
         "risk_exposure": risk_exposure,
         "risk_exposure_baseline": _money(risk_exposure, currency),
-        "recommended_motion": str(recommended_motion.get("title") or (board_pack.get("board_snapshot") or {}).get("recommended_motion") or "Select proof sprint"),
-        "commercial_frame": str(recommended_motion.get("commercial_frame") or (board_pack.get("board_snapshot") or {}).get("commercial_frame") or "fixed next step"),
+        "recommended_motion": str(
+            recommended_motion.get("title")
+            or (board_pack.get("board_snapshot") or {}).get("recommended_motion")
+            or "Select proof sprint"
+        ),
+        "commercial_frame": str(
+            recommended_motion.get("commercial_frame")
+            or (board_pack.get("board_snapshot") or {}).get("commercial_frame")
+            or "fixed next step"
+        ),
         "first_measurement_window": "7 days",
         "proof_standard": "Every claimed outcome must link to a route, owner, acceptance check and exportable artifact.",
     }
@@ -117,7 +130,11 @@ def _outcome_tiles(
 ) -> list[dict[str, Any]]:
     summary, currency = _business_summary(business_case)
     trust_summary = enterprise_trust_center.get("summary") or {}
-    scenarios = {item.get("id"): item for item in scenario_hub.get("scenarios", []) if item.get("id")}
+    scenarios = {
+        item.get("id"): item
+        for item in scenario_hub.get("scenarios", [])
+        if item.get("id")
+    }
     work_packages = vendor_portfolio.get("work_packages") or []
     return [
         {
@@ -129,7 +146,9 @@ def _outcome_tiles(
             "owner": "tech lead",
             "route": "/quality",
             "acceptance": "Developer can explain the finding, fix route and test expectation without a generic AI prompt.",
-            "evidence": (scenarios.get("left-join-null") or {}).get("proof", "LEFT JOIN/NULL proof route"),
+            "evidence": (scenarios.get("left-join-null") or {}).get(
+                "proof", "LEFT JOIN/NULL proof route"
+            ),
         },
         {
             "id": "release-proof",
@@ -140,7 +159,9 @@ def _outcome_tiles(
             "owner": "release owner",
             "route": "/release-readiness",
             "acceptance": "Release board names go/no-go, caveats and required tests from one artifact.",
-            "evidence": (scenarios.get("release-go-no-go") or {}).get("proof", "Release readiness and Evidence Bundle"),
+            "evidence": (scenarios.get("release-go-no-go") or {}).get(
+                "proof", "Release readiness and Evidence Bundle"
+            ),
         },
         {
             "id": "trust-proof",
@@ -162,7 +183,9 @@ def _outcome_tiles(
             "owner": "architect",
             "route": "/platform-doctor",
             "acceptance": "Upgrade, compatibility, DBMS and extension caveats are attached to pilot decision.",
-            "evidence": (scenarios.get("platform-upgrade") or {}).get("proof", "Platform Doctor route"),
+            "evidence": (scenarios.get("platform-upgrade") or {}).get(
+                "proof", "Platform Doctor route"
+            ),
         },
         {
             "id": "vendor-proof",
@@ -173,7 +196,12 @@ def _outcome_tiles(
             "owner": "vendor owner",
             "route": "/vendor-portfolio",
             "acceptance": "Partner sends buyer-safe report and maps at least one risk to a priced package.",
-            "evidence": ", ".join(str(item.get("title")) for item in work_packages[:3] if item.get("title")) or "Vendor Portfolio",
+            "evidence": ", ".join(
+                str(item.get("title"))
+                for item in work_packages[:3]
+                if item.get("title")
+            )
+            or "Vendor Portfolio",
         },
     ]
 
@@ -214,9 +242,14 @@ def _adoption_timeline(
             "window": "Day 30",
             "owner": "pilot owner",
             "route": "/pilot-launchpad",
-            "goal": str(first_offer.get("why_buy") or "Complete paid pilot acceptance."),
+            "goal": str(
+                first_offer.get("why_buy") or "Complete paid pilot acceptance."
+            ),
             "artifact": "Pilot acceptance matrix",
-            "exit_criteria": str(first_offer.get("acceptance") or "Owner, acceptance and next rollout step are selected."),
+            "exit_criteria": str(
+                first_offer.get("acceptance")
+                or "Owner, acceptance and next rollout step are selected."
+            ),
         },
         {
             "window": "Day 60",
@@ -305,9 +338,18 @@ def _role_scorecards(
             {
                 "role": role,
                 "spark": str(card.get("spark") or card.get("first_question") or ""),
-                "adoption_signal": str(card.get("buy_trigger") or committee_item.get("buy_trigger") or ""),
-                "proof_route": str(card.get("start_route") or committee_item.get("proof_route") or "/buyer-concierge"),
-                "owner_action": str(committee_item.get("close_line") or "Pick the first outcome they want measured."),
+                "adoption_signal": str(
+                    card.get("buy_trigger") or committee_item.get("buy_trigger") or ""
+                ),
+                "proof_route": str(
+                    card.get("start_route")
+                    or committee_item.get("proof_route")
+                    or "/buyer-concierge"
+                ),
+                "owner_action": str(
+                    committee_item.get("close_line")
+                    or "Pick the first outcome they want measured."
+                ),
             }
         )
     return scorecards
@@ -355,7 +397,14 @@ def _expansion_paths(
             "title": "Enterprise rollout",
             "route": "/commercial-offer-studio",
             "trigger": "Pilot acceptance and Trust Center caveats are closed or scoped.",
-            "offer": next((item.get("title") for item in offers if item.get("id") == "enterprise-local-license"), "Enterprise local license"),
+            "offer": next(
+                (
+                    item.get("title")
+                    for item in offers
+                    if item.get("id") == "enterprise-local-license"
+                ),
+                "Enterprise local license",
+            ),
             "proof": "Board Pack + Outcome Ledger + Evidence Bundle.",
         },
         {
@@ -363,7 +412,14 @@ def _expansion_paths(
             "title": "Platform and trust hardening",
             "route": "/enterprise-trust-center",
             "trigger": "Trust or platform risk blocks full rollout.",
-            "offer": next((item.get("title") for item in offers if item.get("id") == "platform-trust-pack"), "Platform and trust hardening pack"),
+            "offer": next(
+                (
+                    item.get("title")
+                    for item in offers
+                    if item.get("id") == "platform-trust-pack"
+                ),
+                "Platform and trust hardening pack",
+            ),
             "proof": "Trust Center risk register and Platform Doctor caveats.",
         },
         {
@@ -371,7 +427,14 @@ def _expansion_paths(
             "title": "Developer productivity pack",
             "route": "/value-packs",
             "trigger": "Developer spark route proves a repeatable defect or review-saving path.",
-            "offer": next((item.get("title") for item in packs if "Developer" in str(item.get("title"))), "Developer proof pack"),
+            "offer": next(
+                (
+                    item.get("title")
+                    for item in packs
+                    if "Developer" in str(item.get("title"))
+                ),
+                "Developer proof pack",
+            ),
             "proof": "Quality, Change Impact and Testing route evidence.",
         },
         {
@@ -379,8 +442,18 @@ def _expansion_paths(
             "title": "Vendor portfolio rollout",
             "route": "/vendor-portfolio",
             "trigger": "Partner can sell proof sprint from one buyer-safe audit.",
-            "offer": next((item.get("title") for item in offers if item.get("id") == "vendor-portfolio-rollout"), "Vendor portfolio rollout"),
-            "proof": next((item.get("title") for item in work_packages if item.get("title")), "Vendor Portfolio work packages"),
+            "offer": next(
+                (
+                    item.get("title")
+                    for item in offers
+                    if item.get("id") == "vendor-portfolio-rollout"
+                ),
+                "Vendor portfolio rollout",
+            ),
+            "proof": next(
+                (item.get("title") for item in work_packages if item.get("title")),
+                "Vendor Portfolio work packages",
+            ),
         },
     ]
 
@@ -392,9 +465,9 @@ def _governance_refresh(
 ) -> dict[str, Any]:
     board_close = board_pack.get("board_close_packet") or {}
     activation = pilot_launchpad.get("activation_contract") or {}
-    ready = bool(board_close.get("ready_to_close", _status(board_pack) == "ready")) and bool(
-        activation.get("ready_to_activate", _status(pilot_launchpad) == "ready")
-    )
+    ready = bool(
+        board_close.get("ready_to_close", _status(board_pack) == "ready")
+    ) and bool(activation.get("ready_to_activate", _status(pilot_launchpad) == "ready"))
     gates = [
         {
             "gate": "Approval decisions remain scoped",
@@ -481,8 +554,14 @@ def _acceptance_rollup(
                 "acceptance": "Activation contract is ready and proof routes are attached.",
                 "evidence_route": "/pilot-launchpad",
                 "evidence_file": "rentgen-pilot-launchpad.md",
-                "required_routes": list(activation.get("proof_routes") or ["/pilot-launchpad"]),
-                "status": "ready" if activation.get("ready_to_activate", _status(pilot_launchpad) == "ready") else "watch",
+                "required_routes": list(
+                    activation.get("proof_routes") or ["/pilot-launchpad"]
+                ),
+                "status": "ready"
+                if activation.get(
+                    "ready_to_activate", _status(pilot_launchpad) == "ready"
+                )
+                else "watch",
                 "blocker": "",
                 "next_action": "Refresh Pilot Launchpad with named owner, scope and proof recipient.",
             }
@@ -495,7 +574,12 @@ def _acceptance_rollup(
     ):
         handoff_routes = sorted(
             set(activation.get("proof_routes") or [])
-            | {"/killer-demo", "/pilot-launchpad", "/evidence-bundle", "/outcome-ledger"}
+            | {
+                "/killer-demo",
+                "/pilot-launchpad",
+                "/evidence-bundle",
+                "/outcome-ledger",
+            }
         )
         rows.insert(
             0,
@@ -513,16 +597,27 @@ def _acceptance_rollup(
                 "evidence_file": ARCHIVE_ACCEPTANCE_RECEIPT_MD,
                 "required_routes": handoff_routes,
                 "status": "ready"
-                if activation.get("ready_to_activate", _status(pilot_launchpad) == "ready")
+                if activation.get(
+                    "ready_to_activate", _status(pilot_launchpad) == "ready"
+                )
                 else "watch",
                 "blocker": "",
                 "next_action": "Use the accepted close packet as Day 0 before claiming Day 30 outcomes.",
             },
         )
-    if not any(row.get("id") == "day0-verification-packet" or row.get("evidence_file") == ARCHIVE_VERIFICATION_PACKET_ZIP for row in rows):
+    if not any(
+        row.get("id") == "day0-verification-packet"
+        or row.get("evidence_file") == ARCHIVE_VERIFICATION_PACKET_ZIP
+        for row in rows
+    ):
         handoff_routes = sorted(
             set(activation.get("proof_routes") or [])
-            | {"/killer-demo", "/pilot-launchpad", "/evidence-bundle", "/outcome-ledger"}
+            | {
+                "/killer-demo",
+                "/pilot-launchpad",
+                "/evidence-bundle",
+                "/outcome-ledger",
+            }
         )
         rows.insert(
             1 if rows else 0,
@@ -537,14 +632,18 @@ def _acceptance_rollup(
                 "evidence_file": ARCHIVE_VERIFICATION_PACKET_ZIP,
                 "required_routes": handoff_routes,
                 "status": "ready"
-                if activation.get("ready_to_activate", _status(pilot_launchpad) == "ready")
+                if activation.get(
+                    "ready_to_activate", _status(pilot_launchpad) == "ready"
+                )
                 else "watch",
                 "blocker": "",
                 "next_action": "Use the verification packet as the pair-level Day 0 control before claiming Day 30 outcomes.",
             },
         )
 
-    timeline_by_window = {str(item.get("window") or ""): item for item in adoption_timeline}
+    timeline_by_window = {
+        str(item.get("window") or ""): item for item in adoption_timeline
+    }
 
     def outcome_route(row: dict[str, Any]) -> str:
         role = str(row.get("role") or "").lower()
@@ -568,8 +667,12 @@ def _acceptance_rollup(
         window = str(row.get("window") or "Day 30")
         timeline = timeline_by_window.get(window) or {}
         status = str(row.get("status") or "watch")
-        required_routes = [str(route) for route in row.get("required_routes") or [] if route]
-        evidence_route = str(row.get("evidence_route") or timeline.get("route") or "/outcome-ledger")
+        required_routes = [
+            str(route) for route in row.get("required_routes") or [] if route
+        ]
+        evidence_route = str(
+            row.get("evidence_route") or timeline.get("route") or "/outcome-ledger"
+        )
         result_route = outcome_route(row)
         items.append(
             {
@@ -579,21 +682,34 @@ def _acceptance_rollup(
                 "window": window,
                 "status": status,
                 "decision": str(row.get("decision") or "Acceptance decision is named."),
-                "acceptance": str(row.get("acceptance") or timeline.get("exit_criteria") or ""),
+                "acceptance": str(
+                    row.get("acceptance") or timeline.get("exit_criteria") or ""
+                ),
                 "evidence_route": evidence_route,
-                "evidence_file": str(row.get("evidence_file") or "rentgen-pilot-launchpad.md"),
+                "evidence_file": str(
+                    row.get("evidence_file") or "rentgen-pilot-launchpad.md"
+                ),
                 "outcome_route": result_route,
-                "outcome_signal": str(timeline.get("exit_criteria") or timeline.get("goal") or "Measure and refresh proof."),
+                "outcome_signal": str(
+                    timeline.get("exit_criteria")
+                    or timeline.get("goal")
+                    or "Measure and refresh proof."
+                ),
                 "required_routes": required_routes,
                 "blocker": str(row.get("blocker") or ""),
-                "next_action": str(row.get("next_action") or "Refresh outcome evidence and owner action."),
+                "next_action": str(
+                    row.get("next_action")
+                    or "Refresh outcome evidence and owner action."
+                ),
             }
         )
 
     ready_items = [item for item in items if item["status"] == "ready"]
     watch_items = [item for item in items if item["status"] == "watch"]
     blocked_items = [item for item in items if item["status"] == "blocked"]
-    next_item = next((item for item in items if item["status"] != "ready"), items[0] if items else {})
+    next_item = next(
+        (item for item in items if item["status"] != "ready"), items[0] if items else {}
+    )
     proof_routes = sorted(
         {item["evidence_route"] for item in items}
         | {item["outcome_route"] for item in items}
@@ -620,7 +736,9 @@ def _post_purchase_proof_spine(
     governance_refresh: dict[str, Any],
 ) -> dict[str, Any]:
     activation = pilot_launchpad.get("activation_contract") or {}
-    activation_ready = bool(activation.get("ready_to_activate", _status(pilot_launchpad) == "ready"))
+    activation_ready = bool(
+        activation.get("ready_to_activate", _status(pilot_launchpad) == "ready")
+    )
     files = [
         {
             "title": "Buyer Room Packet ZIP",
@@ -683,7 +801,11 @@ def _post_purchase_proof_spine(
                 "filename": filename,
                 "route": str(item.get("route") or "/pilot-launchpad"),
                 "owner": str(item.get("owner") or "owner"),
-                "purpose": str(item.get("purpose") or item.get("note") or "Activation handoff artifact."),
+                "purpose": str(
+                    item.get("purpose")
+                    or item.get("note")
+                    or "Activation handoff artifact."
+                ),
             }
         )
         filenames.add(filename)
@@ -694,9 +816,13 @@ def _post_purchase_proof_spine(
         | set(acceptance_rollup.get("proof_routes") or [])
         | {"/outcome-ledger"}
     )
-    ready_to_measure = activation_ready and bool(acceptance_rollup.get("ready_to_continue"))
+    ready_to_measure = activation_ready and bool(
+        acceptance_rollup.get("ready_to_continue")
+    )
     ready_to_claim = ready_to_measure and bool(governance_refresh.get("ready"))
-    status = "ready" if ready_to_claim else "blocked" if not ready_to_measure else "watch"
+    status = (
+        "ready" if ready_to_claim else "blocked" if not ready_to_measure else "watch"
+    )
     return {
         "status": status,
         "ready_to_measure": ready_to_measure,
@@ -738,7 +864,10 @@ def _post_purchase_proof_spine(
         "activation_gate": {
             "ready": activation_ready,
             "source": "pilot-launchpad.activation_contract",
-            "invoice_trigger": str(activation.get("invoice_trigger") or "Named owner, scope and evidence packet accepted."),
+            "invoice_trigger": str(
+                activation.get("invoice_trigger")
+                or "Named owner, scope and evidence packet accepted."
+            ),
         },
     }
 
@@ -752,7 +881,9 @@ def _outcome_room_bridge(
     governance_refresh: dict[str, Any],
 ) -> dict[str, Any]:
     brief = buyer_brief or {}
-    ready_to_claim = bool(acceptance_rollup.get("ready_to_claim")) and bool(governance_refresh.get("ready"))
+    ready_to_claim = bool(acceptance_rollup.get("ready_to_claim")) and bool(
+        governance_refresh.get("ready")
+    )
     primary = dict(brief.get("primary_motion") or {})
     outcome_motion = {
         "label": "Claim measured outcomes",
@@ -763,16 +894,23 @@ def _outcome_room_bridge(
             if ready_to_claim
             else "Refresh acceptance, governance and evidence before claiming rollout value."
         ),
-        "reason": str(value_realization.get("proof_standard") or "Every outcome needs route, owner and exportable proof."),
+        "reason": str(
+            value_realization.get("proof_standard")
+            or "Every outcome needs route, owner and exportable proof."
+        ),
         "value_anchor": str(value_realization.get("value_anchor") or "n/a"),
     }
     if not primary:
         primary = {
-            "label": str(value_realization.get("recommended_motion") or "Select paid motion"),
+            "label": str(
+                value_realization.get("recommended_motion") or "Select paid motion"
+            ),
             "route": "/board-pack",
             "status": "ready" if ready_to_claim else "watch",
             "ask": str(outcome_motion["ask"]),
-            "reason": str(value_realization.get("commercial_frame") or outcome_motion["reason"]),
+            "reason": str(
+                value_realization.get("commercial_frame") or outcome_motion["reason"]
+            ),
         }
 
     role_cards = list(brief.get("role_cards") or [])
@@ -801,12 +939,19 @@ def _outcome_room_bridge(
     if not proof_readiness:
         proof_readiness = [
             {
-                "id": str(item.get("gate") or item.get("route") or "outcome-proof").lower().replace(" ", "-"),
+                "id": str(item.get("gate") or item.get("route") or "outcome-proof")
+                .lower()
+                .replace(" ", "-"),
                 "title": str(item.get("gate") or "Outcome proof"),
                 "route": str(item.get("route") or "/outcome-ledger"),
                 "status": "ready" if ready_to_claim else "watch",
-                "signal": str(item.get("evidence") or "Required before the buyer can claim outcomes."),
-                "file": route_to_file.get(str(item.get("route") or ""), "rentgen-outcome-ledger.md"),
+                "signal": str(
+                    item.get("evidence")
+                    or "Required before the buyer can claim outcomes."
+                ),
+                "file": route_to_file.get(
+                    str(item.get("route") or ""), "rentgen-outcome-ledger.md"
+                ),
             }
             for item in governance_refresh.get("gates", [])[:4]
         ]
@@ -814,10 +959,30 @@ def _outcome_room_bridge(
     meeting_flow = list(brief.get("meeting_flow") or [])
     if not meeting_flow:
         meeting_flow = [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Remind the room which role needs which proof."},
-            {"step": 2, "label": "Prove", "route": "/killer-demo", "line": "Replay the accepted proof and objection answers."},
-            {"step": 3, "label": "Measure", "route": "/outcome-ledger", "line": str(outcome_motion["ask"])},
-            {"step": 4, "label": "Refresh", "route": "/evidence-bundle", "line": "Attach refreshed outcome, governance and trust proof with hashes."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Remind the room which role needs which proof.",
+            },
+            {
+                "step": 2,
+                "label": "Prove",
+                "route": "/killer-demo",
+                "line": "Replay the accepted proof and objection answers.",
+            },
+            {
+                "step": 3,
+                "label": "Measure",
+                "route": "/outcome-ledger",
+                "line": str(outcome_motion["ask"]),
+            },
+            {
+                "step": 4,
+                "label": "Refresh",
+                "route": "/evidence-bundle",
+                "line": "Attach refreshed outcome, governance and trust proof with hashes.",
+            },
         ]
     open_first_path = build_open_first_path(
         existing_path=brief.get("open_first_path"),
@@ -859,7 +1024,11 @@ def _outcome_room_bridge(
     )
     fallback_score = 86 if ready_to_claim else 70
     return {
-        "status": str(brief.get("purchase_status") or primary.get("status") or ("ready" if ready_to_claim else "watch")),
+        "status": str(
+            brief.get("purchase_status")
+            or primary.get("status")
+            or ("ready" if ready_to_claim else "watch")
+        ),
         "score": _int(brief.get("score"), fallback_score),
         "source": str(brief.get("source") or "outcome-ledger-derived"),
         "room_line": str(
@@ -869,11 +1038,19 @@ def _outcome_room_bridge(
             f"Value anchor: {outcome_motion['value_anchor']}."
         ),
         "primary_motion": {
-            "label": str(primary.get("label") or value_realization.get("recommended_motion") or "Select paid motion"),
+            "label": str(
+                primary.get("label")
+                or value_realization.get("recommended_motion")
+                or "Select paid motion"
+            ),
             "route": str(primary.get("route") or "/board-pack"),
             "status": str(primary.get("status") or outcome_motion["status"]),
             "ask": str(primary.get("ask") or outcome_motion["ask"]),
-            "reason": str(primary.get("reason") or value_realization.get("commercial_frame") or outcome_motion["reason"]),
+            "reason": str(
+                primary.get("reason")
+                or value_realization.get("commercial_frame")
+                or outcome_motion["reason"]
+            ),
         },
         "outcome_motion": outcome_motion,
         "role_cards": role_cards[:5],
@@ -913,20 +1090,76 @@ def _proof_packet() -> list[dict[str, str]]:
         },
         {"title": "Buyer Brief markdown", "filename": "buyer-brief.md", "route": "/"},
         {"title": "Buyer Pulse markdown", "filename": "buyer-pulse.md", "route": "/"},
-        {"title": "Meeting Close Receipt", "filename": MEETING_CLOSE_RECEIPT_MD, "route": "/killer-demo"},
-        {"title": "Post-Demo Activation Handoff", "filename": POST_DEMO_ACTIVATION_MD, "route": "/pilot-launchpad"},
-        {"title": "Archive Acceptance Receipt", "filename": ARCHIVE_ACCEPTANCE_RECEIPT_MD, "route": "/evidence-bundle"},
-        {"title": "Archive Acceptance Receipt JSON", "filename": ARCHIVE_ACCEPTANCE_RECEIPT_JSON, "route": "/evidence-bundle"},
-        {"title": "Verification Packet ZIP", "filename": ARCHIVE_VERIFICATION_PACKET_ZIP, "route": "/evidence-bundle"},
-        {"title": "Killer Demo Manifest", "filename": KILLER_DEMO_MANIFEST_JSON, "route": "/killer-demo"},
-        {"title": "Outcome Ledger markdown", "filename": "rentgen-outcome-ledger.md", "route": "/outcome-ledger"},
-        {"title": "Board Pack markdown", "filename": "rentgen-board-pack.md", "route": "/board-pack"},
-        {"title": "Pilot Launchpad markdown", "filename": "rentgen-pilot-launchpad.md", "route": "/pilot-launchpad"},
-        {"title": "Business Case markdown", "filename": "rentgen-business-case.md", "route": "/business-case"},
-        {"title": "Enterprise Trust Center markdown", "filename": "rentgen-enterprise-trust-center.md", "route": "/enterprise-trust-center"},
-        {"title": "Governance Proof markdown", "filename": "governance-proof.md", "route": "/approvals"},
-        {"title": "Audit verification/export", "filename": "rentgen-audit-log.jsonl", "route": "/audit"},
-        {"title": "Evidence Bundle manifest", "filename": "evidence-bundle-manifest.json", "route": "/evidence-bundle"},
+        {
+            "title": "Meeting Close Receipt",
+            "filename": MEETING_CLOSE_RECEIPT_MD,
+            "route": "/killer-demo",
+        },
+        {
+            "title": "Post-Demo Activation Handoff",
+            "filename": POST_DEMO_ACTIVATION_MD,
+            "route": "/pilot-launchpad",
+        },
+        {
+            "title": "Archive Acceptance Receipt",
+            "filename": ARCHIVE_ACCEPTANCE_RECEIPT_MD,
+            "route": "/evidence-bundle",
+        },
+        {
+            "title": "Archive Acceptance Receipt JSON",
+            "filename": ARCHIVE_ACCEPTANCE_RECEIPT_JSON,
+            "route": "/evidence-bundle",
+        },
+        {
+            "title": "Verification Packet ZIP",
+            "filename": ARCHIVE_VERIFICATION_PACKET_ZIP,
+            "route": "/evidence-bundle",
+        },
+        {
+            "title": "Killer Demo Manifest",
+            "filename": KILLER_DEMO_MANIFEST_JSON,
+            "route": "/killer-demo",
+        },
+        {
+            "title": "Outcome Ledger markdown",
+            "filename": "rentgen-outcome-ledger.md",
+            "route": "/outcome-ledger",
+        },
+        {
+            "title": "Board Pack markdown",
+            "filename": "rentgen-board-pack.md",
+            "route": "/board-pack",
+        },
+        {
+            "title": "Pilot Launchpad markdown",
+            "filename": "rentgen-pilot-launchpad.md",
+            "route": "/pilot-launchpad",
+        },
+        {
+            "title": "Business Case markdown",
+            "filename": "rentgen-business-case.md",
+            "route": "/business-case",
+        },
+        {
+            "title": "Enterprise Trust Center markdown",
+            "filename": "rentgen-enterprise-trust-center.md",
+            "route": "/enterprise-trust-center",
+        },
+        {
+            "title": "Governance Proof markdown",
+            "filename": "governance-proof.md",
+            "route": "/approvals",
+        },
+        {
+            "title": "Audit verification/export",
+            "filename": "rentgen-audit-log.jsonl",
+            "route": "/audit",
+        },
+        {
+            "title": "Evidence Bundle manifest",
+            "filename": "evidence-bundle-manifest.json",
+            "route": "/evidence-bundle",
+        },
     ]
 
 
@@ -941,18 +1174,66 @@ def _exports() -> list[dict[str, str]]:
         },
         {"title": "Buyer Brief markdown", "filename": "buyer-brief.md", "route": "/"},
         {"title": "Buyer Pulse markdown", "filename": "buyer-pulse.md", "route": "/"},
-        {"title": "Meeting Close Receipt", "filename": MEETING_CLOSE_RECEIPT_MD, "route": "/killer-demo"},
-        {"title": "Post-Demo Activation Handoff", "filename": POST_DEMO_ACTIVATION_MD, "route": "/pilot-launchpad"},
-        {"title": "Archive Acceptance Receipt", "filename": ARCHIVE_ACCEPTANCE_RECEIPT_MD, "route": "/evidence-bundle"},
-        {"title": "Archive Acceptance Receipt JSON", "filename": ARCHIVE_ACCEPTANCE_RECEIPT_JSON, "route": "/evidence-bundle"},
-        {"title": "Verification Packet ZIP", "filename": ARCHIVE_VERIFICATION_PACKET_ZIP, "route": "/evidence-bundle"},
-        {"title": "Killer Demo Manifest", "filename": KILLER_DEMO_MANIFEST_JSON, "route": "/killer-demo"},
-        {"title": "Outcome Ledger markdown", "filename": "rentgen-outcome-ledger.md", "route": "/outcome-ledger"},
-        {"title": "Board Pack markdown", "filename": "rentgen-board-pack.md", "route": "/board-pack"},
-        {"title": "Commercial Offer Studio markdown", "filename": "rentgen-commercial-offer-studio.md", "route": "/commercial-offer-studio"},
-        {"title": "Governance Proof markdown", "filename": "governance-proof.md", "route": "/approvals"},
-        {"title": "Audit verification/export", "filename": "rentgen-audit-log.jsonl", "route": "/audit"},
-        {"title": "Evidence Bundle manifest", "filename": "evidence-bundle-manifest.json", "route": "/evidence-bundle"},
+        {
+            "title": "Meeting Close Receipt",
+            "filename": MEETING_CLOSE_RECEIPT_MD,
+            "route": "/killer-demo",
+        },
+        {
+            "title": "Post-Demo Activation Handoff",
+            "filename": POST_DEMO_ACTIVATION_MD,
+            "route": "/pilot-launchpad",
+        },
+        {
+            "title": "Archive Acceptance Receipt",
+            "filename": ARCHIVE_ACCEPTANCE_RECEIPT_MD,
+            "route": "/evidence-bundle",
+        },
+        {
+            "title": "Archive Acceptance Receipt JSON",
+            "filename": ARCHIVE_ACCEPTANCE_RECEIPT_JSON,
+            "route": "/evidence-bundle",
+        },
+        {
+            "title": "Verification Packet ZIP",
+            "filename": ARCHIVE_VERIFICATION_PACKET_ZIP,
+            "route": "/evidence-bundle",
+        },
+        {
+            "title": "Killer Demo Manifest",
+            "filename": KILLER_DEMO_MANIFEST_JSON,
+            "route": "/killer-demo",
+        },
+        {
+            "title": "Outcome Ledger markdown",
+            "filename": "rentgen-outcome-ledger.md",
+            "route": "/outcome-ledger",
+        },
+        {
+            "title": "Board Pack markdown",
+            "filename": "rentgen-board-pack.md",
+            "route": "/board-pack",
+        },
+        {
+            "title": "Commercial Offer Studio markdown",
+            "filename": "rentgen-commercial-offer-studio.md",
+            "route": "/commercial-offer-studio",
+        },
+        {
+            "title": "Governance Proof markdown",
+            "filename": "governance-proof.md",
+            "route": "/approvals",
+        },
+        {
+            "title": "Audit verification/export",
+            "filename": "rentgen-audit-log.jsonl",
+            "route": "/audit",
+        },
+        {
+            "title": "Evidence Bundle manifest",
+            "filename": "evidence-bundle-manifest.json",
+            "route": "/evidence-bundle",
+        },
     ]
 
 
@@ -981,22 +1262,34 @@ def _markdown(report: dict[str, Any]) -> str:
         "",
     ]
     for item in report["outcome_tiles"]:
-        lines.append(f"- **{item['role']}** (`{item['route']}`): {item['outcome']} Target: {item['target']}")
+        lines.append(
+            f"- **{item['role']}** (`{item['route']}`): {item['outcome']} Target: {item['target']}"
+        )
     lines.extend(["", "## Adoption Timeline", ""])
     for item in report["adoption_timeline"]:
-        lines.append(f"- **{item['window']}** / {item['owner']} (`{item['route']}`): {item['goal']} Exit: {item['exit_criteria']}")
+        lines.append(
+            f"- **{item['window']}** / {item['owner']} (`{item['route']}`): {item['goal']} Exit: {item['exit_criteria']}"
+        )
     lines.extend(["", "## Success Metrics", ""])
     for item in report["success_metrics"]:
-        lines.append(f"- **{item['metric']}**: baseline {item['baseline']}; target {item['target']} (`{item['route']}`)")
+        lines.append(
+            f"- **{item['metric']}**: baseline {item['baseline']}; target {item['target']} (`{item['route']}`)"
+        )
     lines.extend(["", "## Risk Burndown", ""])
     for item in report["risk_burndown"]:
-        lines.append(f"- **{item['severity']}** {item['owner']} (`{item['route']}`): {item['risk']} Day 30: {item['day_30']}")
+        lines.append(
+            f"- **{item['severity']}** {item['owner']} (`{item['route']}`): {item['risk']} Day 30: {item['day_30']}"
+        )
     rollup = report.get("acceptance_rollup") or {}
     if rollup:
         lines.extend(["", "## Acceptance Rollup", ""])
         lines.append(f"- Ready to claim: **{bool(rollup.get('ready_to_claim'))}**")
-        lines.append(f"- Ready/watch/blocked: **{rollup.get('ready_items', 0)}** / **{rollup.get('watch_items', 0)}** / **{rollup.get('blocked_items', 0)}**")
-        lines.append(f"- Next: **{rollup.get('next_window', '')}** / {rollup.get('next_owner', '')}")
+        lines.append(
+            f"- Ready/watch/blocked: **{rollup.get('ready_items', 0)}** / **{rollup.get('watch_items', 0)}** / **{rollup.get('blocked_items', 0)}**"
+        )
+        lines.append(
+            f"- Next: **{rollup.get('next_window', '')}** / {rollup.get('next_owner', '')}"
+        )
         lines.append(f"- {rollup.get('owner_line', '')}")
         for item in rollup.get("items", []):
             lines.append(
@@ -1009,9 +1302,13 @@ def _markdown(report: dict[str, Any]) -> str:
         lines.append(f"- Ready: **{bool(governance.get('ready'))}**")
         lines.append(f"- {governance.get('refresh_line', '')}")
         for item in governance.get("gates", []):
-            lines.append(f"- Gate `{item.get('route', '/outcome-ledger')}`: {item.get('gate', '')} - {item.get('evidence', '')}")
+            lines.append(
+                f"- Gate `{item.get('route', '/outcome-ledger')}`: {item.get('gate', '')} - {item.get('evidence', '')}"
+            )
         for item in governance.get("windows", []):
-            lines.append(f"- **{item.get('window', '')}** / {item.get('owner', '')}: {item.get('acceptance', '')}")
+            lines.append(
+                f"- **{item.get('window', '')}** / {item.get('owner', '')}: {item.get('acceptance', '')}"
+            )
     spine = report.get("post_purchase_proof_spine") or {}
     if spine:
         lines.extend(["", "## Post-Purchase Proof Spine", ""])
@@ -1022,7 +1319,9 @@ def _markdown(report: dict[str, Any]) -> str:
         lines.append(f"- Rule: {spine.get('measurement_rule', '')}")
         receipt = spine.get("archive_receipt") or {}
         if receipt:
-            lines.append(f"- Archive receipt `{receipt.get('filename', '')}` (`{receipt.get('route', '')}`): {receipt.get('check', '')}")
+            lines.append(
+                f"- Archive receipt `{receipt.get('filename', '')}` (`{receipt.get('route', '')}`): {receipt.get('check', '')}"
+            )
         verification = spine.get("verification_packet") or {}
         if verification:
             lines.append(
@@ -1037,10 +1336,14 @@ def _markdown(report: dict[str, Any]) -> str:
     bridge = report.get("outcome_room_bridge") or {}
     if bridge:
         lines.extend(["", "## Outcome Room Bridge", ""])
-        lines.append(f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**")
+        lines.append(
+            f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**"
+        )
         lines.append(f"- Room line: {bridge.get('room_line', '')}")
         motion = bridge.get("primary_motion") or {}
-        lines.append(f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/board-pack')}`): {motion.get('ask', '')}")
+        lines.append(
+            f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/board-pack')}`): {motion.get('ask', '')}"
+        )
         outcome_motion = bridge.get("outcome_motion") or {}
         lines.append(
             f"- Outcome motion: **{outcome_motion.get('label', 'n/a')}** "
@@ -1052,11 +1355,17 @@ def _markdown(report: dict[str, Any]) -> str:
                 f"`{item.get('route', '')}` -> `{item.get('file', '')}`: {item.get('line', '')}"
             )
         for item in bridge.get("role_cards", []):
-            lines.append(f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}")
+            lines.append(
+                f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}"
+            )
         for item in bridge.get("proof_readiness", []):
-            lines.append(f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}")
+            lines.append(
+                f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}"
+            )
         for item in bridge.get("meeting_flow", []):
-            lines.append(f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}")
+            lines.append(
+                f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}"
+            )
     lines.extend(["", "## Caveats", ""])
     lines.extend(f"- {item}" for item in report["caveats"])
     return "\n".join(lines)
@@ -1177,7 +1486,9 @@ def build_outcome_ledger(
         _status(pilot_launchpad),
         _status(productization),
     }
-    severe_risks = len([item for item in risk_burndown if item["severity"] in {"high", "critical"}])
+    severe_risks = len(
+        [item for item in risk_burndown if item["severity"] in {"high", "critical"}]
+    )
     status = _ledger_status(score=score, statuses=statuses, severe_risks=severe_risks)
     report: dict[str, Any] = {
         "generated_at": _now(),

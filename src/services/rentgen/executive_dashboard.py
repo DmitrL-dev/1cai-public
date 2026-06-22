@@ -10,7 +10,6 @@ from src.services.rentgen.coverage_ledger import build_coverage_ledger
 from src.services.rentgen.offline_readiness import build_offline_readiness
 from src.services.rentgen.team_governance import build_team_governance
 
-
 STATUS_SCORES = {"done": 1.0, "partial": 0.55, "planned": 0.12}
 
 
@@ -34,12 +33,17 @@ def _coverage_summary(items: list[dict[str, Any]]) -> dict[str, Any]:
     if items:
         score: int | None = round(
             sum(STATUS_SCORES.get(str(item.get("status")), 0.0) for item in items)
-            / len(items) * 100
+            / len(items)
+            * 100
         )
     else:
         score = None
     p0_score = (
-        round(sum(STATUS_SCORES.get(str(item.get("status")), 0.0) for item in p0) / len(p0) * 100)
+        round(
+            sum(STATUS_SCORES.get(str(item.get("status")), 0.0) for item in p0)
+            / len(p0)
+            * 100
+        )
         if p0
         else None
     )
@@ -62,7 +66,14 @@ def _governance_score(summary: dict[str, Any]) -> int:
     return max(0, 100 - red * 18 - yellow * 7 - min(queue, 25))
 
 
-def _status(score: int, *, store_available: bool, red_areas: int, high_hotspots: int, offline_status: str) -> str:
+def _status(
+    score: int,
+    *,
+    store_available: bool,
+    red_areas: int,
+    high_hotspots: int,
+    offline_status: str,
+) -> str:
     if not store_available:
         return "blocked"
     if offline_status == "fail" or red_areas >= 3 or high_hotspots >= 5:
@@ -122,14 +133,18 @@ def _workstreams(
             "id": "quality",
             "title": "Code quality",
             "score": quality_score,
-            "status": "risk" if high_hotspots else ("watch" if quality_score < 70 else "ready"),
+            "status": "risk"
+            if high_hotspots
+            else ("watch" if quality_score < 70 else "ready"),
             "signal": f"{high_hotspots} high-risk hotspots",
         },
         {
             "id": "governance",
             "title": "Team governance",
             "score": governance_score,
-            "status": "risk" if governance_score < 70 else ("watch" if governance_score < 86 else "ready"),
+            "status": "risk"
+            if governance_score < 70
+            else ("watch" if governance_score < 86 else "ready"),
             "signal": "Ownership, SLA and release queue",
         },
         {
@@ -252,19 +267,40 @@ def build_executive_dashboard(
 
     store_available = store is not None
     quality = _safe(
-        {"total_modules": 0, "avg_maintainability": 0, "modules_with_issues": 0, "by_domain": []},
-        lambda: store.summary() if store_available else {"total_modules": 0, "avg_maintainability": 0, "modules_with_issues": 0, "by_domain": []},
+        {
+            "total_modules": 0,
+            "avg_maintainability": 0,
+            "modules_with_issues": 0,
+            "by_domain": [],
+        },
+        lambda: store.summary()
+        if store_available
+        else {
+            "total_modules": 0,
+            "avg_maintainability": 0,
+            "modules_with_issues": 0,
+            "by_domain": [],
+        },
     )
     stats = _safe({}, lambda: store.get_stats() if store_available else {})
-    hotspots = _safe([], lambda: store.hotspots(limit=hotspot_limit, min_fan_in=0) if store_available else [])
-    governance = build_team_governance(store, limit=governance_limit, save_snapshot=save_snapshot)
+    hotspots = _safe(
+        [],
+        lambda: store.hotspots(limit=hotspot_limit, min_fan_in=0)
+        if store_available
+        else [],
+    )
+    governance = build_team_governance(
+        store, limit=governance_limit, save_snapshot=save_snapshot
+    )
     offline = build_offline_readiness(strict=False, include_metadata=False)
     coverage = _coverage_summary(coverage_items or [])
 
     governance_summary = governance.get("summary") or {}
     offline_decision = offline.get("decision") or {}
     high_hotspots = sum(1 for item in hotspots if int(item.get("risk") or 0) >= 70)
-    quality_score = max(0, min(100, round(float(quality.get("avg_maintainability") or 0))))
+    quality_score = max(
+        0, min(100, round(float(quality.get("avg_maintainability") or 0)))
+    )
     gov_score = _governance_score(governance_summary)
     offline_score = int(offline_decision.get("score") or 0)
     raw_coverage = coverage.get("score")
@@ -309,7 +345,9 @@ def build_executive_dashboard(
         },
         "risk_summary": {
             "high_hotspots": high_hotspots,
-            "top_risk": max((int(item.get("risk") or 0) for item in hotspots), default=0),
+            "top_risk": max(
+                (int(item.get("risk") or 0) for item in hotspots), default=0
+            ),
             "top_risks": _top_risks(hotspots),
             "domains": quality.get("by_domain", [])[:8],
         },
@@ -322,8 +360,12 @@ def build_executive_dashboard(
         ),
         "governance": {
             "summary": governance_summary,
-            "status_counts": (governance.get("release_board") or {}).get("status_counts", {}),
-            "review_queue": (governance.get("release_board") or {}).get("review_queue", [])[:8],
+            "status_counts": (governance.get("release_board") or {}).get(
+                "status_counts", {}
+            ),
+            "review_queue": (governance.get("release_board") or {}).get(
+                "review_queue", []
+            )[:8],
             "trend": governance.get("trend", {}),
         },
         "coverage": coverage,

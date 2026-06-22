@@ -20,7 +20,6 @@ from src.services.rentgen.change_sets import (
     transition_change_set,
 )
 
-
 router = APIRouter(prefix="/api/v1/change-sets", tags=["Change Sets"])
 
 _NO_STORE = (
@@ -97,9 +96,7 @@ def _enforce_sod(record: dict[str, Any] | None, actor: str | None) -> None:
 
     owner = str((record or {}).get("owner") or "").strip()
     if actor and owner and actor == owner:
-        raise PermissionError(
-            "separation of duties: approver must differ from author"
-        )
+        raise PermissionError("separation of duties: approver must differ from author")
 
 
 @router.post("")
@@ -207,7 +204,9 @@ def select_tests(change_set_id: str, req: TestSelectionRequest) -> dict[str, Any
 
 
 @router.post("/{change_set_id}/release-readiness")
-def release_readiness(change_set_id: str, req: ReleaseReadinessRequest) -> dict[str, Any]:
+def release_readiness(
+    change_set_id: str, req: ReleaseReadinessRequest
+) -> dict[str, Any]:
     """Attach release-readiness report to a change set."""
 
     try:

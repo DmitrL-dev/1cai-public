@@ -14,7 +14,9 @@ logger = StructuredLogger(__name__).logger
 class BSLTestGenerator:
     """Generator for BSL (1C:Enterprise) tests"""
 
-    async def generate(self, code: str, include_edge_cases: bool = True, timeout: float = 30.0) -> List[Dict[str, Any]]:
+    async def generate(
+        self, code: str, include_edge_cases: bool = True, timeout: float = 30.0
+    ) -> List[Dict[str, Any]]:
         """Generate tests for BSL code"""
         try:
             return await asyncio.wait_for(
@@ -34,10 +36,13 @@ class BSLTestGenerator:
             )
             return []
 
-    async def _generate_internal(self, code: str, include_edge_cases: bool) -> List[Dict[str, Any]]:
+    async def _generate_internal(
+        self, code: str, include_edge_cases: bool
+    ) -> List[Dict[str, Any]]:
         """Internal generation logic"""
         tests = []
         from src.ai.agents.code_review.bsl_parser import BSLParser
+
         parser = BSLParser()
 
         try:
@@ -81,7 +86,9 @@ class BSLTestGenerator:
 
         return tests
 
-    async def _generate_test_cases(self, func: Dict[str, Any], include_edge_cases: bool) -> List[Dict[str, Any]]:
+    async def _generate_test_cases(
+        self, func: Dict[str, Any], include_edge_cases: bool
+    ) -> List[Dict[str, Any]]:
         """Generate test cases using AI or fallback"""
         test_cases = []
 
@@ -96,8 +103,12 @@ class BSLTestGenerator:
                     for ai_case in ai_test_cases:
                         test_cases.append(
                             {
-                                "id": ai_case.get("id", f"test-{func['name']}-{len(test_cases)}"),
-                                "name": ai_case.get("name", f"{func['name']}_Test{len(test_cases)+1}"),
+                                "id": ai_case.get(
+                                    "id", f"test-{func['name']}-{len(test_cases)}"
+                                ),
+                                "name": ai_case.get(
+                                    "name", f"{func['name']}_Test{len(test_cases)+1}"
+                                ),
                                 "description": ai_case.get("description", ""),
                                 "input": ai_case.get("input", {}),
                                 "expectedOutput": ai_case.get("expectedOutput"),
@@ -140,7 +151,9 @@ class BSLTestGenerator:
 
         return test_cases
 
-    def _generate_test_code(self, func: Dict[str, Any], test_cases: List[Dict[str, Any]]) -> str:
+    def _generate_test_code(
+        self, func: Dict[str, Any], test_cases: List[Dict[str, Any]]
+    ) -> str:
         """Generate BSL test code"""
         test_code = f"// Auto-generated tests for function {func['name']}\n\n"
 

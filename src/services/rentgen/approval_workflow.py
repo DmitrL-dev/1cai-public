@@ -8,7 +8,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[3]
 STORE_PATH = ROOT / "data" / "approval_records.json"
 APPROVAL_STATUSES = {"requested", "approved", "rejected", "used", "expired"}
@@ -48,7 +47,9 @@ def _write(items: list[dict[str, Any]], path: Path | None = None) -> None:
     target = path or STORE_PATH
     target.parent.mkdir(parents=True, exist_ok=True)
     tmp = target.with_suffix(target.suffix + ".tmp")
-    tmp.write_text(json.dumps({"items": items}, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.write_text(
+        json.dumps({"items": items}, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     tmp.replace(target)
 
 
@@ -87,7 +88,12 @@ def create_approval_record(
     clean_actor = _trim(actor, limit=160)
     clean_reason = _trim(approval_reason, limit=1000)
     record = {
-        "id": _approval_id(tool_name=clean_tool, actor=clean_actor, reason=clean_reason, created_at=created_at),
+        "id": _approval_id(
+            tool_name=clean_tool,
+            actor=clean_actor,
+            reason=clean_reason,
+            created_at=created_at,
+        ),
         "kind": "edt_mcp_call",
         "status": "requested",
         "tool_name": clean_tool,
@@ -129,10 +135,16 @@ def list_approval_records(
     if kind:
         items = [item for item in items if item.get("kind") == kind]
     items.sort(key=lambda item: item.get("updated_at", ""), reverse=True)
-    return {"items": items[: max(1, limit)], "total": len(items), "path": str(path or STORE_PATH)}
+    return {
+        "items": items[: max(1, limit)],
+        "total": len(items),
+        "path": str(path or STORE_PATH),
+    }
 
 
-def get_approval_record(approval_id: str, *, path: Path | None = None) -> dict[str, Any] | None:
+def get_approval_record(
+    approval_id: str, *, path: Path | None = None
+) -> dict[str, Any] | None:
     """Return one approval record."""
 
     for item in _load(path):
@@ -208,7 +220,11 @@ def validate_approval_for_call(
     if expires_at and expires_at < _now_dt():
         return {"valid": False, "reason": "expired", "approval": record}
     if record.get("status") != "approved":
-        return {"valid": False, "reason": f"status_{record.get('status')}", "approval": record}
+        return {
+            "valid": False,
+            "reason": f"status_{record.get('status')}",
+            "approval": record,
+        }
     if record.get("kind") != "edt_mcp_call":
         return {"valid": False, "reason": "wrong_kind", "approval": record}
     if record.get("tool_name") != tool_name:
@@ -223,5 +239,9 @@ def validate_approval_for_call(
         call_args = arguments if isinstance(arguments, dict) else {}
         for key, expected in constraints.items():
             if call_args.get(key) != expected:
-                return {"valid": False, "reason": f"argument_mismatch:{key}", "approval": record}
+                return {
+                    "valid": False,
+                    "reason": f"argument_mismatch:{key}",
+                    "approval": record,
+                }
     return {"valid": True, "reason": "approved", "approval": record}

@@ -6,11 +6,11 @@ Implements Multi-Armed Bandit (Thompson Sampling) for adaptive strategy selectio
 Part of Phase 2: The Brain (Meta-Optimizer).
 """
 
-import random
-import math
 import logging
-from typing import Dict, List, Optional
+import math
+import random
 from enum import Enum
+from typing import Dict, List, Optional
 
 from src.ai.query_classifier import AIService
 from src.utils.structured_logging import StructuredLogger
@@ -160,7 +160,7 @@ def get_strategy_selector() -> StrategySelector:
 def register_strategy_feedback_handler():
     """Register handler with EventBus"""
     try:
-        from src.infrastructure.event_bus import get_event_bus, EventType
+        from src.infrastructure.event_bus import EventType, get_event_bus
     except ImportError:
         return  # event bus not available
 

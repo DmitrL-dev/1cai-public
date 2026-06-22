@@ -99,8 +99,7 @@ def run_bsl_review(path: str) -> int:
 def main() -> None:
     """CLI entrypoint."""
     if len(sys.argv) < 2:
-        print("Использование: python -m src.micro_swarm.cli <путь>",
-              file=sys.stderr)
+        print("Использование: python -m src.micro_swarm.cli <путь>", file=sys.stderr)
         sys.exit(2)
 
     path = sys.argv[1]

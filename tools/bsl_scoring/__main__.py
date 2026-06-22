@@ -38,8 +38,9 @@ def cmd_run(args):
     """Full pipeline: extract → classify → score."""
     import json
     import tempfile
-    from .extract import run_extraction
+
     from .classify import run_classification
+    from .extract import run_extraction
     from .score import run_scoring
 
     config_path = Path(args.config_path)

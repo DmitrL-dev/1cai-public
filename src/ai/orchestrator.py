@@ -4,9 +4,9 @@
 
 import asyncio
 import time
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
-from src.ai.query_classifier import QueryClassifier, QueryIntent, QueryType, AIService
+from src.ai.query_classifier import AIService, QueryClassifier, QueryIntent, QueryType
 from src.utils.structured_logging import StructuredLogger
 
 try:
@@ -90,8 +90,8 @@ class AIOrchestrator:
         self.memorizer = None
         self.context_compiler = None
         try:
-            from src.ai.memory.memory_manager import Memorizer
             from src.ai.memory.context_compiler import ContextCompiler
+            from src.ai.memory.memory_manager import Memorizer
             from src.ai.memory.schemas import MemorySource
 
             self.memorizer = Memorizer()
@@ -467,4 +467,4 @@ def get_orchestrator() -> AIOrchestrator:
 # Re-export for backward compatibility with tests
 from src.ai.query_classifier import QueryType
 
-__all__ = ["AIOrchestrator", "AIService", "QueryType", "orchestrator"]
+__all__ = ["AIOrchestrator", "AIService", "QueryType"]

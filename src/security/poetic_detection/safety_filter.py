@@ -40,8 +40,12 @@ class SafetyFilter:
     ]
 
     def __init__(self):
-        self._injection_regexes = [re.compile(p, re.IGNORECASE) for p in self.INJECTION_PATTERNS]
-        self._jailbreak_regexes = [re.compile(p, re.IGNORECASE) for p in self.JAILBREAK_PATTERNS]
+        self._injection_regexes = [
+            re.compile(p, re.IGNORECASE) for p in self.INJECTION_PATTERNS
+        ]
+        self._jailbreak_regexes = [
+            re.compile(p, re.IGNORECASE) for p in self.JAILBREAK_PATTERNS
+        ]
 
     def check_prompt_injection(self, text: str) -> float:
         """
@@ -74,12 +78,16 @@ class SafetyFilter:
         """
         injection_score = self.check_prompt_injection(text)
         if injection_score >= threshold:
-            logger.warning(f"Prompt injection detected (score={injection_score}): {text[:50]}...")
+            logger.warning(
+                f"Prompt injection detected (score={injection_score}): {text[:50]}..."
+            )
             return False, "Prompt Injection Detected"
 
         jailbreak_score = self.check_jailbreak(text)
         if jailbreak_score >= threshold:
-            logger.warning(f"Jailbreak attempt detected (score={jailbreak_score}): {text[:50]}...")
+            logger.warning(
+                f"Jailbreak attempt detected (score={jailbreak_score}): {text[:50]}..."
+            )
             return False, "Jailbreak Attempt Detected"
 
         return True, "Safe"

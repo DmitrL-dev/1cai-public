@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CVE:
     """CVE vulnerability information"""
+
     cve_id: str
     description: str
     severity: str  # low, medium, high, critical
@@ -45,7 +46,7 @@ class CVEDatabaseClient:
         self,
         nvd_api_key: Optional[str] = None,
         snyk_api_key: Optional[str] = None,
-        github_token: Optional[str] = None
+        github_token: Optional[str] = None,
     ):
         """
         Initialize CVE database client
@@ -96,10 +97,7 @@ class CVEDatabaseClient:
         self.logger.info("OSV adapter is not wired in the baseline profile")
 
     async def check_vulnerability(
-        self,
-        package_name: str,
-        version: str,
-        ecosystem: str = "pypi"
+        self, package_name: str, version: str, ecosystem: str = "pypi"
     ) -> List[CVE]:
         """
         Check for vulnerabilities in a package
@@ -130,50 +128,36 @@ class CVEDatabaseClient:
 
         # Check Snyk
         if self.snyk_client:
-            snyk_cves = await self._check_snyk(
-                package_name, version, ecosystem
-            )
+            snyk_cves = await self._check_snyk(package_name, version, ecosystem)
             all_cves.extend(snyk_cves)
 
         # Check GitHub
         if self.github_client:
-            github_cves = await self._check_github(
-                package_name, version, ecosystem
-            )
+            github_cves = await self._check_github(package_name, version, ecosystem)
             all_cves.extend(github_cves)
 
         # Check OSV
         if self.osv_client:
-            osv_cves = await self._check_osv(
-                package_name, version, ecosystem
-            )
+            osv_cves = await self._check_osv(package_name, version, ecosystem)
             all_cves.extend(osv_cves)
 
         # Deduplicate by CVE ID
         unique_cves = self._deduplicate_cves(all_cves)
 
         self.logger.info(
-            f"Found {len(unique_cves)} unique CVEs for "
-            f"{package_name}@{version}"
+            f"Found {len(unique_cves)} unique CVEs for " f"{package_name}@{version}"
         )
 
         return unique_cves
 
-    async def _check_nvd(
-        self,
-        package_name: str,
-        version: str
-    ) -> List[CVE]:
+    async def _check_nvd(self, package_name: str, version: str) -> List[CVE]:
         """Check NVD database"""
         # https://nvd.nist.gov/developers/vulnerabilities
         self.logger.debug("NVD adapter not wired for %s@%s", package_name, version)
         return []
 
     async def _check_snyk(
-        self,
-        package_name: str,
-        version: str,
-        ecosystem: str
+        self, package_name: str, version: str, ecosystem: str
     ) -> List[CVE]:
         """Check Snyk database"""
         # https://snyk.io/api/
@@ -181,21 +165,17 @@ class CVEDatabaseClient:
         return []
 
     async def _check_github(
-        self,
-        package_name: str,
-        version: str,
-        ecosystem: str
+        self, package_name: str, version: str, ecosystem: str
     ) -> List[CVE]:
         """Check GitHub Security Advisories"""
         # https://docs.github.com/en/rest/security-advisories
-        self.logger.debug("GitHub advisory adapter not wired for %s@%s", package_name, version)
+        self.logger.debug(
+            "GitHub advisory adapter not wired for %s@%s", package_name, version
+        )
         return []
 
     async def _check_osv(
-        self,
-        package_name: str,
-        version: str,
-        ecosystem: str
+        self, package_name: str, version: str, ecosystem: str
     ) -> List[CVE]:
         """Check OSV database"""
         # https://osv.dev/
@@ -231,7 +211,7 @@ class CVEDatabaseClient:
             self._get_nvd_details,
             self._get_snyk_details,
             self._get_github_details,
-            self._get_osv_details
+            self._get_osv_details,
         ]
 
         for source_func in sources:
@@ -273,7 +253,7 @@ _cve_client: Optional[CVEDatabaseClient] = None
 def get_cve_client(
     nvd_api_key: Optional[str] = None,
     snyk_api_key: Optional[str] = None,
-    github_token: Optional[str] = None
+    github_token: Optional[str] = None,
 ) -> CVEDatabaseClient:
     """
     Get or create CVE database client singleton
@@ -292,7 +272,7 @@ def get_cve_client(
         _cve_client = CVEDatabaseClient(
             nvd_api_key=nvd_api_key,
             snyk_api_key=snyk_api_key,
-            github_token=github_token
+            github_token=github_token,
         )
 
     return _cve_client

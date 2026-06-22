@@ -9,7 +9,6 @@ from typing import Any
 
 from src.services.rentgen.test_inventory import match_tests_for_module
 
-
 ROOT = Path(__file__).resolve().parents[3]
 YAXUNIT_ROOT = ROOT / "tools" / "yaxunit"
 
@@ -37,7 +36,9 @@ _COMMON_TERMS = {
 
 def dedupe(values: list[str]) -> list[str]:
     """Stable de-duplication for user-supplied module paths."""
-    return list(dict.fromkeys(value.strip() for value in values if value and value.strip()))
+    return list(
+        dict.fromkeys(value.strip() for value in values if value and value.strip())
+    )
 
 
 def strip_diff_path(path: str) -> str | None:
@@ -167,7 +168,9 @@ def select_tests_for_change(
     known yet, it emits run-plan entries with explicit confidence and reasons
     instead of pretending a precise YAxUnit mapping exists.
     """
-    object_name = impact.get("canonical", {}).get("object_name") or Path(module_path).stem
+    object_name = (
+        impact.get("canonical", {}).get("object_name") or Path(module_path).stem
+    )
     impact_total = int(impact.get("total") or 0)
     risk = int((quality or {}).get("risk") or 0)
     has_graph = bool(impact.get("graph_modules"))
@@ -212,10 +215,16 @@ def select_tests_for_change(
                 "selector": f"impact:{object_name}",
                 "priority": "high",
                 "confidence": 0.65 if impacted_hotspots else 0.45,
-                "status": "recommended" if _yaxunit_available() else "framework_missing",
+                "status": "recommended"
+                if _yaxunit_available()
+                else "framework_missing",
                 "reason": (
                     f"Blast radius затрагивает {impact_total} ребер"
-                    + (f" и {len(impacted_hotspots)} hotspot(ов)." if impacted_hotspots else ".")
+                    + (
+                        f" и {len(impacted_hotspots)} hotspot(ов)."
+                        if impacted_hotspots
+                        else "."
+                    )
                 ),
                 "command": _yaxunit_command(f"impact:{object_name}"),
             }
@@ -268,7 +277,9 @@ def build_change_plan(
 
     for module_path in modules:
         quality = store.get_module_risk(module_path)
-        impact = store.module_impact(module_path, max_depth=max_depth, max_edges=max_edges)
+        impact = store.module_impact(
+            module_path, max_depth=max_depth, max_edges=max_edges
+        )
         coverage, coverage_caveat = impact_coverage(impact)
         if coverage == COVERAGE_NO_GRAPH_DATA:
             unmeasured.append(module_path)
@@ -307,7 +318,9 @@ def build_change_plan(
                 "impacted_modules": impact["impacted_modules"][:50],
                 "impacted_hotspots": impacted_hotspots,
                 "quality": quality,
-                "changed_hotspot": quality if quality and int(quality.get("risk", 0)) >= 40 else None,
+                "changed_hotspot": quality
+                if quality and int(quality.get("risk", 0)) >= 40
+                else None,
                 "performance_risks": performance,
                 "covering_tests": covering_tests,
             }
@@ -345,14 +358,31 @@ def _tokens(text: str) -> list[str]:
         values.append(token)
         if lowered != token:
             values.append(lowered)
-        for suffix in ("ами", "ями", "ого", "ему", "ыми", "ими", "ая", "яя", "ое", "ые", "ий", "ый", "ов", "ев"):
+        for suffix in (
+            "ами",
+            "ями",
+            "ого",
+            "ему",
+            "ыми",
+            "ими",
+            "ая",
+            "яя",
+            "ое",
+            "ые",
+            "ий",
+            "ый",
+            "ов",
+            "ев",
+        ):
             if lowered.endswith(suffix) and len(lowered) - len(suffix) >= 4:
                 values.append(lowered[: -len(suffix)])
                 break
     return dedupe(values)
 
 
-def candidate_modules_for_requirement(store, text: str, limit: int = 8) -> list[dict[str, Any]]:
+def candidate_modules_for_requirement(
+    store, text: str, limit: int = 8
+) -> list[dict[str, Any]]:
     """Find likely BSL modules touched by a business requirement."""
     scores: dict[str, dict[str, Any]] = {}
     terms = _tokens(text)
@@ -363,7 +393,10 @@ def candidate_modules_for_requirement(store, text: str, limit: int = 8) -> list[
             lexical = haystack.count(term.lower())
             if lexical <= 0:
                 lexical = 1
-            score = lexical * 10 + max(0, 60 - int(row.get("maintainability_score") or 0)) / 6
+            score = (
+                lexical * 10
+                + max(0, 60 - int(row.get("maintainability_score") or 0)) / 6
+            )
             current = scores.setdefault(
                 path,
                 {
@@ -376,7 +409,9 @@ def candidate_modules_for_requirement(store, text: str, limit: int = 8) -> list[
             current["match_terms"].add(term)
             current["score"] += score
 
-    ranked = sorted(scores.values(), key=lambda item: item["score"], reverse=True)[:limit]
+    ranked = sorted(scores.values(), key=lambda item: item["score"], reverse=True)[
+        :limit
+    ]
     result = []
     for item in ranked:
         risk = store.get_module_risk(item["module_path"])
@@ -401,19 +436,23 @@ def build_requirement_impact(
 ) -> dict[str, Any]:
     candidates = candidate_modules_for_requirement(store, text, limit=limit)
     modules = [item["module_path"] for item in candidates]
-    plan = build_change_plan(
-        store,
-        modules,
-        max_depth=max_depth,
-        max_edges=max_edges,
-        hotspot_limit=8,
-    ) if modules else {
-        "changed_modules": [],
-        "modules": [],
-        "total_impact_edges": 0,
-        "total_impacted_modules": 0,
-        "caveats": [],
-    }
+    plan = (
+        build_change_plan(
+            store,
+            modules,
+            max_depth=max_depth,
+            max_edges=max_edges,
+            hotspot_limit=8,
+        )
+        if modules
+        else {
+            "changed_modules": [],
+            "modules": [],
+            "total_impact_edges": 0,
+            "total_impacted_modules": 0,
+            "caveats": [],
+        }
+    )
     return {
         "requirement": text,
         "candidate_modules": candidates,
@@ -437,8 +476,7 @@ def assess_ci_gate(
         risk = int((item.get("quality") or {}).get("risk") or 0)
         impact = int(item.get("impact_total") or 0)
         high_perf = [
-            r for r in item.get("performance_risks", [])
-            if r.get("severity") == "high"
+            r for r in item.get("performance_risks", []) if r.get("severity") == "high"
         ]
         if risk >= risk_threshold:
             violations.append(
@@ -550,9 +588,7 @@ def render_markdown_report(plan: dict[str, Any], gate: dict[str, Any]) -> str:
     for item in plan["modules"]:
         risk = (item.get("quality") or {}).get("risk", "n/a")
         if item.get("coverage") == COVERAGE_NO_GRAPH_DATA:
-            impact_line = (
-                f"- Impact edges: НЕ ИЗМЕРЕНО — {item.get('coverage_caveat') or _NO_GRAPH_CAVEAT}"
-            )
+            impact_line = f"- Impact edges: НЕ ИЗМЕРЕНО — {item.get('coverage_caveat') or _NO_GRAPH_CAVEAT}"
         else:
             impact_line = f"- Impact edges: {item['impact_total']}"
         lines.extend(

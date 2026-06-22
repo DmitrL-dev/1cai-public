@@ -1,5 +1,6 @@
 import pytest
 
+from src.services.rentgen.metadata_data_governance import build_data_governance
 from src.services.rentgen.metadata_graph import (
     DEFAULT_CONFIG_PATH,
     build_metadata_graph,
@@ -7,7 +8,6 @@ from src.services.rentgen.metadata_graph import (
     metadata_summary,
     search_metadata,
 )
-from src.services.rentgen.metadata_data_governance import build_data_governance
 
 
 def test_metadata_graph_reads_edt_objects_forms_modules_and_rights(tmp_path):
@@ -35,7 +35,9 @@ def test_metadata_graph_reads_edt_objects_forms_modules_and_rights(tmp_path):
 </Properties></Document></MetaDataObject>""",
         encoding="utf-8",
     )
-    (doc_dir / "Ext" / "ObjectModule.bsl").write_text("Процедура Test()\nКонецПроцедуры", encoding="utf-8")
+    (doc_dir / "Ext" / "ObjectModule.bsl").write_text(
+        "Процедура Test()\nКонецПроцедуры", encoding="utf-8"
+    )
     (doc_dir / "Forms" / "ФормаДокумента.xml").write_text(
         """<?xml version="1.0" encoding="UTF-8"?>
 <MetaDataObject><Form uuid="form-1"><Properties>
@@ -43,7 +45,9 @@ def test_metadata_graph_reads_edt_objects_forms_modules_and_rights(tmp_path):
 </Properties></Form></MetaDataObject>""",
         encoding="utf-8",
     )
-    (form_dir / "Ext" / "Form" / "Module.bsl").write_text("Процедура Open()\nКонецПроцедуры", encoding="utf-8")
+    (form_dir / "Ext" / "Form" / "Module.bsl").write_text(
+        "Процедура Open()\nКонецПроцедуры", encoding="utf-8"
+    )
 
     role_dir = root / "Roles" / "Администратор" / "Ext"
     role_dir.mkdir(parents=True)
@@ -134,7 +138,9 @@ def test_metadata_data_governance_reviews_registers_exchanges_and_rights(tmp_pat
     assert report["summary"]["exchange_objects"] == 1
     assert report["summary"]["dangerous_rights"] == 1
     assert report["objects"][0]["dimensions"][0]["name"] == "Product"
-    assert any(item["code"] == "exchange-surface" for item in report["migration_findings"])
+    assert any(
+        item["code"] == "exchange-surface" for item in report["migration_findings"]
+    )
 
 
 def test_edt_nested_properties_name_is_parsed(tmp_path):
@@ -184,7 +190,9 @@ def test_edt_nested_properties_name_is_parsed(tmp_path):
     assert doc is not None
     assert doc["counts"]["attributes"] == 2
     assert {a["name"] for a in doc["attributes"]} == {"Контрагент", "Сумма"}
-    assert doc["attributes"][0]["synonym"] == "Контрагент"  # nested Synonym resolved too
+    assert (
+        doc["attributes"][0]["synonym"] == "Контрагент"
+    )  # nested Synonym resolved too
     assert doc["counts"]["tabular_sections"] == 1
     assert reg is not None
     assert reg["counts"]["dimensions"] == 1
@@ -214,7 +222,11 @@ def test_real_config_objects_have_nonzero_shape():
     doc_ok = False
     for o in docs[:40]:
         e = get_metadata_object(o["ref"])
-        if e and e["counts"]["attributes"] > 0 and all(a["name"].strip() for a in e["attributes"]):
+        if (
+            e
+            and e["counts"]["attributes"] > 0
+            and all(a["name"].strip() for a in e["attributes"])
+        ):
             doc_ok = True
             break
     assert doc_ok, "no Document parsed any attributes — EDT <Properties><Name> bug?"

@@ -22,7 +22,6 @@ from src.services.productization_readiness import (
 )
 from src.services.sbom_inventory import generate_sbom, sbom_markdown_report
 
-
 router = APIRouter(prefix="/api/v1/productization", tags=["Productization"])
 
 
@@ -130,7 +129,9 @@ def create_offline_bundle_archive(req: OfflineBundleArchiveRequest) -> dict[str,
 
 
 @router.post("/offline-bundle/archive/verify")
-def verify_offline_bundle_archive_api(req: OfflineBundleArchiveVerifyRequest) -> dict[str, Any]:
+def verify_offline_bundle_archive_api(
+    req: OfflineBundleArchiveVerifyRequest,
+) -> dict[str, Any]:
     """Verify a portable offline ZIP archive without extracting it."""
 
     try:

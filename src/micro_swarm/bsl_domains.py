@@ -15,7 +15,6 @@ from typing import Any
 
 from src.micro_swarm.domains import DomainConfig, FeatureSpec, NormMethod
 
-
 # ──────────────────────────────────────────
 # Shared BSL regex patterns
 # ──────────────────────────────────────────
@@ -25,7 +24,8 @@ _RE_FUNCTION = re.compile(r"\bФункция\s+\w+\s*\(", re.IGNORECASE)
 _RE_END_PROC = re.compile(r"\bКонецПроцедуры\b", re.IGNORECASE)
 _RE_END_FUNC = re.compile(r"\bКонецФункции\b", re.IGNORECASE)
 _RE_EXPORT = re.compile(
-    r"\b(Процедура|Функция)\s+\w+\s*\([^)]*\)\s*Экспорт\b", re.IGNORECASE)
+    r"\b(Процедура|Функция)\s+\w+\s*\([^)]*\)\s*Экспорт\b", re.IGNORECASE
+)
 _RE_IF = re.compile(r"\bЕсли\b", re.IGNORECASE)
 _RE_ELSEIF = re.compile(r"\bИначеЕсли\b", re.IGNORECASE)
 _RE_FOR = re.compile(r"\bДля\b", re.IGNORECASE)
@@ -68,8 +68,7 @@ _RE_SCHEDULE = re.compile(
 )
 
 # Documentation comment patterns
-_RE_DOC = re.compile(
-    r"//\s*(Функция|Процедура|Параметры:|Возвращаемое значение:)")
+_RE_DOC = re.compile(r"//\s*(Функция|Процедура|Параметры:|Возвращаемое значение:)")
 
 # Code smell patterns
 _RE_MAGIC_NUMBER = re.compile(r"(?<!=)\s+\b\d{2,}\b(?!\s*[),;\n])")
@@ -82,7 +81,8 @@ _RE_SELECT_STAR = re.compile(r"\bВЫБРАТЬ\s+\*", re.IGNORECASE)
 _RE_SUBQUERY = re.compile(r"\(\s*ВЫБРАТЬ\b", re.IGNORECASE)
 _RE_TEMP_TABLE = re.compile(r"\bПОМЕСТИТЬ\b", re.IGNORECASE)
 _RE_JOIN = re.compile(
-    r"\b(ЛЕВОЕ|ПРАВОЕ|ПОЛНОЕ|ВНУТРЕННЕЕ)?\s*СОЕДИНЕНИЕ\b", re.IGNORECASE)
+    r"\b(ЛЕВОЕ|ПРАВОЕ|ПОЛНОЕ|ВНУТРЕННЕЕ)?\s*СОЕДИНЕНИЕ\b", re.IGNORECASE
+)
 _RE_INDEX = re.compile(r"\bИНДЕКСИРОВАТЬ\b", re.IGNORECASE)
 _RE_WHERE = re.compile(r"\bГДЕ\b", re.IGNORECASE)
 _RE_ORDER = re.compile(r"\bУПОРЯДОЧИТЬ\b", re.IGNORECASE)
@@ -98,12 +98,8 @@ def _count_nesting_depth(code: str) -> int:
     """Calculate max nesting depth of control structures."""
     depth = 0
     max_depth = 0
-    openers = re.compile(
-        r"\b(Если|Для|Пока|Попытка)\b", re.IGNORECASE
-    )
-    closers = re.compile(
-        r"\b(КонецЕсли|КонецЦикла|КонецПопытки)\b", re.IGNORECASE
-    )
+    openers = re.compile(r"\b(Если|Для|Пока|Попытка)\b", re.IGNORECASE)
+    closers = re.compile(r"\b(КонецЕсли|КонецЦикла|КонецПопытки)\b", re.IGNORECASE)
     for line in code.split("\n"):
         stripped = line.strip()
         if not stripped or stripped.startswith("//"):
@@ -153,9 +149,7 @@ def extract_bsl_pattern_features(code: str) -> dict[str, float]:
     total_routines = proc_count + func_count
 
     return {
-        "has_form_handler": float(
-            any(p.search(code) for p in _RE_FORM_HANDLERS)
-        ),
+        "has_form_handler": float(any(p.search(code) for p in _RE_FORM_HANDLERS)),
         "has_db_query": float(
             bool(_RE_QUERY.search(code)) or bool(_RE_NEW_QUERY.search(code))
         ),
@@ -164,9 +158,7 @@ def extract_bsl_pattern_features(code: str) -> dict[str, float]:
         "has_schedule_job": float(bool(_RE_SCHEDULE.search(code))),
         "procedure_count": float(proc_count),
         "function_count": float(func_count),
-        "export_ratio": (
-            float(export_count) / max(total_routines, 1)
-        ),
+        "export_ratio": (float(export_count) / max(total_routines, 1)),
     }
 
 
@@ -197,8 +189,9 @@ def extract_bsl_quality_features(code: str) -> dict[str, float]:
     Evaluates: complexity, documentation coverage, nesting,
     coupling (external calls), code smell indicators.
     """
-    lines = [l for l in code.split(
-        "\n") if l.strip() and not l.strip().startswith("//")]
+    lines = [
+        l for l in code.split("\n") if l.strip() and not l.strip().startswith("//")
+    ]
     loc = max(len(lines), 1)
 
     proc_count = _count_re(_RE_PROCEDURE, code)
@@ -211,8 +204,9 @@ def extract_bsl_quality_features(code: str) -> dict[str, float]:
     for_count = _count_re(_RE_FOR, code)
     while_count = _count_re(_RE_WHILE, code)
     try_count = _count_re(_RE_TRY, code)
-    total_complexity = total_routines + if_count + \
-        elseif_count + for_count + while_count + try_count
+    total_complexity = (
+        total_routines + if_count + elseif_count + for_count + while_count + try_count
+    )
 
     avg_complexity = float(total_complexity) / max(total_routines, 1)
     # Approximation without per-routine parsing
@@ -343,11 +337,13 @@ def extract_error_features(code: str) -> dict[str, float]:
     try_count = _count_re(_RE_TRY, code)
 
     # Empty catch: Исключение followed by КонецПопытки with nothing in between
-    empty_catch = len(re.findall(
-        r"Исключение\s*;\s*КонецПопытки",
-        code,
-        re.IGNORECASE,
-    ))
+    empty_catch = len(
+        re.findall(
+            r"Исключение\s*;\s*КонецПопытки",
+            code,
+            re.IGNORECASE,
+        )
+    )
 
     # Unguarded division (division without prior zero check)
     divisions = _count_re(_RE_DIVISION, code)

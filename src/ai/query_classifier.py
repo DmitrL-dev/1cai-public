@@ -4,10 +4,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from src.ai.scenario_hub import ScenarioRiskLevel
-from src.micro_swarm.domains import (
-    QUERY_INTENT_DOMAIN,
-    extract_query_features,
-)
+from src.micro_swarm.domains import QUERY_INTENT_DOMAIN, extract_query_features
 from src.micro_swarm.model import MicroModel, MicroModelConfig
 from src.utils.structured_logging import StructuredLogger
 
@@ -75,8 +72,7 @@ class QueryClassifier:
                 f"{self._micro_model.memory_bytes} bytes)"
             )
         except Exception as e:
-            logger.warning(
-                "MicroModel init failed, using regex fallback: %s", e)
+            logger.warning("MicroModel init failed, using regex fallback: %s", e)
 
         try:
             from src.ai.llm_provider_abstraction import LLMProviderAbstraction
@@ -241,8 +237,7 @@ class QueryClassifier:
             best_type = max(scores, key=scores.get)
             # Normalize confidence
             confidence = (
-                min(scores[best_type] / 5.0,
-                    1.0) if scores[best_type] > 0 else 0.0
+                min(scores[best_type] / 5.0, 1.0) if scores[best_type] > 0 else 0.0
             )
 
             # Micro-Swarm enhancement: blend model score with regex confidence
@@ -281,8 +276,7 @@ class QueryClassifier:
             if best_type in [QueryType.STANDARD_1C, QueryType.ARCHITECTURE]:
                 suggested_tools.append("ba_requirements_extract")
             elif best_type == QueryType.CODE_GENERATION:
-                tools = registry.list_tools(
-                    risk=ScenarioRiskLevel.NON_PROD_CHANGE)
+                tools = registry.list_tools(risk=ScenarioRiskLevel.NON_PROD_CHANGE)
                 suggested_tools.extend([t.id for t in tools])
             elif best_type == QueryType.OPTIMIZATION:
                 suggested_tools.append("security_audit")
@@ -294,8 +288,7 @@ class QueryClassifier:
                     llm_tools = self.llm_abstraction.to_tool_registry_format()
                     suggested_tools.extend([tool["id"] for tool in llm_tools])
                 except Exception as e:
-                    logger.debug(
-                        "Failed to add LLM tools to suggestions: %s", e)
+                    logger.debug("Failed to add LLM tools to suggestions: %s", e)
         except ImportError:
             logger.debug("Tool registry examples not available")
         except Exception as e:

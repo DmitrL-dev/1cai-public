@@ -1,4 +1,3 @@
-
 """
 ToolRegistry examples (experimental)
 ------------------------------------

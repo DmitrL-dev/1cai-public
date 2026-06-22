@@ -7,7 +7,6 @@ from src.ai.mcp.server import (
     handle_rentgen_performer_analyze,
 )
 
-
 TJ_LOG = """12:45:03.456789-3000000,SDBL,p:1:1:1,Usr=Admin,Context='Document.Sales.ObjectModule : 145 : Result = Query.Execute()',Sql='SELECT T1.Name FROM Document123 T1',Sdbl='SELECT Name FROM Document.Sales',Rows=500
 12:45:05.000000-100000,TLOCK,p:1:1:1,Usr=Admin,Context='Document.Sales.ObjectModule : 200 : Movements.Write()'
 12:45:06.000000-0,TDEADLOCK,p:1:1:1,Usr=Admin,Context='Document.Sales.ObjectModule : 210 : Write()'

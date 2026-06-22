@@ -14,7 +14,10 @@ from src.services.rentgen.buyer_pulse import build_buyer_pulse
 from src.services.rentgen.executive_dashboard import build_executive_dashboard
 from src.services.rentgen.intake_wizard import build_intake_plan
 from src.services.rentgen.platform_doctor import build_platform_doctor
-from src.services.rentgen.vendor_portfolio import build_vendor_portfolio, build_vendor_portfolio_book
+from src.services.rentgen.vendor_portfolio import (
+    build_vendor_portfolio,
+    build_vendor_portfolio_book,
+)
 
 router = APIRouter(prefix="/api/v1/vendor-portfolio", tags=["Vendor Portfolio"])
 
@@ -26,7 +29,9 @@ class PortfolioClientRequest(BaseModel):
 
 
 class PortfolioRequest(BaseModel):
-    portfolio_name: str = Field(default="Vendor portfolio", min_length=1, max_length=200)
+    portfolio_name: str = Field(
+        default="Vendor portfolio", min_length=1, max_length=200
+    )
     clients: list[PortfolioClientRequest] = Field(default_factory=list, max_length=50)
     governance_limit: int = Field(default=40, ge=1, le=200)
     hotspot_limit: int = Field(default=12, ge=1, le=50)

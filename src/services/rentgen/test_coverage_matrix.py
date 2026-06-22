@@ -4,8 +4,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.services.rentgen.change_plan import build_change_plan, dedupe, extract_diff_modules
-from src.services.rentgen.test_inventory import inventory_summary, match_tests_for_module
+from src.services.rentgen.change_plan import (
+    build_change_plan,
+    dedupe,
+    extract_diff_modules,
+)
+from src.services.rentgen.test_inventory import (
+    inventory_summary,
+    match_tests_for_module,
+)
 
 
 def _priority(risk: int, impact: int, status: str, impact_measured: bool) -> str:
@@ -24,7 +31,9 @@ def _status(exact: list[dict[str, Any]], planned: list[dict[str, Any]]) -> str:
     return "gap"
 
 
-def _test_data_blueprint(module_path: str, canonical: dict[str, Any], status: str) -> list[dict[str, Any]]:
+def _test_data_blueprint(
+    module_path: str, canonical: dict[str, Any], status: str
+) -> list[dict[str, Any]]:
     object_name = canonical.get("object_name") or module_path
     return [
         {
@@ -42,7 +51,9 @@ def _test_data_blueprint(module_path: str, canonical: dict[str, Any], status: st
     ]
 
 
-def _commands(exact: list[dict[str, Any]], planned: list[dict[str, Any]], module_path: str) -> list[str]:
+def _commands(
+    exact: list[dict[str, Any]], planned: list[dict[str, Any]], module_path: str
+) -> list[str]:
     values = []
     for item in exact:
         selector = item.get("selector") or item.get("name")
@@ -53,7 +64,9 @@ def _commands(exact: list[dict[str, Any]], planned: list[dict[str, Any]], module
         if command:
             values.append(command)
     if not values:
-        values.append(f"YAxUnit/Vanessa: create and run focused tests for '{module_path}'")
+        values.append(
+            f"YAxUnit/Vanessa: create and run focused tests for '{module_path}'"
+        )
     return list(dict.fromkeys(values))
 
 
@@ -104,38 +117,48 @@ def build_test_coverage_matrix(
     """Build exact/planned/gap test coverage for changed modules."""
 
     modules = dedupe(list(changed_modules or []) + extract_diff_modules(diff))
-    plan = build_change_plan(
-        store,
-        modules,
-        max_depth=max_depth,
-        max_edges=max_edges,
-        hotspot_limit=hotspot_limit,
-    ) if modules else {
-        "changed_modules": [],
-        "modules": [],
-        "total_impact_edges": 0,
-        "total_impacted_modules": 0,
-        "caveats": [],
-    }
+    plan = (
+        build_change_plan(
+            store,
+            modules,
+            max_depth=max_depth,
+            max_edges=max_edges,
+            hotspot_limit=hotspot_limit,
+        )
+        if modules
+        else {
+            "changed_modules": [],
+            "modules": [],
+            "total_impact_edges": 0,
+            "total_impacted_modules": 0,
+            "caveats": [],
+        }
+    )
 
     rows = []
     for item in plan["modules"]:
         module_path = item["module_path"]
         canonical = item.get("canonical") or {}
         object_name = canonical.get("object_name") or ""
-        exact = match_tests_for_module(module_path, object_name=object_name, limit=match_limit)
+        exact = match_tests_for_module(
+            module_path, object_name=object_name, limit=match_limit
+        )
         planned = item.get("covering_tests", [])
         status = _status(exact, planned)
         risk = int((item.get("quality") or {}).get("risk") or 0)
         impact = int(item.get("impact_total") or 0)
         impact_measured = item.get("impact_measured") is not False
-        gaps = [] if status == "covered" else [
-            {
-                "kind": "missing_exact_mapping",
-                "severity": "high" if status == "gap" else "medium",
-                "message": "No exact local test mapping was found for the changed module/object.",
-            }
-        ]
+        gaps = (
+            []
+            if status == "covered"
+            else [
+                {
+                    "kind": "missing_exact_mapping",
+                    "severity": "high" if status == "gap" else "medium",
+                    "message": "No exact local test mapping was found for the changed module/object.",
+                }
+            ]
+        )
         if not impact_measured:
             gaps.append(
                 {
@@ -159,7 +182,9 @@ def build_test_coverage_matrix(
                 "exact_tests": exact,
                 "planned_tests": planned,
                 "commands": _commands(exact, planned, module_path),
-                "test_data_blueprint": _test_data_blueprint(module_path, canonical, status),
+                "test_data_blueprint": _test_data_blueprint(
+                    module_path, canonical, status
+                ),
                 "gaps": gaps,
             }
         )

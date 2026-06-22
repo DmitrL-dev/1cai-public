@@ -15,19 +15,14 @@ from typing import Any
 
 from src.micro_swarm.engine import Value
 
-
 # ──────────────────────────────────────────
 # Neural network primitives
 # ──────────────────────────────────────────
 
 
-def _init_matrix(
-    nout: int, nin: int, std: float = 0.08
-) -> list[list[Value]]:
+def _init_matrix(nout: int, nin: int, std: float = 0.08) -> list[list[Value]]:
     """Initialize weight matrix with small random values."""
-    return [
-        [Value(random.gauss(0, std)) for _ in range(nin)] for _ in range(nout)
-    ]
+    return [[Value(random.gauss(0, std)) for _ in range(nin)] for _ in range(nout)]
 
 
 def _linear(x: list[Value], w: list[list[Value]]) -> list[Value]:
@@ -75,14 +70,16 @@ class MicroModel:
 
         self._layers: list[dict[str, list[list[Value]]]] = []
         for _ in range(c.n_layer):
-            self._layers.append({
-                "attn_wq": _init_matrix(c.n_embd, c.n_embd),
-                "attn_wk": _init_matrix(c.n_embd, c.n_embd),
-                "attn_wv": _init_matrix(c.n_embd, c.n_embd),
-                "attn_wo": _init_matrix(c.n_embd, c.n_embd),
-                "mlp_fc1": _init_matrix(4 * c.n_embd, c.n_embd),
-                "mlp_fc2": _init_matrix(c.n_embd, 4 * c.n_embd),
-            })
+            self._layers.append(
+                {
+                    "attn_wq": _init_matrix(c.n_embd, c.n_embd),
+                    "attn_wk": _init_matrix(c.n_embd, c.n_embd),
+                    "attn_wv": _init_matrix(c.n_embd, c.n_embd),
+                    "attn_wo": _init_matrix(c.n_embd, c.n_embd),
+                    "mlp_fc1": _init_matrix(4 * c.n_embd, c.n_embd),
+                    "mlp_fc2": _init_matrix(c.n_embd, 4 * c.n_embd),
+                }
+            )
 
         self._w_head = _init_matrix(1, c.n_embd)
         self._params = self._collect_params()
@@ -116,9 +113,7 @@ class MicroModel:
         """Approximate memory in bytes (fp32)."""
         return self.param_count * 4
 
-    def forward(
-        self, features: list[float]
-    ) -> tuple[float, list[float]]:
+    def forward(self, features: list[float]) -> tuple[float, list[float]]:
         """Forward pass: features → (score, embedding).
 
         Args:
@@ -129,8 +124,7 @@ class MicroModel:
         """
         if len(features) != self._config.n_features:
             raise ValueError(
-                f"Expected {self._config.n_features} features, "
-                f"got {len(features)}"
+                f"Expected {self._config.n_features} features, " f"got {len(features)}"
             )
 
         x = [Value(f) for f in features]
@@ -151,7 +145,7 @@ class MicroModel:
             x_attn: list[Value] = []
             for h in range(c.n_head):
                 hs = h * head_dim
-                x_attn.extend(v[hs: hs + head_dim])
+                x_attn.extend(v[hs : hs + head_dim])
 
             x = _linear(x_attn, layer_weights["attn_wo"])
             x = [a + b for a, b in zip(x, x_res)]
@@ -170,7 +164,9 @@ class MicroModel:
         return score_value.data, embedding
 
     def forward_train(
-        self, features: list[float], target: float,
+        self,
+        features: list[float],
+        target: float,
     ) -> tuple[float, "Value"]:
         """Forward pass for training. Returns (score, loss_Value).
 
@@ -178,8 +174,7 @@ class MicroModel:
         """
         if len(features) != self._config.n_features:
             raise ValueError(
-                f"Expected {self._config.n_features} features, "
-                f"got {len(features)}"
+                f"Expected {self._config.n_features} features, " f"got {len(features)}"
             )
 
         x = [Value(f) for f in features]
@@ -198,7 +193,7 @@ class MicroModel:
             x_attn: list[Value] = []
             for h in range(c.n_head):
                 hs = h * head_dim
-                x_attn.extend(v[hs: hs + head_dim])
+                x_attn.extend(v[hs : hs + head_dim])
             x = _linear(x_attn, layer_weights["attn_wo"])
             x = [a + b for a, b in zip(x, x_res)]
             x_res = x

@@ -52,13 +52,16 @@ class GitHubClient:
             logger.warning("Webhook secret not configured - skipping verification")
             return True  # Allow in development
 
-        mac = hmac.new(self.webhook_secret.encode(),
-                       msg=payload, digestmod=hashlib.sha256)
+        mac = hmac.new(
+            self.webhook_secret.encode(), msg=payload, digestmod=hashlib.sha256
+        )
         expected_signature = "sha256=" + mac.hexdigest()
 
         return hmac.compare_digest(expected_signature, signature)
 
-    async def fetch_pr_files(self, repo_full_name: str, pr_number: int, max_retries: int = 3) -> List[PRFile]:
+    async def fetch_pr_files(
+        self, repo_full_name: str, pr_number: int, max_retries: int = 3
+    ) -> List[PRFile]:
         """
         Fetch changed files from a Pull Request
 
@@ -90,7 +93,9 @@ class GitHubClient:
         url = f"https://api.github.com/repos/{repo_full_name}/pulls/{pr_number}/files"
 
         # Fetch files with retry logic
-        files_data = await self._make_request_with_retry("GET", url, headers=headers, max_retries=max_retries)
+        files_data = await self._make_request_with_retry(
+            "GET", url, headers=headers, max_retries=max_retries
+        )
 
         if not files_data:
             return []
@@ -237,8 +242,10 @@ class GitHubClient:
         if len(comment) > max_comment_length:
             logger.warning(
                 "Comment too long, truncating",
-                extra={"comment_length": len(
-                    comment), "max_length": max_comment_length},
+                extra={
+                    "comment_length": len(comment),
+                    "max_length": max_comment_length,
+                },
             )
             comment = comment[:max_comment_length]
 
@@ -256,7 +263,11 @@ class GitHubClient:
         }
 
         result = await self._make_request_with_retry(
-            "POST", url, headers=headers, json={"body": comment}, max_retries=max_retries
+            "POST",
+            url,
+            headers=headers,
+            json={"body": comment},
+            max_retries=max_retries,
         )
 
         return result is not None
@@ -286,15 +297,22 @@ class GitHubClient:
 
         for attempt in range(max_retries):
             try:
-                async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
-                    response = await client.request(method, url, headers=headers, json=json)
+                async with httpx.AsyncClient(
+                    timeout=httpx.Timeout(10.0, connect=5.0)
+                ) as client:
+                    response = await client.request(
+                        method, url, headers=headers, json=json
+                    )
                     response.raise_for_status()
 
                     if attempt > 0:
                         logger.info(
                             f"Request succeeded on attempt {attempt + 1}",
-                            extra={"url": url, "method": method,
-                                "attempt": attempt + 1},
+                            extra={
+                                "url": url,
+                                "method": method,
+                                "attempt": attempt + 1,
+                            },
                         )
 
                     # Return JSON for successful requests
@@ -364,7 +382,9 @@ class GitHubClient:
 
         return None
 
-    async def _download_file_content(self, url: str, headers: Dict[str, str]) -> Optional[str]:
+    async def _download_file_content(
+        self, url: str, headers: Dict[str, str]
+    ) -> Optional[str]:
         """
         Download file content from URL
 
@@ -376,7 +396,9 @@ class GitHubClient:
             File content as string or None on failure
         """
         try:
-            async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
+            async with httpx.AsyncClient(
+                timeout=httpx.Timeout(10.0, connect=5.0)
+            ) as client:
                 response = await client.get(url, headers=headers)
                 response.raise_for_status()
                 return response.text

@@ -1,4 +1,3 @@
-
 """Tests for audit logger."""
 
 import json

@@ -1,6 +1,6 @@
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-import pytest
 
 from src.ai.mcp.server import TOOLS, handle_sbom_generate
 from src.api.productization_api import router
@@ -8,7 +8,9 @@ from src.services.sbom_inventory import generate_sbom, sbom_markdown_report
 
 
 def test_sbom_inventory_parses_python_npm_and_docker_sources(tmp_path):
-    (tmp_path / "requirements.txt").write_text("fastapi==0.110.0\npytest>=8\n", encoding="utf-8")
+    (tmp_path / "requirements.txt").write_text(
+        "fastapi==0.110.0\npytest>=8\n", encoding="utf-8"
+    )
     (tmp_path / "package.json").write_text(
         '{"dependencies":{"react":"18.2.0"},"devDependencies":{"vite":"^7.0.0"}}',
         encoding="utf-8",
@@ -30,7 +32,12 @@ def test_sbom_inventory_parses_python_npm_and_docker_sources(tmp_path):
 
 def test_sbom_inventory_rejects_escaping_paths(tmp_path):
     try:
-        generate_sbom(root=tmp_path, include_defaults=False, include_paths=["../requirements.txt"], write=False)
+        generate_sbom(
+            root=tmp_path,
+            include_defaults=False,
+            include_paths=["../requirements.txt"],
+            write=False,
+        )
     except ValueError as exc:
         assert "escapes repository root" in str(exc)
     else:
@@ -39,7 +46,9 @@ def test_sbom_inventory_rejects_escaping_paths(tmp_path):
 
 def test_sbom_markdown_report_contains_summary(tmp_path):
     (tmp_path / "requirements.txt").write_text("fastapi==0.110.0\n", encoding="utf-8")
-    report = sbom_markdown_report(root=tmp_path, include_defaults=False, include_paths=["requirements.txt"])
+    report = sbom_markdown_report(
+        root=tmp_path, include_defaults=False, include_paths=["requirements.txt"]
+    )
 
     assert report["format"] == "markdown"
     assert "Components:" in report["content"]
@@ -53,7 +62,11 @@ def test_productization_api_generates_sbom_without_writing():
 
     response = client.post(
         "/api/v1/productization/sbom",
-        json={"include_defaults": False, "include_paths": ["docs/productization/SUPPORT_MATRIX.md"], "write": False},
+        json={
+            "include_defaults": False,
+            "include_paths": ["docs/productization/SUPPORT_MATRIX.md"],
+            "write": False,
+        },
     )
     report = client.get("/api/v1/productization/sbom/report")
 

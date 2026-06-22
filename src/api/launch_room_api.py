@@ -57,12 +57,16 @@ class LaunchRoomRequest(BaseModel):
     assumptions: LaunchRoomAssumptions | None = None
 
 
-def _artifact_summary(id: str, title: str, route: str, report: dict[str, Any]) -> dict[str, Any]:
+def _artifact_summary(
+    id: str, title: str, route: str, report: dict[str, Any]
+) -> dict[str, Any]:
     return {
         "id": id,
         "title": title,
         "route": route,
-        "status": (report.get("decision") or {}).get("status") or report.get("status") or "unknown",
+        "status": (report.get("decision") or {}).get("status")
+        or report.get("status")
+        or "unknown",
         "score": (report.get("decision") or {}).get("score"),
     }
 
@@ -88,10 +92,14 @@ def _build_report(req: LaunchRoomRequest) -> dict[str, Any]:
         intake=intake,
         client_name=req.client_name,
     )
-    assumptions = req.assumptions.model_dump(exclude_none=True) if req.assumptions else None
+    assumptions = (
+        req.assumptions.model_dump(exclude_none=True) if req.assumptions else None
+    )
     buyer_brief = build_buyer_brief(
         executive=executive,
-        monthly_ai_subscription_cost=int((assumptions or {}).get("monthly_ai_subscription_cost") or 120_000),
+        monthly_ai_subscription_cost=int(
+            (assumptions or {}).get("monthly_ai_subscription_cost") or 120_000
+        ),
         currency=str((assumptions or {}).get("currency") or "RUB"),
     )
     business_case = build_business_case(
@@ -164,7 +172,9 @@ def _build_report(req: LaunchRoomRequest) -> dict[str, Any]:
             limit=req.security_limit,
             module_limit=req.security_module_limit,
         ),
-        rights_rls=build_rights_rls(config_path=req.config_path, role_limit=60, object_limit=160),
+        rights_rls=build_rights_rls(
+            config_path=req.config_path, role_limit=60, object_limit=160
+        ),
         demo_command_center=demo_command_center,
         pilot_launchpad=pilot_launchpad,
         scenario_hub=scenario_hub,
@@ -232,20 +242,51 @@ def _build_report(req: LaunchRoomRequest) -> dict[str, Any]:
         target_platform_version=req.target_platform_version,
     )
     evidence_artifacts = [
-        _artifact_summary("platform-doctor", "Platform Doctor", "/platform-doctor", platform),
-        _artifact_summary("configuration-intake", "Configuration Intake", "/configurations", intake),
+        _artifact_summary(
+            "platform-doctor", "Platform Doctor", "/platform-doctor", platform
+        ),
+        _artifact_summary(
+            "configuration-intake", "Configuration Intake", "/configurations", intake
+        ),
         _artifact_summary("value-packs", "Value Packs", "/value-packs", value_packs),
-        _artifact_summary("vendor-portfolio", "Vendor Portfolio", "/vendor-portfolio", vendor),
-        _artifact_summary("business-case", "Business Case", "/business-case", business_case),
+        _artifact_summary(
+            "vendor-portfolio", "Vendor Portfolio", "/vendor-portfolio", vendor
+        ),
+        _artifact_summary(
+            "business-case", "Business Case", "/business-case", business_case
+        ),
         _artifact_summary("guided-demo", "Guided Demo", "/guided-demo", guided_demo),
-        _artifact_summary("scenario-hub", "Scenario Hub", "/scenario-hub", scenario_hub),
-        _artifact_summary("pilot-launchpad", "Pilot Launchpad", "/pilot-launchpad", pilot_launchpad),
-        _artifact_summary("demo-command-center", "Demo Command Center", "/demo-command-center", demo_command_center),
-        _artifact_summary("enterprise-trust-center", "Enterprise Trust Center", "/enterprise-trust-center", enterprise_trust_center),
-        _artifact_summary("commercial-offer-studio", "Commercial Offer Studio", "/commercial-offer-studio", commercial_offer_studio),
-        _artifact_summary("buyer-concierge", "Buyer Concierge", "/buyer-concierge", buyer_concierge),
+        _artifact_summary(
+            "scenario-hub", "Scenario Hub", "/scenario-hub", scenario_hub
+        ),
+        _artifact_summary(
+            "pilot-launchpad", "Pilot Launchpad", "/pilot-launchpad", pilot_launchpad
+        ),
+        _artifact_summary(
+            "demo-command-center",
+            "Demo Command Center",
+            "/demo-command-center",
+            demo_command_center,
+        ),
+        _artifact_summary(
+            "enterprise-trust-center",
+            "Enterprise Trust Center",
+            "/enterprise-trust-center",
+            enterprise_trust_center,
+        ),
+        _artifact_summary(
+            "commercial-offer-studio",
+            "Commercial Offer Studio",
+            "/commercial-offer-studio",
+            commercial_offer_studio,
+        ),
+        _artifact_summary(
+            "buyer-concierge", "Buyer Concierge", "/buyer-concierge", buyer_concierge
+        ),
         _artifact_summary("board-pack", "Board Pack", "/board-pack", board_pack),
-        _artifact_summary("outcome-ledger", "Outcome Ledger", "/outcome-ledger", outcome_ledger),
+        _artifact_summary(
+            "outcome-ledger", "Outcome Ledger", "/outcome-ledger", outcome_ledger
+        ),
     ]
     return build_launch_room(
         executive=executive,

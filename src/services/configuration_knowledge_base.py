@@ -1,4 +1,3 @@
-
 """
 Configuration Knowledge Base Service
 База знаний по типовым конфигурациям 1С
@@ -170,7 +169,9 @@ class ConfigurationKnowledgeBase:
             )
             return None
 
-    def add_module_documentation(self, config_name: str, module_name: str, documentation: Dict[str, Any]) -> bool:
+    def add_module_documentation(
+        self, config_name: str, module_name: str, documentation: Dict[str, Any]
+    ) -> bool:
         """
         Добавление документации модуля с input validation
 
@@ -186,16 +187,22 @@ class ConfigurationKnowledgeBase:
         if not config_name or not isinstance(config_name, str):
             logger.warning(
                 "Invalid config_name in add_module_documentation",
-                extra={"config_name_type": (
-                    type(config_name).__name__ if config_name else None)},
+                extra={
+                    "config_name_type": (
+                        type(config_name).__name__ if config_name else None
+                    )
+                },
             )
             return False
 
         if not module_name or not isinstance(module_name, str):
             logger.warning(
                 "Invalid module_name in add_module_documentation",
-                extra={"module_name_type": (
-                    type(module_name).__name__ if module_name else None)},
+                extra={
+                    "module_name_type": (
+                        type(module_name).__name__ if module_name else None
+                    )
+                },
             )
             return False
 
@@ -268,7 +275,9 @@ class ConfigurationKnowledgeBase:
         # Сохранение в файл
         return self._save_configuration(config_key)
 
-    def add_best_practice(self, config_name: str, category: str, practice: Dict[str, Any]) -> bool:
+    def add_best_practice(
+        self, config_name: str, category: str, practice: Dict[str, Any]
+    ) -> bool:
         """
         Добавление best practice
 
@@ -354,8 +363,9 @@ class ConfigurationKnowledgeBase:
         if pattern_type:
             pattern_type = re.sub(r"[^a-zA-Z0-9_.-]", "", pattern_type)
 
-        configs_to_search = [
-            config_name.lower()] if config_name else self.SUPPORTED_CONFIGURATIONS
+        configs_to_search = (
+            [config_name.lower()] if config_name else self.SUPPORTED_CONFIGURATIONS
+        )
 
         for config_key in configs_to_search:
             if config_key not in self._cache:
@@ -384,7 +394,9 @@ class ConfigurationKnowledgeBase:
 
         return results
 
-    def get_recommendations(self, code: str, config_name: Optional[str] = None) -> List[Dict[str, Any]]:
+    def get_recommendations(
+        self, code: str, config_name: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """
         Получение рекомендаций на основе базы знаний
 
@@ -397,8 +409,9 @@ class ConfigurationKnowledgeBase:
         """
         recommendations = []
 
-        configs_to_search = [
-            config_name.lower()] if config_name else self.SUPPORTED_CONFIGURATIONS
+        configs_to_search = (
+            [config_name.lower()] if config_name else self.SUPPORTED_CONFIGURATIONS
+        )
 
         for config_key in configs_to_search:
             if config_key not in self._cache:
@@ -425,7 +438,10 @@ class ConfigurationKnowledgeBase:
             # Проверка best practices
             best_practices = config_data.get("best_practices", [])
             for practice in best_practices:
-                if practice.get("code_pattern") and practice["code_pattern"].lower() in code.lower():
+                if (
+                    practice.get("code_pattern")
+                    and practice["code_pattern"].lower() in code.lower()
+                ):
                     recommendations.append(
                         {
                             "type": "best_practice",
@@ -490,8 +506,9 @@ class ConfigurationKnowledgeBase:
         dir_path = Path(directory_path)
 
         if not dir_path.exists() or not dir_path.is_dir():
-            logger.error("Директория не найдена", extra={
-                         "directory_path": directory_path})
+            logger.error(
+                "Директория не найдена", extra={"directory_path": directory_path}
+            )
             return 0
 
         loaded_count = 0
@@ -514,7 +531,8 @@ class ConfigurationKnowledgeBase:
                             self._merge_configuration_data(config_name, parsed_data)
                             loaded_count += 1
                             logger.info(
-                                f"Loaded configuration from XML: {config_name}", extra={"xml_file": str(xml_file)}
+                                f"Loaded configuration from XML: {config_name}",
+                                extra={"xml_file": str(xml_file)},
                             )
 
                 elif "module" in file_name:
@@ -526,8 +544,10 @@ class ConfigurationKnowledgeBase:
                         config_name = self._detect_config_from_path(xml_file)
                         if config_name:
                             self._add_module_to_config(config_name, parsed_data)
-                            logger.info(f"Loaded module: {parsed_data['name']}", extra={
-                                        "config": config_name})
+                            logger.info(
+                                f"Loaded module: {parsed_data['name']}",
+                                extra={"config": config_name},
+                            )
 
                 else:
                     # Попытка парсинга как объект метаданных
@@ -564,8 +584,9 @@ class ConfigurationKnowledgeBase:
                 if config_name in self.SUPPORTED_CONFIGURATIONS:
                     self._cache[config_name] = data
                     loaded_count += 1
-                    logger.info("Загружена конфигурация", extra={
-                                "config_name": config_name})
+                    logger.info(
+                        "Загружена конфигурация", extra={"config_name": config_name}
+                    )
 
             except Exception as e:
                 logger.error(
@@ -631,7 +652,9 @@ class ConfigurationKnowledgeBase:
 
         # Если не найдено, возвращаем первую поддерживаемую конфигурацию
         # (для случаев когда путь не содержит явного указания)
-        return self.SUPPORTED_CONFIGURATIONS[0] if self.SUPPORTED_CONFIGURATIONS else None
+        return (
+            self.SUPPORTED_CONFIGURATIONS[0] if self.SUPPORTED_CONFIGURATIONS else None
+        )
 
     def _merge_configuration_data(self, config_key: str, parsed_data: Dict[str, Any]):
         """
@@ -680,7 +703,8 @@ class ConfigurationKnowledgeBase:
 
         # Проверяем, не существует ли уже такой модуль
         existing_module = next(
-            (m for m in config["modules"] if m.get("name") == module_data["name"]), None)
+            (m for m in config["modules"] if m.get("name") == module_data["name"]), None
+        )
 
         if existing_module:
             # Обновляем существующий
@@ -733,25 +757,26 @@ class ConfigurationKnowledgeBase:
 
         self._save_configuration(config_key)
 
-
-    async def sync_from_live_server(self, config_name: str, odata_url: Optional[str] = None) -> Dict[str, Any]:
+    async def sync_from_live_server(
+        self, config_name: str, odata_url: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Синхронизация базы знаний с живым сервером 1С через OData.
-        
+
         Args:
             config_name: Имя конфигурации (например, 'erp')
             odata_url: URL OData сервиса (опционально)
-            
+
         Returns:
             Статистика синхронизации
         """
-        from src.integrations.onec.odata_client import OneCODataClient, ODataConfig
+        from src.integrations.onec.odata_client import ODataConfig, OneCODataClient
 
         logger.info(f"Starting live sync for {config_name}...")
-        
+
         config_key = config_name.lower()
         if config_key not in self.SUPPORTED_CONFIGURATIONS:
-             raise ValueError(f"Unsupported configuration: {config_name}")
+            raise ValueError(f"Unsupported configuration: {config_name}")
 
         # Config for OData
         odata_config = None
@@ -759,26 +784,26 @@ class ConfigurationKnowledgeBase:
             odata_config = ODataConfig(
                 base_url=odata_url,
                 username=os.getenv("ONEC_USERNAME", "Administrator"),
-                password=os.getenv("ONEC_PASSWORD", "")
+                password=os.getenv("ONEC_PASSWORD", ""),
             )
-            
+
         client = OneCODataClient(config=odata_config)
         stats = {"catalogs": 0, "documents": 0, "errors": 0}
-        
+
         try:
             # 1. Fetch Metadata (XML) - This gives us the structure
             # Note: Standard OData $metadata gives structure of published objects
             metadata_xml = await client.get_metadata()
-            
+
             # Parse XML to extract object names (simplified regex for now)
-            # In reality, we should use self.xml_parser.parse_object_metadata if applicable, 
+            # In reality, we should use self.xml_parser.parse_object_metadata if applicable,
             # but $metadata format is different from Config Dump.
             # We will just list standard catalogs for demonstration.
-            
+
             # 2. Update Knowledge Base with existence of these objects
             # For now, we just mark that we connected successfully.
             logger.info("Successfully connected to OData and fetched metadata")
-            
+
             # Example: Fetch specific catalogs if known
             # catalogs = ["Товары", "Контрагенты"]
             # for cat in catalogs:
@@ -787,22 +812,23 @@ class ConfigurationKnowledgeBase:
             #         stats["catalogs"] += 1
             #     except Exception:
             #         stats["errors"] += 1
-            
+
             # Save timestamp
             if config_key not in self._cache:
                 self._cache[config_key] = self._get_default_config()
-                
+
             self._cache[config_key]["last_sync"] = datetime.now().isoformat()
             self._cache[config_key]["sync_source"] = "odata"
             self._save_configuration(config_key)
-            
+
             return stats
-            
+
         except Exception as e:
             logger.error(f"Sync failed: {e}")
             raise
         finally:
             await client.close()
+
 
 # Глобальный экземпляр
 _kb_instance: Optional[ConfigurationKnowledgeBase] = None

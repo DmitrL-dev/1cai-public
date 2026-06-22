@@ -7,14 +7,15 @@ from typing import Any
 
 from src.services.rentgen.open_first_path import build_open_first_path
 
-
 BUYER_ROOM_PACKET_ZIP = "rentgen-buyer-room-packet.zip"
 BUYER_ROOM_PACKET_ENDPOINT = "/api/v1/management/buyer-room-packet"
 BUYER_ROOM_PACKET_HASH_HEADER = "X-Buyer-Room-Packet-Sha256"
 ARCHIVE_ACCEPTANCE_RECEIPT_MD = "archive-acceptance-receipt.md"
 ARCHIVE_ACCEPTANCE_RECEIPT_JSON = "archive-acceptance-receipt.json"
 ARCHIVE_VERIFICATION_PACKET_ZIP = "archive-verification-packet.zip"
-ARCHIVE_VERIFICATION_PACKET_ENDPOINT = "/api/v1/evidence-bundle/archive/verification-packet"
+ARCHIVE_VERIFICATION_PACKET_ENDPOINT = (
+    "/api/v1/evidence-bundle/archive/verification-packet"
+)
 ARCHIVE_VERIFICATION_PACKET_HASH_HEADER = "X-Verification-Packet-Sha256"
 EVIDENCE_ARCHIVE_HASH_HEADER = "X-Archive-Sha256"
 KILLER_DEMO_ARCHIVE_HASH_HEADER = "X-Killer-Demo-Archive-Sha256"
@@ -47,7 +48,9 @@ def _score(report: dict[str, Any] | None, default: int = 0) -> int:
 def _status(report: dict[str, Any] | None, default: str = "watch") -> str:
     if not report:
         return default
-    return str((report.get("decision") or {}).get("status") or report.get("status") or default)
+    return str(
+        (report.get("decision") or {}).get("status") or report.get("status") or default
+    )
 
 
 def _phase_status(*reports: dict[str, Any]) -> str:
@@ -100,7 +103,9 @@ def _next_best_action(
     return {
         "label": str(action.get("label") or "Open Buyer Concierge"),
         "route": str(action.get("route") or "/buyer-concierge"),
-        "reason": str(action.get("reason") or "Start from role or pain to avoid menu overload."),
+        "reason": str(
+            action.get("reason") or "Start from role or pain to avoid menu overload."
+        ),
     }
 
 
@@ -115,8 +120,17 @@ def _launch_summary(
     board_summary = board_pack.get("summary") or {}
     outcome_summary = outcome_ledger.get("summary") or {}
     business_summary = business_case.get("summary") or {}
-    currency = str(outcome_summary.get("currency") or business_summary.get("currency") or (business_case.get("assumptions") or {}).get("currency") or "RUB")
-    first_year_value = _int(outcome_summary.get("first_year_visible_value") or board_summary.get("first_year_visible_value") or business_summary.get("first_year_visible_value"))
+    currency = str(
+        outcome_summary.get("currency")
+        or business_summary.get("currency")
+        or (business_case.get("assumptions") or {}).get("currency")
+        or "RUB"
+    )
+    first_year_value = _int(
+        outcome_summary.get("first_year_visible_value")
+        or board_summary.get("first_year_visible_value")
+        or business_summary.get("first_year_visible_value")
+    )
     return {
         "one_line": "Start from role or pain, prove one 1C scenario, handle trust, approve a buying motion, then track outcomes.",
         "current_truth": (
@@ -128,8 +142,14 @@ def _launch_summary(
         "trust_status": _status(enterprise_trust_center),
         "board_status": _status(board_pack),
         "outcome_status": _status(outcome_ledger),
-        "persona_cards": _int((buyer_concierge.get("summary") or {}).get("persona_cards")),
-        "recommended_motion": str(outcome_summary.get("recommended_motion") or board_summary.get("recommended_offer") or ""),
+        "persona_cards": _int(
+            (buyer_concierge.get("summary") or {}).get("persona_cards")
+        ),
+        "recommended_motion": str(
+            outcome_summary.get("recommended_motion")
+            or board_summary.get("recommended_offer")
+            or ""
+        ),
     }
 
 
@@ -144,19 +164,47 @@ def _purchase_spine(
     escape = business_case.get("subscription_escape_plan") or {}
     close_packet = commercial_offer_studio.get("close_packet") or {}
     one_page_order = close_packet.get("one_page_order") or {}
-    dossier_escape = (commercial_offer_studio.get("procurement_dossier") or {}).get("subscription_escape") or {}
+    dossier_escape = (commercial_offer_studio.get("procurement_dossier") or {}).get(
+        "subscription_escape"
+    ) or {}
     board_snapshot = board_pack.get("board_snapshot") or {}
     board_close = board_pack.get("board_close_packet") or {}
     board_order = board_close.get("one_page_order") or {}
-    currency = str(escape.get("currency") or assumptions.get("currency") or board_snapshot.get("currency") or "RUB")
+    currency = str(
+        escape.get("currency")
+        or assumptions.get("currency")
+        or board_snapshot.get("currency")
+        or "RUB"
+    )
     monthly_ai = _int(assumptions.get("monthly_ai_subscription_cost"))
-    annual_ai = _int(escape.get("annual_ai_rent") or business_summary.get("ai_subscription_year") or monthly_ai * 12)
-    three_year_ai = _int(escape.get("three_year_ai_rent") or business_summary.get("three_year_ai_subscription") or annual_ai * 3)
-    local_license = _int(escape.get("local_license_anchor") or business_summary.get("local_license_anchor"))
-    break_even = _int(escape.get("break_even_months") or business_summary.get("subscription_break_even_months"))
-    ai_rent_months = _int(escape.get("ai_rent_equivalent_months") or business_summary.get("subscription_escape_months"))
+    annual_ai = _int(
+        escape.get("annual_ai_rent")
+        or business_summary.get("ai_subscription_year")
+        or monthly_ai * 12
+    )
+    three_year_ai = _int(
+        escape.get("three_year_ai_rent")
+        or business_summary.get("three_year_ai_subscription")
+        or annual_ai * 3
+    )
+    local_license = _int(
+        escape.get("local_license_anchor")
+        or business_summary.get("local_license_anchor")
+    )
+    break_even = _int(
+        escape.get("break_even_months")
+        or business_summary.get("subscription_break_even_months")
+    )
+    ai_rent_months = _int(
+        escape.get("ai_rent_equivalent_months")
+        or business_summary.get("subscription_escape_months")
+    )
     value_anchor = (
-        str(one_page_order.get("value_anchor") or board_snapshot.get("value_anchor") or "")
+        str(
+            one_page_order.get("value_anchor")
+            or board_snapshot.get("value_anchor")
+            or ""
+        )
         or f"{_money(_int(business_summary.get('first_year_visible_value')), currency)} first-year visible value"
     )
     recommended_purchase = str(
@@ -164,7 +212,11 @@ def _purchase_spine(
         or board_order.get("recommended_purchase")
         or "Enterprise local license"
     )
-    route = str(one_page_order.get("route") or board_order.get("route") or "/commercial-offer-studio")
+    route = str(
+        one_page_order.get("route")
+        or board_order.get("route")
+        or "/commercial-offer-studio"
+    )
     core_evidence_files = [
         {
             "title": "Buyer Room Packet ZIP",
@@ -173,10 +225,26 @@ def _purchase_spine(
             "endpoint": BUYER_ROOM_PACKET_ENDPOINT,
             "hash_header": BUYER_ROOM_PACKET_HASH_HEADER,
         },
-        {"title": "Killer Demo ZIP", "filename": "OPEN_FIRST_KILLER_DEMO.md", "route": "/killer-demo"},
-        {"title": "Meeting Close Receipt", "filename": "MEETING_CLOSE_RECEIPT.md", "route": "/killer-demo"},
-        {"title": "Post-Demo Activation Handoff", "filename": "POST_DEMO_ACTIVATION_HANDOFF.md", "route": "/pilot-launchpad"},
-        {"title": "Archive Acceptance Receipt", "filename": ARCHIVE_ACCEPTANCE_RECEIPT_MD, "route": "/evidence-bundle"},
+        {
+            "title": "Killer Demo ZIP",
+            "filename": "OPEN_FIRST_KILLER_DEMO.md",
+            "route": "/killer-demo",
+        },
+        {
+            "title": "Meeting Close Receipt",
+            "filename": "MEETING_CLOSE_RECEIPT.md",
+            "route": "/killer-demo",
+        },
+        {
+            "title": "Post-Demo Activation Handoff",
+            "filename": "POST_DEMO_ACTIVATION_HANDOFF.md",
+            "route": "/pilot-launchpad",
+        },
+        {
+            "title": "Archive Acceptance Receipt",
+            "filename": ARCHIVE_ACCEPTANCE_RECEIPT_MD,
+            "route": "/evidence-bundle",
+        },
         {
             "title": "Verification Packet ZIP",
             "filename": ARCHIVE_VERIFICATION_PACKET_ZIP,
@@ -188,10 +256,26 @@ def _purchase_spine(
     business_evidence_files = list(
         escape.get("evidence_files")
         or [
-            {"title": "Business Case", "filename": "business-case.md", "route": "/business-case"},
-            {"title": "Board Pack", "filename": "board-pack.md", "route": "/board-pack"},
-            {"title": "Outcome Ledger", "filename": "rentgen-outcome-ledger.md", "route": "/outcome-ledger"},
-            {"title": "Evidence Bundle", "filename": "OPEN_FIRST.md", "route": "/evidence-bundle"},
+            {
+                "title": "Business Case",
+                "filename": "business-case.md",
+                "route": "/business-case",
+            },
+            {
+                "title": "Board Pack",
+                "filename": "board-pack.md",
+                "route": "/board-pack",
+            },
+            {
+                "title": "Outcome Ledger",
+                "filename": "rentgen-outcome-ledger.md",
+                "route": "/outcome-ledger",
+            },
+            {
+                "title": "Evidence Bundle",
+                "filename": "OPEN_FIRST.md",
+                "route": "/evidence-bundle",
+            },
         ]
     )
     evidence_files: list[dict[str, str]] = []
@@ -240,7 +324,9 @@ def _purchase_spine(
         ),
         "value_anchor": value_anchor,
         "monthly_ai_rent": _money(monthly_ai, currency),
-        "annual_ai_rent": str(dossier_escape.get("annual_ai_rent") or _money(annual_ai, currency)),
+        "annual_ai_rent": str(
+            dossier_escape.get("annual_ai_rent") or _money(annual_ai, currency)
+        ),
         "three_year_ai_rent": str(
             dossier_escape.get("three_year_ai_rent")
             or one_page_order.get("three_year_ai_rent")
@@ -256,11 +342,19 @@ def _purchase_spine(
         "break_even": str(
             one_page_order.get("break_even")
             or board_snapshot.get("break_even")
-            or (f"{break_even} months by visible value" if break_even else "review Business Case")
+            or (
+                f"{break_even} months by visible value"
+                if break_even
+                else "review Business Case"
+            )
         ),
         "ai_rent_equivalent_months": ai_rent_months,
         "recommended_purchase": recommended_purchase,
-        "commercial_frame": str(one_page_order.get("commercial_frame") or board_order.get("commercial_frame") or "fixed local license"),
+        "commercial_frame": str(
+            one_page_order.get("commercial_frame")
+            or board_order.get("commercial_frame")
+            or "fixed local license"
+        ),
         "first_invoice_trigger": str(
             one_page_order.get("first_invoice_trigger")
             or board_order.get("first_invoice_trigger")
@@ -270,7 +364,9 @@ def _purchase_spine(
         "proof_routes": proof_routes,
         "evidence_files": evidence_files,
         "procurement_handoff": _procurement_handoff(purchase_status=purchase_status),
-        "guardrails": list(escape.get("guardrails") or dossier_escape.get("guardrails") or []),
+        "guardrails": list(
+            escape.get("guardrails") or dossier_escape.get("guardrails") or []
+        ),
     }
 
 
@@ -375,7 +471,13 @@ def _procurement_handoff(*, purchase_status: str) -> dict[str, Any]:
                 "why": "Proves the two archives as one checked pair.",
             },
         ],
-        "routes": ["/", "/evidence-bundle", "/killer-demo", "/pilot-launchpad", "/outcome-ledger"],
+        "routes": [
+            "/",
+            "/evidence-bundle",
+            "/killer-demo",
+            "/pilot-launchpad",
+            "/outcome-ledger",
+        ],
     }
 
 
@@ -478,11 +580,27 @@ def _role_switchboard(
         rows.append(
             {
                 "role": role,
-                "first_click": str(card.get("start_route") or outcome.get("proof_route") or "/buyer-concierge"),
+                "first_click": str(
+                    card.get("start_route")
+                    or outcome.get("proof_route")
+                    or "/buyer-concierge"
+                ),
                 "second_click": str(card.get("second_route") or "/scenario-hub"),
-                "spark": str(card.get("spark") or outcome.get("spark") or card.get("first_question") or ""),
-                "must_believe": str(board.get("must_believe") or card.get("proof") or ""),
-                "close": str(outcome.get("owner_action") or board.get("close_line") or card.get("buy_trigger") or ""),
+                "spark": str(
+                    card.get("spark")
+                    or outcome.get("spark")
+                    or card.get("first_question")
+                    or ""
+                ),
+                "must_believe": str(
+                    board.get("must_believe") or card.get("proof") or ""
+                ),
+                "close": str(
+                    outcome.get("owner_action")
+                    or board.get("close_line")
+                    or card.get("buy_trigger")
+                    or ""
+                ),
             }
         )
     return rows
@@ -514,9 +632,13 @@ def _meeting_modes(
             "audience": "director + mixed room",
             "minutes": 8,
             "steps": [
-                {"route": str(item.get("route") or "/board-pack"), "label": str(item.get("speaker") or item.get("minute") or "step")}
+                {
+                    "route": str(item.get("route") or "/board-pack"),
+                    "label": str(item.get("speaker") or item.get("minute") or "step"),
+                }
                 for item in board_script[:5]
-            ] or [
+            ]
+            or [
                 {"route": "/buyer-concierge", "label": "orient"},
                 {"route": "/scenario-hub", "label": "prove"},
                 {"route": "/board-pack", "label": "approve"},
@@ -542,7 +664,10 @@ def _meeting_modes(
             "audience": "sponsor + delivery lead",
             "minutes": 10,
             "steps": [
-                {"route": str(item.get("route") or "/outcome-ledger"), "label": str(item.get("window") or "outcome")}
+                {
+                    "route": str(item.get("route") or "/outcome-ledger"),
+                    "label": str(item.get("window") or "outcome"),
+                }
                 for item in adoption[:6]
             ],
             "close": "Book Day 7 proof and Day 30 acceptance refresh.",
@@ -563,15 +688,36 @@ def _buyer_journey(
     governance = outcome_ledger.get("governance_refresh") or {}
     acceptance = outcome_ledger.get("acceptance_rollup") or {}
     outcome_summary = outcome_ledger.get("summary") or {}
-    outcome_proof_routes = len(governance.get("proof_routes") or outcome_ledger.get("proof_routes") or [])
-    acceptance_items = _int(outcome_summary.get("acceptance_rollup_items") or len(acceptance.get("items") or []))
-    acceptance_blocked = _int(outcome_summary.get("acceptance_rollup_blocked") or acceptance.get("blocked_items"))
-    acceptance_watch = _int(outcome_summary.get("acceptance_rollup_watch") or acceptance.get("watch_items"))
+    outcome_proof_routes = len(
+        governance.get("proof_routes") or outcome_ledger.get("proof_routes") or []
+    )
+    acceptance_items = _int(
+        outcome_summary.get("acceptance_rollup_items")
+        or len(acceptance.get("items") or [])
+    )
+    acceptance_blocked = _int(
+        outcome_summary.get("acceptance_rollup_blocked")
+        or acceptance.get("blocked_items")
+    )
+    acceptance_watch = _int(
+        outcome_summary.get("acceptance_rollup_watch") or acceptance.get("watch_items")
+    )
 
-    close_ready = bool(board_close.get("ready_to_close", close_packet.get("ready_to_close", _status(board_pack) == "ready")))
-    activation_ready = bool(activation.get("ready_to_activate", _status(pilot_launchpad) == "ready"))
+    close_ready = bool(
+        board_close.get(
+            "ready_to_close",
+            close_packet.get("ready_to_close", _status(board_pack) == "ready"),
+        )
+    )
+    activation_ready = bool(
+        activation.get("ready_to_activate", _status(pilot_launchpad) == "ready")
+    )
     governance_ready = bool(governance.get("ready", _status(outcome_ledger) == "ready"))
-    claim_ready = bool(outcome_summary.get("acceptance_rollup_ready", acceptance.get("ready_to_claim", False)))
+    claim_ready = bool(
+        outcome_summary.get(
+            "acceptance_rollup_ready", acceptance.get("ready_to_claim", False)
+        )
+    )
     realize_status = "risk" if acceptance_blocked else _status(outcome_ledger)
     steps = [
         {
@@ -579,8 +725,18 @@ def _buyer_journey(
             "title": "Close",
             "route": "/board-pack",
             "status": _journey_status(close_ready),
-            "signal": str(board_close.get("primary_ask") or close_packet.get("primary_ask") or "Approve the paid motion with proof attached."),
-            "action": str((board_close.get("one_page_order") or {}).get("recommended_purchase") or (close_packet.get("one_page_order") or {}).get("recommended_purchase") or "Selected paid next step"),
+            "signal": str(
+                board_close.get("primary_ask")
+                or close_packet.get("primary_ask")
+                or "Approve the paid motion with proof attached."
+            ),
+            "action": str(
+                (board_close.get("one_page_order") or {}).get("recommended_purchase")
+                or (close_packet.get("one_page_order") or {}).get(
+                    "recommended_purchase"
+                )
+                or "Selected paid next step"
+            ),
             "proof": f"{len(board_close.get('checkout') or close_packet.get('checkout') or [])} checkout gates.",
         },
         {
@@ -588,8 +744,13 @@ def _buyer_journey(
             "title": "Activate",
             "route": "/pilot-launchpad",
             "status": _journey_status(activation_ready),
-            "signal": str(activation.get("primary_ask") or "Start the paid pilot with owner, date and acceptance gates."),
-            "action": str(activation.get("selected_offer_title") or "Pilot Launchpad activation"),
+            "signal": str(
+                activation.get("primary_ask")
+                or "Start the paid pilot with owner, date and acceptance gates."
+            ),
+            "action": str(
+                activation.get("selected_offer_title") or "Pilot Launchpad activation"
+            ),
             "proof": f"{len(activation.get('gates') or [])} activation gates.",
         },
         {
@@ -597,7 +758,10 @@ def _buyer_journey(
             "title": "Govern",
             "route": "/approvals",
             "status": _journey_status(governance_ready),
-            "signal": str(governance.get("refresh_line") or "Refresh approvals, audit and evidence before claiming rollout outcomes."),
+            "signal": str(
+                governance.get("refresh_line")
+                or "Refresh approvals, audit and evidence before claiming rollout outcomes."
+            ),
             "action": "Verify approvals, audit chain and Evidence Bundle.",
             "proof": f"{len(governance.get('gates') or [])} governance gates and {len(governance.get('windows') or [])} proof windows.",
         },
@@ -606,7 +770,13 @@ def _buyer_journey(
             "title": "Realize",
             "route": "/outcome-ledger",
             "status": realize_status,
-            "signal": str((outcome_ledger.get("value_realization") or {}).get("recommended_motion") or outcome_summary.get("recommended_motion") or "Track adoption outcomes."),
+            "signal": str(
+                (outcome_ledger.get("value_realization") or {}).get(
+                    "recommended_motion"
+                )
+                or outcome_summary.get("recommended_motion")
+                or "Track adoption outcomes."
+            ),
             "action": "Use Day 7/30/60/90 outcomes for rollout, renewal, hardening or expansion.",
             "proof": f"{_int(outcome_summary.get('success_metrics'))} success metrics, {acceptance_items} acceptance rows and {outcome_proof_routes} proof routes.",
         },
@@ -615,14 +785,19 @@ def _buyer_journey(
         "steps": steps,
         "ready_steps": len([item for item in steps if item["status"] == "ready"]),
         "risk_steps": len([item for item in steps if item["status"] == "risk"]),
-        "checkout_gates": len(board_close.get("checkout") or close_packet.get("checkout") or []),
+        "checkout_gates": len(
+            board_close.get("checkout") or close_packet.get("checkout") or []
+        ),
         "activation_gates": len(activation.get("gates") or []),
         "governance_gates": len(governance.get("gates") or []),
         "acceptance_items": acceptance_items,
         "acceptance_watch": acceptance_watch,
         "acceptance_blocked": acceptance_blocked,
         "claim_ready": claim_ready,
-        "next_route": next((item["route"] for item in steps if item["status"] != "ready"), "/outcome-ledger"),
+        "next_route": next(
+            (item["route"] for item in steps if item["status"] != "ready"),
+            "/outcome-ledger",
+        ),
         "buyer_line": "One path now connects purchase, paid activation, governance proof, acceptance sign-off and measurable outcomes.",
     }
 
@@ -717,11 +892,31 @@ def _proof_packet() -> list[dict[str, str]]:
         },
         {"title": "Buyer Brief markdown", "filename": "buyer-brief.md", "route": "/"},
         {"title": "Buyer Pulse markdown", "filename": "buyer-pulse.md", "route": "/"},
-        {"title": "Killer Demo ZIP open-first", "filename": "OPEN_FIRST_KILLER_DEMO.md", "route": "/killer-demo"},
-        {"title": "Meeting Close Receipt", "filename": "MEETING_CLOSE_RECEIPT.md", "route": "/killer-demo"},
-        {"title": "Post-Demo Activation Handoff", "filename": "POST_DEMO_ACTIVATION_HANDOFF.md", "route": "/pilot-launchpad"},
-        {"title": "Archive Acceptance Receipt", "filename": ARCHIVE_ACCEPTANCE_RECEIPT_MD, "route": "/evidence-bundle"},
-        {"title": "Archive Acceptance Receipt JSON", "filename": ARCHIVE_ACCEPTANCE_RECEIPT_JSON, "route": "/evidence-bundle"},
+        {
+            "title": "Killer Demo ZIP open-first",
+            "filename": "OPEN_FIRST_KILLER_DEMO.md",
+            "route": "/killer-demo",
+        },
+        {
+            "title": "Meeting Close Receipt",
+            "filename": "MEETING_CLOSE_RECEIPT.md",
+            "route": "/killer-demo",
+        },
+        {
+            "title": "Post-Demo Activation Handoff",
+            "filename": "POST_DEMO_ACTIVATION_HANDOFF.md",
+            "route": "/pilot-launchpad",
+        },
+        {
+            "title": "Archive Acceptance Receipt",
+            "filename": ARCHIVE_ACCEPTANCE_RECEIPT_MD,
+            "route": "/evidence-bundle",
+        },
+        {
+            "title": "Archive Acceptance Receipt JSON",
+            "filename": ARCHIVE_ACCEPTANCE_RECEIPT_JSON,
+            "route": "/evidence-bundle",
+        },
         {
             "title": "Verification Packet ZIP",
             "filename": ARCHIVE_VERIFICATION_PACKET_ZIP,
@@ -729,15 +924,51 @@ def _proof_packet() -> list[dict[str, str]]:
             "endpoint": ARCHIVE_VERIFICATION_PACKET_ENDPOINT,
             "hash_header": ARCHIVE_VERIFICATION_PACKET_HASH_HEADER,
         },
-        {"title": "Killer Demo manifest", "filename": "killer-demo-manifest.json", "route": "/killer-demo"},
-        {"title": "Launch Room markdown", "filename": "rentgen-launch-room.md", "route": "/launch-room"},
-        {"title": "Buyer Concierge markdown", "filename": "rentgen-buyer-concierge.md", "route": "/buyer-concierge"},
-        {"title": "Board Pack markdown", "filename": "rentgen-board-pack.md", "route": "/board-pack"},
-        {"title": "Outcome Ledger markdown", "filename": "rentgen-outcome-ledger.md", "route": "/outcome-ledger"},
-        {"title": "Enterprise Trust Center markdown", "filename": "rentgen-enterprise-trust-center.md", "route": "/enterprise-trust-center"},
-        {"title": "Governance Proof markdown", "filename": "governance-proof.md", "route": "/approvals"},
-        {"title": "Audit verification/export", "filename": "rentgen-audit-log.jsonl", "route": "/audit"},
-        {"title": "Evidence Bundle manifest", "filename": "evidence-bundle-manifest.json", "route": "/evidence-bundle"},
+        {
+            "title": "Killer Demo manifest",
+            "filename": "killer-demo-manifest.json",
+            "route": "/killer-demo",
+        },
+        {
+            "title": "Launch Room markdown",
+            "filename": "rentgen-launch-room.md",
+            "route": "/launch-room",
+        },
+        {
+            "title": "Buyer Concierge markdown",
+            "filename": "rentgen-buyer-concierge.md",
+            "route": "/buyer-concierge",
+        },
+        {
+            "title": "Board Pack markdown",
+            "filename": "rentgen-board-pack.md",
+            "route": "/board-pack",
+        },
+        {
+            "title": "Outcome Ledger markdown",
+            "filename": "rentgen-outcome-ledger.md",
+            "route": "/outcome-ledger",
+        },
+        {
+            "title": "Enterprise Trust Center markdown",
+            "filename": "rentgen-enterprise-trust-center.md",
+            "route": "/enterprise-trust-center",
+        },
+        {
+            "title": "Governance Proof markdown",
+            "filename": "governance-proof.md",
+            "route": "/approvals",
+        },
+        {
+            "title": "Audit verification/export",
+            "filename": "rentgen-audit-log.jsonl",
+            "route": "/audit",
+        },
+        {
+            "title": "Evidence Bundle manifest",
+            "filename": "evidence-bundle-manifest.json",
+            "route": "/evidence-bundle",
+        },
     ]
 
 
@@ -794,10 +1025,30 @@ def _buyer_room_bridge(
     meeting_flow = list(brief.get("meeting_flow") or [])
     if not meeting_flow:
         meeting_flow = [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Pick the role in the room."},
-            {"step": 2, "label": "Prove", "route": "/killer-demo", "line": "Show one proof path."},
-            {"step": 3, "label": "Ask", "route": primary["route"], "line": str(primary.get("ask") or "")},
-            {"step": 4, "label": "Forward", "route": "/evidence-bundle", "line": "Attach the proof packet."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Pick the role in the room.",
+            },
+            {
+                "step": 2,
+                "label": "Prove",
+                "route": "/killer-demo",
+                "line": "Show one proof path.",
+            },
+            {
+                "step": 3,
+                "label": "Ask",
+                "route": primary["route"],
+                "line": str(primary.get("ask") or ""),
+            },
+            {
+                "step": 4,
+                "label": "Forward",
+                "route": "/evidence-bundle",
+                "line": "Attach the proof packet.",
+            },
         ]
     open_first_path = build_open_first_path(
         existing_path=brief.get("open_first_path"),
@@ -808,7 +1059,9 @@ def _buyer_room_bridge(
         orient_title="Launch Room",
         orient_route="/launch-room",
         orient_line="Open one buyer cockpit.",
-        orient_status=str(primary.get("status") or purchase_spine.get("status") or "watch"),
+        orient_status=str(
+            primary.get("status") or purchase_spine.get("status") or "watch"
+        ),
         prove_line="Show one proof path.",
         prove_status=str(purchase_spine.get("status") or "watch"),
         close_route=str(primary.get("route") or "/killer-demo"),
@@ -828,7 +1081,12 @@ def _buyer_room_bridge(
     )
     fallback_score = 82 if purchase_spine.get("status") == "ready" else 70
     return {
-        "status": str(brief.get("purchase_status") or primary.get("status") or purchase_spine.get("status") or "watch"),
+        "status": str(
+            brief.get("purchase_status")
+            or primary.get("status")
+            or purchase_spine.get("status")
+            or "watch"
+        ),
         "score": _int(brief.get("score"), fallback_score),
         "source": str(brief.get("source") or "launch-room-derived"),
         "room_line": str(
@@ -838,7 +1096,9 @@ def _buyer_room_bridge(
         "primary_motion": {
             "label": str(primary.get("label") or next_best_action["label"]),
             "route": str(primary.get("route") or next_best_action["route"]),
-            "status": str(primary.get("status") or purchase_spine.get("status") or "watch"),
+            "status": str(
+                primary.get("status") or purchase_spine.get("status") or "watch"
+            ),
             "ask": str(primary.get("ask") or "Name the next paid step."),
             "reason": str(primary.get("reason") or next_best_action["reason"]),
         },
@@ -895,7 +1155,9 @@ def _markdown(report: dict[str, Any]) -> str:
         "",
     ]
     for item in purchase.get("evidence_files", []):
-        lines.append(f"- **{item.get('title', '')}** (`{item.get('route', '/launch-room')}`): `{item.get('filename', '')}`")
+        lines.append(
+            f"- **{item.get('title', '')}** (`{item.get('route', '/launch-room')}`): `{item.get('filename', '')}`"
+        )
     handoff = purchase.get("procurement_handoff") or {}
     if handoff:
         lines.extend(
@@ -909,7 +1171,9 @@ def _markdown(report: dict[str, Any]) -> str:
             ]
         )
         for item in handoff.get("open_order", []):
-            header = f" / `{item.get('hash_header')}`" if item.get("hash_header") else ""
+            header = (
+                f" / `{item.get('hash_header')}`" if item.get("hash_header") else ""
+            )
             lines.append(
                 f"- **{item.get('step')}. {item.get('label', '')}** (`{item.get('route', '/launch-room')}`): "
                 f"`{item.get('file', '')}`{header} - {item.get('check', '')}"
@@ -917,15 +1181,15 @@ def _markdown(report: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
-        "## Buyer Room Bridge",
-        "",
-        f"- Status: **{buyer_room.get('status', 'unknown')}** / score **{buyer_room.get('score', 0)}**",
-        f"- Room line: {buyer_room.get('room_line', '')}",
-        f"- Primary motion: **{(buyer_room.get('primary_motion') or {}).get('label', '')}** (`{(buyer_room.get('primary_motion') or {}).get('route', '/launch-room')}`)",
-        f"- Files: {', '.join(buyer_room.get('files', []))}",
-        "",
-        "### Open-First Path",
-        "",
+            "## Buyer Room Bridge",
+            "",
+            f"- Status: **{buyer_room.get('status', 'unknown')}** / score **{buyer_room.get('score', 0)}**",
+            f"- Room line: {buyer_room.get('room_line', '')}",
+            f"- Primary motion: **{(buyer_room.get('primary_motion') or {}).get('label', '')}** (`{(buyer_room.get('primary_motion') or {}).get('route', '/launch-room')}`)",
+            f"- Files: {', '.join(buyer_room.get('files', []))}",
+            "",
+            "### Open-First Path",
+            "",
         ]
     )
     for item in buyer_room.get("open_first_path", []):
@@ -936,15 +1200,19 @@ def _markdown(report: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
-        "## Path Phases",
-        "",
+            "## Path Phases",
+            "",
         ]
     )
     for item in report["path_phases"]:
-        lines.append(f"- **{item['title']}**: {item['status']} / {item['score']} (`{item['route']}`) - {item['exit_criteria']}")
+        lines.append(
+            f"- **{item['title']}**: {item['status']} / {item['score']} (`{item['route']}`) - {item['exit_criteria']}"
+        )
     lines.extend(["", "## Role Switchboard", ""])
     for item in report["role_switchboard"]:
-        lines.append(f"- **{item['role']}**: first `{item['first_click']}`, then `{item['second_click']}`. {item['spark']}")
+        lines.append(
+            f"- **{item['role']}**: first `{item['first_click']}`, then `{item['second_click']}`. {item['spark']}"
+        )
     lines.extend(["", "## Meeting Modes", ""])
     for item in report["meeting_modes"]:
         lines.append(f"- **{item['title']}** ({item['minutes']} min): {item['close']}")
@@ -958,10 +1226,14 @@ def _markdown(report: dict[str, Any]) -> str:
             f"**{journey.get('acceptance_watch', 0)}** / **{journey.get('acceptance_blocked', 0)}**"
         )
         for item in journey.get("steps", []):
-            lines.append(f"- **{item.get('title', '')}** ({item.get('status', '')}, `{item.get('route', '/launch-room')}`): {item.get('signal', '')}")
+            lines.append(
+                f"- **{item.get('title', '')}** ({item.get('status', '')}, `{item.get('route', '/launch-room')}`): {item.get('signal', '')}"
+            )
     lines.extend(["", "## Anti-confusion", ""])
     for item in report["anti_confusion_cards"]:
-        lines.append(f"- **{item['signal']}** -> {item['response']} (`{item['route']}`)")
+        lines.append(
+            f"- **{item['signal']}** -> {item['response']} (`{item['route']}`)"
+        )
     lines.extend(["", "## Caveats", ""])
     lines.extend(f"- {item}" for item in report["caveats"])
     return "\n".join(lines)
@@ -1089,8 +1361,12 @@ def build_launch_room(
         },
         "summary": {
             "phases": len(path_phases),
-            "ready_phases": len([item for item in path_phases if item["status"] == "ready"]),
-            "risk_phases": len([item for item in path_phases if item["status"] == "risk"]),
+            "ready_phases": len(
+                [item for item in path_phases if item["status"] == "ready"]
+            ),
+            "risk_phases": len(
+                [item for item in path_phases if item["status"] == "risk"]
+            ),
             "role_paths": len(role_switchboard),
             "meeting_modes": len(meeting_modes),
             "route_health_items": len(route_health),
@@ -1106,7 +1382,10 @@ def build_launch_room(
             "acceptance_blocked": buyer_journey["acceptance_blocked"],
             "claim_ready": buyer_journey["claim_ready"],
             "purchase_spine_status": purchase_spine["status"],
-            "procurement_handoff_steps": len((purchase_spine.get("procurement_handoff") or {}).get("open_order") or []),
+            "procurement_handoff_steps": len(
+                (purchase_spine.get("procurement_handoff") or {}).get("open_order")
+                or []
+            ),
             "buyer_room_roles": len(buyer_room_bridge["role_cards"]),
             "buyer_room_proofs": len(buyer_room_bridge["proof_readiness"]),
             "buyer_room_steps": len(buyer_room_bridge["meeting_flow"]),

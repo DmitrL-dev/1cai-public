@@ -36,7 +36,9 @@ EndProcedure
     assert report["summary"]["rights_files"] == 1
     assert report["summary"]["borrowed_objects"] >= 1
     assert report["extensions"][0]["name"] == "SalesPatch"
-    assert any(action["kind"] == "extension-review" for action in report["recommended_actions"])
+    assert any(
+        action["kind"] == "extension-review" for action in report["recommended_actions"]
+    )
     assert "Extension Safety" in report["markdown"]
 
 
@@ -56,7 +58,9 @@ def test_extension_safety_no_extensions_is_ready_with_caveat(tmp_path):
 def test_extension_safety_missing_source_is_watch(tmp_path):
     # A missing source *inside* an allowed data root must degrade to watch with
     # a no-data caveat, not a hard rejection.
-    report = build_extension_safety(config_path=str(tmp_path / "missing" / "config" / "source"))
+    report = build_extension_safety(
+        config_path=str(tmp_path / "missing" / "config" / "source")
+    )
 
     assert report["source"]["exists"] is False
     assert report["decision"]["status"] == "watch"

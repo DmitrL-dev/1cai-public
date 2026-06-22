@@ -3,7 +3,6 @@ from threading import Lock
 from typing import Any, Dict
 
 from src.config import settings
-
 from src.resilience.error_recovery import CircuitBreaker
 
 

@@ -12,7 +12,7 @@ It handles:
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile
 from starlette.requests import Request
@@ -214,7 +214,9 @@ async def update_plugin(
         HTTPException(403): Если у пользователя нет прав на редактирование.
     """
     try:
-        updated = await service.update_plugin(plugin_id, update.model_dump(exclude_unset=True), current_user)
+        updated = await service.update_plugin(
+            plugin_id, update.model_dump(exclude_unset=True), current_user
+        )
         if not updated:
             raise HTTPException(status_code=404, detail="Plugin not found")
         return PluginResponse(**updated)
@@ -224,7 +226,9 @@ async def update_plugin(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/plugins/{plugin_id}/artifact", response_model=PluginResponse, status_code=201)
+@router.post(
+    "/plugins/{plugin_id}/artifact", response_model=PluginResponse, status_code=201
+)
 @limiter.limit("10/minute")
 async def upload_plugin_artifact(
     request: Request,
@@ -382,7 +386,9 @@ async def submit_review(
         PluginReviewResponse: Созданный отзыв.
     """
     try:
-        stored = await service.create_review(plugin_id, review.model_dump(), current_user)
+        stored = await service.create_review(
+            plugin_id, review.model_dump(), current_user
+        )
         return PluginReviewResponse(**stored)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

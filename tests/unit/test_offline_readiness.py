@@ -5,7 +5,10 @@ from fastapi.testclient import TestClient
 from src.ai.mcp.server import TOOLS, handle_rentgen_offline_readiness
 from src.api.offline_readiness_api import router
 from src.services.rentgen.metadata_graph import build_metadata_graph
-from src.services.rentgen.offline_readiness import EXTERNAL_ENV_KEYS, build_offline_readiness
+from src.services.rentgen.offline_readiness import (
+    EXTERNAL_ENV_KEYS,
+    build_offline_readiness,
+)
 
 
 def _make_offline_root(tmp_path):
@@ -30,7 +33,9 @@ def _make_offline_root(tmp_path):
 <MetaDataObject><Document uuid="doc"><Properties><Name>Order</Name></Properties></Document></MetaDataObject>""",
         encoding="utf-8",
     )
-    (docs / "managed_forms.txt").write_text("Managed form offline context", encoding="utf-8")
+    (docs / "managed_forms.txt").write_text(
+        "Managed form offline context", encoding="utf-8"
+    )
     return root
 
 
@@ -61,7 +66,9 @@ def test_offline_readiness_strict_fails_on_external_env(tmp_path, monkeypatch):
     build_metadata_graph.cache_clear()
 
     report = build_offline_readiness(strict=True, root=root)
-    external_check = next(item for item in report["checks"] if item["id"] == "external-env")
+    external_check = next(
+        item for item in report["checks"] if item["id"] == "external-env"
+    )
 
     assert report["decision"]["status"] == "fail"
     assert external_check["status"] == "fail"

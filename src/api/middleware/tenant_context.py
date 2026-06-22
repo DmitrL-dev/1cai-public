@@ -1,4 +1,3 @@
-
 """
 Tenant Context Middleware
 Устанавливает контекст tenant для каждого запроса

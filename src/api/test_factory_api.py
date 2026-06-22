@@ -26,7 +26,9 @@ class TestFactoryRequest(BaseModel):
 
 
 def _build_report(req: TestFactoryRequest) -> dict[str, Any]:
-    changed_modules = list(dict.fromkeys(req.changed_modules + extract_diff_modules(req.diff)))
+    changed_modules = list(
+        dict.fromkeys(req.changed_modules + extract_diff_modules(req.diff))
+    )
     store = store_or_none()
     return build_test_factory(
         store,

@@ -66,7 +66,9 @@ def test_form_blueprint_generates_layout_assets_and_checks(tmp_path):
 
 def test_form_blueprint_api_exposes_report(tmp_path, monkeypatch):
     _build_config(tmp_path)
-    monkeypatch.setattr("src.services.rentgen.form_designer.DEFAULT_CONFIG_PATH", tmp_path)
+    monkeypatch.setattr(
+        "src.services.rentgen.form_designer.DEFAULT_CONFIG_PATH", tmp_path
+    )
     _clear_caches()
 
     app = FastAPI()
@@ -75,7 +77,11 @@ def test_form_blueprint_api_exposes_report(tmp_path, monkeypatch):
 
     response = client.post(
         "/api/v1/metadata/form-blueprint",
-        json={"identifier": "Document.Order", "form_kind": "list", "include_review": False},
+        json={
+            "identifier": "Document.Order",
+            "form_kind": "list",
+            "include_review": False,
+        },
     )
 
     assert response.status_code == 200
@@ -88,7 +94,9 @@ def test_form_blueprint_api_exposes_report(tmp_path, monkeypatch):
 @pytest.mark.asyncio
 async def test_mcp_form_blueprint_tool_is_registered(tmp_path, monkeypatch):
     _build_config(tmp_path)
-    monkeypatch.setattr("src.services.rentgen.form_designer.DEFAULT_CONFIG_PATH", tmp_path)
+    monkeypatch.setattr(
+        "src.services.rentgen.form_designer.DEFAULT_CONFIG_PATH", tmp_path
+    )
     _clear_caches()
 
     names = {tool.name for tool in TOOLS}

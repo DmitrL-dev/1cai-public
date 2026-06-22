@@ -33,7 +33,9 @@ class TestGeneratorService:
         """Generate tests based on language"""
         try:
             if language == "bsl":
-                return await self.bsl_generator.generate(code, include_edge_cases, timeout)
+                return await self.bsl_generator.generate(
+                    code, include_edge_cases, timeout
+                )
             elif language == "python":
                 return await self.python_generator.generate(code, include_edge_cases)
             elif language in ["javascript", "typescript"]:

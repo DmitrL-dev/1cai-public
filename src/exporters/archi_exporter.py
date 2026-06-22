@@ -85,7 +85,9 @@ class ArchiExporter:
                 "xmlns": self.ARCHIMATE_NS,
                 "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
                 "xsi:schemaLocation": (
-                    f"{self.ARCHIMATE_NS} " "http://www.opengroup.org/xsd/archimate/3.1/" "archimate3_Diagram.xsd"
+                    f"{self.ARCHIMATE_NS} "
+                    "http://www.opengroup.org/xsd/archimate/3.1/"
+                    "archimate3_Diagram.xsd"
                 ),
                 "identifier": self._generate_id(),
                 "version": "5.0.0",
@@ -125,10 +127,13 @@ class ArchiExporter:
         tree.write(output_path, encoding="utf-8", xml_declaration=True)
 
         logger.info(
-            f"Export complete: {len(nodes)} elements, " f"{len(rels)} relationships")
+            f"Export complete: {len(nodes)} elements, " f"{len(rels)} relationships"
+        )
         return output_path
 
-    async def _fetch_nodes(self, filters: Dict[str, Any] = None, limit: int = 1000) -> List[Dict]:
+    async def _fetch_nodes(
+        self, filters: Dict[str, Any] = None, limit: int = 1000
+    ) -> List[Dict]:
         """Fetch nodes from graph with parameterized query"""
         query = """
         MATCH (n)
@@ -146,7 +151,9 @@ class ArchiExporter:
         result = await self.graph_service.execute_query(query, {"limit": limit})
         return result
 
-    async def _fetch_relationships(self, filters: Dict[str, Any] = None, limit: int = 2000) -> List[Dict]:
+    async def _fetch_relationships(
+        self, filters: Dict[str, Any] = None, limit: int = 2000
+    ) -> List[Dict]:
         """Fetch relationships from graph with parameterized query"""
         query = """
         MATCH (a)-[r]->(b)
@@ -165,7 +172,9 @@ class ArchiExporter:
     def _generate_id(self, prefix: str | None = None) -> str:
         """Generate unique identifier"""
         if prefix:
-            safe_prefix = "".join(ch if ch.isalnum() or ch == "_" else "_" for ch in prefix).strip("_")
+            safe_prefix = "".join(
+                ch if ch.isalnum() or ch == "_" else "_" for ch in prefix
+            ).strip("_")
             return f"{safe_prefix or 'id'}_{uuid.uuid4()}"
         return f"id-{uuid.uuid4()}"
 
@@ -204,7 +213,9 @@ class ArchiExporter:
 
         return element
 
-    def _create_relationship(self, rel: Dict, element_map: Dict[str, str]) -> ET.Element:
+    def _create_relationship(
+        self, rel: Dict, element_map: Dict[str, str]
+    ) -> ET.Element:
         """Create ArchiMate relationship from Neo4j relationship"""
         source_id = element_map.get(rel["source_id"])
         target_id = element_map.get(rel["target_id"])

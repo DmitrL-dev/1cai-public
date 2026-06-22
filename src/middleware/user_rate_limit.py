@@ -1,4 +1,3 @@
-
 """
 Request rate limiting middleware using Redis counters.
 Версия: 2.1.0
@@ -12,7 +11,7 @@ Request rate limiting middleware using Redis counters.
 from __future__ import annotations
 
 import time
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from fastapi import HTTPException, status
 from redis.asyncio import Redis
@@ -117,7 +116,11 @@ class UserRateLimitMiddleware(BaseHTTPMiddleware):
 
             if not current_user and self.auth_service:
                 authorization: Optional[str] = request.headers.get("Authorization")
-                if authorization and isinstance(authorization, str) and authorization.lower().startswith("bearer "):
+                if (
+                    authorization
+                    and isinstance(authorization, str)
+                    and authorization.lower().startswith("bearer ")
+                ):
                     token = authorization.split(" ", maxsplit=1)[1].strip()
 
                     # Validate token length (prevent DoS)

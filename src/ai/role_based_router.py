@@ -1,4 +1,3 @@
-
 """
 Role-Based AI Router
 Маршрутизация запросов в зависимости от роли пользователя.
@@ -10,10 +9,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from src.micro_swarm.domains import (
-    ROLE_DETECTION_DOMAIN,
-    extract_role_features,
-)
+from src.micro_swarm.domains import ROLE_DETECTION_DOMAIN, extract_role_features
 from src.micro_swarm.model import MicroModel, MicroModelConfig
 from src.utils.structured_logging import StructuredLogger
 
@@ -392,7 +388,11 @@ class RoleBasedRouter:
         unavailable_integrations = unavailable_integrations or []
         guidance = self._role_guidance(role, query, context)
         required_evidence = self._required_evidence(role, context)
-        coverage = "local_router_with_context" if context else "local_router_no_project_evidence"
+        coverage = (
+            "local_router_with_context"
+            if context
+            else "local_router_no_project_evidence"
+        )
         caveats = []
         if unavailable_integrations:
             caveats.append(
@@ -517,7 +517,10 @@ class RoleBasedRouter:
                 ("location", ["current_file", "module_path", "object_name"]),
             ],
             UserRole.BUSINESS_ANALYST: [
-                ("requirements_source", ["document_text", "document_path", "requirements"]),
+                (
+                    "requirements_source",
+                    ["document_text", "document_path", "requirements"],
+                ),
                 ("process_context", ["current_state", "desired_state", "process"]),
             ],
             UserRole.QA_ENGINEER: [
@@ -525,12 +528,18 @@ class RoleBasedRouter:
                 ("quality_signal", ["coverage", "bug_history", "test_cases"]),
             ],
             UserRole.ARCHITECT: [
-                ("metadata_graph", ["metadata_path", "graph", "objects", "dependencies"]),
+                (
+                    "metadata_graph",
+                    ["metadata_path", "graph", "objects", "dependencies"],
+                ),
                 ("change_scope", ["changed_files", "modules", "extension_manifest"]),
             ],
             UserRole.DEVOPS: [
                 ("operational_signal", ["tech_journal", "logs", "metrics"]),
-                ("deployment_context", ["pipeline_config", "compose", "kubernetes", "iac"]),
+                (
+                    "deployment_context",
+                    ["pipeline_config", "compose", "kubernetes", "iac"],
+                ),
             ],
             UserRole.TECHNICAL_WRITER: [
                 ("source_material", ["code", "openapi", "commits", "feature"]),

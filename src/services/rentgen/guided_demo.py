@@ -180,9 +180,21 @@ def _role_paths() -> list[dict[str, Any]]:
             "role": "Developer",
             "headline": "Fix a real 1C risk before commit.",
             "steps": [
-                {"label": "Change Impact", "to": "/change", "proof": "impact, risk, affected tests"},
-                {"label": "Quality / Query Surgeon", "to": "/quality", "proof": "LEFT JOIN fields, NULL guards, deterministic rule"},
-                {"label": "Testing", "to": "/testing", "proof": "exact/planned/gap test matrix"},
+                {
+                    "label": "Change Impact",
+                    "to": "/change",
+                    "proof": "impact, risk, affected tests",
+                },
+                {
+                    "label": "Quality / Query Surgeon",
+                    "to": "/quality",
+                    "proof": "LEFT JOIN fields, NULL guards, deterministic rule",
+                },
+                {
+                    "label": "Testing",
+                    "to": "/testing",
+                    "proof": "exact/planned/gap test matrix",
+                },
             ],
             "buying_trigger": "The first real module gets a defect, impact path and test expectation in one route.",
         },
@@ -190,9 +202,21 @@ def _role_paths() -> list[dict[str, Any]]:
             "role": "Architect",
             "headline": "See configuration topology, upgrade impact and security boundaries.",
             "steps": [
-                {"label": "Architecture", "to": "/architecture", "proof": "graph and blast radius"},
-                {"label": "Update War Room", "to": "/update-war-room", "proof": "platform, extension, rollback and evidence plan"},
-                {"label": "Rights/RLS", "to": "/rights-rls", "proof": "roles, rights, dangerous permissions and caveats"},
+                {
+                    "label": "Architecture",
+                    "to": "/architecture",
+                    "proof": "graph and blast radius",
+                },
+                {
+                    "label": "Update War Room",
+                    "to": "/update-war-room",
+                    "proof": "platform, extension, rollback and evidence plan",
+                },
+                {
+                    "label": "Rights/RLS",
+                    "to": "/rights-rls",
+                    "proof": "roles, rights, dangerous permissions and caveats",
+                },
             ],
             "buying_trigger": "An upgrade discussion becomes evidence-backed instead of expert-memory backed.",
         },
@@ -200,9 +224,21 @@ def _role_paths() -> list[dict[str, Any]]:
             "role": "Director",
             "headline": "Turn local technical evidence into a go/no-go and a money map.",
             "steps": [
-                {"label": "Business Case", "to": "/business-case", "proof": "visible value and objections"},
-                {"label": "Release Readiness", "to": "/release-readiness", "proof": "decision, gates and residual risk"},
-                {"label": "Evidence Bundle", "to": "/evidence-bundle", "proof": "portable approval artifacts"},
+                {
+                    "label": "Business Case",
+                    "to": "/business-case",
+                    "proof": "visible value and objections",
+                },
+                {
+                    "label": "Release Readiness",
+                    "to": "/release-readiness",
+                    "proof": "decision, gates and residual risk",
+                },
+                {
+                    "label": "Evidence Bundle",
+                    "to": "/evidence-bundle",
+                    "proof": "portable approval artifacts",
+                },
             ],
             "buying_trigger": "The buyer can justify a local product purchase without reading module code.",
         },
@@ -210,9 +246,21 @@ def _role_paths() -> list[dict[str, Any]]:
             "role": "QA / Release",
             "headline": "Replace release faith with evidence.",
             "steps": [
-                {"label": "Testing", "to": "/testing", "proof": "test selection and gaps"},
-                {"label": "Release Readiness", "to": "/release-readiness", "proof": "policy gates"},
-                {"label": "Evidence Bundle", "to": "/evidence-bundle", "proof": "approval-ready exports"},
+                {
+                    "label": "Testing",
+                    "to": "/testing",
+                    "proof": "test selection and gaps",
+                },
+                {
+                    "label": "Release Readiness",
+                    "to": "/release-readiness",
+                    "proof": "policy gates",
+                },
+                {
+                    "label": "Evidence Bundle",
+                    "to": "/evidence-bundle",
+                    "proof": "approval-ready exports",
+                },
             ],
             "buying_trigger": "The release meeting gets a reusable test and evidence path.",
         },
@@ -220,9 +268,21 @@ def _role_paths() -> list[dict[str, Any]]:
             "role": "Operations",
             "headline": "Connect runtime pain with code, platform and runbooks.",
             "steps": [
-                {"label": "Platform Doctor", "to": "/platform-doctor", "proof": "runtime and upgrade facts"},
-                {"label": "Lock Radar", "to": "/lock-radar", "proof": "TLOCK/TTIMEOUT/TDEADLOCK to module plan"},
-                {"label": "Operations", "to": "/operations", "proof": "incident report and runbook"},
+                {
+                    "label": "Platform Doctor",
+                    "to": "/platform-doctor",
+                    "proof": "runtime and upgrade facts",
+                },
+                {
+                    "label": "Lock Radar",
+                    "to": "/lock-radar",
+                    "proof": "TLOCK/TTIMEOUT/TDEADLOCK to module plan",
+                },
+                {
+                    "label": "Operations",
+                    "to": "/operations",
+                    "proof": "incident report and runbook",
+                },
             ],
             "buying_trigger": "A runtime incident stops being isolated from release and code evidence.",
         },
@@ -230,9 +290,21 @@ def _role_paths() -> list[dict[str, Any]]:
             "role": "Vendor / Franchisee",
             "headline": "Sell a paid audit, then convert it into scoped work.",
             "steps": [
-                {"label": "Vendor Portfolio", "to": "/vendor-portfolio", "proof": "audit and work packages"},
-                {"label": "Value Packs", "to": "/value-packs", "proof": "buyable role outcomes"},
-                {"label": "Business Case", "to": "/business-case", "proof": "buyer committee and commercial story"},
+                {
+                    "label": "Vendor Portfolio",
+                    "to": "/vendor-portfolio",
+                    "proof": "audit and work packages",
+                },
+                {
+                    "label": "Value Packs",
+                    "to": "/value-packs",
+                    "proof": "buyable role outcomes",
+                },
+                {
+                    "label": "Business Case",
+                    "to": "/business-case",
+                    "proof": "buyer committee and commercial story",
+                },
             ],
             "buying_trigger": "The partner can send a buyer-safe report after a short local scan.",
         },
@@ -240,9 +312,21 @@ def _role_paths() -> list[dict[str, Any]]:
             "role": "Security / Enterprise IT",
             "headline": "Check locality, artifacts and installability before trust.",
             "steps": [
-                {"label": "Enterprise Trust Center", "to": "/enterprise-trust-center", "proof": "local contour, SBOM/offline, rights and procurement proof"},
-                {"label": "Productization", "to": "/productization", "proof": "SBOM and offline bundle controls"},
-                {"label": "Evidence Bundle", "to": "/evidence-bundle", "proof": "hash manifest"},
+                {
+                    "label": "Enterprise Trust Center",
+                    "to": "/enterprise-trust-center",
+                    "proof": "local contour, SBOM/offline, rights and procurement proof",
+                },
+                {
+                    "label": "Productization",
+                    "to": "/productization",
+                    "proof": "SBOM and offline bundle controls",
+                },
+                {
+                    "label": "Evidence Bundle",
+                    "to": "/evidence-bundle",
+                    "proof": "hash manifest",
+                },
             ],
             "buying_trigger": "The security conversation starts from local artifacts and explicit gaps.",
         },
@@ -333,17 +417,61 @@ def _exports() -> list[dict[str, str]]:
     return [
         {"title": "Buyer Brief markdown", "filename": "buyer-brief.md", "route": "/"},
         {"title": "Buyer Pulse markdown", "filename": "buyer-pulse.md", "route": "/"},
-        {"title": "Buyer Concierge markdown", "filename": "rentgen-buyer-concierge.md", "route": "/buyer-concierge"},
-        {"title": "Demo Command Center markdown", "filename": "rentgen-demo-command-center.md", "route": "/demo-command-center"},
-        {"title": "Commercial Offer Studio markdown", "filename": "rentgen-commercial-offer-studio.md", "route": "/commercial-offer-studio"},
-        {"title": "Pilot Launchpad markdown", "filename": "rentgen-pilot-launchpad.md", "route": "/pilot-launchpad"},
-        {"title": "Scenario Hub markdown", "filename": "rentgen-scenario-hub.md", "route": "/scenario-hub"},
-        {"title": "Guided Demo markdown", "filename": "rentgen-guided-demo.md", "route": "/guided-demo"},
-        {"title": "Business Case markdown", "filename": "rentgen-business-case.md", "route": "/business-case"},
-        {"title": "Evidence Bundle manifest", "filename": "evidence-bundle-manifest.json", "route": "/evidence-bundle"},
-        {"title": "Enterprise Trust Center", "filename": "rentgen-enterprise-trust-center.md", "route": "/enterprise-trust-center"},
-        {"title": "Productization readiness", "filename": "productization-readiness.md", "route": "/productization"},
-        {"title": "Vendor audit report", "filename": "vendor-portfolio.md", "route": "/vendor-portfolio"},
+        {
+            "title": "Buyer Concierge markdown",
+            "filename": "rentgen-buyer-concierge.md",
+            "route": "/buyer-concierge",
+        },
+        {
+            "title": "Demo Command Center markdown",
+            "filename": "rentgen-demo-command-center.md",
+            "route": "/demo-command-center",
+        },
+        {
+            "title": "Commercial Offer Studio markdown",
+            "filename": "rentgen-commercial-offer-studio.md",
+            "route": "/commercial-offer-studio",
+        },
+        {
+            "title": "Pilot Launchpad markdown",
+            "filename": "rentgen-pilot-launchpad.md",
+            "route": "/pilot-launchpad",
+        },
+        {
+            "title": "Scenario Hub markdown",
+            "filename": "rentgen-scenario-hub.md",
+            "route": "/scenario-hub",
+        },
+        {
+            "title": "Guided Demo markdown",
+            "filename": "rentgen-guided-demo.md",
+            "route": "/guided-demo",
+        },
+        {
+            "title": "Business Case markdown",
+            "filename": "rentgen-business-case.md",
+            "route": "/business-case",
+        },
+        {
+            "title": "Evidence Bundle manifest",
+            "filename": "evidence-bundle-manifest.json",
+            "route": "/evidence-bundle",
+        },
+        {
+            "title": "Enterprise Trust Center",
+            "filename": "rentgen-enterprise-trust-center.md",
+            "route": "/enterprise-trust-center",
+        },
+        {
+            "title": "Productization readiness",
+            "filename": "productization-readiness.md",
+            "route": "/productization",
+        },
+        {
+            "title": "Vendor audit report",
+            "filename": "vendor-portfolio.md",
+            "route": "/vendor-portfolio",
+        },
     ]
 
 
@@ -361,8 +489,14 @@ def _guided_room_bridge(
         "label": str(opening_step.get("title") or "Open guided proof route"),
         "route": str(opening_step.get("route") or "/guided-demo"),
         "status": "ready",
-        "ask": str(opening_step.get("talk_track") or "Start from role, pain and buyer-safe proof."),
-        "reason": str(opening_step.get("success_signal") or "Buyer sees one route instead of the whole product map."),
+        "ask": str(
+            opening_step.get("talk_track")
+            or "Start from role, pain and buyer-safe proof."
+        ),
+        "reason": str(
+            opening_step.get("success_signal")
+            or "Buyer sees one route instead of the whole product map."
+        ),
         "minutes": float(opening_step.get("minutes") or 0.5),
     }
     if not primary:
@@ -380,7 +514,9 @@ def _guided_room_bridge(
             {
                 "role": item["role"].casefold(),
                 "title": item["role"],
-                "route": str((item.get("steps") or [{}])[0].get("to") or "/guided-demo"),
+                "route": str(
+                    (item.get("steps") or [{}])[0].get("to") or "/guided-demo"
+                ),
                 "status": "ready",
                 "spark": item["headline"],
                 "proof_file": "rentgen-guided-demo.md",
@@ -398,7 +534,9 @@ def _guided_room_bridge(
                 "route": route,
                 "status": "ready",
                 "signal": "Included in the guided proof route.",
-                "file": "rentgen-guided-demo.md" if route == "/guided-demo" else "OPEN_FIRST.md",
+                "file": "rentgen-guided-demo.md"
+                if route == "/guided-demo"
+                else "OPEN_FIRST.md",
             }
             for route in proof_routes[:4]
         ]
@@ -406,10 +544,30 @@ def _guided_room_bridge(
     meeting_flow = list(brief.get("meeting_flow") or [])
     if not meeting_flow:
         meeting_flow = [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Pick role and first pain."},
-            {"step": 2, "label": "Guide", "route": "/guided-demo", "line": "Follow one buyer-safe route through proof."},
-            {"step": 3, "label": "Prove", "route": "/killer-demo", "line": "Compress proof into the buyer-ready demo path."},
-            {"step": 4, "label": "Forward", "route": "/evidence-bundle", "line": "Attach buyer brief, guided demo and hashed proof files."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Pick role and first pain.",
+            },
+            {
+                "step": 2,
+                "label": "Guide",
+                "route": "/guided-demo",
+                "line": "Follow one buyer-safe route through proof.",
+            },
+            {
+                "step": 3,
+                "label": "Prove",
+                "route": "/killer-demo",
+                "line": "Compress proof into the buyer-ready demo path.",
+            },
+            {
+                "step": 4,
+                "label": "Forward",
+                "route": "/evidence-bundle",
+                "line": "Attach buyer brief, guided demo and hashed proof files.",
+            },
         ]
     open_first_path = build_open_first_path(
         existing_path=brief.get("open_first_path"),
@@ -456,14 +614,24 @@ def _guided_room_bridge(
             "route": str(primary.get("route") or "/guided-demo"),
             "status": str(primary.get("status") or "watch"),
             "ask": str(primary.get("ask") or "Prove one route and forward artifacts."),
-            "reason": str(primary.get("reason") or "Guided route keeps the buyer away from menu overload."),
+            "reason": str(
+                primary.get("reason")
+                or "Guided route keeps the buyer away from menu overload."
+            ),
         },
         "guided_path": guided_path,
         "role_cards": role_cards[:5],
         "proof_readiness": proof_readiness[:4],
         "meeting_flow": meeting_flow[:4],
         "open_first_path": open_first_path[:4],
-        "files": ["buyer-brief.md", "buyer-pulse.md", OPEN_FIRST_PATH_FILE, "rentgen-guided-demo.md", "rentgen-demo-command-center.md", "OPEN_FIRST.md"],
+        "files": [
+            "buyer-brief.md",
+            "buyer-pulse.md",
+            OPEN_FIRST_PATH_FILE,
+            "rentgen-guided-demo.md",
+            "rentgen-demo-command-center.md",
+            "OPEN_FIRST.md",
+        ],
         "routes": routes,
         "close_question": "Which role path proves enough to open the paid next step?",
     }
@@ -489,23 +657,41 @@ def _markdown(report: dict[str, Any]) -> str:
         )
     lines.extend(["", "## Close plan", ""])
     for item in report["close_plan"]:
-        lines.append(f"- **{item['window']}** / {item['owner']}: {item['exit_criteria']}")
+        lines.append(
+            f"- **{item['window']}** / {item['owner']}: {item['exit_criteria']}"
+        )
     bridge = report.get("guided_room_bridge") or {}
     if bridge:
         lines.extend(["", "## Guided Room Bridge", ""])
-        lines.append(f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**")
+        lines.append(
+            f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**"
+        )
         lines.append(f"- Room line: {bridge.get('room_line', '')}")
         motion = bridge.get("primary_motion") or {}
-        lines.append(f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/guided-demo')}`): {motion.get('ask', '')}")
+        lines.append(
+            f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/guided-demo')}`): {motion.get('ask', '')}"
+        )
         guided_path = bridge.get("guided_path") or {}
-        lines.append(f"- Guided path: **{guided_path.get('label', 'n/a')}** (`{guided_path.get('route', '/guided-demo')}`): {guided_path.get('ask', '')}")
-        lines.extend(open_first_path_markdown_lines(bridge.get("open_first_path"), default_route="/guided-demo"))
+        lines.append(
+            f"- Guided path: **{guided_path.get('label', 'n/a')}** (`{guided_path.get('route', '/guided-demo')}`): {guided_path.get('ask', '')}"
+        )
+        lines.extend(
+            open_first_path_markdown_lines(
+                bridge.get("open_first_path"), default_route="/guided-demo"
+            )
+        )
         for item in bridge.get("role_cards", []):
-            lines.append(f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}")
+            lines.append(
+                f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}"
+            )
         for item in bridge.get("proof_readiness", []):
-            lines.append(f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}")
+            lines.append(
+                f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}"
+            )
         for item in bridge.get("meeting_flow", []):
-            lines.append(f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}")
+            lines.append(
+                f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}"
+            )
     lines.extend(["", "## Caveats", ""])
     lines.extend(f"- {item}" for item in report["caveats"])
     return "\n".join(lines)
@@ -550,7 +736,12 @@ def build_guided_demo(
             ),
         ),
     )
-    statuses = {_status(executive), _status(business_case), _status(productization), _status(vendor_portfolio)}
+    statuses = {
+        _status(executive),
+        _status(business_case),
+        _status(productization),
+        _status(vendor_portfolio),
+    }
     if statuses & {"blocked", "critical", "fail"}:
         status = "risk"
     elif score >= 82 and "risk" not in statuses:
@@ -590,8 +781,12 @@ def build_guided_demo(
             "roles": len(role_paths),
             "proof_routes": len(proof_routes),
             "value_packs": len(value_packs.get("packs") or []),
-            "business_value": (business_case.get("summary") or {}).get("first_year_visible_value", 0),
-            "productization_findings": (productization.get("summary") or {}).get("findings", 0),
+            "business_value": (business_case.get("summary") or {}).get(
+                "first_year_visible_value", 0
+            ),
+            "productization_findings": (productization.get("summary") or {}).get(
+                "findings", 0
+            ),
             "guided_room_roles": len(guided_room_bridge["role_cards"]),
             "guided_room_proofs": len(guided_room_bridge["proof_readiness"]),
             "guided_room_steps": len(guided_room_bridge["meeting_flow"]),
@@ -618,7 +813,9 @@ def build_guided_demo(
         "guided_room_bridge": guided_room_bridge,
         "role_paths": role_paths,
         "close_plan": _close_plan(),
-        "objection_cards": _objections(business_case=business_case, productization=productization),
+        "objection_cards": _objections(
+            business_case=business_case, productization=productization
+        ),
         "exports": _exports(),
         "proof_routes": proof_routes,
         "source_signals": {

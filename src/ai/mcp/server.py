@@ -1,4 +1,3 @@
-
 """
 MCP Server for IDE Integration (Cursor, VSCode)
 Версия: 2.1.0
@@ -200,7 +199,11 @@ BASE_TOOLS = [
             "type": "object",
             "properties": {
                 "prompt": {"type": "string"},
-                "type": {"type": "string", "enum": ["function", "procedure", "test"], "default": "function"},
+                "type": {
+                    "type": "string",
+                    "enum": ["function", "procedure", "test"],
+                    "default": "function",
+                },
                 "module_path": {"type": "string"},
                 "metadata_identifier": {"type": "string"},
                 "include_its_context": {"type": "boolean", "default": True},
@@ -375,7 +378,11 @@ BASE_TOOLS = [
             "type": "object",
             "properties": {
                 "identifier": {"type": "string"},
-                "form_kind": {"type": "string", "enum": ["auto", "object", "list", "choice"], "default": "auto"},
+                "form_kind": {
+                    "type": "string",
+                    "enum": ["auto", "object", "list", "choice"],
+                    "default": "auto",
+                },
                 "intent": {"type": "string"},
                 "include_review": {"type": "boolean", "default": True},
             },
@@ -513,7 +520,11 @@ BASE_TOOLS = [
             "properties": {
                 "artifact_id": {"type": "string"},
                 "depth": {"type": "integer", "default": 4},
-                "direction": {"type": "string", "enum": ["in", "out", "both"], "default": "both"},
+                "direction": {
+                    "type": "string",
+                    "enum": ["in", "out", "both"],
+                    "default": "both",
+                },
             },
             "required": ["artifact_id"],
         },
@@ -533,7 +544,10 @@ BASE_TOOLS = [
                 "title": {"type": "string"},
                 "description": {"type": "string"},
                 "owner": {"type": "string"},
-                "source_requirement_ids": {"type": "array", "items": {"type": "string"}},
+                "source_requirement_ids": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                },
                 "changed_modules": {"type": "array", "items": {"type": "string"}},
                 "diff": {"type": "string"},
             },
@@ -896,7 +910,11 @@ BASE_TOOLS = [
         input_schema={
             "type": "object",
             "properties": {
-                "format": {"type": "string", "enum": ["json", "markdown"], "default": "json"},
+                "format": {
+                    "type": "string",
+                    "enum": ["json", "markdown"],
+                    "default": "json",
+                },
             },
         },
     ),
@@ -906,7 +924,11 @@ BASE_TOOLS = [
         input_schema={
             "type": "object",
             "properties": {
-                "profile": {"type": "string", "enum": ["pilot", "production", "airgap"], "default": "pilot"},
+                "profile": {
+                    "type": "string",
+                    "enum": ["pilot", "production", "airgap"],
+                    "default": "pilot",
+                },
                 "include_paths": {"type": "array", "items": {"type": "string"}},
                 "include_defaults": {"type": "boolean", "default": True},
                 "output_path": {"type": "string"},
@@ -931,7 +953,11 @@ BASE_TOOLS = [
         input_schema={
             "type": "object",
             "properties": {
-                "profile": {"type": "string", "enum": ["pilot", "production", "airgap"], "default": "pilot"},
+                "profile": {
+                    "type": "string",
+                    "enum": ["pilot", "production", "airgap"],
+                    "default": "pilot",
+                },
                 "include_paths": {"type": "array", "items": {"type": "string"}},
                 "include_defaults": {"type": "boolean", "default": True},
                 "output_path": {"type": "string"},
@@ -960,7 +986,11 @@ BASE_TOOLS = [
                 "include_defaults": {"type": "boolean", "default": True},
                 "output_path": {"type": "string"},
                 "write": {"type": "boolean", "default": True},
-                "format": {"type": "string", "enum": ["json", "markdown"], "default": "json"},
+                "format": {
+                    "type": "string",
+                    "enum": ["json", "markdown"],
+                    "default": "json",
+                },
             },
         },
     ),
@@ -1701,7 +1731,10 @@ async def handle_rentgen_generate_grounded(args: Dict) -> Dict:
     from src.modules.copilot.services.copilot_service import CopilotService
     from src.services.bsl_diagnostics import analyze_bsl
     from src.services.its_rag.search import ITSSearchService
-    from src.services.rentgen.change_plan import build_change_plan, build_requirement_impact
+    from src.services.rentgen.change_plan import (
+        build_change_plan,
+        build_requirement_impact,
+    )
     from src.services.rentgen.grounded_codegen import generate_grounded_bsl
     from src.services.rentgen.metadata_graph import get_metadata_object
 
@@ -1746,9 +1779,13 @@ async def handle_rentgen_generate_grounded(args: Dict) -> Dict:
         )
         change_plan = requirement_impact["change_plan"]
     elif store is not None:
-        caveats.append("No module path, metadata object or requirement-impact lookup was provided for Rentgen grounding.")
+        caveats.append(
+            "No module path, metadata object or requirement-impact lookup was provided for Rentgen grounding."
+        )
     else:
-        caveats.append("Rentgen store is unavailable; generation has no blast-radius grounding.")
+        caveats.append(
+            "Rentgen store is unavailable; generation has no blast-radius grounding."
+        )
 
     its_context: list[dict[str, Any]] = []
     if _mcp_bool(args, "include_its_context", True):
@@ -1831,7 +1868,10 @@ async def handle_rentgen_requirement_trace(args: Dict) -> Dict:
     from src.api._rentgen_store import store_or_none
     from src.services.its_rag.search import ITSSearchService
     from src.services.rentgen.change_plan import build_requirement_impact
-    from src.services.rentgen.requirements_traceability import build_trace_record, save_trace
+    from src.services.rentgen.requirements_traceability import (
+        build_trace_record,
+        save_trace,
+    )
 
     text = args.get("text") or args.get("requirement")
     if not text or not isinstance(text, str):
@@ -2154,7 +2194,10 @@ async def handle_bsl_diagnostics(args: Dict) -> Dict:
 
 async def handle_bsl_standards_review(args: Dict) -> Dict:
     """Return catalog-aware BSL standards review for code."""
-    from src.services.rentgen.standards_review import review_bsl_standards, save_standards_review
+    from src.services.rentgen.standards_review import (
+        review_bsl_standards,
+        save_standards_review,
+    )
 
     code = args.get("code")
     if not code or not isinstance(code, str):
@@ -2171,7 +2214,10 @@ async def handle_bsl_standards_review(args: Dict) -> Dict:
 
 async def handle_rentgen_test_match(args: Dict) -> Dict:
     """Return local YAxUnit/Vanessa test matches for a changed module."""
-    from src.services.rentgen.test_inventory import inventory_summary, match_tests_for_module
+    from src.services.rentgen.test_inventory import (
+        inventory_summary,
+        match_tests_for_module,
+    )
 
     module_path = args.get("module_path")
     if not module_path or not isinstance(module_path, str):
@@ -2283,7 +2329,9 @@ async def handle_artifact_link(args: Dict) -> Dict:
             rationale=str(args.get("rationale") or "") or None,
             status=str(args.get("status") or "active"),
             suspect=_mcp_bool(args, "suspect", False),
-            attributes=args.get("attributes") if isinstance(args.get("attributes"), dict) else {},
+            attributes=args.get("attributes")
+            if isinstance(args.get("attributes"), dict)
+            else {},
         )
     except (KeyError, ValueError) as exc:
         return {"error": str(exc)}
@@ -2548,7 +2596,11 @@ async def handle_test_run_record(args: Dict) -> Dict:
     from src.services.rentgen.test_evidence import record_test_run
 
     results = args.get("results")
-    if not args.get("title") or not args.get("framework") or not isinstance(results, list):
+    if (
+        not args.get("title")
+        or not args.get("framework")
+        or not isinstance(results, list)
+    ):
         return {"error": "title, framework and results[] are required"}
     try:
         return record_test_run(
@@ -2558,7 +2610,9 @@ async def handle_test_run_record(args: Dict) -> Dict:
             results=[item for item in results if isinstance(item, dict)],
             change_set_id=str(args.get("change_set_id") or "") or None,
             command=str(args.get("command") or "") or None,
-            evidence=[item for item in (args.get("evidence") or []) if isinstance(item, dict)],
+            evidence=[
+                item for item in (args.get("evidence") or []) if isinstance(item, dict)
+            ],
             dry_run=_mcp_bool(args, "dry_run", False),
         )
     except (KeyError, ValueError) as exc:
@@ -2788,13 +2842,17 @@ async def handle_offline_bundle_manifest(args: Dict) -> Dict:
     from src.services.offline_bundle import build_offline_bundle_manifest
 
     raw_paths = args.get("include_paths")
-    include_paths = [str(item) for item in raw_paths] if isinstance(raw_paths, list) else []
+    include_paths = (
+        [str(item) for item in raw_paths] if isinstance(raw_paths, list) else []
+    )
     try:
         return build_offline_bundle_manifest(
             profile=str(args.get("profile") or "pilot"),
             include_paths=include_paths,
             include_defaults=_mcp_bool(args, "include_defaults", True),
-            output_path=Path(str(args.get("output_path"))) if args.get("output_path") else None,
+            output_path=Path(str(args.get("output_path")))
+            if args.get("output_path")
+            else None,
             sign=_mcp_bool(args, "sign", False),
             write=_mcp_bool(args, "write", True),
         )
@@ -2810,7 +2868,9 @@ async def handle_offline_bundle_verify(args: Dict) -> Dict:
 
     try:
         return verify_offline_bundle_manifest(
-            manifest_path=Path(str(args.get("manifest_path"))) if args.get("manifest_path") else None,
+            manifest_path=Path(str(args.get("manifest_path")))
+            if args.get("manifest_path")
+            else None,
         )
     except (OSError, ValueError) as exc:
         return {"error": str(exc)}
@@ -2823,13 +2883,17 @@ async def handle_offline_bundle_archive(args: Dict) -> Dict:
     from src.services.offline_bundle import build_offline_bundle_archive
 
     raw_paths = args.get("include_paths")
-    include_paths = [str(item) for item in raw_paths] if isinstance(raw_paths, list) else []
+    include_paths = (
+        [str(item) for item in raw_paths] if isinstance(raw_paths, list) else []
+    )
     try:
         return build_offline_bundle_archive(
             profile=str(args.get("profile") or "pilot"),
             include_paths=include_paths,
             include_defaults=_mcp_bool(args, "include_defaults", True),
-            output_path=Path(str(args.get("output_path"))) if args.get("output_path") else None,
+            output_path=Path(str(args.get("output_path")))
+            if args.get("output_path")
+            else None,
             sign=_mcp_bool(args, "sign", False),
         )
     except (OSError, ValueError) as exc:
@@ -2845,7 +2909,9 @@ async def handle_offline_bundle_archive_verify(args: Dict) -> Dict:
     if not args.get("archive_path"):
         return {"error": "archive_path is required"}
     try:
-        return verify_offline_bundle_archive(archive_path=Path(str(args.get("archive_path"))))
+        return verify_offline_bundle_archive(
+            archive_path=Path(str(args.get("archive_path")))
+        )
     except (OSError, ValueError) as exc:
         return {"error": str(exc)}
 
@@ -2857,7 +2923,9 @@ async def handle_sbom_generate(args: Dict) -> Dict:
     from src.services.sbom_inventory import generate_sbom, sbom_markdown_report
 
     raw_paths = args.get("include_paths")
-    include_paths = [str(item) for item in raw_paths] if isinstance(raw_paths, list) else []
+    include_paths = (
+        [str(item) for item in raw_paths] if isinstance(raw_paths, list) else []
+    )
     try:
         if str(args.get("format") or "json").lower() == "markdown":
             return sbom_markdown_report(
@@ -2867,7 +2935,9 @@ async def handle_sbom_generate(args: Dict) -> Dict:
         return generate_sbom(
             include_paths=include_paths,
             include_defaults=_mcp_bool(args, "include_defaults", True),
-            output_path=Path(str(args.get("output_path"))) if args.get("output_path") else None,
+            output_path=Path(str(args.get("output_path")))
+            if args.get("output_path")
+            else None,
             write=_mcp_bool(args, "write", True),
         )
     except (OSError, ValueError) as exc:
@@ -2887,7 +2957,9 @@ async def handle_edt_mcp_plan(args: Dict) -> Dict:
 
     return plan_edt_mcp_workflow(
         str(args.get("task") or ""),
-        intent=str(args.get("intent") or "") if args.get("intent") is not None else None,
+        intent=str(args.get("intent") or "")
+        if args.get("intent") is not None
+        else None,
     )
 
 

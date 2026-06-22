@@ -29,13 +29,15 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         # Use environment variables for API keys
         api_keys_env = os.getenv("GATEWAY_API_KEYS", "")
         if api_keys_env:
-            self.valid_api_keys = [key.strip()
-                                             for key in api_keys_env.split(",") if key.strip()]
+            self.valid_api_keys = [
+                key.strip() for key in api_keys_env.split(",") if key.strip()
+            ]
         else:
             # Fallback for development (in production should be via env)
             self.valid_api_keys = ["demo-key-12345", "admin-key-67890"]
             logger.warning(
-                "Using default API keys. Set GATEWAY_API_KEYS environment variable for production!")
+                "Using default API keys. Set GATEWAY_API_KEYS environment variable for production!"
+            )
 
     async def dispatch(self, request: Request, call_next: Any) -> Any:
         """Middleware for authentication with input validation"""
@@ -45,8 +47,9 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                 return await call_next(request)
 
             # Check API key
-            api_key = request.headers.get(
-                "X-API-Key") or request.headers.get("Authorization")
+            api_key = request.headers.get("X-API-Key") or request.headers.get(
+                "Authorization"
+            )
 
             # If Authorization header contains "Bearer ", extract token
             if api_key and api_key.startswith("Bearer "):
@@ -85,7 +88,9 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                     extra={
                         "path": request.url.path,
                         "method": request.method,
-                        "key_preview": (api_key[:10] + "..." if len(api_key) > 10 else api_key),
+                        "key_preview": (
+                            api_key[:10] + "..." if len(api_key) > 10 else api_key
+                        ),
                     },
                 )
                 return JSONResponse(

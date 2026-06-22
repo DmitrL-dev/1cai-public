@@ -1,4 +1,3 @@
-
 """
 Доменные модели для модуля аутентификации.
 """
@@ -50,4 +49,6 @@ class CurrentUser(BaseModel):
         Returns:
             bool: True если есть право, иначе False.
         """
-        return any(permission in self.permissions for permission in required_permissions)
+        return any(
+            permission in self.permissions for permission in required_permissions
+        )

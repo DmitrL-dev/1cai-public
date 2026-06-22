@@ -4,10 +4,9 @@ Semantic Intent Extractor
 Extracts true intent from poetic/obfuscated input.
 """
 
+import logging
 from dataclasses import dataclass
 from typing import Dict, Optional
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,9 @@ class SemanticIntentExtractor:
         """
         self.orchestrator = orchestrator
 
-    async def extract_intent(self, text: str, context: Optional[Dict] = None) -> IntentResult:
+    async def extract_intent(
+        self, text: str, context: Optional[Dict] = None
+    ) -> IntentResult:
         """
         Extract intent from text.
 
@@ -64,8 +65,10 @@ class SemanticIntentExtractor:
             if not is_safe:
                 logger.warning(
                     f"Unsafe intent detected in poetic text",
-                    extra={"original_length": len(
-                        text), "prose_length": len(prose_version)},
+                    extra={
+                        "original_length": len(text),
+                        "prose_length": len(prose_version),
+                    },
                 )
 
             return IntentResult(
@@ -113,7 +116,9 @@ Direct prose translation:"""
 
         try:
             # Use orchestrator to translate
-            result = await self.orchestrator.process_query(query=prompt, context={"max_tokens": 200})
+            result = await self.orchestrator.process_query(
+                query=prompt, context={"max_tokens": 200}
+            )
 
             # Extract response
             if isinstance(result, dict):
@@ -139,9 +144,10 @@ Direct prose translation:"""
         """
         # 1. Use SafetyFilter for Prompt Injection and Jailbreak detection
         from src.security.poetic_detection.safety_filter import SafetyFilter
+
         safety_filter = SafetyFilter()
         is_safe, reason = safety_filter.is_safe(text)
-        
+
         if not is_safe:
             logger.warning(f"SafetyFilter blocked request: {reason}")
             return False

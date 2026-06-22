@@ -3,7 +3,6 @@
 import re
 from typing import Any, Dict, List
 
-
 _QUERY_TEXT_PATTERN = re.compile(r"\b(select|выбрать)\b", flags=re.IGNORECASE)
 _QUERY_ASSIGNMENT_PATTERN = re.compile(
     r"(запрос\s*\.\s*текст|query\s*\.\s*text|текстзапроса)\s*=.*\+",

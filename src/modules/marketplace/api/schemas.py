@@ -1,4 +1,3 @@
-
 """
 Marketplace API Schemas
 Версия: 2.1.0
@@ -19,8 +18,9 @@ from src.modules.marketplace.domain.models import (
 )
 
 # Константы
-MAX_ARTIFACT_SIZE_BYTES = int(
-    os.getenv("MARKETPLACE_MAX_ARTIFACT_SIZE_MB", "25")) * 1024 * 1024
+MAX_ARTIFACT_SIZE_BYTES = (
+    int(os.getenv("MARKETPLACE_MAX_ARTIFACT_SIZE_MB", "25")) * 1024 * 1024
+)
 
 
 class PluginSubmitRequest(BaseModel):
@@ -40,13 +40,15 @@ class PluginSubmitRequest(BaseModel):
     # Compatibility
     min_version: str = Field(default="1.0.0")
     supported_platforms: List[str] = Field(
-        default_factory=lambda: ["telegram", "mcp", "edt"])
+        default_factory=lambda: ["telegram", "mcp", "edt"]
+    )
 
     # Resources
     icon_url: Optional[str] = None
     screenshot_urls: List[str] = Field(default_factory=list)
     artifact_path: Optional[str] = Field(
-        default=None, description="S3 object key with plugin bundle")
+        default=None, description="S3 object key with plugin bundle"
+    )
 
     # Documentation
     readme: Optional[str] = None
@@ -66,7 +68,8 @@ class PluginUpdateRequest(BaseModel):
     screenshot_urls: Optional[List[str]] = None
     readme: Optional[str] = None
     artifact_path: Optional[str] = Field(
-        None, description="S3 object key with plugin bundle")
+        None, description="S3 object key with plugin bundle"
+    )
 
 
 class PluginSearchRequest(BaseModel):

@@ -1,6 +1,6 @@
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-import pytest
 
 from src.ai.mcp.server import (
     TOOLS,
@@ -9,8 +9,13 @@ from src.ai.mcp.server import (
     handle_test_runner_run,
 )
 from src.api.testing_api import router
-from src.services.rentgen import artifact_graph, change_sets, policy_engine, test_evidence, test_runners
-
+from src.services.rentgen import (
+    artifact_graph,
+    change_sets,
+    policy_engine,
+    test_evidence,
+    test_runners,
+)
 
 JUNIT_XML = """
 <testsuite name="Runner">
@@ -100,8 +105,14 @@ def test_testing_api_exposes_runner_and_file_import(tmp_path, monkeypatch):
     client = TestClient(app)
 
     catalog = client.get("/api/v1/testing/runners")
-    plan = client.post("/api/v1/testing/runners/plan", json={"adapter": "yaxunit", "test_files": ["test_parsers.bsl"]})
-    dry_run = client.post("/api/v1/testing/runners/run", json={"adapter": "yaxunit", "test_files": ["test_parsers.bsl"]})
+    plan = client.post(
+        "/api/v1/testing/runners/plan",
+        json={"adapter": "yaxunit", "test_files": ["test_parsers.bsl"]},
+    )
+    dry_run = client.post(
+        "/api/v1/testing/runners/run",
+        json={"adapter": "yaxunit", "test_files": ["test_parsers.bsl"]},
+    )
     imported = client.post(
         "/api/v1/testing/results/import-file",
         json={"result_path": str(junit_path), "title": "API JUnit"},
@@ -128,9 +139,15 @@ async def test_mcp_runner_tools_are_registered_and_work(tmp_path, monkeypatch):
     names = {tool.name for tool in TOOLS}
     assert {"test_runner_plan", "test_runner_run", "test_result_import_file"} <= names
 
-    plan = await handle_test_runner_plan({"adapter": "yaxunit", "test_files": ["test_parsers.bsl"]})
-    dry_run = await handle_test_runner_run({"adapter": "yaxunit", "test_files": ["test_parsers.bsl"]})
-    imported = await handle_test_result_import_file({"result_path": str(junit_path), "title": "MCP JUnit"})
+    plan = await handle_test_runner_plan(
+        {"adapter": "yaxunit", "test_files": ["test_parsers.bsl"]}
+    )
+    dry_run = await handle_test_runner_run(
+        {"adapter": "yaxunit", "test_files": ["test_parsers.bsl"]}
+    )
+    imported = await handle_test_result_import_file(
+        {"result_path": str(junit_path), "title": "MCP JUnit"}
+    )
 
     assert plan["adapter"] == "yaxunit"
     assert dry_run["run"]["dry_run"] is True
@@ -141,10 +158,16 @@ def test_change_set_policy_blocks_failed_test_evidence(tmp_path, monkeypatch):
     change_store = tmp_path / "change_sets.json"
     artifact_store = tmp_path / "artifact_graph.json"
     test_store = tmp_path / "test_runs.json"
-    monkeypatch.setattr(policy_engine, "EVALUATIONS_PATH", tmp_path / "policy_evaluations.json")
+    monkeypatch.setattr(
+        policy_engine, "EVALUATIONS_PATH", tmp_path / "policy_evaluations.json"
+    )
     monkeypatch.setattr(policy_engine, "WAIVERS_PATH", tmp_path / "policy_waivers.json")
     change_sets.create_change_set(
-        {"id": "CHG-FAILED-TESTS", "title": "Posting validation", "changed_modules": ["Documents/Order/Ext/ObjectModule.bsl"]},
+        {
+            "id": "CHG-FAILED-TESTS",
+            "title": "Posting validation",
+            "changed_modules": ["Documents/Order/Ext/ObjectModule.bsl"],
+        },
         path=change_store,
         artifact_path=artifact_store,
     )
@@ -166,7 +189,9 @@ def test_change_set_policy_blocks_failed_test_evidence(tmp_path, monkeypatch):
             path=change_store,
             artifact_path=artifact_store,
         )
-    evaluations = policy_engine.list_evaluations(path=tmp_path / "policy_evaluations.json")
+    evaluations = policy_engine.list_evaluations(
+        path=tmp_path / "policy_evaluations.json"
+    )
     matched_rules = {
         item["rule_id"]
         for item in evaluations["items"][0]["results"]

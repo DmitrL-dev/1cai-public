@@ -52,19 +52,19 @@ async def health_check(services=Depends(get_ml_services)):
             "tracking_uri": services["mlflow_manager"].tracking_uri,
         }
     except Exception as e:
-        health_status["services"]["mlflow"] = {
-            "status": "unhealthy", "error": str(e)}
+        health_status["services"]["mlflow"] = {"status": "unhealthy", "error": str(e)}
         health_status["status"] = "degraded"
 
     try:
-        summary = await services["metrics_collector"].get_performance_summary(hours_back=1)
+        summary = await services["metrics_collector"].get_performance_summary(
+            hours_back=1
+        )
         health_status["services"]["metrics"] = {
             "status": "healthy",
             "metrics_collected": len(summary),
         }
     except Exception as e:
-        health_status["services"]["metrics"] = {
-            "status": "unhealthy", "error": str(e)}
+        health_status["services"]["metrics"] = {"status": "unhealthy", "error": str(e)}
         health_status["status"] = "degraded"
 
     try:
@@ -81,6 +81,7 @@ async def health_check(services=Depends(get_ml_services)):
         health_status["status"] = "degraded"
 
     return JSONResponse(content=health_status)
+
 
 # ===== МЕТРИКИ =====
 
@@ -116,9 +117,9 @@ async def record_metric(
             metric_id = await collector.record_requirement_analysis_accuracy(
                 assistant_role=assistant_role,
                 predicted_requirements=request.context.get(
-                    "predicted_requirements", []),
-                actual_requirements=request.context.get(
-                    "actual_requirements", []),
+                    "predicted_requirements", []
+                ),
+                actual_requirements=request.context.get("actual_requirements", []),
                 project_id=request.project_id,
                 context=request.context,
             )
@@ -184,11 +185,11 @@ async def get_metrics_summary(hours_back: int = 24, services=Depends(get_ml_serv
             "timestamp": datetime.utcnow().isoformat(),
         }
     except asyncio.TimeoutError:
-        raise HTTPException(
-            status_code=504, detail="Timeout getting metrics summary")
+        raise HTTPException(status_code=504, detail="Timeout getting metrics summary")
     except Exception as e:
         logger.error("Error getting metrics summary: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
 
 # ===== МОДЕЛИ =====
 
@@ -231,6 +232,7 @@ async def train_model(
     """Обучение модели."""
     try:
         import pandas as pd
+
         from src.modules.ml.application.trainer import TrainingType
 
         training_data_df = pd.DataFrame(request.training_data)
@@ -269,6 +271,7 @@ async def predict_model(
         model = trained_models[model_name]
 
         import pandas as pd
+
         input_df = pd.DataFrame([request.input_data])
 
         predictions = model.predict(input_df)
@@ -277,7 +280,9 @@ async def predict_model(
         return {
             "status": "success",
             "model_name": model_name,
-            "predictions": predictions.tolist() if hasattr(predictions, "tolist") else predictions,
+            "predictions": predictions.tolist()
+            if hasattr(predictions, "tolist")
+            else predictions,
             "explanation": explanation,
         }
     except Exception as e:
@@ -298,6 +303,7 @@ async def list_models():
         models_info.append(info)
     return {"status": "success", "models": models_info}
 
+
 # ===== A/B ТЕСТИРОВАНИЕ =====
 
 
@@ -310,10 +316,12 @@ async def create_ab_test(
     try:
         if request.control_model_name not in trained_models:
             raise ValueError(
-                f"Контрольная модель {request.control_model_name} не найдена")
+                f"Контрольная модель {request.control_model_name} не найдена"
+            )
         if request.treatment_model_name not in trained_models:
             raise ValueError(
-                f"Treatment модель {request.treatment_model_name} не найдена")
+                f"Treatment модель {request.treatment_model_name} не найдена"
+            )
 
         from src.ml.ab_testing.tester import ABTestConfig, TestType
 

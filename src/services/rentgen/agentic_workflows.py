@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from collections import Counter
 import hashlib
 import json
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -14,11 +14,18 @@ from src.services.rentgen import artifact_graph
 from src.services.rentgen.policy_engine import evaluate_policy
 from src.services.rentgen.test_evidence import summarize_test_evidence
 
-
 ROOT = Path(__file__).resolve().parents[3]
 STORE_PATH = ROOT / "data" / "agentic_workflows.json"
 MODES = {"ask", "plan", "act", "review"}
-PLAN_STATUSES = {"draft", "ready", "approved", "running", "blocked", "completed", "rejected"}
+PLAN_STATUSES = {
+    "draft",
+    "ready",
+    "approved",
+    "running",
+    "blocked",
+    "completed",
+    "rejected",
+}
 STEP_STATUSES = {"todo", "in_progress", "blocked", "done", "skipped"}
 RISKY_ACTIONS = {
     "metadata_write",
@@ -61,7 +68,9 @@ def _write(items: list[dict[str, Any]], path: Path | None = None) -> None:
     target = path or STORE_PATH
     target.parent.mkdir(parents=True, exist_ok=True)
     tmp = target.with_suffix(target.suffix + ".tmp")
-    tmp.write_text(json.dumps({"items": items}, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.write_text(
+        json.dumps({"items": items}, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     tmp.replace(target)
 
 
@@ -69,9 +78,17 @@ def _audit_path(path: Path | None = None) -> Path:
     return (path or STORE_PATH).parent / "audit_log.ndjson"
 
 
-def _audit(action: str, *, target: str, metadata: dict[str, Any], path: Path | None = None) -> None:
+def _audit(
+    action: str, *, target: str, metadata: dict[str, Any], path: Path | None = None
+) -> None:
     try:
-        record_event(action=action, target=target, category="agentic", metadata=metadata, path=_audit_path(path))
+        record_event(
+            action=action,
+            target=target,
+            category="agentic",
+            metadata=metadata,
+            path=_audit_path(path),
+        )
     except Exception:
         return
 
@@ -84,17 +101,29 @@ def _id(prefix: str, value: Any) -> str:
 def _normalize_steps(steps: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
     normalized = []
     for index, step in enumerate(steps or [], start=1):
-        action_type = _clean(step.get("action_type") or step.get("action") or "analysis", limit=80)
-        risk = _clean(step.get("risk") or ("high" if action_type in RISKY_ACTIONS else "low"), limit=40)
+        action_type = _clean(
+            step.get("action_type") or step.get("action") or "analysis", limit=80
+        )
+        risk = _clean(
+            step.get("risk") or ("high" if action_type in RISKY_ACTIONS else "low"),
+            limit=40,
+        )
         normalized.append(
             {
                 "id": _clean(step.get("id"), limit=80) or f"step-{index}",
-                "title": _clean(step.get("title") or step.get("action") or f"Step {index}", limit=240),
+                "title": _clean(
+                    step.get("title") or step.get("action") or f"Step {index}",
+                    limit=240,
+                ),
                 "role": _clean(step.get("role") or "agent", limit=80),
                 "action_type": action_type,
-                "status": _clean(step.get("status") or "todo", limit=40) if _clean(step.get("status") or "todo", limit=40) in STEP_STATUSES else "todo",
+                "status": _clean(step.get("status") or "todo", limit=40)
+                if _clean(step.get("status") or "todo", limit=40) in STEP_STATUSES
+                else "todo",
                 "risk": risk,
-                "required_evidence": _safe_list(step.get("required_evidence"), limit=160),
+                "required_evidence": _safe_list(
+                    step.get("required_evidence"), limit=160
+                ),
                 "notes": _clean(step.get("notes"), limit=1000),
             }
         )
@@ -129,7 +158,9 @@ def create_agentic_plan(
     if mode not in MODES:
         raise ValueError(f"Unsupported agent mode: {mode}")
     now = _now()
-    plan_id = _clean(data.get("id"), limit=120) or _id("agent", {"title": title, "at": now})
+    plan_id = _clean(data.get("id"), limit=120) or _id(
+        "agent", {"title": title, "at": now}
+    )
     record = {
         "id": plan_id,
         "title": title,
@@ -139,7 +170,9 @@ def create_agentic_plan(
         "actor": _clean(data.get("actor") or "system", limit=160),
         "change_set_id": _clean(data.get("change_set_id"), limit=160) or None,
         "source_artifact_ids": _safe_list(data.get("source_artifact_ids"), limit=160),
-        "steps": _normalize_steps(data.get("steps") if isinstance(data.get("steps"), list) else None),
+        "steps": _normalize_steps(
+            data.get("steps") if isinstance(data.get("steps"), list) else None
+        ),
         "review": {},
         "created_at": now,
         "updated_at": now,
@@ -150,21 +183,38 @@ def create_agentic_plan(
     items.insert(0, record)
     _write(items, path)
     _sync_plan_artifact(record, artifact_path=artifact_path)
-    _audit("agentic.plan.create", target=record["id"], metadata={"mode": mode, "steps": len(record["steps"])}, path=path)
+    _audit(
+        "agentic.plan.create",
+        target=record["id"],
+        metadata={"mode": mode, "steps": len(record["steps"])},
+        path=path,
+    )
     return record
 
 
-def list_agentic_plans(*, status: str | None = None, mode: str | None = None, limit: int = 100, path: Path | None = None) -> dict[str, Any]:
+def list_agentic_plans(
+    *,
+    status: str | None = None,
+    mode: str | None = None,
+    limit: int = 100,
+    path: Path | None = None,
+) -> dict[str, Any]:
     items = _load(path)
     if status:
         items = [item for item in items if item.get("status") == status]
     if mode:
         items = [item for item in items if item.get("mode") == mode]
     items.sort(key=lambda item: item.get("updated_at", ""), reverse=True)
-    return {"items": items[: max(1, limit)], "total": len(items), "path": str(path or STORE_PATH)}
+    return {
+        "items": items[: max(1, limit)],
+        "total": len(items),
+        "path": str(path or STORE_PATH),
+    }
 
 
-def get_agentic_plan(plan_id: str, *, path: Path | None = None) -> dict[str, Any] | None:
+def get_agentic_plan(
+    plan_id: str, *, path: Path | None = None
+) -> dict[str, Any] | None:
     for item in _load(path):
         if item.get("id") == plan_id:
             return item
@@ -207,7 +257,12 @@ def transition_step(
                 updated["status"] = "completed"
             items[index] = updated
             _write(items, path)
-            _audit("agentic.step.transition", target=plan_id, metadata={"step_id": step_id, "status": status, "actor": actor}, path=path)
+            _audit(
+                "agentic.step.transition",
+                target=plan_id,
+                metadata={"step_id": step_id, "status": status, "actor": actor},
+                path=path,
+            )
             return updated
         raise KeyError(f"Step not found: {step_id}")
     raise KeyError(f"Agentic plan not found: {plan_id}")
@@ -225,17 +280,44 @@ def review_agentic_plan(
 
     findings = []
     if record.get("mode") == "act" and record.get("status") != "approved":
-        findings.append({"severity": "high", "code": "act-without-approved-plan", "message": "Act mode requires an approved plan."})
-    risky_steps = [step for step in record.get("steps", []) if step.get("action_type") in RISKY_ACTIONS or step.get("risk") == "high"]
+        findings.append(
+            {
+                "severity": "high",
+                "code": "act-without-approved-plan",
+                "message": "Act mode requires an approved plan.",
+            }
+        )
+    risky_steps = [
+        step
+        for step in record.get("steps", [])
+        if step.get("action_type") in RISKY_ACTIONS or step.get("risk") == "high"
+    ]
     if risky_steps:
-        findings.append({"severity": "medium", "code": "risky-steps", "message": "Risky steps require approval or policy gate.", "count": len(risky_steps)})
+        findings.append(
+            {
+                "severity": "medium",
+                "code": "risky-steps",
+                "message": "Risky steps require approval or policy gate.",
+                "count": len(risky_steps),
+            }
+        )
 
     traces = []
     for artifact_id in record.get("source_artifact_ids", [])[:10]:
         try:
-            traces.append(artifact_graph.trace_artifact(artifact_id, path=artifact_path)["summary"])
+            traces.append(
+                artifact_graph.trace_artifact(artifact_id, path=artifact_path)[
+                    "summary"
+                ]
+            )
         except (KeyError, ValueError):
-            findings.append({"severity": "medium", "code": "artifact-trace-missing", "message": f"Trace source is missing: {artifact_id}"})
+            findings.append(
+                {
+                    "severity": "medium",
+                    "code": "artifact-trace-missing",
+                    "message": f"Trace source is missing: {artifact_id}",
+                }
+            )
 
     test_summary = summarize_test_evidence(
         change_set_id=record.get("change_set_id"),
@@ -251,12 +333,20 @@ def review_agentic_plan(
         waivers_path=(path or STORE_PATH).parent / "policy_waivers.json",
     )
     severity = Counter(item["severity"] for item in findings)
-    status = "fail" if severity.get("high") or policy["status"] == "fail" else ("warn" if findings or policy["status"] == "warn" else "pass")
+    status = (
+        "fail"
+        if severity.get("high") or policy["status"] == "fail"
+        else ("warn" if findings or policy["status"] == "warn" else "pass")
+    )
     review = {
         "status": status,
         "generated_at": _now(),
         "findings": findings,
-        "policy_evaluation": {"id": policy["id"], "status": policy["status"], "summary": policy["summary"]},
+        "policy_evaluation": {
+            "id": policy["id"],
+            "status": policy["status"],
+            "summary": policy["summary"],
+        },
         "test_evidence": test_summary,
         "trace_summaries": traces,
     }
@@ -268,7 +358,12 @@ def review_agentic_plan(
             updated["updated_at"] = _now()
             items[index] = updated
             _write(items, path)
-            _audit("agentic.plan.review", target=plan_id, metadata={"status": status, "findings": len(findings)}, path=path)
+            _audit(
+                "agentic.plan.review",
+                target=plan_id,
+                metadata={"status": status, "findings": len(findings)},
+                path=path,
+            )
             return updated
     raise KeyError(f"Agentic plan not found: {plan_id}")
 
@@ -292,7 +387,9 @@ def action_gate(
         reasons.append("approved_plan_required")
     if plan and plan.get("status") not in {"approved", "running"} and risky:
         reasons.append("plan_not_approved")
-    test_summary = summarize_test_evidence(change_set_id=change_set_id, path=(path or STORE_PATH).parent / "test_runs.json")
+    test_summary = summarize_test_evidence(
+        change_set_id=change_set_id, path=(path or STORE_PATH).parent / "test_runs.json"
+    )
     if test_summary["failed_runs"]:
         reasons.append("failed_test_evidence")
     allowed = not reasons
@@ -306,11 +403,15 @@ def action_gate(
         "change_set_id": change_set_id,
         "test_evidence": test_summary,
     }
-    _audit("agentic.action_gate", target=plan_id or action, metadata=decision, path=path)
+    _audit(
+        "agentic.action_gate", target=plan_id or action, metadata=decision, path=path
+    )
     return decision
 
 
-def _sync_plan_artifact(record: dict[str, Any], *, artifact_path: Path | None = None) -> None:
+def _sync_plan_artifact(
+    record: dict[str, Any], *, artifact_path: Path | None = None
+) -> None:
     try:
         artifact_graph.create_artifact(
             {
@@ -321,7 +422,10 @@ def _sync_plan_artifact(record: dict[str, Any], *, artifact_path: Path | None = 
                 "status": record.get("status") or "draft",
                 "owner": record.get("actor") or "",
                 "source": "agentic_workflows",
-                "attributes": {"mode": record.get("mode"), "steps": record.get("steps", [])},
+                "attributes": {
+                    "mode": record.get("mode"),
+                    "steps": record.get("steps", []),
+                },
             },
             path=artifact_path,
         )

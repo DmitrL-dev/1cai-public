@@ -69,4 +69,6 @@ async def test_wiki_search_offline_index_does_not_return_mock_results():
     assert results[0]["page_id"] == "page-platform"
     assert results[0]["mode"] == "offline-lexical"
     assert "mock-id" not in {item["page_id"] for item in results}
-    assert all("High level overview of the system" not in item["snippet"] for item in results)
+    assert all(
+        "High level overview of the system" not in item["snippet"] for item in results
+    )

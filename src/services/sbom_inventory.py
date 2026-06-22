@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from collections import Counter
-from datetime import datetime, timezone
 import hashlib
 import json
 import re
+from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SBOM_PATH = ROOT / "data" / "offline_bundles" / "sbom.json"
@@ -111,7 +110,8 @@ def generate_sbom(
 
     base = root or ROOT
     paths = (_default_paths() if include_defaults else []) + [
-        (_safe_rel_path(path, root=base), _infer_type(path)) for path in (include_paths or [])
+        (_safe_rel_path(path, root=base), _infer_type(path))
+        for path in (include_paths or [])
     ]
     components: list[dict[str, Any]] = []
     sources = []
@@ -125,7 +125,9 @@ def generate_sbom(
         if not target.exists() or not target.is_file():
             missing.append({"path": rel_path, "type": source_type})
             continue
-        sources.append({"path": rel_path, "type": source_type, "size_bytes": target.stat().st_size})
+        sources.append(
+            {"path": rel_path, "type": source_type, "size_bytes": target.stat().st_size}
+        )
         if source_type == "python":
             components.extend(_parse_requirements(target, rel_path))
         elif source_type == "npm":
@@ -141,7 +143,10 @@ def generate_sbom(
     sbom = {
         "bomFormat": "CycloneDX-lite",
         "specVersion": "1.0-local",
-        "serialNumber": "urn:uuid:" + hashlib.sha1(json.dumps(deduped, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest(),
+        "serialNumber": "urn:uuid:"
+        + hashlib.sha1(
+            json.dumps(deduped, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        ).hexdigest(),
         "generated_at": _now(),
         "product": "1cAI Enterprise 1C SDLC Platform",
         "summary": {
@@ -168,7 +173,12 @@ def sbom_markdown_report(
 ) -> dict[str, Any]:
     """Return an SBOM summary as Markdown."""
 
-    sbom = generate_sbom(root=root, include_paths=include_paths, include_defaults=include_defaults, write=False)
+    sbom = generate_sbom(
+        root=root,
+        include_paths=include_paths,
+        include_defaults=include_defaults,
+        write=False,
+    )
     lines = [
         "# 1cAI SBOM Inventory",
         "",
@@ -178,9 +188,13 @@ def sbom_markdown_report(
         "",
         "## Component Types",
     ]
-    lines.extend(f"- {name}: {count}" for name, count in sbom["summary"]["by_type"].items())
+    lines.extend(
+        f"- {name}: {count}" for name, count in sbom["summary"]["by_type"].items()
+    )
     lines.extend(["", "## Scopes"])
-    lines.extend(f"- {name}: {count}" for name, count in sbom["summary"]["by_scope"].items())
+    lines.extend(
+        f"- {name}: {count}" for name, count in sbom["summary"]["by_scope"].items()
+    )
     return {"format": "markdown", "content": "\n".join(lines), "sbom": sbom}
 
 
@@ -217,7 +231,15 @@ def _parse_requirements(path: Path, rel_path: str) -> list[dict[str, Any]]:
         if not match:
             continue
         name = match.group(1)
-        version = _clean((match.group(2) or "").replace("=", "").replace("~", "").replace("!", "").replace("<", "").replace(">", ""), limit=120)
+        version = _clean(
+            (match.group(2) or "")
+            .replace("=", "")
+            .replace("~", "")
+            .replace("!", "")
+            .replace("<", "")
+            .replace(">", ""),
+            limit=120,
+        )
         components.append(_component("library", name, version, rel_path, "python", raw))
     return components
 
@@ -228,12 +250,26 @@ def _parse_package_json(path: Path, rel_path: str) -> list[dict[str, Any]]:
     except json.JSONDecodeError:
         return []
     components = []
-    for scope in ("dependencies", "devDependencies", "optionalDependencies", "peerDependencies"):
+    for scope in (
+        "dependencies",
+        "devDependencies",
+        "optionalDependencies",
+        "peerDependencies",
+    ):
         deps = payload.get(scope)
         if not isinstance(deps, dict):
             continue
         for name, version in deps.items():
-            components.append(_component("library", str(name), str(version), rel_path, scope, f"{name}@{version}"))
+            components.append(
+                _component(
+                    "library",
+                    str(name),
+                    str(version),
+                    rel_path,
+                    scope,
+                    f"{name}@{version}",
+                )
+            )
     return components
 
 
@@ -251,7 +287,16 @@ def _parse_package_lock(path: Path, rel_path: str) -> list[dict[str, Any]]:
             name = data.get("name") or str(package_path).split("node_modules/")[-1]
             version = data.get("version") or ""
             scope = "devDependencies" if data.get("dev") else "dependencies"
-            components.append(_component("library", str(name), str(version), rel_path, scope, str(package_path)))
+            components.append(
+                _component(
+                    "library",
+                    str(name),
+                    str(version),
+                    rel_path,
+                    scope,
+                    str(package_path),
+                )
+            )
     return components
 
 
@@ -264,11 +309,15 @@ def _parse_dockerfile(path: Path, rel_path: str) -> list[dict[str, Any]]:
         image = raw.split()[1]
         image = image.split("@", 1)[0]
         name, _, version = image.partition(":")
-        components.append(_component("container", name, version or "latest", rel_path, "runtime", raw))
+        components.append(
+            _component("container", name, version or "latest", rel_path, "runtime", raw)
+        )
     return components
 
 
-def _component(component_type: str, name: str, version: str, source_file: str, scope: str, raw: str) -> dict[str, Any]:
+def _component(
+    component_type: str, name: str, version: str, source_file: str, scope: str, raw: str
+) -> dict[str, Any]:
     component = {
         "type": component_type,
         "name": _clean(name, limit=240),
@@ -292,4 +341,11 @@ def _dedupe_components(components: list[dict[str, Any]]) -> list[dict[str, Any]]
             component.get("scope"),
         )
         seen[key] = component
-    return sorted(seen.values(), key=lambda item: (item.get("type", ""), item.get("name", ""), item.get("source_file", "")))
+    return sorted(
+        seen.values(),
+        key=lambda item: (
+            item.get("type", ""),
+            item.get("name", ""),
+            item.get("source_file", ""),
+        ),
+    )

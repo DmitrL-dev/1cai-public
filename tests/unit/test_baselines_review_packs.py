@@ -1,6 +1,6 @@
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-import pytest
 
 from src.ai.mcp.server import (
     TOOLS,
@@ -22,11 +22,21 @@ def _principal(username: str):
 
 def _seed_artifacts(path):
     req = artifact_graph.create_artifact(
-        {"id": "REQ-1", "type": "requirement", "title": "Credit limit", "status": "approved"},
+        {
+            "id": "REQ-1",
+            "type": "requirement",
+            "title": "Credit limit",
+            "status": "approved",
+        },
         path=path,
     )
     chg = artifact_graph.create_artifact(
-        {"id": "CHG-1", "type": "change_set", "title": "Credit limit change", "status": "review_ready"},
+        {
+            "id": "CHG-1",
+            "type": "change_set",
+            "title": "Credit limit change",
+            "status": "review_ready",
+        },
         path=path,
     )
     artifact_graph.link_artifacts(
@@ -83,7 +93,9 @@ def test_baseline_and_review_pack_service(tmp_path):
     assert commented["comments"][0]["artifact_id"] == chg["id"]
     assert decided["status"] == "approved"
     assert trace["summary"]["links"] >= 2
-    assert {"baseline", "requirement", "change_set"} <= {node["type"] for node in trace["nodes"]}
+    assert {"baseline", "requirement", "change_set"} <= {
+        node["type"] for node in trace["nodes"]
+    }
 
 
 def test_baseline_id_is_immutable(tmp_path):
@@ -125,7 +137,11 @@ def test_baselines_api_exposes_workflow(tmp_path, monkeypatch):
 
     baseline = client.post(
         "/api/v1/baselines",
-        json={"id": "BASE-API", "title": "Release baseline", "artifact_ids": [req["id"], chg["id"]]},
+        json={
+            "id": "BASE-API",
+            "title": "Release baseline",
+            "artifact_ids": [req["id"], chg["id"]],
+        },
     )
     review_pack = client.post(
         "/api/v1/review-packs",
@@ -159,7 +175,9 @@ def test_baselines_api_exposes_workflow(tmp_path, monkeypatch):
 
     # SoD proof: the review-pack author ("dev") cannot self-approve.
     app.dependency_overrides[require_auth] = lambda: _principal("dev")
-    self_approve = client.post("/api/v1/review-packs/RP-API/approve", json={"reason": "self"})
+    self_approve = client.post(
+        "/api/v1/review-packs/RP-API/approve", json={"reason": "self"}
+    )
     assert self_approve.status_code == 403
 
 
@@ -175,10 +193,18 @@ async def test_mcp_baseline_and_review_pack_tools(tmp_path, monkeypatch):
     assert {"baseline_create", "review_pack_create", "review_pack_decide"} <= names
 
     baseline = await handle_baseline_create(
-        {"id": "BASE-MCP", "title": "Release baseline", "artifact_ids": [req["id"], chg["id"]]}
+        {
+            "id": "BASE-MCP",
+            "title": "Release baseline",
+            "artifact_ids": [req["id"], chg["id"]],
+        }
     )
     review_pack = await handle_review_pack_create(
-        {"id": "RP-MCP", "title": "Release review", "artifact_ids": [req["id"], chg["id"]]}
+        {
+            "id": "RP-MCP",
+            "title": "Release review",
+            "artifact_ids": [req["id"], chg["id"]],
+        }
     )
     decision = await handle_review_pack_decide(
         {"review_pack_id": "RP-MCP", "decision": "approved", "actor": "architect"}

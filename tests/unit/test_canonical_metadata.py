@@ -1,6 +1,6 @@
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-import pytest
 
 from src.ai.mcp.server import (
     TOOLS,
@@ -37,13 +37,17 @@ def _write_config(root, *, extra_attribute: bool = False, delete_right: bool = F
 </Properties></Document></MetaDataObject>""",
         encoding="utf-8",
     )
-    (doc_dir / "Ext" / "ObjectModule.bsl").write_text("Procedure Post()\nEndProcedure", encoding="utf-8")
+    (doc_dir / "Ext" / "ObjectModule.bsl").write_text(
+        "Procedure Post()\nEndProcedure", encoding="utf-8"
+    )
     (doc_dir / "Forms" / "DocumentForm.xml").write_text(
         """<?xml version="1.0" encoding="UTF-8"?>
 <MetaDataObject><Form uuid="form-1"><Properties><Name>DocumentForm</Name><FormType>Managed</FormType></Properties></Form></MetaDataObject>""",
         encoding="utf-8",
     )
-    (form_dir / "Ext" / "Form" / "Module.bsl").write_text("Procedure Open()\nEndProcedure", encoding="utf-8")
+    (form_dir / "Ext" / "Form" / "Module.bsl").write_text(
+        "Procedure Open()\nEndProcedure", encoding="utf-8"
+    )
 
     role_dir = root / "Roles" / "Admin" / "Ext"
     role_dir.mkdir(parents=True, exist_ok=True)
@@ -52,7 +56,9 @@ def _write_config(root, *, extra_attribute: bool = False, delete_right: bool = F
 <MetaDataObject><Role uuid="role-1"><Properties><Name>Admin</Name></Properties></Role></MetaDataObject>""",
         encoding="utf-8",
     )
-    delete = '<right><name>Delete</name><value>true</value></right>' if delete_right else ""
+    delete = (
+        "<right><name>Delete</name><value>true</value></right>" if delete_right else ""
+    )
     (role_dir / "Rights.xml").write_text(
         f"""<?xml version="1.0" encoding="UTF-8"?>
 <Rights><object><name>Document.Order</name>
@@ -87,38 +93,56 @@ def test_canonical_metadata_import_drift_rights_and_artifact_sync(tmp_path):
         path=store,
         artifact_path=artifacts,
     )
-    drift = canonical_metadata.diff_metadata(before_id=base["id"], after_id=changed["id"], path=store)
-    rights = canonical_metadata.diff_rights(before_id=base["id"], after_id=changed["id"], path=store)
+    drift = canonical_metadata.diff_metadata(
+        before_id=base["id"], after_id=changed["id"], path=store
+    )
+    rights = canonical_metadata.diff_rights(
+        before_id=base["id"], after_id=changed["id"], path=store
+    )
 
     assert base["summary"]["objects"] == 2
     assert document["counts"]["attributes"] == 1
-    assert {"metadata_object", "bsl_module", "form"} <= {node["type"] for node in trace["nodes"]}
+    assert {"metadata_object", "bsl_module", "form"} <= {
+        node["type"] for node in trace["nodes"]
+    }
     assert drift["summary"]["changed"] == 2
     assert any(item["ref"] == "Document.Order" for item in drift["changed"])
     assert rights["summary"]["changed_roles"] == 1
     assert rights["summary"]["dangerous_rights_after"] == 2
 
 
-def test_metadata_api_exposes_canonical_import_objects_drift_and_rights(tmp_path, monkeypatch):
+def test_metadata_api_exposes_canonical_import_objects_drift_and_rights(
+    tmp_path, monkeypatch
+):
     config = tmp_path / "edt"
     config.mkdir()
     _write_config(config)
-    monkeypatch.setattr(canonical_metadata, "STORE_PATH", tmp_path / "canonical_metadata.json")
+    monkeypatch.setattr(
+        canonical_metadata, "STORE_PATH", tmp_path / "canonical_metadata.json"
+    )
     monkeypatch.setattr(artifact_graph, "STORE_PATH", tmp_path / "artifact_graph.json")
 
     app = FastAPI()
     app.include_router(router)
     client = TestClient(app)
 
-    base = client.post("/api/v1/metadata/import", json={"config_path": str(config), "name": "base"})
+    base = client.post(
+        "/api/v1/metadata/import", json={"config_path": str(config), "name": "base"}
+    )
     objects = client.get("/api/v1/metadata/objects?type=Document")
     detail = client.get("/api/v1/metadata/objects/Document.Order")
 
     _write_config(config, extra_attribute=True, delete_right=True)
-    changed = client.post("/api/v1/metadata/import", json={"config_path": str(config), "name": "changed"})
+    changed = client.post(
+        "/api/v1/metadata/import", json={"config_path": str(config), "name": "changed"}
+    )
     snapshots = client.get("/api/v1/metadata/canonical-snapshots")
-    drift = client.get(f"/api/v1/metadata/drift?before_id={base.json()['id']}&after_id={changed.json()['id']}")
-    rights = client.get(f"/api/v1/metadata/rights/diff?before_id={base.json()['id']}&after_id={changed.json()['id']}")
+    drift = client.get(
+        f"/api/v1/metadata/drift?before_id={base.json()['id']}&after_id={changed.json()['id']}"
+    )
+    rights = client.get(
+        f"/api/v1/metadata/rights/diff?before_id={base.json()['id']}&after_id={changed.json()['id']}"
+    )
 
     assert base.status_code == 200
     assert objects.json()["total"] == 1
@@ -129,11 +153,15 @@ def test_metadata_api_exposes_canonical_import_objects_drift_and_rights(tmp_path
 
 
 @pytest.mark.asyncio
-async def test_mcp_canonical_metadata_tools_are_registered_and_work(tmp_path, monkeypatch):
+async def test_mcp_canonical_metadata_tools_are_registered_and_work(
+    tmp_path, monkeypatch
+):
     config = tmp_path / "edt"
     config.mkdir()
     _write_config(config)
-    monkeypatch.setattr(canonical_metadata, "STORE_PATH", tmp_path / "canonical_metadata.json")
+    monkeypatch.setattr(
+        canonical_metadata, "STORE_PATH", tmp_path / "canonical_metadata.json"
+    )
     monkeypatch.setattr(artifact_graph, "STORE_PATH", tmp_path / "artifact_graph.json")
 
     names = {tool.name for tool in TOOLS}
@@ -144,12 +172,20 @@ async def test_mcp_canonical_metadata_tools_are_registered_and_work(tmp_path, mo
         "metadata_rights_diff",
     } <= names
 
-    base = await handle_metadata_canonical_import({"config_path": str(config), "name": "base"})
+    base = await handle_metadata_canonical_import(
+        {"config_path": str(config), "name": "base"}
+    )
     objects = await handle_metadata_canonical_objects({"type": "Document"})
     _write_config(config, extra_attribute=True, delete_right=True)
-    changed = await handle_metadata_canonical_import({"config_path": str(config), "name": "changed"})
-    drift = await handle_metadata_canonical_drift({"before_id": base["id"], "after_id": changed["id"]})
-    rights = await handle_metadata_rights_diff({"before_id": base["id"], "after_id": changed["id"]})
+    changed = await handle_metadata_canonical_import(
+        {"config_path": str(config), "name": "changed"}
+    )
+    drift = await handle_metadata_canonical_drift(
+        {"before_id": base["id"], "after_id": changed["id"]}
+    )
+    rights = await handle_metadata_rights_diff(
+        {"before_id": base["id"], "after_id": changed["id"]}
+    )
 
     assert objects["total"] == 1
     assert drift["summary"]["changed"] == 2

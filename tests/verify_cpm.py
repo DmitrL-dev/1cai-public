@@ -1,11 +1,13 @@
-import sys
 import os
+import sys
 
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.modules.project_manager.services.critical_path_analyzer import CriticalPathAnalyzer
 from src.modules.project_manager.domain.models import Task, TaskPriority, TaskStatus
+from src.modules.project_manager.services.critical_path_analyzer import (
+    CriticalPathAnalyzer,
+)
 
 
 def verify_cpm():
@@ -20,10 +22,30 @@ def verify_cpm():
     # Path 2: A-C-D = 3+5+4 = 12 (Critical Path)
 
     tasks = [
-        Task(id="A", title="Task A", description="Start", story_points=3, dependencies=[]),
-        Task(id="B", title="Task B", description="Middle 1", story_points=2, dependencies=["A"]),
-        Task(id="C", title="Task C", description="Middle 2", story_points=5, dependencies=["A"]),
-        Task(id="D", title="Task D", description="End", story_points=5, dependencies=["B", "C"]),
+        Task(
+            id="A", title="Task A", description="Start", story_points=3, dependencies=[]
+        ),
+        Task(
+            id="B",
+            title="Task B",
+            description="Middle 1",
+            story_points=2,
+            dependencies=["A"],
+        ),
+        Task(
+            id="C",
+            title="Task C",
+            description="Middle 2",
+            story_points=5,
+            dependencies=["A"],
+        ),
+        Task(
+            id="D",
+            title="Task D",
+            description="End",
+            story_points=5,
+            dependencies=["B", "C"],
+        ),
     ]
 
     print("\nCalculating Critical Path...")

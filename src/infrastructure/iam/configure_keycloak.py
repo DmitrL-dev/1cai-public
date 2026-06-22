@@ -1,11 +1,14 @@
+import logging
 import os
 import time
-import logging
+
 from keycloak import KeycloakAdmin
 from keycloak.exceptions import KeycloakError
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 # Configuration
@@ -139,7 +142,9 @@ def configure_users(keycloak_admin):
             "firstName": "Alice",
             "lastName": "Developer",
             "enabled": True,
-            "credentials": [{"value": "password", "type": "password", "temporary": False}],
+            "credentials": [
+                {"value": "password", "type": "password", "temporary": False}
+            ],
             "roles": ["developer"],
         },
         {
@@ -148,7 +153,9 @@ def configure_users(keycloak_admin):
             "firstName": "Bob",
             "lastName": "Manager",
             "enabled": True,
-            "credentials": [{"value": "password", "type": "password", "temporary": False}],
+            "credentials": [
+                {"value": "password", "type": "password", "temporary": False}
+            ],
             "roles": ["manager", "auditor"],
         },
     ]

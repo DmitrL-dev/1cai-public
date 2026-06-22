@@ -13,7 +13,6 @@ from src.services.rentgen.change_plan import (
     extract_diff_modules,
 )
 
-
 ONEC_ISNULL = "\u0415\u0441\u0442\u044cNULL"
 ONEC_ISNULL_UPPER = "\u0415\u0421\u0422\u042cNULL"
 ONEC_IS_NULL = "\u0415\u0421\u0422\u042c NULL"
@@ -31,7 +30,15 @@ def _now() -> str:
 
 def _scenario(goal: str) -> dict[str, str]:
     lowered = goal.casefold()
-    if any(token in lowered for token in ("null", "left join", "join", "\u0441\u043e\u0435\u0434\u0438\u043d")):
+    if any(
+        token in lowered
+        for token in (
+            "null",
+            "left join",
+            "join",
+            "\u0441\u043e\u0435\u0434\u0438\u043d",
+        )
+    ):
         return {
             "id": "query-null-guard",
             "title": "Guard nullable join fields",
@@ -60,10 +67,14 @@ def _scenario(goal: str) -> dict[str, str]:
     }
 
 
-def _impact(store: Any, modules: list[str], risk_threshold: int, impact_threshold: int) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
+def _impact(
+    store: Any, modules: list[str], risk_threshold: int, impact_threshold: int
+) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
     caveats: list[str] = []
     if not modules:
-        caveats.append("No changed modules or diff were provided; impact is not measured.")
+        caveats.append(
+            "No changed modules or diff were provided; impact is not measured."
+        )
         plan = {
             "changed_modules": [],
             "modules": [],
@@ -84,7 +95,9 @@ def _impact(store: Any, modules: list[str], risk_threshold: int, impact_threshol
         }
         return plan, gate, caveats
     if store is None:
-        caveats.append("Rentgen store is not built; Safe Autopilot cannot measure blast radius yet.")
+        caveats.append(
+            "Rentgen store is not built; Safe Autopilot cannot measure blast radius yet."
+        )
         plan = {
             "changed_modules": modules,
             "modules": [
@@ -124,7 +137,9 @@ def _impact(store: Any, modules: list[str], risk_threshold: int, impact_threshol
         }
         return plan, gate, caveats
 
-    plan = build_change_plan(store, modules, max_depth=5, max_edges=700, hotspot_limit=12)
+    plan = build_change_plan(
+        store, modules, max_depth=5, max_edges=700, hotspot_limit=12
+    )
     gate = assess_ci_gate(
         plan,
         risk_threshold=risk_threshold,
@@ -134,7 +149,12 @@ def _impact(store: Any, modules: list[str], risk_threshold: int, impact_threshol
     return plan, gate, caveats
 
 
-def _steps(scenario: dict[str, str], modules: list[str], gate: dict[str, Any], write_requested: bool) -> list[dict[str, Any]]:
+def _steps(
+    scenario: dict[str, str],
+    modules: list[str],
+    gate: dict[str, Any],
+    write_requested: bool,
+) -> list[dict[str, Any]]:
     gate_status = gate.get("status", "warn")
     return [
         {
@@ -263,7 +283,9 @@ def _has_null_guard(line: str) -> bool:
 def _field_has_null_guard(line: str, field_ref: str) -> bool:
     upper = line.upper()
     field = field_ref.upper()
-    isnull_call = re.compile(rf"{re.escape(ONEC_ISNULL_UPPER)}\s*\([^)]*{re.escape(field)}", re.IGNORECASE)
+    isnull_call = re.compile(
+        rf"{re.escape(ONEC_ISNULL_UPPER)}\s*\([^)]*{re.escape(field)}", re.IGNORECASE
+    )
     null_test = re.compile(
         rf"{re.escape(field)}\s+(?:\u0415\u0421\u0422\u042c\s+(?:\u041d\u0415\s+)?NULL|IS\s+(?:NOT\s+)?NULL)",
         re.IGNORECASE,
@@ -278,7 +300,16 @@ def _join_alias(line: str) -> str | None:
 
 def _line_context(line: str) -> str:
     normalized = line.lstrip("| \t").upper()
-    if normalized.startswith(("\u041f\u041e ", "ON ", "\u0418 ", "\u0418\u041b\u0418 ", "\u0413\u0414\u0415 ", "WHERE ")):
+    if normalized.startswith(
+        (
+            "\u041f\u041e ",
+            "ON ",
+            "\u0418 ",
+            "\u0418\u041b\u0418 ",
+            "\u0413\u0414\u0415 ",
+            "WHERE ",
+        )
+    ):
         return "condition"
     if normalized.startswith(("ПО ", "ON ", "И ", "ИЛИ ", "ГДЕ ", "WHERE ")):
         return "condition"
@@ -311,7 +342,9 @@ def _guarded_line(before: str, field_ref: str) -> str:
     return f"{guarded} AS <Field>"
 
 
-def _query_null_guard_candidates(modules: list[str], diff: str | None) -> list[dict[str, Any]]:
+def _query_null_guard_candidates(
+    modules: list[str], diff: str | None
+) -> list[dict[str, Any]]:
     lines = _diff_lines(diff)
     aliases: list[tuple[str, str]] = []
     for line in lines:
@@ -321,12 +354,16 @@ def _query_null_guard_candidates(modules: list[str], diff: str | None) -> list[d
         aliases.append((alias, line))
 
     if not aliases:
-        aliases.append(("<JoinAlias>", "LEFT JOIN <RightTable> AS <JoinAlias> ON <condition>"))
+        aliases.append(
+            ("<JoinAlias>", "LEFT JOIN <RightTable> AS <JoinAlias> ON <condition>")
+        )
 
     candidates: list[dict[str, Any]] = []
     seen_fields: set[tuple[str, str]] = set()
     for alias, join_line in aliases:
-        field_line = None if alias == "<JoinAlias>" else _field_line_for_alias(lines, alias)
+        field_line = (
+            None if alias == "<JoinAlias>" else _field_line_for_alias(lines, alias)
+        )
         if field_line:
             before, field_ref = field_line
         elif not diff or not lines:
@@ -340,7 +377,9 @@ def _query_null_guard_candidates(modules: list[str], diff: str | None) -> list[d
         seen_fields.add(field_key)
         index = len(candidates) + 1
         after = _guarded_line(before, field_ref)
-        target = modules[min(index - 1, len(modules) - 1)] if modules else "provided diff"
+        target = (
+            modules[min(index - 1, len(modules) - 1)] if modules else "provided diff"
+        )
         candidates.append(
             {
                 "id": f"join-field-null-guard-{index}",
@@ -349,7 +388,9 @@ def _query_null_guard_candidates(modules: list[str], diff: str | None) -> list[d
                 "confidence": "medium" if diff and lines else "low",
                 "before": before,
                 "after": after,
-                "unified_diff": "\n".join(["@@ query-null-guard", f"- {before}", f"+ {after}"]),
+                "unified_diff": "\n".join(
+                    ["@@ query-null-guard", f"- {before}", f"+ {after}"]
+                ),
                 "approval_required": True,
                 "review_notes": [
                     f"Use {ONEC_ISNULL} only when a missing right-side row is valid for the business case.",
@@ -368,7 +409,9 @@ def _query_null_guard_candidates(modules: list[str], diff: str | None) -> list[d
     return candidates
 
 
-def _diff_proposal(scenario: dict[str, str], modules: list[str], diff: str | None) -> dict[str, Any]:
+def _diff_proposal(
+    scenario: dict[str, str], modules: list[str], diff: str | None
+) -> dict[str, Any]:
     if scenario["id"] != "query-null-guard":
         return {
             "status": "blueprint_only",
@@ -432,7 +475,9 @@ def _tests(plan: dict[str, Any], scenario: dict[str, str]) -> list[dict[str, Any
     ]
 
 
-def _tests_from_diff_proposal(diff_proposal: dict[str, Any], scenario: dict[str, str]) -> list[dict[str, Any]]:
+def _tests_from_diff_proposal(
+    diff_proposal: dict[str, Any], scenario: dict[str, str]
+) -> list[dict[str, Any]]:
     tests: list[dict[str, Any]] = []
     for candidate in (diff_proposal.get("candidates") or [])[:6]:
         candidate_tests = candidate.get("tests") or []
@@ -444,7 +489,9 @@ def _tests_from_diff_proposal(diff_proposal: dict[str, Any], scenario: dict[str,
                 "priority": "high",
                 "status": "recommended",
                 "command": f"Run manual query regression for {candidate.get('id')}",
-                "reason": candidate_tests[0] if candidate_tests else "Fallback test generated from diff proposal.",
+                "reason": candidate_tests[0]
+                if candidate_tests
+                else "Fallback test generated from diff proposal.",
             }
         )
     return tests
@@ -508,7 +555,9 @@ def _approval_handoff(
             "role": item["role"],
             "required": item["required"],
             "decision": role_actions.get(item["role"], item["reason"]),
-            "route": "/safe-autopilot" if item["role"] == "developer" else "/evidence-bundle",
+            "route": "/safe-autopilot"
+            if item["role"] == "developer"
+            else "/evidence-bundle",
         }
         for item in approvals
     ]
@@ -575,7 +624,11 @@ def _ai_independence(
 ) -> dict[str, Any]:
     unmeasured = plan.get("unmeasured_modules") or []
     candidates = diff_proposal.get("candidates") or []
-    graph_state = "measured" if modules and not unmeasured and gate.get("status") == "pass" else "unmeasured"
+    graph_state = (
+        "measured"
+        if modules and not unmeasured and gate.get("status") == "pass"
+        else "unmeasured"
+    )
     return {
         "mode": "deterministic-local-first",
         "external_ai_required": False,
@@ -617,7 +670,9 @@ def _ai_independence(
     }
 
 
-def _decision(modules: list[str], gate: dict[str, Any], write_requested: bool) -> dict[str, Any]:
+def _decision(
+    modules: list[str], gate: dict[str, Any], write_requested: bool
+) -> dict[str, Any]:
     score = 82
     if not modules:
         score -= 18
@@ -664,7 +719,9 @@ def _markdown(report: dict[str, Any]) -> str:
     lines.extend(["", "## Diff Proposal", ""])
     lines.append(f"- **{proposal['title']}** ({proposal['status']})")
     for candidate in proposal["candidates"]:
-        lines.append(f"- `{candidate['target']}` {candidate['id']}: {candidate['finding']}")
+        lines.append(
+            f"- `{candidate['target']}` {candidate['id']}: {candidate['finding']}"
+        )
         lines.append(f"  - before: `{candidate['before']}`")
         lines.append(f"  - after: `{candidate['after']}`")
     for item in proposal["acceptance"]:
@@ -675,9 +732,13 @@ def _markdown(report: dict[str, Any]) -> str:
     lines.append(f"- Can request approval: **{handoff['can_request_approval']}**")
     lines.append(f"- {handoff['handoff_line']}")
     for item in handoff["roles"]:
-        lines.append(f"- **{item['role']}** required={item['required']}: {item['decision']}")
+        lines.append(
+            f"- **{item['role']}** required={item['required']}: {item['decision']}"
+        )
     for item in handoff["evidence_packet"]:
-        lines.append(f"- Evidence `{item['artifact']}` via `{item['route']}`: {item['why']}")
+        lines.append(
+            f"- Evidence `{item['artifact']}` via `{item['route']}`: {item['why']}"
+        )
     ai = report["ai_independence"]
     lines.extend(["", "## AI Independence", ""])
     lines.append(f"- Mode: **{ai['mode']}**")
@@ -685,7 +746,9 @@ def _markdown(report: dict[str, Any]) -> str:
     lines.append(f"- {ai['buyer_line']}")
     lines.append(f"- {ai['license_line']}")
     for item in ai["local_sources"]:
-        lines.append(f"- Local source `{item['title']}` available={item['available']}: {item['evidence']}")
+        lines.append(
+            f"- Local source `{item['title']}` available={item['available']}: {item['evidence']}"
+        )
     for item in ai["optional_ai_controls"]:
         lines.append(f"- AI control: {item}")
     lines.extend(["", "## Tests", ""])
@@ -693,7 +756,9 @@ def _markdown(report: dict[str, Any]) -> str:
         lines.append(f"- **{item['priority']}** `{item['selector']}`: {item['reason']}")
     lines.extend(["", "## Approvals", ""])
     for item in report["approvals"]:
-        lines.append(f"- **{item['role']}** required={item['required']}: {item['reason']}")
+        lines.append(
+            f"- **{item['role']}** required={item['required']}: {item['reason']}"
+        )
     if report["caveats"]:
         lines.extend(["", "## Caveats", ""])
         lines.extend(f"- {item}" for item in report["caveats"])
@@ -736,7 +801,11 @@ def build_safe_autopilot(
         modules=modules,
         diff_proposal=diff_proposal,
     )
-    approval_required = write_requested or gate.get("status") != "pass" or bool(diff_proposal["candidates"])
+    approval_required = (
+        write_requested
+        or gate.get("status") != "pass"
+        or bool(diff_proposal["candidates"])
+    )
     report: dict[str, Any] = {
         "generated_at": _now(),
         "goal": goal,
@@ -745,7 +814,9 @@ def build_safe_autopilot(
         "summary": {
             "changed_modules": len(modules),
             "impact_edges": gate.get("summary", {}).get("total_impact_edges", 0),
-            "impacted_modules": gate.get("summary", {}).get("total_impacted_modules", 0),
+            "impacted_modules": gate.get("summary", {}).get(
+                "total_impacted_modules", 0
+            ),
             "violations": gate.get("summary", {}).get("violation_count", 0),
             "tests": 0,
             "diff_candidates": 0,
@@ -778,9 +849,21 @@ def build_safe_autopilot(
         "approval_handoff": approval_handoff,
         "ai_independence": ai_independence,
         "evidence": [
-            {"title": "Change impact", "route": "/change", "artifact": "change-plan.md"},
-            {"title": "Test Factory", "route": "/testing", "artifact": "test-factory.md"},
-            {"title": "Evidence Bundle", "route": "/evidence-bundle", "artifact": "evidence-bundle-manifest.json"},
+            {
+                "title": "Change impact",
+                "route": "/change",
+                "artifact": "change-plan.md",
+            },
+            {
+                "title": "Test Factory",
+                "route": "/testing",
+                "artifact": "test-factory.md",
+            },
+            {
+                "title": "Evidence Bundle",
+                "route": "/evidence-bundle",
+                "artifact": "evidence-bundle-manifest.json",
+            },
         ],
         "caveats": [
             *caveats,

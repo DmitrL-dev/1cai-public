@@ -8,12 +8,16 @@ from typing import Any, Dict, List
 class JSTestGenerator:
     """Generator for JavaScript/TypeScript tests (Jest)"""
 
-    async def generate(self, code: str, include_edge_cases: bool = False) -> List[Dict[str, Any]]:
+    async def generate(
+        self, code: str, include_edge_cases: bool = False
+    ) -> List[Dict[str, Any]]:
         """Generate Jest tests for JavaScript code"""
         tests = []
 
         # Parse JavaScript functions
-        function_pattern = r"(?:function\s+(\w+)|const\s+(\w+)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>)\s*\("
+        function_pattern = (
+            r"(?:function\s+(\w+)|const\s+(\w+)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>)\s*\("
+        )
         matches = re.finditer(function_pattern, code)
 
         for match in matches:

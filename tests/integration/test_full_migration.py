@@ -1,4 +1,3 @@
-
 """
 Integration test for full data migration
 """

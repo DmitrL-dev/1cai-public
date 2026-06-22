@@ -11,28 +11,38 @@ class DevOpsAgentExtended:
     ) -> Dict[str, Any]:
         steps = list(pipeline_config.get("steps") or [])
         duration = float(
-            metrics.get("avg_duration")
-            or pipeline_config.get("duration_minutes")
-            or 0
+            metrics.get("avg_duration") or pipeline_config.get("duration_minutes") or 0
         )
         success_rate = metrics.get("success_rate")
         recommendations: List[str] = []
 
         if duration >= 30:
-            recommendations.append("Split slow build/test stages and cache dependencies.")
+            recommendations.append(
+                "Split slow build/test stages and cache dependencies."
+            )
         if success_rate is not None and float(success_rate) < 0.95:
-            recommendations.append("Add flaky-test quarantine and retry only idempotent steps.")
+            recommendations.append(
+                "Add flaky-test quarantine and retry only idempotent steps."
+            )
         if "deploy" in steps:
-            recommendations.append("Gate deploy with artifact provenance and smoke checks.")
+            recommendations.append(
+                "Gate deploy with artifact provenance and smoke checks."
+            )
         if not recommendations:
-            recommendations.append("Keep collecting duration and failure telemetry per stage.")
+            recommendations.append(
+                "Keep collecting duration and failure telemetry per stage."
+            )
 
         return {
             "mode": "offline_devops_pipeline_triage",
             "steps": steps,
             "metrics": metrics,
             "recommendations": recommendations,
-            "required_evidence": ["per-stage timings", "failure reasons", "release gate log"],
+            "required_evidence": [
+                "per-stage timings",
+                "failure reasons",
+                "release gate log",
+            ],
         }
 
 

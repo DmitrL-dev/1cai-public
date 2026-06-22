@@ -2,19 +2,22 @@
 
 from __future__ import annotations
 
+import re
 from collections import Counter
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
-import re
-
 
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_TEST_ROOTS = ("tests/bsl",)
 YAXUNIT_ROOT = ROOT / "tools" / "yaxunit"
 
-_PROC_RE = re.compile(r"^\s*(Процедура|Функция)\s+([A-Za-zА-Яа-яЁё0-9_]+)", re.IGNORECASE | re.MULTILINE)
-_EN_PROC_RE = re.compile(r"^\s*(Procedure|Function)\s+([A-Za-z][A-Za-z0-9_]*)", re.IGNORECASE | re.MULTILINE)
+_PROC_RE = re.compile(
+    r"^\s*(Процедура|Функция)\s+([A-Za-zА-Яа-яЁё0-9_]+)", re.IGNORECASE | re.MULTILINE
+)
+_EN_PROC_RE = re.compile(
+    r"^\s*(Procedure|Function)\s+([A-Za-z][A-Za-z0-9_]*)", re.IGNORECASE | re.MULTILINE
+)
 _TOKEN_RE = re.compile(r"[A-Za-zА-Яа-яЁё0-9_]{4,}")
 _COMMON_TERMS = {
     "commonmodules",
@@ -94,7 +97,9 @@ def build_test_inventory(root_raw: str | None = None) -> dict[str, Any]:
                 if "тест" not in name.casefold() and framework == "BSL":
                     continue
                 line = text.count("\n", 0, match.start()) + 1
-                terms = _tokens(f"{name}\n{text[max(0, match.start() - 400): match.end() + 1200]}")
+                terms = _tokens(
+                    f"{name}\n{text[max(0, match.start() - 400): match.end() + 1200]}"
+                )
                 cases.append(
                     {
                         "id": _case_id(Path(rel_path), name),
@@ -179,5 +184,7 @@ def match_tests_for_module(
             }
         )
 
-    matches.sort(key=lambda item: (item["confidence"], len(item["matched_terms"])), reverse=True)
+    matches.sort(
+        key=lambda item: (item["confidence"], len(item["matched_terms"])), reverse=True
+    )
     return matches[:limit]

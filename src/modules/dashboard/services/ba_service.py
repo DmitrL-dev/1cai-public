@@ -115,7 +115,9 @@ class BAService:
 
                 return {
                     "requirements_summary": requirements_summary,
-                    "recent_requirements": recent_requirements if recent_requirements else demo["recent_requirements"],
+                    "recent_requirements": recent_requirements
+                    if recent_requirements
+                    else demo["recent_requirements"],
                     "traceability_matrix": demo["traceability_matrix"],
                     "gap_analysis": demo["gap_analysis"],
                     "process_diagrams": demo["process_diagrams"],

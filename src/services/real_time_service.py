@@ -1,4 +1,3 @@
-
 """
 Real-Time Service
 Версия: 2.1.0
@@ -38,7 +37,9 @@ class RealTimeManager:
         self.connections: Dict[str, Set[WebSocket]] = {}
         self.connection_metadata: Dict[WebSocket, Dict] = {}
 
-    async def connect(self, websocket: WebSocket, topic: str = "general", timeout: float = 10.0):
+    async def connect(
+        self, websocket: WebSocket, topic: str = "general", timeout: float = 10.0
+    ):
         """
         Accept new WebSocket connection
 
@@ -138,7 +139,9 @@ class RealTimeManager:
                 exc_info=True,
             )
 
-    async def send_to_client(self, websocket: WebSocket, message: Dict[str, Any], timeout: float = 5.0):
+    async def send_to_client(
+        self, websocket: WebSocket, message: Dict[str, Any], timeout: float = 5.0
+    ):
         """
         Send message to specific client
 
@@ -162,8 +165,9 @@ class RealTimeManager:
                 self.connection_metadata[websocket]["messages_sent"] += 1
 
         except asyncio.TimeoutError:
-            logger.warning(f"Send message timeout after {timeout}s", extra={
-                           "timeout": timeout})
+            logger.warning(
+                f"Send message timeout after {timeout}s", extra={"timeout": timeout}
+            )
             await self.disconnect(websocket)
         except Exception as e:
             logger.error(
@@ -176,7 +180,9 @@ class RealTimeManager:
             )
             await self.disconnect(websocket)
 
-    async def broadcast_to_topic(self, topic: str, message: Dict[str, Any], timeout: float = 5.0):
+    async def broadcast_to_topic(
+        self, topic: str, message: Dict[str, Any], timeout: float = 5.0
+    ):
         """
         Broadcast message to all clients subscribed to topic с input validation
 
@@ -253,7 +259,9 @@ class RealTimeManager:
             },
         )
 
-    async def broadcast_dashboard_update(self, dashboard_type: str, data: Dict[str, Any]):
+    async def broadcast_dashboard_update(
+        self, dashboard_type: str, data: Dict[str, Any]
+    ):
         """
         Broadcast dashboard data update
 
@@ -268,7 +276,9 @@ class RealTimeManager:
 
     async def broadcast_notification(self, user_id: str, notification: Dict[str, Any]):
         """Send notification to specific user"""
-        await self.broadcast_to_topic(f"user_{user_id}", {"type": "notification", "notification": notification})
+        await self.broadcast_to_topic(
+            f"user_{user_id}", {"type": "notification", "notification": notification}
+        )
 
     async def broadcast_system_alert(self, alert: Dict[str, Any]):
         """Broadcast system-wide alert"""
@@ -281,8 +291,12 @@ class RealTimeManager:
         return {
             "total_connections": total_connections,
             "topics": list(self.connections.keys()),
-            "connections_per_topic": {topic: len(clients) for topic, clients in self.connections.items()},
-            "total_messages_sent": sum(meta["messages_sent"] for meta in self.connection_metadata.values()),
+            "connections_per_topic": {
+                topic: len(clients) for topic, clients in self.connections.items()
+            },
+            "total_messages_sent": sum(
+                meta["messages_sent"] for meta in self.connection_metadata.values()
+            ),
         }
 
 

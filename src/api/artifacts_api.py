@@ -9,7 +9,6 @@ from pydantic import BaseModel, Field
 
 from src.services.rentgen import artifact_graph
 
-
 router = APIRouter(prefix="/api/v1/artifacts", tags=["Artifacts"])
 
 
@@ -148,6 +147,8 @@ def trace(
     """Trace incoming/outgoing links around an artifact."""
 
     try:
-        return artifact_graph.trace_artifact(artifact_id, depth=depth, direction=direction)
+        return artifact_graph.trace_artifact(
+            artifact_id, depth=depth, direction=direction
+        )
     except Exception as exc:
         raise _handle_error(exc) from exc

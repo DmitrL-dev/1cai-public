@@ -3,16 +3,12 @@ Gateway API Routes
 """
 
 from datetime import datetime
-
 from typing import Any, Dict
 
 from fastapi import APIRouter, Request
 
 from src.infrastructure.logging.structured_logging import StructuredLogger
-from src.modules.gateway.domain.models import (
-    GatewayHealthResponse,
-    ServiceRequest,
-)
+from src.modules.gateway.domain.models import GatewayHealthResponse, ServiceRequest
 from src.modules.gateway.services.health_checker import ServiceHealthChecker
 from src.modules.gateway.services.proxy_service import ProxyService
 

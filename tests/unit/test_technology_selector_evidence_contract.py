@@ -1,9 +1,6 @@
 import pytest
 
-from src.ai.agents.technology_selector import (
-    TECH_SELECTOR_CONTRACT,
-    TechnologySelector,
-)
+from src.ai.agents.technology_selector import TECH_SELECTOR_CONTRACT, TechnologySelector
 
 
 @pytest.mark.asyncio

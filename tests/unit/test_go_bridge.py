@@ -102,8 +102,7 @@ class TestReviewFromFeatures:
         }
         result = self.router.review_from_features(features)
         # Should catch at least one issue
-        assert result.decision in (
-            RouterDecision.TEMPLATE, RouterDecision.LLM_REQUIRED)
+        assert result.decision in (RouterDecision.TEMPLATE, RouterDecision.LLM_REQUIRED)
         assert result.response is not None
 
     def test_unknown_features_ignored(self) -> None:

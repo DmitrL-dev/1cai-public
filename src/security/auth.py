@@ -1,4 +1,3 @@
-
 """
 JWT-based authentication utilities.
 Версия: 2.1.0
@@ -54,6 +53,7 @@ class TokenResponse(BaseModel):
         token_type: Тип токена (обычно "bearer").
         expires_in: Время жизни токена в секундах.
     """
+
     access_token: str
     token_type: str = "bearer"
     expires_in: int
@@ -71,6 +71,7 @@ class UserCredentials(BaseModel):
         full_name: Полное имя пользователя (опционально).
         email: Email пользователя (опционально).
     """
+
     username: str
     password: str
     user_id: str
@@ -91,6 +92,7 @@ class CurrentUser(BaseModel):
         full_name: Полное имя пользователя.
         email: Email пользователя.
     """
+
     user_id: str
     username: str
     roles: List[str] = Field(default_factory=list)
@@ -270,7 +272,9 @@ class AuthService:
             logger.info("Loaded %d service API tokens", len(token_map))
         return token_map
 
-    def authenticate_user(self, username: str, password: str) -> Optional[UserCredentials]:
+    def authenticate_user(
+        self, username: str, password: str
+    ) -> Optional[UserCredentials]:
         """Аутентифицировать пользователя по имени и паролю.
 
         Args:
@@ -511,6 +515,7 @@ async def get_current_user(
 
 def require_roles(*roles: str):
     """Декоратор для проверки наличия ролей."""
+
     async def dependency(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
         """Проверка ролей пользователя.
 
@@ -535,6 +540,7 @@ def require_roles(*roles: str):
 
 def require_permissions(*permissions: str):
     """Декоратор для проверки наличия прав."""
+
     async def dependency(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
         """Проверка прав пользователя.
 

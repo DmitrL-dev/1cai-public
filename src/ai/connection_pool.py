@@ -1,4 +1,3 @@
-
 """
 Connection Pool для AI Clients
 -------------------------------

@@ -220,7 +220,10 @@ def _quality_findings(module_path: str, quality: dict | None) -> list[StandardsF
                 source="quality-store",
                 severity="high",
                 message="Изменение попадает в модуль с высоким объяснимым риском.",
-                details={"risk": quality.get("risk"), "reasons": quality.get("reasons", [])},
+                details={
+                    "risk": quality.get("risk"),
+                    "reasons": quality.get("reasons", []),
+                },
             )
         )
     if quality.get("has_n_plus_one"):
@@ -257,7 +260,8 @@ def _swarm_findings(module_path: str, code: str | None) -> list[StandardsFinding
             module_path=module_path,
             source="micro-swarm",
             severity="high" if result.decision.value == "llm_required" else "medium",
-            message=result.response or "Micro-Swarm нашёл потенциальные проблемы в изменённых строках.",
+            message=result.response
+            or "Micro-Swarm нашёл потенциальные проблемы в изменённых строках.",
             details={
                 "decision": result.decision.value,
                 "confidence": result.confidence,

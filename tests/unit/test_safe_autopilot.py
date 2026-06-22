@@ -13,7 +13,6 @@ from src.services import audit_log
 from src.services.rentgen import approval_workflow
 from src.services.rentgen.safe_autopilot import ONEC_ISNULL, build_safe_autopilot
 
-
 _JWT_SECRET = "unit-test-secret-key-please-rotate"
 
 
@@ -86,7 +85,9 @@ def test_safe_autopilot_keeps_no_store_plan_read_only():
     assert report["summary"]["approval_required"] is True
     assert report["summary"]["diff_candidates"] == 1
     assert report["summary"]["blocked_actions"] == 3
-    assert report["impact"]["unmeasured_modules"] == ["CommonModules/Sales/Ext/Module.bsl"]
+    assert report["impact"]["unmeasured_modules"] == [
+        "CommonModules/Sales/Ext/Module.bsl"
+    ]
     assert any(ONEC_ISNULL in item for item in report["patch_blueprint"]["changes"])
     assert report["diff_proposal"]["status"] == "manual_review"
     assert report["diff_proposal"]["direct_apply"] is False
@@ -100,7 +101,10 @@ def test_safe_autopilot_keeps_no_store_plan_read_only():
     assert handoff["request_endpoint"] == "/api/v1/safe-autopilot/approval-request"
     assert handoff["approval_record_kind"] == "edt_mcp_call"
     assert "actor" in handoff["audit_requirements"]
-    assert any(item["artifact"] == "rentgen-safe-autopilot.md" for item in handoff["evidence_packet"])
+    assert any(
+        item["artifact"] == "rentgen-safe-autopilot.md"
+        for item in handoff["evidence_packet"]
+    )
     assert any("write" in item.lower() for item in handoff["blocked_actions"])
     assert report["ai_independence"]["external_ai_required"] is False
     assert report["summary"]["external_ai_required"] is False
@@ -171,8 +175,7 @@ def test_safe_autopilot_dedupes_join_candidates_and_skips_join_conditions():
             f"+    {PARTNER_NAME} КАК Контрагент",
             "+ИЗ",
             f"+    {SALES_DOCUMENT} КАК Продажи",
-            "+    ЛЕВОЕ СОЕДИНЕНИЕ "
-            f"Справочник.{PARTNER_ALIAS} КАК {PARTNER_ALIAS}",
+            "+    ЛЕВОЕ СОЕДИНЕНИЕ " f"Справочник.{PARTNER_ALIAS} КАК {PARTNER_ALIAS}",
             f"+    ПО Продажи.{SALES_PARTNER} = {PARTNER_ALIAS}.Ссылка",
             f"+        И {PARTNER_ALIAS}.ПометкаУдаления = ЛОЖЬ",
             "+;",
@@ -180,8 +183,7 @@ def test_safe_autopilot_dedupes_join_candidates_and_skips_join_conditions():
             f"+    {PARTNER_NAME} КАК Контрагент",
             "+ИЗ",
             f"+    {SALES_DOCUMENT} КАК Продажи",
-            "+    ЛЕВОЕ СОЕДИНЕНИЕ "
-            f"Справочник.{PARTNER_ALIAS} КАК {PARTNER_ALIAS}",
+            "+    ЛЕВОЕ СОЕДИНЕНИЕ " f"Справочник.{PARTNER_ALIAS} КАК {PARTNER_ALIAS}",
             f"+    ПО Продажи.{SALES_PARTNER} = {PARTNER_ALIAS}.Ссылка",
         ]
     )
@@ -205,7 +207,7 @@ def test_safe_autopilot_detects_unguarded_field_on_mixed_guarded_projection():
     diff = "\n".join(
         [
             "+\u0412\u042b\u0411\u0420\u0410\u0422\u042c",
-            f"+    {ONEC_ISNULL}({PARTNER_NAME}, \"\") \u041a\u0410\u041a \u041a\u043e\u043d\u0442\u0440\u0430\u0433\u0435\u043d\u0442, {PARTNER_CODE} \u041a\u0410\u041a \u041a\u043e\u0434\u041a\u043e\u043d\u0442\u0440\u0430\u0433\u0435\u043d\u0442\u0430",
+            f'+    {ONEC_ISNULL}({PARTNER_NAME}, "") \u041a\u0410\u041a \u041a\u043e\u043d\u0442\u0440\u0430\u0433\u0435\u043d\u0442, {PARTNER_CODE} \u041a\u0410\u041a \u041a\u043e\u0434\u041a\u043e\u043d\u0442\u0440\u0430\u0433\u0435\u043d\u0442\u0430',
             "+\u0418\u0417",
             f"+    {SALES_DOCUMENT} \u041a\u0410\u041a \u041f\u0440\u043e\u0434\u0430\u0436\u0438",
             "+    \u041b\u0415\u0412\u041e\u0415 \u0421\u041e\u0415\u0414\u0418\u041d\u0415\u041d\u0418\u0415 "
@@ -262,8 +264,7 @@ def test_safe_autopilot_does_not_treat_type_qualifier_as_join_alias():
             "+    КОНЕЦ КАК ПустойКонтрагент",
             "+ИЗ",
             f"+    {SALES_DOCUMENT} КАК Продажи",
-            "+    ЛЕВОЕ СОЕДИНЕНИЕ "
-            f"Справочник.{PARTNER_ALIAS} КАК {PARTNER_ALIAS}",
+            "+    ЛЕВОЕ СОЕДИНЕНИЕ " f"Справочник.{PARTNER_ALIAS} КАК {PARTNER_ALIAS}",
             f"+    ПО Продажи.{SALES_PARTNER} = {PARTNER_ALIAS}.Ссылка",
         ]
     )
@@ -281,7 +282,9 @@ def test_safe_autopilot_does_not_treat_type_qualifier_as_join_alias():
 
 def test_safe_autopilot_api_creates_approval_request(tmp_path, monkeypatch):
     monkeypatch.setattr(safe_autopilot_api, "store_or_none", lambda: None)
-    monkeypatch.setattr(approval_workflow, "STORE_PATH", tmp_path / "approval_records.json")
+    monkeypatch.setattr(
+        approval_workflow, "STORE_PATH", tmp_path / "approval_records.json"
+    )
     monkeypatch.setattr(audit_log, "LOG_PATH", tmp_path / "audit_log.ndjson")
 
     service = _auth_service()
@@ -307,10 +310,15 @@ def test_safe_autopilot_api_creates_approval_request(tmp_path, monkeypatch):
     assert record["tool_name"] == "write_module_source"
     assert record["requested_by"] == "autopilot-user"
     assert record["linked_record"]["type"] == "safe_autopilot_plan"
-    assert record["argument_constraints"]["modulePath"] == "CommonModules/Sales/Ext/Module.bsl"
+    assert (
+        record["argument_constraints"]["modulePath"]
+        == "CommonModules/Sales/Ext/Module.bsl"
+    )
     assert payload["classification"]["requires_confirmation"] is True
     assert payload["handoff"]["can_request_approval"] is True
 
-    audit = audit_log.list_events(action="safe_autopilot.approval.requested", path=tmp_path / "audit_log.ndjson")
+    audit = audit_log.list_events(
+        action="safe_autopilot.approval.requested", path=tmp_path / "audit_log.ndjson"
+    )
     assert audit["total"] == 1
     assert audit["items"][0]["target"] == record["id"]

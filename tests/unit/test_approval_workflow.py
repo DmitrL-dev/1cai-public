@@ -12,7 +12,6 @@ from src.modules.auth.infrastructure.config import AuthSettings
 from src.services import audit_log
 from src.services.rentgen import approval_workflow as approvals
 
-
 _JWT_SECRET = "unit-test-secret-key-please-rotate"
 
 
@@ -79,7 +78,9 @@ def test_approval_workflow_create_approve_validate_and_use(tmp_path):
         arguments={"modulePath": "CommonModules/Y/Ext/Module.bsl"},
         path=store,
     )
-    used = approvals.update_approval_status(record["id"], status="used", actor="developer", path=store)
+    used = approvals.update_approval_status(
+        record["id"], status="used", actor="developer", path=store
+    )
     used_validation = approvals.validate_approval_for_call(
         record["id"],
         tool_name="write_module_source",
@@ -179,6 +180,8 @@ def test_approval_api_create_approve_and_validate(tmp_path, monkeypatch):
 
     listed = client.get("/api/v1/approvals?kind=edt_mcp_call", headers=dev_auth)
     assert listed.json()["total"] == 1
-    events = audit_log.list_events(category="approval", path=tmp_path / "audit_log.ndjson", limit=10)
+    events = audit_log.list_events(
+        category="approval", path=tmp_path / "audit_log.ndjson", limit=10
+    )
     actions = {item["action"] for item in events["items"]}
     assert {"approval.requested", "approval.approved"} <= actions

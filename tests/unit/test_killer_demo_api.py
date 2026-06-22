@@ -1,7 +1,7 @@
-import json
-from io import BytesIO
 import hashlib
+import json
 import zipfile
+from io import BytesIO
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -10,7 +10,10 @@ from src.api import killer_demo_api
 
 
 def _artifact(artifact_id: str) -> dict[str, str]:
-    return {"id": artifact_id, "json": json.dumps({"decision": {"status": "ready", "score": 90}})}
+    return {
+        "id": artifact_id,
+        "json": json.dumps({"decision": {"status": "ready", "score": 90}}),
+    }
 
 
 def _wire_app(monkeypatch):
@@ -56,8 +59,15 @@ def _wire_app(monkeypatch):
                         "recipient": "developer / QA",
                         "role_packet": "ROLE_DEVELOPER_QA.md",
                         "route": "/testing",
-                        "send": ["buyer-brief.md", "rentgen-developer-report.md", "test-factory.md"],
-                        "available_files": ["buyer-brief.md", "rentgen-developer-report.md"],
+                        "send": [
+                            "buyer-brief.md",
+                            "rentgen-developer-report.md",
+                            "test-factory.md",
+                        ],
+                        "available_files": [
+                            "buyer-brief.md",
+                            "rentgen-developer-report.md",
+                        ],
                         "missing_files": ["test-factory.md"],
                         "availability_status": "partial",
                         "why": "Developer proof and test handoff.",
@@ -66,8 +76,15 @@ def _wire_app(monkeypatch):
                         "recipient": "architect / security",
                         "role_packet": "ROLE_ARCHITECT_SECURITY.md",
                         "route": "/enterprise-trust-center",
-                        "send": ["buyer-brief.md", "enterprise-trust-center.md", "rights-rls.md"],
-                        "available_files": ["buyer-brief.md", "enterprise-trust-center.md"],
+                        "send": [
+                            "buyer-brief.md",
+                            "enterprise-trust-center.md",
+                            "rights-rls.md",
+                        ],
+                        "available_files": [
+                            "buyer-brief.md",
+                            "enterprise-trust-center.md",
+                        ],
                         "missing_files": ["rights-rls.md"],
                         "availability_status": "partial",
                         "why": "Trust, locality and access review.",
@@ -76,7 +93,11 @@ def _wire_app(monkeypatch):
                         "recipient": "director / sponsor",
                         "role_packet": "ROLE_DIRECTOR_SPONSOR.md",
                         "route": "/board-pack",
-                        "send": ["buyer-brief.md", "board-pack.md", "commercial-offer-studio.md"],
+                        "send": [
+                            "buyer-brief.md",
+                            "board-pack.md",
+                            "commercial-offer-studio.md",
+                        ],
                         "available_files": ["buyer-brief.md", "board-pack.md"],
                         "missing_files": ["commercial-offer-studio.md"],
                         "availability_status": "partial",
@@ -152,7 +173,10 @@ def _wire_app(monkeypatch):
                 "checkout": [],
                 "customer_can_repeat": ["Local evidence product."],
                 "close_questions": ["Can we open procurement?"],
-                "send_files": ["MEETING_CLOSE_RECEIPT.md", "meeting-close-receipt.json"],
+                "send_files": [
+                    "MEETING_CLOSE_RECEIPT.md",
+                    "meeting-close-receipt.json",
+                ],
                 "why": "Attach after the demo.",
             },
             "post_demo_activation_handoff": {
@@ -171,7 +195,12 @@ def _wire_app(monkeypatch):
                     "acceptance": "Buyer names owner and accepted proof artifacts.",
                 },
                 "invoice_trigger": "Buyer names owner and accepted proof artifacts.",
-                "route_chain": ["/killer-demo", "/pilot-launchpad", "/outcome-ledger", "/evidence-bundle"],
+                "route_chain": [
+                    "/killer-demo",
+                    "/pilot-launchpad",
+                    "/outcome-ledger",
+                    "/evidence-bundle",
+                ],
                 "timeline": [
                     {
                         "window": "Day 0",
@@ -192,7 +221,10 @@ def _wire_app(monkeypatch):
                     }
                 ],
                 "role_packets": [],
-                "proof_files": ["MEETING_CLOSE_RECEIPT.md", "POST_DEMO_ACTIVATION_HANDOFF.md"],
+                "proof_files": [
+                    "MEETING_CLOSE_RECEIPT.md",
+                    "POST_DEMO_ACTIVATION_HANDOFF.md",
+                ],
                 "outcome": {
                     "route": "/outcome-ledger",
                     "acceptance_rollup_ready": False,
@@ -318,7 +350,9 @@ def test_killer_demo_archive_merges_evidence_archive_and_current_demo(monkeypatc
             ],
         }
         buffer = BytesIO()
-        with zipfile.ZipFile(buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+        with zipfile.ZipFile(
+            buffer, mode="w", compression=zipfile.ZIP_DEFLATED
+        ) as archive:
             for filename, content in evidence_files.items():
                 archive.writestr(filename, content)
             archive.writestr("archive-manifest.json", json.dumps(archive_manifest))
@@ -330,14 +364,19 @@ def test_killer_demo_archive_merges_evidence_archive_and_current_demo(monkeypatc
             "bytes": buffer.getvalue(),
         }
 
-    monkeypatch.setattr(killer_demo_api, "evidence_bundle_archive", fake_evidence_archive)
+    monkeypatch.setattr(
+        killer_demo_api, "evidence_bundle_archive", fake_evidence_archive
+    )
 
     response = client.post("/api/v1/killer-demo/archive", json={"client_name": "ACME"})
 
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/zip"
     assert response.headers["x-archive-sha256"]
-    assert response.headers["x-killer-demo-archive-sha256"] == response.headers["x-archive-sha256"]
+    assert (
+        response.headers["x-killer-demo-archive-sha256"]
+        == response.headers["x-archive-sha256"]
+    )
     assert response.headers["x-evidence-archive-sha256"] == "b" * 64
     assert response.headers["x-killer-demo-manifest"] == "killer-demo-manifest.json"
     assert len(response.headers["x-killer-demo-manifest-sha256"]) == 64
@@ -367,9 +406,13 @@ def test_killer_demo_archive_merges_evidence_archive_and_current_demo(monkeypatc
         verify_archive = archive.read("VERIFY_ARCHIVE.md").decode("utf-8")
         developer_packet = archive.read("ROLE_DEVELOPER_QA.md")
         close_receipt = archive.read("MEETING_CLOSE_RECEIPT.md")
-        close_receipt_json = json.loads(archive.read("meeting-close-receipt.json").decode("utf-8"))
+        close_receipt_json = json.loads(
+            archive.read("meeting-close-receipt.json").decode("utf-8")
+        )
         activation_handoff = archive.read("POST_DEMO_ACTIVATION_HANDOFF.md")
-        activation_handoff_json = json.loads(archive.read("post-demo-activation-handoff.json").decode("utf-8"))
+        activation_handoff_json = json.loads(
+            archive.read("post-demo-activation-handoff.json").decode("utf-8")
+        )
         proof_packet = json.loads(archive.read("proof-packet.json").decode("utf-8"))
         demo_manifest_bytes = archive.read("killer-demo-manifest.json")
         demo_manifest = json.loads(demo_manifest_bytes.decode("utf-8"))
@@ -391,34 +434,80 @@ def test_killer_demo_archive_merges_evidence_archive_and_current_demo(monkeypatc
         assert "Not Included In This Build" in developer_packet_text
         assert "test-factory.md" in developer_packet_text
         assert "Meeting Close Receipt" in close_receipt.decode("utf-8")
-        assert close_receipt_json["next_paid_step"]["label"] == "Enterprise local license"
+        assert (
+            close_receipt_json["next_paid_step"]["label"] == "Enterprise local license"
+        )
         assert "Post-Demo Activation Handoff" in activation_handoff.decode("utf-8")
-        assert activation_handoff_json["next_paid_step"]["label"] == "Enterprise local license"
+        assert (
+            activation_handoff_json["next_paid_step"]["label"]
+            == "Enterprise local license"
+        )
         assert demo_manifest["evidence_archive_sha256"] == "b" * 64
         assert demo_manifest["close_receipt"]["filename"] == "MEETING_CLOSE_RECEIPT.md"
         assert demo_manifest["close_receipt"]["ready_to_send"] is True
-        assert demo_manifest["activation_handoff"]["filename"] == "POST_DEMO_ACTIVATION_HANDOFF.md"
+        assert (
+            demo_manifest["activation_handoff"]["filename"]
+            == "POST_DEMO_ACTIVATION_HANDOFF.md"
+        )
         assert demo_manifest["activation_handoff"]["ready_to_start"] is True
-        assert int(response.headers["x-killer-demo-manifest-files"]) == len(demo_manifest["files"])
-        assert response.headers["x-killer-demo-manifest-sha256"] == hashlib.sha256(demo_manifest_bytes).hexdigest()
-        assert any(item["filename"] == "ROLE_DEVELOPER_QA.md" for item in demo_manifest["role_packets"])
+        assert int(response.headers["x-killer-demo-manifest-files"]) == len(
+            demo_manifest["files"]
+        )
+        assert (
+            response.headers["x-killer-demo-manifest-sha256"]
+            == hashlib.sha256(demo_manifest_bytes).hexdigest()
+        )
+        assert any(
+            item["filename"] == "ROLE_DEVELOPER_QA.md"
+            for item in demo_manifest["role_packets"]
+        )
         assert handoff_packets == manifest_packets
-        assert demo_files["rentgen-killer-demo-path.md"]["sha256"] == hashlib.sha256(demo_markdown).hexdigest()
-        assert demo_files["VERIFY_ARCHIVE.md"]["sha256"] == hashlib.sha256(verify_archive.encode("utf-8")).hexdigest()
-        assert demo_files["ROLE_DEVELOPER_QA.md"]["sha256"] == hashlib.sha256(developer_packet).hexdigest()
-        assert demo_files["MEETING_CLOSE_RECEIPT.md"]["sha256"] == hashlib.sha256(close_receipt).hexdigest()
-        assert demo_files["POST_DEMO_ACTIVATION_HANDOFF.md"]["sha256"] == hashlib.sha256(activation_handoff).hexdigest()
-        embedded_archive_manifest = json.loads(archive.read("archive-manifest.json").decode("utf-8"))
-        embedded_files = {item["filename"]: item for item in embedded_archive_manifest["files"]}
-        assert embedded_files["VERIFY_ARCHIVE.md"]["sha256"] == hashlib.sha256(verify_archive.encode("utf-8")).hexdigest()
+        assert (
+            demo_files["rentgen-killer-demo-path.md"]["sha256"]
+            == hashlib.sha256(demo_markdown).hexdigest()
+        )
+        assert (
+            demo_files["VERIFY_ARCHIVE.md"]["sha256"]
+            == hashlib.sha256(verify_archive.encode("utf-8")).hexdigest()
+        )
+        assert (
+            demo_files["ROLE_DEVELOPER_QA.md"]["sha256"]
+            == hashlib.sha256(developer_packet).hexdigest()
+        )
+        assert (
+            demo_files["MEETING_CLOSE_RECEIPT.md"]["sha256"]
+            == hashlib.sha256(close_receipt).hexdigest()
+        )
+        assert (
+            demo_files["POST_DEMO_ACTIVATION_HANDOFF.md"]["sha256"]
+            == hashlib.sha256(activation_handoff).hexdigest()
+        )
+        embedded_archive_manifest = json.loads(
+            archive.read("archive-manifest.json").decode("utf-8")
+        )
+        embedded_files = {
+            item["filename"]: item for item in embedded_archive_manifest["files"]
+        }
+        assert (
+            embedded_files["VERIFY_ARCHIVE.md"]["sha256"]
+            == hashlib.sha256(verify_archive.encode("utf-8")).hexdigest()
+        )
 
-    verify_response = client.post("/api/v1/killer-demo/archive/verify", json={"client_name": "ACME"})
+    verify_response = client.post(
+        "/api/v1/killer-demo/archive/verify", json={"client_name": "ACME"}
+    )
 
     assert verify_response.status_code == 200
     verified = verify_response.json()
     assert verified["status"] == "pass"
-    assert verified["archive_sha256"] == verified["expected_headers"]["X-Killer-Demo-Archive-Sha256"]
-    assert verified["expected_headers"]["X-Killer-Demo-Manifest"] == "killer-demo-manifest.json"
+    assert (
+        verified["archive_sha256"]
+        == verified["expected_headers"]["X-Killer-Demo-Archive-Sha256"]
+    )
+    assert (
+        verified["expected_headers"]["X-Killer-Demo-Manifest"]
+        == "killer-demo-manifest.json"
+    )
     assert verified["expected_headers"]["X-Evidence-Archive-Sha256"] == "b" * 64
     assert verified["embedded_evidence_verify"]["status"] == "pass"
     assert verified["summary"]["high"] == 0

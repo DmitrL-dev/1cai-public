@@ -1,4 +1,3 @@
-
 """Unit tests for admin audit endpoints."""
 
 from __future__ import annotations

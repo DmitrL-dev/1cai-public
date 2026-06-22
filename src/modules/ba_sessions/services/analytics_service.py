@@ -21,9 +21,7 @@ class AnalyticsService:
     ) -> Dict[str, Any]:
         """Generate KPIs"""
         try:
-            from src.ai.agents.business_analyst_agent import (
-                BusinessAnalystAgent,
-            )
+            from src.ai.agents.business_analyst_agent import BusinessAnalystAgent
 
             agent = BusinessAnalystAgent()
 

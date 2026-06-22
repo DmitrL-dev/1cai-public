@@ -26,7 +26,8 @@ logger = logging.getLogger(__name__)
 class LLMProvider(Protocol):
     """Protocol for LLM providers — any callable that reviews BSL code."""
 
-    def review(self, code: str, scores: dict[str, float]) -> str: ...
+    def review(self, code: str, scores: dict[str, float]) -> str:
+        ...
 
 
 # ── Result model ──────────────────────────────────────────────────

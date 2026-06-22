@@ -4,13 +4,13 @@ from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
+from src.api._rentgen_store import store_or_none
 from src.modules.copilot.domain.models import (
     CompletionRequest,
     GenerationRequest,
     GroundedGenerationRequest,
     OptimizationRequest,
 )
-from src.api._rentgen_store import store_or_none
 from src.modules.copilot.services.copilot_service import CopilotService
 from src.services.bsl_diagnostics import analyze_bsl
 from src.services.its_rag.search import ITSSearchService
@@ -71,9 +71,12 @@ async def generate_code(request: Request, body: GenerationRequest) -> Dict[str, 
         code_type = body.type.lower() if body.type else "function"
         if code_type not in valid_types:
             raise HTTPException(
-                status_code=400, detail=f"Invalid code_type: {code_type}")
+                status_code=400, detail=f"Invalid code_type: {code_type}"
+            )
 
-        code = await copilot_service.generate_code(prompt=prompt, code_type=code_type, timeout=10.0)
+        code = await copilot_service.generate_code(
+            prompt=prompt, code_type=code_type, timeout=10.0
+        )
 
         return {"code": code}
 
@@ -141,7 +144,9 @@ async def generate_grounded_code(
 
         code_type = body.type.lower() if body.type else "function"
         if code_type not in ["function", "procedure", "test"]:
-            raise HTTPException(status_code=400, detail=f"Invalid code_type: {code_type}")
+            raise HTTPException(
+                status_code=400, detail=f"Invalid code_type: {code_type}"
+            )
 
         caveats: list[str] = []
         metadata_obj = None
@@ -172,9 +177,13 @@ async def generate_grounded_code(
             )
             change_plan = requirement_impact["change_plan"]
         elif store is not None:
-            caveats.append("No module path, metadata object or requirement-impact lookup was provided for Rentgen grounding.")
+            caveats.append(
+                "No module path, metadata object or requirement-impact lookup was provided for Rentgen grounding."
+            )
         else:
-            caveats.append("Rentgen store is unavailable; generation has no blast-radius grounding.")
+            caveats.append(
+                "Rentgen store is unavailable; generation has no blast-radius grounding."
+            )
 
         its_context: list[dict[str, Any]] = []
         if body.include_its_context:

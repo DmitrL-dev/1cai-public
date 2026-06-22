@@ -58,7 +58,9 @@ def _write(items: list[dict[str, Any]], path: Path | None = None) -> None:
     tmp.replace(target)
 
 
-def _artifact_path_for_trace_store(path: Path | None, artifact_path: Path | None) -> Path | None:
+def _artifact_path_for_trace_store(
+    path: Path | None, artifact_path: Path | None
+) -> Path | None:
     if artifact_path is not None:
         return artifact_path
     if path is not None:
@@ -128,14 +130,20 @@ def _trace_matrix(
                 "match_score": candidate.get("score", 0),
                 "impact_edges": module.get("impact_total", 0),
                 "risk": (module.get("quality") or {}).get("risk", 0),
-                "tests": [test.get("selector") for test in tests if test.get("selector")],
-                "coverage": "mapped" if any(test.get("status") == "mapped" for test in tests) else ("planned" if tests else "missing"),
+                "tests": [
+                    test.get("selector") for test in tests if test.get("selector")
+                ],
+                "coverage": "mapped"
+                if any(test.get("status") == "mapped" for test in tests)
+                else ("planned" if tests else "missing"),
             }
         )
     return rows
 
 
-def _risk_summary(change_plan: dict[str, Any], matrix: list[dict[str, Any]]) -> dict[str, Any]:
+def _risk_summary(
+    change_plan: dict[str, Any], matrix: list[dict[str, Any]]
+) -> dict[str, Any]:
     modules = change_plan.get("modules", [])
     max_risk = max([int(row.get("risk") or 0) for row in matrix] or [0])
     high_risk_modules = sum(1 for row in matrix if int(row.get("risk") or 0) >= 70)
@@ -143,7 +151,9 @@ def _risk_summary(change_plan: dict[str, Any], matrix: list[dict[str, Any]]) -> 
     mapped_tests = sum(1 for test in all_tests if test.get("status") == "mapped")
     return {
         "modules": len(modules),
-        "metadata_objects": len({row["metadata_object"] for row in matrix if row["metadata_object"]}),
+        "metadata_objects": len(
+            {row["metadata_object"] for row in matrix if row["metadata_object"]}
+        ),
         "total_impact_edges": change_plan.get("total_impact_edges", 0),
         "total_impacted_modules": change_plan.get("total_impacted_modules", 0),
         "max_risk": max_risk,
@@ -153,7 +163,9 @@ def _risk_summary(change_plan: dict[str, Any], matrix: list[dict[str, Any]]) -> 
     }
 
 
-def _next_actions(matrix: list[dict[str, Any]], summary: dict[str, Any]) -> list[dict[str, Any]]:
+def _next_actions(
+    matrix: list[dict[str, Any]], summary: dict[str, Any]
+) -> list[dict[str, Any]]:
     actions = [
         {
             "owner": "ba",
@@ -259,7 +271,11 @@ def build_trace_record(
         for row in matrix
     ]
     tests = _unique(
-        [test for module in change_plan.get("modules", []) for test in _module_tests(module)],
+        [
+            test
+            for module in change_plan.get("modules", [])
+            for test in _module_tests(module)
+        ],
         "id",
     )
     its_links = [
@@ -271,7 +287,11 @@ def build_trace_record(
         for item in its_context or []
     ]
     now = _now()
-    status = "needs_review" if summary["high_risk_modules"] or summary["total_impact_edges"] >= 300 else "draft"
+    status = (
+        "needs_review"
+        if summary["high_risk_modules"] or summary["total_impact_edges"] >= 300
+        else "draft"
+    )
     record = {
         "id": _trace_id(requirement, criteria),
         "title": trace_title,
@@ -341,7 +361,9 @@ def sync_trace_to_artifacts(
             "status": record.get("status") or "draft",
             "owner": "ba",
             "risk": str((record.get("risk_summary") or {}).get("max_risk") or ""),
-            "priority": "high" if int((record.get("risk_summary") or {}).get("max_risk") or 0) >= 70 else "medium",
+            "priority": "high"
+            if int((record.get("risk_summary") or {}).get("max_risk") or 0) >= 70
+            else "medium",
             "tags": ["requirement", "traceability"],
             "source": "requirements_traceability",
             "attributes": {
@@ -353,7 +375,12 @@ def sync_trace_to_artifacts(
         path=artifact_path,
     )
 
-    created = {"artifacts": 1, "links": 0, "artifact_id": req_artifact["id"], "errors": []}
+    created = {
+        "artifacts": 1,
+        "links": 0,
+        "artifact_id": req_artifact["id"],
+        "errors": [],
+    }
 
     def create_and_link(
         *,
@@ -442,7 +469,16 @@ def transition_trace(
     """Move a stored requirement trace through the internal review lifecycle."""
 
     clean_status = status.strip()
-    if clean_status not in {"draft", "needs_review", "reviewed", "approved", "baselined", "changed", "deprecated", "rejected"}:
+    if clean_status not in {
+        "draft",
+        "needs_review",
+        "reviewed",
+        "approved",
+        "baselined",
+        "changed",
+        "deprecated",
+        "rejected",
+    }:
         raise ValueError(f"Unsupported requirement trace status: {status}")
 
     items = _load(path)

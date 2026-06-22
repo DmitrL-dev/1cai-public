@@ -22,10 +22,10 @@ from typing import Iterable
 DB_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "rentgen.db"
 
 # ----- explainable risk weights (transparent on purpose) --------------------
-_W_MAINT = 0.40      # weight of (100 - maintainability)
-_W_CPLX = 0.25       # weight of complexity_score
-_W_DOC = 0.10        # weight of (100 - documentation)
-_ISSUE_PTS = {       # concrete anti-pattern penalties (sum capped at 25)
+_W_MAINT = 0.40  # weight of (100 - maintainability)
+_W_CPLX = 0.25  # weight of complexity_score
+_W_DOC = 0.10  # weight of (100 - documentation)
+_ISSUE_PTS = {  # concrete anti-pattern penalties (sum capped at 25)
     "has_n_plus_one": 8,
     "has_empty_catch": 6,
     "has_deep_nesting": 5,
@@ -170,7 +170,9 @@ class RentgenStore:
 
     def db_meta(self) -> dict:
         with self._con() as con:
-            return {r["key"]: r["value"] for r in con.execute("SELECT key, value FROM meta")}
+            return {
+                r["key"]: r["value"] for r in con.execute("SELECT key, value FROM meta")
+            }
 
     # ====================================================================== #
     #  QUALITY                                                                #
@@ -213,15 +215,17 @@ class RentgenStore:
     @classmethod
     def _row_to_full_score(cls, r: sqlite3.Row) -> dict:
         score = cls._row_to_score(r)
-        score.update({
-            "has_select_star": bool(r["has_select_star"]),
-            "has_magic_numbers": bool(r["has_magic_numbers"]),
-            "num_todo_fixme": r["num_todo_fixme"] or 0,
-            "object_name": r["object_name"] or "",
-            "module_kind": r["module_kind"] or "",
-            "fan_in": r["fan_in"] or 0,
-            "fan_out": r["fan_out"] or 0,
-        })
+        score.update(
+            {
+                "has_select_star": bool(r["has_select_star"]),
+                "has_magic_numbers": bool(r["has_magic_numbers"]),
+                "num_todo_fixme": r["num_todo_fixme"] or 0,
+                "object_name": r["object_name"] or "",
+                "module_kind": r["module_kind"] or "",
+                "fan_in": r["fan_in"] or 0,
+                "fan_out": r["fan_out"] or 0,
+            }
+        )
         return score
 
     def get_module(self, path: str) -> dict | None:
@@ -332,20 +336,35 @@ class RentgenStore:
         m_term = _W_MAINT * (100 - mi)
         quality_risk += m_term
         if mi < 50:
-            reasons.append({"factor": "maintainability", "detail":
-                            f"Низкая поддерживаемость: {mi}/100", "weight": round(m_term, 1)})
+            reasons.append(
+                {
+                    "factor": "maintainability",
+                    "detail": f"Низкая поддерживаемость: {mi}/100",
+                    "weight": round(m_term, 1),
+                }
+            )
 
         c_term = _W_CPLX * cplx
         quality_risk += c_term
         if cplx >= 60:
-            reasons.append({"factor": "complexity", "detail":
-                            f"Высокая сложность: {cplx}/100", "weight": round(c_term, 1)})
+            reasons.append(
+                {
+                    "factor": "complexity",
+                    "detail": f"Высокая сложность: {cplx}/100",
+                    "weight": round(c_term, 1),
+                }
+            )
 
         d_term = _W_DOC * (100 - doc)
         quality_risk += d_term
         if doc < 25:
-            reasons.append({"factor": "documentation", "detail":
-                            f"Почти нет документации: {doc}/100", "weight": round(d_term, 1)})
+            reasons.append(
+                {
+                    "factor": "documentation",
+                    "detail": f"Почти нет документации: {doc}/100",
+                    "weight": round(d_term, 1),
+                }
+            )
 
         issue_pts = 0
         issue_labels = {
@@ -362,8 +381,13 @@ class RentgenStore:
                 present = False
             if present:
                 issue_pts += pts
-                reasons.append({"factor": "antipattern", "detail": issue_labels[flag],
-                                "weight": pts})
+                reasons.append(
+                    {
+                        "factor": "antipattern",
+                        "detail": issue_labels[flag],
+                        "weight": pts,
+                    }
+                )
         issue_pts = min(issue_pts, 25)
         quality_risk += issue_pts
 
@@ -372,13 +396,21 @@ class RentgenStore:
         centrality = min(1.0, fan_in / _FANIN_SATURATION)
         blast = 0.65 + 0.35 * centrality
         if fan_in >= 5:
-            reasons.append({"factor": "blast_radius", "detail":
-                            f"От модуля зависят {fan_in} других модулей (радиус поражения)",
-                            "weight": round(quality_risk * (blast - 0.65), 1)})
+            reasons.append(
+                {
+                    "factor": "blast_radius",
+                    "detail": f"От модуля зависят {fan_in} других модулей (радиус поражения)",
+                    "weight": round(quality_risk * (blast - 0.65), 1),
+                }
+            )
         if fan_out >= 15:
-            reasons.append({"factor": "coupling", "detail":
-                            f"Высокая связанность: зависит от {fan_out} модулей",
-                            "weight": 0})
+            reasons.append(
+                {
+                    "factor": "coupling",
+                    "detail": f"Высокая связанность: зависит от {fan_out} модулей",
+                    "weight": 0,
+                }
+            )
 
         risk = round(min(100.0, quality_risk * blast))
         reasons.sort(key=lambda x: x["weight"], reverse=True)
@@ -390,8 +422,9 @@ class RentgenStore:
             "reasons": reasons,
         }
 
-    def hotspots(self, limit: int = 30, domain: str | None = None,
-                 min_fan_in: int = 0) -> list[dict]:
+    def hotspots(
+        self, limit: int = 30, domain: str | None = None, min_fan_in: int = 0
+    ) -> list[dict]:
         where = "WHERE fan_in >= ?"
         params: list = [min_fan_in]
         if domain:
@@ -418,24 +451,28 @@ class RentgenStore:
         scored = []
         for r in rows:
             risk = self._risk(r)
-            scored.append({
-                "module_path": r["module_path"],
-                "module_type": r["module_type"],
-                "domain": r["domain"],
-                "loc": r["loc"],
-                "complexity_score": r["complexity_score"],
-                "documentation_score": r["documentation_score"],
-                "maintainability_score": r["maintainability_score"],
-                "code_quality": r["code_quality"],
-                **risk,
-            })
+            scored.append(
+                {
+                    "module_path": r["module_path"],
+                    "module_type": r["module_type"],
+                    "domain": r["domain"],
+                    "loc": r["loc"],
+                    "complexity_score": r["complexity_score"],
+                    "documentation_score": r["documentation_score"],
+                    "maintainability_score": r["maintainability_score"],
+                    "code_quality": r["code_quality"],
+                    **risk,
+                }
+            )
         scored.sort(key=lambda x: x["risk"], reverse=True)
         return scored[:limit]
 
     # ====================================================================== #
     #  CALL GRAPH — flow / impact / dead code                                 #
     # ====================================================================== #
-    def _resolve_entry(self, con: sqlite3.Connection, entry: str, cap: int = 25) -> list[int]:
+    def _resolve_entry(
+        self, con: sqlite3.Connection, entry: str, cap: int = 25
+    ) -> list[int]:
         """Resolve an entry point string to subroutine ids."""
         rows = con.execute(
             "SELECT id FROM subroutine WHERE name = ? LIMIT ?", (entry, cap)
@@ -454,9 +491,14 @@ class RentgenStore:
             ).fetchall()
         return [r["id"] for r in rows]
 
-    def _traverse_ids(self, con: sqlite3.Connection, entry_ids: list[int],
-                      max_depth: int, reverse: bool,
-                      max_edges: int = 600) -> list[dict]:
+    def _traverse_ids(
+        self,
+        con: sqlite3.Connection,
+        entry_ids: list[int],
+        max_depth: int,
+        reverse: bool,
+        max_edges: int = 600,
+    ) -> list[dict]:
         join_from = "callee_id" if reverse else "caller_id"
         join_to = "caller_id" if reverse else "callee_id"
         edges: list[dict] = []
@@ -490,14 +532,16 @@ class RentgenStore:
                     if pair in seen_edges:
                         continue
                     seen_edges.add(pair)
-                    edges.append({
-                        "caller": r["caller_name"],
-                        "caller_module": r["caller_module"],
-                        "callee": r["callee_name"],
-                        "callee_module": r["callee_module"],
-                        "line": r["line"],
-                        "depth": depth,
-                    })
+                    edges.append(
+                        {
+                            "caller": r["caller_name"],
+                            "caller_module": r["caller_module"],
+                            "callee": r["callee_name"],
+                            "callee_module": r["callee_module"],
+                            "line": r["line"],
+                            "depth": depth,
+                        }
+                    )
                     nxt = r["to_id"]
                     if nxt not in visited:
                         visited.add(nxt)
@@ -509,8 +553,9 @@ class RentgenStore:
             frontier = list(next_frontier)
         return edges
 
-    def _traverse(self, entry: str, max_depth: int, reverse: bool,
-                  max_edges: int = 600) -> list[dict]:
+    def _traverse(
+        self, entry: str, max_depth: int, reverse: bool, max_edges: int = 600
+    ) -> list[dict]:
         with self._con() as con:
             entry_ids = self._resolve_entry(con, entry)
             return self._traverse_ids(con, entry_ids, max_depth, reverse, max_edges)
@@ -556,8 +601,12 @@ class RentgenStore:
                   AND NOT EXISTS (SELECT 1 FROM call_edge e WHERE e.callee_id = s.id)
                 """
             ).fetchone()["c"]
-        return {"candidates": [dict(r) for r in rows], "total": total,
-                "shown": len(rows), "scope": scope}
+        return {
+            "candidates": [dict(r) for r in rows],
+            "total": total,
+            "shown": len(rows),
+            "scope": scope,
+        }
 
     def get_stats(self) -> dict:
         with self._con() as con:
@@ -650,8 +699,9 @@ class RentgenStore:
             "graph_modules": [dict(r) for r in rows],
         }
 
-    def module_impact(self, module_ref: str, max_depth: int = 5,
-                      max_edges: int = 600) -> dict:
+    def module_impact(
+        self, module_ref: str, max_depth: int = 5, max_edges: int = 600
+    ) -> dict:
         """Reverse impact for every subroutine in a resolved graph module."""
         with self._con() as con:
             module_rows, canonical = self._resolve_graph_modules(con, module_ref)
@@ -666,7 +716,10 @@ class RentgenStore:
                 seed_ids.extend(r["id"] for r in rows)
 
             edges = self._traverse_ids(
-                con, seed_ids, max_depth=max_depth, reverse=True,
+                con,
+                seed_ids,
+                max_depth=max_depth,
+                reverse=True,
                 max_edges=max_edges,
             )
 
@@ -694,8 +747,9 @@ class RentgenStore:
             "impacted_modules": impacted_modules,
         }
 
-    def hotspots_for_graph_modules(self, module_names: list[str],
-                                   limit: int = 20) -> list[dict]:
+    def hotspots_for_graph_modules(
+        self, module_names: list[str], limit: int = 20
+    ) -> list[dict]:
         """Risk rows whose canonical key matches any graph module name."""
         if not module_names:
             return []
@@ -729,15 +783,18 @@ class RentgenStore:
         with self._con() as con:
             out = con.execute(
                 "SELECT dst AS module, weight FROM module_edge WHERE src = ? "
-                "ORDER BY weight DESC LIMIT ?", (module, limit),
+                "ORDER BY weight DESC LIMIT ?",
+                (module, limit),
             ).fetchall()
             inc = con.execute(
                 "SELECT src AS module, weight FROM module_edge WHERE dst = ? "
-                "ORDER BY weight DESC LIMIT ?", (module, limit),
+                "ORDER BY weight DESC LIMIT ?",
+                (module, limit),
             ).fetchall()
             self_row = con.execute(
                 "SELECT name, object_name, module_kind, fan_in, fan_out, n_subs, "
-                "max_complexity FROM module WHERE name = ?", (module,),
+                "max_complexity FROM module WHERE name = ?",
+                (module,),
             ).fetchone()
         return {
             "module": module,

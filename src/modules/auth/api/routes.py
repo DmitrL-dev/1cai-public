@@ -1,4 +1,3 @@
-
 """API маршруты для аутентификации."""
 from __future__ import annotations
 
@@ -44,7 +43,9 @@ async def login_for_access_token(
 
     expires_delta = timedelta(minutes=auth_service.settings.access_token_expire_minutes)
     access_token = auth_service.create_access_token(user, expires_delta=expires_delta)
-    return TokenResponse(access_token=access_token, expires_in=int(expires_delta.total_seconds()))
+    return TokenResponse(
+        access_token=access_token, expires_in=int(expires_delta.total_seconds())
+    )
 
 
 @router.get("/me", response_model=CurrentUser)

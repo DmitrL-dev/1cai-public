@@ -40,7 +40,9 @@ def _host_port_from_url(url: str) -> tuple[str, int]:
     return host, port
 
 
-def skip_if_unreachable(url: str, name: str | None = None, timeout: float = 1.5) -> None:
+def skip_if_unreachable(
+    url: str, name: str | None = None, timeout: float = 1.5
+) -> None:
     """``pytest.skip`` if the service behind ``url`` is not accepting connections.
 
     Works for both pytest-style and ``unittest.TestCase`` tests because
@@ -50,4 +52,6 @@ def skip_if_unreachable(url: str, name: str | None = None, timeout: float = 1.5)
     host, port = _host_port_from_url(url)
     if not is_port_open(host, port, timeout=timeout):
         label = name or url
-        pytest.skip(f"{label} not reachable at {url} (port {port} closed); serviceless skip")
+        pytest.skip(
+            f"{label} not reachable at {url} (port {port} closed); serviceless skip"
+        )

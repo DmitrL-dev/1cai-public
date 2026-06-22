@@ -41,7 +41,9 @@ async def generate_report(request: ReportRequest) -> ReportResponse:
         ReportResponse: Сгенерированный отчет.
     """
     report = analytics_service.generate_report(
-        title=request.title, period_days=request.period_days, components=request.components
+        title=request.title,
+        period_days=request.period_days,
+        components=request.components,
     )
     return report
 
@@ -115,7 +117,9 @@ async def get_owner_dashboard() -> OwnerDashboardResponse:
 
 
 @router.get("/dashboard/executive", response_model=ExecutiveDashboardResponse)
-async def get_executive_dashboard(db_pool: asyncpg.Pool = Depends(get_db_pool)) -> ExecutiveDashboardResponse:
+async def get_executive_dashboard(
+    db_pool: asyncpg.Pool = Depends(get_db_pool),
+) -> ExecutiveDashboardResponse:
     """Получает данные для исполнительного дашборда.
 
     Returns:
@@ -211,5 +215,7 @@ async def get_developer_dashboard() -> DeveloperDashboardResponse:
             "mode": "analytics_dashboard_evidence_contract",
             "coverage": "no_developer_sources",
         },
-        caveats=["Developer analytics endpoint requires issue, VCS, CI and quality evidence."],
+        caveats=[
+            "Developer analytics endpoint requires issue, VCS, CI and quality evidence."
+        ],
     )

@@ -1,4 +1,3 @@
-
 """
 Integration tests for Kimi-K2-Thinking client
 """

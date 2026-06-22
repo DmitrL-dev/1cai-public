@@ -1,4 +1,3 @@
-
 """Вспомогательные функции для управления ролями и правами пользователей."""
 
 from __future__ import annotations
@@ -44,7 +43,8 @@ async def enrich_user_from_db(user: "CurrentUser") -> "CurrentUser":
 
     user.roles = _merge(user.roles, [row["role"] for row in rows_roles])
     user.permissions = _merge(
-        user.permissions, [row["permission"] for row in rows_permissions])
+        user.permissions, [row["permission"] for row in rows_permissions]
+    )
     return user
 
 
@@ -144,7 +144,9 @@ async def revoke_role(
             )
 
 
-async def grant_permission(user_id: str, permission: str, assigned_by: Optional[str] = None) -> None:
+async def grant_permission(
+    user_id: str, permission: str, assigned_by: Optional[str] = None
+) -> None:
     """Назначает отдельное право (permission) пользователю.
 
     Args:

@@ -9,22 +9,72 @@ from fastapi import APIRouter
 
 from src.api._rentgen_store import store_or_none
 
-router = APIRouter(prefix="/api/v1/copilot-coverage", tags=["Subscription Escape Coverage"])
+router = APIRouter(
+    prefix="/api/v1/copilot-coverage", tags=["Subscription Escape Coverage"]
+)
 
 
 STAGES: list[dict[str, str]] = [
-    {"id": "discover", "title": "Discovery", "description": "Понимание конфигурации, домена и legacy."},
-    {"id": "requirements", "title": "Requirements", "description": "Требования, сценарии, критерии приемки."},
-    {"id": "architecture", "title": "Architecture", "description": "Архитектурные границы, impact, техдолг."},
-    {"id": "coding", "title": "Coding", "description": "Генерация, правка, рефакторинг BSL и метаданных."},
-    {"id": "ui_forms", "title": "Forms/UI", "description": "Формы 1С, команды, динамические списки, UX."},
-    {"id": "data", "title": "Data", "description": "Метаданные, запросы, миграции, права, обмены."},
-    {"id": "review", "title": "Review", "description": "Стандарты, безопасность, качество, diff-review."},
-    {"id": "performance", "title": "Performance", "description": "ТЖ, запросы, N+1, блокировки, blast radius."},
-    {"id": "testing", "title": "Testing", "description": "YAxUnit/Vanessa, тестовые данные, выбор тестов."},
-    {"id": "delivery", "title": "Delivery", "description": "Git, CI/CD, release gates, сравнение и поставка."},
-    {"id": "operations", "title": "Operations", "description": "Наблюдаемость, инциденты, эксплуатационные риски."},
-    {"id": "governance", "title": "Governance", "description": "Портфель, роли, аудит, enterprise-контроль."},
+    {
+        "id": "discover",
+        "title": "Discovery",
+        "description": "Понимание конфигурации, домена и legacy.",
+    },
+    {
+        "id": "requirements",
+        "title": "Requirements",
+        "description": "Требования, сценарии, критерии приемки.",
+    },
+    {
+        "id": "architecture",
+        "title": "Architecture",
+        "description": "Архитектурные границы, impact, техдолг.",
+    },
+    {
+        "id": "coding",
+        "title": "Coding",
+        "description": "Генерация, правка, рефакторинг BSL и метаданных.",
+    },
+    {
+        "id": "ui_forms",
+        "title": "Forms/UI",
+        "description": "Формы 1С, команды, динамические списки, UX.",
+    },
+    {
+        "id": "data",
+        "title": "Data",
+        "description": "Метаданные, запросы, миграции, права, обмены.",
+    },
+    {
+        "id": "review",
+        "title": "Review",
+        "description": "Стандарты, безопасность, качество, diff-review.",
+    },
+    {
+        "id": "performance",
+        "title": "Performance",
+        "description": "ТЖ, запросы, N+1, блокировки, blast radius.",
+    },
+    {
+        "id": "testing",
+        "title": "Testing",
+        "description": "YAxUnit/Vanessa, тестовые данные, выбор тестов.",
+    },
+    {
+        "id": "delivery",
+        "title": "Delivery",
+        "description": "Git, CI/CD, release gates, сравнение и поставка.",
+    },
+    {
+        "id": "operations",
+        "title": "Operations",
+        "description": "Наблюдаемость, инциденты, эксплуатационные риски.",
+    },
+    {
+        "id": "governance",
+        "title": "Governance",
+        "description": "Портфель, роли, аудит, enterprise-контроль.",
+    },
 ]
 
 PERSONAS: list[dict[str, str]] = [
@@ -70,7 +120,11 @@ COVERAGE_ITEMS: list[dict[str, Any]] = [
         "moat": "whole_config_graph",
         "enterprise_value": "Новая команда видит систему как карту зависимостей, а не набор файлов.",
         "next_build": "Добавить drill-down из карты покрытия в конкретные hotspots и impact.",
-        "implementation_refs": ["tools/rentgen/store.py", "src/api/rentgen_api.py", "portal/src/routes/_authenticated/quality.tsx"],
+        "implementation_refs": [
+            "tools/rentgen/store.py",
+            "src/api/rentgen_api.py",
+            "portal/src/routes/_authenticated/quality.tsx",
+        ],
     },
     {
         "id": "onprem-offline",
@@ -125,7 +179,11 @@ COVERAGE_ITEMS: list[dict[str, Any]] = [
         "moat": "blast_radius",
         "enterprise_value": "Перед правкой видно, что сломается в масштабе ERP/УХ.",
         "next_build": "Связать с Git provider и risk-driven test selector.",
-        "implementation_refs": ["src/api/rentgen_api.py", "src/api/quality_api.py", "portal/src/routes/_authenticated/change.tsx"],
+        "implementation_refs": [
+            "src/api/rentgen_api.py",
+            "src/api/quality_api.py",
+            "portal/src/routes/_authenticated/change.tsx",
+        ],
     },
     {
         "id": "architecture-review",
@@ -140,7 +198,10 @@ COVERAGE_ITEMS: list[dict[str, Any]] = [
         "moat": "architecture_intelligence",
         "enterprise_value": "Архитектор управляет эволюцией конфигурации, а не тушит регрессии.",
         "next_build": "Добавить правила слоев и отчеты по нарушенным зависимостям.",
-        "implementation_refs": ["tools/rentgen/store.py", "docs/02-architecture/adr/ADR_TEMPLATE.md"],
+        "implementation_refs": [
+            "tools/rentgen/store.py",
+            "docs/02-architecture/adr/ADR_TEMPLATE.md",
+        ],
     },
     {
         "id": "requirements-traceability",
@@ -340,7 +401,10 @@ COVERAGE_ITEMS: list[dict[str, Any]] = [
         "moat": "offline_knowledge",
         "enterprise_value": "Единые ответы по стандартам и платформе внутри закрытого контура.",
         "next_build": "Расширить ingestion документов и показывать citations в UI.",
-        "implementation_refs": ["src/api/its_rag_api.py", "src/services/its_rag/search.py"],
+        "implementation_refs": [
+            "src/api/its_rag_api.py",
+            "src/services/its_rag/search.py",
+        ],
     },
     {
         "id": "team-governance",
@@ -432,7 +496,9 @@ def _summary(items: list[dict[str, Any]]) -> dict[str, Any]:
     by_priority = Counter(item["priority"] for item in items)
     score = sum(STATUS_SCORES[item["status"]] for item in items) / max(len(items), 1)
     p0_items = [item for item in items if item["priority"] == "P0"]
-    p0_score = sum(STATUS_SCORES[item["status"]] for item in p0_items) / max(len(p0_items), 1)
+    p0_score = sum(STATUS_SCORES[item["status"]] for item in p0_items) / max(
+        len(p0_items), 1
+    )
 
     return {
         "total_items": len(items),
@@ -456,7 +522,11 @@ def _next_actions(items: list[dict[str, Any]]) -> list[dict[str, str]]:
     status_order = {"partial": 0, "planned": 1, "done": 2}
     candidates = sorted(
         (item for item in items if item["status"] != "done"),
-        key=lambda item: (priority_order.get(item["priority"], 9), status_order.get(item["status"], 9), item["stage"]),
+        key=lambda item: (
+            priority_order.get(item["priority"], 9),
+            status_order.get(item["status"], 9),
+            item["stage"],
+        ),
     )
     return [
         {

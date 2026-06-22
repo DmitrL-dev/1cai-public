@@ -22,12 +22,10 @@ class ModelService:
     def _load_model(self):
         """Attempt to load fine-tuned model"""
         try:
-            model_path = os.getenv("COPILOT_MODEL_PATH",
-                                   "./models/1c-copilot-lora")
+            model_path = os.getenv("COPILOT_MODEL_PATH", "./models/1c-copilot-lora")
 
             if os.path.exists(model_path):
-                logger.info("Loading Copilot model", extra={
-                            "model_path": model_path})
+                logger.info("Loading Copilot model", extra={"model_path": model_path})
 
                 try:
                     import torch
@@ -40,7 +38,8 @@ class ModelService:
 
                     # Load base model
                     base_model_name = os.getenv(
-                        "BASE_MODEL", "Qwen/Qwen2.5-Coder-7B-Instruct")
+                        "BASE_MODEL", "Qwen/Qwen2.5-Coder-7B-Instruct"
+                    )
 
                     logger.info(
                         "Loading base model",
@@ -49,15 +48,15 @@ class ModelService:
                     base_model = AutoModelForCausalLM.from_pretrained(
                         base_model_name,
                         device_map="auto",
-                        torch_dtype=(torch.float16 if self.device ==
-                                     "cuda" else torch.float32),
+                        torch_dtype=(
+                            torch.float16 if self.device == "cuda" else torch.float32
+                        ),
                         low_cpu_mem_usage=True,
                     )
 
                     # Load LoRA adapter
                     logger.info("Loading LoRA adapter...")
-                    self.model = PeftModel.from_pretrained(
-                        base_model, model_path)
+                    self.model = PeftModel.from_pretrained(base_model, model_path)
 
                     # Load tokenizer
                     self.tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -70,11 +69,9 @@ class ModelService:
                 except ImportError as e:
                     logger.warning(
                         "Required libraries not installed",
-                        extra={"error": str(
-                            e), "error_type": type(e).__name__},
+                        extra={"error": str(e), "error_type": type(e).__name__},
                     )
-                    logger.warning(
-                        "Install with: pip install transformers peft torch")
+                    logger.warning("Install with: pip install transformers peft torch")
                 except Exception as e:
                     logger.error(
                         "Failed to load model",

@@ -66,7 +66,8 @@ async def generate_code(
             raise HTTPException(status_code=400, detail="User ID cannot be empty")
 
         result = service.generate_code(
-            prompt=prompt, user_id=user_id, context=request.context)
+            prompt=prompt, user_id=user_id, context=request.context
+        )
 
         if result.get("blocked"):
             raise HTTPException(
@@ -98,11 +99,14 @@ async def generate_code(
             exc_info=True,
         )
         raise HTTPException(
-            status_code=500, detail="An error occurred while generating code")
+            status_code=500, detail="An error occurred while generating code"
+        )
 
 
 @router.get("/preview/{token}")
-async def get_preview(token: str, service: CodeApprovalService = Depends(get_approval_service)) -> Dict[str, Any]:
+async def get_preview(
+    token: str, service: CodeApprovalService = Depends(get_approval_service)
+) -> Dict[str, Any]:
     """
     Get preview suggestion for review
     """
@@ -123,14 +127,17 @@ async def get_preview(token: str, service: CodeApprovalService = Depends(get_app
             "prompt": suggestion_data["prompt"],
             "safety": suggestion_data["safety"],
             "created_at": suggestion_data["created_at"].isoformat(),
-            "expires_at": (suggestion_data["created_at"] + timedelta(minutes=30)).isoformat(),
+            "expires_at": (
+                suggestion_data["created_at"] + timedelta(minutes=30)
+            ).isoformat(),
         }
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error in get_preview: {e}", exc_info=True)
         raise HTTPException(
-            status_code=500, detail="An error occurred while retrieving preview")
+            status_code=500, detail="An error occurred while retrieving preview"
+        )
 
 
 @router.post("/approve")
@@ -161,8 +168,9 @@ async def approve_suggestion(
         )
 
         if result.get("blocked"):
-            raise HTTPException(status_code=403, detail=result.get(
-                "error", "Application blocked"))
+            raise HTTPException(
+                status_code=403, detail=result.get("error", "Application blocked")
+            )
 
         logger.info(
             "Suggestion approved successfully",
@@ -185,7 +193,8 @@ async def approve_suggestion(
     except Exception as e:
         logger.error(f"Error in approve_suggestion: {e}", exc_info=True)
         raise HTTPException(
-            status_code=500, detail="An error occurred while approving suggestion")
+            status_code=500, detail="An error occurred while approving suggestion"
+        )
 
 
 @router.post("/approve-all")
@@ -231,11 +240,14 @@ async def bulk_approve(
     except Exception as e:
         logger.error(f"Error in bulk_approve: {e}", exc_info=True)
         raise HTTPException(
-            status_code=500, detail="An error occurred while processing bulk approval")
+            status_code=500, detail="An error occurred while processing bulk approval"
+        )
 
 
 @router.delete("/reject/{token}")
-async def reject_suggestion(token: str, service: CodeApprovalService = Depends(get_approval_service)) -> Dict[str, Any]:
+async def reject_suggestion(
+    token: str, service: CodeApprovalService = Depends(get_approval_service)
+) -> Dict[str, Any]:
     """
     Reject suggestion
     """
@@ -252,11 +264,14 @@ async def reject_suggestion(token: str, service: CodeApprovalService = Depends(g
     except Exception as e:
         logger.error(f"Error in reject_suggestion: {e}", exc_info=True)
         raise HTTPException(
-            status_code=500, detail="An error occurred while rejecting suggestion")
+            status_code=500, detail="An error occurred while rejecting suggestion"
+        )
 
 
 @router.get("/pending")
-async def get_pending_suggestions(user_id: str, service: CodeApprovalService = Depends(get_approval_service)) -> Dict[str, Any]:
+async def get_pending_suggestions(
+    user_id: str, service: CodeApprovalService = Depends(get_approval_service)
+) -> Dict[str, Any]:
     """
     Get all pending suggestions for user
     """

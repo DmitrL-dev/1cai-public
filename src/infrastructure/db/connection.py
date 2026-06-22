@@ -1,4 +1,3 @@
-
 """
 Database Connection Pool Management
 Best Practices:
@@ -15,8 +14,8 @@ from contextlib import asynccontextmanager
 from typing import Optional
 
 import asyncpg
-from src.config import settings
 
+from src.config import settings
 from src.infrastructure.logging.structured_logging import StructuredLogger
 
 logger = StructuredLogger(__name__).logger
@@ -34,7 +33,9 @@ DEFAULT_COMMAND_TIMEOUT = settings.db_command_timeout
 DEFAULT_CONNECT_TIMEOUT = settings.db_connect_timeout
 
 
-async def create_pool(max_retries: int = 1, retry_delay: int = 1) -> Optional[asyncpg.Pool]:
+async def create_pool(
+    max_retries: int = 1, retry_delay: int = 1
+) -> Optional[asyncpg.Pool]:
     """
     Create database connection pool with retry logic and best practices
 
@@ -91,7 +92,8 @@ async def create_pool(max_retries: int = 1, retry_delay: int = 1) -> Optional[as
                 break
             except asyncio.TimeoutError:
                 logger.warning(
-                    f"Database connection timeout (attempt {attempt + 1}/{max_retries})")
+                    f"Database connection timeout (attempt {attempt + 1}/{max_retries})"
+                )
                 if attempt < max_retries - 1:
                     backoff_delay = retry_delay * (2**attempt)
                     await asyncio.sleep(backoff_delay)
@@ -149,7 +151,9 @@ def get_pool() -> asyncpg.Pool:
     """
     if _pool is None:
         raise RuntimeError(
-            "Database pool not initialized. " "Call create_pool() during application startup.")
+            "Database pool not initialized. "
+            "Call create_pool() during application startup."
+        )
 
     return _pool
 

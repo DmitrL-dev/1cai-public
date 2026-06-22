@@ -2,7 +2,9 @@ from src.services.rentgen.demo_command_center import build_demo_command_center
 
 
 def _executive_report():
-    return {"decision": {"status": "watch", "score": 78, "headline": "Track yellow areas."}}
+    return {
+        "decision": {"status": "watch", "score": 78, "headline": "Track yellow areas."}
+    }
 
 
 def _scenario_hub():
@@ -21,7 +23,10 @@ def _guided_demo():
 
 
 def _pilot_launchpad():
-    return {"decision": {"status": "ready", "score": 84}, "summary": {"offers": 4, "acceptance_checks": 6}}
+    return {
+        "decision": {"status": "ready", "score": 84},
+        "summary": {"offers": 4, "acceptance_checks": 6},
+    }
 
 
 def _business_case():
@@ -50,23 +55,106 @@ def _buyer_brief(status="ready", score=88):
         },
         "room_line": "Ask for local license: run buyer-safe proof and move to paid pilot.",
         "role_cards": [
-            {"role": "developer", "title": "Developer", "route": "/change", "status": "ready", "spark": "Show code proof.", "proof_file": "rentgen-developer-report.md"},
-            {"role": "architect", "title": "Architect", "route": "/platform-doctor", "status": "ready", "spark": "Show platform proof.", "proof_file": "rentgen-architect-report.md"},
-            {"role": "director", "title": "Director", "route": "/board-pack", "status": status, "spark": "Show value proof.", "proof_file": "board-pack.md"},
-            {"role": "security", "title": "Security", "route": "/enterprise-trust-center", "status": "ready", "spark": "Show trust proof.", "proof_file": "rentgen-security-questionnaire.md"},
-            {"role": "vendor", "title": "Vendor", "route": "/vendor-portfolio", "status": "ready", "spark": "Show portfolio proof.", "proof_file": "vendor-portfolio.md"},
+            {
+                "role": "developer",
+                "title": "Developer",
+                "route": "/change",
+                "status": "ready",
+                "spark": "Show code proof.",
+                "proof_file": "rentgen-developer-report.md",
+            },
+            {
+                "role": "architect",
+                "title": "Architect",
+                "route": "/platform-doctor",
+                "status": "ready",
+                "spark": "Show platform proof.",
+                "proof_file": "rentgen-architect-report.md",
+            },
+            {
+                "role": "director",
+                "title": "Director",
+                "route": "/board-pack",
+                "status": status,
+                "spark": "Show value proof.",
+                "proof_file": "board-pack.md",
+            },
+            {
+                "role": "security",
+                "title": "Security",
+                "route": "/enterprise-trust-center",
+                "status": "ready",
+                "spark": "Show trust proof.",
+                "proof_file": "rentgen-security-questionnaire.md",
+            },
+            {
+                "role": "vendor",
+                "title": "Vendor",
+                "route": "/vendor-portfolio",
+                "status": "ready",
+                "spark": "Show portfolio proof.",
+                "proof_file": "vendor-portfolio.md",
+            },
         ],
         "proof_readiness": [
-            {"id": "evidence-bundle", "title": "Forwardable evidence", "route": "/evidence-bundle", "status": status, "signal": "Proof routes and hashes.", "file": "OPEN_FIRST.md"},
-            {"id": "governance", "title": "Approval gates", "route": "/approvals", "status": "ready", "signal": "Governance gates.", "file": "governance-proof.md"},
-            {"id": "audit-siem", "title": "Audit / SIEM handoff", "route": "/audit", "status": "ready", "signal": "SIEM export.", "file": "rentgen-audit-siem.jsonl"},
-            {"id": "trust", "title": "Enterprise trust", "route": "/enterprise-trust-center", "status": "ready", "signal": "Trust proof.", "file": "rentgen-security-questionnaire.md"},
+            {
+                "id": "evidence-bundle",
+                "title": "Forwardable evidence",
+                "route": "/evidence-bundle",
+                "status": status,
+                "signal": "Proof routes and hashes.",
+                "file": "OPEN_FIRST.md",
+            },
+            {
+                "id": "governance",
+                "title": "Approval gates",
+                "route": "/approvals",
+                "status": "ready",
+                "signal": "Governance gates.",
+                "file": "governance-proof.md",
+            },
+            {
+                "id": "audit-siem",
+                "title": "Audit / SIEM handoff",
+                "route": "/audit",
+                "status": "ready",
+                "signal": "SIEM export.",
+                "file": "rentgen-audit-siem.jsonl",
+            },
+            {
+                "id": "trust",
+                "title": "Enterprise trust",
+                "route": "/enterprise-trust-center",
+                "status": "ready",
+                "signal": "Trust proof.",
+                "file": "rentgen-security-questionnaire.md",
+            },
         ],
         "meeting_flow": [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Pick role."},
-            {"step": 2, "label": "Prove", "route": "/killer-demo", "line": "Show proof."},
-            {"step": 3, "label": "Ask", "route": "/pilot-launchpad", "line": "Ask for pilot."},
-            {"step": 4, "label": "Forward", "route": "/evidence-bundle", "line": "Forward packet."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Pick role.",
+            },
+            {
+                "step": 2,
+                "label": "Prove",
+                "route": "/killer-demo",
+                "line": "Show proof.",
+            },
+            {
+                "step": 3,
+                "label": "Ask",
+                "route": "/pilot-launchpad",
+                "line": "Ask for pilot.",
+            },
+            {
+                "step": 4,
+                "label": "Forward",
+                "route": "/evidence-bundle",
+                "line": "Forward packet.",
+            },
         ],
     }
 
@@ -102,8 +190,17 @@ def test_demo_command_center_builds_live_stages_role_pivots_and_recovery():
     assert bridge["source"] == "management-buyer-brief"
     assert bridge["primary_motion"]["route"] == "/demo-command-center"
     assert bridge["presenter_opening"]["route"] == "/buyer-concierge"
-    assert bridge["files"][:3] == ["buyer-brief.md", "buyer-pulse.md", "open-first-path.md"]
-    assert [item["stage"] for item in bridge["open_first_path"]] == ["orient", "prove", "close", "verify"]
+    assert bridge["files"][:3] == [
+        "buyer-brief.md",
+        "buyer-pulse.md",
+        "open-first-path.md",
+    ]
+    assert [item["stage"] for item in bridge["open_first_path"]] == [
+        "orient",
+        "prove",
+        "close",
+        "verify",
+    ]
     assert "/killer-demo" in bridge["routes"]
     assert report["exports"][0]["filename"] == "buyer-brief.md"
     assert report["exports"][1]["filename"] == "buyer-pulse.md"

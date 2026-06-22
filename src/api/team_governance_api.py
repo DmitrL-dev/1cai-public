@@ -17,7 +17,9 @@ def board(
     limit: int = Query(40, ge=1, le=200),
     save_snapshot: bool = Query(False),
 ) -> dict[str, Any]:
-    return build_team_governance(store_or_none(), limit=limit, save_snapshot=save_snapshot)
+    return build_team_governance(
+        store_or_none(), limit=limit, save_snapshot=save_snapshot
+    )
 
 
 @router.post("/snapshots")

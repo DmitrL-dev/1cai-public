@@ -108,7 +108,9 @@ class AdminDashboardService:
             HTTPException: Если тенант не найден (404).
         """
         async with self.db.acquire() as conn:
-            tenant = await conn.fetchrow("SELECT * FROM tenants WHERE id = $1", tenant_id)
+            tenant = await conn.fetchrow(
+                "SELECT * FROM tenants WHERE id = $1", tenant_id
+            )
 
             if not tenant:
                 raise HTTPException(status_code=404, detail="Tenant not found")

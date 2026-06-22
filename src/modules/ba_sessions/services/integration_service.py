@@ -20,9 +20,7 @@ class IntegrationService:
     ) -> Dict[str, Any]:
         """Sync requirements to Jira"""
         try:
-            from src.ai.agents.business_analyst_agent import (
-                BusinessAnalystAgent,
-            )
+            from src.ai.agents.business_analyst_agent import BusinessAnalystAgent
 
             agent = BusinessAnalystAgent()
 
@@ -45,9 +43,7 @@ class IntegrationService:
     ) -> Dict[str, Any]:
         """Sync BPMN to Confluence"""
         try:
-            from src.ai.agents.business_analyst_agent import (
-                BusinessAnalystAgent,
-            )
+            from src.ai.agents.business_analyst_agent import BusinessAnalystAgent
 
             agent = BusinessAnalystAgent()
 
@@ -70,9 +66,7 @@ class IntegrationService:
     ) -> Dict[str, Any]:
         """Sync KPI to Confluence"""
         try:
-            from src.ai.agents.business_analyst_agent import (
-                BusinessAnalystAgent,
-            )
+            from src.ai.agents.business_analyst_agent import BusinessAnalystAgent
 
             agent = BusinessAnalystAgent()
 
@@ -95,9 +89,7 @@ class IntegrationService:
     ) -> Dict[str, Any]:
         """Sync Traceability to Confluence"""
         try:
-            from src.ai.agents.business_analyst_agent import (
-                BusinessAnalystAgent,
-            )
+            from src.ai.agents.business_analyst_agent import BusinessAnalystAgent
 
             agent = BusinessAnalystAgent()
 
@@ -109,5 +101,6 @@ class IntegrationService:
             )
         except Exception as e:
             logger.error(
-                f"Error syncing traceability to Confluence: {e}", exc_info=True)
+                f"Error syncing traceability to Confluence: {e}", exc_info=True
+            )
             raise

@@ -4,8 +4,8 @@ Parses rphost .log files into structured TJEvent objects with
 BSL source code correlation via Context field.
 """
 
-import re
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -98,7 +98,9 @@ class TJParser:
         events = []
         current_lines: list[str] = []
 
-        with open(path, "r", encoding=self._detect_encoding(path), errors="replace") as f:
+        with open(
+            path, "r", encoding=self._detect_encoding(path), errors="replace"
+        ) as f:
             for line in f:
                 if self.RE_EVENT_START.match(line):
                     if current_lines:

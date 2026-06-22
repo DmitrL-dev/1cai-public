@@ -7,7 +7,6 @@ from typing import Any
 
 from src.services.rentgen.coverage_ledger import build_coverage_ledger
 
-
 DEMO_CHANGED_MODULE = "CommonModules/СводнаяТаблицаУХ/Ext/Module.bsl"
 
 ROLE_TITLES = {
@@ -29,7 +28,7 @@ def _route(path: str) -> str:
 
 
 def _top_module(executive: dict[str, Any]) -> str:
-    risks = ((executive.get("risk_summary") or {}).get("top_risks") or [])
+    risks = (executive.get("risk_summary") or {}).get("top_risks") or []
     for item in risks:
         module = item.get("module_path")
         if module:
@@ -45,7 +44,9 @@ def _status_tone(status: str | None) -> str:
     return "warn"
 
 
-def _role_report(role: str, executive: dict[str, Any], changed_module: str) -> dict[str, Any]:
+def _role_report(
+    role: str, executive: dict[str, Any], changed_module: str
+) -> dict[str, Any]:
     decision = executive.get("decision") or {}
     kpis = executive.get("kpis") or {}
     risk = executive.get("risk_summary") or {}
@@ -163,7 +164,9 @@ def _role_report(role: str, executive: dict[str, Any], changed_module: str) -> d
     }
 
 
-def _render_role_markdown(role: str, payload: dict[str, Any], executive: dict[str, Any]) -> str:
+def _render_role_markdown(
+    role: str, payload: dict[str, Any], executive: dict[str, Any]
+) -> str:
     decision = executive.get("decision") or {}
     lines = [
         f"# {ROLE_TITLES.get(role, ROLE_TITLES['director'])}",
@@ -180,7 +183,9 @@ def _render_role_markdown(role: str, payload: dict[str, Any], executive: dict[st
     ]
     lines.extend(f"- {item}" for item in payload["proof_points"])
     lines.extend(["", "## Дальше", ""])
-    lines.extend(f"- {item['label']}: `{item['to']}`" for item in payload["next_actions"])
+    lines.extend(
+        f"- {item['label']}: `{item['to']}`" for item in payload["next_actions"]
+    )
     return "\n".join(lines)
 
 
@@ -198,7 +203,9 @@ def _demo_markdown(story: dict[str, Any]) -> str:
         lines.append(f"- **{item['title']}**: {item['value']} — {item['why']}")
     lines.extend(["", "## Demo Steps", ""])
     for item in story["demo_steps"]:
-        lines.append(f"- **{item['title']}** ({item['role']}, {item['minutes']} min): {item['evidence']}")
+        lines.append(
+            f"- **{item['title']}** ({item['role']}, {item['minutes']} min): {item['evidence']}"
+        )
     lines.extend(["", "## Role Reports", ""])
     for report in story["role_reports"]:
         lines.append(f"- {report['title']}: {report['headline']}")
@@ -239,7 +246,9 @@ def build_demo_story(executive: dict[str, Any]) -> dict[str, Any]:
             "configuration": "1C ERP / UH style configuration",
             "setup_minutes": 5,
             "coverage": {
-                "status": "partial" if int(coverage.get("score") or 0) < 100 else "ready",
+                "status": "partial"
+                if int(coverage.get("score") or 0) < 100
+                else "ready",
                 "score": coverage.get("score"),
                 "caveat": "Неполные источники показываются как caveat; impact не превращается в безопасный ноль.",
             },
@@ -249,7 +258,8 @@ def build_demo_story(executive: dict[str, Any]) -> dict[str, Any]:
                 "title": "Можно выпускать?",
                 "value": f"{decision.get('status', 'unknown')} / {decision.get('score', 0)}",
                 "tone": _status_tone(str(decision.get("status"))),
-                "why": decision.get("headline") or "Release decision is built from local evidence.",
+                "why": decision.get("headline")
+                or "Release decision is built from local evidence.",
                 "next_action": "Открыть релизное решение",
                 "to": _route("/release-readiness"),
             },
@@ -392,7 +402,8 @@ def build_demo_story(executive: dict[str, Any]) -> dict[str, Any]:
                 "role": "director",
                 "minutes": 1,
                 "to": _route("/release-readiness"),
-                "evidence": decision.get("headline") or "Release decision is available.",
+                "evidence": decision.get("headline")
+                or "Release decision is available.",
             },
             {
                 "id": "rights-rls",
@@ -464,4 +475,6 @@ def build_role_report(role: str, executive: dict[str, Any]) -> dict[str, Any]:
         "vendor": "vendor",
         "franchisee": "vendor",
     }
-    return _role_report(aliases.get(normalized, "director"), executive, _top_module(executive))
+    return _role_report(
+        aliases.get(normalized, "director"), executive, _top_module(executive)
+    )

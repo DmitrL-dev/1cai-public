@@ -97,9 +97,7 @@ class ArchitectAgentExtended:
                 "risks": risks,
                 "recommendations": recommendations,
             },
-            "details": {
-                "cycles": cycles[:10]  # Return top 10 cycles
-            },
+            "details": {"cycles": cycles[:10]},  # Return top 10 cycles
         }
 
     async def _count_nodes(self, kind: NodeKind) -> int:
@@ -110,7 +108,9 @@ class ArchitectAgentExtended:
         result = self._execute_query(cypher, {"kind": kind.value})
         return result[0]["count"] if result else 0
 
-    async def _analyze_coupling(self, config_name: Optional[str] = None) -> Optional[float]:
+    async def _analyze_coupling(
+        self, config_name: Optional[str] = None
+    ) -> Optional[float]:
         """
         Calculate system-wide coupling (0.0 to 1.0).
         Simplified metric: Ratio of actual dependencies to maximum possible dependencies.
@@ -139,7 +139,9 @@ class ArchitectAgentExtended:
         max_edges = nodes * (nodes - 1)
         return min(1.0, edges / max_edges) if max_edges > 0 else 0.0
 
-    async def _analyze_cohesion(self, config_name: Optional[str] = None) -> Optional[float]:
+    async def _analyze_cohesion(
+        self, config_name: Optional[str] = None
+    ) -> Optional[float]:
         """
         Calculate system-wide cohesion (0.0 to 1.0).
         Proxy metric: share of edges that stay inside the same declared module,
@@ -219,7 +221,9 @@ class ArchitectAgentExtended:
         if cohesion is not None and cohesion < 0.4:
             recs.append("Group related functions into cohesive modules.")
         if coupling is None or cohesion is None:
-            recs.append("Connect and populate the code graph before scoring architecture quality.")
+            recs.append(
+                "Connect and populate the code graph before scoring architecture quality."
+            )
         if not patterns:
             recs.append("Define clear architectural layers.")
         return recs
@@ -236,7 +240,9 @@ class ArchitectAgentExtended:
         score -= min(5, cycles_count * 0.5)
         return max(0.0, min(10.0, score))
 
-    def _execute_query(self, cypher: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def _execute_query(
+        self, cypher: str, params: Optional[Dict[str, Any]] = None
+    ) -> List[Dict[str, Any]]:
         if not self.client:
             return []
         try:

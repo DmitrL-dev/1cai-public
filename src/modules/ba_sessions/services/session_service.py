@@ -32,7 +32,9 @@ class SessionService:
         """Leave a session"""
         await ba_session_manager.leave_session(session_id, user_id)
 
-    async def broadcast(self, session_id: str, message: Dict[str, Any], sender: str) -> None:
+    async def broadcast(
+        self, session_id: str, message: Dict[str, Any], sender: str
+    ) -> None:
         """Broadcast a message to a session"""
         await ba_session_manager.broadcast(session_id, message, sender=sender)
 

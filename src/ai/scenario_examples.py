@@ -1,4 +1,3 @@
-
 """
 Scenario Examples (experimental)
 --------------------------------
@@ -328,7 +327,9 @@ def example_empty_execution_report(plan: ScenarioPlan) -> ScenarioExecutionRepor
     """
 
     trust = TrustScore(
-        score=0.5, level="medium", reasons=["Reference dry-run report; runtime metrics are not attached."]
+        score=0.5,
+        level="medium",
+        reasons=["Reference dry-run report; runtime metrics are not attached."],
     )
 
     return ScenarioExecutionReport(
@@ -337,6 +338,8 @@ def example_empty_execution_report(plan: ScenarioPlan) -> ScenarioExecutionRepor
         trust_before=trust,
         trust_after=trust,
         summary="Reference dry-run report: execution summary will be attached after the scenario runs.",
-        timeline=["Scenario has not been executed; no runtime evidence has been attached."],
+        timeline=[
+            "Scenario has not been executed; no runtime evidence has been attached."
+        ],
         artifacts={},
     )

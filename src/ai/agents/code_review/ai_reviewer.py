@@ -1,4 +1,3 @@
-
 """
 AI Code Reviewer - главный orchestrator
 Координирует все проверки и генерирует review
@@ -42,7 +41,10 @@ except ImportError:
         def analyze(self, code: str, ast: Dict[str, Any]) -> List[Dict[str, Any]]:
             issues = []
             for query in ast.get("queries", []):
-                if "SELECT *" in query.get("text", "").upper() or "ВЫБРАТЬ *" in query.get("text", "").upper():
+                if (
+                    "SELECT *" in query.get("text", "").upper()
+                    or "ВЫБРАТЬ *" in query.get("text", "").upper()
+                ):
                     issues.append(
                         {
                             "severity": "MEDIUM",
@@ -90,6 +92,7 @@ except ImportError:
         def _line_of(self, code: str, needle: str) -> int:
             index = code.lower().find(needle.lower())
             return code[:index].count("\n") + 1 if index >= 0 else 1
+
 
 logger = StructuredLogger(__name__).logger
 
@@ -198,7 +201,9 @@ class AICodeReviewer:
                 "llm_credentials_present": self.llm_configured,
                 "required_evidence": []
                 if self.llm_available
-                else ["LLM review adapter"] if self.llm_configured else ["LLM review adapter and credentials"],
+                else ["LLM review adapter"]
+                if self.llm_configured
+                else ["LLM review adapter and credentials"],
                 "caveats": []
                 if self.llm_available
                 else [

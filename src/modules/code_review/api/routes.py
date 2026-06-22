@@ -3,7 +3,6 @@ Code Review API Routes
 """
 import asyncio
 from datetime import datetime
-
 from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException, Request, Response
@@ -50,7 +49,9 @@ fixer = CodeFixer()
     """,
 )
 @limiter.limit(PUBLIC_RATE_LIMIT)
-async def analyze_code(request: Request, request_data: CodeContextRequest, response: Response) -> CodeAnalysisResponse:
+async def analyze_code(
+    request: Request, request_data: CodeContextRequest, response: Response
+) -> CodeAnalysisResponse:
     """
     Analyze code with improvement suggestions
     """
@@ -127,7 +128,8 @@ async def analyze_code(request: Request, request_data: CodeContextRequest, respo
         # Log language for monitoring
         if code_request.language != "bsl":
             logger.info(
-                f"Analyzing {code_request.language} code with BSL analyzer", extra={"language": code_request.language}
+                f"Analyzing {code_request.language} code with BSL analyzer",
+                extra={"language": code_request.language},
             )
 
         # AI analysis via OpenAI (async if available) with timeout
@@ -203,7 +205,8 @@ async def analyze_code(request: Request, request_data: CodeContextRequest, respo
             exc_info=True,
         )
         raise HTTPException(
-            status_code=500, detail="An error occurred while analyzing code")
+            status_code=500, detail="An error occurred while analyzing code"
+        )
 
 
 @router.post(
@@ -213,7 +216,9 @@ async def analyze_code(request: Request, request_data: CodeContextRequest, respo
     description="Apply automatic fix to code based on suggestion",
 )
 @limiter.limit("20/minute")
-async def auto_fix_code_endpoint(api_request: Request, request: AutoFixRequest, response: Response) -> AutoFixResponse:
+async def auto_fix_code_endpoint(
+    api_request: Request, request: AutoFixRequest, response: Response
+) -> AutoFixResponse:
     return await fixer.apply_auto_fix(request)
 
 

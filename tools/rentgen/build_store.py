@@ -46,8 +46,13 @@ ALLOW_NAME_ONLY = False
 
 # Module-type file stems we recognise when parsing score paths.
 KNOWN_KINDS = {
-    "commandmodule", "managermodule", "objectmodule", "recordsetmodule",
-    "valuemanagermodule", "module", "form",
+    "commandmodule",
+    "managermodule",
+    "objectmodule",
+    "recordsetmodule",
+    "valuemanagermodule",
+    "module",
+    "form",
 }
 
 
@@ -181,11 +186,11 @@ def build(db_path: Path = DB_PATH) -> dict:
 
     # ---- PASS 1: subroutines + resolution indices ----------------------------
     print("[pass 1] loading subroutines + building resolution index ...", flush=True)
-    id_map: dict[tuple[str, str], int] = {}      # (name_l, module_l) -> id  (exact)
+    id_map: dict[tuple[str, str], int] = {}  # (name_l, module_l) -> id  (exact)
     func_alias: dict[tuple[str, str], str] = {}  # (name_l, short_l) -> full module
-    func_name_exported: dict[str, str] = {}      # name_l -> exported module
-    func_by_name: dict[str, str] = {}            # name_l -> any module
-    module_meta: dict[str, dict] = {}            # module -> aggregates
+    func_name_exported: dict[str, str] = {}  # name_l -> exported module
+    func_by_name: dict[str, str] = {}  # name_l -> any module
+    module_meta: dict[str, dict] = {}  # module -> aggregates
 
     batch = []
     sid = 0
@@ -215,8 +220,13 @@ def build(db_path: Path = DB_PATH) -> dict:
         if mm is None:
             o, k = _canon_from_callgraph(module)
             mm = module_meta[module] = {
-                "object_name": o, "module_kind": k, "n_subs": 0, "n_export": 0,
-                "n_functions": 0, "sum_complexity": 0, "max_complexity": 0,
+                "object_name": o,
+                "module_kind": k,
+                "n_subs": 0,
+                "n_export": 0,
+                "n_functions": 0,
+                "sum_complexity": 0,
+                "max_complexity": 0,
             }
         mm["n_subs"] += 1
         mm["n_export"] += is_export
@@ -226,29 +236,37 @@ def build(db_path: Path = DB_PATH) -> dict:
             mm["max_complexity"] = complexity
 
         if len(batch) >= 20000:
-            cur.executemany(
-                "INSERT INTO subroutine VALUES (?,?,?,?,?,?,?)", batch
-            )
+            cur.executemany("INSERT INTO subroutine VALUES (?,?,?,?,?,?,?)", batch)
             batch.clear()
     if batch:
         cur.executemany("INSERT INTO subroutine VALUES (?,?,?,?,?,?,?)", batch)
     con.commit()
     n_subs = sid
-    print(f"  subroutines: {n_subs:,}  modules: {len(module_meta):,}  "
-          f"exact-keys: {len(id_map):,}  names: {len(func_by_name):,} "
-          f"({len(func_name_exported):,} exported)", flush=True)
+    print(
+        f"  subroutines: {n_subs:,}  modules: {len(module_meta):,}  "
+        f"exact-keys: {len(id_map):,}  names: {len(func_by_name):,} "
+        f"({len(func_name_exported):,} exported)",
+        flush=True,
+    )
 
     # write module rows
     mrows = [
-        (m, d["object_name"], d["module_kind"], d["n_subs"], d["n_export"],
-         d["n_functions"],
-         round(d["sum_complexity"] / d["n_subs"], 2) if d["n_subs"] else 0,
-         d["max_complexity"], d["sum_complexity"], 0, 0)
+        (
+            m,
+            d["object_name"],
+            d["module_kind"],
+            d["n_subs"],
+            d["n_export"],
+            d["n_functions"],
+            round(d["sum_complexity"] / d["n_subs"], 2) if d["n_subs"] else 0,
+            d["max_complexity"],
+            d["sum_complexity"],
+            0,
+            0,
+        )
         for m, d in module_meta.items()
     ]
-    cur.executemany(
-        "INSERT INTO module VALUES (?,?,?,?,?,?,?,?,?,?,?)", mrows
-    )
+    cur.executemany("INSERT INTO module VALUES (?,?,?,?,?,?,?,?,?,?,?)", mrows)
     con.commit()
 
     # ---- PASS 2: resolve calls -> internal edges -----------------------------
@@ -286,7 +304,10 @@ def build(db_path: Path = DB_PATH) -> dict:
                 cnl = call.lower()
                 if (cnl, caller_ml) in id_map:
                     callee_module, tier = caller_module, "exact"
-                elif "." in caller_module and (cnl, caller_module.split(".")[0].lower()) in id_map:
+                elif (
+                    "." in caller_module
+                    and (cnl, caller_module.split(".")[0].lower()) in id_map
+                ):
                     callee_module, tier = caller_module.split(".")[0], "alias"
                 elif ALLOW_NAME_ONLY and cnl in func_name_exported:
                     callee_module, tier = func_name_exported[cnl], "name"
@@ -313,11 +334,13 @@ def build(db_path: Path = DB_PATH) -> dict:
     if edge_batch:
         cur.executemany("INSERT INTO call_edge VALUES (?,?,?,?)", edge_batch)
     con.commit()
-    print(f"  internal call edges: {n_edges:,}  "
-          f"(exact={tier_counts['exact']:,} alias={tier_counts['alias']:,} "
-          f"name={tier_counts['name']:,} dropped={tier_counts['dropped']:,})  "
-          f"name_only={'ON' if ALLOW_NAME_ONLY else 'OFF'}",
-          flush=True)
+    print(
+        f"  internal call edges: {n_edges:,}  "
+        f"(exact={tier_counts['exact']:,} alias={tier_counts['alias']:,} "
+        f"name={tier_counts['name']:,} dropped={tier_counts['dropped']:,})  "
+        f"name_only={'ON' if ALLOW_NAME_ONLY else 'OFF'}",
+        flush=True,
+    )
 
     # module-level edges
     cur.executemany(
@@ -362,18 +385,31 @@ def build(db_path: Path = DB_PATH) -> dict:
     for m in scores.get("modules", []):
         path = m["module_path"]
         o, k = _canon_from_path(path)
-        qrows.append((
-            path, m.get("module_type", "Unknown"), m.get("domain", "Прочее"),
-            int(m.get("loc", 0)), int(m.get("complexity_score", 0)),
-            int(m.get("documentation_score", 0)), int(m.get("maintainability_score", 0)),
-            m.get("code_quality"),
-            1 if m.get("has_n_plus_one") else 0, 1 if m.get("has_select_star") else 0,
-            1 if m.get("has_empty_catch") else 0, 1 if m.get("has_deep_nesting") else 0,
-            1 if m.get("has_magic_numbers") else 0, int(m.get("num_todo_fixme", 0)),
-            o, k, 0, 0,
-        ))
+        qrows.append(
+            (
+                path,
+                m.get("module_type", "Unknown"),
+                m.get("domain", "Прочее"),
+                int(m.get("loc", 0)),
+                int(m.get("complexity_score", 0)),
+                int(m.get("documentation_score", 0)),
+                int(m.get("maintainability_score", 0)),
+                m.get("code_quality"),
+                1 if m.get("has_n_plus_one") else 0,
+                1 if m.get("has_select_star") else 0,
+                1 if m.get("has_empty_catch") else 0,
+                1 if m.get("has_deep_nesting") else 0,
+                1 if m.get("has_magic_numbers") else 0,
+                int(m.get("num_todo_fixme", 0)),
+                o,
+                k,
+                0,
+                0,
+            )
+        )
     cur.executemany(
-        "INSERT OR REPLACE INTO quality VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", qrows
+        "INSERT OR REPLACE INTO quality VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        qrows,
     )
     con.commit()
     print(f"  quality rows: {len(qrows):,}", flush=True)
@@ -423,10 +459,14 @@ def build(db_path: Path = DB_PATH) -> dict:
     size_mb = db_path.stat().st_size / 1e6
     print("\n=== BUILD COMPLETE ===", flush=True)
     print(f"  db: {db_path}  ({size_mb:.1f} MB)  in {dt:.1f}s")
-    print(f"  subroutines={n_subs:,}  modules={len(module_meta):,}  "
-          f"call_edges={n_edges:,}  module_edges={len(mod_edge):,}")
-    print(f"  quality={len(qrows):,}  join_coverage={cov:.1f}% "
-          f"({joined:,} quality modules have call-graph fans)")
+    print(
+        f"  subroutines={n_subs:,}  modules={len(module_meta):,}  "
+        f"call_edges={n_edges:,}  module_edges={len(mod_edge):,}"
+    )
+    print(
+        f"  quality={len(qrows):,}  join_coverage={cov:.1f}% "
+        f"({joined:,} quality modules have call-graph fans)"
+    )
     return meta
 
 

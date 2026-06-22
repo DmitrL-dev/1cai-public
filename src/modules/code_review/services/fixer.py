@@ -27,7 +27,11 @@ class CodeFixer:
             suggestion_id = payload.suggestionId.lower()
 
             # Pattern 1: Type checking (Тип → ПроверитьТип)
-            if "type-check" in suggestion_id or "bsl-type" in suggestion_id or "Тип(" in fixed_code:
+            if (
+                "type-check" in suggestion_id
+                or "bsl-type" in suggestion_id
+                or "Тип(" in fixed_code
+            ):
                 original = fixed_code
                 fixed_code = fixed_code.replace("Тип(", "ПроверитьТип(")
 
@@ -37,7 +41,8 @@ class CodeFixer:
                             "type": "type_safety",
                             "old": "Тип(",
                             "new": "ПроверитьТип(",
-                            "count": fixed_code.count("ПроверитьТип(") - original.count("ПроверитьТип("),
+                            "count": fixed_code.count("ПроверитьТип(")
+                            - original.count("ПроверитьТип("),
                             "description": "Added type checking for safety",
                         }
                     )
@@ -118,7 +123,9 @@ class CodeFixer:
                 changes=changes,
                 success=len(changes) > 0,
                 message=(
-                    f"Applied {len(changes)} fix(es)" if changes else "No applicable auto-fixes for this suggestion"
+                    f"Applied {len(changes)} fix(es)"
+                    if changes
+                    else "No applicable auto-fixes for this suggestion"
                 ),
             )
 

@@ -1,4 +1,3 @@
-
 """
 Telegram Bot - Main entry point
 Интеграция с 1C AI Assistant

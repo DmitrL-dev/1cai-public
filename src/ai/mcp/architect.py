@@ -1,4 +1,3 @@
-
 """
 MCP Server для AI Архитектора - Полный функционал
 Все возможности архитектора через MCP protocol
@@ -144,7 +143,9 @@ class ArchitectMCPServer:
             return adrs
 
         status = str(filter_params.get("status") or "").lower()
-        query = str(filter_params.get("query") or filter_params.get("title") or "").lower()
+        query = str(
+            filter_params.get("query") or filter_params.get("title") or ""
+        ).lower()
 
         filtered = adrs
         if status:
@@ -178,7 +179,9 @@ class ArchitectMCPServer:
         )
         if isinstance(raw_components, dict):
             raw_components = [
-                {"id": key, **value} if isinstance(value, dict) else {"id": key, "name": value}
+                {"id": key, **value}
+                if isinstance(value, dict)
+                else {"id": key, "name": value}
                 for key, value in raw_components.items()
             ]
         if not isinstance(raw_components, list):
@@ -187,7 +190,11 @@ class ArchitectMCPServer:
         components = []
         for index, component in enumerate(raw_components, 1):
             if isinstance(component, dict):
-                name = component.get("name") or component.get("id") or component.get("title")
+                name = (
+                    component.get("name")
+                    or component.get("id")
+                    or component.get("title")
+                )
                 component_id = component.get("id") or name or f"component_{index}"
                 components.append(
                     {
@@ -226,7 +233,9 @@ class ArchitectMCPServer:
                     **flow,
                     "source": str(source),
                     "target": str(target),
-                    "label": flow.get("label") or flow.get("type") or flow.get("protocol"),
+                    "label": flow.get("label")
+                    or flow.get("type")
+                    or flow.get("protocol"),
                 }
             )
         return flows
@@ -240,7 +249,9 @@ class ArchitectMCPServer:
         for index, component in enumerate(components, 1):
             node_id = self._sanitize_mermaid_id(component.get("id"), f"C{index}")
             known_ids.add(str(component.get("id")))
-            label = str(component.get("name") or component.get("id") or node_id).replace('"', "'")
+            label = str(
+                component.get("name") or component.get("id") or node_id
+            ).replace('"', "'")
             lines.append(f'  {node_id}["{label}"]')
 
         for index, flow in enumerate(flows, 1):
@@ -271,13 +282,24 @@ class ArchitectMCPServer:
         lowered = text.lower()
         if any(word in lowered for word in ["sla", "доступн", "отказ", "резерв"]):
             return "availability"
-        if any(word in lowered for word in ["быстр", "мс", "сек", "производ", "нагруз"]):
+        if any(
+            word in lowered for word in ["быстр", "мс", "сек", "производ", "нагруз"]
+        ):
             return "performance"
-        if any(word in lowered for word in ["роль", "прав", "152", "персон", "шифр", "security"]):
+        if any(
+            word in lowered
+            for word in ["роль", "прав", "152", "персон", "шифр", "security"]
+        ):
             return "security"
-        if any(word in lowered for word in ["интеграц", "api", "обмен", "шина", "kafka", "rabbit"]):
+        if any(
+            word in lowered
+            for word in ["интеграц", "api", "обмен", "шина", "kafka", "rabbit"]
+        ):
             return "integration"
-        if any(word in lowered for word in ["как пользователь", "должен", "нужно", "требуется"]):
+        if any(
+            word in lowered
+            for word in ["как пользователь", "должен", "нужно", "требуется"]
+        ):
             return "functional"
         return "business"
 
@@ -301,7 +323,9 @@ class ArchitectMCPServer:
     def _system_name(self, system: Dict[str, Any], index: int) -> str:
         return str(system.get("name") or system.get("id") or f"system_{index}")
 
-    def _normalize_endpoint(self, endpoint: Dict[str, Any], index: int) -> Dict[str, Any]:
+    def _normalize_endpoint(
+        self, endpoint: Dict[str, Any], index: int
+    ) -> Dict[str, Any]:
         method = str(endpoint.get("method") or "get").lower()
         path = str(endpoint.get("path") or endpoint.get("url") or f"/operation-{index}")
         summary = str(endpoint.get("summary") or endpoint.get("name") or path)
@@ -310,8 +334,10 @@ class ArchitectMCPServer:
             "path": path if path.startswith("/") else f"/{path}",
             "summary": summary,
             "description": endpoint.get("description") or "",
-            "request_schema": endpoint.get("request_schema") or endpoint.get("requestBody"),
-            "response_schema": endpoint.get("response_schema") or endpoint.get("responses"),
+            "request_schema": endpoint.get("request_schema")
+            or endpoint.get("requestBody"),
+            "response_schema": endpoint.get("response_schema")
+            or endpoint.get("responses"),
         }
 
     # ===== Graph Analysis Tools =====
@@ -396,7 +422,9 @@ class ArchitectMCPServer:
                     status="success",
                     coverage="context_adrs_only",
                     adr=adr,
-                    caveats=["ADR body is limited to fields supplied in request context."],
+                    caveats=[
+                        "ADR body is limited to fields supplied in request context."
+                    ],
                 )
 
         return self._offline_contract(
@@ -452,7 +480,9 @@ class ArchitectMCPServer:
                 item.strip() for item in re.split(r"[,;\n]", tech_list) if item.strip()
             ]
         else:
-            technologies = [str(item).strip() for item in tech_list if str(item).strip()]
+            technologies = [
+                str(item).strip() for item in tech_list if str(item).strip()
+            ]
 
         if not technologies:
             return self._offline_contract(
@@ -463,10 +493,12 @@ class ArchitectMCPServer:
             )
 
         catalog_by_name = {
-            option.name.lower(): option for option in self.tech_selector.tech_catalog.values()
+            option.name.lower(): option
+            for option in self.tech_selector.tech_catalog.values()
         }
         catalog_by_key = {
-            key.lower(): option for key, option in self.tech_selector.tech_catalog.items()
+            key.lower(): option
+            for key, option in self.tech_selector.tech_catalog.items()
         }
         matrix = []
         unknown = []
@@ -549,7 +581,9 @@ class ArchitectMCPServer:
                     "Architecture components",
                     "Dependencies or integration flows",
                 ],
-                caveats=["Mermaid diagram is not generated without architecture facts."],
+                caveats=[
+                    "Mermaid diagram is not generated without architecture facts."
+                ],
             )
 
         components = self._extract_architecture_components(architecture)
@@ -587,7 +621,9 @@ class ArchitectMCPServer:
                 "arch:analyze_requirements",
                 requirements=[],
                 summary={"total": 0},
-                required_evidence=["Requirements text, backlog export or stakeholder notes"],
+                required_evidence=[
+                    "Requirements text, backlog export or stakeholder notes"
+                ],
                 caveats=["No requirements were supplied for analysis."],
             )
 
@@ -685,7 +721,8 @@ class ArchitectMCPServer:
         sync_external = [
             flow
             for flow in flows
-            if str(flow.get("mode") or flow.get("type") or "").lower() in {"sync", "http", "rest"}
+            if str(flow.get("mode") or flow.get("type") or "").lower()
+            in {"sync", "http", "rest"}
             and str(flow.get("target") or "").lower() not in {"", "internal"}
         ]
         if sync_external:
@@ -713,7 +750,9 @@ class ArchitectMCPServer:
 
         severity_order = {"critical": 4, "high": 3, "medium": 2, "low": 1}
         risks = sorted(
-            risks, key=lambda item: severity_order.get(item["severity"], 0), reverse=True
+            risks,
+            key=lambda item: severity_order.get(item["severity"], 0),
+            reverse=True,
         )
         return self._offline_contract(
             "arch:assess_risks",
@@ -727,7 +766,9 @@ class ArchitectMCPServer:
                 "Security classification",
                 "Failure-mode test results",
             ],
-            caveats=["Risk confidence is heuristic until validated by runtime evidence."],
+            caveats=[
+                "Risk confidence is heuristic until validated by runtime evidence."
+            ],
         )
 
     # ===== Integration Architecture Tools =====
@@ -738,18 +779,26 @@ class ArchitectMCPServer:
             systems = self._context_list(context, "systems", "participants")
 
         clean_systems = [
-            system for system in systems if isinstance(system, dict) and self._system_name(system, 0)
+            system
+            for system in systems
+            if isinstance(system, dict) and self._system_name(system, 0)
         ]
         if len(clean_systems) < 2:
             return self._offline_contract(
                 "arch:design_integration",
-                integration_architecture={"systems": clean_systems, "flows": [], "diagram": ""},
+                integration_architecture={
+                    "systems": clean_systems,
+                    "flows": [],
+                    "diagram": "",
+                },
                 required_evidence=[
                     "At least two participating systems",
                     "Data objects/messages",
                     "Exchange frequency and consistency requirements",
                 ],
-                caveats=["Integration architecture cannot be designed from fewer than two systems."],
+                caveats=[
+                    "Integration architecture cannot be designed from fewer than two systems."
+                ],
             )
 
         declared_flows = self._context_list(context, "flows", "integrations")
@@ -761,14 +810,19 @@ class ArchitectMCPServer:
                 flows.append(
                     {
                         "source": self._system_name(clean_systems[index], index + 1),
-                        "target": self._system_name(clean_systems[index + 1], index + 2),
+                        "target": self._system_name(
+                            clean_systems[index + 1], index + 2
+                        ),
                         "label": "contract_to_define",
                         "status": "candidate",
                     }
                 )
 
         components = [
-            {"id": self._system_name(system, index), "name": self._system_name(system, index)}
+            {
+                "id": self._system_name(system, index),
+                "name": self._system_name(system, index),
+            }
             for index, system in enumerate(clean_systems, 1)
         ]
         diagram = self._build_mermaid_diagram(components, flows)
@@ -820,7 +874,9 @@ class ArchitectMCPServer:
                 if isinstance(methods, dict):
                     for method, details in methods.items():
                         details = details if isinstance(details, dict) else {}
-                        endpoint_list.append({"path": path, "method": method, **details})
+                        endpoint_list.append(
+                            {"path": path, "method": method, **details}
+                        )
                 else:
                     endpoint_list.append({"path": path, "method": "get"})
             endpoints = endpoint_list
@@ -830,7 +886,9 @@ class ArchitectMCPServer:
                 "arch:generate_api_spec",
                 openapi_spec={},
                 required_evidence=["Endpoint list with HTTP methods and paths"],
-                caveats=["No endpoint facts were supplied; empty OpenAPI would be misleading."],
+                caveats=[
+                    "No endpoint facts were supplied; empty OpenAPI would be misleading."
+                ],
             )
 
         paths: Dict[str, Dict[str, Any]] = {}
@@ -855,7 +913,9 @@ class ArchitectMCPServer:
         spec = {
             "openapi": "3.0.3",
             "info": {
-                "title": str(api_info.get("title") or api_info.get("name") or "Declared API"),
+                "title": str(
+                    api_info.get("title") or api_info.get("name") or "Declared API"
+                ),
                 "version": str(api_info.get("version") or "0.1.0"),
             },
             "paths": paths,
@@ -870,7 +930,9 @@ class ArchitectMCPServer:
                 "Auth scheme",
                 "Error model",
             ],
-            caveats=["Generated OpenAPI contains only endpoints declared in the request."],
+            caveats=[
+                "Generated OpenAPI contains only endpoints declared in the request."
+            ],
         )
 
     # ===== SQL Optimization Tools =====

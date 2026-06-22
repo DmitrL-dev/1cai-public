@@ -34,7 +34,9 @@ def _score(report: dict[str, Any] | None, default: int = 0) -> int:
 def _status(report: dict[str, Any] | None, default: str = "watch") -> str:
     if not report:
         return default
-    return str((report.get("decision") or {}).get("status") or report.get("status") or default)
+    return str(
+        (report.get("decision") or {}).get("status") or report.get("status") or default
+    )
 
 
 def _stage(
@@ -68,7 +70,9 @@ def _stage(
     }
 
 
-def _scenario_title(scenario_hub: dict[str, Any], scenario_id: str, default: str) -> str:
+def _scenario_title(
+    scenario_hub: dict[str, Any], scenario_id: str, default: str
+) -> str:
     for item in scenario_hub.get("scenarios", []):
         if item.get("id") == scenario_id:
             return str(item.get("title") or default)
@@ -123,7 +127,9 @@ def _stages(
             minutes=1.0,
             cue="Use a concrete 1C query defect before talking about architecture.",
             talk_track="Fields from joined tables need an explicit NULL story: ЕстьNULL, ЕСТЬ NULL check or intentional inner join.",
-            proof=_scenario_title(scenario_hub, "left-join-null", "LEFT JOIN field without NULL guard"),
+            proof=_scenario_title(
+                scenario_hub, "left-join-null", "LEFT JOIN field without NULL guard"
+            ),
             expected_reaction="Developer sees a real defect class and a testable fix path.",
             next_click="Open Change Impact or Testing.",
             fallback_line="If there is no finding in current data, show the deterministic rule and explain when it triggers.",
@@ -137,7 +143,11 @@ def _stages(
             minutes=1.0,
             cue="Move from code finding to platform/update risk.",
             talk_track="The product treats platform, compatibility, extensions and runtime evidence as first-class risk, not as afterthoughts.",
-            proof=_scenario_title(scenario_hub, "platform-upgrade", "Platform or typical update feels unsafe"),
+            proof=_scenario_title(
+                scenario_hub,
+                "platform-upgrade",
+                "Platform or typical update feels unsafe",
+            ),
             expected_reaction="Architect sees 1C topology and platform risk in the same conversation.",
             next_click="Open Architecture or Update War Room.",
             fallback_line="If platform facts are missing, emphasize that unknown facts stay visible as warnings.",
@@ -302,15 +312,47 @@ def _objections(productization: dict[str, Any]) -> list[dict[str, str]]:
 
 def _proof_assets() -> list[dict[str, str]]:
     return [
-        {"title": "Scenario Hub", "route": "/scenario-hub", "why": "pain-led entry point"},
-        {"title": "Buyer Concierge", "route": "/buyer-concierge", "why": "first-click orientation"},
+        {
+            "title": "Scenario Hub",
+            "route": "/scenario-hub",
+            "why": "pain-led entry point",
+        },
+        {
+            "title": "Buyer Concierge",
+            "route": "/buyer-concierge",
+            "why": "first-click orientation",
+        },
         {"title": "Guided Demo", "route": "/guided-demo", "why": "role proof route"},
-        {"title": "Pilot Launchpad", "route": "/pilot-launchpad", "why": "pilot offers and acceptance"},
-        {"title": "Business Case", "route": "/business-case", "why": "money and objections"},
-        {"title": "Commercial Offer Studio", "route": "/commercial-offer-studio", "why": "buyable offer"},
-        {"title": "Enterprise Trust Center", "route": "/enterprise-trust-center", "why": "enterprise trust"},
-        {"title": "Productization", "route": "/productization", "why": "SBOM/offline controls"},
-        {"title": "Evidence Bundle", "route": "/evidence-bundle", "why": "portable proof with hashes"},
+        {
+            "title": "Pilot Launchpad",
+            "route": "/pilot-launchpad",
+            "why": "pilot offers and acceptance",
+        },
+        {
+            "title": "Business Case",
+            "route": "/business-case",
+            "why": "money and objections",
+        },
+        {
+            "title": "Commercial Offer Studio",
+            "route": "/commercial-offer-studio",
+            "why": "buyable offer",
+        },
+        {
+            "title": "Enterprise Trust Center",
+            "route": "/enterprise-trust-center",
+            "why": "enterprise trust",
+        },
+        {
+            "title": "Productization",
+            "route": "/productization",
+            "why": "SBOM/offline controls",
+        },
+        {
+            "title": "Evidence Bundle",
+            "route": "/evidence-bundle",
+            "why": "portable proof with hashes",
+        },
     ]
 
 
@@ -348,14 +390,46 @@ def _exports() -> list[dict[str, str]]:
     return [
         {"title": "Buyer Brief markdown", "filename": "buyer-brief.md", "route": "/"},
         {"title": "Buyer Pulse markdown", "filename": "buyer-pulse.md", "route": "/"},
-        {"title": "Demo Command Center markdown", "filename": "rentgen-demo-command-center.md", "route": "/demo-command-center"},
-        {"title": "Buyer Concierge markdown", "filename": "rentgen-buyer-concierge.md", "route": "/buyer-concierge"},
-        {"title": "Commercial Offer Studio markdown", "filename": "rentgen-commercial-offer-studio.md", "route": "/commercial-offer-studio"},
-        {"title": "Enterprise Trust Center markdown", "filename": "rentgen-enterprise-trust-center.md", "route": "/enterprise-trust-center"},
-        {"title": "Scenario Hub markdown", "filename": "rentgen-scenario-hub.md", "route": "/scenario-hub"},
-        {"title": "Guided Demo markdown", "filename": "rentgen-guided-demo.md", "route": "/guided-demo"},
-        {"title": "Pilot Launchpad markdown", "filename": "rentgen-pilot-launchpad.md", "route": "/pilot-launchpad"},
-        {"title": "Evidence Bundle manifest", "filename": "evidence-bundle-manifest.json", "route": "/evidence-bundle"},
+        {
+            "title": "Demo Command Center markdown",
+            "filename": "rentgen-demo-command-center.md",
+            "route": "/demo-command-center",
+        },
+        {
+            "title": "Buyer Concierge markdown",
+            "filename": "rentgen-buyer-concierge.md",
+            "route": "/buyer-concierge",
+        },
+        {
+            "title": "Commercial Offer Studio markdown",
+            "filename": "rentgen-commercial-offer-studio.md",
+            "route": "/commercial-offer-studio",
+        },
+        {
+            "title": "Enterprise Trust Center markdown",
+            "filename": "rentgen-enterprise-trust-center.md",
+            "route": "/enterprise-trust-center",
+        },
+        {
+            "title": "Scenario Hub markdown",
+            "filename": "rentgen-scenario-hub.md",
+            "route": "/scenario-hub",
+        },
+        {
+            "title": "Guided Demo markdown",
+            "filename": "rentgen-guided-demo.md",
+            "route": "/guided-demo",
+        },
+        {
+            "title": "Pilot Launchpad markdown",
+            "filename": "rentgen-pilot-launchpad.md",
+            "route": "/pilot-launchpad",
+        },
+        {
+            "title": "Evidence Bundle manifest",
+            "filename": "evidence-bundle-manifest.json",
+            "route": "/evidence-bundle",
+        },
     ]
 
 
@@ -373,8 +447,14 @@ def _demo_room_bridge(
         "label": str(opening_stage.get("title") or "Orient the room"),
         "route": str(opening_stage.get("route") or "/buyer-concierge"),
         "status": "ready",
-        "ask": str(opening_stage.get("talk_track") or "Start from role, pain and one proof path."),
-        "reason": str(opening_stage.get("expected_reaction") or "Buyer should understand the product before seeing the full menu."),
+        "ask": str(
+            opening_stage.get("talk_track")
+            or "Start from role, pain and one proof path."
+        ),
+        "reason": str(
+            opening_stage.get("expected_reaction")
+            or "Buyer should understand the product before seeing the full menu."
+        ),
         "minutes": float(opening_stage.get("minutes") or 0.5),
     }
     if not primary:
@@ -409,8 +489,12 @@ def _demo_room_bridge(
                 "title": str(item.get("title") or "Proof asset"),
                 "route": str(item.get("route") or "/demo-command-center"),
                 "status": "ready",
-                "signal": str(item.get("why") or "Use this route during the live demo."),
-                "file": "rentgen-demo-command-center.md" if item.get("route") == "/demo-command-center" else "OPEN_FIRST.md",
+                "signal": str(
+                    item.get("why") or "Use this route during the live demo."
+                ),
+                "file": "rentgen-demo-command-center.md"
+                if item.get("route") == "/demo-command-center"
+                else "OPEN_FIRST.md",
             }
             for item in proof_assets[:4]
         ]
@@ -418,10 +502,30 @@ def _demo_room_bridge(
     meeting_flow = list(brief.get("meeting_flow") or [])
     if not meeting_flow:
         meeting_flow = [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Pick the role and pain before showing the menu."},
-            {"step": 2, "label": "Prove", "route": "/killer-demo", "line": "Show one buyer-ready proof and objection answer."},
-            {"step": 3, "label": "Ask", "route": "/pilot-launchpad", "line": "Select the paid proof or pilot with owner and date."},
-            {"step": 4, "label": "Forward", "route": "/evidence-bundle", "line": "Send buyer brief, demo script and hash-verifiable proof files."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Pick the role and pain before showing the menu.",
+            },
+            {
+                "step": 2,
+                "label": "Prove",
+                "route": "/killer-demo",
+                "line": "Show one buyer-ready proof and objection answer.",
+            },
+            {
+                "step": 3,
+                "label": "Ask",
+                "route": "/pilot-launchpad",
+                "line": "Select the paid proof or pilot with owner and date.",
+            },
+            {
+                "step": 4,
+                "label": "Forward",
+                "route": "/evidence-bundle",
+                "line": "Send buyer brief, demo script and hash-verifiable proof files.",
+            },
         ]
     open_first_path = build_open_first_path(
         existing_path=brief.get("open_first_path"),
@@ -466,15 +570,26 @@ def _demo_room_bridge(
             "label": str(primary.get("label") or "Run buyer-safe demo"),
             "route": str(primary.get("route") or "/demo-command-center"),
             "status": str(primary.get("status") or "watch"),
-            "ask": str(primary.get("ask") or "Prove one pain and ask for the paid next step."),
-            "reason": str(primary.get("reason") or "Presenter has a staged proof path."),
+            "ask": str(
+                primary.get("ask") or "Prove one pain and ask for the paid next step."
+            ),
+            "reason": str(
+                primary.get("reason") or "Presenter has a staged proof path."
+            ),
         },
         "presenter_opening": presenter_opening,
         "role_cards": role_cards[:5],
         "proof_readiness": proof_readiness[:4],
         "meeting_flow": meeting_flow[:4],
         "open_first_path": open_first_path[:4],
-        "files": ["buyer-brief.md", "buyer-pulse.md", OPEN_FIRST_PATH_FILE, "rentgen-demo-command-center.md", "rentgen-killer-demo-path.md", "OPEN_FIRST.md"],
+        "files": [
+            "buyer-brief.md",
+            "buyer-pulse.md",
+            OPEN_FIRST_PATH_FILE,
+            "rentgen-demo-command-center.md",
+            "rentgen-killer-demo-path.md",
+            "OPEN_FIRST.md",
+        ],
         "routes": routes,
         "close_question": "Which proof or paid pilot should we commit to before leaving the meeting?",
     }
@@ -492,29 +607,49 @@ def _markdown(report: dict[str, Any]) -> str:
         "",
     ]
     for item in report["live_stages"]:
-        lines.append(f"- **{item['title']}** ({item['role']}, {item['minutes']} min, `{item['route']}`): {item['talk_track']}")
+        lines.append(
+            f"- **{item['title']}** ({item['role']}, {item['minutes']} min, `{item['route']}`): {item['talk_track']}"
+        )
     lines.extend(["", "## Role pivots", ""])
     for item in report["role_pivots"]:
-        lines.append(f"- **{item['role']}** (`{item['route']}`): {item['opener']} Close: {item['close_question']}")
+        lines.append(
+            f"- **{item['role']}** (`{item['route']}`): {item['opener']} Close: {item['close_question']}"
+        )
     lines.extend(["", "## Close checklist", ""])
     for item in report["live_checklist"]["close"]:
         lines.append(f"- {item}")
     bridge = report.get("demo_room_bridge") or {}
     if bridge:
         lines.extend(["", "## Demo Room Bridge", ""])
-        lines.append(f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**")
+        lines.append(
+            f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**"
+        )
         lines.append(f"- Room line: {bridge.get('room_line', '')}")
         motion = bridge.get("primary_motion") or {}
-        lines.append(f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/demo-command-center')}`): {motion.get('ask', '')}")
+        lines.append(
+            f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/demo-command-center')}`): {motion.get('ask', '')}"
+        )
         opening = bridge.get("presenter_opening") or {}
-        lines.append(f"- Presenter opening: **{opening.get('label', 'n/a')}** (`{opening.get('route', '/buyer-concierge')}`): {opening.get('ask', '')}")
-        lines.extend(open_first_path_markdown_lines(bridge.get("open_first_path"), default_route="/demo-command-center"))
+        lines.append(
+            f"- Presenter opening: **{opening.get('label', 'n/a')}** (`{opening.get('route', '/buyer-concierge')}`): {opening.get('ask', '')}"
+        )
+        lines.extend(
+            open_first_path_markdown_lines(
+                bridge.get("open_first_path"), default_route="/demo-command-center"
+            )
+        )
         for item in bridge.get("role_cards", []):
-            lines.append(f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}")
+            lines.append(
+                f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}"
+            )
         for item in bridge.get("proof_readiness", []):
-            lines.append(f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}")
+            lines.append(
+                f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}"
+            )
         for item in bridge.get("meeting_flow", []):
-            lines.append(f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}")
+            lines.append(
+                f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}"
+            )
     lines.extend(["", "## Caveats", ""])
     lines.extend(f"- {item}" for item in report["caveats"])
     return "\n".join(lines)
@@ -566,7 +701,13 @@ def build_demo_command_center(
         _status(business_case),
         _status(productization),
     }
-    status = "risk" if statuses & {"blocked", "critical", "fail"} else "ready" if score >= 82 else "watch"
+    status = (
+        "risk"
+        if statuses & {"blocked", "critical", "fail"}
+        else "ready"
+        if score >= 82
+        else "watch"
+    )
     role_pivots = _role_pivots()
     proof_assets = _proof_assets()
     demo_room_bridge = _demo_room_bridge(

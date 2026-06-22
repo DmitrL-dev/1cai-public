@@ -10,8 +10,12 @@ from src.middleware.jwt_user_context import JWTUserContextMiddleware, require_au
 from src.modules.auth.application.service import AuthService
 from src.modules.auth.infrastructure.config import AuthSettings
 from src.services import audit_log
-from src.services.rentgen import artifact_graph, canonical_metadata, policy_engine, test_evidence
-
+from src.services.rentgen import (
+    artifact_graph,
+    canonical_metadata,
+    policy_engine,
+    test_evidence,
+)
 
 _JWT_SECRET = "unit-test-secret-key-please-rotate"
 
@@ -130,7 +134,9 @@ def test_canonical_metadata_import_writes_audit(tmp_path):
         path=tmp_path / "canonical_metadata.json",
         artifact_path=tmp_path / "artifact_graph.json",
     )
-    events = audit_log.list_events(action="metadata.canonical.import", path=tmp_path / "audit_log.ndjson")
+    events = audit_log.list_events(
+        action="metadata.canonical.import", path=tmp_path / "audit_log.ndjson"
+    )
 
     assert events["total"] == 1
     assert events["items"][0]["metadata"]["summary"]["objects"] == 1

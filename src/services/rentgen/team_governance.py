@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
+import json
+import re
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-import json
-import re
-
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 OWNER_MAP_PATH = REPO_ROOT / "data" / "team_owners.json"
@@ -43,7 +42,9 @@ def _owner_for_domain(domain: str, overrides: list[dict[str, Any]]) -> dict[str,
     for owner in overrides:
         domains = [str(item).casefold() for item in owner.get("domains", [])]
         patterns = [str(item).casefold() for item in owner.get("patterns", [])]
-        if folded in domains or any(pattern and pattern in folded for pattern in patterns):
+        if folded in domains or any(
+            pattern and pattern in folded for pattern in patterns
+        ):
             return {
                 "id": str(owner.get("id") or _safe_id(domain)),
                 "name": str(owner.get("name") or domain),
@@ -86,7 +87,9 @@ def _save_snapshot(report: dict[str, Any], path: Path) -> dict[str, Any]:
     }
     snapshots.insert(0, snapshot)
     snapshots = snapshots[:50]
-    path.write_text(json.dumps(snapshots, ensure_ascii=False, indent=2), encoding="utf-8")
+    path.write_text(
+        json.dumps(snapshots, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     return {"path": str(path), "total": len(snapshots), "latest": snapshot}
 
 
@@ -97,7 +100,11 @@ def _trend(path: Path) -> dict[str, Any]:
     return {"path": str(path), "snapshots": snapshots[:12], "total": len(snapshots)}
 
 
-def _domain_areas(summary: dict[str, Any], hotspots: list[dict[str, Any]], overrides: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _domain_areas(
+    summary: dict[str, Any],
+    hotspots: list[dict[str, Any]],
+    overrides: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     hotspots_by_domain: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for hotspot in hotspots:
         hotspots_by_domain[str(hotspot.get("domain") or "Прочее")].append(hotspot)
@@ -144,7 +151,9 @@ def _review_queue(areas: list[dict[str, Any]], limit: int) -> list[dict[str, Any
     return queue[:limit]
 
 
-def _recommendations(areas: list[dict[str, Any]], queue: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _recommendations(
+    areas: list[dict[str, Any]], queue: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     recs = []
     red = [area for area in areas if area["status"] == "red"]
     if red:

@@ -10,6 +10,7 @@ Edge types: CALLS, EXECUTES_QUERY, READS_TABLE, WRITES_TABLE,
 
 import logging
 from typing import Any, Optional
+
 from src.db.neo4j_client import Neo4jClient
 
 logger = logging.getLogger(__name__)
@@ -447,28 +448,33 @@ class GraphService:
         """
         # Compute fan-out: for each module, count distinct target modules
         logger.info("Computing fan-out metrics...")
-        self.client.run_write("""
+        self.client.run_write(
+            """
             MATCH (src_mod:BSL_MODULE)-[:HAS_FUNCTION|HAS_PROCEDURE]->(src_fn)
             MATCH (src_fn)-[:CALLS]->(tgt_fn)
             MATCH (tgt_mod:BSL_MODULE)-[:HAS_FUNCTION|HAS_PROCEDURE]->(tgt_fn)
             WHERE src_mod <> tgt_mod
             WITH src_mod, count(DISTINCT tgt_mod) AS fan_out
             SET src_mod.fan_out = fan_out
-        """)
+        """
+        )
 
         # Compute fan-in: for each module, count distinct source modules
         logger.info("Computing fan-in metrics...")
-        self.client.run_write("""
+        self.client.run_write(
+            """
             MATCH (tgt_mod:BSL_MODULE)-[:HAS_FUNCTION|HAS_PROCEDURE]->(tgt_fn)
             MATCH (src_fn)-[:CALLS]->(tgt_fn)
             MATCH (src_mod:BSL_MODULE)-[:HAS_FUNCTION|HAS_PROCEDURE]->(src_fn)
             WHERE src_mod <> tgt_mod
             WITH tgt_mod, count(DISTINCT src_mod) AS fan_in
             SET tgt_mod.fan_in = fan_in
-        """)
+        """
+        )
 
         # Get stats
-        result = self.client.run("""
+        result = self.client.run(
+            """
             MATCH (n:BSL_MODULE)
             WHERE n.fan_in IS NOT NULL OR n.fan_out IS NOT NULL
             RETURN count(n) AS modules_with_fans,
@@ -476,7 +482,8 @@ class GraphService:
                    round(avg(coalesce(n.fan_out, 0)), 1) AS avg_fan_out,
                    max(n.fan_in) AS max_fan_in,
                    max(n.fan_out) AS max_fan_out
-        """)
+        """
+        )
         stats = result[0] if result else {}
         logger.info("Fan metrics computed: %s", stats)
         return stats

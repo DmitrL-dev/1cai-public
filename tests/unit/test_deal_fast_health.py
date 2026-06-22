@@ -11,7 +11,11 @@ from src.api import (
 
 def _executive():
     return {
-        "decision": {"status": "ready", "score": 86, "headline": "Buyer path is ready."},
+        "decision": {
+            "status": "ready",
+            "score": 86,
+            "headline": "Buyer path is ready.",
+        },
         "kpis": {"red_areas": 0, "review_queue": 1},
         "risk_summary": {"high_hotspots": 0},
     }
@@ -19,7 +23,9 @@ def _executive():
 
 def _assert_fast_health(module, path: str, expected_keys: set[str], monkeypatch):
     monkeypatch.setattr(module, "store_or_none", lambda: None)
-    monkeypatch.setattr(module, "build_executive_dashboard", lambda *args, **kwargs: _executive())
+    monkeypatch.setattr(
+        module, "build_executive_dashboard", lambda *args, **kwargs: _executive()
+    )
 
     def fail_deep_build(_req):
         raise AssertionError("health must not call deep deal build")

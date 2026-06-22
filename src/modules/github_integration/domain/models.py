@@ -32,11 +32,13 @@ class PRFile(BaseModel):
 class PullRequestEvent(BaseModel):
     """Model for GitHub Pull Request webhook event"""
 
-    action: str = Field(...,
-                        description="PR action: opened, synchronize, reopened, etc.")
+    action: str = Field(
+        ..., description="PR action: opened, synchronize, reopened, etc."
+    )
     number: int = Field(..., description="Pull request number")
-    repository_full_name: str = Field(...,
-                                      description="Repository full name (owner/repo)")
+    repository_full_name: str = Field(
+        ..., description="Repository full name (owner/repo)"
+    )
     repository_owner: str = Field(..., description="Repository owner")
     repository_name: str = Field(..., description="Repository name")
     pr_title: str = Field(..., description="Pull request title")
@@ -81,7 +83,8 @@ class ReviewComment(BaseModel):
     body: str = Field(..., description="Comment body in Markdown")
     severity: str = Field(default="info", description="Severity: error, warning, info")
     position: Optional[int] = Field(
-        None, description="Position in diff (for GitHub API)")
+        None, description="Position in diff (for GitHub API)"
+    )
 
     @validator("body")
     def validate_body(cls, v: str) -> str:
@@ -98,22 +101,26 @@ class ReviewComment(BaseModel):
         valid_severities = {"error", "warning", "info"}
         if v not in valid_severities:
             raise ValueError(
-                f"Invalid severity: {v}. Must be one of {valid_severities}")
+                f"Invalid severity: {v}. Must be one of {valid_severities}"
+            )
         return v
 
 
 class ReviewResult(BaseModel):
     """Model for complete code review result"""
 
-    event: str = Field(default="COMMENT",
-                       description="Review event: APPROVE, REQUEST_CHANGES, COMMENT")
+    event: str = Field(
+        default="COMMENT", description="Review event: APPROVE, REQUEST_CHANGES, COMMENT"
+    )
     body: str = Field(..., description="Overall review summary")
     comments: List[ReviewComment] = Field(
-        default_factory=list, description="Line-by-line comments")
+        default_factory=list, description="Line-by-line comments"
+    )
     files_reviewed: int = Field(default=0, description="Number of files reviewed")
     issues_found: int = Field(default=0, description="Total issues found")
-    timestamp: datetime = Field(default_factory=datetime.utcnow,
-                                description="Review timestamp")
+    timestamp: datetime = Field(
+        default_factory=datetime.utcnow, description="Review timestamp"
+    )
 
     @validator("event")
     def validate_event(cls, v: str) -> str:

@@ -97,6 +97,8 @@ def test_rights_rls_diff_flags_added_dangerous_rights(tmp_path):
     assert report["diff"]["status"] == "risk"
     assert report["diff"]["summary"]["added_rights"] == 1
     assert report["diff"]["summary"]["added_dangerous_rights"] == 1
-    assert any(item["code"] == "rights-diff-added-dangerous" for item in report["findings"])
+    assert any(
+        item["code"] == "rights-diff-added-dangerous" for item in report["findings"]
+    )
     assert report["gate"]["block_release"] is True
     assert "Rights Diff" in report["markdown"]

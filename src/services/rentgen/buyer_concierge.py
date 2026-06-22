@@ -34,14 +34,18 @@ def _score(report: dict[str, Any] | None, default: int = 0) -> int:
 def _status(report: dict[str, Any] | None, default: str = "watch") -> str:
     if not report:
         return default
-    return str((report.get("decision") or {}).get("status") or report.get("status") or default)
+    return str(
+        (report.get("decision") or {}).get("status") or report.get("status") or default
+    )
 
 
 def _money(value: Any, currency: str) -> str:
     return f"{_int(value):,}".replace(",", " ") + f" {currency}"
 
 
-def _first_offer(commercial_offer_studio: dict[str, Any], offer_id: str) -> dict[str, Any]:
+def _first_offer(
+    commercial_offer_studio: dict[str, Any], offer_id: str
+) -> dict[str, Any]:
     for offer in commercial_offer_studio.get("offers", []):
         if offer.get("id") == offer_id:
             return offer
@@ -94,7 +98,9 @@ def _persona_cards(
             "first_question": "Can this catch a real 1C bug before review?",
             "start_route": "/quality",
             "second_route": "/change",
-            "spark": (scenarios.get("left-join-null") or {}).get("title", "LEFT JOIN field without NULL guard"),
+            "spark": (scenarios.get("left-join-null") or {}).get(
+                "title", "LEFT JOIN field without NULL guard"
+            ),
             "proof": "Show one deterministic finding, safe rewrite and test expectation.",
             "buy_trigger": "A real module gets a finding, impact route and regression expectation.",
             "purchase_route": "/evidence-bundle",
@@ -108,7 +114,9 @@ def _persona_cards(
             "first_question": "Does it understand configuration topology and platform risk?",
             "start_route": "/platform-doctor",
             "second_route": "/architecture",
-            "spark": (scenarios.get("platform-upgrade") or {}).get("title", "Platform or update risk"),
+            "spark": (scenarios.get("platform-upgrade") or {}).get(
+                "title", "Platform or update risk"
+            ),
             "proof": "Connect platform, compatibility, extensions, rights and release caveats.",
             "buy_trigger": "The first upgrade or extension decision becomes evidence-backed.",
             "purchase_route": "/enterprise-trust-center",
@@ -150,7 +158,9 @@ def _persona_cards(
             "first_question": "Can this become a paid audit and repeatable proposal?",
             "start_route": "/vendor-portfolio",
             "second_route": "/commercial-offer-studio",
-            "spark": (_first_offer(commercial_offer_studio, "vendor-portfolio-rollout") or {}).get("commercial_frame", "Partner rollout offer is available."),
+            "spark": (
+                _first_offer(commercial_offer_studio, "vendor-portfolio-rollout") or {}
+            ).get("commercial_frame", "Partner rollout offer is available."),
             "proof": "Vendor Portfolio, Value Packs and Offer Studio turn scan evidence into packaged work.",
             "buy_trigger": "Partner sends one buyer-safe report and scopes the first work package.",
             "purchase_route": "/commercial-offer-studio",
@@ -164,7 +174,9 @@ def _persona_cards(
             "first_question": "Can it change our release meeting?",
             "start_route": "/release-readiness",
             "second_route": "/evidence-bundle",
-            "spark": (scenarios.get("release-go-no-go") or {}).get("title", "Can we release today?"),
+            "spark": (scenarios.get("release-go-no-go") or {}).get(
+                "title", "Can we release today?"
+            ),
             "proof": "Show gates, test gaps, owner actions and portable approval artifacts.",
             "buy_trigger": "The release board gets one go/no-go artifact instead of screenshots.",
             "purchase_route": "/evidence-bundle",
@@ -178,7 +190,9 @@ def _persona_cards(
             "first_question": "Can runtime pain connect back to code and platform?",
             "start_route": "/lock-radar",
             "second_route": "/operations",
-            "spark": (scenarios.get("locks-after-release") or {}).get("title", "Locks or slowdowns after release"),
+            "spark": (scenarios.get("locks-after-release") or {}).get(
+                "title", "Locks or slowdowns after release"
+            ),
             "proof": "Use tech journal, Platform Doctor and runbooks to connect runtime symptoms to owner actions.",
             "buy_trigger": "Operations stops owning incidents alone; release/code context is visible.",
             "purchase_route": "/launch-room",
@@ -229,11 +243,36 @@ def _shortest_paths() -> list[dict[str, Any]]:
             "audience": "director + mixed room",
             "total_minutes": 5,
             "steps": [
-                {"label": "Buyer Concierge", "route": "/buyer-concierge", "minutes": 0.5, "why": "pick role or pain"},
-                {"label": "Scenario Hub", "route": "/scenario-hub", "minutes": 1.0, "why": "make the product concrete"},
-                {"label": "Business Case", "route": "/business-case", "minutes": 1.0, "why": "money and local asset"},
-                {"label": "Enterprise Trust Center", "route": "/enterprise-trust-center", "minutes": 1.0, "why": "security pre-answer"},
-                {"label": "Commercial Offer Studio", "route": "/commercial-offer-studio", "minutes": 1.5, "why": "pick paid package"},
+                {
+                    "label": "Buyer Concierge",
+                    "route": "/buyer-concierge",
+                    "minutes": 0.5,
+                    "why": "pick role or pain",
+                },
+                {
+                    "label": "Scenario Hub",
+                    "route": "/scenario-hub",
+                    "minutes": 1.0,
+                    "why": "make the product concrete",
+                },
+                {
+                    "label": "Business Case",
+                    "route": "/business-case",
+                    "minutes": 1.0,
+                    "why": "money and local asset",
+                },
+                {
+                    "label": "Enterprise Trust Center",
+                    "route": "/enterprise-trust-center",
+                    "minutes": 1.0,
+                    "why": "security pre-answer",
+                },
+                {
+                    "label": "Commercial Offer Studio",
+                    "route": "/commercial-offer-studio",
+                    "minutes": 1.5,
+                    "why": "pick paid package",
+                },
             ],
             "close": "Pick proof sprint, local pilot or enterprise license path.",
         },
@@ -243,10 +282,30 @@ def _shortest_paths() -> list[dict[str, Any]]:
             "audience": "developer + QA",
             "total_minutes": 4,
             "steps": [
-                {"label": "Quality", "route": "/quality", "minutes": 1.0, "why": "LEFT JOIN/NULL defect"},
-                {"label": "Change Impact", "route": "/change", "minutes": 1.0, "why": "blast radius"},
-                {"label": "Testing", "route": "/testing", "minutes": 1.0, "why": "regression expectation"},
-                {"label": "Evidence Bundle", "route": "/evidence-bundle", "minutes": 1.0, "why": "portable proof"},
+                {
+                    "label": "Quality",
+                    "route": "/quality",
+                    "minutes": 1.0,
+                    "why": "LEFT JOIN/NULL defect",
+                },
+                {
+                    "label": "Change Impact",
+                    "route": "/change",
+                    "minutes": 1.0,
+                    "why": "blast radius",
+                },
+                {
+                    "label": "Testing",
+                    "route": "/testing",
+                    "minutes": 1.0,
+                    "why": "regression expectation",
+                },
+                {
+                    "label": "Evidence Bundle",
+                    "route": "/evidence-bundle",
+                    "minutes": 1.0,
+                    "why": "portable proof",
+                },
             ],
             "close": "Ask whether this would have saved a recent review or regression.",
         },
@@ -256,10 +315,30 @@ def _shortest_paths() -> list[dict[str, Any]]:
             "audience": "architect + security",
             "total_minutes": 6,
             "steps": [
-                {"label": "Platform Doctor", "route": "/platform-doctor", "minutes": 1.5, "why": "platform/update facts"},
-                {"label": "Rights/RLS", "route": "/rights-rls", "minutes": 1.0, "why": "access gate"},
-                {"label": "Enterprise Trust Center", "route": "/enterprise-trust-center", "minutes": 2.0, "why": "trust questions"},
-                {"label": "Commercial Offer Studio", "route": "/commercial-offer-studio", "minutes": 1.5, "why": "hardening or license package"},
+                {
+                    "label": "Platform Doctor",
+                    "route": "/platform-doctor",
+                    "minutes": 1.5,
+                    "why": "platform/update facts",
+                },
+                {
+                    "label": "Rights/RLS",
+                    "route": "/rights-rls",
+                    "minutes": 1.0,
+                    "why": "access gate",
+                },
+                {
+                    "label": "Enterprise Trust Center",
+                    "route": "/enterprise-trust-center",
+                    "minutes": 2.0,
+                    "why": "trust questions",
+                },
+                {
+                    "label": "Commercial Offer Studio",
+                    "route": "/commercial-offer-studio",
+                    "minutes": 1.5,
+                    "why": "hardening or license package",
+                },
             ],
             "close": "Name the first blocker, accepted risk or hardening package.",
         },
@@ -269,10 +348,30 @@ def _shortest_paths() -> list[dict[str, Any]]:
             "audience": "franchisee / implementation partner",
             "total_minutes": 6,
             "steps": [
-                {"label": "Vendor Portfolio", "route": "/vendor-portfolio", "minutes": 1.5, "why": "audit signals"},
-                {"label": "Value Packs", "route": "/value-packs", "minutes": 1.0, "why": "sellable outcomes"},
-                {"label": "Commercial Offer Studio", "route": "/commercial-offer-studio", "minutes": 2.0, "why": "partner rollout offer"},
-                {"label": "Evidence Bundle", "route": "/evidence-bundle", "minutes": 1.5, "why": "buyer-safe export"},
+                {
+                    "label": "Vendor Portfolio",
+                    "route": "/vendor-portfolio",
+                    "minutes": 1.5,
+                    "why": "audit signals",
+                },
+                {
+                    "label": "Value Packs",
+                    "route": "/value-packs",
+                    "minutes": 1.0,
+                    "why": "sellable outcomes",
+                },
+                {
+                    "label": "Commercial Offer Studio",
+                    "route": "/commercial-offer-studio",
+                    "minutes": 2.0,
+                    "why": "partner rollout offer",
+                },
+                {
+                    "label": "Evidence Bundle",
+                    "route": "/evidence-bundle",
+                    "minutes": 1.5,
+                    "why": "buyer-safe export",
+                },
             ],
             "close": "Pick first portfolio client and paid proof sprint.",
         },
@@ -320,20 +419,45 @@ def _purchase_router(
     recommended = dossier.get("recommended_purchase") or {}
     currency = str(escape.get("currency") or assumptions.get("currency") or "RUB")
 
-    monthly_ai = _int(escape.get("monthly_ai_rent") or assumptions.get("monthly_ai_subscription_cost"))
-    annual_ai = _int(escape.get("annual_ai_rent") or summary.get("ai_subscription_year") or monthly_ai * 12)
-    three_year_ai = _int(escape.get("three_year_ai_rent") or summary.get("three_year_ai_subscription") or annual_ai * 3)
-    local_license = _int(escape.get("local_license_anchor") or summary.get("local_license_anchor"))
-    break_even = _int(escape.get("break_even_months") or summary.get("subscription_break_even_months"))
-    ai_rent_months = _int(escape.get("ai_rent_equivalent_months") or summary.get("subscription_escape_months"))
+    monthly_ai = _int(
+        escape.get("monthly_ai_rent") or assumptions.get("monthly_ai_subscription_cost")
+    )
+    annual_ai = _int(
+        escape.get("annual_ai_rent")
+        or summary.get("ai_subscription_year")
+        or monthly_ai * 12
+    )
+    three_year_ai = _int(
+        escape.get("three_year_ai_rent")
+        or summary.get("three_year_ai_subscription")
+        or annual_ai * 3
+    )
+    local_license = _int(
+        escape.get("local_license_anchor") or summary.get("local_license_anchor")
+    )
+    break_even = _int(
+        escape.get("break_even_months") or summary.get("subscription_break_even_months")
+    )
+    ai_rent_months = _int(
+        escape.get("ai_rent_equivalent_months")
+        or summary.get("subscription_escape_months")
+    )
     first_year_value = _int(summary.get("first_year_visible_value"))
 
-    route = str(one_page_order.get("route") or recommended.get("route") or "/commercial-offer-studio")
+    route = str(
+        one_page_order.get("route")
+        or recommended.get("route")
+        or "/commercial-offer-studio"
+    )
     recommended_purchase = str(
-        one_page_order.get("recommended_purchase") or recommended.get("title") or "24-hour proof sprint"
+        one_page_order.get("recommended_purchase")
+        or recommended.get("title")
+        or "24-hour proof sprint"
     )
     commercial_frame = str(
-        one_page_order.get("commercial_frame") or recommended.get("commercial_frame") or "fixed paid next step"
+        one_page_order.get("commercial_frame")
+        or recommended.get("commercial_frame")
+        or "fixed paid next step"
     )
     value_anchor = str(
         one_page_order.get("value_anchor")
@@ -358,7 +482,9 @@ def _purchase_router(
             "and procurement-ready evidence instead."
         )
 
-    guardrails = list(dossier_escape.get("guardrails") or escape.get("guardrails") or [])[:4]
+    guardrails = list(
+        dossier_escape.get("guardrails") or escape.get("guardrails") or []
+    )[:4]
     if not guardrails:
         guardrails = [
             "Sell the local evidence product first; keep external AI credits optional.",
@@ -368,16 +494,34 @@ def _purchase_router(
 
     evidence_files = [
         {"title": "Launch Room", "filename": "launch-room.md", "route": "/launch-room"},
-        {"title": "Business Case", "filename": "business-case.md", "route": "/business-case"},
-        {"title": "Commercial Offer Studio", "filename": "commercial-offer-studio.md", "route": "/commercial-offer-studio"},
-        {"title": "Evidence Bundle", "filename": "OPEN_FIRST.md", "route": "/evidence-bundle"},
+        {
+            "title": "Business Case",
+            "filename": "business-case.md",
+            "route": "/business-case",
+        },
+        {
+            "title": "Commercial Offer Studio",
+            "filename": "commercial-offer-studio.md",
+            "route": "/commercial-offer-studio",
+        },
+        {
+            "title": "Evidence Bundle",
+            "filename": "OPEN_FIRST.md",
+            "route": "/evidence-bundle",
+        },
     ]
-    for item in dossier_escape.get("evidence_files") or escape.get("evidence_files") or []:
-        if item.get("route") and item.get("route") not in {entry["route"] for entry in evidence_files}:
+    for item in (
+        dossier_escape.get("evidence_files") or escape.get("evidence_files") or []
+    ):
+        if item.get("route") and item.get("route") not in {
+            entry["route"] for entry in evidence_files
+        }:
             evidence_files.append(
                 {
                     "title": str(item.get("title") or item.get("route")),
-                    "filename": str(item.get("filename") or _proof_file(str(item.get("route")))),
+                    "filename": str(
+                        item.get("filename") or _proof_file(str(item.get("route")))
+                    ),
                     "route": str(item.get("route")),
                 }
             )
@@ -484,7 +628,13 @@ def _purchase_router(
         "evidence_files": evidence_files[:8],
         "guardrails": guardrails,
         "proof_routes": sorted(
-            {"/launch-room", "/business-case", "/commercial-offer-studio", "/evidence-bundle", route}
+            {
+                "/launch-room",
+                "/business-case",
+                "/commercial-offer-studio",
+                "/evidence-bundle",
+                route,
+            }
             | {item["route"] for item in evidence_files}
         ),
     }
@@ -529,11 +679,31 @@ def _exports() -> list[dict[str, str]]:
     return [
         {"title": "Buyer Brief markdown", "filename": "buyer-brief.md", "route": "/"},
         {"title": "Buyer Pulse markdown", "filename": "buyer-pulse.md", "route": "/"},
-        {"title": "Buyer Concierge markdown", "filename": "rentgen-buyer-concierge.md", "route": "/buyer-concierge"},
-        {"title": "Scenario Hub markdown", "filename": "rentgen-scenario-hub.md", "route": "/scenario-hub"},
-        {"title": "Commercial Offer Studio markdown", "filename": "rentgen-commercial-offer-studio.md", "route": "/commercial-offer-studio"},
-        {"title": "Enterprise Trust Center markdown", "filename": "rentgen-enterprise-trust-center.md", "route": "/enterprise-trust-center"},
-        {"title": "Evidence Bundle manifest", "filename": "evidence-bundle-manifest.json", "route": "/evidence-bundle"},
+        {
+            "title": "Buyer Concierge markdown",
+            "filename": "rentgen-buyer-concierge.md",
+            "route": "/buyer-concierge",
+        },
+        {
+            "title": "Scenario Hub markdown",
+            "filename": "rentgen-scenario-hub.md",
+            "route": "/scenario-hub",
+        },
+        {
+            "title": "Commercial Offer Studio markdown",
+            "filename": "rentgen-commercial-offer-studio.md",
+            "route": "/commercial-offer-studio",
+        },
+        {
+            "title": "Enterprise Trust Center markdown",
+            "filename": "rentgen-enterprise-trust-center.md",
+            "route": "/enterprise-trust-center",
+        },
+        {
+            "title": "Evidence Bundle manifest",
+            "filename": "evidence-bundle-manifest.json",
+            "route": "/evidence-bundle",
+        },
     ]
 
 
@@ -552,14 +722,22 @@ def _concierge_room_bridge(
             "route": str(default_next_action.get("route") or "/buyer-concierge"),
             "status": str(purchase_router.get("status") or "watch"),
             "ask": "Pick the role or pain, then open the shortest proof path.",
-            "reason": str(default_next_action.get("reason") or "Buyer Concierge prevents first-screen confusion."),
+            "reason": str(
+                default_next_action.get("reason")
+                or "Buyer Concierge prevents first-screen confusion."
+            ),
         }
 
     concierge_motion = {
         "label": str(default_next_action.get("label") or "Open Buyer Concierge"),
         "route": str(default_next_action.get("route") or "/buyer-concierge"),
-        "status": str(purchase_router.get("status") or primary.get("status") or "watch"),
-        "ask": str(default_next_action.get("reason") or "Use role, pain and proof route before showing the larger product."),
+        "status": str(
+            purchase_router.get("status") or primary.get("status") or "watch"
+        ),
+        "ask": str(
+            default_next_action.get("reason")
+            or "Use role, pain and proof route before showing the larger product."
+        ),
         "reason": "The first screen should choose the buyer path before deep workbench pages appear.",
     }
 
@@ -594,7 +772,10 @@ def _concierge_room_bridge(
                 "title": "Commercial Offer",
                 "route": "/commercial-offer-studio",
                 "status": str(purchase_router.get("status") or "watch"),
-                "signal": str(purchase_router.get("recommended_purchase") or "Paid next step is selected."),
+                "signal": str(
+                    purchase_router.get("recommended_purchase")
+                    or "Paid next step is selected."
+                ),
                 "file": "rentgen-commercial-offer-studio.md",
             },
             {
@@ -618,10 +799,33 @@ def _concierge_room_bridge(
     meeting_flow = list(brief.get("meeting_flow") or [])
     if not meeting_flow:
         meeting_flow = [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Pick role or pain before opening the large product map."},
-            {"step": 2, "label": "Prove", "route": "/killer-demo", "line": "Compress the chosen pain into one buyer-ready demo path."},
-            {"step": 3, "label": "Ask", "route": "/launch-room", "line": str(purchase_router.get("first_invoice_trigger") or "Name owner, scope and paid next step.")},
-            {"step": 4, "label": "Forward", "route": "/evidence-bundle", "line": "Send buyer brief, pulse, role files and proof archive."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Pick role or pain before opening the large product map.",
+            },
+            {
+                "step": 2,
+                "label": "Prove",
+                "route": "/killer-demo",
+                "line": "Compress the chosen pain into one buyer-ready demo path.",
+            },
+            {
+                "step": 3,
+                "label": "Ask",
+                "route": "/launch-room",
+                "line": str(
+                    purchase_router.get("first_invoice_trigger")
+                    or "Name owner, scope and paid next step."
+                ),
+            },
+            {
+                "step": 4,
+                "label": "Forward",
+                "route": "/evidence-bundle",
+                "line": "Send buyer brief, pulse, role files and proof archive.",
+            },
         ]
     open_first_path = build_open_first_path(
         existing_path=brief.get("open_first_path"),
@@ -632,13 +836,20 @@ def _concierge_room_bridge(
         orient_title="Buyer Concierge",
         orient_route="/buyer-concierge",
         orient_line="Pick role or pain before opening the large product map.",
-        orient_status=str(primary.get("status") or purchase_router.get("status") or "watch"),
+        orient_status=str(
+            primary.get("status") or purchase_router.get("status") or "watch"
+        ),
         prove_line="Compress the chosen pain into one buyer-ready demo path.",
         close_title="Launch Room",
         close_route="/launch-room",
-        close_line=str(purchase_router.get("first_invoice_trigger") or "Name owner, scope and paid next step."),
+        close_line=str(
+            purchase_router.get("first_invoice_trigger")
+            or "Name owner, scope and paid next step."
+        ),
         close_file="launch-room.md",
-        close_status=str(purchase_router.get("status") or primary.get("status") or "watch"),
+        close_status=str(
+            purchase_router.get("status") or primary.get("status") or "watch"
+        ),
         verify_line="Send buyer brief, pulse, role files and proof archive.",
     )
 
@@ -651,14 +862,28 @@ def _concierge_room_bridge(
             *[str(item.get("route") or "") for item in proof_readiness],
             *[str(item.get("route") or "") for item in meeting_flow],
             *[str(item.get("route") or "") for item in open_first_path],
-            *[str(item.get("route") or "") for item in purchase_router.get("quick_actions", [])],
-            *[str(item.get("route") or "") for item in purchase_router.get("role_prompts", [])],
-            *[str(item.get("route") or "") for item in purchase_router.get("evidence_files", [])],
+            *[
+                str(item.get("route") or "")
+                for item in purchase_router.get("quick_actions", [])
+            ],
+            *[
+                str(item.get("route") or "")
+                for item in purchase_router.get("role_prompts", [])
+            ],
+            *[
+                str(item.get("route") or "")
+                for item in purchase_router.get("evidence_files", [])
+            ],
         }
         - {""}
     )
     return {
-        "status": str(brief.get("purchase_status") or primary.get("status") or purchase_router.get("status") or "watch"),
+        "status": str(
+            brief.get("purchase_status")
+            or primary.get("status")
+            or purchase_router.get("status")
+            or "watch"
+        ),
         "score": _int(brief.get("score"), 76),
         "source": str(brief.get("source") or "buyer-concierge-derived"),
         "room_line": str(
@@ -668,16 +893,28 @@ def _concierge_room_bridge(
         "primary_motion": {
             "label": str(primary.get("label") or "Open buyer route"),
             "route": str(primary.get("route") or "/buyer-concierge"),
-            "status": str(primary.get("status") or purchase_router.get("status") or "watch"),
+            "status": str(
+                primary.get("status") or purchase_router.get("status") or "watch"
+            ),
             "ask": str(primary.get("ask") or "Pick role or pain and prove it."),
-            "reason": str(primary.get("reason") or "Buyer Concierge keeps the first route small and role-specific."),
+            "reason": str(
+                primary.get("reason")
+                or "Buyer Concierge keeps the first route small and role-specific."
+            ),
         },
         "concierge_motion": concierge_motion,
         "role_cards": role_cards[:5],
         "proof_readiness": proof_readiness[:4],
         "meeting_flow": meeting_flow[:4],
         "open_first_path": open_first_path[:4],
-        "files": ["buyer-brief.md", "buyer-pulse.md", OPEN_FIRST_PATH_FILE, "rentgen-buyer-concierge.md", "launch-room.md", "OPEN_FIRST.md"],
+        "files": [
+            "buyer-brief.md",
+            "buyer-pulse.md",
+            OPEN_FIRST_PATH_FILE,
+            "rentgen-buyer-concierge.md",
+            "launch-room.md",
+            "OPEN_FIRST.md",
+        ],
         "routes": routes,
         "close_question": "Which role pain is strong enough to open Launch Room and paid proof?",
     }
@@ -705,24 +942,42 @@ def _markdown(report: dict[str, Any]) -> str:
     ]
     bridge = report.get("concierge_room_bridge") or {}
     if bridge:
-        lines.append(f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**")
+        lines.append(
+            f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**"
+        )
         lines.append(f"- Room line: {bridge.get('room_line', '')}")
         motion = bridge.get("primary_motion") or {}
-        lines.append(f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/buyer-concierge')}`): {motion.get('ask', '')}")
+        lines.append(
+            f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/buyer-concierge')}`): {motion.get('ask', '')}"
+        )
         concierge_motion = bridge.get("concierge_motion") or {}
-        lines.append(f"- Concierge motion: **{concierge_motion.get('label', 'n/a')}** (`{concierge_motion.get('route', '/buyer-concierge')}`): {concierge_motion.get('ask', '')}")
-        lines.extend(open_first_path_markdown_lines(bridge.get("open_first_path"), default_route="/buyer-concierge"))
+        lines.append(
+            f"- Concierge motion: **{concierge_motion.get('label', 'n/a')}** (`{concierge_motion.get('route', '/buyer-concierge')}`): {concierge_motion.get('ask', '')}"
+        )
+        lines.extend(
+            open_first_path_markdown_lines(
+                bridge.get("open_first_path"), default_route="/buyer-concierge"
+            )
+        )
         for item in bridge.get("role_cards", []):
-            lines.append(f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}")
+            lines.append(
+                f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}"
+            )
         for item in bridge.get("proof_readiness", []):
-            lines.append(f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}")
+            lines.append(
+                f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}"
+            )
         for item in bridge.get("meeting_flow", []):
-            lines.append(f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}")
-    lines.extend([
-        "",
-        "## Persona Cards",
-        "",
-    ])
+            lines.append(
+                f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}"
+            )
+    lines.extend(
+        [
+            "",
+            "## Persona Cards",
+            "",
+        ]
+    )
     for item in report["persona_cards"]:
         lines.append(
             f"- **{item['role']}** (`{item['start_route']}`): {item['first_question']} "
@@ -730,13 +985,19 @@ def _markdown(report: dict[str, Any]) -> str:
         )
     lines.extend(["", "## Role Purchase Prompts", ""])
     for item in report["purchase_router"]["role_prompts"]:
-        lines.append(f"- **{item['role']}** (`{item['route']}`): {item['ask']} Close: {item['close']}")
+        lines.append(
+            f"- **{item['role']}** (`{item['route']}`): {item['ask']} Close: {item['close']}"
+        )
     lines.extend(["", "## Shortest Paths", ""])
     for path in report["shortest_paths"]:
-        lines.append(f"- **{path['title']}** ({path['total_minutes']} min): {path['close']}")
+        lines.append(
+            f"- **{path['title']}** ({path['total_minutes']} min): {path['close']}"
+        )
     lines.extend(["", "## Confusion Guardrails", ""])
     for item in report["confusion_guardrails"]:
-        lines.append(f"- **{item['signal']}** -> {item['response']} (`{item['route']}`)")
+        lines.append(
+            f"- **{item['signal']}** -> {item['response']} (`{item['route']}`)"
+        )
     lines.extend(["", "## Caveats", ""])
     lines.extend(f"- {item}" for item in report["caveats"])
     return "\n".join(lines)
@@ -808,7 +1069,13 @@ def build_buyer_concierge(
         _status(commercial_offer_studio),
         _status(productization),
     }
-    status = "risk" if statuses & {"blocked", "critical", "fail"} else "ready" if score >= 82 else "watch"
+    status = (
+        "risk"
+        if statuses & {"blocked", "critical", "fail"}
+        else "ready"
+        if score >= 82
+        else "watch"
+    )
     proof_routes = sorted(
         {card["start_route"] for card in persona_cards}
         | {card["second_route"] for card in persona_cards}
@@ -840,8 +1107,12 @@ def build_buyer_concierge(
             "shortest_paths": len(shortest_paths),
             "guardrails": len(confusion_guardrails),
             "proof_routes": len(proof_routes),
-            "offer_packages": _int((commercial_offer_studio.get("summary") or {}).get("offers")),
-            "trust_controls": _int((enterprise_trust_center.get("summary") or {}).get("controls")),
+            "offer_packages": _int(
+                (commercial_offer_studio.get("summary") or {}).get("offers")
+            ),
+            "trust_controls": _int(
+                (enterprise_trust_center.get("summary") or {}).get("controls")
+            ),
             "pilot_offers": _int((pilot_launchpad.get("summary") or {}).get("offers")),
             "purchase_router_status": purchase_router["status"],
             "concierge_room_roles": len(concierge_room_bridge["role_cards"]),

@@ -13,7 +13,9 @@ logger = StructuredLogger(__name__).logger
 class WebhookHandler:
     """Handles GitHub webhook events"""
 
-    async def handle_pull_request_event(self, event_data: Dict[str, Any]) -> PullRequestEvent:
+    async def handle_pull_request_event(
+        self, event_data: Dict[str, Any]
+    ) -> PullRequestEvent:
         """
         Process Pull Request webhook event
 

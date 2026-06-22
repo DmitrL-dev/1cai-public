@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+import json
+import re
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-import json
-import re
 
 from src.services.bsl_diagnostics import analyze_bsl
 from src.services.rentgen.metadata_graph import (
@@ -18,7 +18,6 @@ from src.services.rentgen.metadata_graph import (
     build_metadata_graph,
     get_metadata_object,
 )
-
 
 SNAPSHOT_DIR = REPO_ROOT / "data" / "metadata_snapshots"
 _SAFE_NAME_RE = re.compile(r"[^A-Za-z0-9_.-]+")
@@ -71,7 +70,9 @@ def build_snapshot_payload(config_path: str | None = None) -> dict[str, Any]:
     }
 
 
-def create_metadata_snapshot(name: str | None = None, config_path: str | None = None) -> dict[str, Any]:
+def create_metadata_snapshot(
+    name: str | None = None, config_path: str | None = None
+) -> dict[str, Any]:
     SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
     payload = build_snapshot_payload(config_path)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -90,7 +91,9 @@ def list_metadata_snapshots() -> list[dict[str, Any]]:
     if not SNAPSHOT_DIR.exists():
         return []
     result = []
-    for path in sorted(SNAPSHOT_DIR.glob("*.json"), key=lambda item: item.stat().st_mtime, reverse=True):
+    for path in sorted(
+        SNAPSHOT_DIR.glob("*.json"), key=lambda item: item.stat().st_mtime, reverse=True
+    ):
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
@@ -151,7 +154,14 @@ def diff_metadata_snapshot(
             if old.get(key) != new.get(key):
                 changes[key] = {"before": old.get(key), "after": new.get(key)}
         if changes:
-            changed.append({"ref": ref, "type": new.get("type"), "name": new.get("name"), "changes": changes})
+            changed.append(
+                {
+                    "ref": ref,
+                    "type": new.get("type"),
+                    "name": new.get("name"),
+                    "changes": changes,
+                }
+            )
 
     return {
         "snapshot": {
@@ -225,12 +235,21 @@ def security_review(config_path: str | None = None, limit: int = 200) -> dict[st
                     "severity": "medium",
                     "code": "broad-role",
                     "message": "Role grants a very broad rights surface.",
-                    "details": {"rights": rights["rights"], "objects": rights.get("objects", 0)},
+                    "details": {
+                        "rights": rights["rights"],
+                        "objects": rights.get("objects", 0),
+                    },
                 }
             )
 
     severity_order = {"high": 0, "medium": 1, "low": 2}
-    findings.sort(key=lambda item: (severity_order.get(item["severity"], 9), item["role"], item["code"]))
+    findings.sort(
+        key=lambda item: (
+            severity_order.get(item["severity"], 9),
+            item["role"],
+            item["code"],
+        )
+    )
 
     return {
         "summary": {
@@ -265,10 +284,23 @@ def _form_metrics(ext_root) -> dict[str, Any]:
     excluded_commands = []
     default_buttons = 0
     if ext_root is None:
-        return {"parse_error": True, "counts": {}, "excluded_commands": [], "default_buttons": 0}
+        return {
+            "parse_error": True,
+            "counts": {},
+            "excluded_commands": [],
+            "default_buttons": 0,
+        }
     for elem in ext_root.iter():
         tag = _local(elem.tag)
-        if tag in {"Button", "Popup", "ButtonGroup", "Table", "Group", "InputField", "Command"}:
+        if tag in {
+            "Button",
+            "Popup",
+            "ButtonGroup",
+            "Table",
+            "Group",
+            "InputField",
+            "Command",
+        }:
             counts[tag] += 1
         if tag == "ExcludedCommand" and elem.text:
             excluded_commands.append(elem.text.strip())
@@ -343,7 +375,9 @@ def review_forms(
                     "severity": "medium",
                     "code": "document-core-commands-excluded",
                     "message": "Document form excludes write/post commands; confirm business process and permissions.",
-                    "details": {"excluded": sorted({"Post", "PostAndClose", "Write"} & excluded)},
+                    "details": {
+                        "excluded": sorted({"Post", "PostAndClose", "Write"} & excluded)
+                    },
                 }
             )
         if button_count and not metrics["default_buttons"]:
@@ -393,7 +427,9 @@ def review_forms(
         reviewed.append(
             {
                 "form": form,
-                "ext_path": ext_path.relative_to(config).as_posix() if ext_path.exists() else str(ext_path),
+                "ext_path": ext_path.relative_to(config).as_posix()
+                if ext_path.exists()
+                else str(ext_path),
                 "metrics": metrics,
                 "diagnostics": diagnostics,
                 "findings": findings,

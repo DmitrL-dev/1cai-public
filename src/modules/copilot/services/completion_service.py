@@ -15,17 +15,23 @@ class CompletionService:
     def __init__(self, model_service: ModelService):
         self.model_service = model_service
 
-    async def get_completions(self, code: str, current_line: str, max_suggestions: int = 3) -> List[Dict[str, Any]]:
+    async def get_completions(
+        self, code: str, current_line: str, max_suggestions: int = 3
+    ) -> List[Dict[str, Any]]:
         """
         Get code completion suggestions
         Uses model if available, otherwise rule-based
         """
         if self.model_service.is_loaded():
-            return await self._get_model_completions(code, current_line, max_suggestions)
+            return await self._get_model_completions(
+                code, current_line, max_suggestions
+            )
         else:
             return self._get_rule_based_completions(code, current_line, max_suggestions)
 
-    async def _get_model_completions(self, code: str, current_line: str, max_suggestions: int) -> List[Dict[str, Any]]:
+    async def _get_model_completions(
+        self, code: str, current_line: str, max_suggestions: int
+    ) -> List[Dict[str, Any]]:
         """Model-based completions"""
         import torch
 
@@ -39,8 +45,9 @@ class CompletionService:
             prompt = f"{code}\n{current_line}"
 
             # Tokenize
-            inputs = tokenizer(prompt, return_tensors="pt",
-                               max_length=2048, truncation=True).to(device)
+            inputs = tokenizer(
+                prompt, return_tensors="pt", max_length=2048, truncation=True
+            ).to(device)
 
             # Generate multiple completions with different temperatures
             temperatures = [0.2, 0.5, 0.8][:max_suggestions]
@@ -90,7 +97,9 @@ class CompletionService:
 
         return suggestions[:max_suggestions]
 
-    def _get_rule_based_completions(self, code: str, current_line: str, max_suggestions: int) -> List[Dict[str, Any]]:
+    def _get_rule_based_completions(
+        self, code: str, current_line: str, max_suggestions: int
+    ) -> List[Dict[str, Any]]:
         """
         SMART rule-based completions
         20+ patterns for comprehensive coverage
@@ -211,7 +220,8 @@ class CompletionService:
         # Pattern 7: Новый
         if "новый" in line_lower:
             suggestions.append(
-                {"text": " Массив", "description": "Новый массив", "score": 0.87})
+                {"text": " Массив", "description": "Новый массив", "score": 0.87}
+            )
             suggestions.append(
                 {
                     "text": " Структура",

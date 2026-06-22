@@ -9,7 +9,6 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[2]
 LOG_PATH = ROOT / "data" / "audit_log.ndjson"
 _LOCK = Lock()
@@ -160,16 +159,26 @@ def list_events(
         items = [item for item in items if item.get("category") == category]
     if target:
         needle = target.casefold()
-        items = [item for item in items if needle in str(item.get("target") or "").casefold()]
+        items = [
+            item for item in items if needle in str(item.get("target") or "").casefold()
+        ]
     since_dt = _parse_dt(since)
     if since_dt:
         items = [
             item
             for item in items
-            if (_parse_dt(str(item.get("timestamp") or "")) or datetime.min.replace(tzinfo=timezone.utc)) >= since_dt
+            if (
+                _parse_dt(str(item.get("timestamp") or ""))
+                or datetime.min.replace(tzinfo=timezone.utc)
+            )
+            >= since_dt
         ]
     items.sort(key=lambda item: item.get("timestamp", ""), reverse=True)
-    return {"items": items[: max(1, limit)], "total": len(items), "path": str(path or LOG_PATH)}
+    return {
+        "items": items[: max(1, limit)],
+        "total": len(items),
+        "path": str(path or LOG_PATH),
+    }
 
 
 def verify_chain(*, path: Path | None = None) -> dict[str, Any]:
@@ -235,7 +244,9 @@ def verify_chain(*, path: Path | None = None) -> dict[str, Any]:
     }
 
 
-def export_events(*, output_format: str = "jsonl", path: Path | None = None) -> dict[str, Any]:
+def export_events(
+    *, output_format: str = "jsonl", path: Path | None = None
+) -> dict[str, Any]:
     """Return audit log export content."""
 
     items = _read(path)
@@ -246,7 +257,12 @@ def export_events(*, output_format: str = "jsonl", path: Path | None = None) -> 
         content = "\n".join(json.dumps(item, ensure_ascii=False) for item in items)
     else:
         raise ValueError(f"Unsupported audit export format: {output_format}")
-    return {"format": fmt, "events": len(items), "content": content, "path": str(path or LOG_PATH)}
+    return {
+        "format": fmt,
+        "events": len(items),
+        "content": content,
+        "path": str(path or LOG_PATH),
+    }
 
 
 def _siem_event(event: dict[str, Any], *, chain_valid: bool) -> dict[str, Any]:
@@ -310,7 +326,9 @@ def export_siem_events(
     max_events = max(1, min(int(limit or 1000), 5000))
     verify = verify_chain(path=target)
     items = _read(target)[-max_events:]
-    mapped = [_siem_event(item, chain_valid=bool(verify.get("valid"))) for item in items]
+    mapped = [
+        _siem_event(item, chain_valid=bool(verify.get("valid"))) for item in items
+    ]
     package = {
         "schema": "rentgen.audit.siem.v1",
         "generated_at": _now(),
@@ -319,7 +337,9 @@ def export_siem_events(
         "chain": verify,
         "events": mapped,
         "ingestion": {
-            "recommended_filename": "rentgen-audit-siem.jsonl" if fmt == "jsonl" else "rentgen-audit-siem.json",
+            "recommended_filename": "rentgen-audit-siem.jsonl"
+            if fmt == "jsonl"
+            else "rentgen-audit-siem.json",
             "format": fmt,
             "time_field": "@timestamp",
             "event_id_field": "event.id",

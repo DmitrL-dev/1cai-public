@@ -18,6 +18,7 @@ from pathlib import Path
 
 import pytest
 
+from src.services.edt_mcp_bridge import guard_edt_mcp_tool_call
 from src.services.rentgen import test_runners
 from src.services.rentgen.test_runners import (
     ALLOWED_EXECUTABLE_BASENAMES,
@@ -29,8 +30,6 @@ from src.services.rentgen.test_runners import (
     import_result_file,
     run_test_adapter,
 )
-from src.services.edt_mcp_bridge import guard_edt_mcp_tool_call
-
 
 ROOT = test_runners.ROOT
 
@@ -148,10 +147,14 @@ def test_confine_path_allows_os_temp(tmp_path):
 @pytest.mark.parametrize(
     "bad",
     [
-        str(ROOT / "artifacts" / "playwright-dev-auth.json"),  # the documented exfil target
+        str(
+            ROOT / "artifacts" / "playwright-dev-auth.json"
+        ),  # the documented exfil target
         str(ROOT / "src" / "services" / "edt_mcp_bridge.py"),
         str(ROOT / ".sentinel_key"),
-        str(ROOT / "tests" / ".." / "artifacts" / "playwright-dev-auth.json"),  # traversal
+        str(
+            ROOT / "tests" / ".." / "artifacts" / "playwright-dev-auth.json"
+        ),  # traversal
     ],
 )
 def test_confine_path_rejects_outside_allowed_roots(bad):

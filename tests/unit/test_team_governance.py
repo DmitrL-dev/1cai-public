@@ -45,7 +45,16 @@ def test_team_governance_builds_owners_sla_and_snapshot(tmp_path):
     owners = tmp_path / "owners.json"
     snapshots = tmp_path / "snapshots.json"
     owners.write_text(
-        json.dumps([{"id": "sales", "name": "Sales Platform", "lead": "lead", "domains": ["Sales"]}]),
+        json.dumps(
+            [
+                {
+                    "id": "sales",
+                    "name": "Sales Platform",
+                    "lead": "lead",
+                    "domains": ["Sales"],
+                }
+            ]
+        ),
         encoding="utf-8",
     )
 
@@ -61,13 +70,17 @@ def test_team_governance_builds_owners_sla_and_snapshot(tmp_path):
     assert report["available"] is True
     assert sales["owner"]["name"] == "Sales Platform"
     assert sales["status"] == "red"
-    assert report["release_board"]["review_queue"][0]["module_path"].endswith("Module.bsl")
+    assert report["release_board"]["review_queue"][0]["module_path"].endswith(
+        "Module.bsl"
+    )
     assert report["stored_snapshot"]["total"] == 1
     assert "Team Governance" in report["markdown"]
 
 
 def test_team_governance_api_exposes_board(monkeypatch):
-    monkeypatch.setattr("src.api.team_governance_api.store_or_none", lambda: FakeStore())
+    monkeypatch.setattr(
+        "src.api.team_governance_api.store_or_none", lambda: FakeStore()
+    )
 
     app = FastAPI()
     app.include_router(router)
@@ -90,4 +103,7 @@ async def test_mcp_team_governance_tool_is_registered(monkeypatch):
 
     assert "rentgen_team_governance" in names
     assert report["summary"]["review_queue"] == 2
-    assert report["areas"][0]["owner"]["source"] in {"inferred-domain", "team_owners.json"}
+    assert report["areas"][0]["owner"]["source"] in {
+        "inferred-domain",
+        "team_owners.json",
+    }

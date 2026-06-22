@@ -218,7 +218,9 @@ def _mount_mcp(app: FastAPI):
 
     Re-enable ONLY behind real authentication + filesystem confinement.
     """
-    logger.info("Legacy /mcp sub-app mount is disabled (quarantined legacy AI; see _mount_mcp docstring)")
+    logger.info(
+        "Legacy /mcp sub-app mount is disabled (quarantined legacy AI; see _mount_mcp docstring)"
+    )
     return
 
 

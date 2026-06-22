@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """
     Lifecycle management with best practices.
-    
+
     Features:
     - OpenTelemetry setup
     - Database pool initialization
@@ -38,28 +38,28 @@ async def lifespan(app: FastAPI):
 
     try:
         logger.info("Starting 1C AI Stack...")
-        
+
         # Setup OpenTelemetry
         await _setup_opentelemetry(app)
-        
+
         # Database pool
         pool = await _create_database_pool()
-        
+
         # Redis
         redis_client = await _create_redis_client(app)
-        
+
         # Marketplace repository
         if pool:
             marketplace_repo = await _create_marketplace_repo(app, pool, redis_client)
-        
+
         # Scheduler
         if marketplace_repo:
             scheduler = _start_scheduler(app, marketplace_repo)
-        
+
         # User rate limit middleware
         if redis_client:
             _add_rate_limit_middleware(app, redis_client)
-        
+
         logger.info("Security layer initialized (Agents Rule of Two)")
         logger.info("Application startup completed successfully")
 
@@ -71,31 +71,31 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         logger.info("Shutting down...")
-        
+
         if scheduler:
             try:
                 scheduler.shutdown(wait=False)
             except Exception as e:
                 logger.warning(f"Error shutting down scheduler: {e}")
-        
+
         if marketplace_repo:
             try:
                 await marketplace_repo.refresh_cached_views()
             except Exception as e:
                 logger.warning(f"Error refreshing marketplace cache: {e}")
-        
+
         if redis_client:
             try:
                 await redis_client.close()
             except Exception as e:
                 logger.warning(f"Error closing Redis: {e}")
-        
+
         if pool:
             try:
                 await close_pool()
             except Exception as e:
                 logger.warning(f"Error closing database pool: {e}")
-        
+
         logger.info("Resources released")
 
 
@@ -104,7 +104,7 @@ async def _setup_opentelemetry(app: FastAPI):
     otlp_endpoint = os.getenv("OTLP_ENDPOINT")
     if not otlp_endpoint:
         return
-    
+
     try:
         from src.infrastructure.monitoring.opentelemetry_setup import (
             instrument_asyncpg,
@@ -113,12 +113,13 @@ async def _setup_opentelemetry(app: FastAPI):
             instrument_redis,
             setup_opentelemetry,
         )
-        
+
         setup_opentelemetry(
             service_name="1c-ai-stack",
             service_version="2.2.0",
             otlp_endpoint=otlp_endpoint,
-            enable_console_exporter=os.getenv("OTEL_CONSOLE_EXPORTER", "false").lower() == "true",
+            enable_console_exporter=os.getenv("OTEL_CONSOLE_EXPORTER", "false").lower()
+            == "true",
         )
         instrument_fastapi_app(app)
         instrument_asyncpg()
@@ -157,7 +158,7 @@ async def _create_redis_client(app: FastAPI):
             socket_connect_timeout=2,
             socket_timeout=2,
         )
-        
+
         await asyncio.wait_for(redis_client.ping(), timeout=2.0)
         app.state.redis = redis_client
         logger.info("Redis client connected")
@@ -177,10 +178,11 @@ async def _create_marketplace_repo(app: FastAPI, pool, redis_client):
             "region": settings.aws_s3_region or "",
             "endpoint": settings.aws_s3_endpoint or settings.minio_endpoint,
             "access_key": settings.aws_access_key_id or settings.minio_root_user,
-            "secret_key": settings.aws_secret_access_key or settings.minio_root_password,
+            "secret_key": settings.aws_secret_access_key
+            or settings.minio_root_password,
             "create_bucket": settings.aws_s3_create_bucket,
         }
-        
+
         marketplace_repo = MarketplaceRepository(
             pool, cache=redis_client, storage_config=storage_config
         )
@@ -217,7 +219,7 @@ def _add_rate_limit_middleware(app: FastAPI, redis_client):
     try:
         from src.middleware.user_rate_limit import UserRateLimitMiddleware
         from src.modules.auth.api.dependencies import get_auth_service
-        
+
         auth_service = get_auth_service()
         if auth_service:
             app.add_middleware(

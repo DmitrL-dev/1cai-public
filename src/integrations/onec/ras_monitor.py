@@ -1,4 +1,3 @@
-
 """
 RAS Monitor - 1C Remote Administration Server Monitoring
 Мониторинг кластера 1С через RAS
@@ -10,8 +9,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from src.utils.structured_logging import StructuredLogger
 from src.integrations.onec.ras_client import RasClient
+from src.utils.structured_logging import StructuredLogger
 
 logger = StructuredLogger(__name__).logger
 
@@ -122,7 +121,9 @@ class RASMonitor:
             logger.error(f"Error getting cluster info: {e}")
             return ClusterInfo("unavailable", "RAS unavailable", 0, 0, 0, 0.0)
 
-    async def _get_active_sessions(self, cluster_name: Optional[str]) -> List[SessionInfo]:
+    async def _get_active_sessions(
+        self, cluster_name: Optional[str]
+    ) -> List[SessionInfo]:
         """Получение активных сессий"""
         try:
             # We need cluster ID first
@@ -153,7 +154,8 @@ class RASMonitor:
                         application=s.get("app-id", "Unknown"),
                         started_at=start_time,
                         duration_minutes=max(
-                            0, int((datetime.utcnow() - start_time).total_seconds() / 60)
+                            0,
+                            int((datetime.utcnow() - start_time).total_seconds() / 60),
                         ),
                         memory_mb=0,  # Not always available in simple list
                         cpu_time_seconds=0,
@@ -195,7 +197,11 @@ class RASMonitor:
         issues = []
 
         # 1. Долгие сессии
-        long_sessions = [s for s in sessions if s.duration_minutes > self.thresholds["long_session_minutes"]]
+        long_sessions = [
+            s
+            for s in sessions
+            if s.duration_minutes > self.thresholds["long_session_minutes"]
+        ]
 
         if long_sessions:
             issues.append(
@@ -209,7 +215,9 @@ class RASMonitor:
             )
 
         # 2. Высокое потребление памяти
-        high_memory_sessions = [s for s in sessions if s.memory_mb > self.thresholds["high_memory_mb"]]
+        high_memory_sessions = [
+            s for s in sessions if s.memory_mb > self.thresholds["high_memory_mb"]
+        ]
 
         if high_memory_sessions:
             issues.append(
@@ -278,7 +286,9 @@ class RASMonitor:
                 recommended = max(1, len(sessions) // 15)  # 15 sessions per process
                 improvement = None
                 if current > 0:
-                    improvement = f"{(recommended/current - 1)*100:.0f}% больше capacity"
+                    improvement = (
+                        f"{(recommended/current - 1)*100:.0f}% больше capacity"
+                    )
 
                 recommendations.append(
                     {
@@ -329,9 +339,7 @@ class RASMonitor:
         sessions = await self._get_active_sessions(cluster_name)
         locks = await self._get_locks(cluster_name)
         processes = await self._get_working_processes_info(cluster_name)
-        issues = await self._analyze_cluster_health(
-            cluster, sessions, locks, processes
-        )
+        issues = await self._analyze_cluster_health(cluster, sessions, locks, processes)
         recommendations = await self._generate_cluster_recommendations(
             cluster, sessions, issues
         )
@@ -346,7 +354,9 @@ class RASMonitor:
         return {
             "status": "success",
             "mode": "ras_monitor",
-            "coverage": "ras_cluster_list_partial" if caveats else "ras_cluster_evidence",
+            "coverage": "ras_cluster_list_partial"
+            if caveats
+            else "ras_cluster_evidence",
             "connected": True,
             "cluster_info": cluster,
             "working_processes": cluster.working_processes,
@@ -388,7 +398,9 @@ if __name__ == "__main__":
 
         print(f"\nIssues: {len(health['issues'])}")
         for issue in health["issues"]:
-            print(f"  [{issue['severity'].upper()}] {issue['type']}: {issue['details']}")
+            print(
+                f"  [{issue['severity'].upper()}] {issue['type']}: {issue['details']}"
+            )
 
         print(f"\nRecommendations: {len(health['recommendations'])}")
 

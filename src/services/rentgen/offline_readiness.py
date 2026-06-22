@@ -8,7 +8,6 @@ from typing import Any
 
 from src.services.rentgen.metadata_graph import metadata_summary
 
-
 REPO_ROOT = Path(__file__).resolve().parents[3]
 EXTERNAL_ENV_KEYS = [
     "OPENAI_API_KEY",
@@ -25,7 +24,15 @@ EXTERNAL_ENV_KEYS = [
 ]
 
 
-def _check(checks: list[dict[str, Any]], *, id: str, title: str, status: str, evidence: Any, severity: str = "medium") -> None:
+def _check(
+    checks: list[dict[str, Any]],
+    *,
+    id: str,
+    title: str,
+    status: str,
+    evidence: Any,
+    severity: str = "medium",
+) -> None:
     checks.append(
         {
             "id": id,
@@ -146,7 +153,9 @@ def build_offline_readiness(
         checks,
         id="its-mode",
         title="ITS RAG mode does not require external semantic services",
-        status="pass" if its_mode in {"offline", "auto"} else ("fail" if strict else "warn"),
+        status="pass"
+        if its_mode in {"offline", "auto"}
+        else ("fail" if strict else "warn"),
         evidence={"ITS_RAG_MODE": its_mode},
         severity="medium",
     )

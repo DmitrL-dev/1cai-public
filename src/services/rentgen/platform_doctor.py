@@ -12,7 +12,6 @@ from typing import Any
 from src.services.rentgen.metadata_graph import DEFAULT_CONFIG_PATH
 from src.services.rentgen.path_safety import confine_path
 
-
 VERSION_RE = re.compile(r"(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:\.(\d+))?")
 
 
@@ -84,7 +83,11 @@ def _count_extensions(config_path: Path) -> int:
         folder = config_path / name
         if folder.exists():
             try:
-                total += sum(1 for item in folder.iterdir() if item.is_dir() or item.suffix.lower() in {".cfe", ".xml"})
+                total += sum(
+                    1
+                    for item in folder.iterdir()
+                    if item.is_dir() or item.suffix.lower() in {".cfe", ".xml"}
+                )
             except OSError:
                 pass
     return total
@@ -127,8 +130,14 @@ def _score(checks: list[dict[str, Any]]) -> int:
 
 
 def _decision(score: int, checks: list[dict[str, Any]]) -> dict[str, Any]:
-    high = sum(1 for item in checks if item["status"] != "pass" and item["severity"] == "high")
-    medium = sum(1 for item in checks if item["status"] != "pass" and item["severity"] == "medium")
+    high = sum(
+        1 for item in checks if item["status"] != "pass" and item["severity"] == "high"
+    )
+    medium = sum(
+        1
+        for item in checks
+        if item["status"] != "pass" and item["severity"] == "medium"
+    )
     if high:
         status = "risk"
         headline = "Обновление платформы требует подготовки: есть критичные неизвестные или отсутствующие источники."
@@ -137,7 +146,9 @@ def _decision(score: int, checks: list[dict[str, Any]]) -> dict[str, Any]:
         headline = "Платформенный контур описан достаточно для пилотного upgrade/readiness решения."
     else:
         status = "watch"
-        headline = "Платформенный контур частично описан; нужны дополнительные ops-сигналы."
+        headline = (
+            "Платформенный контур частично описан; нужны дополнительные ops-сигналы."
+        )
     return {"status": status, "score": score, "headline": headline}
 
 
@@ -154,7 +165,9 @@ def _markdown(report: dict[str, Any]) -> str:
         "",
     ]
     for item in report["checks"]:
-        lines.append(f"- **{item['status']} / {item['severity']}** {item['title']}: {item['action']}")
+        lines.append(
+            f"- **{item['status']} / {item['severity']}** {item['title']}: {item['action']}"
+        )
     lines.extend(["", "## Upgrade checklist", ""])
     lines.extend(f"- {item}" for item in report["upgrade"]["checklist"])
     return "\n".join(lines)
@@ -184,20 +197,30 @@ def build_platform_doctor(
     root = _safe_parse(config_xml)
     configuration_version = _xml_text(root, "Version")
     configuration_name = _xml_text(root, "Name")
-    compatibility_mode = _env("ONEC_COMPATIBILITY_MODE", "PLATFORM_COMPATIBILITY_MODE") or _xml_text(
+    compatibility_mode = _env(
+        "ONEC_COMPATIBILITY_MODE", "PLATFORM_COMPATIBILITY_MODE"
+    ) or _xml_text(
         root,
         "CompatibilityMode",
         "DefaultCompatibilityMode",
     )
-    platform_version = _env("ONEC_PLATFORM_VERSION", "PLATFORM_VERSION", "1C_PLATFORM_VERSION")
-    target_version = target_platform_version or _env("ONEC_TARGET_PLATFORM_VERSION", "TARGET_PLATFORM_VERSION")
+    platform_version = _env(
+        "ONEC_PLATFORM_VERSION", "PLATFORM_VERSION", "1C_PLATFORM_VERSION"
+    )
+    target_version = target_platform_version or _env(
+        "ONEC_TARGET_PLATFORM_VERSION", "TARGET_PLATFORM_VERSION"
+    )
     dbms = _env("ONEC_DBMS", "DBMS", "DATABASE_ENGINE")
     cluster = _env("ONEC_CLUSTER", "ONEC_CLUSTER_HOST", "RAC_CLUSTER")
     infobase_mode = _env("ONEC_INFOBASE_MODE", "INFOBASE_MODE", "ONEC_SERVER_MODE")
     clients = _env("ONEC_CLIENTS", "ONEC_CLIENT_MODES")
-    tech_journal = _path_info(_env("ONEC_TECH_JOURNAL_PATH", "TECH_JOURNAL_PATH", "TJ_PATH"))
+    tech_journal = _path_info(
+        _env("ONEC_TECH_JOURNAL_PATH", "TECH_JOURNAL_PATH", "TJ_PATH")
+    )
     license_events = _path_info(_env("ONEC_LICENSE_EVENTS_PATH", "LICENSE_EVENTS_PATH"))
-    openmetrics = _env("ONEC_OPENMETRICS_URL", "OPENMETRICS_URL", "PROMETHEUS_EXPORTER_URL")
+    openmetrics = _env(
+        "ONEC_OPENMETRICS_URL", "OPENMETRICS_URL", "PROMETHEUS_EXPORTER_URL"
+    )
     extensions_count = _count_extensions(config)
     checks: list[dict[str, Any]] = []
 
@@ -322,9 +345,13 @@ def build_platform_doctor(
     if not platform_version:
         checklist.insert(0, "Добавить ONEC_PLATFORM_VERSION из продуктивного контура.")
     if not target_version:
-        checklist.insert(1, "Добавить ONEC_TARGET_PLATFORM_VERSION перед upgrade decision.")
+        checklist.insert(
+            1, "Добавить ONEC_TARGET_PLATFORM_VERSION перед upgrade decision."
+        )
     if not tech_journal["exists"]:
-        checklist.append("Подключить TECH_JOURNAL_PATH, иначе блокировки и таймауты останутся без RCA.")
+        checklist.append(
+            "Подключить TECH_JOURNAL_PATH, иначе блокировки и таймауты останутся без RCA."
+        )
 
     score = _score(checks)
     report = {
@@ -351,7 +378,11 @@ def build_platform_doctor(
         "upgrade": {
             "from": platform_version,
             "to": target_version,
-            "readiness": "ready" if score >= 86 else "needs-data" if score >= 60 else "blocked",
+            "readiness": "ready"
+            if score >= 86
+            else "needs-data"
+            if score >= 60
+            else "blocked",
             "checklist": checklist,
         },
         "caveats": [

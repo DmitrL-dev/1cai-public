@@ -10,7 +10,6 @@ from typing import Any
 
 from src.services.rentgen import artifact_graph
 
-
 ROOT = Path(__file__).resolve().parents[3]
 BASELINES_PATH = ROOT / "data" / "baselines.json"
 REVIEW_PACKS_PATH = ROOT / "data" / "review_packs.json"
@@ -44,11 +43,15 @@ def _load(path: Path, key: str = "items") -> list[dict[str, Any]]:
 def _write(path: Path, items: list[dict[str, Any]], key: str = "items") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps({key: items}, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.write_text(
+        json.dumps({key: items}, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     tmp.replace(path)
 
 
-def _id(prefix: str, title: str, created_at: str, explicit_id: str | None = None) -> str:
+def _id(
+    prefix: str, title: str, created_at: str, explicit_id: str | None = None
+) -> str:
     if explicit_id:
         return _clean(explicit_id, limit=120)
     digest = hashlib.sha1(f"{title}\n{created_at}".encode("utf-8")).hexdigest()[:16]
@@ -60,7 +63,9 @@ def _hash(payload: Any) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def _artifact_path_for_store(path: Path | None, artifact_path: Path | None) -> Path | None:
+def _artifact_path_for_store(
+    path: Path | None, artifact_path: Path | None
+) -> Path | None:
     if artifact_path is not None:
         return artifact_path
     if path is not None:
@@ -68,7 +73,9 @@ def _artifact_path_for_store(path: Path | None, artifact_path: Path | None) -> P
     return None
 
 
-def _require_artifacts(artifact_ids: list[str], artifact_path: Path | None) -> list[dict[str, Any]]:
+def _require_artifacts(
+    artifact_ids: list[str], artifact_path: Path | None
+) -> list[dict[str, Any]]:
     artifacts = []
     missing = []
     for artifact_id in artifact_ids:
@@ -130,7 +137,9 @@ def create_baseline(
     return record
 
 
-def sync_baseline_to_artifacts(record: dict[str, Any], *, artifact_path: Path | None = None) -> dict[str, Any]:
+def sync_baseline_to_artifacts(
+    record: dict[str, Any], *, artifact_path: Path | None = None
+) -> dict[str, Any]:
     """Project a baseline into the internal artifact graph."""
 
     sync = {"artifact_id": record["id"], "links": 0, "errors": []}
@@ -146,9 +155,13 @@ def sync_baseline_to_artifacts(record: dict[str, Any], *, artifact_path: Path | 
                 "source": "baselines",
                 "attributes": {
                     "evidence_hash": record.get("evidence_hash"),
-                    "artifact_ids": (record.get("snapshot") or {}).get("artifact_ids", []),
+                    "artifact_ids": (record.get("snapshot") or {}).get(
+                        "artifact_ids", []
+                    ),
                     "release_id": (record.get("snapshot") or {}).get("release_id"),
-                    "change_set_ids": (record.get("snapshot") or {}).get("change_set_ids", []),
+                    "change_set_ids": (record.get("snapshot") or {}).get(
+                        "change_set_ids", []
+                    ),
                 },
             },
             path=artifact_path,
@@ -174,7 +187,9 @@ def list_baselines(*, limit: int = 100, path: Path | None = None) -> dict[str, A
     return {"items": items[: max(1, limit)], "total": len(items), "path": str(target)}
 
 
-def get_baseline(baseline_id: str, *, path: Path | None = None) -> dict[str, Any] | None:
+def get_baseline(
+    baseline_id: str, *, path: Path | None = None
+) -> dict[str, Any] | None:
     for item in _load(path or BASELINES_PATH):
         if item.get("id") == baseline_id:
             return item
@@ -223,7 +238,9 @@ def create_review_pack(
     return record
 
 
-def sync_review_pack_to_artifacts(record: dict[str, Any], *, artifact_path: Path | None = None) -> dict[str, Any]:
+def sync_review_pack_to_artifacts(
+    record: dict[str, Any], *, artifact_path: Path | None = None
+) -> dict[str, Any]:
     """Project a review pack into the internal artifact graph."""
 
     sync = {"artifact_id": record["id"], "links": 0, "errors": []}
@@ -259,7 +276,9 @@ def sync_review_pack_to_artifacts(record: dict[str, Any], *, artifact_path: Path
     return sync
 
 
-def list_review_packs(*, status: str | None = None, limit: int = 100, path: Path | None = None) -> dict[str, Any]:
+def list_review_packs(
+    *, status: str | None = None, limit: int = 100, path: Path | None = None
+) -> dict[str, Any]:
     target = path or REVIEW_PACKS_PATH
     items = _load(target)
     if status:
@@ -268,7 +287,9 @@ def list_review_packs(*, status: str | None = None, limit: int = 100, path: Path
     return {"items": items[: max(1, limit)], "total": len(items), "path": str(target)}
 
 
-def get_review_pack(review_pack_id: str, *, path: Path | None = None) -> dict[str, Any] | None:
+def get_review_pack(
+    review_pack_id: str, *, path: Path | None = None
+) -> dict[str, Any] | None:
     for item in _load(path or REVIEW_PACKS_PATH):
         if item.get("id") == review_pack_id:
             return item

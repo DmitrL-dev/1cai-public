@@ -29,8 +29,16 @@ def _business_case():
             "decision_line": "Three-year AI rent can fund the local evidence asset.",
             "guardrails": ["External AI remains optional."],
             "evidence_files": [
-                {"title": "Business Case", "filename": "business-case.md", "route": "/business-case"},
-                {"title": "Evidence Bundle", "filename": "OPEN_FIRST.md", "route": "/evidence-bundle"},
+                {
+                    "title": "Business Case",
+                    "filename": "business-case.md",
+                    "route": "/business-case",
+                },
+                {
+                    "title": "Evidence Bundle",
+                    "filename": "OPEN_FIRST.md",
+                    "route": "/evidence-bundle",
+                },
             ],
         },
     }
@@ -89,29 +97,152 @@ def _buyer_brief(status="ready", score=88):
         "room_line": "Ask for local license: move from demo proof to a local product purchase.",
         "commercial": {"three_year_ai_rent": "4 320 000 RUB"},
         "role_cards": [
-            {"role": "developer", "title": "Developer", "route": "/change", "status": "ready", "spark": "Show code proof.", "proof_file": "rentgen-developer-report.md"},
-            {"role": "architect", "title": "Architect", "route": "/platform-doctor", "status": "ready", "spark": "Show platform proof.", "proof_file": "rentgen-architect-report.md"},
-            {"role": "director", "title": "Director", "route": "/board-pack", "status": status, "spark": "Show value proof.", "proof_file": "board-pack.md"},
-            {"role": "security", "title": "Security", "route": "/enterprise-trust-center", "status": "ready", "spark": "Show trust proof.", "proof_file": "rentgen-security-questionnaire.md"},
-            {"role": "vendor", "title": "Vendor", "route": "/vendor-portfolio", "status": "ready", "spark": "Show portfolio proof.", "proof_file": "vendor-portfolio.md"},
+            {
+                "role": "developer",
+                "title": "Developer",
+                "route": "/change",
+                "status": "ready",
+                "spark": "Show code proof.",
+                "proof_file": "rentgen-developer-report.md",
+            },
+            {
+                "role": "architect",
+                "title": "Architect",
+                "route": "/platform-doctor",
+                "status": "ready",
+                "spark": "Show platform proof.",
+                "proof_file": "rentgen-architect-report.md",
+            },
+            {
+                "role": "director",
+                "title": "Director",
+                "route": "/board-pack",
+                "status": status,
+                "spark": "Show value proof.",
+                "proof_file": "board-pack.md",
+            },
+            {
+                "role": "security",
+                "title": "Security",
+                "route": "/enterprise-trust-center",
+                "status": "ready",
+                "spark": "Show trust proof.",
+                "proof_file": "rentgen-security-questionnaire.md",
+            },
+            {
+                "role": "vendor",
+                "title": "Vendor",
+                "route": "/vendor-portfolio",
+                "status": "ready",
+                "spark": "Show portfolio proof.",
+                "proof_file": "vendor-portfolio.md",
+            },
         ],
         "proof_readiness": [
-            {"id": "evidence-bundle", "title": "Forwardable evidence", "route": "/evidence-bundle", "status": status, "signal": "Proof routes and hashes.", "file": "OPEN_FIRST.md"},
-            {"id": "governance", "title": "Approval gates", "route": "/approvals", "status": "ready", "signal": "Governance gates.", "file": "governance-proof.md"},
-            {"id": "audit-siem", "title": "Audit / SIEM handoff", "route": "/audit", "status": "ready", "signal": "SIEM export.", "file": "rentgen-audit-siem.jsonl"},
-            {"id": "trust", "title": "Enterprise trust", "route": "/enterprise-trust-center", "status": "ready", "signal": "Trust proof.", "file": "rentgen-security-questionnaire.md"},
+            {
+                "id": "evidence-bundle",
+                "title": "Forwardable evidence",
+                "route": "/evidence-bundle",
+                "status": status,
+                "signal": "Proof routes and hashes.",
+                "file": "OPEN_FIRST.md",
+            },
+            {
+                "id": "governance",
+                "title": "Approval gates",
+                "route": "/approvals",
+                "status": "ready",
+                "signal": "Governance gates.",
+                "file": "governance-proof.md",
+            },
+            {
+                "id": "audit-siem",
+                "title": "Audit / SIEM handoff",
+                "route": "/audit",
+                "status": "ready",
+                "signal": "SIEM export.",
+                "file": "rentgen-audit-siem.jsonl",
+            },
+            {
+                "id": "trust",
+                "title": "Enterprise trust",
+                "route": "/enterprise-trust-center",
+                "status": "ready",
+                "signal": "Trust proof.",
+                "file": "rentgen-security-questionnaire.md",
+            },
         ],
         "meeting_flow": [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Pick role."},
-            {"step": 2, "label": "Prove", "route": "/killer-demo", "line": "Show proof."},
-            {"step": 3, "label": "Ask", "route": "/board-pack", "line": "Ask for local license."},
-            {"step": 4, "label": "Forward", "route": "/evidence-bundle", "line": "Forward packet."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Pick role.",
+            },
+            {
+                "step": 2,
+                "label": "Prove",
+                "route": "/killer-demo",
+                "line": "Show proof.",
+            },
+            {
+                "step": 3,
+                "label": "Ask",
+                "route": "/board-pack",
+                "line": "Ask for local license.",
+            },
+            {
+                "step": 4,
+                "label": "Forward",
+                "route": "/evidence-bundle",
+                "line": "Forward packet.",
+            },
         ],
         "open_first_path": [
-            {"step": 1, "stage": "orient", "label": "Orient", "title": "Buyer room", "route": "/buyer-concierge", "line": "Pick role.", "file": "buyer-brief.md", "status": status, "source": "test"},
-            {"step": 2, "stage": "prove", "label": "Prove", "title": "Killer Demo", "route": "/killer-demo", "line": "Show proof.", "file": "OPEN_FIRST_KILLER_DEMO.md", "status": status, "source": "test"},
-            {"step": 3, "stage": "close", "label": "Close", "title": "Receipt", "route": "/killer-demo", "line": "Close.", "file": "MEETING_CLOSE_RECEIPT.md", "status": status, "source": "test"},
-            {"step": 4, "stage": "verify", "label": "Verify", "title": "Verification Packet ZIP", "route": "/evidence-bundle", "line": "Verify.", "file": "archive-verification-packet.zip", "status": "ready", "source": "test"},
+            {
+                "step": 1,
+                "stage": "orient",
+                "label": "Orient",
+                "title": "Buyer room",
+                "route": "/buyer-concierge",
+                "line": "Pick role.",
+                "file": "buyer-brief.md",
+                "status": status,
+                "source": "test",
+            },
+            {
+                "step": 2,
+                "stage": "prove",
+                "label": "Prove",
+                "title": "Killer Demo",
+                "route": "/killer-demo",
+                "line": "Show proof.",
+                "file": "OPEN_FIRST_KILLER_DEMO.md",
+                "status": status,
+                "source": "test",
+            },
+            {
+                "step": 3,
+                "stage": "close",
+                "label": "Close",
+                "title": "Receipt",
+                "route": "/killer-demo",
+                "line": "Close.",
+                "file": "MEETING_CLOSE_RECEIPT.md",
+                "status": status,
+                "source": "test",
+            },
+            {
+                "step": 4,
+                "stage": "verify",
+                "label": "Verify",
+                "title": "Verification Packet ZIP",
+                "route": "/evidence-bundle",
+                "line": "Verify.",
+                "file": "archive-verification-packet.zip",
+                "status": "ready",
+                "source": "test",
+            },
         ],
     }
 
@@ -247,7 +378,11 @@ def _outcome_ledger(status="ready", score=82):
                 {"route": "/evidence-bundle"},
                 {"route": "/enterprise-trust-center"},
             ],
-            "windows": [{"route": "/approvals"}, {"route": "/audit"}, {"route": "/evidence-bundle"}],
+            "windows": [
+                {"route": "/approvals"},
+                {"route": "/audit"},
+                {"route": "/evidence-bundle"},
+            ],
             "proof_routes": ["/approvals", "/audit", "/evidence-bundle"],
         },
         "acceptance_rollup": {
@@ -283,7 +418,12 @@ def _pilot_launchpad(status="ready", score=84):
                 {"route": "/evidence-bundle"},
                 {"route": "/enterprise-trust-center"},
             ],
-            "proof_routes": ["/pilot-launchpad", "/approvals", "/audit", "/evidence-bundle"],
+            "proof_routes": [
+                "/pilot-launchpad",
+                "/approvals",
+                "/audit",
+                "/evidence-bundle",
+            ],
         },
     }
 
@@ -345,18 +485,28 @@ def test_launch_room_builds_single_buyer_cockpit():
     handoff = report["purchase_spine"]["procurement_handoff"]
     assert handoff["title"] == "Procurement-ready handoff"
     assert handoff["open_order"][0]["hash_header"] == "X-Buyer-Room-Packet-Sha256"
-    assert handoff["open_order"][0]["endpoint"] == "/api/v1/management/buyer-room-packet"
+    assert (
+        handoff["open_order"][0]["endpoint"] == "/api/v1/management/buyer-room-packet"
+    )
     assert handoff["open_order"][1]["hash_header"] == "X-Archive-Sha256"
     assert handoff["open_order"][2]["hash_header"] == "X-Killer-Demo-Archive-Sha256"
-    assert any(item["file"] == "rentgen-buyer-room-packet.zip" for item in handoff["attachments"])
-    assert any(item["file"] == "archive-verification-packet.zip" for item in handoff["attachments"])
+    assert any(
+        item["file"] == "rentgen-buyer-room-packet.zip"
+        for item in handoff["attachments"]
+    )
+    assert any(
+        item["file"] == "archive-verification-packet.zip"
+        for item in handoff["attachments"]
+    )
     assert "/" in report["purchase_spine"]["proof_routes"]
     assert "/killer-demo" in report["purchase_spine"]["proof_routes"]
     assert "/business-case" in report["purchase_spine"]["proof_routes"]
     assert "/commercial-offer-studio" in report["purchase_spine"]["proof_routes"]
     assert "/pilot-launchpad" in report["purchase_spine"]["proof_routes"]
     assert "/outcome-ledger" in report["purchase_spine"]["proof_routes"]
-    assert [item["filename"] for item in report["purchase_spine"]["evidence_files"][:4]] == [
+    assert [
+        item["filename"] for item in report["purchase_spine"]["evidence_files"][:4]
+    ] == [
         "rentgen-buyer-room-packet.zip",
         "OPEN_FIRST_KILLER_DEMO.md",
         "MEETING_CLOSE_RECEIPT.md",
@@ -382,9 +532,17 @@ def test_launch_room_builds_single_buyer_cockpit():
     assert "POST_DEMO_ACTIVATION_HANDOFF.md" in report["buyer_room_bridge"]["files"]
     assert "archive-acceptance-receipt.md" in report["buyer_room_bridge"]["files"]
     assert "archive-verification-packet.zip" in report["buyer_room_bridge"]["files"]
-    assert any(item["id"] == "audit-siem" for item in report["buyer_room_bridge"]["proof_readiness"])
-    assert any(item["route"] == "/killer-demo" for item in report["buyer_room_bridge"]["meeting_flow"])
-    assert [item["stage"] for item in report["buyer_room_bridge"]["open_first_path"]] == [
+    assert any(
+        item["id"] == "audit-siem"
+        for item in report["buyer_room_bridge"]["proof_readiness"]
+    )
+    assert any(
+        item["route"] == "/killer-demo"
+        for item in report["buyer_room_bridge"]["meeting_flow"]
+    )
+    assert [
+        item["stage"] for item in report["buyer_room_bridge"]["open_first_path"]
+    ] == [
         "orient",
         "prove",
         "close",
@@ -402,10 +560,21 @@ def test_launch_room_builds_single_buyer_cockpit():
         "MEETING_CLOSE_RECEIPT.md",
         "POST_DEMO_ACTIVATION_HANDOFF.md",
     ]
-    assert "archive-acceptance-receipt.md" in [item["filename"] for item in report["proof_packet"]]
-    assert "archive-acceptance-receipt.json" in [item["filename"] for item in report["proof_packet"]]
-    assert "archive-verification-packet.zip" in [item["filename"] for item in report["proof_packet"]]
-    assert [item["id"] for item in report["buyer_journey"]["steps"]] == ["close", "activate", "govern", "realize"]
+    assert "archive-acceptance-receipt.md" in [
+        item["filename"] for item in report["proof_packet"]
+    ]
+    assert "archive-acceptance-receipt.json" in [
+        item["filename"] for item in report["proof_packet"]
+    ]
+    assert "archive-verification-packet.zip" in [
+        item["filename"] for item in report["proof_packet"]
+    ]
+    assert [item["id"] for item in report["buyer_journey"]["steps"]] == [
+        "close",
+        "activate",
+        "govern",
+        "realize",
+    ]
     assert report["buyer_journey"]["buyer_line"]
     assert report["buyer_journey"]["acceptance_items"] == 7
     assert report["buyer_journey"]["claim_ready"] is True

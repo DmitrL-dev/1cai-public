@@ -1,4 +1,3 @@
-
 """
 Structured Logging Setup with Context Propagation
 Best Practices:
@@ -15,9 +14,10 @@ import uuid
 from contextvars import ContextVar
 from datetime import datetime
 from typing import Dict, Optional
-from src.config import settings
 
 from pythonjsonlogger import jsonlogger
+
+from src.config import settings
 
 
 class StructuredLogger:
@@ -136,8 +136,11 @@ class StructuredLogger:
             "msecs",
             "relativeCreated",
         }
-        log_data = {k: v for k, v in log_data.items(
-        ) if v is not None and k not in reserved_keys}
+        log_data = {
+            k: v
+            for k, v in log_data.items()
+            if v is not None and k not in reserved_keys
+        }
 
         log_func = getattr(self.logger, level.lower())
         log_func(message, extra=log_data)

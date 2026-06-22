@@ -10,7 +10,6 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List
 
-
 AUTO_FIXER_CONTRACT = "code_review_auto_fixer_evidence_contract"
 
 

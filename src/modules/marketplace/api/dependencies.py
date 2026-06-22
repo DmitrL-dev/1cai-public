@@ -1,4 +1,3 @@
-
 """
 Marketplace API Dependencies
 Версия: 2.1.0

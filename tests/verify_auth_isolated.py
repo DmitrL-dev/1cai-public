@@ -1,6 +1,6 @@
-import sys
-import os
 import asyncio
+import os
+import sys
 import time
 
 # Add project root to path
@@ -20,7 +20,7 @@ async def verify_auth_isolated():
     try:
         # 1. Verify Domain Models
         log("1. Verifying Domain Models...")
-        from src.modules.auth.domain.models import UserCredentials, CurrentUser
+        from src.modules.auth.domain.models import CurrentUser, UserCredentials
 
         user = CurrentUser(user_id="test", username="test", roles=["admin"])
         assert user.has_role("admin")
@@ -38,7 +38,9 @@ async def verify_auth_isolated():
         from src.modules.auth.application.service import AuthService
 
         service = AuthService(settings)
-        token = service.create_access_token(UserCredentials(username="test", password="pwd", user_id="1", roles=[]))
+        token = service.create_access_token(
+            UserCredentials(username="test", password="pwd", user_id="1", roles=[])
+        )
         decoded = service.decode_token(token)
         assert decoded.user_id == "1"
         log("   Service OK.")

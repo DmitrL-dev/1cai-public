@@ -24,7 +24,10 @@ def _build_config(root: Path) -> None:
 <MetaDataObject><Document uuid="doc"><Properties><Name>Order</Name></Properties></Document></MetaDataObject>
 """,
     )
-    _write(root / "Documents" / "Order" / "Ext" / "ObjectModule.bsl", "Procedure X()\nEndProcedure")
+    _write(
+        root / "Documents" / "Order" / "Ext" / "ObjectModule.bsl",
+        "Procedure X()\nEndProcedure",
+    )
     _write(
         root / "Documents" / "Order" / "Forms" / "Main.xml",
         """
@@ -77,7 +80,7 @@ def test_metadata_snapshot_diff_security_and_form_review(tmp_path, monkeypatch):
     snapshot = insights.create_metadata_snapshot("baseline", str(config))
     _write(
         config / "Catalogs" / "Customer.xml",
-        "<MetaDataObject><Catalog uuid=\"cat\"><Properties><Name>Customer</Name></Properties></Catalog></MetaDataObject>",
+        '<MetaDataObject><Catalog uuid="cat"><Properties><Name>Customer</Name></Properties></Catalog></MetaDataObject>',
     )
     build_metadata_graph.cache_clear()
 

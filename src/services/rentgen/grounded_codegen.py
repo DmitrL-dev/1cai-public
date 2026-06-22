@@ -11,7 +11,6 @@ import hashlib
 import re
 from typing import Any
 
-
 _WORD_RE = re.compile(r"[A-Za-z][A-Za-z0-9_]{2,}")
 _PATH_TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z0-9_]{2,}")
 _VALID_TYPES = {"function", "procedure", "test"}
@@ -41,7 +40,9 @@ _COMMON_WORDS = {
 
 def _short_hash(*values: Any) -> str:
     payload = "|".join("" if value is None else str(value) for value in values)
-    return hashlib.sha1(payload.encode("utf-8", errors="ignore")).hexdigest()[:6].upper()
+    return (
+        hashlib.sha1(payload.encode("utf-8", errors="ignore")).hexdigest()[:6].upper()
+    )
 
 
 def _safe_comment(value: Any, *, limit: int = 160) -> str:
@@ -98,7 +99,9 @@ def _entrypoint_name(
     prompt_tokens = _tokens_from_text(prompt)
     tokens = (metadata_tokens + path_tokens + prompt_tokens)[:3]
     stem = _pascal(tokens)
-    suffix = _short_hash(prompt, code_type, module_path, (metadata_obj or {}).get("ref"))
+    suffix = _short_hash(
+        prompt, code_type, module_path, (metadata_obj or {}).get("ref")
+    )
     if stem:
         return f"{prefix}{stem}{suffix}"
     return f"{prefix}{suffix}"
@@ -107,7 +110,9 @@ def _entrypoint_name(
 def _metadata_ref(metadata_obj: dict[str, Any] | None) -> str | None:
     if not metadata_obj:
         return None
-    return metadata_obj.get("ref") or metadata_obj.get("path") or metadata_obj.get("name")
+    return (
+        metadata_obj.get("ref") or metadata_obj.get("path") or metadata_obj.get("name")
+    )
 
 
 def _module_items(change_plan: dict[str, Any] | None) -> list[dict[str, Any]]:
@@ -128,7 +133,9 @@ def _impact_summary(change_plan: dict[str, Any] | None) -> dict[str, Any]:
         performance_flags += len(item.get("performance_risks") or [])
         impacted_hotspots += len(item.get("impacted_hotspots") or [])
     return {
-        "changed_modules": len(change_plan.get("changed_modules") or []) if change_plan else 0,
+        "changed_modules": len(change_plan.get("changed_modules") or [])
+        if change_plan
+        else 0,
         "impact_edges": int((change_plan or {}).get("total_impact_edges") or 0),
         "impacted_modules": int((change_plan or {}).get("total_impacted_modules") or 0),
         "max_quality_risk": max_risk,
@@ -264,7 +271,9 @@ def _risk_controls(
     return controls
 
 
-def _test_actions(change_plan: dict[str, Any] | None, entrypoint: str) -> list[dict[str, Any]]:
+def _test_actions(
+    change_plan: dict[str, Any] | None, entrypoint: str
+) -> list[dict[str, Any]]:
     actions: list[dict[str, Any]] = [
         {
             "id": "generated-unit-skeleton",
@@ -289,7 +298,9 @@ def _test_actions(change_plan: dict[str, Any] | None, entrypoint: str) -> list[d
                     "selector": selector,
                     "priority": test.get("priority", "medium"),
                     "status": test.get("status", "recommended"),
-                    "reason": test.get("reason", "Rentgen impact-based test recommendation."),
+                    "reason": test.get(
+                        "reason", "Rentgen impact-based test recommendation."
+                    ),
                     "command": test.get("command"),
                     "module_path": item.get("module_path"),
                     "confidence": test.get("confidence"),
@@ -331,9 +342,14 @@ def _comment_lines(
         f"max_quality_risk={impact['max_quality_risk']}"
     )
     if its_context:
-        titles = ", ".join(_safe_comment(item.get("section_title"), limit=60) for item in its_context[:3])
+        titles = ", ".join(
+            _safe_comment(item.get("section_title"), limit=60)
+            for item in its_context[:3]
+        )
         lines.append(f"// ITS context: {titles}")
-    lines.append("// Controls: validate input, avoid dynamic execution, no silent exception handlers.")
+    lines.append(
+        "// Controls: validate input, avoid dynamic execution, no silent exception handlers."
+    )
     return lines
 
 

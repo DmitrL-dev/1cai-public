@@ -18,7 +18,6 @@ from src.services.rentgen.approval_workflow import (
     validate_approval_for_call,
 )
 
-
 router = APIRouter(prefix="/api/v1/approvals", tags=["Approvals"])
 
 

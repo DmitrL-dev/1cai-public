@@ -1,4 +1,3 @@
-
 """
 Embedding Service Facade
 Redirects to the refactored implementation in src/services/embedding/

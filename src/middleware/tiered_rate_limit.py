@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import time
 from enum import Enum
-from typing import Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Optional
 
 from fastapi import HTTPException, status
 from prometheus_client import Counter
@@ -31,6 +31,7 @@ logger = StructuredLogger(__name__).logger
 
 class UserTier(str, Enum):
     """User tier for rate limiting"""
+
     FREE = "free"
     PRO = "pro"
     ENTERPRISE = "enterprise"
@@ -47,15 +48,15 @@ TIER_LIMITS: Dict[UserTier, int] = {
 
 # Prometheus metrics
 rate_limit_exceeded = Counter(
-    'rate_limit_exceeded_total',
-    'Total number of rate limit violations',
-    ['tier', 'path']
+    "rate_limit_exceeded_total",
+    "Total number of rate limit violations",
+    ["tier", "path"],
 )
 
 rate_limit_requests = Counter(
-    'rate_limit_requests_total',
-    'Total number of rate limited requests',
-    ['tier', 'path', 'status']
+    "rate_limit_requests_total",
+    "Total number of rate limited requests",
+    ["tier", "path", "status"],
 )
 
 
@@ -106,8 +107,7 @@ class TieredRateLimitMiddleware(BaseHTTPMiddleware):
                 if current_value > max_requests:
                     # Record metric
                     rate_limit_exceeded.labels(
-                        tier=tier.value,
-                        path=str(request.url.path)
+                        tier=tier.value, path=str(request.url.path)
                     ).inc()
 
                     logger.warning(
@@ -127,21 +127,21 @@ class TieredRateLimitMiddleware(BaseHTTPMiddleware):
                             "tier": tier.value,
                             "limit": max_requests,
                             "window": self.window_seconds,
-                            "retry_after": self.window_seconds
+                            "retry_after": self.window_seconds,
                         },
                         headers={
                             "X-RateLimit-Limit": str(max_requests),
                             "X-RateLimit-Remaining": "0",
-                            "X-RateLimit-Reset": str(int(time.time()) + self.window_seconds),
-                            "Retry-After": str(self.window_seconds)
-                        }
+                            "X-RateLimit-Reset": str(
+                                int(time.time()) + self.window_seconds
+                            ),
+                            "Retry-After": str(self.window_seconds),
+                        },
                     )
 
                 # Record successful request
                 rate_limit_requests.labels(
-                    tier=tier.value,
-                    path=str(request.url.path),
-                    status="allowed"
+                    tier=tier.value, path=str(request.url.path), status="allowed"
                 ).inc()
 
                 # Process request
@@ -150,9 +150,11 @@ class TieredRateLimitMiddleware(BaseHTTPMiddleware):
                 # Add rate limit headers
                 response.headers["X-RateLimit-Limit"] = str(max_requests)
                 response.headers["X-RateLimit-Remaining"] = str(
-                    max(0, max_requests - current_value))
+                    max(0, max_requests - current_value)
+                )
                 response.headers["X-RateLimit-Reset"] = str(
-                    int(time.time()) + self.window_seconds)
+                    int(time.time()) + self.window_seconds
+                )
 
                 return response
 

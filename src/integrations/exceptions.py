@@ -1,5 +1,3 @@
-
-
 class IntegrationError(RuntimeError):
     """Base error for integration failures."""
 

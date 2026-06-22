@@ -1,4 +1,3 @@
-
 """
 Graph Query Helper для Orchestrator
 -----------------------------------

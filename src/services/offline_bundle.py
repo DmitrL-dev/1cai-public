@@ -2,18 +2,23 @@
 
 from __future__ import annotations
 
-from collections import Counter
-from datetime import datetime, timezone
 import hashlib
 import hmac
 import json
 import os
+import zipfile
+from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-import zipfile
 
-from src.services.productization_readiness import DELIVERABLES, REVIEW_FILES, ROOT, TEST_FILES, productization_readiness
-
+from src.services.productization_readiness import (
+    DELIVERABLES,
+    REVIEW_FILES,
+    ROOT,
+    TEST_FILES,
+    productization_readiness,
+)
 
 DEFAULT_OUTPUT_PATH = ROOT / "data" / "offline_bundles" / "latest_manifest.json"
 DEFAULT_ARCHIVE_DIR = ROOT / "data" / "offline_bundles"
@@ -80,7 +85,9 @@ def _canonical(payload: dict[str, Any]) -> bytes:
     copy = json.loads(json.dumps(payload, ensure_ascii=False))
     copy.pop("signature", None)
     copy.pop("manifest_sha256", None)
-    encoded = json.dumps(copy, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    encoded = json.dumps(
+        copy, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    )
     return encoded.encode("utf-8")
 
 
@@ -89,7 +96,9 @@ def _manifest_digest(payload: dict[str, Any]) -> str:
 
 
 def _sign(payload: dict[str, Any], signing_key: str) -> dict[str, Any]:
-    signature = hmac.new(signing_key.encode("utf-8"), _canonical(payload), hashlib.sha256).hexdigest()
+    signature = hmac.new(
+        signing_key.encode("utf-8"), _canonical(payload), hashlib.sha256
+    ).hexdigest()
     return {
         "signed": True,
         "algorithm": "hmac-sha256",
@@ -103,14 +112,24 @@ def _signing_key(explicit: str | None = None) -> str | None:
 
 
 def _signature_required(manifest: dict[str, Any]) -> bool:
-    installer_profile = manifest.get("installer_profile") if isinstance(manifest.get("installer_profile"), dict) else {}
+    installer_profile = (
+        manifest.get("installer_profile")
+        if isinstance(manifest.get("installer_profile"), dict)
+        else {}
+    )
     return bool(installer_profile.get("requires_signed_manifest"))
 
 
 def _passport_decision(manifest: dict[str, Any]) -> dict[str, str]:
-    signature = manifest.get("signature") if isinstance(manifest.get("signature"), dict) else {}
-    readiness = manifest.get("readiness") if isinstance(manifest.get("readiness"), dict) else {}
-    summary = manifest.get("summary") if isinstance(manifest.get("summary"), dict) else {}
+    signature = (
+        manifest.get("signature") if isinstance(manifest.get("signature"), dict) else {}
+    )
+    readiness = (
+        manifest.get("readiness") if isinstance(manifest.get("readiness"), dict) else {}
+    )
+    summary = (
+        manifest.get("summary") if isinstance(manifest.get("summary"), dict) else {}
+    )
     requires_signature = _signature_required(manifest)
     if int(summary.get("missing") or 0):
         return {
@@ -138,8 +157,12 @@ def _passport_decision(manifest: dict[str, Any]) -> dict[str, str]:
     }
 
 
-def _verification_steps(manifest: dict[str, Any], *, archive_filename: str) -> list[dict[str, Any]]:
-    signature = manifest.get("signature") if isinstance(manifest.get("signature"), dict) else {}
+def _verification_steps(
+    manifest: dict[str, Any], *, archive_filename: str
+) -> list[dict[str, Any]]:
+    signature = (
+        manifest.get("signature") if isinstance(manifest.get("signature"), dict) else {}
+    )
     signed = bool(signature.get("signed"))
     return [
         {
@@ -153,7 +176,9 @@ def _verification_steps(manifest: dict[str, Any], *, archive_filename: str) -> l
             "step": 2,
             "owner": "Security",
             "title": "Check signature policy",
-            "command": "set ONECAI_BUNDLE_SIGNING_KEY=<customer-secret> before verification" if signed else "Approve unsigned pilot scope or rebuild with --sign",
+            "command": "set ONECAI_BUNDLE_SIGNING_KEY=<customer-secret> before verification"
+            if signed
+            else "Approve unsigned pilot scope or rebuild with --sign",
             "pass_condition": "production and airgap profiles have signature.signed=true and matching key_hint",
         },
         {
@@ -167,9 +192,15 @@ def _verification_steps(manifest: dict[str, Any], *, archive_filename: str) -> l
 
 
 def _acceptance_gates(manifest: dict[str, Any]) -> list[dict[str, Any]]:
-    signature = manifest.get("signature") if isinstance(manifest.get("signature"), dict) else {}
-    summary = manifest.get("summary") if isinstance(manifest.get("summary"), dict) else {}
-    readiness = manifest.get("readiness") if isinstance(manifest.get("readiness"), dict) else {}
+    signature = (
+        manifest.get("signature") if isinstance(manifest.get("signature"), dict) else {}
+    )
+    summary = (
+        manifest.get("summary") if isinstance(manifest.get("summary"), dict) else {}
+    )
+    readiness = (
+        manifest.get("readiness") if isinstance(manifest.get("readiness"), dict) else {}
+    )
     requires_signature = _signature_required(manifest)
     signed = bool(signature.get("signed"))
     signature_status = "pass" if signed else ("fail" if requires_signature else "warn")
@@ -212,12 +243,22 @@ def _acceptance_gates(manifest: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
-def build_delivery_passport(manifest: dict[str, Any], *, archive_filename: str = "<archive.zip>") -> dict[str, Any]:
+def build_delivery_passport(
+    manifest: dict[str, Any], *, archive_filename: str = "<archive.zip>"
+) -> dict[str, Any]:
     """Build a buyer-safe delivery passport for an offline bundle archive."""
 
-    summary = manifest.get("summary") if isinstance(manifest.get("summary"), dict) else {}
-    signature = manifest.get("signature") if isinstance(manifest.get("signature"), dict) else {}
-    installer_profile = manifest.get("installer_profile") if isinstance(manifest.get("installer_profile"), dict) else {}
+    summary = (
+        manifest.get("summary") if isinstance(manifest.get("summary"), dict) else {}
+    )
+    signature = (
+        manifest.get("signature") if isinstance(manifest.get("signature"), dict) else {}
+    )
+    installer_profile = (
+        manifest.get("installer_profile")
+        if isinstance(manifest.get("installer_profile"), dict)
+        else {}
+    )
     return {
         "schema_version": "1.0",
         "product": manifest.get("product") or "1cAI Enterprise 1C SDLC Platform",
@@ -235,7 +276,9 @@ def build_delivery_passport(manifest: dict[str, Any], *, archive_filename: str =
             "signature_key_hint": signature.get("key_hint"),
         },
         "install_profile": installer_profile,
-        "verification_steps": _verification_steps(manifest, archive_filename=archive_filename),
+        "verification_steps": _verification_steps(
+            manifest, archive_filename=archive_filename
+        ),
         "acceptance_gates": _acceptance_gates(manifest),
         "handoff_by_role": [
             {
@@ -264,9 +307,17 @@ def build_delivery_passport(manifest: dict[str, Any], *, archive_filename: str =
 def delivery_passport_markdown(passport: dict[str, Any]) -> str:
     """Render an offline delivery passport as Markdown."""
 
-    decision = passport.get("decision") if isinstance(passport.get("decision"), dict) else {}
-    package = passport.get("package") if isinstance(passport.get("package"), dict) else {}
-    install_profile = passport.get("install_profile") if isinstance(passport.get("install_profile"), dict) else {}
+    decision = (
+        passport.get("decision") if isinstance(passport.get("decision"), dict) else {}
+    )
+    package = (
+        passport.get("package") if isinstance(passport.get("package"), dict) else {}
+    )
+    install_profile = (
+        passport.get("install_profile")
+        if isinstance(passport.get("install_profile"), dict)
+        else {}
+    )
     lines = [
         "# 1cAI Offline Delivery Passport",
         "",
@@ -282,11 +333,15 @@ def delivery_passport_markdown(passport: dict[str, Any]) -> str:
         "",
     ]
     for item in passport.get("verification_steps", []):
-        lines.append(f"{item['step']}. **{item['owner']}** - {item['title']}: `{item['command']}`")
+        lines.append(
+            f"{item['step']}. **{item['owner']}** - {item['title']}: `{item['command']}`"
+        )
         lines.append(f"   Pass: {item['pass_condition']}")
     lines.extend(["", "## Acceptance Gates", ""])
     for item in passport.get("acceptance_gates", []):
-        lines.append(f"- **{item['status']}** `{item['id']}` / {item['owner']}: {item['acceptance']} Evidence: {item['evidence']}")
+        lines.append(
+            f"- **{item['status']}** `{item['id']}` / {item['owner']}: {item['acceptance']} Evidence: {item['evidence']}"
+        )
     lines.extend(["", "## Role Handoff", ""])
     for item in passport.get("handoff_by_role", []):
         lines.append(f"- **{item['role']}** opens `{item['opens']}`: {item['needs']}")
@@ -359,7 +414,9 @@ def build_offline_bundle_manifest(
         seen.add(safe_rel)
         abs_path = base / safe_rel
         if not abs_path.exists() or not abs_path.is_file():
-            missing.append({"path": safe_rel, "category": category, "reason": "missing"})
+            missing.append(
+                {"path": safe_rel, "category": category, "reason": "missing"}
+            )
             continue
         artifacts.append(
             {
@@ -407,14 +464,20 @@ def build_offline_bundle_manifest(
         key = signing_key
     else:
         key = _signing_key()
-    manifest["signature"] = _sign(manifest, key) if key else {"signed": False, "algorithm": "none", "value": None}
+    manifest["signature"] = (
+        _sign(manifest, key)
+        if key
+        else {"signed": False, "algorithm": "none", "value": None}
+    )
 
     if write:
         _atomic_write_json(manifest, _safe_output_path(output_path, root=base))
     return manifest
 
 
-def load_offline_bundle_manifest(*, manifest_path: Path | None = None) -> dict[str, Any]:
+def load_offline_bundle_manifest(
+    *, manifest_path: Path | None = None
+) -> dict[str, Any]:
     """Load a bundle manifest from disk."""
 
     target = manifest_path or DEFAULT_OUTPUT_PATH
@@ -453,7 +516,9 @@ def verify_offline_bundle_manifest(
         rel_path = _safe_rel_path(str(artifact.get("path") or ""), root=base)
         target = base / rel_path
         if not target.exists() or not target.is_file():
-            findings.append({"severity": "high", "code": "bundle-file-missing", "path": rel_path})
+            findings.append(
+                {"severity": "high", "code": "bundle-file-missing", "path": rel_path}
+            )
             continue
         checked += 1
         actual = _sha256_file(target)
@@ -480,17 +545,37 @@ def verify_offline_bundle_manifest(
             }
         )
 
-    signature = payload.get("signature") if isinstance(payload.get("signature"), dict) else {}
+    signature = (
+        payload.get("signature") if isinstance(payload.get("signature"), dict) else {}
+    )
     key = _signing_key(signing_key)
     if signature.get("signed"):
         if not key:
-            findings.append({"severity": "medium", "code": "signature-key-missing", "message": "Signed manifest requires signing key for verification."})
+            findings.append(
+                {
+                    "severity": "medium",
+                    "code": "signature-key-missing",
+                    "message": "Signed manifest requires signing key for verification.",
+                }
+            )
         else:
             expected = _sign(payload, key)["value"]
             if expected != signature.get("value"):
-                findings.append({"severity": "high", "code": "signature-mismatch", "message": "Manifest signature does not match."})
+                findings.append(
+                    {
+                        "severity": "high",
+                        "code": "signature-mismatch",
+                        "message": "Manifest signature does not match.",
+                    }
+                )
     else:
-        findings.append({"severity": "medium", "code": "manifest-unsigned", "message": "Manifest is not signed."})
+        findings.append(
+            {
+                "severity": "medium",
+                "code": "manifest-unsigned",
+                "message": "Manifest is not signed.",
+            }
+        )
 
     severities = Counter(item["severity"] for item in findings)
     status = "fail" if severities.get("high") else ("warn" if findings else "pass")
@@ -532,9 +617,14 @@ def build_offline_bundle_archive(
         root=base,
     )
     if manifest.get("missing"):
-        raise ValueError(f"Cannot build offline archive with missing files: {len(manifest['missing'])}")
+        raise ValueError(
+            f"Cannot build offline archive with missing files: {len(manifest['missing'])}"
+        )
 
-    archive_path = _safe_output_path(output_path or (DEFAULT_ARCHIVE_DIR / _archive_name(manifest["profile"])), root=base)
+    archive_path = _safe_output_path(
+        output_path or (DEFAULT_ARCHIVE_DIR / _archive_name(manifest["profile"])),
+        root=base,
+    )
     archive_path.parent.mkdir(parents=True, exist_ok=True)
     passport = build_delivery_passport(manifest, archive_filename=archive_path.name)
     passport_markdown = delivery_passport_markdown(passport)
@@ -551,9 +641,15 @@ def build_offline_bundle_archive(
             "",
         ]
     )
-    with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2))
-        archive.writestr("DELIVERY_PASSPORT.json", json.dumps(passport, ensure_ascii=False, indent=2))
+    with zipfile.ZipFile(
+        archive_path, "w", compression=zipfile.ZIP_DEFLATED
+    ) as archive:
+        archive.writestr(
+            "manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2)
+        )
+        archive.writestr(
+            "DELIVERY_PASSPORT.json", json.dumps(passport, ensure_ascii=False, indent=2)
+        )
         archive.writestr("DELIVERY_PASSPORT.md", passport_markdown)
         archive.writestr("VERIFY.txt", verify_text)
         for artifact in manifest["artifacts"]:
@@ -598,14 +694,22 @@ def verify_offline_bundle_archive(
                 "status": "fail",
                 "checked_files": 0,
                 "archive_path": str(archive_path),
-                "findings": [{"severity": "high", "code": "archive-manifest-missing", "message": "Archive has no manifest.json."}],
+                "findings": [
+                    {
+                        "severity": "high",
+                        "code": "archive-manifest-missing",
+                        "message": "Archive has no manifest.json.",
+                    }
+                ],
                 "summary": {"findings": 1, "high": 1, "medium": 0, "low": 0},
             }
         manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
         if not isinstance(manifest, dict):
             raise ValueError("Archive manifest must be a JSON object")
         if "DELIVERY_PASSPORT.json" in names:
-            passport = json.loads(archive.read("DELIVERY_PASSPORT.json").decode("utf-8"))
+            passport = json.loads(
+                archive.read("DELIVERY_PASSPORT.json").decode("utf-8")
+            )
             if not isinstance(passport, dict):
                 findings.append(
                     {
@@ -616,7 +720,11 @@ def verify_offline_bundle_archive(
                 )
                 passport = None
             else:
-                package = passport.get("package") if isinstance(passport.get("package"), dict) else {}
+                package = (
+                    passport.get("package")
+                    if isinstance(passport.get("package"), dict)
+                    else {}
+                )
                 if package.get("manifest_sha256") != manifest.get("manifest_sha256"):
                     findings.append(
                         {
@@ -657,7 +765,13 @@ def verify_offline_bundle_archive(
             rel_path = str(artifact.get("path") or "").replace("\\", "/")
             member = f"payload/{rel_path}"
             if member not in names:
-                findings.append({"severity": "high", "code": "archive-payload-missing", "path": rel_path})
+                findings.append(
+                    {
+                        "severity": "high",
+                        "code": "archive-payload-missing",
+                        "path": rel_path,
+                    }
+                )
                 continue
             checked += 1
             actual = _sha256_bytes(archive.read(member))
@@ -684,17 +798,37 @@ def verify_offline_bundle_archive(
             }
         )
 
-    signature = manifest.get("signature") if isinstance(manifest.get("signature"), dict) else {}
+    signature = (
+        manifest.get("signature") if isinstance(manifest.get("signature"), dict) else {}
+    )
     key = _signing_key(signing_key)
     if signature.get("signed"):
         if not key:
-            findings.append({"severity": "medium", "code": "signature-key-missing", "message": "Signed archive manifest requires signing key for verification."})
+            findings.append(
+                {
+                    "severity": "medium",
+                    "code": "signature-key-missing",
+                    "message": "Signed archive manifest requires signing key for verification.",
+                }
+            )
         else:
             expected = _sign(manifest, key)["value"]
             if expected != signature.get("value"):
-                findings.append({"severity": "high", "code": "signature-mismatch", "message": "Archive manifest signature does not match."})
+                findings.append(
+                    {
+                        "severity": "high",
+                        "code": "signature-mismatch",
+                        "message": "Archive manifest signature does not match.",
+                    }
+                )
     else:
-        findings.append({"severity": "medium", "code": "manifest-unsigned", "message": "Archive manifest is not signed."})
+        findings.append(
+            {
+                "severity": "medium",
+                "code": "manifest-unsigned",
+                "message": "Archive manifest is not signed.",
+            }
+        )
 
     severities = Counter(item["severity"] for item in findings)
     status = "fail" if severities.get("high") else ("warn" if findings else "pass")
@@ -733,7 +867,14 @@ def _installer_profile(profile: str) -> dict[str, Any]:
             "offline": True,
             "target": "air-gapped enterprise contour",
             "requires_signed_manifest": True,
-            "services": ["api", "portal", "local-data", "audit-export", "backup", "local-model"],
+            "services": [
+                "api",
+                "portal",
+                "local-data",
+                "audit-export",
+                "backup",
+                "local-model",
+            ],
         },
     }
     return profiles[profile]
@@ -742,8 +883,12 @@ def _installer_profile(profile: str) -> dict[str, Any]:
 def _main() -> int:  # pragma: no cover - CLI convenience
     import argparse
 
-    parser = argparse.ArgumentParser(description="Build or verify 1cAI offline bundle manifests.")
-    parser.add_argument("--profile", default="pilot", choices=sorted(SUPPORTED_PROFILES))
+    parser = argparse.ArgumentParser(
+        description="Build or verify 1cAI offline bundle manifests."
+    )
+    parser.add_argument(
+        "--profile", default="pilot", choices=sorted(SUPPORTED_PROFILES)
+    )
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT_PATH))
     parser.add_argument("--sign", action="store_true")
     parser.add_argument("--verify")
@@ -762,12 +907,36 @@ def _main() -> int:  # pragma: no cover - CLI convenience
         return 0 if result["status"] != "fail" else 1
 
     if args.archive:
-        result = build_offline_bundle_archive(profile=args.profile, output_path=Path(args.output), sign=args.sign)
-        print(json.dumps({"path": result["archive_path"], "sha256": result["archive_sha256"], "files": result["manifest"]["summary"]["files"]}, ensure_ascii=False, indent=2))
+        result = build_offline_bundle_archive(
+            profile=args.profile, output_path=Path(args.output), sign=args.sign
+        )
+        print(
+            json.dumps(
+                {
+                    "path": result["archive_path"],
+                    "sha256": result["archive_sha256"],
+                    "files": result["manifest"]["summary"]["files"],
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
         return 0
 
-    manifest = build_offline_bundle_manifest(profile=args.profile, output_path=Path(args.output), sign=args.sign)
-    print(json.dumps({"path": args.output, "summary": manifest["summary"], "signed": manifest["signature"]["signed"]}, ensure_ascii=False, indent=2))
+    manifest = build_offline_bundle_manifest(
+        profile=args.profile, output_path=Path(args.output), sign=args.sign
+    )
+    print(
+        json.dumps(
+            {
+                "path": args.output,
+                "summary": manifest["summary"],
+                "signed": manifest["signature"]["signed"],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
     return 0
 
 

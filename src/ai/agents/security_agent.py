@@ -72,7 +72,7 @@ class SecurityAgent(BaseAgent):
             capabilities=[
                 AgentCapability.SECURITY_AUDIT,
                 AgentCapability.CODE_REVIEW,
-            ]
+            ],
         )
 
         self.security_layer = AISecurityLayer()
@@ -81,8 +81,8 @@ class SecurityAgent(BaseAgent):
         # Rule of Two: [AB] - can process untrusted code, can access sensitive data
         self.rule_of_two = AgentRuleOfTwoConfig(
             can_process_untrusted=True,  # [A] - анализирует любой код
-            can_access_sensitive=True,   # [B] - видит security данные
-            can_change_state=False,      # [C] - НЕ может изменять код
+            can_access_sensitive=True,  # [B] - видит security данные
+            can_change_state=False,  # [C] - НЕ может изменять код
         )
 
         self.cve_database = None
@@ -144,16 +144,20 @@ class SecurityAgent(BaseAgent):
                 matches = re.finditer(pattern, code, re.IGNORECASE | re.MULTILINE)
                 for match in matches:
                     # Find line number
-                    line_num = code[:match.start()].count('\n') + 1
+                    line_num = code[: match.start()].count("\n") + 1
 
-                    vulnerabilities.append({
-                        "type": vuln_type,
-                        "severity": self._get_severity(vuln_type),
-                        "line": line_num,
-                        "code_snippet": match.group(0),
-                        "description": self._get_vulnerability_description(vuln_type),
-                        "recommendation": self._get_recommendation(vuln_type),
-                    })
+                    vulnerabilities.append(
+                        {
+                            "type": vuln_type,
+                            "severity": self._get_severity(vuln_type),
+                            "line": line_num,
+                            "code_snippet": match.group(0),
+                            "description": self._get_vulnerability_description(
+                                vuln_type
+                            ),
+                            "recommendation": self._get_recommendation(vuln_type),
+                        }
+                    )
 
         # Calculate risk score
         risk_score = self._calculate_risk_score(vulnerabilities)
@@ -187,16 +191,18 @@ class SecurityAgent(BaseAgent):
                 cve_results = await self.cve_database.check_vulnerability(name, version)
 
             if cve_results:
-                vulnerable_deps.append({
-                    "name": name,
-                    "version": version,
-                    "vulnerability": "Known CVE",
-                    "cves": [
-                        getattr(cve, "cve_id", str(cve)) for cve in cve_results
-                    ],
-                    "severity": getattr(cve_results[0], "severity", "unknown"),
-                    "recommendation": f"Update {name} to latest version",
-                })
+                vulnerable_deps.append(
+                    {
+                        "name": name,
+                        "version": version,
+                        "vulnerability": "Known CVE",
+                        "cves": [
+                            getattr(cve, "cve_id", str(cve)) for cve in cve_results
+                        ],
+                        "severity": getattr(cve_results[0], "severity", "unknown"),
+                        "recommendation": f"Update {name} to latest version",
+                    }
+                )
 
         return {
             "mode": "offline_dependency_audit",
@@ -228,14 +234,16 @@ class SecurityAgent(BaseAgent):
         for pattern in self.VULNERABILITY_PATTERNS["hardcoded_secrets"]:
             matches = re.finditer(pattern, code, re.IGNORECASE | re.MULTILINE)
             for match in matches:
-                line_num = code[:match.start()].count('\n') + 1
+                line_num = code[: match.start()].count("\n") + 1
 
-                secrets_found.append({
-                    "type": "hardcoded_secret",
-                    "line": line_num,
-                    "severity": "critical",
-                    "recommendation": "Move secrets to environment variables or secret manager",
-                })
+                secrets_found.append(
+                    {
+                        "type": "hardcoded_secret",
+                        "line": line_num,
+                        "severity": "critical",
+                        "recommendation": "Move secrets to environment variables or secret manager",
+                    }
+                )
 
         return {
             "secrets_found": secrets_found,
@@ -244,9 +252,7 @@ class SecurityAgent(BaseAgent):
         }
 
     async def _check_compliance(
-        self,
-        code: str,
-        framework: Optional[str] = None
+        self, code: str, framework: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Check code compliance with security frameworks.
@@ -268,8 +274,7 @@ class SecurityAgent(BaseAgent):
 
         # Map to framework
         compliance_issues = self._map_to_framework(
-            vuln_results["vulnerabilities"],
-            framework
+            vuln_results["vulnerabilities"], framework
         )
 
         return {
@@ -325,8 +330,7 @@ class SecurityAgent(BaseAgent):
         }
 
         total_score = sum(
-            severity_weights.get(v["severity"], 1)
-            for v in vulnerabilities
+            severity_weights.get(v["severity"], 1) for v in vulnerabilities
         )
 
         # Normalize to 0-100
@@ -365,9 +369,7 @@ class SecurityAgent(BaseAgent):
         return False
 
     async def check_cve_database(
-        self,
-        package_name: str,
-        version: str
+        self, package_name: str, version: str
     ) -> Dict[str, Any]:
         """
         Check package against CVE database.
@@ -406,10 +408,7 @@ class SecurityAgent(BaseAgent):
         }
 
     async def run_sast_scan(
-        self,
-        code: str,
-        language: str = "python",
-        tool: str = "semgrep"
+        self, code: str, language: str = "python", tool: str = "semgrep"
     ) -> Dict[str, Any]:
         """
         Run SAST (Static Application Security Testing) scan.
@@ -457,11 +456,7 @@ class SecurityAgent(BaseAgent):
             ],
         }
 
-    async def run_dast_scan(
-        self,
-        target_url: str,
-        tool: str = "zap"
-    ) -> Dict[str, Any]:
+    async def run_dast_scan(self, target_url: str, tool: str = "zap") -> Dict[str, Any]:
         """
         Run DAST (Dynamic Application Security Testing) scan.
 
@@ -503,10 +498,7 @@ class SecurityAgent(BaseAgent):
             ],
         }
 
-    async def detect_prompt_injection(
-        self,
-        user_input: str
-    ) -> Dict[str, Any]:
+    async def detect_prompt_injection(self, user_input: str) -> Dict[str, Any]:
         """
         Detect AI prompt injection attempts.
 
@@ -531,11 +523,9 @@ class SecurityAgent(BaseAgent):
         detections = []
         for pattern in injection_patterns:
             if re.search(pattern, user_input, re.IGNORECASE):
-                detections.append({
-                    "pattern": pattern,
-                    "severity": "high",
-                    "type": "prompt_injection"
-                })
+                detections.append(
+                    {"pattern": pattern, "severity": "high", "type": "prompt_injection"}
+                )
 
         # Use LLM for advanced detection if available
         if self.llm_selector and getattr(self.llm_selector, "available", True):
@@ -555,19 +545,21 @@ class SecurityAgent(BaseAgent):
 
                     Return: {{"is_injection": bool, "confidence": float, "reason": str}}
                     """,
-                    context={"security_check": True}
+                    context={"security_check": True},
                 )
 
                 # Parse LLM response
                 try:
                     llm_result = json.loads(llm_analysis["response"])
                     if llm_result.get("is_injection", False):
-                        detections.append({
-                            "type": "ai_detected_injection",
-                            "confidence": llm_result.get("confidence", 0.0),
-                            "reason": llm_result.get("reason", ""),
-                            "severity": "critical"
-                        })
+                        detections.append(
+                            {
+                                "type": "ai_detected_injection",
+                                "confidence": llm_result.get("confidence", 0.0),
+                                "reason": llm_result.get("reason", ""),
+                                "severity": "critical",
+                            }
+                        )
                 except json.JSONDecodeError:
                     self.logger.warning("Failed to parse LLM security analysis")
             except Exception as e:
@@ -577,13 +569,11 @@ class SecurityAgent(BaseAgent):
             "is_malicious": len(detections) > 0,
             "detections": detections,
             "risk_score": len(detections) * 25,  # 0-100 scale
-            "recommendation": "Block input" if detections else "Allow input"
+            "recommendation": "Block input" if detections else "Allow input",
         }
 
     async def analyze_with_llm(
-        self,
-        code: str,
-        analysis_type: str = "comprehensive"
+        self, code: str, analysis_type: str = "comprehensive"
     ) -> Dict[str, Any]:
         """
         Use LLM for advanced security analysis.
@@ -632,26 +622,21 @@ class SecurityAgent(BaseAgent):
 
                 Format: JSON
                 """,
-                context={"language": "auto-detect"}
+                context={"language": "auto-detect"},
             )
 
             return {
                 "analysis_type": analysis_type,
                 "llm_findings": analysis["response"],
                 "model_used": analysis.get("model", "unknown"),
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.utcnow().isoformat(),
             }
         except Exception as e:
             self.logger.error("LLM security analysis failed: %s", e)
-            return {
-                "status": "analysis_failed",
-                "error": str(e)
-            }
+            return {"status": "analysis_failed", "error": str(e)}
 
     def _map_to_framework(
-        self,
-        vulnerabilities: List[Dict],
-        framework: str
+        self, vulnerabilities: List[Dict], framework: str
     ) -> List[Dict]:
         """Map vulnerabilities to compliance framework"""
         # Deterministic mapping for locally detected issues.

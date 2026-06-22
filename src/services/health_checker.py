@@ -1,4 +1,3 @@
-
 """
 Enhanced Health Checker Service
 Версия: 2.0.0
@@ -15,8 +14,8 @@ import time
 from datetime import datetime
 from typing import Dict
 
-from src.utils.structured_logging import StructuredLogger
 from src.config import settings
+from src.utils.structured_logging import StructuredLogger
 
 logger = StructuredLogger(__name__).logger
 
@@ -108,7 +107,9 @@ class HealthChecker:
         overall = (
             "healthy"
             if not unhealthy
-            else "degraded" if len(unhealthy) < 3 else "unhealthy"
+            else "degraded"
+            if len(unhealthy) < 3
+            else "unhealthy"
         )
 
         return {
@@ -137,7 +138,8 @@ class HealthChecker:
                         }
                     else:
                         logger.debug(
-                            "Provided PostgreSQLSaver exists but not connected, trying to connect...")
+                            "Provided PostgreSQLSaver exists but not connected, trying to connect..."
+                        )
                         if pg_saver.connect() and pg_saver.is_connected():
                             return {
                                 "status": "healthy",
@@ -149,6 +151,7 @@ class HealthChecker:
             # Try to create and connect new PostgreSQLSaver
             try:
                 from src.db.postgres_saver import PostgreSQLSaver
+
                 pg_saver = PostgreSQLSaver()
                 if pg_saver.connect():
                     if pg_saver.is_connected():
@@ -158,16 +161,19 @@ class HealthChecker:
                         }
                     else:
                         logger.debug(
-                            "PostgreSQLSaver.connect() returned True but is_connected() returns False")
+                            "PostgreSQLSaver.connect() returned True but is_connected() returns False"
+                        )
                 else:
                     logger.debug("PostgreSQLSaver.connect() returned False")
             except ValueError as e:
                 # Password not provided - this is expected, continue to direct connection
                 logger.debug(
-                    f"PostgreSQLSaver initialization failed (likely missing password): {e}")
+                    f"PostgreSQLSaver initialization failed (likely missing password): {e}"
+                )
             except Exception as e:
                 logger.debug(
-                    f"PostgreSQLSaver check failed, using direct connection: {e}")
+                    f"PostgreSQLSaver check failed, using direct connection: {e}"
+                )
 
             # Fallback to direct connection
             db_url = settings.database_url
@@ -181,7 +187,8 @@ class HealthChecker:
 
                 if not password:
                     logger.warning(
-                        "PostgreSQL password not provided in environment variables")
+                        "PostgreSQL password not provided in environment variables"
+                    )
                     return {
                         "status": "unhealthy",
                         "error": "PostgreSQL password not provided",
@@ -232,15 +239,26 @@ class HealthChecker:
         except asyncpg.exceptions.InvalidPasswordError as e:
             logger.error(
                 "PostgreSQL authentication failed",
-                extra={"error": str(e), "host": host,
-                                    "database": database, "user": user},
+                extra={
+                    "error": str(e),
+                    "host": host,
+                    "database": database,
+                    "user": user,
+                },
             )
-            return {"status": "unhealthy", "error": "Authentication failed - check password"}
+            return {
+                "status": "unhealthy",
+                "error": "Authentication failed - check password",
+            }
         except asyncpg.exceptions.ConnectionDoesNotExistError as e:
             logger.error(
                 "PostgreSQL connection error",
-                extra={"error": str(e), "host": host, "port": port,
-                                    "database": database},
+                extra={
+                    "error": str(e),
+                    "host": host,
+                    "port": port,
+                    "database": database,
+                },
             )
             return {"status": "unhealthy", "error": f"Connection failed: {str(e)}"}
         except Exception as e:
@@ -261,8 +279,6 @@ class HealthChecker:
     async def check_redis(self) -> Dict:
         """Check Redis connection"""
         try:
-            import redis.asyncio as aioredis
-
             import redis.asyncio as aioredis
 
             redis_url = settings.redis_url
@@ -299,7 +315,10 @@ class HealthChecker:
             neo4j_user = getattr(settings, "neo4j_user", None)
             neo4j_pass = getattr(settings, "neo4j_password", None)
             if not neo4j_uri:
-                return {"status": "degraded", "error": "Neo4j not configured (optional)"}
+                return {
+                    "status": "degraded",
+                    "error": "Neo4j not configured (optional)",
+                }
 
             driver = AsyncGraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_pass))
 
@@ -330,7 +349,10 @@ class HealthChecker:
 
             qdrant_host = getattr(settings, "qdrant_host", None)
             if not qdrant_host:
-                return {"status": "degraded", "error": "Qdrant not configured (optional)"}
+                return {
+                    "status": "degraded",
+                    "error": "Qdrant not configured (optional)",
+                }
             client = QdrantClient(
                 host=qdrant_host,
                 port=getattr(settings, "qdrant_port", 6333) or 6333,

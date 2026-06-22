@@ -41,7 +41,8 @@ class CopilotService:
                 logger.info("Nested completion enabled for CopilotService")
             except Exception as e:
                 logger.warning(
-                    f"Failed to initialize nested completion: {e}", exc_info=True)
+                    f"Failed to initialize nested completion: {e}", exc_info=True
+                )
 
     async def get_completions(
         self,
@@ -72,7 +73,9 @@ class CopilotService:
             logger.error(f"Error in get_completions: {e}", exc_info=True)
             return []
 
-    async def _get_completions_internal(self, code: str, current_line: str, max_suggestions: int) -> List[Dict]:
+    async def _get_completions_internal(
+        self, code: str, current_line: str, max_suggestions: int
+    ) -> List[Dict]:
         """Internal method for getting completions."""
         suggestions = []
         line_lower = current_line.lower()
@@ -120,11 +123,14 @@ class CopilotService:
 
         if "Результат" in current_line:
             suggestions.append(
-                {"text": " = ", "description": "Присвоение значения", "score": 0.8})
+                {"text": " = ", "description": "Присвоение значения", "score": 0.8}
+            )
 
         return suggestions[:max_suggestions]
 
-    async def generate_code(self, prompt: str, code_type: str = "function", timeout: float = 10.0) -> str:
+    async def generate_code(
+        self, prompt: str, code_type: str = "function", timeout: float = 10.0
+    ) -> str:
         """Generate code from description with timeout handling."""
         if not isinstance(prompt, str) or not prompt.strip():
             prompt = "Новая функция"
@@ -137,7 +143,9 @@ class CopilotService:
             timeout = 10.0
 
         try:
-            return await asyncio.wait_for(self._generate_code_internal(prompt, code_type), timeout=timeout)
+            return await asyncio.wait_for(
+                self._generate_code_internal(prompt, code_type), timeout=timeout
+            )
         except asyncio.TimeoutError:
             logger.warning("Timeout in generate_code", extra={"timeout": timeout})
             return self._generate_function_template(prompt)
@@ -235,8 +243,11 @@ class CopilotService:
             function_name = "ТестоваяФункция"
 
         function_name = function_name[:200]
-        clean_name = re.sub(r"[^\\wА-Яа-я]", "",
-                            function_name) if function_name else "ТестоваяФункция"
+        clean_name = (
+            re.sub(r"[^\\wА-Яа-я]", "", function_name)
+            if function_name
+            else "ТестоваяФункция"
+        )
         if not clean_name:
             clean_name = "ТестоваяФункция"
 

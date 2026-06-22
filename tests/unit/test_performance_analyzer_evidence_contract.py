@@ -1,9 +1,6 @@
 import pytest
 
-from src.ai.agents.performance_analyzer import (
-    PERFORMANCE_CONTRACT,
-    PerformanceAnalyzer,
-)
+from src.ai.agents.performance_analyzer import PERFORMANCE_CONTRACT, PerformanceAnalyzer
 
 
 @pytest.mark.asyncio
@@ -61,7 +58,10 @@ async def test_performance_analyzer_uses_supplied_metrics_only():
     assert result["apdex_score"] == 0.5
     assert result["performance_grade"] == "Poor"
     assert result["scalability_assessment"]["current_capacity"] == "120 users"
-    assert result["scalability_assessment"]["predicted_capacity"] == "360 users (12 months)"
+    assert (
+        result["scalability_assessment"]["predicted_capacity"]
+        == "360 users (12 months)"
+    )
 
     bottleneck_locations = {item["location"] for item in result["bottlenecks"]}
     assert "Report.Inventory" in bottleneck_locations
@@ -111,10 +111,11 @@ async def test_performance_analyzer_normalizes_string_metrics():
 
     assert result["apdex_score"] == 0.75
     assert result["scalability_assessment"]["current_capacity"] == "10 users"
-    assert result["scalability_assessment"]["predicted_capacity"] == "25 users (12 months)"
+    assert (
+        result["scalability_assessment"]["predicted_capacity"] == "25 users (12 months)"
+    )
     assert any(
-        item["location"] == "Report.StringMetrics"
-        for item in result["bottlenecks"]
+        item["location"] == "Report.StringMetrics" for item in result["bottlenecks"]
     )
     assert any(item["type"] == "high_memory" for item in result["bottlenecks"])
     assert not any(item["type"] == "high_cpu" for item in result["bottlenecks"])

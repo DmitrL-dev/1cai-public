@@ -11,7 +11,6 @@ from src.services.rentgen.open_first_path import (
     open_first_path_markdown_lines,
 )
 
-
 ARCHIVE_ACCEPTANCE_RECEIPT_MD = "archive-acceptance-receipt.md"
 
 
@@ -37,7 +36,9 @@ def _score(report: dict[str, Any] | None, default: int = 0) -> int:
 def _status(report: dict[str, Any] | None, default: str = "watch") -> str:
     if not report:
         return default
-    return str((report.get("decision") or {}).get("status") or report.get("status") or default)
+    return str(
+        (report.get("decision") or {}).get("status") or report.get("status") or default
+    )
 
 
 def _money(value: Any, currency: str) -> str:
@@ -48,15 +49,22 @@ def _route_set(items: list[dict[str, Any]], key: str = "route") -> set[str]:
     return {str(item.get(key) or "") for item in items if item.get(key)}
 
 
-def _offer_by_id(commercial_offer_studio: dict[str, Any], offer_id: str) -> dict[str, Any]:
+def _offer_by_id(
+    commercial_offer_studio: dict[str, Any], offer_id: str
+) -> dict[str, Any]:
     for offer in commercial_offer_studio.get("offers", []):
         if offer.get("id") == offer_id:
             return offer
     return {}
 
 
-def _ensure_archive_receipt_requirement(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    if any(str(item.get("artifact") or "") == "Archive Acceptance Receipt" for item in items):
+def _ensure_archive_receipt_requirement(
+    items: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    if any(
+        str(item.get("artifact") or "") == "Archive Acceptance Receipt"
+        for item in items
+    ):
         return items
     return [
         *items,
@@ -97,8 +105,13 @@ def _value_anchor(
     commercial_summary = commercial_offer_studio.get("summary") or {}
     business_summary = business_case.get("summary") or {}
     assumptions = business_case.get("assumptions") or {}
-    value = _int(commercial_summary.get("first_year_visible_value") or business_summary.get("first_year_visible_value"))
-    currency = str(commercial_summary.get("currency") or assumptions.get("currency") or "RUB")
+    value = _int(
+        commercial_summary.get("first_year_visible_value")
+        or business_summary.get("first_year_visible_value")
+    )
+    currency = str(
+        commercial_summary.get("currency") or assumptions.get("currency") or "RUB"
+    )
     ai_year = _int(business_summary.get("ai_subscription_year"))
     return value, currency, ai_year
 
@@ -111,16 +124,49 @@ def _subscription_escape(
     currency: str,
     ai_year: int,
 ) -> dict[str, Any]:
-    dossier_escape = ((commercial_offer_studio.get("procurement_dossier") or {}).get("subscription_escape") or {})
-    close_order = ((commercial_offer_studio.get("close_packet") or {}).get("one_page_order") or {})
+    dossier_escape = (commercial_offer_studio.get("procurement_dossier") or {}).get(
+        "subscription_escape"
+    ) or {}
+    close_order = (commercial_offer_studio.get("close_packet") or {}).get(
+        "one_page_order"
+    ) or {}
     business_escape = business_case.get("subscription_escape_plan") or {}
     return {
-        "annual_ai_rent": str(dossier_escape.get("annual_ai_rent") or close_order.get("ai_rent_baseline") or (_money(ai_year, currency) if ai_year else "not provided")),
-        "three_year_ai_rent": str(dossier_escape.get("three_year_ai_rent") or close_order.get("three_year_ai_rent") or (_money(ai_year * 3, currency) if ai_year else "not provided")),
-        "local_value_anchor": str(dossier_escape.get("local_value_anchor") or close_order.get("value_anchor") or _money(value, currency)),
-        "local_license_anchor": str(dossier_escape.get("local_license_anchor") or close_order.get("local_license_anchor") or (_money(_int(business_escape.get("local_license_anchor")), currency) if business_escape.get("local_license_anchor") else "not provided")),
-        "break_even": str(close_order.get("break_even") or (f"{_int(dossier_escape.get('break_even_months') or business_escape.get('break_even_months'))} months by visible value")),
-        "decision_line": str(dossier_escape.get("decision_line") or business_escape.get("decision_line") or "Core product value stays local; AI credits remain optional."),
+        "annual_ai_rent": str(
+            dossier_escape.get("annual_ai_rent")
+            or close_order.get("ai_rent_baseline")
+            or (_money(ai_year, currency) if ai_year else "not provided")
+        ),
+        "three_year_ai_rent": str(
+            dossier_escape.get("three_year_ai_rent")
+            or close_order.get("three_year_ai_rent")
+            or (_money(ai_year * 3, currency) if ai_year else "not provided")
+        ),
+        "local_value_anchor": str(
+            dossier_escape.get("local_value_anchor")
+            or close_order.get("value_anchor")
+            or _money(value, currency)
+        ),
+        "local_license_anchor": str(
+            dossier_escape.get("local_license_anchor")
+            or close_order.get("local_license_anchor")
+            or (
+                _money(_int(business_escape.get("local_license_anchor")), currency)
+                if business_escape.get("local_license_anchor")
+                else "not provided"
+            )
+        ),
+        "break_even": str(
+            close_order.get("break_even")
+            or (
+                f"{_int(dossier_escape.get('break_even_months') or business_escape.get('break_even_months'))} months by visible value"
+            )
+        ),
+        "decision_line": str(
+            dossier_escape.get("decision_line")
+            or business_escape.get("decision_line")
+            or "Core product value stays local; AI credits remain optional."
+        ),
     }
 
 
@@ -156,9 +202,16 @@ def _board_snapshot(
         "local_license_anchor": escape["local_license_anchor"],
         "break_even": escape["break_even"],
         "subscription_escape_line": escape["decision_line"],
-        "recommended_motion": str(recommended_offer.get("title") or "Select proof sprint"),
-        "commercial_frame": str(recommended_offer.get("commercial_frame") or "fixed next step"),
-        "default_route": str((buyer_concierge.get("default_next_action") or {}).get("route") or "/buyer-concierge"),
+        "recommended_motion": str(
+            recommended_offer.get("title") or "Select proof sprint"
+        ),
+        "commercial_frame": str(
+            recommended_offer.get("commercial_frame") or "fixed next step"
+        ),
+        "default_route": str(
+            (buyer_concierge.get("default_next_action") or {}).get("route")
+            or "/buyer-concierge"
+        ),
         "trust_position": (
             f"{_status(enterprise_trust_center)} / {_score(enterprise_trust_center)}; "
             f"failed controls: {_int(trust_summary.get('failed_controls'))}"
@@ -268,10 +321,21 @@ def _committee_map(
             {
                 "role": role,
                 "first_question": str(card.get("first_question") or ""),
-                "must_believe": str(card.get("proof") or closer.get("buy_trigger") or ""),
-                "buy_trigger": str(card.get("buy_trigger") or closer.get("buy_trigger") or ""),
-                "proof_route": str(card.get("start_route") or closer.get("proof_route") or "/buyer-concierge"),
-                "close_line": str(closer.get("close_line") or "Name the first proof they want repeated on customer data."),
+                "must_believe": str(
+                    card.get("proof") or closer.get("buy_trigger") or ""
+                ),
+                "buy_trigger": str(
+                    card.get("buy_trigger") or closer.get("buy_trigger") or ""
+                ),
+                "proof_route": str(
+                    card.get("start_route")
+                    or closer.get("proof_route")
+                    or "/buyer-concierge"
+                ),
+                "close_line": str(
+                    closer.get("close_line")
+                    or "Name the first proof they want repeated on customer data."
+                ),
             }
         )
     return committee
@@ -290,7 +354,9 @@ def _risk_to_decision(
                 "owner": str(item.get("owner") or "lead"),
                 "risk": str(item.get("risk") or "Trust risk"),
                 "route": str(item.get("route") or "/enterprise-trust-center"),
-                "decision": str(item.get("next_action") or "Assign owner before rollout."),
+                "decision": str(
+                    item.get("next_action") or "Assign owner before rollout."
+                ),
             }
         )
     for item in commercial_offer_studio.get("deal_risks", [])[:6]:
@@ -300,7 +366,9 @@ def _risk_to_decision(
                 "owner": "seller / buyer owner",
                 "risk": str(item.get("risk") or "Deal risk"),
                 "route": str(item.get("route") or "/commercial-offer-studio"),
-                "decision": str(item.get("mitigation") or "Name mitigation in proposal."),
+                "decision": str(
+                    item.get("mitigation") or "Name mitigation in proposal."
+                ),
             }
         )
     close_packet = commercial_offer_studio.get("close_packet") or {}
@@ -308,11 +376,16 @@ def _risk_to_decision(
         mode = str(close_packet.get("close_mode") or "")
         risks.append(
             {
-                "severity": "high" if mode == "sell_hardening_before_rollout" else "medium",
+                "severity": "high"
+                if mode == "sell_hardening_before_rollout"
+                else "medium",
                 "owner": "director / security / architect",
                 "risk": "Board close is not ready without explicit scope.",
                 "route": "/commercial-offer-studio",
-                "decision": str(close_packet.get("primary_ask") or "Convert the blocker into paid proof, hardening or pilot scope."),
+                "decision": str(
+                    close_packet.get("primary_ask")
+                    or "Convert the blocker into paid proof, hardening or pilot scope."
+                ),
             }
         )
     if not risks:
@@ -407,11 +480,21 @@ def _board_room_bridge(
     primary = dict(brief.get("primary_motion") or {})
     if not primary:
         primary = {
-            "label": str(order.get("recommended_purchase") or board_snapshot.get("recommended_motion") or "Approve paid next step"),
+            "label": str(
+                order.get("recommended_purchase")
+                or board_snapshot.get("recommended_motion")
+                or "Approve paid next step"
+            ),
             "route": str(order.get("route") or "/commercial-offer-studio"),
             "status": "ready" if board_close_packet.get("ready_to_close") else "watch",
-            "ask": str(board_close_packet.get("primary_ask") or "Approve the selected paid next step with proof attached."),
-            "reason": str(board_snapshot.get("why_now") or "Board has value, trust and evidence in one packet."),
+            "ask": str(
+                board_close_packet.get("primary_ask")
+                or "Approve the selected paid next step with proof attached."
+            ),
+            "reason": str(
+                board_snapshot.get("why_now")
+                or "Board has value, trust and evidence in one packet."
+            ),
         }
     role_cards = list(brief.get("role_cards") or [])
     if not role_cards:
@@ -433,7 +516,9 @@ def _board_room_bridge(
                 "id": "evidence-bundle",
                 "title": "Forwardable evidence",
                 "route": "/evidence-bundle",
-                "status": "ready" if board_close_packet.get("ready_to_close") else "watch",
+                "status": "ready"
+                if board_close_packet.get("ready_to_close")
+                else "watch",
                 "signal": "Board Pack, Offer Studio, Trust Center and governance proof can be forwarded.",
                 "file": "OPEN_FIRST.md",
             },
@@ -449,10 +534,30 @@ def _board_room_bridge(
     meeting_flow = list(brief.get("meeting_flow") or [])
     if not meeting_flow:
         meeting_flow = [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Name who is in the committee."},
-            {"step": 2, "label": "Prove", "route": "/killer-demo", "line": "Show the proof packet and objections."},
-            {"step": 3, "label": "Ask", "route": str(primary.get("route") or "/commercial-offer-studio"), "line": str(primary.get("ask") or "")},
-            {"step": 4, "label": "Forward", "route": "/evidence-bundle", "line": "Attach buyer brief, board pack and proof archive."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Name who is in the committee.",
+            },
+            {
+                "step": 2,
+                "label": "Prove",
+                "route": "/killer-demo",
+                "line": "Show the proof packet and objections.",
+            },
+            {
+                "step": 3,
+                "label": "Ask",
+                "route": str(primary.get("route") or "/commercial-offer-studio"),
+                "line": str(primary.get("ask") or ""),
+            },
+            {
+                "step": 4,
+                "label": "Forward",
+                "route": "/evidence-bundle",
+                "line": "Attach buyer brief, board pack and proof archive.",
+            },
         ]
     open_first_path = build_open_first_path(
         existing_path=brief.get("open_first_path"),
@@ -463,13 +568,29 @@ def _board_room_bridge(
         orient_title="Board Pack",
         orient_route="/board-pack",
         orient_line="Name who is in the committee.",
-        orient_status=str(primary.get("status") or ("ready" if board_close_packet.get("ready_to_close") else "watch")),
+        orient_status=str(
+            primary.get("status")
+            or ("ready" if board_close_packet.get("ready_to_close") else "watch")
+        ),
         prove_line="Show the proof packet and objections.",
-        close_title=str(order.get("recommended_purchase") or board_snapshot.get("recommended_motion") or "Approve paid next step"),
-        close_route=str(primary.get("route") or order.get("route") or "/commercial-offer-studio"),
-        close_line=str(primary.get("ask") or board_close_packet.get("primary_ask") or "Approve the selected paid next step."),
+        close_title=str(
+            order.get("recommended_purchase")
+            or board_snapshot.get("recommended_motion")
+            or "Approve paid next step"
+        ),
+        close_route=str(
+            primary.get("route") or order.get("route") or "/commercial-offer-studio"
+        ),
+        close_line=str(
+            primary.get("ask")
+            or board_close_packet.get("primary_ask")
+            or "Approve the selected paid next step."
+        ),
         close_file="rentgen-board-pack.md",
-        close_status=str(primary.get("status") or ("ready" if board_close_packet.get("ready_to_close") else "watch")),
+        close_status=str(
+            primary.get("status")
+            or ("ready" if board_close_packet.get("ready_to_close") else "watch")
+        ),
         verify_line="Attach buyer brief, board pack and proof archive.",
     )
     routes = sorted(
@@ -484,7 +605,11 @@ def _board_room_bridge(
     )
     fallback_score = 84 if board_close_packet.get("ready_to_close") else 70
     return {
-        "status": str(brief.get("purchase_status") or primary.get("status") or ("ready" if board_close_packet.get("ready_to_close") else "watch")),
+        "status": str(
+            brief.get("purchase_status")
+            or primary.get("status")
+            or ("ready" if board_close_packet.get("ready_to_close") else "watch")
+        ),
         "score": _int(brief.get("score"), fallback_score),
         "source": str(brief.get("source") or "board-pack-derived"),
         "room_line": str(
@@ -492,17 +617,37 @@ def _board_room_bridge(
             or f"{primary.get('label', board_snapshot.get('recommended_motion', 'Approve paid next step'))}: {primary.get('ask', board_close_packet.get('primary_ask', 'Attach proof and approve the motion.'))}"
         ),
         "primary_motion": {
-            "label": str(primary.get("label") or board_snapshot.get("recommended_motion") or "Approve paid next step"),
-            "route": str(primary.get("route") or order.get("route") or "/commercial-offer-studio"),
-            "status": str(primary.get("status") or ("ready" if board_close_packet.get("ready_to_close") else "watch")),
-            "ask": str(primary.get("ask") or board_close_packet.get("primary_ask") or "Approve the selected paid next step."),
+            "label": str(
+                primary.get("label")
+                or board_snapshot.get("recommended_motion")
+                or "Approve paid next step"
+            ),
+            "route": str(
+                primary.get("route") or order.get("route") or "/commercial-offer-studio"
+            ),
+            "status": str(
+                primary.get("status")
+                or ("ready" if board_close_packet.get("ready_to_close") else "watch")
+            ),
+            "ask": str(
+                primary.get("ask")
+                or board_close_packet.get("primary_ask")
+                or "Approve the selected paid next step."
+            ),
             "reason": str(primary.get("reason") or board_snapshot.get("why_now") or ""),
         },
         "role_cards": role_cards[:5],
         "proof_readiness": proof_readiness[:4],
         "meeting_flow": meeting_flow[:4],
         "open_first_path": open_first_path[:4],
-        "files": ["buyer-brief.md", "buyer-pulse.md", OPEN_FIRST_PATH_FILE, "rentgen-board-pack.md", "commercial-offer-studio.md", "OPEN_FIRST.md"],
+        "files": [
+            "buyer-brief.md",
+            "buyer-pulse.md",
+            OPEN_FIRST_PATH_FILE,
+            "rentgen-board-pack.md",
+            "commercial-offer-studio.md",
+            "OPEN_FIRST.md",
+        ],
         "routes": routes,
         "board_question": (
             "Can we approve the selected local-license/proof motion with these owners and artifacts?"
@@ -590,23 +735,53 @@ def _board_close_packet(
         ]
     if not evidence_requirements:
         evidence_requirements = [
-            {"artifact": "Evidence Bundle ZIP", "route": "/evidence-bundle", "why": "Forwardable proof with SHA-256 manifest."},
+            {
+                "artifact": "Evidence Bundle ZIP",
+                "route": "/evidence-bundle",
+                "why": "Forwardable proof with SHA-256 manifest.",
+            },
             {
                 "artifact": "Archive Acceptance Receipt",
                 "route": "/evidence-bundle",
                 "why": f"`{ARCHIVE_ACCEPTANCE_RECEIPT_MD}` records Evidence Bundle and Killer Demo archive hashes.",
             },
-            {"artifact": "Governance proof", "route": "/approvals", "why": "Approval records, scope constraints and audit trail."},
-            {"artifact": "Audit verify", "route": "/audit", "why": "Tamper-evident hash-chain status."},
-            {"artifact": "Business Case", "route": "/business-case", "why": "Value anchor and AI-rent displacement."},
+            {
+                "artifact": "Governance proof",
+                "route": "/approvals",
+                "why": "Approval records, scope constraints and audit trail.",
+            },
+            {
+                "artifact": "Audit verify",
+                "route": "/audit",
+                "why": "Tamper-evident hash-chain status.",
+            },
+            {
+                "artifact": "Business Case",
+                "route": "/business-case",
+                "why": "Value anchor and AI-rent displacement.",
+            },
         ]
     else:
-        evidence_requirements = _ensure_archive_receipt_requirement(evidence_requirements)
+        evidence_requirements = _ensure_archive_receipt_requirement(
+            evidence_requirements
+        )
     if not buyer_commitments:
         buyer_commitments = [
-            {"role": "finance", "commitment": "Accept local value anchor and separated optional AI credits.", "route": "/business-case"},
-            {"role": "security", "commitment": "Confirm approval/audit evidence and trust caveats.", "route": "/approvals"},
-            {"role": "sponsor", "commitment": "Approve the paid next step or explicit hardening scope.", "route": "/commercial-offer-studio"},
+            {
+                "role": "finance",
+                "commitment": "Accept local value anchor and separated optional AI credits.",
+                "route": "/business-case",
+            },
+            {
+                "role": "security",
+                "commitment": "Confirm approval/audit evidence and trust caveats.",
+                "route": "/approvals",
+            },
+            {
+                "role": "sponsor",
+                "commitment": "Approve the paid next step or explicit hardening scope.",
+                "route": "/commercial-offer-studio",
+            },
         ]
     if not close_script:
         close_script = [
@@ -619,24 +794,61 @@ def _board_close_packet(
         _route_set(checkout)
         | _route_set(evidence_requirements)
         | _route_set(buyer_commitments)
-        | {str(one_page_order.get("route") or recommended_offer.get("route") or "/commercial-offer-studio")}
+        | {
+            str(
+                one_page_order.get("route")
+                or recommended_offer.get("route")
+                or "/commercial-offer-studio"
+            )
+        }
     )
-    ready_to_close = bool(close_packet.get("ready_to_close", _status(commercial_offer_studio) == "ready"))
+    ready_to_close = bool(
+        close_packet.get("ready_to_close", _status(commercial_offer_studio) == "ready")
+    )
     return {
         "ready_to_close": ready_to_close,
         "close_mode": str(close_packet.get("close_mode") or "open_enterprise_purchase"),
-        "primary_ask": str(close_packet.get("primary_ask") or "Approve the recommended paid next step with the proof packet attached."),
+        "primary_ask": str(
+            close_packet.get("primary_ask")
+            or "Approve the recommended paid next step with the proof packet attached."
+        ),
         "one_page_order": {
-            "product": str(one_page_order.get("product") or "1C Rentgen local evidence control plane"),
-            "recommended_purchase": str(one_page_order.get("recommended_purchase") or recommended_offer.get("title") or "Selected paid next step"),
-            "commercial_frame": str(one_page_order.get("commercial_frame") or recommended_offer.get("commercial_frame") or "fixed paid next step"),
+            "product": str(
+                one_page_order.get("product")
+                or "1C Rentgen local evidence control plane"
+            ),
+            "recommended_purchase": str(
+                one_page_order.get("recommended_purchase")
+                or recommended_offer.get("title")
+                or "Selected paid next step"
+            ),
+            "commercial_frame": str(
+                one_page_order.get("commercial_frame")
+                or recommended_offer.get("commercial_frame")
+                or "fixed paid next step"
+            ),
             "value_anchor": str(one_page_order.get("value_anchor") or "Business Case"),
-            "ai_rent_baseline": str(one_page_order.get("ai_rent_baseline") or "optional AI credits"),
-            "three_year_ai_rent": str(one_page_order.get("three_year_ai_rent") or "not provided"),
-            "local_license_anchor": str(one_page_order.get("local_license_anchor") or "Business Case"),
-            "break_even": str(one_page_order.get("break_even") or "review Business Case"),
-            "first_invoice_trigger": str(one_page_order.get("first_invoice_trigger") or "Board names owner, scope, date and accepted proof artifacts."),
-            "route": str(one_page_order.get("route") or recommended_offer.get("route") or "/commercial-offer-studio"),
+            "ai_rent_baseline": str(
+                one_page_order.get("ai_rent_baseline") or "optional AI credits"
+            ),
+            "three_year_ai_rent": str(
+                one_page_order.get("three_year_ai_rent") or "not provided"
+            ),
+            "local_license_anchor": str(
+                one_page_order.get("local_license_anchor") or "Business Case"
+            ),
+            "break_even": str(
+                one_page_order.get("break_even") or "review Business Case"
+            ),
+            "first_invoice_trigger": str(
+                one_page_order.get("first_invoice_trigger")
+                or "Board names owner, scope, date and accepted proof artifacts."
+            ),
+            "route": str(
+                one_page_order.get("route")
+                or recommended_offer.get("route")
+                or "/commercial-offer-studio"
+            ),
         },
         "checkout": checkout,
         "evidence_requirements": evidence_requirements,
@@ -718,13 +930,41 @@ def _board_room_script(recommended_offer: dict[str, Any]) -> list[dict[str, Any]
 
 def _exports() -> list[dict[str, str]]:
     return [
-        {"title": "Board Pack markdown", "filename": "rentgen-board-pack.md", "route": "/board-pack"},
-        {"title": "Buyer Concierge markdown", "filename": "rentgen-buyer-concierge.md", "route": "/buyer-concierge"},
-        {"title": "Commercial Offer Studio markdown", "filename": "rentgen-commercial-offer-studio.md", "route": "/commercial-offer-studio"},
-        {"title": "Enterprise Trust Center markdown", "filename": "rentgen-enterprise-trust-center.md", "route": "/enterprise-trust-center"},
-        {"title": "Governance Proof markdown", "filename": "governance-proof.md", "route": "/approvals"},
-        {"title": "Audit verification/export", "filename": "rentgen-audit-log.jsonl", "route": "/audit"},
-        {"title": "Evidence Bundle manifest", "filename": "evidence-bundle-manifest.json", "route": "/evidence-bundle"},
+        {
+            "title": "Board Pack markdown",
+            "filename": "rentgen-board-pack.md",
+            "route": "/board-pack",
+        },
+        {
+            "title": "Buyer Concierge markdown",
+            "filename": "rentgen-buyer-concierge.md",
+            "route": "/buyer-concierge",
+        },
+        {
+            "title": "Commercial Offer Studio markdown",
+            "filename": "rentgen-commercial-offer-studio.md",
+            "route": "/commercial-offer-studio",
+        },
+        {
+            "title": "Enterprise Trust Center markdown",
+            "filename": "rentgen-enterprise-trust-center.md",
+            "route": "/enterprise-trust-center",
+        },
+        {
+            "title": "Governance Proof markdown",
+            "filename": "governance-proof.md",
+            "route": "/approvals",
+        },
+        {
+            "title": "Audit verification/export",
+            "filename": "rentgen-audit-log.jsonl",
+            "route": "/audit",
+        },
+        {
+            "title": "Evidence Bundle manifest",
+            "filename": "evidence-bundle-manifest.json",
+            "route": "/evidence-bundle",
+        },
     ]
 
 
@@ -765,34 +1005,50 @@ def _markdown(report: dict[str, Any]) -> str:
         f"- Board question: {board_room.get('board_question', '')}",
         f"- Files: {', '.join(board_room.get('files', []))}",
     ]
-    lines.extend(open_first_path_markdown_lines(board_room.get("open_first_path"), default_route="/board-pack"))
+    lines.extend(
+        open_first_path_markdown_lines(
+            board_room.get("open_first_path"), default_route="/board-pack"
+        )
+    )
     lines.extend(["", "## Decision Brief", ""])
     for item in report["decision_brief"]:
         lines.append(f"- **{item['question']}** {item['answer']} (`{item['route']}`)")
     lines.extend(["", "## Committee Map", ""])
     for item in report["committee_map"]:
-        lines.append(f"- **{item['role']}** (`{item['proof_route']}`): {item['must_believe']} Close: {item['close_line']}")
+        lines.append(
+            f"- **{item['role']}** (`{item['proof_route']}`): {item['must_believe']} Close: {item['close_line']}"
+        )
     lines.extend(["", "## Risks To Decision", ""])
     for item in report["risk_to_decision"]:
-        lines.append(f"- **{item['severity']}** {item['owner']} (`{item['route']}`): {item['risk']} Decision: {item['decision']}")
+        lines.append(
+            f"- **{item['severity']}** {item['owner']} (`{item['route']}`): {item['risk']} Decision: {item['decision']}"
+        )
     close_packet = report.get("board_close_packet") or {}
     if close_packet:
         order = close_packet.get("one_page_order") or {}
         lines.extend(["", "## Board Close Packet", ""])
-        lines.append(f"- Ready to close: **{bool(close_packet.get('ready_to_close'))}**")
+        lines.append(
+            f"- Ready to close: **{bool(close_packet.get('ready_to_close'))}**"
+        )
         lines.append(f"- Mode: **{close_packet.get('close_mode', 'unknown')}**")
         lines.append(f"- Primary ask: {close_packet.get('primary_ask', '')}")
-        lines.append(f"- Recommended purchase: **{order.get('recommended_purchase', 'n/a')}** (`{order.get('route', '/commercial-offer-studio')}`)")
+        lines.append(
+            f"- Recommended purchase: **{order.get('recommended_purchase', 'n/a')}** (`{order.get('route', '/commercial-offer-studio')}`)"
+        )
         lines.append(f"- Board line: {close_packet.get('board_line', '')}")
         for item in close_packet.get("checkout", []):
-            lines.append(f"- Checkout `{item.get('route', '/board-pack')}`: {item.get('gate', '')} - {item.get('evidence', '')}")
+            lines.append(
+                f"- Checkout `{item.get('route', '/board-pack')}`: {item.get('gate', '')} - {item.get('evidence', '')}"
+            )
         for item in close_packet.get("evidence_requirements", []):
             lines.append(
                 f"- Evidence `{item.get('route', '/board-pack')}`: {item.get('artifact', '')} - {item.get('why', '')}"
             )
     lines.extend(["", "## Next 72 Hours", ""])
     for item in report["next_72_hours"]:
-        lines.append(f"- **{item['window']}** / {item['owner']} (`{item['route']}`): {item['action']} -> {item['output']}")
+        lines.append(
+            f"- **{item['window']}** / {item['owner']} (`{item['route']}`): {item['action']} -> {item['output']}"
+        )
     lines.extend(["", "## Caveats", ""])
     lines.extend(f"- {item}" for item in report["caveats"])
     return "\n".join(lines)
@@ -885,7 +1141,9 @@ def build_board_pack(
         _status(business_case),
         _status(productization),
     }
-    severe_risks = [item for item in risk_to_decision if item["severity"] in {"high", "critical"}]
+    severe_risks = [
+        item for item in risk_to_decision if item["severity"] in {"high", "critical"}
+    ]
     status = _board_status(
         score=score,
         statuses=statuses,

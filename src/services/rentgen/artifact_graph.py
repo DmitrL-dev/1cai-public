@@ -11,7 +11,6 @@ from typing import Any
 
 from src.services.audit_log import record_event
 
-
 ROOT = Path(__file__).resolve().parents[3]
 STORE_PATH = ROOT / "data" / "artifact_graph.json"
 
@@ -117,7 +116,9 @@ def _audit_path(path: Path | None = None) -> Path:
     return (path or STORE_PATH).parent / "audit_log.ndjson"
 
 
-def _audit(action: str, *, target: str, metadata: dict[str, Any], path: Path | None = None) -> None:
+def _audit(
+    action: str, *, target: str, metadata: dict[str, Any], path: Path | None = None
+) -> None:
     try:
         record_event(
             action=action,
@@ -130,7 +131,9 @@ def _audit(action: str, *, target: str, metadata: dict[str, Any], path: Path | N
         return
 
 
-def _artifact_id(artifact_type: str, title: str, created_at: str, external_id: str | None = None) -> str:
+def _artifact_id(
+    artifact_type: str, title: str, created_at: str, external_id: str | None = None
+) -> str:
     if external_id:
         return _clean(external_id, limit=120)
     source = "\n".join([artifact_type, title, created_at])
@@ -167,13 +170,23 @@ def _normalize_artifact(
     existing: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     now = _now()
-    artifact_type = _validate_artifact_type(data.get("type") or existing.get("type") if existing else data.get("type"))
-    title = _clean(data.get("title") if data.get("title") is not None else (existing or {}).get("title"), limit=240)
+    artifact_type = _validate_artifact_type(
+        data.get("type") or existing.get("type") if existing else data.get("type")
+    )
+    title = _clean(
+        data.get("title")
+        if data.get("title") is not None
+        else (existing or {}).get("title"),
+        limit=240,
+    )
     if not title:
         raise ValueError("Artifact title is required")
 
     created_at = str((existing or {}).get("created_at") or now)
-    artifact_id = str((existing or {}).get("id") or _artifact_id(artifact_type, title, created_at, data.get("id")))
+    artifact_id = str(
+        (existing or {}).get("id")
+        or _artifact_id(artifact_type, title, created_at, data.get("id"))
+    )
     version = int((existing or {}).get("version") or 0) + (1 if existing else 0)
 
     return {
@@ -181,19 +194,47 @@ def _normalize_artifact(
         "type": artifact_type,
         "title": title,
         "description": _clean(
-            data.get("description") if data.get("description") is not None else (existing or {}).get("description"),
+            data.get("description")
+            if data.get("description") is not None
+            else (existing or {}).get("description"),
             limit=4000,
         ),
-        "status": _clean(data.get("status") if data.get("status") is not None else (existing or {}).get("status"), limit=80)
+        "status": _clean(
+            data.get("status")
+            if data.get("status") is not None
+            else (existing or {}).get("status"),
+            limit=80,
+        )
         or "draft",
-        "owner": _clean(data.get("owner") if data.get("owner") is not None else (existing or {}).get("owner"), limit=160),
-        "risk": _clean(data.get("risk") if data.get("risk") is not None else (existing or {}).get("risk"), limit=40),
-        "priority": _clean(
-            data.get("priority") if data.get("priority") is not None else (existing or {}).get("priority"),
+        "owner": _clean(
+            data.get("owner")
+            if data.get("owner") is not None
+            else (existing or {}).get("owner"),
+            limit=160,
+        ),
+        "risk": _clean(
+            data.get("risk")
+            if data.get("risk") is not None
+            else (existing or {}).get("risk"),
             limit=40,
         ),
-        "tags": _safe_list(data.get("tags") if data.get("tags") is not None else (existing or {}).get("tags")),
-        "source": _clean(data.get("source") if data.get("source") is not None else (existing or {}).get("source"), limit=240),
+        "priority": _clean(
+            data.get("priority")
+            if data.get("priority") is not None
+            else (existing or {}).get("priority"),
+            limit=40,
+        ),
+        "tags": _safe_list(
+            data.get("tags")
+            if data.get("tags") is not None
+            else (existing or {}).get("tags")
+        ),
+        "source": _clean(
+            data.get("source")
+            if data.get("source") is not None
+            else (existing or {}).get("source"),
+            limit=240,
+        ),
         "version": max(1, version),
         "attributes": {
             **_safe_dict((existing or {}).get("attributes")),
@@ -204,14 +245,19 @@ def _normalize_artifact(
     }
 
 
-def create_artifact(data: dict[str, Any], *, path: Path | None = None) -> dict[str, Any]:
+def create_artifact(
+    data: dict[str, Any], *, path: Path | None = None
+) -> dict[str, Any]:
     """Create or upsert an artifact in the local graph store."""
 
     payload = _load(path)
     requested_id = _clean(data.get("id"), limit=120)
     existing = None
     if requested_id:
-        existing = next((item for item in payload["artifacts"] if item.get("id") == requested_id), None)
+        existing = next(
+            (item for item in payload["artifacts"] if item.get("id") == requested_id),
+            None,
+        )
     artifact = _normalize_artifact(data, existing=existing)
     items = [item for item in payload["artifacts"] if item.get("id") != artifact["id"]]
     items.insert(0, artifact)
@@ -220,33 +266,47 @@ def create_artifact(data: dict[str, Any], *, path: Path | None = None) -> dict[s
     _audit(
         "artifact.upsert",
         target=artifact["id"],
-        metadata={"type": artifact["type"], "title": artifact["title"], "version": artifact["version"]},
+        metadata={
+            "type": artifact["type"],
+            "title": artifact["title"],
+            "version": artifact["version"],
+        },
         path=path,
     )
     return artifact
 
 
-def update_artifact(artifact_id: str, patch: dict[str, Any], *, path: Path | None = None) -> dict[str, Any]:
+def update_artifact(
+    artifact_id: str, patch: dict[str, Any], *, path: Path | None = None
+) -> dict[str, Any]:
     """Patch an artifact while preserving id, creation time and unknown attributes."""
 
     payload = _load(path)
     for index, item in enumerate(payload["artifacts"]):
         if item.get("id") != artifact_id:
             continue
-        updated = _normalize_artifact({**item, **patch, "id": artifact_id}, existing=item)
+        updated = _normalize_artifact(
+            {**item, **patch, "id": artifact_id}, existing=item
+        )
         payload["artifacts"][index] = updated
         _write(payload, path)
         _audit(
             "artifact.update",
             target=artifact_id,
-            metadata={"type": updated["type"], "title": updated["title"], "version": updated["version"]},
+            metadata={
+                "type": updated["type"],
+                "title": updated["title"],
+                "version": updated["version"],
+            },
             path=path,
         )
         return updated
     raise KeyError(f"Artifact not found: {artifact_id}")
 
 
-def get_artifact(artifact_id: str, *, path: Path | None = None) -> dict[str, Any] | None:
+def get_artifact(
+    artifact_id: str, *, path: Path | None = None
+) -> dict[str, Any] | None:
     """Return one artifact by id."""
 
     for item in _load(path)["artifacts"]:
@@ -273,13 +333,16 @@ def list_artifacts(
         items = [item for item in items if item.get("status") == status]
     if owner:
         folded = owner.casefold()
-        items = [item for item in items if folded in str(item.get("owner") or "").casefold()]
+        items = [
+            item for item in items if folded in str(item.get("owner") or "").casefold()
+        ]
     if query:
         folded_query = query.casefold()
         items = [
             item
             for item in items
-            if folded_query in " ".join(
+            if folded_query
+            in " ".join(
                 [
                     str(item.get("id") or ""),
                     str(item.get("title") or ""),
@@ -289,7 +352,11 @@ def list_artifacts(
             ).casefold()
         ]
     items.sort(key=lambda item: item.get("updated_at", ""), reverse=True)
-    return {"items": items[: max(1, limit)], "total": len(items), "path": str(path or STORE_PATH)}
+    return {
+        "items": items[: max(1, limit)],
+        "total": len(items),
+        "path": str(path or STORE_PATH),
+    }
 
 
 def link_artifacts(
@@ -315,7 +382,9 @@ def link_artifacts(
     clean_type = _validate_link_type(link_type)
     link_id = _link_id(source_id, target_id, clean_type)
     now = _now()
-    existing = next((item for item in payload["links"] if item.get("id") == link_id), None)
+    existing = next(
+        (item for item in payload["links"] if item.get("id") == link_id), None
+    )
     link = {
         "id": link_id,
         "source_id": source_id,
@@ -324,7 +393,10 @@ def link_artifacts(
         "status": _clean(status, limit=80) or "active",
         "suspect": bool(suspect),
         "rationale": _clean(rationale, limit=1000),
-        "attributes": {**_safe_dict((existing or {}).get("attributes")), **_safe_dict(attributes)},
+        "attributes": {
+            **_safe_dict((existing or {}).get("attributes")),
+            **_safe_dict(attributes),
+        },
         "created_at": (existing or {}).get("created_at") or now,
         "updated_at": now,
     }
@@ -334,7 +406,12 @@ def link_artifacts(
     _audit(
         "artifact.link",
         target=link_id,
-        metadata={"source_id": source_id, "target_id": target_id, "type": clean_type, "suspect": bool(suspect)},
+        metadata={
+            "source_id": source_id,
+            "target_id": target_id,
+            "type": clean_type,
+            "suspect": bool(suspect),
+        },
         path=path,
     )
     return link
@@ -371,9 +448,13 @@ def trace_artifact(
             continue
         candidates: list[tuple[dict[str, Any], str]] = []
         if direction in {"out", "both"}:
-            candidates.extend((link, str(link.get("target_id"))) for link in outgoing.get(current, []))
+            candidates.extend(
+                (link, str(link.get("target_id"))) for link in outgoing.get(current, [])
+            )
         if direction in {"in", "both"}:
-            candidates.extend((link, str(link.get("source_id"))) for link in incoming.get(current, []))
+            candidates.extend(
+                (link, str(link.get("source_id"))) for link in incoming.get(current, [])
+            )
         for link, neighbor in candidates:
             if neighbor not in artifacts:
                 continue
@@ -392,7 +473,9 @@ def trace_artifact(
         "summary": {
             "nodes": len(nodes),
             "links": len(result_links),
-            "suspect_links": sum(1 for link in result_links.values() if link.get("suspect")),
+            "suspect_links": sum(
+                1 for link in result_links.values() if link.get("suspect")
+            ),
             "depth": max_depth,
             "direction": direction,
         },
@@ -412,7 +495,10 @@ def coverage_matrix(*, path: Path | None = None) -> dict[str, Any]:
     for artifact in payload["artifacts"]:
         if artifact.get("type") not in {"need", "requirement", "capability"}:
             continue
-        linked = [artifacts.get(str(link.get("target_id"))) for link in outgoing.get(str(artifact["id"]), [])]
+        linked = [
+            artifacts.get(str(link.get("target_id")))
+            for link in outgoing.get(str(artifact["id"]), [])
+        ]
         linked = [item for item in linked if item]
         by_type = CounterLike(linked)
         rows.append(
@@ -434,7 +520,11 @@ def coverage_matrix(*, path: Path | None = None) -> dict[str, Any]:
                     "defects": by_type.get("defect"),
                 },
                 "coverage": _coverage_status(by_type),
-                "suspect_links": sum(1 for link in outgoing.get(str(artifact["id"]), []) if link.get("suspect")),
+                "suspect_links": sum(
+                    1
+                    for link in outgoing.get(str(artifact["id"]), [])
+                    if link.get("suspect")
+                ),
             }
         )
 

@@ -1,18 +1,20 @@
 import asyncio
-import sys
 import os
+import sys
 import uuid
 
 # Add project root to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
-from src.modules.ai_orchestration.services.nodes import GraphNodes
-from src.modules.ai_orchestration.services.graph_builder import GraphBuilder
-from src.modules.ai_orchestration.infrastructure.checkpoint import PostgresCheckpointer
 from src.modules.ai_orchestration.domain.models import AgentState
+from src.modules.ai_orchestration.infrastructure.checkpoint import PostgresCheckpointer
+from src.modules.ai_orchestration.services.graph_builder import GraphBuilder
+from src.modules.ai_orchestration.services.nodes import GraphNodes
 
 # Set DB URL for localhost (running from host)
-os.environ["DATABASE_URL"] = "postgresql://admin:change_me_in_prod@localhost:5432/enterprise_os"
+os.environ[
+    "DATABASE_URL"
+] = "postgresql://admin:change_me_in_prod@localhost:5432/enterprise_os"
 
 
 async def main():

@@ -3,7 +3,6 @@
 import re
 from typing import Any, Dict, List
 
-
 _SELECT_STAR_PATTERN = re.compile(r"\b(select|выбрать)\s+\*", flags=re.IGNORECASE)
 
 

@@ -1,4 +1,3 @@
-
 """
 Asynchronous client for 1C:Напарник API.
 

@@ -10,7 +10,6 @@ from typing import Any
 from src.security.auth import AuthSettings
 from src.services.audit_log import record_event
 
-
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG_PATH = ROOT / "data" / "enterprise_iam.json"
 PROVIDER_TYPES = {"local_jwt", "service_token", "oidc", "saml", "ldap", "scim"}
@@ -19,11 +18,38 @@ PROVIDER_TYPES = {"local_jwt", "service_token", "oidc", "saml", "ldap", "scim"}
 def _default_config() -> dict[str, Any]:
     return {
         "providers": [
-            {"id": "local-jwt", "type": "local_jwt", "enabled": True, "issuer": "1cai-local"},
-            {"id": "service-tokens", "type": "service_token", "enabled": bool(os.getenv("SERVICE_API_TOKENS"))},
-            {"id": "oidc-primary", "type": "oidc", "enabled": False, "issuer": "", "client_id": ""},
-            {"id": "saml-primary", "type": "saml", "enabled": False, "entity_id": "", "sso_url": ""},
-            {"id": "ldap-primary", "type": "ldap", "enabled": False, "url": "", "base_dn": ""},
+            {
+                "id": "local-jwt",
+                "type": "local_jwt",
+                "enabled": True,
+                "issuer": "1cai-local",
+            },
+            {
+                "id": "service-tokens",
+                "type": "service_token",
+                "enabled": bool(os.getenv("SERVICE_API_TOKENS")),
+            },
+            {
+                "id": "oidc-primary",
+                "type": "oidc",
+                "enabled": False,
+                "issuer": "",
+                "client_id": "",
+            },
+            {
+                "id": "saml-primary",
+                "type": "saml",
+                "enabled": False,
+                "entity_id": "",
+                "sso_url": "",
+            },
+            {
+                "id": "ldap-primary",
+                "type": "ldap",
+                "enabled": False,
+                "url": "",
+                "base_dn": "",
+            },
             {"id": "scim-primary", "type": "scim", "enabled": False, "base_url": ""},
         ],
         "boundaries": [],
@@ -57,9 +83,17 @@ def _audit_path(path: Path | None = None) -> Path:
     return (path or CONFIG_PATH).parent / "audit_log.ndjson"
 
 
-def _audit(action: str, *, target: str, metadata: dict[str, Any], path: Path | None = None) -> None:
+def _audit(
+    action: str, *, target: str, metadata: dict[str, Any], path: Path | None = None
+) -> None:
     try:
-        record_event(action=action, target=target, category="iam", metadata=metadata, path=_audit_path(path))
+        record_event(
+            action=action,
+            target=target,
+            category="iam",
+            metadata=metadata,
+            path=_audit_path(path),
+        )
     except Exception:
         return
 
@@ -81,24 +115,76 @@ def validate_iam_config(config: dict[str, Any]) -> list[dict[str, Any]]:
         provider_id = _clean(provider.get("id"), limit=120)
         provider_type = _clean(provider.get("type"), limit=40)
         if not provider_id:
-            findings.append({"severity": "high", "code": "provider-id-missing", "message": "Provider id is required."})
+            findings.append(
+                {
+                    "severity": "high",
+                    "code": "provider-id-missing",
+                    "message": "Provider id is required.",
+                }
+            )
         if provider_id in provider_ids:
-            findings.append({"severity": "high", "code": "provider-id-duplicate", "message": f"Duplicate provider id: {provider_id}"})
+            findings.append(
+                {
+                    "severity": "high",
+                    "code": "provider-id-duplicate",
+                    "message": f"Duplicate provider id: {provider_id}",
+                }
+            )
         provider_ids.add(provider_id)
         if provider_type not in PROVIDER_TYPES:
-            findings.append({"severity": "high", "code": "provider-type-invalid", "message": f"Unsupported provider type: {provider_type}"})
-        if provider.get("enabled") and provider_type == "oidc" and not provider.get("issuer"):
-            findings.append({"severity": "medium", "code": "oidc-issuer-missing", "message": f"OIDC provider {provider_id} has no issuer."})
-        if provider.get("enabled") and provider_type == "saml" and not provider.get("sso_url"):
-            findings.append({"severity": "medium", "code": "saml-sso-missing", "message": f"SAML provider {provider_id} has no SSO URL."})
-        if provider.get("enabled") and provider_type == "ldap" and not provider.get("base_dn"):
-            findings.append({"severity": "medium", "code": "ldap-base-dn-missing", "message": f"LDAP provider {provider_id} has no base DN."})
+            findings.append(
+                {
+                    "severity": "high",
+                    "code": "provider-type-invalid",
+                    "message": f"Unsupported provider type: {provider_type}",
+                }
+            )
+        if (
+            provider.get("enabled")
+            and provider_type == "oidc"
+            and not provider.get("issuer")
+        ):
+            findings.append(
+                {
+                    "severity": "medium",
+                    "code": "oidc-issuer-missing",
+                    "message": f"OIDC provider {provider_id} has no issuer.",
+                }
+            )
+        if (
+            provider.get("enabled")
+            and provider_type == "saml"
+            and not provider.get("sso_url")
+        ):
+            findings.append(
+                {
+                    "severity": "medium",
+                    "code": "saml-sso-missing",
+                    "message": f"SAML provider {provider_id} has no SSO URL.",
+                }
+            )
+        if (
+            provider.get("enabled")
+            and provider_type == "ldap"
+            and not provider.get("base_dn")
+        ):
+            findings.append(
+                {
+                    "severity": "medium",
+                    "code": "ldap-base-dn-missing",
+                    "message": f"LDAP provider {provider_id} has no base DN.",
+                }
+            )
     return findings
 
 
 def load_iam_config(*, path: Path | None = None) -> dict[str, Any]:
     config = _load(path)
-    return {**config, "validation": validate_iam_config(config), "path": str(path or CONFIG_PATH)}
+    return {
+        **config,
+        "validation": validate_iam_config(config),
+        "path": str(path or CONFIG_PATH),
+    }
 
 
 def save_iam_config(
@@ -128,20 +214,49 @@ def save_iam_config(
     return load_iam_config(path=path)
 
 
-def iam_readiness(*, path: Path | None = None, auth_settings: AuthSettings | None = None) -> dict[str, Any]:
+def iam_readiness(
+    *, path: Path | None = None, auth_settings: AuthSettings | None = None
+) -> dict[str, Any]:
     settings = auth_settings or AuthSettings()
     config = _load(path)
     findings = validate_iam_config(config)
     providers = config.get("providers", [])
     enabled = [provider for provider in providers if provider.get("enabled")]
     if settings.jwt_secret == "CHANGE_ME":
-        findings.append({"severity": "high", "code": "jwt-secret-default", "message": "JWT secret uses default value."})
+        findings.append(
+            {
+                "severity": "high",
+                "code": "jwt-secret-default",
+                "message": "JWT secret uses default value.",
+            }
+        )
     if not settings.service_tokens:
-        findings.append({"severity": "medium", "code": "service-tokens-missing", "message": "Service API tokens are not configured."})
-    if not any(provider.get("enabled") and provider.get("type") in {"oidc", "saml"} for provider in providers):
-        findings.append({"severity": "medium", "code": "federation-disabled", "message": "OIDC/SAML federation is not enabled."})
+        findings.append(
+            {
+                "severity": "medium",
+                "code": "service-tokens-missing",
+                "message": "Service API tokens are not configured.",
+            }
+        )
+    if not any(
+        provider.get("enabled") and provider.get("type") in {"oidc", "saml"}
+        for provider in providers
+    ):
+        findings.append(
+            {
+                "severity": "medium",
+                "code": "federation-disabled",
+                "message": "OIDC/SAML federation is not enabled.",
+            }
+        )
     if not config.get("boundaries"):
-        findings.append({"severity": "medium", "code": "project-boundaries-missing", "message": "No project/tenant boundaries are configured."})
+        findings.append(
+            {
+                "severity": "medium",
+                "code": "project-boundaries-missing",
+                "message": "No project/tenant boundaries are configured.",
+            }
+        )
 
     high = sum(1 for item in findings if item["severity"] == "high")
     medium = sum(1 for item in findings if item["severity"] == "medium")
@@ -177,15 +292,21 @@ def upsert_project_boundary(
         "tenant_id": tenant_id,
         "name": _clean(boundary.get("name"), limit=240) or project_id,
         "allowed_roles": _safe_list(boundary.get("allowed_roles"), limit=80),
-        "allowed_permissions": _safe_list(boundary.get("allowed_permissions"), limit=120),
+        "allowed_permissions": _safe_list(
+            boundary.get("allowed_permissions"), limit=120
+        ),
         "data_roots": _safe_list(boundary.get("data_roots"), limit=500),
-        "metadata": boundary.get("metadata") if isinstance(boundary.get("metadata"), dict) else {},
+        "metadata": boundary.get("metadata")
+        if isinstance(boundary.get("metadata"), dict)
+        else {},
     }
     payload = _load(path)
     payload["boundaries"] = [
         item
         for item in payload.get("boundaries", [])
-        if not (item.get("project_id") == project_id and item.get("tenant_id") == tenant_id)
+        if not (
+            item.get("project_id") == project_id and item.get("tenant_id") == tenant_id
+        )
     ]
     payload["boundaries"].insert(0, record)
     _write(payload, path)
@@ -198,7 +319,9 @@ def upsert_project_boundary(
     return record
 
 
-def list_project_boundaries(*, tenant_id: str | None = None, path: Path | None = None) -> dict[str, Any]:
+def list_project_boundaries(
+    *, tenant_id: str | None = None, path: Path | None = None
+) -> dict[str, Any]:
     items = _load(path).get("boundaries", [])
     if tenant_id:
         items = [item for item in items if item.get("tenant_id") == tenant_id]
@@ -223,7 +346,9 @@ def check_project_access(
         return {"allowed": False, "reason": "boundary_not_found", "action": action}
     boundary = boundaries[0]
     role_match = bool(set(roles) & set(boundary.get("allowed_roles") or []))
-    permission_match = bool(set(permissions) & set(boundary.get("allowed_permissions") or []))
+    permission_match = bool(
+        set(permissions) & set(boundary.get("allowed_permissions") or [])
+    )
     allowed = role_match or permission_match
     return {
         "allowed": allowed,

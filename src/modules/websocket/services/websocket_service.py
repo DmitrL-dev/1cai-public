@@ -27,8 +27,9 @@ class WebSocketService:
 
         # Sanitize user_id
         if not re.match(r"^[a-zA-Z0-9_.-]+$", user_id):
-            logger.warning(f"Invalid characters in user_id: {user_id}", extra={
-                           "user_id": user_id})
+            logger.warning(
+                f"Invalid characters in user_id: {user_id}", extra={"user_id": user_id}
+            )
             await websocket.close(code=1008, reason="Invalid user_id format")
             return
 
@@ -51,7 +52,9 @@ class WebSocketService:
 
             while True:
                 try:
-                    data = await asyncio.wait_for(websocket.receive_json(), timeout=300.0)
+                    data = await asyncio.wait_for(
+                        websocket.receive_json(), timeout=300.0
+                    )
                 except asyncio.TimeoutError:
                     try:
                         await websocket.send_json({"type": "ping"})
@@ -64,13 +67,17 @@ class WebSocketService:
                         "Invalid message format received",
                         extra={"user_id": user_id, "message_type": type(data).__name__},
                     )
-                    await websocket.send_json({"type": "error", "message": "Invalid message format"})
+                    await websocket.send_json(
+                        {"type": "error", "message": "Invalid message format"}
+                    )
                     continue
 
                 message_type = data.get("type", "")
 
                 if message_type == "ping":
-                    await websocket.send_json({"type": "pong", "timestamp": datetime.utcnow().isoformat()})
+                    await websocket.send_json(
+                        {"type": "pong", "timestamp": datetime.utcnow().isoformat()}
+                    )
 
                 elif message_type == "subscribe":
                     room_id = data.get("room_id")
@@ -90,7 +97,9 @@ class WebSocketService:
                                 "Invalid room_id in subscribe request",
                                 extra={"user_id": user_id, "room_id": room_id},
                             )
-                            await websocket.send_json({"type": "error", "message": "Invalid room_id"})
+                            await websocket.send_json(
+                                {"type": "error", "message": "Invalid room_id"}
+                            )
                 else:
                     logger.debug(
                         f"Unknown message type: {message_type}",
@@ -107,7 +116,9 @@ class WebSocketService:
             manager.disconnect(websocket, user_id=user_id)
             logger.info("WebSocket disconnected", extra={"user_id": user_id})
 
-    async def notify_user(self, user_id: str, notification_type: str, data: Dict) -> None:
+    async def notify_user(
+        self, user_id: str, notification_type: str, data: Dict
+    ) -> None:
         """Send notification to user via WebSocket."""
         if not user_id or not isinstance(user_id, str):
             logger.warning(

@@ -1,4 +1,3 @@
-
 """
 Performance Monitoring
 Версия: 2.1.0

@@ -1,4 +1,3 @@
-
 """
 SQL Optimizer Agent
 AI-оптимизация SQL запросов для 1С (PostgreSQL, MS SQL)
@@ -125,7 +124,9 @@ class SQLOptimizer:
             "coverage": self._query_coverage(context),
             "original_query": query,
             "optimized_query": optimized_query,
-            "rewrite_status": self._rewrite_status(optimizations, query, optimized_query),
+            "rewrite_status": self._rewrite_status(
+                optimizations, query, optimized_query
+            ),
             "optimizations": [asdict(item) for item in optimizations],
             "index_recommendations": [asdict(item) for item in index_recommendations],
             "anti_patterns_found": anti_patterns_found,
@@ -330,7 +331,11 @@ class SQLOptimizer:
                 expected_improvement="Требует кардинальности таблиц и селективности фильтра",
                 source="ITS + Infostart",
                 rewrite_status="needs_evidence",
-                evidence_required=["business filter", "table cardinality", "EXPLAIN ANALYZE"],
+                evidence_required=[
+                    "business filter",
+                    "table cardinality",
+                    "EXPLAIN ANALYZE",
+                ],
             )
 
         # N+1 → JOIN or temp table
@@ -365,7 +370,9 @@ class SQLOptimizer:
                 expected_improvement="План-зависимо; проверить EXPLAIN/ANALYZE на продуктивной статистике",
                 source="PostgreSQL + MS SQL",
                 rewrite_status=rewrite_status,
-                evidence_required=[] if rewrite_status == "rewritten" else ["SQL AST or normalized predicate"],
+                evidence_required=[]
+                if rewrite_status == "rewritten"
+                else ["SQL AST or normalized predicate"],
             )
 
         # FUNCTION IN WHERE → Computed column or materialized view
@@ -379,7 +386,11 @@ class SQLOptimizer:
                 expected_improvement="Требует индекса, статистики и сравнения плана выполнения",
                 source="PostgreSQL Best Practices",
                 rewrite_status="needs_evidence",
-                evidence_required=["table schema", "index definitions", "EXPLAIN ANALYZE"],
+                evidence_required=[
+                    "table schema",
+                    "index definitions",
+                    "EXPLAIN ANALYZE",
+                ],
             )
 
         # NOT IN → NOT EXISTS
@@ -414,7 +425,10 @@ class SQLOptimizer:
             return query
 
         where_clause = where_match.group("where").strip()
-        terms = [term.strip().strip("()") for term in re.split(r"\s+OR\s+", where_clause, flags=re.IGNORECASE)]
+        terms = [
+            term.strip().strip("()")
+            for term in re.split(r"\s+OR\s+", where_clause, flags=re.IGNORECASE)
+        ]
         if len(terms) < 2:
             return query
 
@@ -762,12 +776,12 @@ class SQLOptimizer:
             severity_impact.get(ap["severity"], 1.0) for ap in anti_patterns
         )
 
-        has_plan = bool(context and (context.get("explain_plan") or context.get("explain_analyze")))
+        has_plan = bool(
+            context and (context.get("explain_plan") or context.get("explain_analyze"))
+        )
         has_stats = bool(context and context.get("table_stats"))
         confidence = 0.45 if has_plan and has_stats else 0.25 if has_plan else 0.0
-        description = (
-            "Potential impact detected from SQL anti-patterns; speedup requires EXPLAIN/ANALYZE or before/after benchmark."
-        )
+        description = "Potential impact detected from SQL anti-patterns; speedup requires EXPLAIN/ANALYZE or before/after benchmark."
 
         return {
             "factor": "not_measured",
@@ -835,7 +849,9 @@ class SQLOptimizer:
         Returns:
             Рекомендованные параметры конфигурации
         """
-        required = [key for key in ("ram_gb", "cpu_cores") if key not in system_resources]
+        required = [
+            key for key in ("ram_gb", "cpu_cores") if key not in system_resources
+        ]
         if required:
             return {
                 "status": "needs_evidence",

@@ -27,9 +27,18 @@ class PMService:
         """
         # Projects summary
         projects_summary = {
-            "active": await conn.fetchval("SELECT COUNT(*) FROM projects WHERE status = 'active'") or 12,
-            "completed": await conn.fetchval("SELECT COUNT(*) FROM projects WHERE status = 'completed'") or 45,
-            "paused": await conn.fetchval("SELECT COUNT(*) FROM projects WHERE status = 'paused'") or 3,
+            "active": await conn.fetchval(
+                "SELECT COUNT(*) FROM projects WHERE status = 'active'"
+            )
+            or 12,
+            "completed": await conn.fetchval(
+                "SELECT COUNT(*) FROM projects WHERE status = 'completed'"
+            )
+            or 45,
+            "paused": await conn.fetchval(
+                "SELECT COUNT(*) FROM projects WHERE status = 'paused'"
+            )
+            or 3,
             "at_risk": 2,
         }
 

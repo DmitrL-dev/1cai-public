@@ -16,7 +16,6 @@ from typing import Any
 from src.services.audit_log import record_event
 from src.services.rentgen.test_evidence import import_junit_xml, record_test_run
 
-
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_BUNDLE_ROOT = ROOT / "data" / "test_evidence_bundles"
 DEFAULT_OUTPUT_ROOT = ROOT / "output" / "test-runners"
@@ -80,7 +79,12 @@ ALLOWED_PATH_ROOTS = (
 
 
 def _test_execution_enabled() -> bool:
-    return os.getenv(TEST_EXECUTION_FLAG, "").strip().lower() in {"1", "true", "yes", "on"}
+    return os.getenv(TEST_EXECUTION_FLAG, "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
 
 
 def _executable_basename(command_part: str) -> str:
@@ -147,7 +151,11 @@ ADAPTERS = {
         "kind": "command",
         "description": "Generic Vanessa Automation/ADD command adapter.",
         "default_report": "vanessa-report.xml",
-        "requires": ["vanessa-runner or configured command", "1C platform", "test infobase"],
+        "requires": [
+            "vanessa-runner or configured command",
+            "1C platform",
+            "test infobase",
+        ],
     },
     "1c_tester": {
         "framework": "1C:Tester",
@@ -177,7 +185,9 @@ def _safe_list(values: Any) -> list[str]:
 def _safe_dict(value: Any) -> dict[str, str]:
     if not isinstance(value, dict):
         return {}
-    return {_clean(key, limit=120): _clean(val, limit=1000) for key, val in value.items()}
+    return {
+        _clean(key, limit=120): _clean(val, limit=1000) for key, val in value.items()
+    }
 
 
 def _display_command(command: list[str]) -> str:
@@ -211,7 +221,9 @@ def _audit_path(path: Path | None = None) -> Path:
     return ROOT / "data" / "audit_log.ndjson"
 
 
-def _audit(action: str, *, target: str, metadata: dict[str, Any], path: Path | None = None) -> None:
+def _audit(
+    action: str, *, target: str, metadata: dict[str, Any], path: Path | None = None
+) -> None:
     try:
         record_event(
             action=action,
@@ -298,7 +310,9 @@ def build_runner_plan(
             command.extend(["--modules", *(modules or selectors or [])])
         if dry_run:
             command.append("--dry-run")
-        caveats.append("Actual YAxUnit execution requires a configured 1C infobase and platform binary.")
+        caveats.append(
+            "Actual YAxUnit execution requires a configured 1C infobase and platform binary."
+        )
     elif adapter_id == "bsl_manifest":
         manifest = (
             _confine_path(manifest_path, label="manifest_path")
@@ -318,15 +332,31 @@ def build_runner_plan(
             "executable allow-list; the manifest path is confined to the repo tests/ root."
         )
     elif adapter_id == "vanessa":
-        command = ["vanessa-runner", "run", "--workspace", str(safe_cwd), "--report", str(report or out_dir / "vanessa-report.xml")]
+        command = [
+            "vanessa-runner",
+            "run",
+            "--workspace",
+            str(safe_cwd),
+            "--report",
+            str(report or out_dir / "vanessa-report.xml"),
+        ]
         if selectors:
             command.extend(["--filter", ",".join(selectors)])
-        caveats.append("Vanessa runs from the repository root with a fixed argv; custom wrappers are not accepted from the request.")
+        caveats.append(
+            "Vanessa runs from the repository root with a fixed argv; custom wrappers are not accepted from the request."
+        )
     else:
-        command = ["1ctestc", "run", "--out", str(report or out_dir / "1c-tester-report.xml")]
+        command = [
+            "1ctestc",
+            "run",
+            "--out",
+            str(report or out_dir / "1c-tester-report.xml"),
+        ]
         if selectors:
             command.extend(["--filter", ",".join(selectors)])
-        caveats.append("1C:Tester execution is environment-specific; exported result import is preferred by default.")
+        caveats.append(
+            "1C:Tester execution is environment-specific; exported result import is preferred by default."
+        )
 
     # extra_args, env and cwd are deliberately NOT taken from the request body:
     # each was an injection lever (arbitrary trailing argv / process environment /
@@ -394,7 +424,9 @@ def create_evidence_bundle(
         },
     }
     manifest_path = bundle_dir / "manifest.json"
-    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     manifest["manifest_path"] = str(manifest_path)
     _audit(
         "test.evidence.bundle",
@@ -443,10 +475,17 @@ def _json_result(payload: dict[str, Any], *, source: Path) -> dict[str, Any]:
         status = "error"
     duration_ms = payload.get("duration_ms")
     if duration_ms is None and isinstance(payload.get("time"), dict):
-        duration_ms = (payload["time"].get("duration") or 0)
-    details = payload.get("statusDetails") if isinstance(payload.get("statusDetails"), dict) else {}
+        duration_ms = payload["time"].get("duration") or 0
+    details = (
+        payload.get("statusDetails")
+        if isinstance(payload.get("statusDetails"), dict)
+        else {}
+    )
     return {
-        "id": payload.get("id") or payload.get("uuid") or payload.get("fullName") or payload.get("name"),
+        "id": payload.get("id")
+        or payload.get("uuid")
+        or payload.get("fullName")
+        or payload.get("name"),
         "name": payload.get("name") or payload.get("fullName") or source.stem,
         "framework": payload.get("framework") or "JSON",
         "status": status,
@@ -476,7 +515,11 @@ def import_result_file(
         raise FileNotFoundError(f"Result path not found: {result_path}")
     fmt = _clean(result_format or "auto", limit=40).lower()
     if fmt == "auto":
-        fmt = "allure" if target.is_dir() else ("junit" if target.suffix.lower() == ".xml" else "json")
+        fmt = (
+            "allure"
+            if target.is_dir()
+            else ("junit" if target.suffix.lower() == ".xml" else "json")
+        )
 
     if fmt in {"junit", "xml"}:
         run = import_junit_xml(
@@ -503,7 +546,11 @@ def import_result_file(
         framework=framework or ("Allure" if fmt == "allure" else "JSON"),
         results=results,
         change_set_id=change_set_id,
-        evidence=[_file_evidence(target) if target.is_file() else {"kind": fmt, "path": str(target), "files": len(results)}],
+        evidence=[
+            _file_evidence(target)
+            if target.is_file()
+            else {"kind": fmt, "path": str(target), "files": len(results)}
+        ],
         path=path,
         artifact_path=artifact_path,
     )
@@ -552,7 +599,11 @@ def run_test_adapter(
         _audit(
             "test.runner.plan",
             target=run["id"],
-            metadata={"adapter": plan["adapter"], "framework": plan["framework"], "change_set_id": plan.get("change_set_id")},
+            metadata={
+                "adapter": plan["adapter"],
+                "framework": plan["framework"],
+                "change_set_id": plan.get("change_set_id"),
+            },
             path=path,
         )
         return {"executed": False, "plan": plan, "run": run}
@@ -575,7 +626,10 @@ def run_test_adapter(
 
     output_dir = Path(plan["output_dir"])
     output_dir.mkdir(parents=True, exist_ok=True)
-    log_path = output_dir / f"{plan['adapter']}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.log"
+    log_path = (
+        output_dir
+        / f"{plan['adapter']}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}.log"
+    )
     # Use a clean, fixed environment and the repo root as cwd. We never merge a
     # caller-supplied env (plan["env"] is forced empty upstream) so request data
     # cannot influence the spawned process environment.
@@ -592,15 +646,24 @@ def run_test_adapter(
             check=False,
         )
         exit_code = result.returncode
-        log_path.write_text((result.stdout or "") + ("\n" + result.stderr if result.stderr else ""), encoding="utf-8")
+        log_path.write_text(
+            (result.stdout or "") + ("\n" + result.stderr if result.stderr else ""),
+            encoding="utf-8",
+        )
     except FileNotFoundError as exc:
         exit_code = 127
         log_path.write_text(f"Runner not found: {exc}\n", encoding="utf-8")
     except subprocess.TimeoutExpired as exc:
         exit_code = 124
-        log_path.write_text(f"Timed out after {exc.timeout} seconds\n{exc.stdout or ''}\n{exc.stderr or ''}", encoding="utf-8")
+        log_path.write_text(
+            f"Timed out after {exc.timeout} seconds\n{exc.stdout or ''}\n{exc.stderr or ''}",
+            encoding="utf-8",
+        )
 
-    attachment_paths = [str(log_path), *[item for item in plan["expected_reports"] if Path(item).exists()]]
+    attachment_paths = [
+        str(log_path),
+        *[item for item in plan["expected_reports"] if Path(item).exists()],
+    ]
     imported = None
     if import_results:
         for report in plan["expected_reports"]:
@@ -634,11 +697,17 @@ def run_test_adapter(
         path=path,
         artifact_path=artifact_path,
     )
-    bundle = create_evidence_bundle(run["id"], attachment_paths=attachment_paths, bundle_root=bundle_root)
+    bundle = create_evidence_bundle(
+        run["id"], attachment_paths=attachment_paths, bundle_root=bundle_root
+    )
     _audit(
         "test.runner.execute",
         target=run["id"],
-        metadata={"adapter": plan["adapter"], "exit_code": exit_code, "status": run["status"]},
+        metadata={
+            "adapter": plan["adapter"],
+            "exit_code": exit_code,
+            "status": run["status"],
+        },
         path=path,
     )
     return {

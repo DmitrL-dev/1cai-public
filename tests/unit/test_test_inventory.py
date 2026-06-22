@@ -1,4 +1,7 @@
-from src.services.rentgen.test_inventory import build_test_inventory, match_tests_for_module
+from src.services.rentgen.test_inventory import (
+    build_test_inventory,
+    match_tests_for_module,
+)
 
 
 def test_test_inventory_matches_changed_module_to_bsl_test(tmp_path):

@@ -48,7 +48,6 @@ from src.services.rentgen.approval_workflow import (  # noqa: E402
 )
 from src.services.rentgen.policy_engine import decide_waiver  # noqa: E402
 
-
 JWT_SECRET = "unit-test-secret-key-please-rotate"
 
 
@@ -134,9 +133,7 @@ def test_require_roles_enforced(
     resp = client.get("/admin-only", headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 403
     # admin token -> 200
-    resp = client.get(
-        "/admin-only", headers={"Authorization": f"Bearer {admin_token}"}
-    )
+    resp = client.get("/admin-only", headers={"Authorization": f"Bearer {admin_token}"})
     assert resp.status_code == 200
 
 
@@ -226,9 +223,9 @@ def test_waiver_self_approval_rejected(tmp_path) -> None:
 
 def test_self_approved_waiver_cannot_flip_gate(tmp_path) -> None:
     """A self-approved waiver in the store must NOT silence a failing gate."""
-    from src.services.rentgen.policy_engine import evaluate_policy
-
     import json
+
+    from src.services.rentgen.policy_engine import evaluate_policy
 
     policy = tmp_path / "policy.json"
     waivers = tmp_path / "waivers.json"
@@ -413,7 +410,5 @@ def test_enforce_project_access_unauthenticated(tmp_path) -> None:
     from fastapi import HTTPException
 
     with pytest.raises(HTTPException) as exc:
-        enforce_project_access(
-            None, tenant_id="t1", project_id="p1", action="read"
-        )
+        enforce_project_access(None, tenant_id="t1", project_id="p1", action="read")
     assert exc.value.status_code == 401

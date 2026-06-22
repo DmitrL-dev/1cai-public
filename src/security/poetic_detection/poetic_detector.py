@@ -4,11 +4,10 @@ Poetic Form Detector
 Detects poetic structure in user input to prevent adversarial poetry jailbreaks.
 """
 
+import logging
 import re
 from dataclasses import dataclass
 from typing import Dict, List
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +54,9 @@ class PoeticFormDetector:
             PoeticAnalysis with detection results
         """
         if not text or len(text.strip()) < 10:
-            return PoeticAnalysis(is_poetic=False, confidence=0.0, features={}, detected_patterns=[])
+            return PoeticAnalysis(
+                is_poetic=False, confidence=0.0, features={}, detected_patterns=[]
+            )
 
         # Analyze features
         rhyme_score = self._detect_rhymes(text)
@@ -64,8 +65,12 @@ class PoeticFormDetector:
         metaphor_score = self._detect_metaphors(text)
 
         # Combine scores (weighted)
-        poetic_score = rhyme_score * 0.3 + meter_score * \
-            0.2 + verse_score * 0.3 + metaphor_score * 0.2
+        poetic_score = (
+            rhyme_score * 0.3
+            + meter_score * 0.2
+            + verse_score * 0.3
+            + metaphor_score * 0.2
+        )
 
         # Adversarial-poetry jailbreaks frequently arrive as *short* couplets or
         # tercets, where the linear weighting above never crosses threshold even
@@ -102,8 +107,10 @@ class PoeticFormDetector:
         is_poetic = poetic_score > self.threshold
 
         if is_poetic:
-            logger.warning(f"Poetic form detected (confidence: {poetic_score:.2f})", extra={
-                           "patterns": patterns})
+            logger.warning(
+                f"Poetic form detected (confidence: {poetic_score:.2f})",
+                extra={"patterns": patterns},
+            )
 
         return PoeticAnalysis(
             is_poetic=is_poetic,
@@ -135,9 +142,9 @@ class PoeticFormDetector:
         keys = {w[-2:], w[-3:]}
         vowel_groups = list(re.finditer(r"[aeiouy]+", w))
         if vowel_groups:
-            keys.add(w[vowel_groups[-1].start():])
+            keys.add(w[vowel_groups[-1].start() :])
             if len(vowel_groups) >= 2:
-                keys.add(w[vowel_groups[-2].start():])
+                keys.add(w[vowel_groups[-2].start() :])
 
         return {k for k in keys if k}
 
@@ -212,8 +219,9 @@ class PoeticFormDetector:
 
         # Check for consistency
         avg_syllables = sum(syllable_counts) / len(syllable_counts)
-        variance = sum((s - avg_syllables) **
-                       2 for s in syllable_counts) / len(syllable_counts)
+        variance = sum((s - avg_syllables) ** 2 for s in syllable_counts) / len(
+            syllable_counts
+        )
 
         # Low variance = consistent meter
         consistency = 1.0 / (1.0 + variance)
@@ -240,8 +248,10 @@ class PoeticFormDetector:
         # Verse indicators
         has_stanzas = empty_lines > 0
         has_multiple_lines = content_lines >= 4
-        has_short_lines = sum(1 for line in lines if line.strip()
-                              and len(line.strip()) < 60) > content_lines * 0.7
+        has_short_lines = (
+            sum(1 for line in lines if line.strip() and len(line.strip()) < 60)
+            > content_lines * 0.7
+        )
 
         score = 0.0
         if has_stanzas:

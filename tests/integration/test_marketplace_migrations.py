@@ -1,4 +1,3 @@
-
 """Integration tests for marketplace migrations and repository."""
 
 from __future__ import annotations

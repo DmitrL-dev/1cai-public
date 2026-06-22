@@ -1,4 +1,3 @@
-
 """
 API зависимости для модуля аутентификации.
 """
@@ -28,7 +27,9 @@ def get_auth_service() -> AuthService:
     return AuthService(get_auth_settings())
 
 
-async def get_current_user(request: Request, token: Optional[str] = Depends(oauth2_scheme)) -> CurrentUser:
+async def get_current_user(
+    request: Request, token: Optional[str] = Depends(oauth2_scheme)
+) -> CurrentUser:
     """Получает текущего пользователя из запроса.
 
     Извлекает токен из заголовка Authorization или X-Service-Token,
@@ -96,7 +97,9 @@ def require_permissions(*permissions: str):
 
 
 # Dependency для получения user_id (для OAuth)
-async def get_current_user_id(current_user: CurrentUser = Depends(get_current_user)) -> int:
+async def get_current_user_id(
+    current_user: CurrentUser = Depends(get_current_user),
+) -> int:
     """Получить ID текущего пользователя из сессии/JWT.
 
     Args:

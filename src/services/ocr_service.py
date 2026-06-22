@@ -1,4 +1,3 @@
-
 """
 OCR Service for 1C Documents
 Версия: 2.2.0
@@ -7,13 +6,14 @@ Refactored: Non-blocking execution for CPU/GPU intensive tasks
 
 import asyncio
 import os
+import tempfile
 from concurrent.futures import ThreadPoolExecutor
-from src.config import settings
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
+from src.config import settings
 from src.utils.structured_logging import StructuredLogger
 
 logger = StructuredLogger(__name__).logger
@@ -429,7 +429,9 @@ class OCRService:
         """Process image from bytes"""
         import tempfile
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(filename)[1]) as tmp:
+        with tempfile.NamedTemporaryFile(
+            delete=False, suffix=os.path.splitext(filename)[1]
+        ) as tmp:
             tmp.write(file_content)
             tmp_path = tmp.name
 
@@ -480,8 +482,7 @@ async def quick_ocr(image_path: str) -> str:
 
 
 async def ocr_with_structure(
-    image_path: str,
-    document_type: DocumentType = DocumentType.AUTO
+    image_path: str, document_type: DocumentType = DocumentType.AUTO
 ) -> Dict[str, Any]:
     """
     OCR с извлечением структуры

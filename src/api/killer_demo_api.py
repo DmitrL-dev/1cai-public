@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import hashlib
-from io import BytesIO
 import json
-from typing import Any, Literal
 import zipfile
+from io import BytesIO
+from typing import Any, Literal
 
 from fastapi import APIRouter, Response
 from pydantic import BaseModel, Field
@@ -90,7 +90,9 @@ def _compose(req: KillerDemoRequest) -> tuple[dict[str, Any], dict[str, Any]]:
         hotspot_limit=req.hotspot_limit,
         save_snapshot=False,
     )
-    assumptions = req.assumptions.model_dump(exclude_none=True) if req.assumptions else None
+    assumptions = (
+        req.assumptions.model_dump(exclude_none=True) if req.assumptions else None
+    )
     enterprise_profile = req.evidence_profile == "enterprise"
     bundle = build_evidence_bundle(
         executive=executive,
@@ -133,7 +135,9 @@ def _build_report(req: KillerDemoRequest) -> dict[str, Any]:
 
 
 def _json_bytes(payload: Any) -> bytes:
-    return json.dumps(payload, ensure_ascii=False, indent=2, default=str).encode("utf-8")
+    return json.dumps(payload, ensure_ascii=False, indent=2, default=str).encode(
+        "utf-8"
+    )
 
 
 def _role_packet_markdown(report: dict[str, Any], item: dict[str, Any]) -> str:
@@ -141,7 +145,9 @@ def _role_packet_markdown(report: dict[str, Any], item: dict[str, Any]) -> str:
     handoff = packet.get("procurement_handoff") or {}
     recipient = str(item.get("recipient") or "stakeholder")
     send_files = [str(file) for file in item.get("send", []) if file]
-    available_files = [str(file) for file in item.get("available_files", []) if file] or send_files
+    available_files = [
+        str(file) for file in item.get("available_files", []) if file
+    ] or send_files
     missing_files = [str(file) for file in item.get("missing_files", []) if file]
     route = str(item.get("route") or "/killer-demo")
     lines = [
@@ -154,7 +160,10 @@ def _role_packet_markdown(report: dict[str, Any], item: dict[str, Any]) -> str:
         "",
         "## Why This Stakeholder Gets It",
         "",
-        str(item.get("why") or "Use these files to evaluate the proof without opening the whole archive."),
+        str(
+            item.get("why")
+            or "Use these files to evaluate the proof without opening the whole archive."
+        ),
         "",
         "## Available In This Archive",
         "",
@@ -209,7 +218,9 @@ def _role_packets(report: dict[str, Any]) -> list[dict[str, str]]:
     return entries
 
 
-def _open_first_killer_demo(report: dict[str, Any], bundle: dict[str, Any], role_packets: list[dict[str, str]]) -> str:
+def _open_first_killer_demo(
+    report: dict[str, Any], bundle: dict[str, Any], role_packets: list[dict[str, str]]
+) -> str:
     packet = report.get("proof_packet") or {}
     handoff = packet.get("procurement_handoff") or {}
     order = [
@@ -237,7 +248,9 @@ def _open_first_killer_demo(report: dict[str, Any], bundle: dict[str, Any], role
     if role_packets:
         lines.extend(["", "## Role Packets", ""])
         for item in role_packets:
-            lines.append(f"- **{item['recipient']}**: `{item['filename']}` (`{item['route']}`)")
+            lines.append(
+                f"- **{item['recipient']}**: `{item['filename']}` (`{item['route']}`)"
+            )
     lines.extend(
         [
             "",
@@ -253,10 +266,15 @@ def _open_first_killer_demo(report: dict[str, Any], bundle: dict[str, Any], role
     return "\n".join(lines)
 
 
-def _archive_readme(report: dict[str, Any], bundle: dict[str, Any], role_packets: list[dict[str, str]]) -> str:
+def _archive_readme(
+    report: dict[str, Any], bundle: dict[str, Any], role_packets: list[dict[str, str]]
+) -> str:
     packet = report.get("proof_packet") or {}
     handoff = packet.get("procurement_handoff") or {}
-    role_line = ", ".join(f"`{item['filename']}`" for item in role_packets) or "`ROLE_*.md` when role packets are available"
+    role_line = (
+        ", ".join(f"`{item['filename']}`" for item in role_packets)
+        or "`ROLE_*.md` when role packets are available"
+    )
     return "\n".join(
         [
             "# 1C Rentgen Killer Demo Archive",
@@ -285,10 +303,14 @@ def _archive_readme(report: dict[str, Any], bundle: dict[str, Any], role_packets
     )
 
 
-def _verify_killer_demo_archive_markdown(report: dict[str, Any], bundle: dict[str, Any], role_packets: list[dict[str, str]]) -> str:
+def _verify_killer_demo_archive_markdown(
+    report: dict[str, Any], bundle: dict[str, Any], role_packets: list[dict[str, str]]
+) -> str:
     packet = report.get("proof_packet") or {}
     handoff = packet.get("procurement_handoff") or {}
-    role_line = ", ".join(f"`{item['filename']}`" for item in role_packets) or "`ROLE_*.md`"
+    role_line = (
+        ", ".join(f"`{item['filename']}`" for item in role_packets) or "`ROLE_*.md`"
+    )
     lines = [
         "# Verify Killer Demo Archive",
         "",
@@ -321,7 +343,9 @@ def _verify_killer_demo_archive_markdown(report: dict[str, Any], bundle: dict[st
     return "\n".join(lines)
 
 
-def _sync_embedded_archive_manifest(source_manifest: dict[str, Any] | None, replacements: dict[str, bytes]) -> bytes | None:
+def _sync_embedded_archive_manifest(
+    source_manifest: dict[str, Any] | None, replacements: dict[str, bytes]
+) -> bytes | None:
     if not source_manifest:
         return None
     updated = dict(source_manifest)
@@ -369,34 +393,60 @@ def _killer_demo_archive(
     with zipfile.ZipFile(BytesIO(evidence_archive["bytes"]), mode="r") as source:
         source_archive_manifest: dict[str, Any] | None = None
         if "archive-manifest.json" in source.namelist():
-            source_archive_manifest = json.loads(source.read("archive-manifest.json").decode("utf-8"))
+            source_archive_manifest = json.loads(
+                source.read("archive-manifest.json").decode("utf-8")
+            )
             if not isinstance(source_archive_manifest, dict):
                 source_archive_manifest = None
-        with zipfile.ZipFile(buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+        with zipfile.ZipFile(
+            buffer, mode="w", compression=zipfile.ZIP_DEFLATED
+        ) as archive:
             for item in source.infolist():
-                if item.is_dir() or item.filename in skipped or item.filename in written:
+                if (
+                    item.is_dir()
+                    or item.filename in skipped
+                    or item.filename in written
+                ):
                     continue
                 archive.writestr(item.filename, source.read(item.filename))
                 written.add(item.filename)
             additions = {
-                "README-KILLER-DEMO.md": _archive_readme(report, bundle, role_packets).encode("utf-8"),
-                "OPEN_FIRST_KILLER_DEMO.md": _open_first_killer_demo(report, bundle, role_packets).encode("utf-8"),
-                VERIFY_ARCHIVE_MD: _verify_killer_demo_archive_markdown(report, bundle, role_packets).encode("utf-8"),
-                str(report.get("download_name") or "rentgen-killer-demo-path.md"): str(report.get("markdown") or "").encode("utf-8"),
+                "README-KILLER-DEMO.md": _archive_readme(
+                    report, bundle, role_packets
+                ).encode("utf-8"),
+                "OPEN_FIRST_KILLER_DEMO.md": _open_first_killer_demo(
+                    report, bundle, role_packets
+                ).encode("utf-8"),
+                VERIFY_ARCHIVE_MD: _verify_killer_demo_archive_markdown(
+                    report, bundle, role_packets
+                ).encode("utf-8"),
+                str(report.get("download_name") or "rentgen-killer-demo-path.md"): str(
+                    report.get("markdown") or ""
+                ).encode("utf-8"),
                 "killer-demo.json": _json_bytes(report),
                 "proof-packet.json": _json_bytes(report.get("proof_packet") or {}),
             }
             receipt = report.get("meeting_close_receipt") or {}
             if receipt:
-                additions[str(receipt.get("filename") or MEETING_CLOSE_RECEIPT_MD)] = meeting_close_receipt_markdown(receipt).encode("utf-8")
-                additions[str(receipt.get("json_filename") or MEETING_CLOSE_RECEIPT_JSON)] = _json_bytes(receipt)
+                additions[
+                    str(receipt.get("filename") or MEETING_CLOSE_RECEIPT_MD)
+                ] = meeting_close_receipt_markdown(receipt).encode("utf-8")
+                additions[
+                    str(receipt.get("json_filename") or MEETING_CLOSE_RECEIPT_JSON)
+                ] = _json_bytes(receipt)
             activation = report.get("post_demo_activation_handoff") or {}
             if activation:
-                additions[str(activation.get("filename") or POST_DEMO_ACTIVATION_MD)] = post_demo_activation_handoff_markdown(activation).encode("utf-8")
-                additions[str(activation.get("json_filename") or POST_DEMO_ACTIVATION_JSON)] = _json_bytes(activation)
+                additions[
+                    str(activation.get("filename") or POST_DEMO_ACTIVATION_MD)
+                ] = post_demo_activation_handoff_markdown(activation).encode("utf-8")
+                additions[
+                    str(activation.get("json_filename") or POST_DEMO_ACTIVATION_JSON)
+                ] = _json_bytes(activation)
             for item in role_packets:
                 additions[item["filename"]] = item["content"].encode("utf-8")
-            synced_archive_manifest = _sync_embedded_archive_manifest(source_archive_manifest, additions)
+            synced_archive_manifest = _sync_embedded_archive_manifest(
+                source_archive_manifest, additions
+            )
             if synced_archive_manifest is not None:
                 additions["archive-manifest.json"] = synced_archive_manifest
             demo_manifest = {
@@ -405,16 +455,28 @@ def _killer_demo_archive(
                 "evidence_archive_sha256": str(evidence_archive.get("sha256") or ""),
                 "close_receipt": {
                     "filename": str(receipt.get("filename") or "") if receipt else "",
-                    "json_filename": str(receipt.get("json_filename") or "") if receipt else "",
+                    "json_filename": str(receipt.get("json_filename") or "")
+                    if receipt
+                    else "",
                     "status": str(receipt.get("status") or "") if receipt else "",
-                    "ready_to_send": bool(receipt.get("ready_to_send")) if receipt else False,
-                    "ready_to_ask": bool(receipt.get("ready_to_ask")) if receipt else False,
+                    "ready_to_send": bool(receipt.get("ready_to_send"))
+                    if receipt
+                    else False,
+                    "ready_to_ask": bool(receipt.get("ready_to_ask"))
+                    if receipt
+                    else False,
                 },
                 "activation_handoff": {
-                    "filename": str(activation.get("filename") or "") if activation else "",
-                    "json_filename": str(activation.get("json_filename") or "") if activation else "",
+                    "filename": str(activation.get("filename") or "")
+                    if activation
+                    else "",
+                    "json_filename": str(activation.get("json_filename") or "")
+                    if activation
+                    else "",
                     "status": str(activation.get("status") or "") if activation else "",
-                    "ready_to_start": bool(activation.get("ready_to_start")) if activation else False,
+                    "ready_to_start": bool(activation.get("ready_to_start"))
+                    if activation
+                    else False,
                     "route": str(activation.get("route") or "") if activation else "",
                 },
                 "role_packets": [
@@ -462,7 +524,9 @@ def _finding_summary(findings: list[dict[str, Any]]) -> dict[str, int]:
     return {"findings": len(findings), "high": high, "medium": medium, "low": low}
 
 
-def verify_killer_demo_archive_payload(payload: bytes, *, filename: str = "") -> dict[str, Any]:
+def verify_killer_demo_archive_payload(
+    payload: bytes, *, filename: str = ""
+) -> dict[str, Any]:
     """Verify a Killer Demo ZIP archive without extracting it."""
 
     findings: list[dict[str, Any]] = []
@@ -504,7 +568,9 @@ def verify_killer_demo_archive_payload(payload: bytes, *, filename: str = "") ->
                 )
                 demo_manifest: dict[str, Any] = {}
             else:
-                demo_manifest = json.loads(archive.read("killer-demo-manifest.json").decode("utf-8"))
+                demo_manifest = json.loads(
+                    archive.read("killer-demo-manifest.json").decode("utf-8")
+                )
                 if not isinstance(demo_manifest, dict):
                     findings.append(
                         {
@@ -517,14 +583,30 @@ def verify_killer_demo_archive_payload(payload: bytes, *, filename: str = "") ->
 
             for entry in demo_manifest.get("files", []):
                 if not isinstance(entry, dict):
-                    findings.append({"severity": "high", "code": "killer-demo-manifest-entry-invalid"})
+                    findings.append(
+                        {
+                            "severity": "high",
+                            "code": "killer-demo-manifest-entry-invalid",
+                        }
+                    )
                     continue
                 entry_name = str(entry.get("filename") or "")
                 if not entry_name:
-                    findings.append({"severity": "high", "code": "killer-demo-manifest-entry-without-filename"})
+                    findings.append(
+                        {
+                            "severity": "high",
+                            "code": "killer-demo-manifest-entry-without-filename",
+                        }
+                    )
                     continue
                 if entry_name not in names:
-                    findings.append({"severity": "high", "code": "killer-demo-entry-missing", "filename": entry_name})
+                    findings.append(
+                        {
+                            "severity": "high",
+                            "code": "killer-demo-entry-missing",
+                            "filename": entry_name,
+                        }
+                    )
                     continue
                 content = archive.read(entry_name)
                 checked += 1
@@ -551,12 +633,26 @@ def verify_killer_demo_archive_payload(payload: bytes, *, filename: str = "") ->
                         }
                     )
 
-            role_packet_names = {str(item.get("filename") or "") for item in demo_manifest.get("role_packets", []) if isinstance(item, dict)}
-            for filename_in_manifest in sorted(name for name in role_packet_names if name and name not in names):
-                findings.append({"severity": "high", "code": "role-packet-missing", "filename": filename_in_manifest})
+            role_packet_names = {
+                str(item.get("filename") or "")
+                for item in demo_manifest.get("role_packets", [])
+                if isinstance(item, dict)
+            }
+            for filename_in_manifest in sorted(
+                name for name in role_packet_names if name and name not in names
+            ):
+                findings.append(
+                    {
+                        "severity": "high",
+                        "code": "role-packet-missing",
+                        "filename": filename_in_manifest,
+                    }
+                )
 
         if "archive-manifest.json" in names:
-            evidence_verify = verify_evidence_bundle_archive_payload(payload, filename=filename)
+            evidence_verify = verify_evidence_bundle_archive_payload(
+                payload, filename=filename
+            )
             if evidence_verify["status"] == "fail":
                 findings.append(
                     {
@@ -582,9 +678,17 @@ def verify_killer_demo_archive_payload(payload: bytes, *, filename: str = "") ->
                 }
             )
     except zipfile.BadZipFile:
-        findings.append({"severity": "high", "code": "zip-invalid", "message": "Payload is not a readable ZIP archive."})
+        findings.append(
+            {
+                "severity": "high",
+                "code": "zip-invalid",
+                "message": "Payload is not a readable ZIP archive.",
+            }
+        )
     except (UnicodeDecodeError, json.JSONDecodeError, TypeError) as exc:
-        findings.append({"severity": "high", "code": "archive-json-invalid", "message": str(exc)})
+        findings.append(
+            {"severity": "high", "code": "archive-json-invalid", "message": str(exc)}
+        )
 
     summary = _finding_summary(findings)
     status = "fail" if summary["high"] else ("warn" if findings else "pass")
@@ -625,8 +729,12 @@ def archive(req: KillerDemoRequest) -> Response:
             "X-Archive-Files": str(archive_payload["files"]),
             "X-Evidence-Archive-Sha256": archive_payload["evidence_sha256"],
             KILLER_DEMO_MANIFEST_HEADER: archive_payload["killer_demo_manifest_file"],
-            KILLER_DEMO_MANIFEST_HASH_HEADER: archive_payload["killer_demo_manifest_sha256"],
-            KILLER_DEMO_MANIFEST_FILES_HEADER: str(archive_payload["killer_demo_manifest_files"]),
+            KILLER_DEMO_MANIFEST_HASH_HEADER: archive_payload[
+                "killer_demo_manifest_sha256"
+            ],
+            KILLER_DEMO_MANIFEST_FILES_HEADER: str(
+                archive_payload["killer_demo_manifest_files"]
+            ),
         },
     )
 
@@ -647,10 +755,16 @@ def verify_archive(req: KillerDemoRequest) -> dict[str, Any]:
         "X-Archive-Files": str(archive_payload["files"]),
         "X-Evidence-Archive-Sha256": archive_payload["evidence_sha256"],
         KILLER_DEMO_MANIFEST_HEADER: archive_payload["killer_demo_manifest_file"],
-        KILLER_DEMO_MANIFEST_HASH_HEADER: archive_payload["killer_demo_manifest_sha256"],
-        KILLER_DEMO_MANIFEST_FILES_HEADER: str(archive_payload["killer_demo_manifest_files"]),
+        KILLER_DEMO_MANIFEST_HASH_HEADER: archive_payload[
+            "killer_demo_manifest_sha256"
+        ],
+        KILLER_DEMO_MANIFEST_FILES_HEADER: str(
+            archive_payload["killer_demo_manifest_files"]
+        ),
     }
-    attach_archive_verification_receipt(result, expected_headers=result["expected_headers"])
+    attach_archive_verification_receipt(
+        result, expected_headers=result["expected_headers"]
+    )
     return result
 
 

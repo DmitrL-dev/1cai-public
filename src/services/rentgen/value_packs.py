@@ -66,13 +66,22 @@ def _value_room_bridge(
             "reason": "Value Packs turn feature depth into purchasable outcomes.",
         }
 
-    first_ready = next((pack for pack in packs if pack.get("maturity") == "pilot-ready"), packs[0] if packs else {})
+    first_ready = next(
+        (pack for pack in packs if pack.get("maturity") == "pilot-ready"),
+        packs[0] if packs else {},
+    )
     value_motion = {
         "label": str(first_ready.get("title") or "Pick value pack"),
         "route": "/value-packs",
         "status": "ready" if packs else "watch",
-        "ask": str(first_ready.get("price_story") or "Select the package that becomes the paid proof or rollout."),
-        "reason": str(first_ready.get("outcome") or "The package connects role, outcome, proof and deliverables."),
+        "ask": str(
+            first_ready.get("price_story")
+            or "Select the package that becomes the paid proof or rollout."
+        ),
+        "reason": str(
+            first_ready.get("outcome")
+            or "The package connects role, outcome, proof and deliverables."
+        ),
     }
 
     role_cards = list(brief.get("role_cards") or [])
@@ -81,7 +90,10 @@ def _value_room_bridge(
             {
                 "role": str(pack.get("id") or "pack"),
                 "title": str(pack.get("title") or "Value pack"),
-                "route": str((pack.get("routes") or [{"to": "/value-packs"}])[0].get("to") or "/value-packs"),
+                "route": str(
+                    (pack.get("routes") or [{"to": "/value-packs"}])[0].get("to")
+                    or "/value-packs"
+                ),
                 "status": "ready" if pack.get("maturity") == "pilot-ready" else "watch",
                 "spark": str(pack.get("outcome") or ""),
                 "proof_file": "rentgen-value-packs.md",
@@ -97,7 +109,9 @@ def _value_room_bridge(
                 "title": str(pack.get("title") or "Value pack"),
                 "route": "/value-packs",
                 "status": "ready" if pack.get("maturity") == "pilot-ready" else "watch",
-                "signal": "; ".join(str(item) for item in (pack.get("proof_points") or [])[:2]),
+                "signal": "; ".join(
+                    str(item) for item in (pack.get("proof_points") or [])[:2]
+                ),
                 "file": "rentgen-value-packs.md",
             }
             for pack in packs[:4]
@@ -106,10 +120,30 @@ def _value_room_bridge(
     meeting_flow = list(brief.get("meeting_flow") or [])
     if not meeting_flow:
         meeting_flow = [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Pick the role or pain first."},
-            {"step": 2, "label": "Package", "route": "/value-packs", "line": "Choose the role pack that becomes the paid scope."},
-            {"step": 3, "label": "Price", "route": "/commercial-offer-studio", "line": "Convert the pack into offer and procurement language."},
-            {"step": 4, "label": "Forward", "route": "/evidence-bundle", "line": "Attach buyer brief, value pack and proof files."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Pick the role or pain first.",
+            },
+            {
+                "step": 2,
+                "label": "Package",
+                "route": "/value-packs",
+                "line": "Choose the role pack that becomes the paid scope.",
+            },
+            {
+                "step": 3,
+                "label": "Price",
+                "route": "/commercial-offer-studio",
+                "line": "Convert the pack into offer and procurement language.",
+            },
+            {
+                "step": 4,
+                "label": "Forward",
+                "route": "/evidence-bundle",
+                "line": "Attach buyer brief, value pack and proof files.",
+            },
         ]
     open_first_path = build_open_first_path(
         existing_path=brief.get("open_first_path"),
@@ -120,13 +154,17 @@ def _value_room_bridge(
         orient_title="Value Packs",
         orient_route="/value-packs",
         orient_line="Choose the role pack that becomes the paid scope.",
-        orient_status=str(primary.get("status") or value_motion.get("status") or "watch"),
+        orient_status=str(
+            primary.get("status") or value_motion.get("status") or "watch"
+        ),
         prove_line="Show the package proof points that match the buyer role.",
         close_title="Commercial Offer",
         close_route="/commercial-offer-studio",
         close_line="Convert the pack into offer and procurement language.",
         close_file="rentgen-commercial-offer-studio.md",
-        close_status=str(primary.get("status") or value_motion.get("status") or "watch"),
+        close_status=str(
+            primary.get("status") or value_motion.get("status") or "watch"
+        ),
         verify_line="Attach buyer brief, value pack and proof files.",
     )
 
@@ -135,7 +173,11 @@ def _value_room_bridge(
             "/value-packs",
             str(primary.get("route") or "/value-packs"),
             str(value_motion["route"]),
-            *[str(route.get("to") or "") for pack in packs for route in pack.get("routes", [])],
+            *[
+                str(route.get("to") or "")
+                for pack in packs
+                for route in pack.get("routes", [])
+            ],
             *[str(item.get("route") or "") for item in role_cards],
             *[str(item.get("route") or "") for item in proof_readiness],
             *[str(item.get("route") or "") for item in meeting_flow],
@@ -156,14 +198,23 @@ def _value_room_bridge(
             "route": str(primary.get("route") or "/value-packs"),
             "status": str(primary.get("status") or "watch"),
             "ask": str(primary.get("ask") or "Choose package and prove it."),
-            "reason": str(primary.get("reason") or "Role packaging makes the product buyable."),
+            "reason": str(
+                primary.get("reason") or "Role packaging makes the product buyable."
+            ),
         },
         "value_motion": value_motion,
         "role_cards": role_cards[:5],
         "proof_readiness": proof_readiness[:4],
         "meeting_flow": meeting_flow[:4],
         "open_first_path": open_first_path[:4],
-        "files": ["buyer-brief.md", "buyer-pulse.md", OPEN_FIRST_PATH_FILE, "rentgen-value-packs.md", "rentgen-commercial-offer-studio.md", "OPEN_FIRST.md"],
+        "files": [
+            "buyer-brief.md",
+            "buyer-pulse.md",
+            OPEN_FIRST_PATH_FILE,
+            "rentgen-value-packs.md",
+            "rentgen-commercial-offer-studio.md",
+            "OPEN_FIRST.md",
+        ],
         "routes": routes,
         "close_question": "Which pack becomes the first paid proof, pilot or rollout?",
     }
@@ -200,19 +251,35 @@ def _markdown(report: dict[str, Any]) -> str:
     bridge = report.get("value_room_bridge") or {}
     if bridge:
         lines.extend(["## Value Room Bridge", ""])
-        lines.append(f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**")
+        lines.append(
+            f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**"
+        )
         lines.append(f"- Room line: {bridge.get('room_line', '')}")
         motion = bridge.get("primary_motion") or {}
-        lines.append(f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/value-packs')}`): {motion.get('ask', '')}")
+        lines.append(
+            f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/value-packs')}`): {motion.get('ask', '')}"
+        )
         value_motion = bridge.get("value_motion") or {}
-        lines.append(f"- Value motion: **{value_motion.get('label', 'n/a')}** (`{value_motion.get('route', '/value-packs')}`): {value_motion.get('ask', '')}")
-        lines.extend(open_first_path_markdown_lines(bridge.get("open_first_path"), default_route="/value-packs"))
+        lines.append(
+            f"- Value motion: **{value_motion.get('label', 'n/a')}** (`{value_motion.get('route', '/value-packs')}`): {value_motion.get('ask', '')}"
+        )
+        lines.extend(
+            open_first_path_markdown_lines(
+                bridge.get("open_first_path"), default_route="/value-packs"
+            )
+        )
         for item in bridge.get("role_cards", []):
-            lines.append(f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}")
+            lines.append(
+                f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}"
+            )
         for item in bridge.get("proof_readiness", []):
-            lines.append(f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}")
+            lines.append(
+                f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}"
+            )
         for item in bridge.get("meeting_flow", []):
-            lines.append(f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}")
+            lines.append(
+                f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}"
+            )
         lines.append("")
     lines.extend(["## Licensing story", "", report["licensing_story"]])
     return "\n".join(lines)
@@ -383,7 +450,9 @@ def build_value_packs(
                 "Deployment and evidence checklist.",
             ],
             price_story="Покупается как on-prem актив/лицензия, AI credits остаются optional add-on.",
-            caveats=["Enterprise hardening still needs installer/SBOM/signed offline bundle work."],
+            caveats=[
+                "Enterprise hardening still needs installer/SBOM/signed offline bundle work."
+            ],
         ),
     ]
     mature = sum(1 for pack in packs if pack["maturity"] == "pilot-ready")

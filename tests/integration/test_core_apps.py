@@ -1,10 +1,10 @@
-import requests
 import logging
-import unittest
-import time
-
 import os as _os
 import sys as _sys
+import time
+import unittest
+
+import requests
 
 _sys.path.insert(0, _os.path.dirname(__file__))
 from service_probe import skip_if_unreachable
@@ -23,7 +23,9 @@ class TestCoreApps(unittest.TestCase):
             response = requests.get(url, timeout=5)
             logger.info(f"{name} returned {response.status_code}")
             self.assertIn(
-                response.status_code, expected_codes, f"{name} returned unexpected code {response.status_code}"
+                response.status_code,
+                expected_codes,
+                f"{name} returned unexpected code {response.status_code}",
             )
         except requests.exceptions.ConnectionError:
             self.fail(f"{name} is not reachable at {url}")
@@ -40,7 +42,9 @@ class TestCoreApps(unittest.TestCase):
         # VS Code redirects to login (302) or shows login page (200) depending on path
         # It might return 401 if auth is required immediately
         # We accept 200, 302, 401 as signs of life
-        self.check_url("VS Code", "http://localhost:8000", expected_codes=[200, 302, 401])
+        self.check_url(
+            "VS Code", "http://localhost:8000", expected_codes=[200, 302, 401]
+        )
 
     def test_portainer_availability(self):
         """Test Portainer availability."""

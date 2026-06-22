@@ -1,4 +1,3 @@
-
 """
 LLM Gateway — центральная точка выбора провайдера с поддержкой fallback-цепочек.
 
@@ -14,7 +13,7 @@ import logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Sequence, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence
 
 import yaml
 
@@ -71,6 +70,7 @@ class LLMGateway:
         if enable_cache:
             try:
                 from src.ai.intelligent_cache import IntelligentCache
+
                 self.cache = IntelligentCache(max_size=1000, default_ttl_seconds=300)
             except Exception as e:
                 logger.warning("Failed to initialize cache: %s", e)

@@ -2,20 +2,16 @@
 
 from __future__ import annotations
 
-from collections import Counter
 import hashlib
 import json
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from src.services.audit_log import record_event
 from src.services.rentgen import artifact_graph
-from src.services.rentgen.metadata_graph import (
-    build_metadata_graph,
-    _enrich_object,
-)
-
+from src.services.rentgen.metadata_graph import _enrich_object, build_metadata_graph
 
 ROOT = Path(__file__).resolve().parents[3]
 STORE_PATH = ROOT / "data" / "canonical_metadata.json"
@@ -66,8 +62,12 @@ def _load(path: Path | None = None) -> dict[str, list[dict[str, Any]]]:
     if not isinstance(payload, dict):
         return {"snapshots": [], "objects": []}
     return {
-        "snapshots": payload.get("snapshots", []) if isinstance(payload.get("snapshots"), list) else [],
-        "objects": payload.get("objects", []) if isinstance(payload.get("objects"), list) else [],
+        "snapshots": payload.get("snapshots", [])
+        if isinstance(payload.get("snapshots"), list)
+        else [],
+        "objects": payload.get("objects", [])
+        if isinstance(payload.get("objects"), list)
+        else [],
     }
 
 
@@ -83,7 +83,9 @@ def _audit_path(path: Path | None = None) -> Path:
     return (path or STORE_PATH).parent / "audit_log.ndjson"
 
 
-def _audit(action: str, *, target: str, metadata: dict[str, Any], path: Path | None = None) -> None:
+def _audit(
+    action: str, *, target: str, metadata: dict[str, Any], path: Path | None = None
+) -> None:
     try:
         record_event(
             action=action,
@@ -134,7 +136,9 @@ def _form_id(form_path: str) -> str:
     return _id("form", form_path)
 
 
-def _rights_summary(rights: dict[str, Any] | None, rights_path: str | None) -> dict[str, Any]:
+def _rights_summary(
+    rights: dict[str, Any] | None, rights_path: str | None
+) -> dict[str, Any]:
     rights = rights or {}
     return {
         "path": rights.get("path") or rights_path,
@@ -146,7 +150,9 @@ def _rights_summary(rights: dict[str, Any] | None, rights_path: str | None) -> d
     }
 
 
-def _canonical_object(graph: dict[str, Any], raw: dict[str, Any], *, snapshot_id: str, imported_at: str) -> dict[str, Any]:
+def _canonical_object(
+    graph: dict[str, Any], raw: dict[str, Any], *, snapshot_id: str, imported_at: str
+) -> dict[str, Any]:
     enriched = _enrich_object(graph, raw)
     stable = {
         "ref": enriched["ref"],
@@ -194,7 +200,9 @@ def _snapshot_preview(obj: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _sync_to_artifacts(objects: list[dict[str, Any]], *, artifact_path: Path | None = None) -> dict[str, Any]:
+def _sync_to_artifacts(
+    objects: list[dict[str, Any]], *, artifact_path: Path | None = None
+) -> dict[str, Any]:
     sync = {"artifacts": 0, "links": 0, "errors": []}
     for obj in objects:
         try:
@@ -296,10 +304,14 @@ def import_metadata_snapshot(
         build_metadata_graph.cache_clear()
     graph = build_metadata_graph(config_path)
     if not graph["available"]:
-        raise FileNotFoundError(f"Metadata configuration path not found: {graph['config_path']}")
+        raise FileNotFoundError(
+            f"Metadata configuration path not found: {graph['config_path']}"
+        )
 
     imported_at = _now()
-    snapshot_id = _id("msnap", {"config_path": graph["config_path"], "name": name, "at": imported_at})
+    snapshot_id = _id(
+        "msnap", {"config_path": graph["config_path"], "name": name, "at": imported_at}
+    )
     objects = [
         _canonical_object(graph, raw, snapshot_id=snapshot_id, imported_at=imported_at)
         for raw in graph["objects"]
@@ -310,7 +322,9 @@ def import_metadata_snapshot(
     evidence_hash = _fingerprint(snapshot_objects)
     snapshot = {
         "id": snapshot_id,
-        "name": _clean(name, limit=160) or graph["configuration"].get("name") or "metadata",
+        "name": _clean(name, limit=160)
+        or graph["configuration"].get("name")
+        or "metadata",
         "source": _clean(source, limit=80) or "edt",
         "config_path": graph["config_path"],
         "created_at": imported_at,
@@ -321,7 +335,10 @@ def import_metadata_snapshot(
             "by_group": dict(by_group),
             "modules": sum(len(obj.get("modules", [])) for obj in objects),
             "forms": sum(len(obj.get("forms", [])) for obj in objects),
-            "dangerous_rights": sum(int((obj.get("rights") or {}).get("dangerous_total") or 0) for obj in objects),
+            "dangerous_rights": sum(
+                int((obj.get("rights") or {}).get("dangerous_total") or 0)
+                for obj in objects
+            ),
         },
         "object_ids": [obj["id"] for obj in objects],
         "objects": snapshot_objects,
@@ -337,12 +354,19 @@ def import_metadata_snapshot(
     sync = _sync_to_artifacts(objects, artifact_path=artifact_path)
     snapshot["artifact_sync"] = sync
     payload = _load(path)
-    payload["snapshots"] = [snapshot if item.get("id") == snapshot_id else item for item in payload["snapshots"]]
+    payload["snapshots"] = [
+        snapshot if item.get("id") == snapshot_id else item
+        for item in payload["snapshots"]
+    ]
     _write(payload, path)
     _audit(
         "metadata.canonical.import",
         target=snapshot_id,
-        metadata={"name": snapshot["name"], "summary": snapshot["summary"], "config_path": graph["config_path"]},
+        metadata={
+            "name": snapshot["name"],
+            "summary": snapshot["summary"],
+            "config_path": graph["config_path"],
+        },
         path=path,
     )
     return snapshot
@@ -367,13 +391,26 @@ def list_metadata_objects(
         items = [
             item
             for item in items
-            if needle in " ".join([str(item.get("ref") or ""), str(item.get("name") or ""), str(item.get("path") or "")]).casefold()
+            if needle
+            in " ".join(
+                [
+                    str(item.get("ref") or ""),
+                    str(item.get("name") or ""),
+                    str(item.get("path") or ""),
+                ]
+            ).casefold()
         ]
     items.sort(key=lambda item: (item.get("type", ""), item.get("ref", "")))
-    return {"items": items[: max(1, limit)], "total": len(items), "path": str(path or STORE_PATH)}
+    return {
+        "items": items[: max(1, limit)],
+        "total": len(items),
+        "path": str(path or STORE_PATH),
+    }
 
 
-def get_canonical_object(identifier: str, *, path: Path | None = None) -> dict[str, Any] | None:
+def get_canonical_object(
+    identifier: str, *, path: Path | None = None
+) -> dict[str, Any] | None:
     needle = identifier.casefold().replace("\\", "/")
     for item in _load(path)["objects"]:
         candidates = {
@@ -387,9 +424,15 @@ def get_canonical_object(identifier: str, *, path: Path | None = None) -> dict[s
     return None
 
 
-def list_metadata_snapshots(*, limit: int = 50, path: Path | None = None) -> dict[str, Any]:
+def list_metadata_snapshots(
+    *, limit: int = 50, path: Path | None = None
+) -> dict[str, Any]:
     items = _load(path)["snapshots"]
-    return {"items": items[: max(1, limit)], "total": len(items), "path": str(path or STORE_PATH)}
+    return {
+        "items": items[: max(1, limit)],
+        "total": len(items),
+        "path": str(path or STORE_PATH),
+    }
 
 
 def _snapshot(snapshot_id: str, *, path: Path | None = None) -> dict[str, Any]:
@@ -436,12 +479,31 @@ def diff_metadata(
         for key in ("counts", "modules", "forms", "commands", "rights"):
             if old.get(key) != new.get(key):
                 changes[key] = {"before": old.get(key), "after": new.get(key)}
-        changed.append({"ref": ref, "type": new.get("type"), "name": new.get("name"), "changes": changes})
+        changed.append(
+            {
+                "ref": ref,
+                "type": new.get("type"),
+                "name": new.get("name"),
+                "changes": changes,
+            }
+        )
 
     return {
-        "before": {"id": before["id"], "created_at": before.get("created_at"), "summary": before.get("summary", {})},
-        "after": {"id": after["id"], "created_at": after.get("created_at"), "summary": after.get("summary", {})},
-        "summary": {"added": len(added_refs), "removed": len(removed_refs), "changed": len(changed)},
+        "before": {
+            "id": before["id"],
+            "created_at": before.get("created_at"),
+            "summary": before.get("summary", {}),
+        },
+        "after": {
+            "id": after["id"],
+            "created_at": after.get("created_at"),
+            "summary": after.get("summary", {}),
+        },
+        "summary": {
+            "added": len(added_refs),
+            "removed": len(removed_refs),
+            "changed": len(changed),
+        },
         "added": [after_map[ref] for ref in added_refs[:limit]],
         "removed": [before_map[ref] for ref in removed_refs[:limit]],
         "changed": changed[:limit],
@@ -455,7 +517,9 @@ def diff_rights(
     limit: int = 200,
     path: Path | None = None,
 ) -> dict[str, Any]:
-    drift = diff_metadata(before_id=before_id, after_id=after_id, limit=limit, path=path)
+    drift = diff_metadata(
+        before_id=before_id, after_id=after_id, limit=limit, path=path
+    )
     rights_changes = []
     for item in drift["changed"]:
         if "rights" in item.get("changes", {}):
@@ -469,7 +533,9 @@ def diff_rights(
             "changed_roles": len(rights_changes),
             "added_roles": len(added_roles),
             "removed_roles": len(removed_roles),
-            "dangerous_rights_after": drift["after"]["summary"].get("dangerous_rights", 0),
+            "dangerous_rights_after": drift["after"]["summary"].get(
+                "dangerous_rights", 0
+            ),
         },
         "changed": rights_changes[:limit],
         "added_roles": added_roles[:limit],

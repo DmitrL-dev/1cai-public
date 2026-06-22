@@ -35,7 +35,9 @@ class WikiSearchService:
     async def ensure_collection(self):
         """Ensure the configured vector collection exists when an adapter is present."""
         if self.qdrant and hasattr(self.qdrant, "create_collection"):
-            result = self.qdrant.create_collection(self.COLLECTION_NAME, vector_size=768)
+            result = self.qdrant.create_collection(
+                self.COLLECTION_NAME, vector_size=768
+            )
             if inspect.isawaitable(result):
                 await result
             return {"mode": "qdrant", "collection": self.COLLECTION_NAME}

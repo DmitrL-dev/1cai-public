@@ -1,6 +1,6 @@
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-import pytest
 
 from src.ai.mcp.server import (
     TOOLS,
@@ -38,11 +38,19 @@ class FakeStore:
 
     def module_impact(self, module_path, max_depth=5, max_edges=600):
         return {
-            "canonical": {"object_name": "Document.Order", "module_kind": "ObjectModule", "source": "fake"},
-            "graph_modules": [{"name": "Order.ObjectModule", "fan_in": 3, "fan_out": 4}],
+            "canonical": {
+                "object_name": "Document.Order",
+                "module_kind": "ObjectModule",
+                "source": "fake",
+            },
+            "graph_modules": [
+                {"name": "Order.ObjectModule", "fan_in": 3, "fan_out": 4}
+            ],
             "entry_subroutines": 2,
             "total": 42,
-            "impacted_modules": [{"module": "CommonModules/Sales/Ext/Module.bsl", "edges": 3}],
+            "impacted_modules": [
+                {"module": "CommonModules/Sales/Ext/Module.bsl", "edges": 3}
+            ],
         }
 
     def hotspots_for_graph_modules(self, module_names, limit=10):
@@ -59,7 +67,9 @@ class FakeStore:
 def test_change_set_lifecycle_analysis_tests_and_release(tmp_path, monkeypatch):
     store_path = tmp_path / "change_sets.json"
     artifact_path = tmp_path / "artifact_graph.json"
-    monkeypatch.setattr(policy_engine, "EVALUATIONS_PATH", tmp_path / "policy_evaluations.json")
+    monkeypatch.setattr(
+        policy_engine, "EVALUATIONS_PATH", tmp_path / "policy_evaluations.json"
+    )
     monkeypatch.setattr(policy_engine, "WAIVERS_PATH", tmp_path / "policy_waivers.json")
     record = change_sets.create_change_set(
         {
@@ -73,8 +83,12 @@ def test_change_set_lifecycle_analysis_tests_and_release(tmp_path, monkeypatch):
         artifact_path=artifact_path,
     )
 
-    analyzed = change_sets.analyze_change_set(FakeStore(), record["id"], path=store_path, artifact_path=artifact_path)
-    tests = change_sets.select_change_set_tests(FakeStore(), record["id"], path=store_path)
+    analyzed = change_sets.analyze_change_set(
+        FakeStore(), record["id"], path=store_path, artifact_path=artifact_path
+    )
+    tests = change_sets.select_change_set_tests(
+        FakeStore(), record["id"], path=store_path
+    )
     release = change_sets.attach_release_readiness(
         FakeStore(),
         record["id"],
@@ -118,7 +132,9 @@ def test_change_set_lifecycle_analysis_tests_and_release(tmp_path, monkeypatch):
 def test_change_sets_api_exposes_workflow(tmp_path, monkeypatch):
     monkeypatch.setattr(change_sets, "STORE_PATH", tmp_path / "change_sets.json")
     monkeypatch.setattr(artifact_graph, "STORE_PATH", tmp_path / "artifact_graph.json")
-    monkeypatch.setattr(policy_engine, "EVALUATIONS_PATH", tmp_path / "policy_evaluations.json")
+    monkeypatch.setattr(
+        policy_engine, "EVALUATIONS_PATH", tmp_path / "policy_evaluations.json"
+    )
     monkeypatch.setattr(policy_engine, "WAIVERS_PATH", tmp_path / "policy_waivers.json")
     monkeypatch.setattr(change_sets_api, "store_or_none", lambda: FakeStore())
 
@@ -142,7 +158,9 @@ def test_change_sets_api_exposes_workflow(tmp_path, monkeypatch):
     )
     analyzed = client.post("/api/v1/change-sets/CHG-API/analyze", json={})
     tests = client.post("/api/v1/change-sets/CHG-API/select-tests", json={})
-    release = client.post("/api/v1/change-sets/CHG-API/release-readiness", json={"include_forms": False})
+    release = client.post(
+        "/api/v1/change-sets/CHG-API/release-readiness", json={"include_forms": False}
+    )
 
     # Approver differs from the "dev" author so SoD passes; the 400 is the policy
     # gate failing, and the override path then approves.
@@ -183,7 +201,9 @@ def test_change_sets_api_exposes_workflow(tmp_path, monkeypatch):
 async def test_mcp_change_set_tools_are_registered_and_work(tmp_path, monkeypatch):
     monkeypatch.setattr(change_sets, "STORE_PATH", tmp_path / "change_sets.json")
     monkeypatch.setattr(artifact_graph, "STORE_PATH", tmp_path / "artifact_graph.json")
-    monkeypatch.setattr(policy_engine, "EVALUATIONS_PATH", tmp_path / "policy_evaluations.json")
+    monkeypatch.setattr(
+        policy_engine, "EVALUATIONS_PATH", tmp_path / "policy_evaluations.json"
+    )
     monkeypatch.setattr(policy_engine, "WAIVERS_PATH", tmp_path / "policy_waivers.json")
     monkeypatch.setattr("src.api._rentgen_store.store_or_none", lambda: FakeStore())
 

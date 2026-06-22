@@ -13,7 +13,9 @@ class BPMNService:
     def __init__(self, db_pool: asyncpg.Pool):
         self.db = db_pool
 
-    async def list_diagrams(self, project_id: str | None = None) -> List[Dict[str, Any]]:
+    async def list_diagrams(
+        self, project_id: str | None = None
+    ) -> List[Dict[str, Any]]:
         """List all BPMN diagrams."""
         async with self.db.acquire() as conn:
             tenant_id = await conn.fetchval("SELECT id FROM tenants LIMIT 1")
@@ -75,12 +77,16 @@ class BPMNService:
                 "name": diagram["name"],
                 "description": diagram["description"],
                 "xml": diagram["xml_content"],
-                "project_id": (str(diagram["project_id"]) if diagram["project_id"] else None),
+                "project_id": (
+                    str(diagram["project_id"]) if diagram["project_id"] else None
+                ),
                 "created_at": diagram["created_at"].isoformat(),
                 "updated_at": diagram["updated_at"].isoformat(),
             }
 
-    async def save_diagram(self, name: str, description: str, xml: str, project_id: str | None = None) -> str:
+    async def save_diagram(
+        self, name: str, description: str, xml: str, project_id: str | None = None
+    ) -> str:
         """Save new BPMN diagram."""
         async with self.db.acquire() as conn:
             tenant_id = await conn.fetchval("SELECT id FROM tenants LIMIT 1")
@@ -105,7 +111,9 @@ class BPMNService:
             logger.info("Saved BPMN diagram", extra={"diagram_id": str(diagram_id)})
             return str(diagram_id)
 
-    async def update_diagram(self, diagram_id: str, name: str, description: str, xml: str) -> bool:
+    async def update_diagram(
+        self, diagram_id: str, name: str, description: str, xml: str
+    ) -> bool:
         """Update existing BPMN diagram."""
         async with self.db.acquire() as conn:
             updated = await conn.execute(
@@ -128,6 +136,8 @@ class BPMNService:
     async def delete_diagram(self, diagram_id: str) -> bool:
         """Delete BPMN diagram."""
         async with self.db.acquire() as conn:
-            deleted = await conn.execute("DELETE FROM bpmn_diagrams WHERE id = $1", diagram_id)
+            deleted = await conn.execute(
+                "DELETE FROM bpmn_diagrams WHERE id = $1", diagram_id
+            )
 
             return deleted != "DELETE 0"

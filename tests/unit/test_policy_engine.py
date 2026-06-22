@@ -2,9 +2,9 @@ import os
 
 os.environ.setdefault("JWT_SECRET", "unit-test-secret-key-please-rotate")
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-import pytest
 
 from src.ai.mcp.server import (
     TOOLS,
@@ -92,7 +92,9 @@ _TWO_USERS = (
 
 
 def test_policies_api_exposes_evaluate_and_waivers(tmp_path, monkeypatch):
-    monkeypatch.setattr(policy_engine, "EVALUATIONS_PATH", tmp_path / "policy_evaluations.json")
+    monkeypatch.setattr(
+        policy_engine, "EVALUATIONS_PATH", tmp_path / "policy_evaluations.json"
+    )
     monkeypatch.setattr(policy_engine, "WAIVERS_PATH", tmp_path / "policy_waivers.json")
     monkeypatch.setattr(artifact_graph, "STORE_PATH", tmp_path / "artifact_graph.json")
 
@@ -100,8 +102,12 @@ def test_policies_api_exposes_evaluate_and_waivers(tmp_path, monkeypatch):
     # principal (not the body). Separation of duties => the owner cannot approve
     # their own waiver, so create as "architect" and approve as "lead".
     auth_service = _auth_service(_TWO_USERS)
-    owner_token = auth_service.create_access_token(auth_service.authenticate_user("architect", "pw"))
-    approver_token = auth_service.create_access_token(auth_service.authenticate_user("lead", "pw"))
+    owner_token = auth_service.create_access_token(
+        auth_service.authenticate_user("architect", "pw")
+    )
+    approver_token = auth_service.create_access_token(
+        auth_service.authenticate_user("lead", "pw")
+    )
 
     app = FastAPI()
     app.add_middleware(JWTUserContextMiddleware, auth_service=auth_service)
@@ -144,7 +150,9 @@ def test_policies_api_exposes_evaluate_and_waivers(tmp_path, monkeypatch):
 def test_policies_api_blocks_self_approval(tmp_path, monkeypatch):
     """SoD at the API boundary: a waiver owner (authenticated principal) cannot
     approve their own waiver -> 403 (PermissionError mapped in _handle_error)."""
-    monkeypatch.setattr(policy_engine, "EVALUATIONS_PATH", tmp_path / "policy_evaluations.json")
+    monkeypatch.setattr(
+        policy_engine, "EVALUATIONS_PATH", tmp_path / "policy_evaluations.json"
+    )
     monkeypatch.setattr(policy_engine, "WAIVERS_PATH", tmp_path / "policy_waivers.json")
     monkeypatch.setattr(artifact_graph, "STORE_PATH", tmp_path / "artifact_graph.json")
 
@@ -152,7 +160,9 @@ def test_policies_api_blocks_self_approval(tmp_path, monkeypatch):
         '[{"username":"solo","password":"pw","user_id":"u-solo",'
         '"roles":["architect"],"permissions":[]}]'
     )
-    token = auth_service.create_access_token(auth_service.authenticate_user("solo", "pw"))
+    token = auth_service.create_access_token(
+        auth_service.authenticate_user("solo", "pw")
+    )
     headers = {"Authorization": f"Bearer {token}"}
 
     app = FastAPI()
@@ -180,14 +190,18 @@ def test_policies_api_blocks_self_approval(tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_mcp_policy_tools_are_registered_and_work(tmp_path, monkeypatch):
-    monkeypatch.setattr(policy_engine, "EVALUATIONS_PATH", tmp_path / "policy_evaluations.json")
+    monkeypatch.setattr(
+        policy_engine, "EVALUATIONS_PATH", tmp_path / "policy_evaluations.json"
+    )
     monkeypatch.setattr(policy_engine, "WAIVERS_PATH", tmp_path / "policy_waivers.json")
     monkeypatch.setattr(artifact_graph, "STORE_PATH", tmp_path / "artifact_graph.json")
 
     names = {tool.name for tool in TOOLS}
     assert {"policy_evaluate", "policy_waiver_request", "policy_waiver_decide"} <= names
 
-    failed = await handle_policy_evaluate({"context": RISK_CONTEXT, "scope_id": "CHG-MCP"})
+    failed = await handle_policy_evaluate(
+        {"context": RISK_CONTEXT, "scope_id": "CHG-MCP"}
+    )
     waiver = await handle_policy_waiver_request(
         {
             "rule_id": "impact.max_risk.high",
@@ -217,7 +231,9 @@ async def test_mcp_waiver_decide_blocks_self_approval(tmp_path, monkeypatch):
     MCP handler must surface that as a blocked/error result and must NEVER
     report status == "approved".
     """
-    monkeypatch.setattr(policy_engine, "EVALUATIONS_PATH", tmp_path / "policy_evaluations.json")
+    monkeypatch.setattr(
+        policy_engine, "EVALUATIONS_PATH", tmp_path / "policy_evaluations.json"
+    )
     monkeypatch.setattr(policy_engine, "WAIVERS_PATH", tmp_path / "policy_waivers.json")
     monkeypatch.setattr(artifact_graph, "STORE_PATH", tmp_path / "artifact_graph.json")
 

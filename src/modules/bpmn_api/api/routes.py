@@ -28,7 +28,9 @@ async def list_diagrams(
 
 
 @router.get("/diagrams/{diagram_id}")
-async def get_diagram(diagram_id: str, service: BPMNService = Depends(get_bpmn_service)) -> Dict[str, Any]:
+async def get_diagram(
+    diagram_id: str, service: BPMNService = Depends(get_bpmn_service)
+) -> Dict[str, Any]:
     """Get specific BPMN diagram."""
     try:
         diagram = await service.get_diagram(diagram_id)
@@ -42,10 +44,14 @@ async def get_diagram(diagram_id: str, service: BPMNService = Depends(get_bpmn_s
 
 
 @router.post("/diagrams")
-async def save_diagram(request: SaveDiagramRequest, service: BPMNService = Depends(get_bpmn_service)) -> Dict[str, Any]:
+async def save_diagram(
+    request: SaveDiagramRequest, service: BPMNService = Depends(get_bpmn_service)
+) -> Dict[str, Any]:
     """Save new BPMN diagram."""
     try:
-        diagram_id = await service.save_diagram(request.name, request.description, request.xml, request.project_id)
+        diagram_id = await service.save_diagram(
+            request.name, request.description, request.xml, request.project_id
+        )
         return {"id": diagram_id, "message": "Diagram saved successfully"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -61,7 +67,9 @@ async def update_diagram(
 ) -> Dict[str, Any]:
     """Update existing BPMN diagram."""
     try:
-        success = await service.update_diagram(diagram_id, request.name, request.description, request.xml)
+        success = await service.update_diagram(
+            diagram_id, request.name, request.description, request.xml
+        )
         if not success:
             raise HTTPException(status_code=404, detail="Diagram not found")
         return {"id": diagram_id, "message": "Diagram updated successfully"}
@@ -72,7 +80,9 @@ async def update_diagram(
 
 
 @router.delete("/diagrams/{diagram_id}")
-async def delete_diagram(diagram_id: str, service: BPMNService = Depends(get_bpmn_service)) -> Dict[str, Any]:
+async def delete_diagram(
+    diagram_id: str, service: BPMNService = Depends(get_bpmn_service)
+) -> Dict[str, Any]:
     """Delete BPMN diagram."""
     try:
         success = await service.delete_diagram(diagram_id)

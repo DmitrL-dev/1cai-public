@@ -1,4 +1,3 @@
-
 """
 Telegram Bot для 1C AI Assistant
 Прямая интеграция с AIOrchestrator

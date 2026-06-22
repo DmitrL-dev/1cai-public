@@ -28,7 +28,8 @@ def test_consolidator_stores_llm_generated_insight_when_configured():
     Consolidator(memorizer, llm_service=LocalLLM()).run_maintenance()
 
     dreams = [
-        item for item in memorizer.storage.values()
+        item
+        for item in memorizer.storage.values()
         if item.provenance.source == MemorySource.DREAM
     ]
     assert len(dreams) == 1

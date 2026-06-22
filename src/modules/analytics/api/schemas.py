@@ -1,5 +1,5 @@
 """Модуль схем данных для аналитики и дашбордов."""
-    
+
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -17,6 +17,7 @@ class RevenueData(BaseModel):
         change_percent: Процент изменения.
         trend: Тренд ("up" или "down").
     """
+
     this_month: float
     last_month: float
     change_percent: float
@@ -32,6 +33,7 @@ class CustomersData(BaseModel):
         total: Всего клиентов.
         new_this_month: Новых клиентов за месяц.
     """
+
     total: int
     new_this_month: int
     measured: bool = True
@@ -47,6 +49,7 @@ class MetricData(BaseModel):
         trend: Направление тренда.
         status: Статус (good/warning/critical).
     """
+
     value: float
     change: float
     trend: str
@@ -65,6 +68,7 @@ class OwnerDashboardResponse(BaseModel):
         system_status: Статус системы.
         recent_activities: Список недавних активностей.
     """
+
     revenue: RevenueData
     customers: CustomersData
     growth_percent: float
@@ -88,6 +92,7 @@ class ExecutiveDashboardResponse(BaseModel):
         objectives: Стратегические цели.
         metrics: Прочие метрики.
     """
+
     id: str
     health: Dict[str, str]
     roi: MetricData
@@ -112,6 +117,7 @@ class SprintProgress(BaseModel):
         blockers: Количество блокеров.
         end_date: Дата окончания.
     """
+
     sprint_number: int
     tasks_done: int
     tasks_total: int
@@ -131,6 +137,7 @@ class PMDashboardResponse(BaseModel):
         team_workload: Загрузка команды.
         sprint_progress: Прогресс текущего спринта.
     """
+
     id: str
     projects: List[Dict[str, Any]]
     projects_summary: Dict[str, Any]
@@ -153,6 +160,7 @@ class DeveloperDashboardResponse(BaseModel):
         code_quality: Метрики качества кода.
         ai_suggestions: Предложения AI.
     """
+
     id: str
     name: str
     assigned_tasks: List[Dict[str, Any]]
@@ -175,6 +183,7 @@ class ReportRequest(BaseModel):
         period_days: Период в днях.
         components: Список компонентов для анализа.
     """
+
     title: str
     period_days: int = 7
     components: Optional[List[str]] = None
@@ -193,6 +202,7 @@ class ReportResponse(BaseModel):
         recommendations: Рекомендации.
         timestamp: Время создания.
     """
+
     id: str
     title: str
     period_start: datetime

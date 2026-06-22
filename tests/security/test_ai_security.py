@@ -1,4 +1,3 @@
-
 """
 Security Tests - для AI agents защиты
 Based on Meta's Agents Rule of Two framework

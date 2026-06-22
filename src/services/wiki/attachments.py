@@ -4,11 +4,11 @@ Handles file uploads to S3-compatible storage (MinIO/AWS)
 """
 
 from typing import Optional
-from src.config import settings
 
 import boto3
 from botocore.exceptions import ClientError
 
+from src.config import settings
 from src.utils.structured_logging import StructuredLogger
 
 logger = StructuredLogger(__name__).logger
@@ -39,7 +39,9 @@ class WikiAttachmentStorage:
             aws_secret_access_key=secret_key,
         )
 
-    async def upload_file(self, file_content: bytes, filename: str, content_type: str) -> Optional[str]:
+    async def upload_file(
+        self, file_content: bytes, filename: str, content_type: str
+    ) -> Optional[str]:
         """
         Upload file to S3 and return public URL.
         """

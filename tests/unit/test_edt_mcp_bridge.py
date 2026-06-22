@@ -14,7 +14,6 @@ from src.ai.mcp.server import (
     handle_edt_mcp_toolsets,
 )
 from src.api.edt_mcp_api import router
-from src.services.rentgen import approval_workflow as approvals
 from src.services.edt_mcp_bridge import (
     build_connection_config,
     call_live_edt_mcp_tool,
@@ -26,6 +25,7 @@ from src.services.edt_mcp_bridge import (
     normalize_edt_mcp_base_url,
     plan_edt_mcp_workflow,
 )
+from src.services.rentgen import approval_workflow as approvals
 
 
 class FakeAuditLogger:
@@ -69,14 +69,19 @@ def test_edt_mcp_connection_config_contains_client_snippets():
     assert config_from_mcp_url["mcp_url"] == "http://localhost:8765/mcp"
     assert "vscode" in config["clients"]
     assert "cursor" in config["clients"]
-    assert any("nativeFormBufferedLayoutRender" in item for item in config["edt_preconditions"])
+    assert any(
+        "nativeFormBufferedLayoutRender" in item for item in config["edt_preconditions"]
+    )
 
 
 def test_edt_mcp_rejects_remote_base_url_by_default():
     with pytest.raises(ValueError):
         normalize_edt_mcp_base_url("http://example.com:8765")
 
-    assert normalize_edt_mcp_base_url("http://127.0.0.1:8765/mcp") == "http://127.0.0.1:8765"
+    assert (
+        normalize_edt_mcp_base_url("http://127.0.0.1:8765/mcp")
+        == "http://127.0.0.1:8765"
+    )
 
 
 def test_edt_mcp_api_exposes_catalog_plan_and_config():
@@ -86,8 +91,12 @@ def test_edt_mcp_api_exposes_catalog_plan_and_config():
 
     catalog = client.get("/api/v1/edt-mcp/toolsets")
     plan = client.post("/api/v1/edt-mcp/plan", json={"task": "run YAxUnit tests"})
-    config = client.get("/api/v1/edt-mcp/connection-config?base_url=http://localhost:8765")
-    remote_config = client.get("/api/v1/edt-mcp/connection-config?base_url=http://example.com:8765")
+    config = client.get(
+        "/api/v1/edt-mcp/connection-config?base_url=http://localhost:8765"
+    )
+    remote_config = client.get(
+        "/api/v1/edt-mcp/connection-config?base_url=http://example.com:8765"
+    )
 
     assert catalog.status_code == 200
     assert catalog.json()["summary"]["toolsets"] >= 9
@@ -105,7 +114,11 @@ def test_edt_mcp_safety_gate_classifies_read_write_and_unknown_tools():
     unknown_read_prefix = classify_edt_mcp_tool("get_and_delete_everything")
     annotated_read_tool = classify_edt_mcp_tool(
         "get_new_safe_tool",
-        annotations={"readOnlyHint": True, "idempotentHint": True, "openWorldHint": False},
+        annotations={
+            "readOnlyHint": True,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
     )
 
     assert read_tool["risk"] == "read"
@@ -167,7 +180,10 @@ def test_edt_mcp_safety_gate_accepts_approved_record(tmp_path, monkeypatch):
     assert allowed["policy"]["approval_source"] == "record"
     assert allowed["policy"]["approval_validation"]["valid"] is True
     assert mismatch["allowed"] is False
-    assert mismatch["policy"]["approval_validation"]["reason"] == "argument_mismatch:modulePath"
+    assert (
+        mismatch["policy"]["approval_validation"]["reason"]
+        == "argument_mismatch:modulePath"
+    )
 
 
 def test_edt_mcp_strict_policy_requires_approval_record(monkeypatch):
@@ -237,11 +253,17 @@ async def test_edt_mcp_successful_call_consumes_approval_record(tmp_path, monkey
         side_effect=[
             httpx.Response(
                 200,
-                json={"jsonrpc": "2.0", "id": 1, "result": {"serverInfo": {"name": "EDT-MCP"}}},
+                json={
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "result": {"serverInfo": {"name": "EDT-MCP"}},
+                },
                 headers={"Mcp-Session-Id": "session-1"},
             ),
             httpx.Response(202),
-            httpx.Response(200, json={"jsonrpc": "2.0", "id": 3, "result": {"content": []}}),
+            httpx.Response(
+                200, json={"jsonrpc": "2.0", "id": 3, "result": {"content": []}}
+            ),
         ]
     )
 
@@ -277,8 +299,12 @@ async def test_edt_mcp_call_rejects_remote_url_even_for_read_tool():
 @pytest.mark.asyncio
 async def test_edt_mcp_status_reads_health_and_server_info():
     base = "http://127.0.0.1:8765"
-    respx.get(f"{base}/health").mock(return_value=httpx.Response(200, json={"status": "ok"}))
-    respx.get(f"{base}/mcp").mock(return_value=httpx.Response(200, json={"server": "EDT MCP"}))
+    respx.get(f"{base}/health").mock(
+        return_value=httpx.Response(200, json={"status": "ok"})
+    )
+    respx.get(f"{base}/mcp").mock(
+        return_value=httpx.Response(200, json={"server": "EDT MCP"})
+    )
 
     status = await check_edt_mcp_status(base)
 
@@ -311,11 +337,18 @@ async def test_edt_mcp_live_tools_uses_json_rpc_and_enriches_risk():
                     "result": {
                         "tools": [
                             {"name": "validate_query", "description": "Validate query"},
-                            {"name": "write_module_source", "description": "Write module"},
+                            {
+                                "name": "write_module_source",
+                                "description": "Write module",
+                            },
                             {
                                 "name": "get_future_read_tool",
                                 "description": "Future read tool",
-                                "annotations": {"readOnlyHint": True, "idempotentHint": True, "openWorldHint": False},
+                                "annotations": {
+                                    "readOnlyHint": True,
+                                    "idempotentHint": True,
+                                    "openWorldHint": False,
+                                },
                             },
                         ]
                     },
@@ -331,9 +364,18 @@ async def test_edt_mcp_live_tools_uses_json_rpc_and_enriches_risk():
     assert tools["summary"]["tools"] == 3
     by_name = {item["name"]: item for item in tools["tools"]}
     assert by_name["validate_query"]["classification"]["requires_confirmation"] is False
-    assert by_name["write_module_source"]["classification"]["requires_confirmation"] is True
-    assert by_name["get_future_read_tool"]["classification"]["requires_confirmation"] is False
-    assert by_name["get_future_read_tool"]["classification"]["source"] == "live_annotations"
+    assert (
+        by_name["write_module_source"]["classification"]["requires_confirmation"]
+        is True
+    )
+    assert (
+        by_name["get_future_read_tool"]["classification"]["requires_confirmation"]
+        is False
+    )
+    assert (
+        by_name["get_future_read_tool"]["classification"]["source"]
+        == "live_annotations"
+    )
 
 
 def test_edt_mcp_api_blocks_unconfirmed_write_call():
@@ -369,7 +411,9 @@ def test_edt_mcp_api_forwards_actor_and_approval_context(monkeypatch):
             "policy": {"actor": kwargs.get("actor"), "missing": []},
         }
 
-    monkeypatch.setattr("src.api.edt_mcp_api.call_live_edt_mcp_tool", fake_call_live_edt_mcp_tool)
+    monkeypatch.setattr(
+        "src.api.edt_mcp_api.call_live_edt_mcp_tool", fake_call_live_edt_mcp_tool
+    )
 
     app = FastAPI()
     app.include_router(router)
@@ -390,7 +434,10 @@ def test_edt_mcp_api_forwards_actor_and_approval_context(monkeypatch):
 
     assert response.status_code == 200
     assert captured["actor"] == "architect"
-    assert captured["approval_reason"] == "Approved after impact review and test selection."
+    assert (
+        captured["approval_reason"]
+        == "Approved after impact review and test selection."
+    )
     assert captured["approval_ticket"] == "CHG-42"
 
 
@@ -400,7 +447,9 @@ async def test_edt_mcp_mcp_tools_are_registered():
 
     catalog = await handle_edt_mcp_toolsets({})
     plan = await handle_edt_mcp_plan({"task": "rename metadata object safely"})
-    config = await handle_edt_mcp_connection_config({"base_url": "http://127.0.0.1:8765"})
+    config = await handle_edt_mcp_connection_config(
+        {"base_url": "http://127.0.0.1:8765"}
+    )
     blocked = await handle_edt_mcp_call({"tool_name": "write_module_source"})
 
     assert {
@@ -422,13 +471,23 @@ async def test_edt_mcp_mcp_tools_are_registered():
 @pytest.mark.asyncio
 async def test_edt_mcp_mcp_status_and_live_tools_handlers():
     base = "http://127.0.0.1:8765"
-    respx.get(f"{base}/health").mock(return_value=httpx.Response(200, json={"status": "ok"}))
-    respx.get(f"{base}/mcp").mock(return_value=httpx.Response(200, json={"server": "EDT MCP"}))
+    respx.get(f"{base}/health").mock(
+        return_value=httpx.Response(200, json={"status": "ok"})
+    )
+    respx.get(f"{base}/mcp").mock(
+        return_value=httpx.Response(200, json={"server": "EDT MCP"})
+    )
     respx.post(f"{base}/mcp").mock(
         side_effect=[
-            httpx.Response(200, json={"jsonrpc": "2.0", "id": 1, "result": {}}, headers={"Mcp-Session-Id": "s1"}),
+            httpx.Response(
+                200,
+                json={"jsonrpc": "2.0", "id": 1, "result": {}},
+                headers={"Mcp-Session-Id": "s1"},
+            ),
             httpx.Response(202),
-            httpx.Response(200, json={"jsonrpc": "2.0", "id": 2, "result": {"tools": []}}),
+            httpx.Response(
+                200, json={"jsonrpc": "2.0", "id": 2, "result": {"tools": []}}
+            ),
         ]
     )
 

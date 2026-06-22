@@ -25,9 +25,7 @@ class KubernetesClient:
     """
 
     def __init__(
-        self,
-        config_file: Optional[str] = None,
-        context: Optional[str] = None
+        self, config_file: Optional[str] = None, context: Optional[str] = None
     ):
         """
         Initialize Kubernetes client
@@ -51,10 +49,7 @@ class KubernetesClient:
         try:
             from kubernetes import client, config
 
-            config.load_kube_config(
-                config_file=self.config_file,
-                context=self.context
-            )
+            config.load_kube_config(config_file=self.config_file, context=self.context)
             self.v1 = client.CoreV1Api()
             self.apps_v1 = client.AppsV1Api()
             self.configured = True
@@ -92,7 +87,7 @@ class KubernetesClient:
         replicas: int = 3,
         namespace: str = "default",
         port: int = 8080,
-        env_vars: Optional[Dict[str, str]] = None
+        env_vars: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """
         Deploy application to Kubernetes
@@ -108,9 +103,7 @@ class KubernetesClient:
         Returns:
             Deployment information
         """
-        self.logger.info(
-            f"Deploying {app_name} with {replicas} replicas"
-        )
+        self.logger.info(f"Deploying {app_name} with {replicas} replicas")
 
         if not self.apps_v1:
             return self._offline_contract(
@@ -123,7 +116,11 @@ class KubernetesClient:
                     "port": port,
                     "env_vars": env_vars or {},
                 },
-                required_evidence=["kubeconfig", "kubernetes-python-client", "deployment_policy"],
+                required_evidence=[
+                    "kubeconfig",
+                    "kubernetes-python-client",
+                    "deployment_policy",
+                ],
             )
 
         return {
@@ -139,10 +136,7 @@ class KubernetesClient:
         }
 
     async def scale_deployment(
-        self,
-        app_name: str,
-        replicas: int,
-        namespace: str = "default"
+        self, app_name: str, replicas: int, namespace: str = "default"
     ) -> Dict[str, Any]:
         """
         Scale deployment
@@ -155,16 +149,18 @@ class KubernetesClient:
         Returns:
             Scaling result
         """
-        self.logger.info(
-            f"Scaling {app_name} to {replicas} replicas"
-        )
+        self.logger.info(f"Scaling {app_name} to {replicas} replicas")
 
         if not self.apps_v1:
             return self._offline_contract(
                 operation="scale_deployment",
                 namespace=namespace,
                 desired_state={"app_name": app_name, "replicas": replicas},
-                required_evidence=["kubeconfig", "kubernetes-python-client", "scale_policy"],
+                required_evidence=[
+                    "kubeconfig",
+                    "kubernetes-python-client",
+                    "scale_policy",
+                ],
             )
 
         return {
@@ -179,9 +175,7 @@ class KubernetesClient:
         }
 
     async def get_deployment_status(
-        self,
-        app_name: str,
-        namespace: str = "default"
+        self, app_name: str, namespace: str = "default"
     ) -> Dict[str, Any]:
         """
         Get deployment status
@@ -214,10 +208,7 @@ class KubernetesClient:
         }
 
     async def get_pod_logs(
-        self,
-        pod_name: str,
-        namespace: str = "default",
-        tail_lines: int = 100
+        self, pod_name: str, namespace: str = "default", tail_lines: int = 100
     ) -> Dict[str, Any]:
         """
         Get pod logs
@@ -253,8 +244,7 @@ class KubernetesClient:
 
 
 def get_k8s_client(
-    config_file: Optional[str] = None,
-    context: Optional[str] = None
+    config_file: Optional[str] = None, context: Optional[str] = None
 ) -> KubernetesClient:
     """
     Create Kubernetes client

@@ -2,8 +2,10 @@
 Unit tests for ArchiImporter
 """
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
+
 from src.exporters.archi_importer import ArchiImporter
 
 

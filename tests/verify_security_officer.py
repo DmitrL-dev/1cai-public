@@ -1,14 +1,14 @@
-import sys
-import os
 import asyncio
-from typing import Dict, Any
+import os
+import sys
+from typing import Any, Dict
 
 # Add src to path
 sys.path.append(os.getcwd())
 
-from src.modules.security.services.vulnerability_scanner import VulnerabilityScanner
-from src.modules.security.services.sensitive_data_scanner import SensitiveDataScanner
 from src.modules.security.domain.models import ComplianceFramework
+from src.modules.security.services.sensitive_data_scanner import SensitiveDataScanner
+from src.modules.security.services.vulnerability_scanner import VulnerabilityScanner
 
 
 async def test_security_officer():

@@ -1,10 +1,6 @@
 import pytest
 
-from src.ai.agents.code_review.ai_reviewer import (
-    CODE_REVIEW_CONTRACT,
-    AICodeReviewer,
-)
-
+from src.ai.agents.code_review.ai_reviewer import CODE_REVIEW_CONTRACT, AICodeReviewer
 
 SIMPLE_BSL = """
 Функция ПолучитьДанные(ID)

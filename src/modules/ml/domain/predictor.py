@@ -24,11 +24,12 @@ from sklearn.metrics import (
     recall_score,
 )
 
+from src.infrastructure.logging.structured_logging import StructuredLogger
+from src.modules.ml.infrastructure.mlflow_manager import MLFlowManager
+
 # TensorFlow removed — was never in requirements.txt (dead code)
 # PyTorch removed — not needed for sklearn-based ML pipeline
 
-from src.infrastructure.logging.structured_logging import StructuredLogger
-from src.modules.ml.infrastructure.mlflow_manager import MLFlowManager
 
 logger = StructuredLogger(__name__).logger
 
@@ -81,7 +82,9 @@ class MLPredictor(ABC):
         """Train the model."""
 
     @abstractmethod
-    def predict(self, X: Union[pd.DataFrame, np.ndarray]) -> Union[np.ndarray, pd.DataFrame]:
+    def predict(
+        self, X: Union[pd.DataFrame, np.ndarray]
+    ) -> Union[np.ndarray, pd.DataFrame]:
         """Run prediction."""
 
     @abstractmethod
@@ -150,7 +153,9 @@ class MLPredictor(ABC):
             )
             raise
 
-    def evaluate(self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]) -> Dict[str, float]:
+    def evaluate(
+        self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.Series, np.ndarray]
+    ) -> Dict[str, float]:
         """Evaluate model quality."""
 
         if not self.is_trained:
@@ -179,11 +184,15 @@ class MLPredictor(ABC):
                 }
             )
 
-        logger.info("Model evaluated", extra={"model_name": self.model_name, "metrics": metrics})
+        logger.info(
+            "Model evaluated", extra={"model_name": self.model_name, "metrics": metrics}
+        )
 
         return metrics
 
-    def log_model_metrics_to_mlflow(self, metrics: Dict[str, float], run_id: Optional[str] = None):
+    def log_model_metrics_to_mlflow(
+        self, metrics: Dict[str, float], run_id: Optional[str] = None
+    ):
         """Log metrics to MLflow when a manager is configured."""
 
         if self.mlflow_manager:
@@ -196,14 +205,17 @@ class MLPredictor(ABC):
             return dict(zip(self.features, self.model.feature_importances_))
         elif hasattr(self.model, "coef_"):
             importance = (
-                np.abs(self.model.coef_[0]) if len(
-                    self.model.coef_.shape) == 1 else np.abs(self.model.coef_[0])
+                np.abs(self.model.coef_[0])
+                if len(self.model.coef_.shape) == 1
+                else np.abs(self.model.coef_[0])
             )
             return dict(zip(self.features, importance))
 
         return None
 
-    def explain_prediction(self, X: Union[pd.DataFrame, np.ndarray], index: int = 0) -> Dict[str, Any]:
+    def explain_prediction(
+        self, X: Union[pd.DataFrame, np.ndarray], index: int = 0
+    ) -> Dict[str, Any]:
         """Explain one prediction using available feature importance."""
 
         if not self.is_trained:
@@ -226,7 +238,8 @@ class MLPredictor(ABC):
 
         if importance:
             sorted_features = sorted(
-                importance.items(), key=lambda x: x[1], reverse=True)
+                importance.items(), key=lambda x: x[1], reverse=True
+            )
             # Top 5 features
             explanation["contributing_features"] = sorted_features[:5]
 
@@ -248,14 +261,12 @@ class SklearnPredictor(MLPredictor):
     ):
         super().__init__(model_name, prediction_type, features, target, mlflow_manager)
 
-        self.model_class = model_class or self._get_default_model_class(
-            prediction_type)
+        self.model_class = model_class or self._get_default_model_class(prediction_type)
         self.model_params = model_params or {}
 
         logger.info(
             "Initialized SklearnPredictor",
-            extra={"model_name": model_name,
-                   "model_class": self.model_class.__name__},
+            extra={"model_name": model_name, "model_class": self.model_class.__name__},
         )
 
     def _get_default_model_class(self, prediction_type: str) -> type:
@@ -310,7 +321,9 @@ class SklearnPredictor(MLPredictor):
             )
             raise
 
-    def predict(self, X: Union[pd.DataFrame, np.ndarray]) -> Union[np.ndarray, pd.DataFrame]:
+    def predict(
+        self, X: Union[pd.DataFrame, np.ndarray]
+    ) -> Union[np.ndarray, pd.DataFrame]:
         """Run prediction."""
 
         if not self.is_trained:
@@ -325,7 +338,9 @@ class SklearnPredictor(MLPredictor):
 
             predictions = self.model.predict(X_processed)
 
-            logger.debug("Prediction completed", extra={"samples_count": len(X_processed)})
+            logger.debug(
+                "Prediction completed", extra={"samples_count": len(X_processed)}
+            )
 
             return predictions
 
@@ -352,7 +367,9 @@ class SklearnPredictor(MLPredictor):
 
             probabilities = self.model.predict_proba(X_processed)
 
-            logger.debug("Probabilities computed", extra={"samples_count": len(X_processed)})
+            logger.debug(
+                "Probabilities computed", extra={"samples_count": len(X_processed)}
+            )
 
             return probabilities
 
@@ -370,6 +387,7 @@ class SklearnPredictor(MLPredictor):
 #
 # To restore: git checkout v4.0-pre-cleanup -- src/modules/ml/domain/predictor.py
 
+
 class ModelEnsemble:
     """Ensemble of ML models for stronger predictions."""
 
@@ -379,8 +397,7 @@ class ModelEnsemble:
 
         logger.info(
             "Model ensemble created",
-            extra={"models_count": len(
-                models), "ensemble_method": ensemble_method},
+            extra={"models_count": len(models), "ensemble_method": ensemble_method},
         )
 
     def fit(
@@ -396,7 +413,9 @@ class ModelEnsemble:
         logger.info("All ensemble models trained")
         return self
 
-    def predict(self, X: Union[pd.DataFrame, np.ndarray]) -> Union[np.ndarray, pd.DataFrame]:
+    def predict(
+        self, X: Union[pd.DataFrame, np.ndarray]
+    ) -> Union[np.ndarray, pd.DataFrame]:
         """Run ensemble prediction."""
 
         predictions = []
@@ -419,7 +438,9 @@ class ModelEnsemble:
 
         return ensemble_pred
 
-    def predict_with_uncertainty(self, X: Union[pd.DataFrame, np.ndarray]) -> Tuple[np.ndarray, np.ndarray]:
+    def predict_with_uncertainty(
+        self, X: Union[pd.DataFrame, np.ndarray]
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Return ensemble prediction with uncertainty estimate."""
 
         predictions = []
@@ -466,12 +487,12 @@ class ModelEnsemble:
             ensemble_pred = self.predict(X)
 
             if self.models[0].prediction_type == PredictionType.CLASSIFICATION:
-                ensemble_metrics["ensemble_accuracy"] = accuracy_score(
-                    y, ensemble_pred)
+                ensemble_metrics["ensemble_accuracy"] = accuracy_score(y, ensemble_pred)
             else:
                 ensemble_metrics["ensemble_r2"] = r2_score(y, ensemble_pred)
                 ensemble_metrics["ensemble_rmse"] = np.sqrt(
-                    mean_squared_error(y, ensemble_pred))
+                    mean_squared_error(y, ensemble_pred)
+                )
 
         except Exception as e:
             logger.error(
@@ -514,8 +535,7 @@ def create_model(
             prediction_type=prediction_type,
             features=features,
             target=target,
-            model_class=model_class_map.get(
-                prediction_type, RandomForestClassifier),
+            model_class=model_class_map.get(prediction_type, RandomForestClassifier),
             model_params=model_params,
             mlflow_manager=mlflow_manager,
         )

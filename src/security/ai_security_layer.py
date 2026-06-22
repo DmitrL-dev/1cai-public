@@ -1,4 +1,3 @@
-
 """
 AI Security Layer - Unified Security для всех AI агентов
 Версия: 2.1.0

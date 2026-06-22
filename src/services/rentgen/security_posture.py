@@ -2,20 +2,23 @@
 
 from __future__ import annotations
 
+import re
 from collections import Counter
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
-import re
 
 from src.services.rentgen.metadata_data_governance import EXCHANGE_TYPES
-from src.services.rentgen.metadata_graph import DEFAULT_CONFIG_PATH, _enrich_object, build_metadata_graph
+from src.services.rentgen.metadata_graph import (
+    DEFAULT_CONFIG_PATH,
+    _enrich_object,
+    build_metadata_graph,
+)
 from src.services.rentgen.metadata_insights import (
     diff_metadata_snapshot,
     list_metadata_snapshots,
 )
-
 
 SECURITY_RULES: list[dict[str, Any]] = [
     {
@@ -55,7 +58,13 @@ SECURITY_RULES: list[dict[str, Any]] = [
         "category": "integration_code_paths",
         "severity": "high",
         "title": "External process or COM call",
-        "needles": ("comобъект", "comobject", "запуститьприложение", "runapp", "wscript.shell"),
+        "needles": (
+            "comобъект",
+            "comobject",
+            "запуститьприложение",
+            "runapp",
+            "wscript.shell",
+        ),
         "recommendation": "Route through an approved integration boundary and audit command input.",
     },
 ]
@@ -87,7 +96,9 @@ def _read_prefix(path: Path, max_file_bytes: int) -> str:
     return data.decode("utf-8", errors="ignore")
 
 
-def _append_limited(items: list[dict[str, Any]], item: dict[str, Any], limit: int) -> None:
+def _append_limited(
+    items: list[dict[str, Any]], item: dict[str, Any], limit: int
+) -> None:
     if len(items) < limit:
         items.append(item)
 
@@ -193,7 +204,11 @@ def _exchange_objects(graph: dict[str, Any], limit: int) -> list[dict[str, Any]]
     for obj in graph.get("objects", []):
         if obj.get("type") not in EXCHANGE_TYPES:
             continue
-        severity = "high" if obj["type"] in {"ExternalDataSource", "HTTPService", "WebService"} else "medium"
+        severity = (
+            "high"
+            if obj["type"] in {"ExternalDataSource", "HTTPService", "WebService"}
+            else "medium"
+        )
         objects.append(
             {
                 "ref": obj["ref"],
@@ -260,17 +275,28 @@ def _bounded_role_review(graph: dict[str, Any], limit: int) -> dict[str, Any]:
                     "severity": "medium",
                     "code": "broad-role",
                     "message": "Role grants a very broad rights surface.",
-                    "details": {"rights": rights["rights"], "objects": rights.get("objects", 0)},
+                    "details": {
+                        "rights": rights["rights"],
+                        "objects": rights.get("objects", 0),
+                    },
                 }
             )
 
     severity_order = {"high": 0, "medium": 1, "low": 2}
-    findings.sort(key=lambda item: (severity_order.get(item["severity"], 9), item["role"], item["code"]))
+    findings.sort(
+        key=lambda item: (
+            severity_order.get(item["severity"], 9),
+            item["role"],
+            item["code"],
+        )
+    )
     caveats = [
         "Security posture role review is static EDT rights analysis.",
     ]
     if len(roles) > roles_reviewed:
-        caveats.append("Role review reached limit; increase limit for full role coverage.")
+        caveats.append(
+            "Role review reached limit; increase limit for full role coverage."
+        )
 
     return {
         "summary": {
@@ -287,7 +313,9 @@ def _bounded_role_review(graph: dict[str, Any], limit: int) -> dict[str, Any]:
     }
 
 
-def _role_diff(snapshot_id: str | None, *, config_path: Path, limit: int) -> dict[str, Any]:
+def _role_diff(
+    snapshot_id: str | None, *, config_path: Path, limit: int
+) -> dict[str, Any]:
     snapshots = list_metadata_snapshots()
     if not snapshot_id:
         return {
@@ -298,7 +326,9 @@ def _role_diff(snapshot_id: str | None, *, config_path: Path, limit: int) -> dic
         }
 
     try:
-        diff = diff_metadata_snapshot(snapshot_id, config_path=str(config_path), limit=limit)
+        diff = diff_metadata_snapshot(
+            snapshot_id, config_path=str(config_path), limit=limit
+        )
     except FileNotFoundError as exc:
         return {
             "included": False,
@@ -339,7 +369,13 @@ def _decision(summary: dict[str, Any]) -> dict[str, Any]:
         status = "warn"
     else:
         status = "pass"
-    return {"status": status, "score": score, "high": high, "medium": medium, "low": low}
+    return {
+        "status": status,
+        "score": score,
+        "high": high,
+        "medium": medium,
+        "low": low,
+    }
 
 
 def _recommendations(report: dict[str, Any]) -> list[dict[str, Any]]:
@@ -441,7 +477,13 @@ def build_security_posture(
             "available": False,
             "generated_at": _now(),
             "config_path": str(config),
-            "decision": {"status": "fail", "score": 0, "high": 0, "medium": 0, "low": 0},
+            "decision": {
+                "status": "fail",
+                "score": 0,
+                "high": 0,
+                "medium": 0,
+                "low": 0,
+            },
             "summary": {"findings": 0, "by_severity": {}},
             "role_review": {"summary": {}, "findings": []},
             "role_diff": _role_diff(snapshot_id, config_path=config, limit=limit),
@@ -450,9 +492,13 @@ def build_security_posture(
             "integration_exposure": {"metadata_objects": [], "code_paths": []},
             "code_scan": {"scanned_modules": 0, "truncated": False},
             "recommendations": [],
-            "caveats": ["Metadata graph is unavailable; unpack EDT configuration first."],
+            "caveats": [
+                "Metadata graph is unavailable; unpack EDT configuration first."
+            ],
         }
-        report["markdown"] = _markdown({**report, "recommendations": report["recommendations"] or []})
+        report["markdown"] = _markdown(
+            {**report, "recommendations": report["recommendations"] or []}
+        )
         return report
 
     role_review = _bounded_role_review(graph, limit)
@@ -477,11 +523,18 @@ def build_security_posture(
         "roles_with_rights": role_summary.get("roles_with_rights", 0),
         "dangerous_rights": role_summary.get("dangerous_rights", 0),
         "role_findings": len(role_review.get("findings", [])),
-        "privileged_code_paths": int(code_scan["totals"].get("privileged_code_paths", 0)),
-        "dynamic_execute_paths": int(code_scan["totals"].get("dynamic_execute_paths", 0)),
-        "integration_code_paths": int(code_scan["totals"].get("integration_code_paths", 0)),
+        "privileged_code_paths": int(
+            code_scan["totals"].get("privileged_code_paths", 0)
+        ),
+        "dynamic_execute_paths": int(
+            code_scan["totals"].get("dynamic_execute_paths", 0)
+        ),
+        "integration_code_paths": int(
+            code_scan["totals"].get("integration_code_paths", 0)
+        ),
         "exchange_objects": len(exchange_objects),
-        "external_exposure": len(exchange_objects) + int(code_scan["totals"].get("integration_code_paths", 0)),
+        "external_exposure": len(exchange_objects)
+        + int(code_scan["totals"].get("integration_code_paths", 0)),
         "scanned_modules": code_scan["scanned_modules"],
         "findings": (
             len(role_review.get("findings", []))
@@ -524,7 +577,9 @@ def build_security_posture(
         ],
     }
     if code_scan["truncated"]:
-        report["caveats"].append("BSL scan reached module_limit; rerun with a higher limit for full coverage.")
+        report["caveats"].append(
+            "BSL scan reached module_limit; rerun with a higher limit for full coverage."
+        )
     report["recommendations"] = _recommendations(report)
     report["markdown"] = _markdown(report)
     return report

@@ -2,7 +2,8 @@
 Code Analyzers API Routes
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
+
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel
 

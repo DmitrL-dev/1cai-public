@@ -32,7 +32,9 @@ class TenantManagementService:
         except (ImportError, Exception):
             logger.warning("Stripe not available")
 
-    async def create_tenant(self, registration: TenantRegistrationRequest) -> Dict[str, Any]:
+    async def create_tenant(
+        self, registration: TenantRegistrationRequest
+    ) -> Dict[str, Any]:
         """Create new tenant."""
         tenant_id = uuid.uuid4()
 
@@ -93,7 +95,9 @@ class TenantManagementService:
         # 4. Create Stripe customer (if available)
         stripe_info = {}
         if self.stripe_available:
-            stripe_info = await self._create_stripe_subscription(tenant_id, registration)
+            stripe_info = await self._create_stripe_subscription(
+                tenant_id, registration
+            )
 
         logger.info(
             "Tenant created",
@@ -126,10 +130,13 @@ class TenantManagementService:
 
     async def _initialize_tenant_resources(self, tenant_id: uuid.UUID):
         """Initialize tenant resources."""
-        logger.info("Initializing resources for tenant",
-                    extra={"tenant_id": str(tenant_id)})
+        logger.info(
+            "Initializing resources for tenant", extra={"tenant_id": str(tenant_id)}
+        )
 
-    async def _create_stripe_subscription(self, tenant_id: uuid.UUID, registration: TenantRegistrationRequest) -> Dict:
+    async def _create_stripe_subscription(
+        self, tenant_id: uuid.UUID, registration: TenantRegistrationRequest
+    ) -> Dict:
         """Create Stripe customer and subscription."""
         try:
             customer = self.stripe.Customer.create(

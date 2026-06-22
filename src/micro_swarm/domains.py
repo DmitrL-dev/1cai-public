@@ -86,28 +86,68 @@ class DomainConfig:
 
 # BSL/1C keyword patterns for feature extraction
 _BSL_KEYWORDS = [
-    "процедура", "функция", "перем", "конецпроцедуры", "конецфункции",
-    "если", "тогда", "иначе", "конецесли", "для", "каждого", "цикл",
-    "попытка", "исключение", "конецпопытки", "запрос", "выборка",
+    "процедура",
+    "функция",
+    "перем",
+    "конецпроцедуры",
+    "конецфункции",
+    "если",
+    "тогда",
+    "иначе",
+    "конецесли",
+    "для",
+    "каждого",
+    "цикл",
+    "попытка",
+    "исключение",
+    "конецпопытки",
+    "запрос",
+    "выборка",
 ]
 
 _GRAPH_KEYWORDS = [
-    "зависимост", "граф", "связ", "модуль", "архитектур", "структур",
-    "дерев", "иерарх", "подчинен",
+    "зависимост",
+    "граф",
+    "связ",
+    "модуль",
+    "архитектур",
+    "структур",
+    "дерев",
+    "иерарх",
+    "подчинен",
 ]
 
 _CODE_GEN_KEYWORDS = [
-    "сгенерируй", "напиши", "создай", "код", "реализуй", "функци",
-    "процедур", "обработк", "форм",
+    "сгенерируй",
+    "напиши",
+    "создай",
+    "код",
+    "реализуй",
+    "функци",
+    "процедур",
+    "обработк",
+    "форм",
 ]
 
 _OPTIMIZE_KEYWORDS = [
-    "оптимиз", "ускор", "медлен", "производительност", "замедлен",
-    "тормоз", "долго", "быстр",
+    "оптимиз",
+    "ускор",
+    "медлен",
+    "производительност",
+    "замедлен",
+    "тормоз",
+    "долго",
+    "быстр",
 ]
 
 _SEARCH_KEYWORDS = [
-    "найди", "поиск", "где", "как", "покажи", "объясни", "документац",
+    "найди",
+    "поиск",
+    "где",
+    "как",
+    "покажи",
+    "объясни",
+    "документац",
 ]
 
 
@@ -130,15 +170,9 @@ def extract_query_features(query: str) -> dict[str, float]:
         "code_gen_hits": _count_keyword_hits(query, _CODE_GEN_KEYWORDS),
         "optimize_hits": _count_keyword_hits(query, _OPTIMIZE_KEYWORDS),
         "search_hits": _count_keyword_hits(query, _SEARCH_KEYWORDS),
-        "avg_word_length": (
-            sum(len(w) for w in words) / max(len(words), 1)
-        ),
-        "uppercase_ratio": (
-            sum(1 for c in query if c.isupper()) / max(len(query), 1)
-        ),
-        "digit_ratio": (
-            sum(1 for c in query if c.isdigit()) / max(len(query), 1)
-        ),
+        "avg_word_length": (sum(len(w) for w in words) / max(len(words), 1)),
+        "uppercase_ratio": (sum(1 for c in query if c.isupper()) / max(len(query), 1)),
+        "digit_ratio": (sum(1 for c in query if c.isdigit()) / max(len(query), 1)),
     }
 
 
@@ -168,28 +202,68 @@ QUERY_INTENT_DOMAIN = DomainConfig(
 
 _ROLE_KEYWORDS = {
     "developer": [
-        "сгенерируй код", "напиши функцию", "рефакторинг", "баг", "отладка",
-        "компилятор", "модуль", "обработка", "форма", "макет",
+        "сгенерируй код",
+        "напиши функцию",
+        "рефакторинг",
+        "баг",
+        "отладка",
+        "компилятор",
+        "модуль",
+        "обработка",
+        "форма",
+        "макет",
     ],
     "business_analyst": [
-        "бизнес-процесс", "требования", "техзадание", "анализ", "отчёт",
-        "пользовательская история", "user story", "сценарий", "бп",
+        "бизнес-процесс",
+        "требования",
+        "техзадание",
+        "анализ",
+        "отчёт",
+        "пользовательская история",
+        "user story",
+        "сценарий",
+        "бп",
     ],
     "qa_engineer": [
-        "тест", "проверка", "ошибка", "регресс", "тестирование",
-        "покрытие", "автотест", "юнит-тест", "smoke",
+        "тест",
+        "проверка",
+        "ошибка",
+        "регресс",
+        "тестирование",
+        "покрытие",
+        "автотест",
+        "юнит-тест",
+        "smoke",
     ],
     "architect": [
-        "архитектура", "подсистема", "интеграция", "API", "схема",
-        "паттерн", "масштабирование", "микросервис",
+        "архитектура",
+        "подсистема",
+        "интеграция",
+        "API",
+        "схема",
+        "паттерн",
+        "масштабирование",
+        "микросервис",
     ],
     "devops": [
-        "деплой", "CI/CD", "контейнер", "docker", "мониторинг",
-        "сервер", "нагрузка", "балансировка", "kubernetes",
+        "деплой",
+        "CI/CD",
+        "контейнер",
+        "docker",
+        "мониторинг",
+        "сервер",
+        "нагрузка",
+        "балансировка",
+        "kubernetes",
     ],
     "technical_writer": [
-        "документация", "инструкция", "описание", "руководство",
-        "справка", "комментарий", "readme",
+        "документация",
+        "инструкция",
+        "описание",
+        "руководство",
+        "справка",
+        "комментарий",
+        "readme",
     ],
 }
 
@@ -238,14 +312,12 @@ def extract_log_features(log_entry: dict[str, Any]) -> dict[str, float]:
         "error_level": float(
             str(log_entry.get("level", "")).upper() in ("ERROR", "CRITICAL")
         ),
-        "warning_level": float(
-            str(log_entry.get("level", "")).upper() == "WARNING"
+        "warning_level": float(str(log_entry.get("level", "")).upper() == "WARNING"),
+        "has_stack_trace": float(
+            "traceback" in message.lower() or "error" in message.lower()
         ),
-        "has_stack_trace": float("traceback" in message.lower() or "error" in message.lower()),
         "word_count": float(len(message.split())),
-        "digit_ratio": (
-            sum(1 for c in message if c.isdigit()) / max(len(message), 1)
-        ),
+        "digit_ratio": (sum(1 for c in message if c.isdigit()) / max(len(message), 1)),
         "special_char_ratio": (
             sum(1 for c in message if not c.isalnum() and not c.isspace())
             / max(len(message), 1)

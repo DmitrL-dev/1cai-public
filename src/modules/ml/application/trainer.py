@@ -1,4 +1,3 @@
-
 """
 Обучающие пайплайны для моделей машинного обучения.
 Интеграция с Celery для background обучения и автоматического переобучения.
@@ -115,8 +114,7 @@ class DataPreprocessor:
                 X[col] = X[col].fillna("unknown")
 
         # Кодирование категориальных переменных
-        categorical_encoding = preprocessing_config.get(
-            "categorical_encoding", "label")
+        categorical_encoding = preprocessing_config.get("categorical_encoding", "label")
         if categorical_encoding == "label":
             for col in X.select_dtypes(include=["object"]).columns:
                 if col not in self.encoders:
@@ -125,14 +123,19 @@ class DataPreprocessor:
                 else:
                     # Обработка новых категорий
                     X[col] = X[col].map(
-                        lambda x: x if x in self.encoders[col].classes_ else "unknown")
+                        lambda x: x if x in self.encoders[col].classes_ else "unknown"
+                    )
                     # Добавляем новую категорию
                     unknown_class = len(self.encoders[col].classes_)
                     self.encoders[col].classes_ = np.append(
-                        self.encoders[col].classes_, "unknown")
+                        self.encoders[col].classes_, "unknown"
+                    )
                     X[col] = X[col].map(
-                        lambda x: (self.encoders[col].transform([x])[
-                                   0] if x != "unknown" else unknown_class)
+                        lambda x: (
+                            self.encoders[col].transform([x])[0]
+                            if x != "unknown"
+                            else unknown_class
+                        )
                     )
 
         # Нормализация числовых признаков
@@ -147,17 +150,19 @@ class DataPreprocessor:
         k_best = preprocessing_config.get("k_best_features")
         if k_best and y is not None:
             if self._get_prediction_type(y) == PredictionType.CLASSIFICATION:
-                selector = SelectKBest(score_func=f_classif,
-                                       k=min(k_best, len(features)))
+                selector = SelectKBest(
+                    score_func=f_classif, k=min(k_best, len(features))
+                )
             else:
-                selector = SelectKBest(score_func=f_regression,
-                                       k=min(k_best, len(features)))
+                selector = SelectKBest(
+                    score_func=f_regression, k=min(k_best, len(features))
+                )
 
             X_selected = selector.fit_transform(X, y)
-            selected_features = [features[i]
-                                 for i in selector.get_support(indices=True)]
-            X = pd.DataFrame(
-                X_selected, columns=selected_features, index=X.index)
+            selected_features = [
+                features[i] for i in selector.get_support(indices=True)
+            ]
+            X = pd.DataFrame(X_selected, columns=selected_features, index=X.index)
             self.feature_selectors["k_best"] = selector
 
             logger.info(
@@ -235,8 +240,7 @@ class ModelTrainer:
             )
             job.celery_task_id = task.id
 
-            logger.info("Создан Celery task для обучения",
-                        extra={"task_id": task.id})
+            logger.info("Создан Celery task для обучения", extra={"task_id": task.id})
 
         return job_id
 
@@ -285,7 +289,8 @@ class ModelTrainer:
         try:
             # Предобработка данных
             X, y = self.preprocessor.prepare_features(
-                training_data, features, target, preprocessing_config)
+                training_data, features, target, preprocessing_config
+            )
 
             # Определение типа задачи
             prediction_type = self.preprocessor._get_prediction_type(y)
@@ -297,7 +302,8 @@ class ModelTrainer:
                 )
             else:
                 X_train, X_test, y_train, y_test = train_test_split(
-                    X, y, test_size=test_size, random_state=42)
+                    X, y, test_size=test_size, random_state=42
+                )
 
             # Создание модели
             model = create_model(
@@ -361,7 +367,8 @@ class ModelTrainer:
             self.metrics_collector.record_user_satisfaction(
                 assistant_role=AssistantRole.ARCHITECT,  # По умолчанию
                 satisfaction_score=test_metrics.get(
-                    "accuracy", test_metrics.get("r2_score", 0)),
+                    "accuracy", test_metrics.get("r2_score", 0)
+                ),
                 project_id="model_training",
                 context={
                     "model_name": model_name,
@@ -408,10 +415,10 @@ class ModelTrainer:
 
         try:
             # Предобработка данных
-            X, y = self.preprocessor.prepare_features(
-                training_data, features, target)
+            X, y = self.preprocessor.prepare_features(training_data, features, target)
             X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=0.2, random_state=42)
+                X, y, test_size=0.2, random_state=42
+            )
 
             def objective(trial):
                 """Целевая функция для оптимизации"""
@@ -429,7 +436,8 @@ class ModelTrainer:
                         )
                     elif param_config["type"] == "choice":
                         current_params[param_name] = trial.suggest_categorical(
-                            param_name, param_config["choices"])
+                            param_name, param_config["choices"]
+                        )
 
                 # Создание и обучение модели
                 model = create_model(
@@ -498,7 +506,8 @@ class ModelTrainer:
                     )
 
                     self.mlflow_manager.log_model(
-                        model=final_model, model_name=model_name, model_type=model_type)
+                        model=final_model, model_name=model_name, model_type=model_type
+                    )
 
             logger.info(
                 "Гиперпараметры оптимизированы",
@@ -542,13 +551,11 @@ class ModelTrainer:
             )
             models.append(model_result["model"])
 
-        ensemble = ModelEnsemble(
-            models=models, ensemble_method=ensemble_method)
+        ensemble = ModelEnsemble(models=models, ensemble_method=ensemble_method)
 
         logger.info(
             "Создан ансамбль моделей",
-            extra={"models_count": len(
-                models), "ensemble_method": ensemble_method},
+            extra={"models_count": len(models), "ensemble_method": ensemble_method},
         )
 
         return ensemble

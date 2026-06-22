@@ -1,4 +1,3 @@
-
 """
 QA Engineer AI Agent
 AI ассистент для тестировщиков
@@ -210,11 +209,19 @@ class QAEngineerAgent:
         """
         evidence = "\n".join(part for part in [bug_description, stacktrace] if part)
         affected_modules = sorted(
-            set(re.findall(r"(?:ОбщийМодуль|Документ|Справочник)\.[A-Za-zА-Яа-я0-9_]+", evidence))
+            set(
+                re.findall(
+                    r"(?:ОбщийМодуль|Документ|Справочник)\.[A-Za-zА-Яа-я0-9_]+",
+                    evidence,
+                )
+            )
         )
         lower = evidence.lower()
         severity = "unknown"
-        if any(marker in lower for marker in ("critical", "критич", "падение", "исключение")):
+        if any(
+            marker in lower
+            for marker in ("critical", "критич", "падение", "исключение")
+        ):
             severity = "high"
         elif any(marker in lower for marker in ("warning", "предупреж", "медлен")):
             severity = "medium"
@@ -242,7 +249,9 @@ class QAEngineerAgent:
             ],
         }
 
-    async def generate_tests(self, function_code: str, function_name: str) -> Dict[str, Any]:
+    async def generate_tests(
+        self, function_code: str, function_name: str
+    ) -> Dict[str, Any]:
         """Контракт, ожидаемый RoleBasedRouter для генерации тестов."""
         routines = self._extract_bsl_routines(function_code) or [function_name]
         yaxunit = await self.generate_yaxunit_tests(function_name, routines)
@@ -297,9 +306,7 @@ class QAEngineerAgent:
             "recommendations": [
                 "Передать defect id, модуль, stacktrace и дату для поиска повторяемых зон."
             ],
-            "caveats": [
-                "Паттерны дефектов не строятся без структурированной истории."
-            ],
+            "caveats": ["Паттерны дефектов не строятся без структурированной истории."],
         }
 
     async def generate_performance_test(
@@ -309,7 +316,9 @@ class QAEngineerAgent:
         return {
             "agent": self.agent_name,
             "mode": "offline_performance_test_blueprint",
-            "coverage": "endpoints_and_profile" if endpoints and load_profile else "partial_input",
+            "coverage": "endpoints_and_profile"
+            if endpoints and load_profile
+            else "partial_input",
             "endpoints": endpoints,
             "load_profile": load_profile,
             "script_outline": [

@@ -9,14 +9,13 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timezone
 from hashlib import sha256
 from ipaddress import ip_address
-from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urlparse
 
 import httpx
-
 
 EDT_MCP_REPO = "https://github.com/DitriXNew/EDT-MCP"
 DEFAULT_BASE_URL = "http://127.0.0.1:8765"
@@ -157,7 +156,11 @@ TOOLSETS: list[dict[str, Any]] = [
         "id": "translation",
         "title": "Translation",
         "purpose": "LanguageTool translation string generation and synchronization.",
-        "tools": ["generate_translation_strings", "translate_configuration", "get_translation_project_info"],
+        "tools": [
+            "generate_translation_strings",
+            "translate_configuration",
+            "get_translation_project_info",
+        ],
         "risk": "write",
     },
 ]
@@ -178,7 +181,15 @@ PRESETS = [
     {
         "id": "development",
         "title": "Development",
-        "enabled_toolsets": ["core", "project", "metadata", "code", "forms", "testing", "tags"],
+        "enabled_toolsets": [
+            "core",
+            "project",
+            "metadata",
+            "code",
+            "forms",
+            "testing",
+            "tags",
+        ],
         "disabled_toolsets": ["debug", "profiling"],
     },
     {
@@ -193,7 +204,11 @@ WORKFLOW_RULES = [
         "id": "query_validation",
         "keywords": ["query", "запрос", "скд", "select", "выбрать", "validate"],
         "toolsets": ["core", "code"],
-        "edt_tools": ["validate_query", "get_metadata_objects", "get_platform_documentation"],
+        "edt_tools": [
+            "validate_query",
+            "get_metadata_objects",
+            "get_platform_documentation",
+        ],
         "one_cai_tools": ["rentgen_generate_grounded", "bsl_standards_review"],
         "safety": "Validate query text in EDT before embedding it into generated BSL.",
     },
@@ -201,24 +216,62 @@ WORKFLOW_RULES = [
         "id": "form_review",
         "keywords": ["form", "форма", "layout", "screenshot", "визуал", "интерфейс"],
         "toolsets": ["core", "forms", "code"],
-        "edt_tools": ["get_form_layout_snapshot", "get_form_screenshot", "get_module_structure"],
+        "edt_tools": [
+            "get_form_layout_snapshot",
+            "get_form_screenshot",
+            "get_module_structure",
+        ],
         "one_cai_tools": ["rentgen_form_review", "rentgen_form_blueprint"],
         "safety": "Use YAML layout first; PNG only when a visual decision is needed.",
     },
     {
         "id": "metadata_refactoring",
-        "keywords": ["rename", "delete", "create metadata", "переимен", "удали", "создай объект", "реквизит"],
+        "keywords": [
+            "rename",
+            "delete",
+            "create metadata",
+            "переимен",
+            "удали",
+            "создай объект",
+            "реквизит",
+        ],
         "toolsets": ["core", "metadata", "project"],
-        "edt_tools": ["get_metadata_details", "find_references", "rename_metadata_object", "delete_metadata", "create_metadata"],
-        "one_cai_tools": ["rentgen_metadata_object_impact", "rentgen_release_readiness"],
+        "edt_tools": [
+            "get_metadata_details",
+            "find_references",
+            "rename_metadata_object",
+            "delete_metadata",
+            "create_metadata",
+        ],
+        "one_cai_tools": [
+            "rentgen_metadata_object_impact",
+            "rentgen_release_readiness",
+        ],
         "safety": "Run preview/impact first; destructive metadata calls require explicit confirmation.",
     },
     {
         "id": "code_change",
-        "keywords": ["change code", "write", "исправ", "доработ", "метод", "module", "модуль"],
+        "keywords": [
+            "change code",
+            "write",
+            "исправ",
+            "доработ",
+            "метод",
+            "module",
+            "модуль",
+        ],
         "toolsets": ["core", "code", "project"],
-        "edt_tools": ["get_module_structure", "read_method_source", "write_module_source", "get_project_errors"],
-        "one_cai_tools": ["rentgen_change_plan", "bsl_standards_review", "rentgen_test_coverage_matrix"],
+        "edt_tools": [
+            "get_module_structure",
+            "read_method_source",
+            "write_module_source",
+            "get_project_errors",
+        ],
+        "one_cai_tools": [
+            "rentgen_change_plan",
+            "bsl_standards_review",
+            "rentgen_test_coverage_matrix",
+        ],
         "safety": "Prefer method-level read and searchReplace with contentHash/expectedSource guards.",
     },
     {
@@ -233,16 +286,34 @@ WORKFLOW_RULES = [
         "id": "debugging",
         "keywords": ["debug", "отлад", "breakpoint", "переменн", "stack", "expression"],
         "toolsets": ["core", "debug", "code"],
-        "edt_tools": ["debug_launch", "set_breakpoint", "wait_for_break", "get_variables", "step", "resume"],
+        "edt_tools": [
+            "debug_launch",
+            "set_breakpoint",
+            "wait_for_break",
+            "get_variables",
+            "step",
+            "resume",
+        ],
         "one_cai_tools": ["rentgen_change_plan", "rentgen_incident_report"],
         "safety": "Treat evaluate_expression as executable code; require trusted local EDT session.",
     },
     {
         "id": "performance",
-        "keywords": ["performance", "производ", "profiling", "профилир", "slow", "медлен"],
+        "keywords": [
+            "performance",
+            "производ",
+            "profiling",
+            "профилир",
+            "slow",
+            "медлен",
+        ],
         "toolsets": ["core", "profiling", "debug"],
         "edt_tools": ["start_profiling", "stop_profiling", "get_profiling_results"],
-        "one_cai_tools": ["rentgen_performer_analyze", "rentgen_performer_impact", "rentgen_incident_report"],
+        "one_cai_tools": [
+            "rentgen_performer_analyze",
+            "rentgen_performer_impact",
+            "rentgen_incident_report",
+        ],
         "safety": "Combine live profiling with Rentgen/TJ impact before assigning fixes.",
     },
 ]
@@ -318,11 +389,21 @@ def _total_tools() -> int:
 
 
 def _allow_remote_edt_mcp() -> bool:
-    return os.getenv("EDT_MCP_ALLOW_REMOTE", "").strip().lower() in {"1", "true", "yes", "on"}
+    return os.getenv("EDT_MCP_ALLOW_REMOTE", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
 
 
 def _require_approval_record() -> bool:
-    return os.getenv("EDT_MCP_REQUIRE_APPROVAL_RECORD", "").strip().lower() in {"1", "true", "yes", "on"}
+    return os.getenv("EDT_MCP_REQUIRE_APPROVAL_RECORD", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
 
 
 # Risk levels that are privileged/destructive: starting/altering/executing a live
@@ -335,7 +416,12 @@ PRIVILEGED_RISK_LEVELS = frozenset({"execute"})
 def _allow_inline_privileged_approval() -> bool:
     """Dev-only escape hatch: permit inline-reason approval for privileged ops."""
 
-    return os.getenv("EDT_MCP_ALLOW_INLINE_PRIVILEGED", "").strip().lower() in {"1", "true", "yes", "on"}
+    return os.getenv("EDT_MCP_ALLOW_INLINE_PRIVILEGED", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
 
 
 def _is_loopback_host(host: str | None) -> bool:
@@ -350,7 +436,9 @@ def _is_loopback_host(host: str | None) -> bool:
         return False
 
 
-def normalize_edt_mcp_base_url(base_url: str | None = None, *, allow_remote: bool | None = None) -> str:
+def normalize_edt_mcp_base_url(
+    base_url: str | None = None, *, allow_remote: bool | None = None
+) -> str:
     """Normalize an EDT-MCP endpoint root, accepting either root or /mcp URL."""
 
     raw = (base_url or DEFAULT_BASE_URL).strip().rstrip("/")
@@ -375,7 +463,9 @@ def _annotation_bool(annotations: dict[str, Any] | None, name: str) -> bool | No
     return value if isinstance(value, bool) else None
 
 
-def _annotation_classification(annotations: dict[str, Any] | None) -> tuple[str, bool, str] | None:
+def _annotation_classification(
+    annotations: dict[str, Any] | None
+) -> tuple[str, bool, str] | None:
     read_only = _annotation_bool(annotations, "readOnlyHint")
     destructive = _annotation_bool(annotations, "destructiveHint")
     open_world = _annotation_bool(annotations, "openWorldHint")
@@ -383,7 +473,11 @@ def _annotation_classification(annotations: dict[str, Any] | None) -> tuple[str,
     if destructive is True:
         return "write", True, "Live MCP annotations mark this tool as destructive."
     if open_world is True:
-        return "execute", True, "Live MCP annotations mark this tool as touching the open world."
+        return (
+            "execute",
+            True,
+            "Live MCP annotations mark this tool as touching the open world.",
+        )
     if read_only is True:
         return "read", False, "Live MCP annotations mark this tool as read-only."
     if read_only is False or destructive is False:
@@ -391,7 +485,9 @@ def _annotation_classification(annotations: dict[str, Any] | None) -> tuple[str,
     return None
 
 
-def classify_edt_mcp_tool(tool_name: str, *, annotations: dict[str, Any] | None = None) -> dict[str, Any]:
+def classify_edt_mcp_tool(
+    tool_name: str, *, annotations: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Classify an EDT-MCP tool so the bridge can gate mutating calls."""
 
     name = str(tool_name or "").strip()
@@ -413,7 +509,9 @@ def classify_edt_mcp_tool(tool_name: str, *, annotations: dict[str, Any] | None 
         note = "Can start/alter/debug/execute a live EDT or 1C session."
     elif annotation_verdict is not None:
         risk, requires_confirmation, note = annotation_verdict
-    elif known and (name in READ_ONLY_TOOL_NAMES or name.startswith(READ_ONLY_PREFIXES)):
+    elif known and (
+        name in READ_ONLY_TOOL_NAMES or name.startswith(READ_ONLY_PREFIXES)
+    ):
         risk = "read"
         requires_confirmation = False
         note = "Read-only EDT inspection or validation."
@@ -440,7 +538,11 @@ def classify_edt_mcp_tool(tool_name: str, *, annotations: dict[str, Any] | None 
         "mutates_configuration": risk in {"write", "mixed"},
         "executes_runtime": risk == "execute",
         "safety_note": note,
-        "source": "catalog" if known else "live_annotations" if annotation_verdict is not None else "unknown",
+        "source": "catalog"
+        if known
+        else "live_annotations"
+        if annotation_verdict is not None
+        else "unknown",
     }
 
 
@@ -463,7 +565,11 @@ def _payload_fingerprint(value: Any) -> str:
 
 def _argument_summary(arguments: dict[str, Any] | None) -> dict[str, Any]:
     if not isinstance(arguments, dict):
-        return {"type": type(arguments).__name__, "keys": [], "fingerprint": _payload_fingerprint(arguments)}
+        return {
+            "type": type(arguments).__name__,
+            "keys": [],
+            "fingerprint": _payload_fingerprint(arguments),
+        }
     return {
         "type": "object",
         "keys": sorted(str(key) for key in arguments.keys())[:50],
@@ -501,7 +607,11 @@ def _audit_edt_mcp_call(
     approval_source: str | None = None,
     error: Any | None = None,
 ) -> None:
-    if not classification.get("requires_confirmation") and status == "ok" and not os.getenv("EDT_MCP_AUDIT_READS"):
+    if (
+        not classification.get("requires_confirmation")
+        and status == "ok"
+        and not os.getenv("EDT_MCP_AUDIT_READS")
+    ):
         return
     logger = audit_logger
     if logger is None:
@@ -577,7 +687,9 @@ def guard_edt_mcp_tool_call(
             missing.append("actor")
         if normalized_approval_id:
             try:
-                from src.services.rentgen.approval_workflow import validate_approval_for_call
+                from src.services.rentgen.approval_workflow import (
+                    validate_approval_for_call,
+                )
 
                 approval_validation = validate_approval_for_call(
                     normalized_approval_id,
@@ -587,7 +699,11 @@ def guard_edt_mcp_tool_call(
                     arguments=arguments,
                 )
             except Exception as exc:
-                approval_validation = {"valid": False, "reason": f"validation_error:{exc}", "approval": None}
+                approval_validation = {
+                    "valid": False,
+                    "reason": f"validation_error:{exc}",
+                    "approval": None,
+                }
             if approval_validation.get("valid"):
                 approval_source = "record"
             else:
@@ -604,13 +720,18 @@ def guard_edt_mcp_tool_call(
             missing.append("approval_reason")
     allowed = not missing
     policy = {
-        "mode": "approval_required" if classification["requires_confirmation"] else "read_only",
+        "mode": "approval_required"
+        if classification["requires_confirmation"]
+        else "read_only",
         "requires_confirmation": classification["requires_confirmation"],
         "requires_actor": classification["requires_confirmation"],
         "requires_reason": classification["requires_confirmation"],
-        "requires_approval_record": approval_record_required and classification["requires_confirmation"],
+        "requires_approval_record": approval_record_required
+        and classification["requires_confirmation"],
         "privileged": is_privileged and classification["requires_confirmation"],
-        "minimum_reason_length": APPROVAL_REASON_MIN_LENGTH if classification["requires_confirmation"] else 0,
+        "minimum_reason_length": APPROVAL_REASON_MIN_LENGTH
+        if classification["requires_confirmation"]
+        else 0,
         "actor": normalized_actor,
         "approval_id": normalized_approval_id,
         "approval_source": approval_source,
@@ -644,7 +765,9 @@ def _mcp_url(base_url: str) -> str:
     return normalize_edt_mcp_base_url(base_url) + "/mcp"
 
 
-def _headers(auth_token: str | None = None, session_id: str | None = None) -> dict[str, str]:
+def _headers(
+    auth_token: str | None = None, session_id: str | None = None
+) -> dict[str, str]:
     headers = {"Content-Type": "application/json", "Accept": "application/json"}
     if auth_token:
         headers["Authorization"] = f"Bearer {auth_token}"
@@ -658,8 +781,12 @@ def _extract_mcp_payload(response: httpx.Response) -> Any:
         return None
 
     text = response.text.strip()
-    if "text/event-stream" in response.headers.get("content-type", "") or text.startswith("event:"):
-        data_lines = [line[5:].strip() for line in text.splitlines() if line.startswith("data:")]
+    if "text/event-stream" in response.headers.get(
+        "content-type", ""
+    ) or text.startswith("event:"):
+        data_lines = [
+            line[5:].strip() for line in text.splitlines() if line.startswith("data:")
+        ]
         if not data_lines:
             return None
         return json.loads(data_lines[-1])
@@ -766,7 +893,9 @@ def list_edt_mcp_toolsets() -> dict[str, Any]:
         "summary": {
             "toolsets": len(TOOLSETS),
             "tools": _total_tools(),
-            "write_or_execute_toolsets": sum(1 for item in TOOLSETS if item["risk"] in {"write", "execute"}),
+            "write_or_execute_toolsets": sum(
+                1 for item in TOOLSETS if item["risk"] in {"write", "execute"}
+            ),
         },
         "toolsets": TOOLSETS,
         "presets": PRESETS,
@@ -780,12 +909,15 @@ def list_edt_mcp_toolsets() -> dict[str, Any]:
     }
 
 
-def plan_edt_mcp_workflow(task: str | None, *, intent: str | None = None) -> dict[str, Any]:
+def plan_edt_mcp_workflow(
+    task: str | None, *, intent: str | None = None
+) -> dict[str, Any]:
     """Map a user task to EDT-MCP toolsets, EDT tools and 1cAI companion tools."""
 
     text = f"{task or ''} {intent or ''}".casefold()
     matches = [
-        rule for rule in WORKFLOW_RULES
+        rule
+        for rule in WORKFLOW_RULES
         if any(keyword.casefold() in text for keyword in rule["keywords"])
     ]
     if not matches:
@@ -793,17 +925,29 @@ def plan_edt_mcp_workflow(task: str | None, *, intent: str | None = None) -> dic
             {
                 "id": "workspace_onboarding",
                 "toolsets": ["core", "project", "tags"],
-                "edt_tools": ["list_projects", "get_configuration_properties", "get_problem_summary"],
-                "one_cai_tools": ["rentgen_hotspots", "rentgen_metadata_search", "rentgen_team_governance"],
+                "edt_tools": [
+                    "list_projects",
+                    "get_configuration_properties",
+                    "get_problem_summary",
+                ],
+                "one_cai_tools": [
+                    "rentgen_hotspots",
+                    "rentgen_metadata_search",
+                    "rentgen_team_governance",
+                ],
                 "safety": "Start read-only; reveal write/debug toolsets only after a concrete task is known.",
             }
         ]
 
     toolsets = _unique([item for match in matches for item in match["toolsets"]])
     edt_tools = _unique([item for match in matches for item in match["edt_tools"]])
-    one_cai_tools = _unique([item for match in matches for item in match["one_cai_tools"]])
+    one_cai_tools = _unique(
+        [item for match in matches for item in match["one_cai_tools"]]
+    )
     toolset_data = _toolset_map()
-    risk_levels = _unique([str(toolset_data[item]["risk"]) for item in toolsets if item in toolset_data])
+    risk_levels = _unique(
+        [str(toolset_data[item]["risk"]) for item in toolsets if item in toolset_data]
+    )
     has_write = any(level in {"write", "execute", "mixed"} for level in risk_levels)
 
     return {
@@ -818,7 +962,12 @@ def plan_edt_mcp_workflow(task: str | None, *, intent: str | None = None) -> dic
         "recommended_preset": "code_review" if not has_write else "development",
         "progressive_disclosure_calls": [
             {"tool": "list_toolsets", "arguments": {}},
-            {"tool": "enable_toolset", "arguments": {"toolsets": [item for item in toolsets if item != "core"]}},
+            {
+                "tool": "enable_toolset",
+                "arguments": {
+                    "toolsets": [item for item in toolsets if item != "core"]
+                },
+            },
         ],
         "safety": _unique([match["safety"] for match in matches]),
         "bridge_notes": [
@@ -847,7 +996,9 @@ def build_connection_config(base_url: str = DEFAULT_BASE_URL) -> dict[str, Any]:
             "vscode": {"servers": {"EDT MCP Server": {"type": "sse", "url": url}}},
             "cursor": {"mcpServers": {"EDT MCP Server": {"url": url}}},
             "claude_desktop": {"mcpServers": {"EDT MCP Server": {"url": url}}},
-            "cline": {"mcpServers": {"EDTMCPServer": {"type": "streamableHttp", "url": url}}},
+            "cline": {
+                "mcpServers": {"EDTMCPServer": {"type": "streamableHttp", "url": url}}
+            },
         },
     }
 
@@ -896,7 +1047,9 @@ async def check_edt_mcp_status(
             result["errors"].append(f"health: {exc}")
 
         try:
-            info_response = await client.get(result["mcp_url"], headers=_headers(auth_token))
+            info_response = await client.get(
+                result["mcp_url"], headers=_headers(auth_token)
+            )
             result["mcp_status_code"] = info_response.status_code
             if info_response.status_code == 401:
                 result["auth_required"] = True
@@ -909,7 +1062,10 @@ async def check_edt_mcp_status(
     health_status = ""
     if isinstance(result["health"], dict):
         health_status = str(result["health"].get("status") or "").lower()
-    has_health = health_status in {"ok", "starting", "degraded"} or result.get("health_status_code") == 200
+    has_health = (
+        health_status in {"ok", "starting", "degraded"}
+        or result.get("health_status_code") == 200
+    )
     has_info = isinstance(result["server_info"], dict)
     result["available"] = bool(has_health or has_info)
     if result["auth_required"]:
@@ -932,12 +1088,19 @@ async def list_live_edt_mcp_tools(
     try:
         mcp_endpoint = _mcp_url(base_url or DEFAULT_BASE_URL)
     except ValueError as exc:
-        return {"available": False, "status": "invalid_url", "error": str(exc), "tools": []}
+        return {
+            "available": False,
+            "status": "invalid_url",
+            "error": str(exc),
+            "tools": [],
+        }
 
     timeout = max(1.0, min(float(timeout_s), 60.0))
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
-            session = await _initialize_session(client, mcp_url=mcp_endpoint, auth_token=auth_token)
+            session = await _initialize_session(
+                client, mcp_url=mcp_endpoint, auth_token=auth_token
+            )
             if not session["ok"]:
                 return {
                     "available": False,
@@ -991,9 +1154,15 @@ async def list_live_edt_mcp_tools(
         if not isinstance(item, dict):
             continue
         name = str(item.get("name") or "")
-        annotations = item.get("annotations") if isinstance(item.get("annotations"), dict) else None
+        annotations = (
+            item.get("annotations")
+            if isinstance(item.get("annotations"), dict)
+            else None
+        )
         classification = classify_edt_mcp_tool(name, annotations=annotations)
-        risk_counts[classification["risk"]] = risk_counts.get(classification["risk"], 0) + 1
+        risk_counts[classification["risk"]] = (
+            risk_counts.get(classification["risk"], 0) + 1
+        )
         tools.append({**item, "classification": classification})
 
     return {
@@ -1092,7 +1261,9 @@ async def call_live_edt_mcp_tool(
     timeout = max(1.0, min(float(timeout_s), 300.0))
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
-            session = await _initialize_session(client, mcp_url=mcp_endpoint, auth_token=auth_token)
+            session = await _initialize_session(
+                client, mcp_url=mcp_endpoint, auth_token=auth_token
+            )
             if not session["ok"]:
                 _audit_edt_mcp_call(
                     audit_logger=audit_logger,
@@ -1219,7 +1390,9 @@ async def call_live_edt_mcp_tool(
         approval_id=guard["policy"].get("approval_id"),
         approval_source=guard["policy"].get("approval_source"),
     )
-    if guard["policy"].get("approval_source") == "record" and guard["policy"].get("approval_id"):
+    if guard["policy"].get("approval_source") == "record" and guard["policy"].get(
+        "approval_id"
+    ):
         try:
             from src.services.rentgen.approval_workflow import update_approval_status
 
@@ -1241,5 +1414,7 @@ async def call_live_edt_mcp_tool(
         "policy": guard["policy"],
         "session_id": session.get("session_id"),
         "server": session.get("server"),
-        "result": payload.get("result", payload) if isinstance(payload, dict) else payload,
+        "result": payload.get("result", payload)
+        if isinstance(payload, dict)
+        else payload,
     }

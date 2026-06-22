@@ -55,6 +55,7 @@ class Participant:
         websocket: WebSocket соединение.
         joined_at: Время присоединения.
     """
+
     user_id: str
     role: str
     websocket: WebSocket
@@ -72,6 +73,7 @@ class SessionState:
         participants: Словарь участников {user_id: Participant}.
         history: История событий сессии.
     """
+
     session_id: str
     topic: Optional[str] = None
     created_at: datetime = field(default_factory=datetime.utcnow)

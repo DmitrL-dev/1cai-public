@@ -19,7 +19,6 @@ from src.services.rentgen.baselines import (
     list_review_packs,
 )
 
-
 router = APIRouter(prefix="/api/v1", tags=["Baselines"])
 
 
@@ -69,9 +68,7 @@ def _enforce_sod(record: dict[str, Any] | None, actor: str | None) -> None:
 
     owner = str((record or {}).get("owner") or "").strip()
     if actor and owner and actor == owner:
-        raise PermissionError(
-            "separation of duties: approver must differ from author"
-        )
+        raise PermissionError("separation of duties: approver must differ from author")
 
 
 @router.post("/baselines")
@@ -176,7 +173,9 @@ def approve_review_pack(
     actor = principal_actor(principal)
     try:
         _enforce_sod(get_review_pack(review_pack_id), actor)
-        return decide_review_pack(review_pack_id, actor=actor, decision="approved", reason=req.reason)
+        return decide_review_pack(
+            review_pack_id, actor=actor, decision="approved", reason=req.reason
+        )
     except Exception as exc:
         raise _handle_error(exc) from exc
 
@@ -189,7 +188,10 @@ def reject_review_pack(
 
     try:
         return decide_review_pack(
-            review_pack_id, actor=principal_actor(principal), decision="rejected", reason=req.reason
+            review_pack_id,
+            actor=principal_actor(principal),
+            decision="rejected",
+            reason=req.reason,
         )
     except Exception as exc:
         raise _handle_error(exc) from exc

@@ -1,4 +1,3 @@
-
 """
 Tests for playbook_executor (experimental).
 """

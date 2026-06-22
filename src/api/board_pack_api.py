@@ -76,10 +76,14 @@ def _build_report(req: BoardPackRequest) -> dict[str, Any]:
         intake=intake,
         client_name=req.client_name,
     )
-    assumptions = req.assumptions.model_dump(exclude_none=True) if req.assumptions else None
+    assumptions = (
+        req.assumptions.model_dump(exclude_none=True) if req.assumptions else None
+    )
     buyer_brief = build_buyer_brief(
         executive=executive,
-        monthly_ai_subscription_cost=int((assumptions or {}).get("monthly_ai_subscription_cost") or 120_000),
+        monthly_ai_subscription_cost=int(
+            (assumptions or {}).get("monthly_ai_subscription_cost") or 120_000
+        ),
         currency=str((assumptions or {}).get("currency") or "RUB"),
     )
     business_case = build_business_case(
@@ -152,7 +156,9 @@ def _build_report(req: BoardPackRequest) -> dict[str, Any]:
             limit=req.security_limit,
             module_limit=req.security_module_limit,
         ),
-        rights_rls=build_rights_rls(config_path=req.config_path, role_limit=60, object_limit=160),
+        rights_rls=build_rights_rls(
+            config_path=req.config_path, role_limit=60, object_limit=160
+        ),
         demo_command_center=demo_command_center,
         pilot_launchpad=pilot_launchpad,
         scenario_hub=scenario_hub,
@@ -226,7 +232,9 @@ def health() -> dict[str, Any]:
         "status": pulse["status"],
         "score": pulse["score"],
         "decision_items": 6,
-        "recommended_offer": "enterprise-local-license" if pulse["purchase_status"] == "ready" else "proof-sprint",
+        "recommended_offer": "enterprise-local-license"
+        if pulse["purchase_status"] == "ready"
+        else "proof-sprint",
         "purchase_status": pulse["purchase_status"],
         "three_year_ai_rent": pulse["commercial"]["three_year_ai_rent"],
         "source": pulse["source"],

@@ -26,7 +26,9 @@ class MultiLayerCache:
         self._l1: Dict[str, Tuple[Any, Optional[float]]] = {}
         self.hits = {"l1": 0, "l2": 0, "miss": 0}
 
-    async def set(self, key: str, value: Any, ttl_seconds: Optional[int] = None) -> None:
+    async def set(
+        self, key: str, value: Any, ttl_seconds: Optional[int] = None
+    ) -> None:
         expires_at = time.monotonic() + ttl_seconds if ttl_seconds else None
         self._l1[key] = (value, expires_at)
 

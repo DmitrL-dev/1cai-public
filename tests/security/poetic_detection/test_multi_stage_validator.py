@@ -2,8 +2,9 @@
 Tests for Multi-Stage Validator
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from src.security.poetic_detection.multi_stage_validator import MultiStageValidator
 
@@ -39,7 +40,9 @@ async def test_validate_poetic_safe(validator):
     For documents in their proper place.
     """
 
-    with patch.object(validator.intent_extractor, "extract_intent", new_callable=AsyncMock) as mock_extract:
+    with patch.object(
+        validator.intent_extractor, "extract_intent", new_callable=AsyncMock
+    ) as mock_extract:
         mock_extract.return_value = MagicMock(is_safe=True, action="allow")
 
         result = await validator.validate(query)
@@ -55,8 +58,12 @@ async def test_validate_poetic_unsafe(validator):
     Through silent queries, softly made.
     """
 
-    with patch.object(validator.intent_extractor, "extract_intent", new_callable=AsyncMock) as mock_extract:
-        mock_extract.return_value = MagicMock(is_safe=False, action="block", reason="Harmful intent")
+    with patch.object(
+        validator.intent_extractor, "extract_intent", new_callable=AsyncMock
+    ) as mock_extract:
+        mock_extract.return_value = MagicMock(
+            is_safe=False, action="block", reason="Harmful intent"
+        )
 
         result = await validator.validate(query)
 
@@ -77,7 +84,9 @@ async def test_validate_dangerous_keywords(validator):
 @pytest.mark.asyncio
 async def test_validate_error_handling(validator):
     """Test error handling in validation"""
-    with patch.object(validator.poetic_detector, "detect_poetry", side_effect=Exception("Test error")):
+    with patch.object(
+        validator.poetic_detector, "detect_poetry", side_effect=Exception("Test error")
+    ):
         result = await validator.validate("test query")
 
         assert result.allowed is False

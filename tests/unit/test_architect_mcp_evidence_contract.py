@@ -1,7 +1,7 @@
 import pytest
 
-from src.ai.agents.technology_selector import TechnologySelector
 from src.ai.agents.sql_optimizer import SQLOptimizer
+from src.ai.agents.technology_selector import TechnologySelector
 from src.ai.mcp.architect import ARCHITECT_CONTRACT, ArchitectMCPServer
 
 

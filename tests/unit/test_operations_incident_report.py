@@ -6,7 +6,6 @@ from src.ai.mcp.server import TOOLS, handle_rentgen_incident_report
 from src.api.operations_api import router
 from src.services.rentgen.incident_response import build_incident_report
 
-
 TJ_LOG = """12:00:01.000000-3000000,SDBL,p:1:1:1,Usr=Admin,Context='CommonModule.Sales.Module : 42 : Query.Execute()',Sql='SELECT * FROM Sales',Sdbl='SELECT * FROM Sales',Rows=100
 12:00:02.000000-200000,TLOCK,p:1:1:1,Usr=Admin,Context='CommonModule.Sales.Module : 50 : Write()'
 12:00:03.000000-0,TDEADLOCK,p:1:1:1,Usr=Admin,Context='CommonModule.Sales.Module : 60 : Post()'
@@ -26,8 +25,14 @@ class FakeStore:
 
     def module_impact(self, module_path, max_depth=5, max_edges=300):
         return {
-            "canonical": {"object_name": "Sales", "module_kind": "Module", "source": "runtime_module"},
-            "graph_modules": [{"name": "Sales", "fan_in": 12, "fan_out": 3, "n_subs": 2}],
+            "canonical": {
+                "object_name": "Sales",
+                "module_kind": "Module",
+                "source": "runtime_module",
+            },
+            "graph_modules": [
+                {"name": "Sales", "fan_in": 12, "fan_out": 3, "n_subs": 2}
+            ],
             "entry_subroutines": 2,
             "total": 320,
             "impacted_modules": [{"module": "CriticalPath", "edges": 90}],

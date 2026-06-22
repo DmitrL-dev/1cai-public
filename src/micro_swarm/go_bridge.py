@@ -139,7 +139,6 @@ class GoBridge:
             "total_loc": total_loc,
             "decisions": decisions,
             "llm_savings_pct": round(
-                (1 - decisions.get("llm_required", 0) /
-                 max(len(results), 1)) * 100, 1
+                (1 - decisions.get("llm_required", 0) / max(len(results), 1)) * 100, 1
             ),
         }

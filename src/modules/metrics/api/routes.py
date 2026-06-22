@@ -82,7 +82,9 @@ async def get_performance_metrics(
     Get performance metrics for service
     """
     try:
-        return service.get_performance_metrics(service_name=service_name, hours_back=hours_back)
+        return service.get_performance_metrics(
+            service_name=service_name, hours_back=hours_back
+        )
     except Exception as e:
         logger.error(f"Error getting performance metrics: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

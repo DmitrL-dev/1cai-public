@@ -18,7 +18,6 @@ from src.services.enterprise_iam import (
     upsert_project_boundary,
 )
 
-
 router = APIRouter(prefix="/api/v1/enterprise", tags=["Enterprise"])
 
 # Roles permitted to mutate IAM config / tenant-project boundaries. Changing

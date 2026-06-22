@@ -110,7 +110,10 @@ class ITSSearchService:
         query_set = set(query_terms)
         ranked: list[ITSSearchResult] = []
         for chunk in self._get_offline_chunks():
-            if section_filter and section_filter.lower() not in chunk.section_title.lower():
+            if (
+                section_filter
+                and section_filter.lower() not in chunk.section_title.lower()
+            ):
                 continue
 
             haystack = f"{chunk.section_title}\n{chunk.text}"
@@ -161,7 +164,7 @@ class ITSSearchService:
 
         query_filter = None
         if section_filter:
-            from qdrant_client.models import Filter, FieldCondition, MatchText
+            from qdrant_client.models import FieldCondition, Filter, MatchText
 
             query_filter = Filter(
                 must=[
@@ -204,12 +207,18 @@ class ITSSearchService:
             return self._query_offline(question, limit, score_threshold, section_filter)
 
         if self.mode == "semantic":
-            return self._query_semantic(question, limit, score_threshold, section_filter)
+            return self._query_semantic(
+                question, limit, score_threshold, section_filter
+            )
 
         try:
-            return self._query_semantic(question, limit, score_threshold, section_filter)
+            return self._query_semantic(
+                question, limit, score_threshold, section_filter
+            )
         except Exception as exc:
-            logger.info("ITS semantic search unavailable, using offline search: %s", exc)
+            logger.info(
+                "ITS semantic search unavailable, using offline search: %s", exc
+            )
             return self._query_offline(question, limit, score_threshold, section_filter)
 
     async def get_context_for_llm(
@@ -227,7 +236,9 @@ class ITSSearchService:
         context_parts = []
         total_chars = 0
         for r in results:
-            chunk_text = f"[Источник: {r.section_title} | Файл: {r.source_file}]\n{r.text}"
+            chunk_text = (
+                f"[Источник: {r.section_title} | Файл: {r.source_file}]\n{r.text}"
+            )
             if total_chars + len(chunk_text) > max_chars:
                 break
             context_parts.append(chunk_text)

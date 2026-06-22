@@ -1,4 +1,3 @@
-
 """
 Performance Analyzer - Анализ производительности 1С конфигураций
 """
@@ -129,9 +128,7 @@ class PerformanceAnalyzer:
             )
             if threshold is None:
                 threshold = self.performance_thresholds["query_time"]
-            executions = self._integer(
-                query.get("executions") or query.get("count")
-            )
+            executions = self._integer(query.get("executions") or query.get("count"))
             if avg_time is None or avg_time <= threshold:
                 continue
             normalized.append(
@@ -146,7 +143,9 @@ class PerformanceAnalyzer:
                     "avg_time": avg_time,
                     "executions": executions or 0,
                     "threshold": threshold,
-                    "query_type": str(query.get("query_type") or query.get("type") or "unknown"),
+                    "query_type": str(
+                        query.get("query_type") or query.get("type") or "unknown"
+                    ),
                     "source": query.get("source") or "provided_metrics",
                 }
             )
@@ -293,7 +292,9 @@ class PerformanceAnalyzer:
             "scaling_strategy": self._recommend_scaling_strategy(
                 current_load, predicted_load or current_load
             ),
-            "scaling_readiness": "measured" if predicted_load is not None else "partial",
+            "scaling_readiness": "measured"
+            if predicted_load is not None
+            else "partial",
             "recommendations": [
                 "Валидировать стратегию на нагрузочном профиле",
                 "Сверить рекомендации с топом медленных запросов и RAS/TJ метриками",
@@ -334,9 +335,7 @@ class PerformanceAnalyzer:
             if parsed is not None
         ]
 
-        satisfied = len(
-            [t for t in numeric_response_times if t < threshold_satisfied]
-        )
+        satisfied = len([t for t in numeric_response_times if t < threshold_satisfied])
         tolerating = len(
             [
                 t
@@ -562,13 +561,20 @@ class PerformanceAnalyzer:
             ]
         if "response_times" not in metrics:
             required.append("response time samples for Apdex")
-        if not any(key in metrics for key in ("slow_queries", "top_slow_queries", "queries")):
+        if not any(
+            key in metrics for key in ("slow_queries", "top_slow_queries", "queries")
+        ):
             required.append("slow query log or top SQL report")
         if not any(key in metrics for key in ("current_users", "active_users")):
             required.append("current active users/sessions")
         if not any(
             key in metrics
-            for key in ("predicted_users", "target_users", "expected_users_12m", "growth_factor")
+            for key in (
+                "predicted_users",
+                "target_users",
+                "expected_users_12m",
+                "growth_factor",
+            )
         ):
             required.append("target load or growth factor")
         return required
@@ -577,11 +583,15 @@ class PerformanceAnalyzer:
         self, metrics: Optional[Dict[str, Any]], apdex: Optional[float]
     ) -> List[str]:
         if not metrics:
-            return ["No synthetic bottlenecks or capacity numbers are generated without telemetry."]
+            return [
+                "No synthetic bottlenecks or capacity numbers are generated without telemetry."
+            ]
 
         caveats = ["Analysis is limited to metrics supplied by the caller."]
         if apdex is None:
-            caveats.append("Apdex is unknown because response time samples are missing.")
+            caveats.append(
+                "Apdex is unknown because response time samples are missing."
+            )
         return caveats
 
 

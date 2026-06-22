@@ -1,14 +1,16 @@
 import asyncio
-import sys
 import os
+import sys
 
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.infrastructure.event_bus import EventBus, EventType, Event
+from src.infrastructure.event_bus import Event, EventBus, EventType
 from src.modules.security.services.vulnerability_scanner import VulnerabilityScanner
-from src.modules.technical_writer.services.ast_doc_generator import ASTUserGuideGenerator
 from src.modules.technical_writer.domain.models import Audience
+from src.modules.technical_writer.services.ast_doc_generator import (
+    ASTUserGuideGenerator,
+)
 
 
 class MockEventBus(EventBus):
@@ -36,7 +38,9 @@ async def verify_integration():
     await scanner.scan_vulnerabilities(code_with_vuln)
 
     # Check if VULNERABILITY_FOUND event was published
-    vuln_events = [e for e in mock_bus.published_events if e.type == EventType.VULNERABILITY_FOUND]
+    vuln_events = [
+        e for e in mock_bus.published_events if e.type == EventType.VULNERABILITY_FOUND
+    ]
     print(f"Vulnerability Events Published: {len(vuln_events)}")
     assert len(vuln_events) > 0
     assert vuln_events[0].source == "security_officer"
@@ -52,7 +56,9 @@ async def verify_integration():
     await generator.generate(code_doc, "MyFeature", Audience.DEVELOPER)
 
     # Check if DOC_GENERATED event was published
-    doc_events = [e for e in mock_bus.published_events if e.type == EventType.DOC_GENERATED]
+    doc_events = [
+        e for e in mock_bus.published_events if e.type == EventType.DOC_GENERATED
+    ]
     print(f"Doc Events Published: {len(doc_events)}")
     assert len(doc_events) == 1
     assert doc_events[0].source == "technical_writer"

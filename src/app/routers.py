@@ -5,6 +5,7 @@ Router Configuration for 1C AI Stack
 """
 
 import logging
+
 from fastapi import APIRouter, Depends
 
 from src.middleware.jwt_user_context import require_auth
@@ -274,12 +275,8 @@ def register_routers(app, api_v1_router: APIRouter):
         try:
             module = __import__(module_path, fromlist=["router"])
             if name in _AUTH_REQUIRED_DIRECT_ROUTERS:
-                app.include_router(
-                    module.router, dependencies=[Depends(require_auth)]
-                )
-                logger.info(
-                    "%s router mounted directly on app (auth required)", name
-                )
+                app.include_router(module.router, dependencies=[Depends(require_auth)])
+                logger.info("%s router mounted directly on app (auth required)", name)
             else:
                 app.include_router(module.router)
                 logger.info("%s router mounted directly on app", name)
@@ -291,9 +288,10 @@ def register_routers(app, api_v1_router: APIRouter):
 
     # API v2 (optional)
     try:
-        from src.api.v2.router import router as api_v2_router_impl
         from fastapi import APIRouter
         from fastapi.responses import JSONResponse
+
+        from src.api.v2.router import router as api_v2_router_impl
 
         api_v2_router = APIRouter(
             prefix="/api/v2",

@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
+import re
+import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
-import re
-import xml.etree.ElementTree as ET
-
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_CONFIG_PATH = REPO_ROOT / "data" / "configs" / "unpacked"
@@ -112,7 +111,13 @@ def _localized_text(element: ET.Element | None, name: str) -> str | None:
         if content:
             by_lang[lang or ""] = content
 
-    return by_lang.get("ru") or by_lang.get("") or next(iter(by_lang.values()), None) or direct or None
+    return (
+        by_lang.get("ru")
+        or by_lang.get("")
+        or next(iter(by_lang.values()), None)
+        or direct
+        or None
+    )
 
 
 def _safe_parse(path: Path) -> ET.Element | None:
@@ -216,7 +221,9 @@ def _forms(config_path: Path, object_dir: Path) -> list[dict[str, Any]]:
                 "synonym": _localized_text(props, "Synonym"),
                 "form_type": _first_text(props, "FormType"),
                 "path": xml_path.relative_to(config_path).as_posix(),
-                "module_path": module.relative_to(config_path).as_posix() if module.exists() else None,
+                "module_path": module.relative_to(config_path).as_posix()
+                if module.exists()
+                else None,
             }
         )
     return forms
@@ -242,7 +249,9 @@ def _asset_key(config_path: Path, path: Path) -> tuple[str, str] | None:
     return (parts[0], parts[1])
 
 
-def _collect_assets(config_path: Path) -> dict[str, dict[tuple[str, str], list[dict[str, Any]]]]:
+def _collect_assets(
+    config_path: Path,
+) -> dict[str, dict[tuple[str, str], list[dict[str, Any]]]]:
     modules: defaultdict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     forms: defaultdict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     commands: defaultdict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
@@ -273,7 +282,9 @@ def _collect_assets(config_path: Path) -> dict[str, dict[tuple[str, str], list[d
                 "synonym": None,
                 "form_type": None,
                 "path": path.relative_to(config_path).as_posix(),
-                "module_path": module.relative_to(config_path).as_posix() if module.exists() else None,
+                "module_path": module.relative_to(config_path).as_posix()
+                if module.exists()
+                else None,
             }
         )
 
@@ -281,7 +292,9 @@ def _collect_assets(config_path: Path) -> dict[str, dict[tuple[str, str], list[d
         key = _asset_key(config_path, path)
         if key is None:
             continue
-        commands[key].append({"name": path.stem, "path": path.relative_to(config_path).as_posix()})
+        commands[key].append(
+            {"name": path.stem, "path": path.relative_to(config_path).as_posix()}
+        )
 
     return {"modules": dict(modules), "forms": dict(forms), "commands": dict(commands)}
 
@@ -326,13 +339,17 @@ def _tabular_sections(meta: ET.Element | None, limit: int = 40) -> list[dict[str
         name = _attribute_name(element)
         if not name:
             continue
-        sections.append({"name": name, "synonym": _nested_localized(element, "Synonym") or ""})
+        sections.append(
+            {"name": name, "synonym": _nested_localized(element, "Synonym") or ""}
+        )
         if len(sections) >= limit:
             break
     return sections
 
 
-def _named_items(meta: ET.Element | None, tag_name: str, limit: int = 80) -> list[dict[str, str]]:
+def _named_items(
+    meta: ET.Element | None, tag_name: str, limit: int = 80
+) -> list[dict[str, str]]:
     if meta is None:
         return []
     items: list[dict[str, str]] = []
@@ -428,7 +445,9 @@ def _configuration_info(config_path: Path) -> dict[str, str | None]:
         "synonym": _localized_text(props, "Synonym"),
         "version": _first_text(props, "Version"),
         "vendor": _first_text(props, "Vendor"),
-        "path": xml_path.relative_to(config_path).as_posix() if xml_path.exists() else None,
+        "path": xml_path.relative_to(config_path).as_posix()
+        if xml_path.exists()
+        else None,
     }
 
 
@@ -549,7 +568,13 @@ def search_metadata(
             continue
         haystack = " ".join(
             str(part or "")
-            for part in (obj["name"], obj["synonym"], obj["ref"], obj["path"], obj["type"])
+            for part in (
+                obj["name"],
+                obj["synonym"],
+                obj["ref"],
+                obj["path"],
+                obj["type"],
+            )
         ).casefold()
         if needle and needle not in haystack:
             continue
@@ -559,7 +584,9 @@ def search_metadata(
     return results
 
 
-def get_metadata_object(identifier: str, config_path: str | None = None) -> dict[str, Any] | None:
+def get_metadata_object(
+    identifier: str, config_path: str | None = None
+) -> dict[str, Any] | None:
     graph = build_metadata_graph(config_path)
     needle = identifier.casefold().replace("\\", "/")
     for obj in graph["objects"]:

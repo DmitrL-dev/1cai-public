@@ -1,4 +1,3 @@
-
 """
 MLflow менеджер для экспериментов и трекинга моделей.
 Интеграция с MLflow для мониторинга экспериментов и управления моделями.
@@ -37,8 +36,7 @@ class MLFlowManager:
         # Настройка экспериментов
         self._setup_experiments()
 
-        logger.info("MLflow инициализирован", extra={
-                    "tracking_uri": self.tracking_uri})
+        logger.info("MLflow инициализирован", extra={"tracking_uri": self.tracking_uri})
 
     def _setup_experiments(self) -> None:
         """Создание и настройка экспериментов"""
@@ -79,8 +77,9 @@ class MLFlowManager:
                             "created_at": datetime.utcnow().isoformat(),
                         },
                     )
-                    logger.info("Создан эксперимент", extra={
-                                "experiment_name": experiment_name})
+                    logger.info(
+                        "Создан эксперимент", extra={"experiment_name": experiment_name}
+                    )
 
             except Exception as e:
                 logger.error(
@@ -93,14 +92,15 @@ class MLFlowManager:
                     exc_info=True,
                 )
 
-    def start_experiment(self, experiment_name: str, run_name: Optional[str] = None) -> str:
+    def start_experiment(
+        self, experiment_name: str, run_name: Optional[str] = None
+    ) -> str:
         """Запуск нового эксперимента"""
 
         try:
             # Получаем или создаем эксперимент
             try:
-                experiment = self.client.get_experiment_by_name(
-                    experiment_name)
+                experiment = self.client.get_experiment_by_name(experiment_name)
                 experiment_id = experiment.experiment_id
             except MlflowException:
                 experiment_id = self.client.create_experiment(experiment_name)
@@ -145,10 +145,13 @@ class MLFlowManager:
                 filtered_params[key] = json.dumps(value)
 
         mlflow.log_params(filtered_params)
-        logger.debug("Записаны параметры", extra={
-                     "params_keys": list(filtered_params.keys())})
+        logger.debug(
+            "Записаны параметры", extra={"params_keys": list(filtered_params.keys())}
+        )
 
-    def log_metrics(self, metrics: Dict[str, float], step: Optional[int] = None) -> None:
+    def log_metrics(
+        self, metrics: Dict[str, float], step: Optional[int] = None
+    ) -> None:
         """Логирование метрик"""
 
         # Фильтруем метрики
@@ -164,15 +167,16 @@ class MLFlowManager:
                 extra={"metrics_keys": list(filtered_metrics.keys())},
             )
 
-    def log_artifacts(self, artifacts: Dict[str, Union[str, Path]], prefix: str = "") -> None:
+    def log_artifacts(
+        self, artifacts: Dict[str, Union[str, Path]], prefix: str = ""
+    ) -> None:
         """Логирование артефактов"""
 
         for name, path in artifacts.items():
             try:
                 artifact_name = f"{prefix}/{name}" if prefix else name
                 mlflow.log_artifact(str(path), artifact_name)
-                logger.debug("Записан артефакт", extra={
-                             "artifact_name": artifact_name})
+                logger.debug("Записан артефакт", extra={"artifact_name": artifact_name})
             except Exception as e:
                 logger.error(
                     "Ошибка записи артефакта",
@@ -208,6 +212,7 @@ class MLFlowManager:
                 )
             elif model_flavor == "tensorflow":
                 import mlflow.tensorflow
+
                 mlflow.tensorflow.log_model(
                     model,
                     model_name,
@@ -223,8 +228,7 @@ class MLFlowManager:
                     registered_model_name=registered_model_name,
                 )
 
-            logger.info("Модель записана в MLflow",
-                        extra={"model_name": model_name})
+            logger.info("Модель записана в MLflow", extra={"model_name": model_name})
 
         except Exception as e:
             logger.error(
@@ -264,13 +268,11 @@ class MLFlowManager:
             model_uri = f"runs:/{run_id}/model"
 
             # Создаем или обновляем модель в registry
-            model_version = mlflow.register_model(
-                model_uri=model_uri, name=model_name)
+            model_version = mlflow.register_model(model_uri=model_uri, name=model_name)
 
             logger.info(
                 "Модель зарегистрирована",
-                extra={"model_name": model_name,
-                       "version": model_version.version},
+                extra={"model_name": model_name, "version": model_version.version},
             )
 
             return model_version
@@ -287,7 +289,9 @@ class MLFlowManager:
             )
             raise
 
-    def get_experiment_metrics(self, experiment_name: str, limit: int = 10) -> pd.DataFrame:
+    def get_experiment_metrics(
+        self, experiment_name: str, limit: int = 10
+    ) -> pd.DataFrame:
         """Получение метрик экспериментов"""
 
         try:
@@ -324,8 +328,7 @@ class MLFlowManager:
             df = pd.DataFrame(data)
             logger.debug(
                 "Получено runs из эксперимента",
-                extra={"runs_count": len(
-                    df), "experiment_name": experiment_name},
+                extra={"runs_count": len(df), "experiment_name": experiment_name},
             )
 
             return df
@@ -351,15 +354,15 @@ class MLFlowManager:
             try:
                 # Получаем последние версии моделей
                 model_versions = self.client.search_model_versions(
-                    f"name='{model_name}'")
+                    f"name='{model_name}'"
+                )
 
                 if model_versions:
                     latest_version = model_versions[0]
                     model_uri = f"models:/{model_name}/{latest_version.version}"
 
                     # Загружаем метаданные модели
-                    self.client.get_model_version(
-                        model_name, latest_version.version)
+                    self.client.get_model_version(model_name, latest_version.version)
 
                     comparison_results[model_name] = {
                         "version": latest_version.version,
@@ -396,8 +399,7 @@ class MLFlowManager:
 
             logger.info(
                 "Модель переведена в стадию",
-                extra={"model_name": model_name,
-                       "version": version, "stage": stage},
+                extra={"model_name": model_name, "version": version, "stage": stage},
             )
 
         except Exception as e:
@@ -419,12 +421,13 @@ class MLFlowManager:
 
         try:
             # Создаем временный файл
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".csv", delete=False
+            ) as f:
                 df.to_csv(f.name, index=False)
                 mlflow.log_artifact(f.name, f"data/{name}.csv")
 
-            logger.debug("DataFrame записан в MLflow",
-                         extra={"dataframe_name": name})
+            logger.debug("DataFrame записан в MLflow", extra={"dataframe_name": name})
 
         except Exception as e:
             logger.error(
@@ -452,7 +455,9 @@ class MLFlowManager:
         else:
             return "sklearn"  # Default fallback
 
-    def create_feature_store_experiment(self, features: pd.DataFrame, name: str) -> None:
+    def create_feature_store_experiment(
+        self, features: pd.DataFrame, name: str
+    ) -> None:
         """Создание эксперимента для Feature Store"""
 
         try:
@@ -460,7 +465,8 @@ class MLFlowManager:
 
             # Запускаем эксперимент
             self.start_experiment(
-                experiment_name, f"features_{datetime.now().strftime('%Y%m%d')}")
+                experiment_name, f"features_{datetime.now().strftime('%Y%m%d')}"
+            )
 
             # Логируем статистики фич
             feature_stats = {}
@@ -501,8 +507,7 @@ class MLFlowManager:
 
         try:
             mlflow.end_run(run_id)
-            logger.debug("Эксперимент завершен", extra={
-                         "run_id": run_id or "текущий"})
+            logger.debug("Эксперимент завершен", extra={"run_id": run_id or "текущий"})
         except Exception as e:
             logger.error(
                 "Ошибка завершения эксперимента",

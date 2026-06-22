@@ -19,7 +19,9 @@ def _executive():
 
 def _assert_fast_health(module, path: str, expected_keys: set[str], monkeypatch):
     monkeypatch.setattr(module, "store_or_none", lambda: None)
-    monkeypatch.setattr(module, "build_executive_dashboard", lambda *args, **kwargs: _executive())
+    monkeypatch.setattr(
+        module, "build_executive_dashboard", lambda *args, **kwargs: _executive()
+    )
 
     def fail_deep_build(_req):
         raise AssertionError("health must not call deep pre-deal build")

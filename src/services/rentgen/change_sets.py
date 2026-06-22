@@ -9,12 +9,15 @@ from pathlib import Path
 from typing import Any
 
 from src.services.rentgen import artifact_graph
-from src.services.rentgen.change_plan import build_change_plan, dedupe, extract_diff_modules
+from src.services.rentgen.change_plan import (
+    build_change_plan,
+    dedupe,
+    extract_diff_modules,
+)
 from src.services.rentgen.policy_engine import evaluate_policy
 from src.services.rentgen.release_readiness import build_release_readiness
 from src.services.rentgen.test_coverage_matrix import build_test_coverage_matrix
 from src.services.rentgen.test_evidence import summarize_test_evidence
-
 
 ROOT = Path(__file__).resolve().parents[3]
 STORE_PATH = ROOT / "data" / "change_sets.json"
@@ -61,11 +64,15 @@ def _write(items: list[dict[str, Any]], path: Path | None = None) -> None:
     target = path or STORE_PATH
     target.parent.mkdir(parents=True, exist_ok=True)
     tmp = target.with_suffix(target.suffix + ".tmp")
-    tmp.write_text(json.dumps({"items": items}, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.write_text(
+        json.dumps({"items": items}, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     tmp.replace(target)
 
 
-def _artifact_path_for_store(path: Path | None, artifact_path: Path | None) -> Path | None:
+def _artifact_path_for_store(
+    path: Path | None, artifact_path: Path | None
+) -> Path | None:
     if artifact_path is not None:
         return artifact_path
     if path is not None:
@@ -96,28 +103,61 @@ def _stable_artifact_id(prefix: str, value: str) -> str:
     return f"{prefix}_{digest}"
 
 
-def _normalize(data: dict[str, Any], *, existing: dict[str, Any] | None = None) -> dict[str, Any]:
+def _normalize(
+    data: dict[str, Any], *, existing: dict[str, Any] | None = None
+) -> dict[str, Any]:
     now = _now()
-    title = _clean(data.get("title") if data.get("title") is not None else (existing or {}).get("title"), limit=240)
+    title = _clean(
+        data.get("title")
+        if data.get("title") is not None
+        else (existing or {}).get("title"),
+        limit=240,
+    )
     if not title:
         raise ValueError("Change set title is required")
     created_at = (existing or {}).get("created_at") or now
-    modules = dedupe(_safe_list(data.get("changed_modules") if data.get("changed_modules") is not None else (existing or {}).get("changed_modules")))
-    diff = data.get("diff") if data.get("diff") is not None else (existing or {}).get("diff")
+    modules = dedupe(
+        _safe_list(
+            data.get("changed_modules")
+            if data.get("changed_modules") is not None
+            else (existing or {}).get("changed_modules")
+        )
+    )
+    diff = (
+        data.get("diff")
+        if data.get("diff") is not None
+        else (existing or {}).get("diff")
+    )
     modules = dedupe(modules + extract_diff_modules(diff))
-    status = _clean(data.get("status") if data.get("status") is not None else (existing or {}).get("status"), limit=80) or "draft"
+    status = (
+        _clean(
+            data.get("status")
+            if data.get("status") is not None
+            else (existing or {}).get("status"),
+            limit=80,
+        )
+        or "draft"
+    )
     if status not in STATUSES:
         raise ValueError(f"Unsupported change set status: {status}")
 
     return {
-        "id": (existing or {}).get("id") or _change_set_id(title, created_at, data.get("id")),
+        "id": (existing or {}).get("id")
+        or _change_set_id(title, created_at, data.get("id")),
         "title": title,
         "description": _clean(
-            data.get("description") if data.get("description") is not None else (existing or {}).get("description"),
+            data.get("description")
+            if data.get("description") is not None
+            else (existing or {}).get("description"),
             limit=4000,
         ),
         "status": status,
-        "owner": _clean(data.get("owner") if data.get("owner") is not None else (existing or {}).get("owner"), limit=160),
+        "owner": _clean(
+            data.get("owner")
+            if data.get("owner") is not None
+            else (existing or {}).get("owner"),
+            limit=160,
+        ),
         "source_requirement_ids": _safe_list(
             data.get("source_requirement_ids")
             if data.get("source_requirement_ids") is not None
@@ -125,14 +165,32 @@ def _normalize(data: dict[str, Any], *, existing: dict[str, Any] | None = None) 
         ),
         "changed_modules": modules,
         "diff": diff or "",
-        "risk_summary": data.get("risk_summary") or (existing or {}).get("risk_summary") or {},
-        "change_plan": data.get("change_plan") or (existing or {}).get("change_plan") or None,
-        "test_matrix": data.get("test_matrix") or (existing or {}).get("test_matrix") or None,
-        "release_readiness": data.get("release_readiness") or (existing or {}).get("release_readiness") or None,
-        "approval_ids": _safe_list(data.get("approval_ids") if data.get("approval_ids") is not None else (existing or {}).get("approval_ids")),
-        "waiver_ids": _safe_list(data.get("waiver_ids") if data.get("waiver_ids") is not None else (existing or {}).get("waiver_ids")),
+        "risk_summary": data.get("risk_summary")
+        or (existing or {}).get("risk_summary")
+        or {},
+        "change_plan": data.get("change_plan")
+        or (existing or {}).get("change_plan")
+        or None,
+        "test_matrix": data.get("test_matrix")
+        or (existing or {}).get("test_matrix")
+        or None,
+        "release_readiness": data.get("release_readiness")
+        or (existing or {}).get("release_readiness")
+        or None,
+        "approval_ids": _safe_list(
+            data.get("approval_ids")
+            if data.get("approval_ids") is not None
+            else (existing or {}).get("approval_ids")
+        ),
+        "waiver_ids": _safe_list(
+            data.get("waiver_ids")
+            if data.get("waiver_ids") is not None
+            else (existing or {}).get("waiver_ids")
+        ),
         "decision_log": list((existing or {}).get("decision_log") or []),
-        "artifact_sync": data.get("artifact_sync") or (existing or {}).get("artifact_sync") or {},
+        "artifact_sync": data.get("artifact_sync")
+        or (existing or {}).get("artifact_sync")
+        or {},
         "created_at": created_at,
         "updated_at": now,
     }
@@ -146,7 +204,9 @@ def _upsert(record: dict[str, Any], *, path: Path | None = None) -> dict[str, An
     return record
 
 
-def sync_change_set_to_artifacts(record: dict[str, Any], *, artifact_path: Path | None = None) -> dict[str, Any]:
+def sync_change_set_to_artifacts(
+    record: dict[str, Any], *, artifact_path: Path | None = None
+) -> dict[str, Any]:
     """Project a change set into the internal artifact graph."""
 
     sync = {"artifact_id": record["id"], "artifacts": 1, "links": 0, "errors": []}
@@ -228,8 +288,12 @@ def sync_change_set_to_artifacts(record: dict[str, Any], *, artifact_path: Path 
             sync["errors"].append(str(exc))
 
     test_matrix = record.get("test_matrix") or {}
-    for module in test_matrix.get("modules", []) if isinstance(test_matrix, dict) else []:
-        for test in list(module.get("exact_tests") or []) + list(module.get("planned_tests") or []):
+    for module in (
+        test_matrix.get("modules", []) if isinstance(test_matrix, dict) else []
+    ):
+        for test in list(module.get("exact_tests") or []) + list(
+            module.get("planned_tests") or []
+        ):
             selector = test.get("selector") or test.get("id") or test.get("command")
             if not selector:
                 continue
@@ -260,14 +324,19 @@ def sync_change_set_to_artifacts(record: dict[str, Any], *, artifact_path: Path 
 
     readiness = record.get("release_readiness") or {}
     if isinstance(readiness, dict) and readiness.get("release_name"):
-        release_id = _stable_artifact_id("rel", f"{record['id']}:{readiness['release_name']}")
+        release_id = _stable_artifact_id(
+            "rel", f"{record['id']}:{readiness['release_name']}"
+        )
         try:
             artifact_graph.create_artifact(
                 {
                     "id": release_id,
                     "type": "release",
                     "title": str(readiness["release_name"]),
-                    "status": str((readiness.get("decision") or {}).get("status") or "review_ready"),
+                    "status": str(
+                        (readiness.get("decision") or {}).get("status")
+                        or "review_ready"
+                    ),
                     "source": "change_sets",
                     "attributes": {
                         "change_set_id": record["id"],
@@ -291,18 +360,28 @@ def sync_change_set_to_artifacts(record: dict[str, Any], *, artifact_path: Path 
     return sync
 
 
-def create_change_set(data: dict[str, Any], *, path: Path | None = None, artifact_path: Path | None = None) -> dict[str, Any]:
+def create_change_set(
+    data: dict[str, Any], *, path: Path | None = None, artifact_path: Path | None = None
+) -> dict[str, Any]:
     """Create or upsert a change set."""
 
     existing = None
     if data.get("id"):
         existing = get_change_set(str(data["id"]), path=path)
     record = _normalize(data, existing=existing)
-    record["artifact_sync"] = sync_change_set_to_artifacts(record, artifact_path=_artifact_path_for_store(path, artifact_path))
+    record["artifact_sync"] = sync_change_set_to_artifacts(
+        record, artifact_path=_artifact_path_for_store(path, artifact_path)
+    )
     return _upsert(record, path=path)
 
 
-def list_change_sets(*, status: str | None = None, owner: str | None = None, limit: int = 100, path: Path | None = None) -> dict[str, Any]:
+def list_change_sets(
+    *,
+    status: str | None = None,
+    owner: str | None = None,
+    limit: int = 100,
+    path: Path | None = None,
+) -> dict[str, Any]:
     """List change sets with lightweight filters."""
 
     items = _load(path)
@@ -310,12 +389,20 @@ def list_change_sets(*, status: str | None = None, owner: str | None = None, lim
         items = [item for item in items if item.get("status") == status]
     if owner:
         folded = owner.casefold()
-        items = [item for item in items if folded in str(item.get("owner") or "").casefold()]
+        items = [
+            item for item in items if folded in str(item.get("owner") or "").casefold()
+        ]
     items.sort(key=lambda item: item.get("updated_at", ""), reverse=True)
-    return {"items": items[: max(1, limit)], "total": len(items), "path": str(path or STORE_PATH)}
+    return {
+        "items": items[: max(1, limit)],
+        "total": len(items),
+        "path": str(path or STORE_PATH),
+    }
 
 
-def get_change_set(change_set_id: str, *, path: Path | None = None) -> dict[str, Any] | None:
+def get_change_set(
+    change_set_id: str, *, path: Path | None = None
+) -> dict[str, Any] | None:
     """Return one change set."""
 
     for item in _load(path):
@@ -365,9 +452,19 @@ def transition_change_set(
     updated["status"] = status
     updated["updated_at"] = now
     decisions = list(updated.get("decision_log") or [])
-    decisions.insert(0, {"at": now, "actor": actor or "system", "status": status, "reason": reason or ""})
+    decisions.insert(
+        0,
+        {
+            "at": now,
+            "actor": actor or "system",
+            "status": status,
+            "reason": reason or "",
+        },
+    )
     updated["decision_log"] = decisions
-    updated["artifact_sync"] = sync_change_set_to_artifacts(updated, artifact_path=_artifact_path_for_store(path, artifact_path))
+    updated["artifact_sync"] = sync_change_set_to_artifacts(
+        updated, artifact_path=_artifact_path_for_store(path, artifact_path)
+    )
     return _upsert(updated, path=path)
 
 
@@ -425,7 +522,10 @@ def analyze_change_set(
         max_edges=max_edges,
         hotspot_limit=hotspot_limit,
     )
-    risks = [int((item.get("quality") or {}).get("risk") or 0) for item in plan.get("modules", [])]
+    risks = [
+        int((item.get("quality") or {}).get("risk") or 0)
+        for item in plan.get("modules", [])
+    ]
     updated = dict(record)
     updated["status"] = "impact_analyzed"
     updated["change_plan"] = plan
@@ -437,7 +537,9 @@ def analyze_change_set(
         "high_risk_modules": sum(1 for risk in risks if risk >= 70),
     }
     updated["updated_at"] = _now()
-    updated["artifact_sync"] = sync_change_set_to_artifacts(updated, artifact_path=_artifact_path_for_store(path, artifact_path))
+    updated["artifact_sync"] = sync_change_set_to_artifacts(
+        updated, artifact_path=_artifact_path_for_store(path, artifact_path)
+    )
     return _upsert(updated, path=path)
 
 
@@ -470,7 +572,9 @@ def select_change_set_tests(
     updated["status"] = "tests_selected"
     updated["test_matrix"] = matrix
     updated["updated_at"] = _now()
-    updated["artifact_sync"] = sync_change_set_to_artifacts(updated, artifact_path=_artifact_path_for_store(path, artifact_path))
+    updated["artifact_sync"] = sync_change_set_to_artifacts(
+        updated, artifact_path=_artifact_path_for_store(path, artifact_path)
+    )
     return _upsert(updated, path=path)
 
 
@@ -500,5 +604,7 @@ def attach_release_readiness(
     updated["status"] = "review_ready"
     updated["release_readiness"] = report
     updated["updated_at"] = _now()
-    updated["artifact_sync"] = sync_change_set_to_artifacts(updated, artifact_path=_artifact_path_for_store(path, artifact_path))
+    updated["artifact_sync"] = sync_change_set_to_artifacts(
+        updated, artifact_path=_artifact_path_for_store(path, artifact_path)
+    )
     return _upsert(updated, path=path)

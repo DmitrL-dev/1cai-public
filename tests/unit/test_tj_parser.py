@@ -1,9 +1,11 @@
 """Tests for TJ Parser (Перформер)."""
 
-import pytest
 from pathlib import Path
-from src.services.tj_parser.parser import TJParser, TJEvent, ContextFrame
+
+import pytest
+
 from src.services.tj_parser.analyzer import TJPerformanceAnalyzer
+from src.services.tj_parser.parser import ContextFrame, TJEvent, TJParser
 
 # === TJ Log Fixtures ===
 

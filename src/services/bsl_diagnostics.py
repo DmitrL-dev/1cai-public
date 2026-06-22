@@ -24,7 +24,9 @@ class BSLDiagnostic:
 
 _SOURCE = "bsl-diagnostics:fallback"
 
-_PROC_RE = re.compile(r"^\s*(Процедура|Функция)\s+([A-Za-zА-Яа-яЁё0-9_]+)", re.IGNORECASE)
+_PROC_RE = re.compile(
+    r"^\s*(Процедура|Функция)\s+([A-Za-zА-Яа-яЁё0-9_]+)", re.IGNORECASE
+)
 _SELECT_STAR_RE = re.compile(r"\bВЫБРАТЬ\s+\*", re.IGNORECASE)
 _LEFT_JOIN_ALIAS_RE = re.compile(
     r"\bЛЕВОЕ(?:\s+ВНЕШНЕЕ)?\s+СОЕДИНЕНИЕ\b[\s\S]{0,240}?\bКАК\s+([A-Za-zА-Яа-яЁё_][\wА-Яа-яЁё]*)",
@@ -40,9 +42,13 @@ _PRIVILEGED_MODE_RE = re.compile(
 )
 _LOOP_START_RE = re.compile(r"^\s*(Для(\s+Каждого)?|Пока)\b", re.IGNORECASE)
 _LOOP_END_RE = re.compile(r"^\s*КонецЦикла\b", re.IGNORECASE)
-_BLOCK_START_RE = re.compile(r"^\s*(Если|Для(\s+Каждого)?|Пока|Попытка)\b", re.IGNORECASE)
+_BLOCK_START_RE = re.compile(
+    r"^\s*(Если|Для(\s+Каждого)?|Пока|Попытка)\b", re.IGNORECASE
+)
 _BLOCK_END_RE = re.compile(r"^\s*(КонецЕсли|КонецЦикла|КонецПопытки)\b", re.IGNORECASE)
-_QUERY_EXEC_RE = re.compile(r"(Новый\s+Запрос|Запрос\s*\.|\.Выполнить\s*\()", re.IGNORECASE)
+_QUERY_EXEC_RE = re.compile(
+    r"(Новый\s+Запрос|Запрос\s*\.|\.Выполнить\s*\()", re.IGNORECASE
+)
 _OBJECT_REF_RE = re.compile(
     r"\b(Справочник|Справочники|Документ|Документы|РегистрСведений|РегистрыСведений|"
     r"РегистрНакопления|РегистрыНакопления|РегистрБухгалтерии|РегистрыБухгалтерии|"
@@ -71,17 +77,23 @@ _NULL_GUARD_RE = re.compile(
 _NULL_FUNC_TOKENS = r"(?:ЕстьNULL|ЕСТЬNULL|ISNULL|COALESCE)"
 _NULL_CHECK_TOKENS = r"(?:ЕСТЬ\s+NULL|НЕ\s+ЕСТЬ\s+NULL|IS\s+NULL|IS\s+NOT\s+NULL)"
 _FIELD_NAME_RE = r"[A-Za-zА-Яа-яЁё_][\wА-Яа-яЁё]*"
-_EN_PROC_RE = re.compile(r"^\s*(Procedure|Function)\s+([A-Za-z][A-Za-z0-9_]*)", re.IGNORECASE)
+_EN_PROC_RE = re.compile(
+    r"^\s*(Procedure|Function)\s+([A-Za-z][A-Za-z0-9_]*)", re.IGNORECASE
+)
 _EN_SELECT_STAR_RE = re.compile(r"\bSELECT\s+\*", re.IGNORECASE)
 _EN_DYNAMIC_EXEC_RE = re.compile(r"(?<![.\w])Execute\s*\(", re.IGNORECASE)
-_EN_PRIVILEGED_MODE_RE = re.compile(r"SetPrivilegedMode\s*\(\s*True\s*\)", re.IGNORECASE)
+_EN_PRIVILEGED_MODE_RE = re.compile(
+    r"SetPrivilegedMode\s*\(\s*True\s*\)", re.IGNORECASE
+)
 _EN_EXCEPTION_RE = re.compile(r"^\s*Except\b", re.IGNORECASE)
 _EN_END_TRY_RE = re.compile(r"^\s*EndTry\b", re.IGNORECASE)
 _EN_LOOP_START_RE = re.compile(r"^\s*(For(\s+Each)?|While)\b", re.IGNORECASE)
 _EN_LOOP_END_RE = re.compile(r"^\s*EndDo\b", re.IGNORECASE)
 _EN_BLOCK_START_RE = re.compile(r"^\s*(If|For(\s+Each)?|While|Try)\b", re.IGNORECASE)
 _EN_BLOCK_END_RE = re.compile(r"^\s*(EndIf|EndDo|EndTry)\b", re.IGNORECASE)
-_EN_QUERY_EXEC_RE = re.compile(r"(New\s+Query|Query\s*\.|\.Execute\s*\()", re.IGNORECASE)
+_EN_QUERY_EXEC_RE = re.compile(
+    r"(New\s+Query|Query\s*\.|\.Execute\s*\()", re.IGNORECASE
+)
 _EN_OBJECT_REF_RE = re.compile(
     r"\b(Catalog|Catalogs|Document|Documents|InformationRegister|InformationRegisters|"
     r"AccumulationRegister|AccumulationRegisters|AccountingRegister|AccountingRegisters|"
@@ -239,7 +251,9 @@ def _nesting(lines: list[str], diagnostics: list[BSLDiagnostic], threshold: int)
     return max_depth
 
 
-def _nesting_english(lines: list[str], diagnostics: list[BSLDiagnostic], threshold: int) -> int:
+def _nesting_english(
+    lines: list[str], diagnostics: list[BSLDiagnostic], threshold: int
+) -> int:
     depth = 0
     max_depth = 0
     max_line = 1
@@ -284,7 +298,9 @@ def _undocumented_exports(lines: list[str], diagnostics: list[BSLDiagnostic]) ->
             )
 
 
-def _undocumented_exports_english(lines: list[str], diagnostics: list[BSLDiagnostic]) -> None:
+def _undocumented_exports_english(
+    lines: list[str], diagnostics: list[BSLDiagnostic]
+) -> None:
     for idx, line in enumerate(lines):
         if "Export" not in line:
             continue
@@ -335,7 +351,9 @@ def _field_has_null_guard(line: str, alias: str, field: str) -> bool:
     )
 
 
-def _field_has_case_null_guard(lines: list[str], line_number: int, alias: str, field: str) -> bool:
+def _field_has_case_null_guard(
+    lines: list[str], line_number: int, alias: str, field: str
+) -> bool:
     window: list[str] = []
     saw_case = False
     for cursor in range(line_number - 1, max(0, line_number - 9), -1):
@@ -354,7 +372,9 @@ def _field_has_case_null_guard(lines: list[str], line_number: int, alias: str, f
         if re.search(r"\b(КОНЕЦ|END)\b", current, re.IGNORECASE):
             break
     text = "\n".join(window)
-    return bool(re.search(r"\b(КОГДА|WHEN)\b", text, re.IGNORECASE)) and _field_has_null_guard(text, alias, field)
+    return bool(
+        re.search(r"\b(КОГДА|WHEN)\b", text, re.IGNORECASE)
+    ) and _field_has_null_guard(text, alias, field)
 
 
 def _same_query_block(lines: list[str], left_line: int, right_line: int) -> bool:
@@ -408,7 +428,9 @@ def _is_join_condition_continuation(lines: list[str], line_number: int) -> bool:
     ru_on = "\u041f\u041e"
     ru_left = "\u041b\u0415\u0412\u041e\u0415"
     ru_where = "\u0413\u0414\u0415"
-    ru_group = "\u0421\u0413\u0420\u0423\u041f\u041f\u0418\u0420\u041e\u0412\u0410\u0422\u042c"
+    ru_group = (
+        "\u0421\u0413\u0420\u0423\u041f\u041f\u0418\u0420\u041e\u0412\u0410\u0422\u042c"
+    )
     ru_select = "\u0412\u042b\u0411\u0420\u0410\u0422\u042c"
     ru_from = "\u0418\u0417"
     line = lines[line_number - 1]
@@ -530,7 +552,9 @@ def _mixed_left_join_null_guard_line(
             )
 
 
-def _left_join_null_guards(code: str, lines: list[str], diagnostics: list[BSLDiagnostic]) -> None:
+def _left_join_null_guards(
+    code: str, lines: list[str], diagnostics: list[BSLDiagnostic]
+) -> None:
     aliases: dict[str, int] = {}
     for pattern in (_LEFT_JOIN_ALIAS_RE, _EN_LEFT_JOIN_ALIAS_RE):
         for match in pattern.finditer(code):
@@ -660,8 +684,12 @@ def analyze_bsl(
         "diagnostics": [asdict(item) for item in diagnostics],
         "metrics": {
             "loc": sum(1 for line in lines if _is_code_line(line)),
-            "procedures": sum(1 for line in lines if re.match(r"^\s*Процедура\b", line, re.IGNORECASE)),
-            "functions": sum(1 for line in lines if re.match(r"^\s*Функция\b", line, re.IGNORECASE)),
+            "procedures": sum(
+                1 for line in lines if re.match(r"^\s*Процедура\b", line, re.IGNORECASE)
+            ),
+            "functions": sum(
+                1 for line in lines if re.match(r"^\s*Функция\b", line, re.IGNORECASE)
+            ),
             "max_nesting": max_nesting,
             "procedures": sum(1 for line in lines if _is_procedure_decl(line)),
             "functions": sum(1 for line in lines if _is_function_decl(line)),

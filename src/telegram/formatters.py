@@ -33,7 +33,9 @@ class TelegramFormatter:
                 text += f"`{module}`\n"
 
             if description:
-                desc_short = description[:150] + "..." if len(description) > 150 else description
+                desc_short = (
+                    description[:150] + "..." if len(description) > 150 else description
+                )
                 text += f"{desc_short}\n"
 
             if score:

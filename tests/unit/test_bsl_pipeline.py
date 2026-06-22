@@ -13,7 +13,6 @@ import pytest
 
 from src.ai.bsl_pipeline import BSLPipeline, PipelineResult, run_pipeline
 
-
 # ── Helpers ───────────────────────────────────────────────────────
 
 CLEAN_BSL = """\

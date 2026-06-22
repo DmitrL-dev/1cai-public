@@ -1,4 +1,3 @@
-
 """
 Конфигурация для AI-ассистентов
 Версия: 2.0.0
@@ -583,8 +582,7 @@ class Settings(BaseSettings):
         # makes the test suite uncollectable, while production still fails hard.
         under_test = bool(
             os.getenv("PYTEST_CURRENT_TEST")
-            or os.getenv("SKIP_SECURITY_VALIDATION", "").lower()
-            in {"1", "true", "yes"}
+            or os.getenv("SKIP_SECURITY_VALIDATION", "").lower() in {"1", "true", "yes"}
             or "pytest" in sys.modules
             or any("pytest" in str(part).lower() for part in sys.argv)
         )
@@ -592,8 +590,7 @@ class Settings(BaseSettings):
         message = "Insecure security configuration: " + "; ".join(problems)
         if is_production and not under_test:
             raise RuntimeError(
-                message
-                + ". Refusing to start with insecure secrets in production."
+                message + ". Refusing to start with insecure secrets in production."
             )
         logger.warning(
             "%s. Continuing because %s (NOT acceptable for production).",

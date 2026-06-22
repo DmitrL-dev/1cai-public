@@ -1,4 +1,3 @@
-
 """
 System Tests - End-to-End сценарии
 """
@@ -27,6 +26,7 @@ async def test_full_code_review_flow():
     """
 
     from src.ai.agents.code_review.ai_reviewer import AICodeReviewer
+
     # GitHubIntegration.post_pr_comment was refactored into
     # src.modules.github_integration.GitHubClient.post_comment (token is now a
     # constructor arg; the client POSTs via httpx.AsyncClient.request).

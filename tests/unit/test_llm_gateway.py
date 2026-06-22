@@ -1,4 +1,3 @@
-
 """
 Unit tests for LLM Gateway
 """
@@ -186,9 +185,7 @@ async def test_fallback_chain(gateway):
     )
 
     gateway.get_client = Mock(
-        side_effect=lambda name: (
-            mock_gigachat if name == "gigachat" else mock_yandex
-        )
+        side_effect=lambda name: (mock_gigachat if name == "gigachat" else mock_yandex)
     )
 
     response = await gateway.generate("test prompt", role="developer")
@@ -198,7 +195,9 @@ async def test_fallback_chain(gateway):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="Superseded by get_client-based offline fallback contract test.")
+@pytest.mark.skip(
+    reason="Superseded by get_client-based offline fallback contract test."
+)
 async def test_offline_fallback(gateway):
     """Test offline fallback when all providers fail"""
     with patch(

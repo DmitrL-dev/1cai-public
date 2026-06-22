@@ -8,22 +8,27 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from src.api._rentgen_store import store_or_none
+from src.services.rentgen.canonical_metadata import (
+    diff_metadata as diff_canonical_metadata,
+)
+from src.services.rentgen.canonical_metadata import diff_rights as diff_canonical_rights
+from src.services.rentgen.canonical_metadata import get_canonical_object
+from src.services.rentgen.canonical_metadata import (
+    import_metadata_snapshot as import_canonical_metadata_snapshot,
+)
+from src.services.rentgen.canonical_metadata import (
+    list_metadata_objects as list_canonical_metadata_objects,
+)
+from src.services.rentgen.canonical_metadata import (
+    list_metadata_snapshots as list_canonical_metadata_snapshots,
+)
+from src.services.rentgen.form_designer import build_form_blueprint
+from src.services.rentgen.metadata_data_governance import build_data_governance
 from src.services.rentgen.metadata_graph import (
     build_metadata_graph,
     get_metadata_object,
     metadata_summary,
     search_metadata,
-)
-from src.services.rentgen.metadata_data_governance import build_data_governance
-from src.services.rentgen.form_designer import build_form_blueprint
-from src.services.rentgen.security_posture import build_security_posture
-from src.services.rentgen.canonical_metadata import (
-    diff_metadata as diff_canonical_metadata,
-    diff_rights as diff_canonical_rights,
-    get_canonical_object,
-    import_metadata_snapshot as import_canonical_metadata_snapshot,
-    list_metadata_objects as list_canonical_metadata_objects,
-    list_metadata_snapshots as list_canonical_metadata_snapshots,
 )
 from src.services.rentgen.metadata_insights import (
     create_metadata_snapshot,
@@ -32,6 +37,7 @@ from src.services.rentgen.metadata_insights import (
     review_forms,
     security_review,
 )
+from src.services.rentgen.security_posture import build_security_posture
 
 router = APIRouter(prefix="/api/v1/metadata", tags=["Metadata Graph"])
 
@@ -83,7 +89,8 @@ def summary() -> dict[str, Any]:
 @router.get("/search")
 def search(
     q: str | None = Query(None, min_length=1),
-    type: str | None = Query(None, description="Metadata type, e.g. Document, Catalog, Role"),
+    type: str
+    | None = Query(None, description="Metadata type, e.g. Document, Catalog, Role"),
     limit: int = Query(30, ge=1, le=200),
 ) -> dict[str, Any]:
     return {"items": search_metadata(q, metadata_type=type, limit=limit)}
@@ -114,14 +121,23 @@ def import_canonical(req: CanonicalImportRequest) -> dict[str, Any]:
 
 @router.get("/objects")
 def canonical_objects(
-    type: str | None = Query(default=None, description="Metadata type, e.g. Document, Catalog, Role"),
-    group: str | None = Query(default=None, description="Canonical group: data, ui, integration, security, support"),
+    type: str
+    | None = Query(
+        default=None, description="Metadata type, e.g. Document, Catalog, Role"
+    ),
+    group: str
+    | None = Query(
+        default=None,
+        description="Canonical group: data, ui, integration, security, support",
+    ),
     q: str | None = Query(default=None, min_length=1),
     limit: int = Query(default=100, ge=1, le=1000),
 ) -> dict[str, Any]:
     """List canonical metadata objects from the latest imports."""
 
-    return list_canonical_metadata_objects(metadata_type=type, group=group, query=q, limit=limit)
+    return list_canonical_metadata_objects(
+        metadata_type=type, group=group, query=q, limit=limit
+    )
 
 
 @router.get("/objects/{object_id}")
@@ -150,7 +166,9 @@ def canonical_drift(
     """Compare canonical metadata snapshots."""
 
     try:
-        return diff_canonical_metadata(before_id=before_id, after_id=after_id, limit=limit)
+        return diff_canonical_metadata(
+            before_id=before_id, after_id=after_id, limit=limit
+        )
     except KeyError as exc:
         raise HTTPException(404, str(exc)) from exc
 
@@ -164,7 +182,9 @@ def canonical_rights_diff(
     """Compare role rights between canonical metadata snapshots."""
 
     try:
-        return diff_canonical_rights(before_id=before_id, after_id=after_id, limit=limit)
+        return diff_canonical_rights(
+            before_id=before_id, after_id=after_id, limit=limit
+        )
     except KeyError as exc:
         raise HTTPException(404, str(exc)) from exc
 
@@ -185,7 +205,9 @@ def object_impact(
     total_edges = 0
     if store is not None:
         for module_path in modules:
-            impact = store.module_impact(module_path, max_depth=max_depth, max_edges=max_edges)
+            impact = store.module_impact(
+                module_path, max_depth=max_depth, max_edges=max_edges
+            )
             total_edges += int(impact.get("total", 0))
             impacts.append(impact)
 
@@ -239,7 +261,9 @@ def security_posture(
     module_limit: int = Query(2500, ge=1, le=30000),
     snapshot_id: str | None = Query(None, min_length=1),
 ) -> dict[str, Any]:
-    return build_security_posture(limit=limit, module_limit=module_limit, snapshot_id=snapshot_id)
+    return build_security_posture(
+        limit=limit, module_limit=module_limit, snapshot_id=snapshot_id
+    )
 
 
 @router.get("/data-governance")

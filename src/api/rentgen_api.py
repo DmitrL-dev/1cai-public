@@ -14,7 +14,10 @@ from src.services.rentgen.change_plan import (
     render_markdown_report,
 )
 from src.services.rentgen.test_coverage_matrix import build_test_coverage_matrix
-from src.services.rentgen.test_inventory import inventory_summary, match_tests_for_module
+from src.services.rentgen.test_inventory import (
+    inventory_summary,
+    match_tests_for_module,
+)
 
 router = APIRouter(prefix="/rentgen", tags=["rentgen"])
 
@@ -174,9 +177,13 @@ def get_impact_analysis(req: FlowRequest):
 @router.post("/change-impact", response_model=ChangeImpactResponse)
 def change_impact(req: ChangeImpactRequest):
     """Change-driven review: module paths -> whole-config blast radius + risks."""
-    changed_modules = list(dict.fromkeys(req.changed_modules + extract_diff_modules(req.diff)))
+    changed_modules = list(
+        dict.fromkeys(req.changed_modules + extract_diff_modules(req.diff))
+    )
     if not changed_modules:
-        raise HTTPException(400, "Provide changed_modules or a unified diff with .bsl paths")
+        raise HTTPException(
+            400, "Provide changed_modules or a unified diff with .bsl paths"
+        )
 
     store = store_or_none()
     if store is None:
@@ -195,9 +202,13 @@ def change_impact(req: ChangeImpactRequest):
 @router.post("/test-selector", response_model=TestSelectorResponse)
 def test_selector(req: ChangeImpactRequest):
     """Risk-driven YAxUnit/Vanessa test run plan for a diff or module list."""
-    changed_modules = list(dict.fromkeys(req.changed_modules + extract_diff_modules(req.diff)))
+    changed_modules = list(
+        dict.fromkeys(req.changed_modules + extract_diff_modules(req.diff))
+    )
     if not changed_modules:
-        raise HTTPException(400, "Provide changed_modules or a unified diff with .bsl paths")
+        raise HTTPException(
+            400, "Provide changed_modules or a unified diff with .bsl paths"
+        )
 
     store = store_or_none()
     if store is None:
@@ -228,9 +239,13 @@ def test_selector(req: ChangeImpactRequest):
 @router.post("/test-coverage-matrix")
 def test_coverage_matrix(req: TestCoverageMatrixRequest):
     """Exact/planned/gap test coverage matrix for changed modules or diff."""
-    changed_modules = list(dict.fromkeys(req.changed_modules + extract_diff_modules(req.diff)))
+    changed_modules = list(
+        dict.fromkeys(req.changed_modules + extract_diff_modules(req.diff))
+    )
     if not changed_modules:
-        raise HTTPException(400, "Provide changed_modules or a unified diff with .bsl paths")
+        raise HTTPException(
+            400, "Provide changed_modules or a unified diff with .bsl paths"
+        )
 
     store = store_or_none()
     if store is None:
@@ -269,9 +284,13 @@ def test_inventory_match(req: TestInventoryMatchRequest):
 @router.post("/ci-gate", response_model=CIGateResponse)
 def ci_gate(req: CIGateRequest):
     """PR/release gate: diff/module list -> risk decision + markdown report."""
-    changed_modules = list(dict.fromkeys(req.changed_modules + extract_diff_modules(req.diff)))
+    changed_modules = list(
+        dict.fromkeys(req.changed_modules + extract_diff_modules(req.diff))
+    )
     if not changed_modules:
-        raise HTTPException(400, "Provide changed_modules or a unified diff with .bsl paths")
+        raise HTTPException(
+            400, "Provide changed_modules or a unified diff with .bsl paths"
+        )
 
     store = store_or_none()
     if store is None:

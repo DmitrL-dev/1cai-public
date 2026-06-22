@@ -63,23 +63,106 @@ def _buyer_brief():
             "reason": "Buyer pulse is ready.",
         },
         "role_cards": [
-            {"role": "developer", "title": "Developer", "route": "/change", "status": "ready", "spark": "impact proof", "proof_file": "rentgen-developer-report.md"},
-            {"role": "architect", "title": "Architect", "route": "/platform-doctor", "status": "ready", "spark": "platform proof", "proof_file": "rentgen-architect-report.md"},
-            {"role": "director", "title": "Director", "route": "/board-pack", "status": "ready", "spark": "money proof", "proof_file": "board-pack.md"},
-            {"role": "security", "title": "Security", "route": "/enterprise-trust-center", "status": "ready", "spark": "trust proof", "proof_file": "rentgen-security-questionnaire.md"},
-            {"role": "vendor", "title": "Vendor", "route": "/vendor-portfolio", "status": "ready", "spark": "audit proof", "proof_file": "vendor-portfolio.md"},
+            {
+                "role": "developer",
+                "title": "Developer",
+                "route": "/change",
+                "status": "ready",
+                "spark": "impact proof",
+                "proof_file": "rentgen-developer-report.md",
+            },
+            {
+                "role": "architect",
+                "title": "Architect",
+                "route": "/platform-doctor",
+                "status": "ready",
+                "spark": "platform proof",
+                "proof_file": "rentgen-architect-report.md",
+            },
+            {
+                "role": "director",
+                "title": "Director",
+                "route": "/board-pack",
+                "status": "ready",
+                "spark": "money proof",
+                "proof_file": "board-pack.md",
+            },
+            {
+                "role": "security",
+                "title": "Security",
+                "route": "/enterprise-trust-center",
+                "status": "ready",
+                "spark": "trust proof",
+                "proof_file": "rentgen-security-questionnaire.md",
+            },
+            {
+                "role": "vendor",
+                "title": "Vendor",
+                "route": "/vendor-portfolio",
+                "status": "ready",
+                "spark": "audit proof",
+                "proof_file": "vendor-portfolio.md",
+            },
         ],
         "proof_readiness": [
-            {"id": "bundle", "title": "Evidence Bundle", "route": "/evidence-bundle", "status": "ready", "signal": "hashed proof", "file": "OPEN_FIRST.md"},
-            {"id": "approval", "title": "Approval gates", "route": "/approvals", "status": "ready", "signal": "governance proof", "file": "governance-proof.md"},
-            {"id": "audit", "title": "Audit / SIEM", "route": "/audit", "status": "ready", "signal": "hash chain", "file": "rentgen-audit-siem.jsonl"},
-            {"id": "trust", "title": "Enterprise Trust", "route": "/enterprise-trust-center", "status": "ready", "signal": "questionnaire", "file": "rentgen-security-questionnaire.md"},
+            {
+                "id": "bundle",
+                "title": "Evidence Bundle",
+                "route": "/evidence-bundle",
+                "status": "ready",
+                "signal": "hashed proof",
+                "file": "OPEN_FIRST.md",
+            },
+            {
+                "id": "approval",
+                "title": "Approval gates",
+                "route": "/approvals",
+                "status": "ready",
+                "signal": "governance proof",
+                "file": "governance-proof.md",
+            },
+            {
+                "id": "audit",
+                "title": "Audit / SIEM",
+                "route": "/audit",
+                "status": "ready",
+                "signal": "hash chain",
+                "file": "rentgen-audit-siem.jsonl",
+            },
+            {
+                "id": "trust",
+                "title": "Enterprise Trust",
+                "route": "/enterprise-trust-center",
+                "status": "ready",
+                "signal": "questionnaire",
+                "file": "rentgen-security-questionnaire.md",
+            },
         ],
         "meeting_flow": [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Pick the role."},
-            {"step": 2, "label": "Prove", "route": "/killer-demo", "line": "Show proof."},
-            {"step": 3, "label": "Ask", "route": "/board-pack", "line": "Ask for purchase."},
-            {"step": 4, "label": "Forward", "route": "/evidence-bundle", "line": "Forward packet."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Pick the role.",
+            },
+            {
+                "step": 2,
+                "label": "Prove",
+                "route": "/killer-demo",
+                "line": "Show proof.",
+            },
+            {
+                "step": 3,
+                "label": "Ask",
+                "route": "/board-pack",
+                "line": "Ask for purchase.",
+            },
+            {
+                "step": 4,
+                "label": "Forward",
+                "route": "/evidence-bundle",
+                "line": "Forward packet.",
+            },
         ],
     }
 
@@ -96,7 +179,10 @@ def test_enterprise_trust_center_builds_security_and_procurement_pack():
         demo_command_center=_decision(score=84),
         pilot_launchpad=_decision(score=85),
         scenario_hub=_decision(score=83),
-        vendor_portfolio={"decision": {"status": "ready", "score": 84}, "work_packages": [{"id": "platform"}]},
+        vendor_portfolio={
+            "decision": {"status": "ready", "score": 84},
+            "work_packages": [{"id": "platform"}],
+        },
         evidence_artifacts=[{"id": "business-case"}, {"id": "demo-command-center"}],
         client_name="ACME",
         config_path="data/configs/unpacked",
@@ -121,8 +207,14 @@ def test_enterprise_trust_center_builds_security_and_procurement_pack():
     assert report["summary"]["trust_room_open_first"] == 4
     assert report["security_questionnaire"]["status"] == "ready"
     assert report["trust_room_bridge"]["source"] == "management-buyer-brief"
-    assert report["trust_room_bridge"]["files"][:3] == ["buyer-brief.md", "buyer-pulse.md", "open-first-path.md"]
-    assert [item["stage"] for item in report["trust_room_bridge"]["open_first_path"]] == ["orient", "prove", "close", "verify"]
+    assert report["trust_room_bridge"]["files"][:3] == [
+        "buyer-brief.md",
+        "buyer-pulse.md",
+        "open-first-path.md",
+    ]
+    assert [
+        item["stage"] for item in report["trust_room_bridge"]["open_first_path"]
+    ] == ["orient", "prove", "close", "verify"]
     assert "/killer-demo" in report["trust_room_bridge"]["routes"]
     assert report["security_questionnaire"]["ready_to_send"] is True
     assert report["security_questionnaire"]["ready_to_approve"] is True
@@ -131,16 +223,26 @@ def test_enterprise_trust_center_builds_security_and_procurement_pack():
     assert any("Preview depth" in item for item in report["caveats"])
     section_ids = {item["id"] for item in report["security_questionnaire"]["sections"]}
     assert {"data-locality", "artifact-integrity", "platform-upgrade"} <= section_ids
-    assert "rentgen-security-questionnaire.md" in report["security_questionnaire"]["send_files"]
+    assert (
+        "rentgen-security-questionnaire.md"
+        in report["security_questionnaire"]["send_files"]
+    )
     control_ids = {item["id"] for item in report["trust_controls"]}
-    assert {"local-contour", "sbom-inventory", "offline-bundle", "rights-rls"} <= control_ids
+    assert {
+        "local-contour",
+        "sbom-inventory",
+        "offline-bundle",
+        "rights-rls",
+    } <= control_ids
     assert "/enterprise-trust-center" in report["proof_routes"]
     assert "/killer-demo" in report["proof_routes"]
     assert report["exports"][:2] == [
         {"title": "Buyer Brief markdown", "filename": "buyer-brief.md", "route": "/"},
         {"title": "Buyer Pulse markdown", "filename": "buyer-pulse.md", "route": "/"},
     ]
-    assert any(item["route"] == "/enterprise-trust-center" for item in report["exports"])
+    assert any(
+        item["route"] == "/enterprise-trust-center" for item in report["exports"]
+    )
     assert "Enterprise Trust Center" in report["markdown"]
     assert "Security Questionnaire" in report["markdown"]
     assert "Trust Room Bridge" in report["markdown"]
@@ -150,7 +252,10 @@ def test_enterprise_trust_center_builds_security_and_procurement_pack():
 def test_enterprise_trust_center_surfaces_blocking_trust_risk():
     report = build_enterprise_trust_center(
         executive=_decision(status="watch", score=70),
-        platform={**_decision(status="watch", score=72), "checks": [{"status": "warn", "title": "Platform caveat"}]},
+        platform={
+            **_decision(status="watch", score=72),
+            "checks": [{"status": "warn", "title": "Platform caveat"}],
+        },
         business_case=_decision(status="watch", score=75),
         productization=_productization(status="fail", score=40),
         offline_readiness=_offline(status="fail", score=45),
@@ -159,7 +264,10 @@ def test_enterprise_trust_center_surfaces_blocking_trust_risk():
         demo_command_center=_decision(status="watch", score=75),
         pilot_launchpad=_decision(status="watch", score=72),
         scenario_hub=_decision(status="watch", score=74),
-        vendor_portfolio={"decision": {"status": "watch", "score": 70}, "work_packages": []},
+        vendor_portfolio={
+            "decision": {"status": "watch", "score": 70},
+            "work_packages": [],
+        },
         client_name="ACME",
     )
 
@@ -175,9 +283,14 @@ def test_enterprise_trust_center_surfaces_blocking_trust_risk():
 
 
 def test_preview_depth_softens_missing_fact_risk():
-    report = {"decision": {"status": "risk", "score": 19, "headline": "missing facts"}, "caveats": []}
+    report = {
+        "decision": {"status": "risk", "score": 19, "headline": "missing facts"},
+        "caveats": [],
+    }
 
-    softened = _soften_preview_risk(report, headline="Preview keeps this navigable.", score_floor=60)
+    softened = _soften_preview_risk(
+        report, headline="Preview keeps this navigable.", score_floor=60
+    )
 
     assert softened["decision"]["status"] == "watch"
     assert softened["decision"]["score"] == 60

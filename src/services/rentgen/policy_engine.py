@@ -11,7 +11,6 @@ from typing import Any
 from src.services.audit_log import record_event
 from src.services.rentgen import artifact_graph
 
-
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_POLICY_PATH = ROOT / "policy" / "1cai-default-policy.json"
 EVALUATIONS_PATH = ROOT / "data" / "policy_evaluations.json"
@@ -42,7 +41,9 @@ def _load_json(path: Path, default: Any) -> Any:
 def _write_items(path: Path, items: list[dict[str, Any]], key: str = "items") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps({key: items}, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.write_text(
+        json.dumps({key: items}, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     tmp.replace(path)
 
 
@@ -50,7 +51,9 @@ def _audit_path(path: Path | None = None) -> Path:
     return (path or EVALUATIONS_PATH).parent / "audit_log.ndjson"
 
 
-def _audit(action: str, *, target: str, metadata: dict[str, Any], path: Path | None = None) -> None:
+def _audit(
+    action: str, *, target: str, metadata: dict[str, Any], path: Path | None = None
+) -> None:
     try:
         record_event(
             action=action,
@@ -129,9 +132,17 @@ def _compare(actual: Any, op: str, expected: Any) -> bool:
     if op == "contains":
         return str(expected) in str(actual or "")
     if op == "count>":
-        return len(actual or []) > int(expected or 0) if isinstance(actual, list) else False
+        return (
+            len(actual or []) > int(expected or 0)
+            if isinstance(actual, list)
+            else False
+        )
     if op == "count>=":
-        return len(actual or []) >= int(expected or 0) if isinstance(actual, list) else False
+        return (
+            len(actual or []) >= int(expected or 0)
+            if isinstance(actual, list)
+            else False
+        )
     raise ValueError(f"Unsupported policy operator: {op}")
 
 
@@ -195,9 +206,13 @@ def evaluate_policy(
         if domain and rule.get("domain") != domain:
             continue
         if not _rule_matches(rule, context):
-            evaluated.append({"rule_id": rule.get("id"), "matched": False, "status": "pass"})
+            evaluated.append(
+                {"rule_id": rule.get("id"), "matched": False, "status": "pass"}
+            )
             continue
-        waivers = _active_waivers(rule_id=str(rule.get("id")), scope_id=scope_id, waivers_path=waiver_store)
+        waivers = _active_waivers(
+            rule_id=str(rule.get("id")), scope_id=scope_id, waivers_path=waiver_store
+        )
         waived = bool(waivers)
         rule_status = "waived" if waived else str(rule.get("decision") or "warn")
         if not waived and rule_status == "fail":
@@ -216,14 +231,19 @@ def evaluate_policy(
                 "status": rule_status,
                 "waiver_ids": [waiver["id"] for waiver in waivers],
                 "field": (rule.get("when") or {}).get("field"),
-                "actual": _field(context, str((rule.get("when") or {}).get("field") or "")),
+                "actual": _field(
+                    context, str((rule.get("when") or {}).get("field") or "")
+                ),
                 "expected": (rule.get("when") or {}).get("value"),
             }
         )
 
     matched = [item for item in evaluated if item.get("matched")]
     result = {
-        "id": _id("pol", {"context": context, "domain": domain, "scope_id": scope_id, "at": _now()}),
+        "id": _id(
+            "pol",
+            {"context": context, "domain": domain, "scope_id": scope_id, "at": _now()},
+        ),
         "status": status,
         "policy_version": policy.get("version"),
         "scope_id": scope_id,
@@ -235,7 +255,9 @@ def evaluate_policy(
             "fail": sum(1 for item in matched if item.get("status") == "fail"),
             "warn": sum(1 for item in matched if item.get("status") == "warn"),
             "waived": sum(1 for item in matched if item.get("status") == "waived"),
-            "requires_approval": sum(1 for item in matched if item.get("requires_approval")),
+            "requires_approval": sum(
+                1 for item in matched if item.get("requires_approval")
+            ),
         },
         "results": evaluated,
         "context": context,
@@ -248,7 +270,11 @@ def evaluate_policy(
         _audit(
             "policy.evaluate",
             target=result["id"],
-            metadata={"status": result["status"], "scope_id": scope_id, "summary": result["summary"]},
+            metadata={
+                "status": result["status"],
+                "scope_id": scope_id,
+                "summary": result["summary"],
+            },
             path=path,
         )
     return result
@@ -260,7 +286,9 @@ def list_evaluations(*, limit: int = 100, path: Path | None = None) -> dict[str,
     return {"items": items[: max(1, limit)], "total": len(items), "path": str(target)}
 
 
-def get_evaluation(evaluation_id: str, *, path: Path | None = None) -> dict[str, Any] | None:
+def get_evaluation(
+    evaluation_id: str, *, path: Path | None = None
+) -> dict[str, Any] | None:
     for item in _items(path or EVALUATIONS_PATH):
         if item.get("id") == evaluation_id:
             return item
@@ -282,7 +310,10 @@ def create_waiver(
 
     now = _now()
     record = {
-        "id": _id("waiver", {"rule_id": rule_id, "scope_id": scope_id, "owner": owner, "at": now}),
+        "id": _id(
+            "waiver",
+            {"rule_id": rule_id, "scope_id": scope_id, "owner": owner, "at": now},
+        ),
         "rule_id": _clean(rule_id, limit=160),
         "scope_id": _clean(scope_id, limit=160) or "*",
         "reason": _clean(reason, limit=1000),
@@ -291,7 +322,11 @@ def create_waiver(
         "status": "requested",
         "created_at": now,
         "updated_at": now,
-        "expires_at": (_now_dt() + timedelta(days=max(1, min(int(expires_in_days), 365)))).replace(microsecond=0).isoformat(),
+        "expires_at": (
+            _now_dt() + timedelta(days=max(1, min(int(expires_in_days), 365)))
+        )
+        .replace(microsecond=0)
+        .isoformat(),
         "approved_by": None,
         "decision_reason": None,
     }
@@ -303,7 +338,11 @@ def create_waiver(
     _audit(
         "policy.waiver.request",
         target=record["id"],
-        metadata={"rule_id": record["rule_id"], "scope_id": record["scope_id"], "owner": record["owner"]},
+        metadata={
+            "rule_id": record["rule_id"],
+            "scope_id": record["scope_id"],
+            "owner": record["owner"],
+        },
         path=target,
     )
     return record
@@ -349,14 +388,20 @@ def decide_waiver(
         _audit(
             "policy.waiver.decide",
             target=updated["id"],
-            metadata={"status": updated["status"], "rule_id": updated["rule_id"], "actor": actor},
+            metadata={
+                "status": updated["status"],
+                "rule_id": updated["rule_id"],
+                "actor": actor,
+            },
             path=target,
         )
         return updated
     raise KeyError(f"Policy waiver not found: {waiver_id}")
 
 
-def list_waivers(*, status: str | None = None, limit: int = 100, path: Path | None = None) -> dict[str, Any]:
+def list_waivers(
+    *, status: str | None = None, limit: int = 100, path: Path | None = None
+) -> dict[str, Any]:
     target = path or WAIVERS_PATH
     items = _items(target)
     if status:
@@ -364,7 +409,9 @@ def list_waivers(*, status: str | None = None, limit: int = 100, path: Path | No
     return {"items": items[: max(1, limit)], "total": len(items), "path": str(target)}
 
 
-def _sync_waiver_artifact(record: dict[str, Any], *, artifact_path: Path | None = None) -> None:
+def _sync_waiver_artifact(
+    record: dict[str, Any], *, artifact_path: Path | None = None
+) -> None:
     try:
         artifact_graph.create_artifact(
             {

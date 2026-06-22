@@ -12,15 +12,15 @@ Runs comprehensive tests to ensure:
 """
 
 import asyncio
-import sys
 import os
+import sys
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from src.api.dependencies import get_graph_service, get_neo4j_client
 from src.db.neo4j_client import Neo4jClient
 from src.modules.graph_api.services.graph_service import GraphService
-from src.api.dependencies import get_neo4j_client, get_graph_service
 
 
 async def test_dependency_injection():
@@ -44,7 +44,7 @@ async def test_async_operations():
         if not neo4j_client.connect():
             print("⚠️ Neo4j not available, skipping")
             return True
-        
+
         graph_service = GraphService(neo4j_client)
         result = await graph_service.execute_query("RETURN 1 as test", {})
         print(f"✅ Async query works! Result: {result}")
@@ -62,7 +62,7 @@ async def test_connection_pool():
         if not neo4j_client.connect():
             print("⚠️ Neo4j not available, skipping")
             return True
-        
+
         # Check driver has pool config
         driver = neo4j_client.driver
         print(f"✅ Connection pool configured!")
@@ -81,17 +81,15 @@ async def test_session_management():
         if not neo4j_client.connect():
             print("⚠️ Neo4j not available, skipping")
             return True
-        
+
         graph_service = GraphService(neo4j_client)
-        
+
         # Test with invalid query to trigger error handling
         try:
-            await graph_service.execute_query(
-                "MATCH (n) RETURN invalid_field", {}
-            )
+            await graph_service.execute_query("MATCH (n) RETURN invalid_field", {})
         except Exception:
             pass  # Expected to fail
-        
+
         # Session should still work after error
         result = await graph_service.execute_query("RETURN 1 as test", {})
         print("✅ Session management works - no leaks!")
@@ -109,9 +107,9 @@ async def test_retry_logic():
         if not neo4j_client.connect():
             print("⚠️ Neo4j not available, skipping")
             return True
-        
+
         graph_service = GraphService(neo4j_client)
-        
+
         # execute_query has @retry_on_transient_error decorator
         result = await graph_service.execute_query("RETURN 1 as test", {})
         print("✅ Retry logic configured!")
@@ -126,7 +124,7 @@ async def main():
     print("=" * 60)
     print("🔬 CRITICAL BUG FIXES VERIFICATION")
     print("=" * 60)
-    
+
     tests = [
         test_dependency_injection,
         test_async_operations,
@@ -134,22 +132,22 @@ async def main():
         test_session_management,
         test_retry_logic,
     ]
-    
+
     results = []
     for test in tests:
         result = await test()
         results.append(result)
-    
+
     print("\n" + "=" * 60)
     print("📊 RESULTS")
     print("=" * 60)
-    
+
     passed = sum(results)
     total = len(results)
-    
+
     print(f"\n✅ Passed: {passed}/{total}")
     print(f"❌ Failed: {total - passed}/{total}")
-    
+
     if passed == total:
         print("\n🎉 ALL TESTS PASSED!")
         print("✅ Production ready!")

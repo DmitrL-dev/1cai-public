@@ -143,7 +143,9 @@ def _bsl_language_server_probe() -> dict[str, Any]:
         "available": any(path.suffix == ".jar" for path in existing),
         "home": str(BSL_LS_HOME),
         "detected_paths": [str(path) for path in existing],
-        "mode": "fallback" if not any(path.suffix == ".jar" for path in existing) else "detected",
+        "mode": "fallback"
+        if not any(path.suffix == ".jar" for path in existing)
+        else "detected",
     }
 
 
@@ -188,7 +190,9 @@ def _summary(findings: list[dict[str, Any]], metrics: dict[str, Any]) -> dict[st
         "findings": len(findings),
         "by_severity": dict(by_severity),
         "by_standard": dict(by_standard),
-        "autofixable": sum(1 for item in findings if item.get("autofix", {}).get("available")),
+        "autofixable": sum(
+            1 for item in findings if item.get("autofix", {}).get("available")
+        ),
         "loc": metrics.get("loc", 0),
         "functions": metrics.get("functions", 0),
         "procedures": metrics.get("procedures", 0),
@@ -239,7 +243,9 @@ def review_bsl_standards(
         module_path=module_path,
         max_nesting_threshold=max_nesting_threshold,
     )
-    findings = [_finding(module_path, diagnostic) for diagnostic in diagnostics["diagnostics"]]
+    findings = [
+        _finding(module_path, diagnostic) for diagnostic in diagnostics["diagnostics"]
+    ]
     resolution = _graph_resolution(module_path)
     caveats = [
         "Fallback standards review is deterministic and offline.",
@@ -287,11 +293,15 @@ def _write(items: list[dict[str, Any]], path: Path | None = None) -> None:
     target = path or STORE_PATH
     target.parent.mkdir(parents=True, exist_ok=True)
     tmp = target.with_suffix(target.suffix + ".tmp")
-    tmp.write_text(json.dumps({"items": items}, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.write_text(
+        json.dumps({"items": items}, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     tmp.replace(target)
 
 
-def save_standards_review(report: dict[str, Any], path: Path | None = None) -> dict[str, Any]:
+def save_standards_review(
+    report: dict[str, Any], path: Path | None = None
+) -> dict[str, Any]:
     """Persist findings by module path for team review dashboards.
 
     HONESTY guard: refuse to store findings for a module that does not resolve in
@@ -354,7 +364,11 @@ def list_standards_findings(
     items = _load(path)
     if module_path:
         needle = module_path.casefold()
-        items = [item for item in items if needle in str(item.get("module_path", "")).casefold()]
+        items = [
+            item
+            for item in items
+            if needle in str(item.get("module_path", "")).casefold()
+        ]
     return {
         "items": items[: max(1, limit)],
         "total": len(items),

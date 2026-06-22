@@ -1,7 +1,6 @@
 from src.services.rentgen import test_inventory
 from src.services.rentgen.test_factory import build_test_factory
 
-
 MODULE = "Documents/Order/Ext/ObjectModule.bsl"
 
 
@@ -35,7 +34,9 @@ class FakeStore:
             ],
             "entry_subroutines": 2,
             "total": 320,
-            "impacted_modules": [{"module": "CommonModules/Sales/Ext/Module.bsl", "edges": 4}],
+            "impacted_modules": [
+                {"module": "CommonModules/Sales/Ext/Module.bsl", "edges": 4}
+            ],
         }
 
     def hotspots_for_graph_modules(self, module_names, limit=10):
@@ -119,4 +120,7 @@ def test_test_factory_treats_unmeasured_impact_as_release_risk():
     assert report["summary"]["unmeasured_impact"] == 1
     assert report["matrix"]["modules"][0]["impact_measured"] is False
     assert any("impact not measured" in item["reason"] for item in report["run_now"])
-    assert any(item["title"].startswith("Impact coverage proof") for item in report["manual_checks"])
+    assert any(
+        item["title"].startswith("Impact coverage proof")
+        for item in report["manual_checks"]
+    )

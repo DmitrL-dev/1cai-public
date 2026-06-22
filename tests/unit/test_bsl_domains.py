@@ -10,20 +10,19 @@ Tests all 5 BSL-oriented domains:
 
 import pytest
 
-from src.micro_swarm.model import MicroModel, MicroModelConfig
 from src.micro_swarm.bsl_domains import (
     BSL_PATTERN_DOMAIN,
     BSL_QUALITY_DOMAIN,
-    QUERY_OPTIMIZER_DOMAIN,
-    ERROR_PREDICTOR_DOMAIN,
     CONFIG_SIMILARITY_DOMAIN,
+    ERROR_PREDICTOR_DOMAIN,
+    QUERY_OPTIMIZER_DOMAIN,
     extract_bsl_pattern_features,
     extract_bsl_quality_features,
-    extract_query_optimizer_features,
-    extract_error_features,
     extract_config_features,
+    extract_error_features,
+    extract_query_optimizer_features,
 )
-
+from src.micro_swarm.model import MicroModel, MicroModelConfig
 
 # ──────────────────────────────────────────
 # Test fixtures — BSL code samples
@@ -332,28 +331,31 @@ class TestConfigSimilarity:
 class TestMicroModelBSLIntegration:
     """Smoke tests: MicroModel forward pass with BSL domains."""
 
-    @pytest.mark.parametrize("domain,extractor,data", [
-        (
-            BSL_PATTERN_DOMAIN,
-            extract_bsl_pattern_features,
-            FORM_HANDLER_CODE,
-        ),
-        (
-            BSL_QUALITY_DOMAIN,
-            extract_bsl_quality_features,
-            COMPLEX_CODE,
-        ),
-        (
-            QUERY_OPTIMIZER_DOMAIN,
-            extract_query_optimizer_features,
-            QUERY_CODE,
-        ),
-        (
-            ERROR_PREDICTOR_DOMAIN,
-            extract_error_features,
-            ERROR_PRONE_CODE,
-        ),
-    ])
+    @pytest.mark.parametrize(
+        "domain,extractor,data",
+        [
+            (
+                BSL_PATTERN_DOMAIN,
+                extract_bsl_pattern_features,
+                FORM_HANDLER_CODE,
+            ),
+            (
+                BSL_QUALITY_DOMAIN,
+                extract_bsl_quality_features,
+                COMPLEX_CODE,
+            ),
+            (
+                QUERY_OPTIMIZER_DOMAIN,
+                extract_query_optimizer_features,
+                QUERY_CODE,
+            ),
+            (
+                ERROR_PREDICTOR_DOMAIN,
+                extract_error_features,
+                ERROR_PRONE_CODE,
+            ),
+        ],
+    )
     def test_forward_pass(self, domain, extractor, data):
         """MicroModel produces valid score and embedding with BSL features."""
         features = extractor(data)
@@ -370,24 +372,32 @@ class TestMicroModelBSLIntegration:
     def test_config_similarity_forward(self):
         """Config Similarity embedding distance works."""
         config1 = {
-            "module_count": 100, "role_count": 10, "subsystem_depth": 3,
-            "form_count": 150, "command_count": 40, "template_count": 20,
-            "scheduled_job_count": 3, "attr_count": 800,
+            "module_count": 100,
+            "role_count": 10,
+            "subsystem_depth": 3,
+            "form_count": 150,
+            "command_count": 40,
+            "template_count": 20,
+            "scheduled_job_count": 3,
+            "attr_count": 800,
         }
         config2 = {
-            "module_count": 120, "role_count": 15, "subsystem_depth": 5,
-            "form_count": 300, "command_count": 80, "template_count": 40,
-            "scheduled_job_count": 8, "attr_count": 2000,
+            "module_count": 120,
+            "role_count": 15,
+            "subsystem_depth": 5,
+            "form_count": 300,
+            "command_count": 80,
+            "template_count": 40,
+            "scheduled_job_count": 8,
+            "attr_count": 2000,
         }
 
         domain = CONFIG_SIMILARITY_DOMAIN
         model_config = MicroModelConfig(n_features=domain.n_features)
         model = MicroModel(model_config)
 
-        _, emb1 = model.forward(domain.extract(
-            extract_config_features(config1)))
-        _, emb2 = model.forward(domain.extract(
-            extract_config_features(config2)))
+        _, emb1 = model.forward(domain.extract(extract_config_features(config1)))
+        _, emb2 = model.forward(domain.extract(extract_config_features(config2)))
 
         # Embeddings should exist and have same dimensionality
         assert len(emb1) == len(emb2) == model_config.n_embd

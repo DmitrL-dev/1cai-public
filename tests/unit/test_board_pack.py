@@ -61,23 +61,106 @@ def _buyer_brief(status="ready", score=88):
         },
         "room_line": "Ask for local license: move from demo proof to a local product purchase.",
         "role_cards": [
-            {"role": "developer", "title": "Developer", "route": "/change", "status": "ready", "spark": "Show code proof.", "proof_file": "rentgen-developer-report.md"},
-            {"role": "architect", "title": "Architect", "route": "/platform-doctor", "status": "ready", "spark": "Show platform proof.", "proof_file": "rentgen-architect-report.md"},
-            {"role": "director", "title": "Director", "route": "/board-pack", "status": status, "spark": "Show value proof.", "proof_file": "board-pack.md"},
-            {"role": "security", "title": "Security", "route": "/enterprise-trust-center", "status": "ready", "spark": "Show trust proof.", "proof_file": "rentgen-security-questionnaire.md"},
-            {"role": "vendor", "title": "Vendor", "route": "/vendor-portfolio", "status": "ready", "spark": "Show portfolio proof.", "proof_file": "vendor-portfolio.md"},
+            {
+                "role": "developer",
+                "title": "Developer",
+                "route": "/change",
+                "status": "ready",
+                "spark": "Show code proof.",
+                "proof_file": "rentgen-developer-report.md",
+            },
+            {
+                "role": "architect",
+                "title": "Architect",
+                "route": "/platform-doctor",
+                "status": "ready",
+                "spark": "Show platform proof.",
+                "proof_file": "rentgen-architect-report.md",
+            },
+            {
+                "role": "director",
+                "title": "Director",
+                "route": "/board-pack",
+                "status": status,
+                "spark": "Show value proof.",
+                "proof_file": "board-pack.md",
+            },
+            {
+                "role": "security",
+                "title": "Security",
+                "route": "/enterprise-trust-center",
+                "status": "ready",
+                "spark": "Show trust proof.",
+                "proof_file": "rentgen-security-questionnaire.md",
+            },
+            {
+                "role": "vendor",
+                "title": "Vendor",
+                "route": "/vendor-portfolio",
+                "status": "ready",
+                "spark": "Show portfolio proof.",
+                "proof_file": "vendor-portfolio.md",
+            },
         ],
         "proof_readiness": [
-            {"id": "evidence-bundle", "title": "Forwardable evidence", "route": "/evidence-bundle", "status": status, "signal": "Proof routes and hashes.", "file": "OPEN_FIRST.md"},
-            {"id": "governance", "title": "Approval gates", "route": "/approvals", "status": "ready", "signal": "Governance gates.", "file": "governance-proof.md"},
-            {"id": "audit-siem", "title": "Audit / SIEM handoff", "route": "/audit", "status": "ready", "signal": "SIEM export.", "file": "rentgen-audit-siem.jsonl"},
-            {"id": "trust", "title": "Enterprise trust", "route": "/enterprise-trust-center", "status": "ready", "signal": "Trust proof.", "file": "rentgen-security-questionnaire.md"},
+            {
+                "id": "evidence-bundle",
+                "title": "Forwardable evidence",
+                "route": "/evidence-bundle",
+                "status": status,
+                "signal": "Proof routes and hashes.",
+                "file": "OPEN_FIRST.md",
+            },
+            {
+                "id": "governance",
+                "title": "Approval gates",
+                "route": "/approvals",
+                "status": "ready",
+                "signal": "Governance gates.",
+                "file": "governance-proof.md",
+            },
+            {
+                "id": "audit-siem",
+                "title": "Audit / SIEM handoff",
+                "route": "/audit",
+                "status": "ready",
+                "signal": "SIEM export.",
+                "file": "rentgen-audit-siem.jsonl",
+            },
+            {
+                "id": "trust",
+                "title": "Enterprise trust",
+                "route": "/enterprise-trust-center",
+                "status": "ready",
+                "signal": "Trust proof.",
+                "file": "rentgen-security-questionnaire.md",
+            },
         ],
         "meeting_flow": [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Pick role."},
-            {"step": 2, "label": "Prove", "route": "/killer-demo", "line": "Show proof."},
-            {"step": 3, "label": "Ask", "route": "/board-pack", "line": "Ask for local license."},
-            {"step": 4, "label": "Forward", "route": "/evidence-bundle", "line": "Forward packet."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Pick role.",
+            },
+            {
+                "step": 2,
+                "label": "Prove",
+                "route": "/killer-demo",
+                "line": "Show proof.",
+            },
+            {
+                "step": 3,
+                "label": "Ask",
+                "route": "/board-pack",
+                "line": "Ask for local license.",
+            },
+            {
+                "step": 4,
+                "label": "Forward",
+                "route": "/evidence-bundle",
+                "line": "Forward packet.",
+            },
         ],
     }
 
@@ -137,7 +220,9 @@ def _commercial_offer(status="ready", score=88):
         ],
         "close_packet": {
             "ready_to_close": status == "ready",
-            "close_mode": "open_enterprise_purchase" if status == "ready" else "sell_paid_proof_sprint",
+            "close_mode": "open_enterprise_purchase"
+            if status == "ready"
+            else "sell_paid_proof_sprint",
             "primary_ask": "Open enterprise local-license procurement with the proof packet attached.",
             "one_page_order": {
                 "product": "1C Rentgen local evidence control plane",
@@ -152,20 +237,60 @@ def _commercial_offer(status="ready", score=88):
                 "route": "/commercial-offer-studio",
             },
             "buyer_commitments": [
-                {"role": "finance", "commitment": "Accept local value anchor.", "route": "/business-case"},
-                {"role": "security", "commitment": "Confirm approval and audit evidence.", "route": "/approvals"},
-                {"role": "sponsor", "commitment": "Approve paid next step.", "route": "/commercial-offer-studio"},
+                {
+                    "role": "finance",
+                    "commitment": "Accept local value anchor.",
+                    "route": "/business-case",
+                },
+                {
+                    "role": "security",
+                    "commitment": "Confirm approval and audit evidence.",
+                    "route": "/approvals",
+                },
+                {
+                    "role": "sponsor",
+                    "commitment": "Approve paid next step.",
+                    "route": "/commercial-offer-studio",
+                },
             ],
             "evidence_requirements": [
-                {"artifact": "Evidence Bundle ZIP", "route": "/evidence-bundle", "why": "Forwardable proof."},
-                {"artifact": "Governance proof", "route": "/approvals", "why": "Approval records."},
-                {"artifact": "Audit verify", "route": "/audit", "why": "Hash-chain proof."},
+                {
+                    "artifact": "Evidence Bundle ZIP",
+                    "route": "/evidence-bundle",
+                    "why": "Forwardable proof.",
+                },
+                {
+                    "artifact": "Governance proof",
+                    "route": "/approvals",
+                    "why": "Approval records.",
+                },
+                {
+                    "artifact": "Audit verify",
+                    "route": "/audit",
+                    "why": "Hash-chain proof.",
+                },
             ],
             "checkout": [
-                {"gate": "Approval record exists", "route": "/approvals", "evidence": "Scoped approval record."},
-                {"gate": "Audit chain is valid", "route": "/audit", "evidence": "valid=true broken=0."},
-                {"gate": "Proof archive is exportable", "route": "/evidence-bundle", "evidence": "ZIP with manifest."},
-                {"gate": "Trust caveats are visible", "route": "/enterprise-trust-center", "evidence": "Named caveats."},
+                {
+                    "gate": "Approval record exists",
+                    "route": "/approvals",
+                    "evidence": "Scoped approval record.",
+                },
+                {
+                    "gate": "Audit chain is valid",
+                    "route": "/audit",
+                    "evidence": "valid=true broken=0.",
+                },
+                {
+                    "gate": "Proof archive is exportable",
+                    "route": "/evidence-bundle",
+                    "evidence": "ZIP with manifest.",
+                },
+                {
+                    "gate": "Trust caveats are visible",
+                    "route": "/enterprise-trust-center",
+                    "evidence": "Named caveats.",
+                },
             ],
             "close_script": [
                 "Approve the paid next step only with evidence attached.",
@@ -217,8 +342,14 @@ def test_board_pack_builds_board_level_buying_motion():
     assert report["decision"]["status"] == "ready"
     assert report["summary"]["recommended_offer"] == "enterprise-local-license"
     assert report["summary"]["decision_items"] >= 6
-    assert any(item["question"] == "What does procurement need?" for item in report["decision_brief"])
-    assert any(item["question"] == "What must pass before signature?" for item in report["decision_brief"])
+    assert any(
+        item["question"] == "What does procurement need?"
+        for item in report["decision_brief"]
+    )
+    assert any(
+        item["question"] == "What must pass before signature?"
+        for item in report["decision_brief"]
+    )
     assert report["summary"]["committee_roles"] >= 3
     assert report["summary"]["first_year_visible_value"] == 4_800_000
     assert report["board_snapshot"]["three_year_ai_rent"] == "4 320 000 RUB"
@@ -232,19 +363,43 @@ def test_board_pack_builds_board_level_buying_motion():
     assert report["summary"]["board_room_open_first"] == 4
     assert report["board_room_bridge"]["source"] == "management-buyer-brief"
     assert report["board_room_bridge"]["primary_motion"]["route"] == "/board-pack"
-    assert report["board_room_bridge"]["files"][:3] == ["buyer-brief.md", "buyer-pulse.md", "open-first-path.md"]
-    assert [item["stage"] for item in report["board_room_bridge"]["open_first_path"]] == ["orient", "prove", "close", "verify"]
-    assert any(item["id"] == "audit-siem" for item in report["board_room_bridge"]["proof_readiness"])
-    assert any(item["route"] == "/killer-demo" for item in report["board_room_bridge"]["meeting_flow"])
-    assert [item["filename"] for item in report["proof_packet"][:2]] == ["buyer-brief.md", "buyer-pulse.md"]
+    assert report["board_room_bridge"]["files"][:3] == [
+        "buyer-brief.md",
+        "buyer-pulse.md",
+        "open-first-path.md",
+    ]
+    assert [
+        item["stage"] for item in report["board_room_bridge"]["open_first_path"]
+    ] == ["orient", "prove", "close", "verify"]
+    assert any(
+        item["id"] == "audit-siem"
+        for item in report["board_room_bridge"]["proof_readiness"]
+    )
+    assert any(
+        item["route"] == "/killer-demo"
+        for item in report["board_room_bridge"]["meeting_flow"]
+    )
+    assert [item["filename"] for item in report["proof_packet"][:2]] == [
+        "buyer-brief.md",
+        "buyer-pulse.md",
+    ]
     assert any(item["route"] == "/evidence-bundle" for item in report["proof_packet"])
     assert any(item["route"] == "/approvals" for item in report["proof_packet"])
     assert any(item["route"] == "/audit" for item in report["proof_packet"])
     assert report["board_close_packet"]["ready_to_close"] is True
     assert report["board_close_packet"]["close_mode"] == "open_enterprise_purchase"
-    assert report["board_close_packet"]["one_page_order"]["three_year_ai_rent"] == "4 320 000 RUB"
-    assert report["board_close_packet"]["one_page_order"]["local_license_anchor"] == "1 800 000 RUB"
-    assert report["board_close_packet"]["one_page_order"]["break_even"] == "5 months by visible value"
+    assert (
+        report["board_close_packet"]["one_page_order"]["three_year_ai_rent"]
+        == "4 320 000 RUB"
+    )
+    assert (
+        report["board_close_packet"]["one_page_order"]["local_license_anchor"]
+        == "1 800 000 RUB"
+    )
+    assert (
+        report["board_close_packet"]["one_page_order"]["break_even"]
+        == "5 months by visible value"
+    )
     assert {item["route"] for item in report["board_close_packet"]["checkout"]} >= {
         "/approvals",
         "/audit",
@@ -252,7 +407,8 @@ def test_board_pack_builds_board_level_buying_motion():
         "/enterprise-trust-center",
     }
     assert any(
-        item["artifact"] == "Archive Acceptance Receipt" and item["route"] == "/evidence-bundle"
+        item["artifact"] == "Archive Acceptance Receipt"
+        and item["route"] == "/evidence-bundle"
         for item in report["board_close_packet"]["evidence_requirements"]
     )
     assert "/board-pack" in report["proof_routes"]
@@ -271,7 +427,9 @@ def test_board_pack_keeps_trust_risk_as_hardening_motion():
         executive=_decision(status="watch", score=70),
         buyer_concierge=_buyer_concierge(status="watch", score=72),
         commercial_offer_studio=_commercial_offer(status="watch", score=76),
-        enterprise_trust_center=_trust_center(status="risk", score=45, failed_controls=3),
+        enterprise_trust_center=_trust_center(
+            status="risk", score=45, failed_controls=3
+        ),
         business_case=_business_case(),
         scenario_hub=_decision(status="watch", score=70),
         pilot_launchpad=_decision(status="watch", score=70),
@@ -284,4 +442,6 @@ def test_board_pack_keeps_trust_risk_as_hardening_motion():
     assert report["summary"]["recommended_offer"] == "platform-trust-pack"
     assert report["summary"]["severe_risks"] >= 1
     assert report["summary"]["close_ready"] is False
-    assert any(item["route"] == "/enterprise-trust-center" for item in report["next_72_hours"])
+    assert any(
+        item["route"] == "/enterprise-trust-center" for item in report["next_72_hours"]
+    )

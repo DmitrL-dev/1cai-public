@@ -11,7 +11,6 @@ from src.services.rentgen.standards_review import (
     save_standards_review,
 )
 
-
 UNSAFE_CODE = """
 Function UnsafeQuery(Rows) Export
     For Each Row In Rows Do
@@ -165,7 +164,11 @@ class _NoGraphReviewStore:
 
     def module_impact(self, module_path, max_depth=4, max_edges=300):
         return {
-            "canonical": {"object_name": "OrderForm", "module_kind": "FormModule", "source": "module_path"},
+            "canonical": {
+                "object_name": "OrderForm",
+                "module_kind": "FormModule",
+                "source": "module_path",
+            },
             "graph_modules": [],
             "entry_subroutines": 0,
             "total": 0,
@@ -199,7 +202,12 @@ def test_review_maps_diagnostics_to_catalog_and_autofix():
     report = review_bsl_standards(UNSAFE_CODE, module_path=REAL_MODULE)
     rule_ids = {finding["rule_id"] for finding in report["findings"]}
 
-    assert {"select-star", "query-in-loop", "dynamic-execute", "undocumented-export"} <= rule_ids
+    assert {
+        "select-star",
+        "query-in-loop",
+        "dynamic-execute",
+        "undocumented-export",
+    } <= rule_ids
     assert report["summary"]["findings"] >= 4
     assert report["summary"]["autofixable"] >= 2
     assert report["findings"][0]["standard"].startswith("1c:")
@@ -209,7 +217,11 @@ def test_review_maps_diagnostics_to_catalog_and_autofix():
 
 def test_left_join_fields_without_null_guard_are_flagged():
     report = review_bsl_standards(UNSAFE_LEFT_JOIN_CODE)
-    findings = [item for item in report["findings"] if item["rule_id"] == "join-field-null-guard"]
+    findings = [
+        item
+        for item in report["findings"]
+        if item["rule_id"] == "join-field-null-guard"
+    ]
 
     assert len(findings) == 1
     assert findings[0]["severity"] == "high"
@@ -226,7 +238,9 @@ def test_left_join_fields_with_yesnull_guard_are_not_flagged():
 
 
 def test_review_diff_marks_missing_graph_as_unmeasured(monkeypatch):
-    monkeypatch.setattr("src.api.quality_api.store_or_none", lambda: _NoGraphReviewStore())
+    monkeypatch.setattr(
+        "src.api.quality_api.store_or_none", lambda: _NoGraphReviewStore()
+    )
 
     app = FastAPI()
     app.include_router(router)
@@ -248,7 +262,11 @@ def test_review_diff_marks_missing_graph_as_unmeasured(monkeypatch):
 
 def test_left_join_mixed_guard_line_still_flags_unguarded_field():
     report = review_bsl_standards(MIXED_LEFT_JOIN_CODE)
-    findings = [item for item in report["findings"] if item["rule_id"] == "join-field-null-guard"]
+    findings = [
+        item
+        for item in report["findings"]
+        if item["rule_id"] == "join-field-null-guard"
+    ]
 
     assert len(findings) == 1
     assert findings[0]["details"]["alias"] == "Discounts"
@@ -264,7 +282,11 @@ def test_left_join_condition_continuation_is_not_reported_as_field_usage():
 
 def test_russian_mixed_yesnull_line_flags_only_unguarded_neighbor():
     report = review_bsl_standards(RUSSIAN_MIXED_YESNULL_CODE)
-    findings = [item for item in report["findings"] if item["rule_id"] == "join-field-null-guard"]
+    findings = [
+        item
+        for item in report["findings"]
+        if item["rule_id"] == "join-field-null-guard"
+    ]
 
     assert len(findings) == 1
     assert findings[0]["details"]["alias"] == "СтруктураПредприятия"
@@ -284,7 +306,11 @@ def test_multiline_case_with_explicit_not_null_check_is_safe():
 
 def test_case_null_check_for_one_join_field_does_not_hide_another_field():
     report = review_bsl_standards(RUSSIAN_CASE_CHECKS_DIFFERENT_FIELD_CODE)
-    findings = [item for item in report["findings"] if item["rule_id"] == "join-field-null-guard"]
+    findings = [
+        item
+        for item in report["findings"]
+        if item["rule_id"] == "join-field-null-guard"
+    ]
 
     assert len(findings) == 1
     assert findings[0]["details"]["field_ref"] == "Скидки.Сумма"

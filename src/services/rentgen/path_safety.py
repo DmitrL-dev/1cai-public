@@ -66,7 +66,7 @@ def confine_path(raw, *, label: str = "path", roots: list[Path] | None = None) -
         resolved = Path(raw).resolve()
     except (OSError, RuntimeError) as exc:
         raise ValueError(f"Invalid {label}: {raw!r} ({exc}).") from exc
-    for root in (roots if roots is not None else allowed_roots()):
+    for root in roots if roots is not None else allowed_roots():
         try:
             if resolved == root or resolved.is_relative_to(root):
                 return resolved

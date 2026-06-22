@@ -34,7 +34,9 @@ def _score(report: dict[str, Any] | None, default: int = 0) -> int:
 def _status(report: dict[str, Any] | None, default: str = "watch") -> str:
     if not report:
         return default
-    return str((report.get("decision") or {}).get("status") or report.get("status") or default)
+    return str(
+        (report.get("decision") or {}).get("status") or report.get("status") or default
+    )
 
 
 def _control_status(status: str) -> str:
@@ -134,7 +136,9 @@ def _trust_controls(
             id="sbom-inventory",
             title="SBOM and dependency inventory",
             owner="Security / procurement",
-            status=_deliverable_status(productization, "sbom-inventory-guide", "sbom-inventory-service"),
+            status=_deliverable_status(
+                productization, "sbom-inventory-guide", "sbom-inventory-service"
+            ),
             severity="high",
             route="/productization",
             evidence="Productization includes SBOM inventory guide and service checks.",
@@ -144,7 +148,9 @@ def _trust_controls(
             id="offline-bundle",
             title="Offline bundle, delivery passport and verification",
             owner="Operations",
-            status=_deliverable_status(productization, "offline-bundle-guide", "offline-bundle-service"),
+            status=_deliverable_status(
+                productization, "offline-bundle-guide", "offline-bundle-service"
+            ),
             severity="high",
             route="/productization",
             evidence="Offline bundle manifest service, ZIP archive and delivery passport are tracked as productization deliverables.",
@@ -352,7 +358,9 @@ def _questionnaire_section(
         "proof_routes": proof_routes,
         "evidence_files": evidence_files,
         "acceptance": acceptance,
-        "linked_controls": [str(item.get("id")) for item in linked_controls if item.get("id")],
+        "linked_controls": [
+            str(item.get("id")) for item in linked_controls if item.get("id")
+        ],
         "blockers": blockers,
         "caveats": list(caveats or [])[:5],
     }
@@ -380,7 +388,11 @@ def _security_questionnaire(
                 "the customer contour for Trust Center proof; external AI remains an optional integration."
             ),
             proof_routes=["/offline-readiness", "/productization"],
-            evidence_files=["offline-readiness.md", "productization-readiness.md", "DELIVERY_PASSPORT.md"],
+            evidence_files=[
+                "offline-readiness.md",
+                "productization-readiness.md",
+                "DELIVERY_PASSPORT.md",
+            ],
             acceptance="Security confirms closed-contour pilot boundaries and any allowed external dependencies.",
             linked_controls=linked("local-contour", "productization-gate"),
             caveats=control_by_id.get("local-contour", {}).get("caveats", []),
@@ -395,9 +407,15 @@ def _security_questionnaire(
                 "productization controls and can be attached to the approval pack."
             ),
             proof_routes=["/productization"],
-            evidence_files=["sbom-inventory.json", "offline-bundle-manifest.json", "DELIVERY_PASSPORT.md"],
+            evidence_files=[
+                "sbom-inventory.json",
+                "offline-bundle-manifest.json",
+                "DELIVERY_PASSPORT.md",
+            ],
             acceptance="SBOM and offline manifest are generated for the release candidate and accepted by procurement.",
-            linked_controls=linked("sbom-inventory", "offline-bundle", "productization-gate"),
+            linked_controls=linked(
+                "sbom-inventory", "offline-bundle", "productization-gate"
+            ),
         ),
         _questionnaire_section(
             id="artifact-integrity",
@@ -409,10 +427,15 @@ def _security_questionnaire(
                 "forward the same proof package to security, architecture and procurement."
             ),
             proof_routes=["/evidence-bundle", "/enterprise-trust-center"],
-            evidence_files=["evidence-bundle-manifest.json", "rentgen-enterprise-trust-center.md"],
+            evidence_files=[
+                "evidence-bundle-manifest.json",
+                "rentgen-enterprise-trust-center.md",
+            ],
             acceptance="Release board verifies the manifest and archives the exact approval pack used for the decision.",
             linked_controls=linked("hash-manifest"),
-            caveats=[] if evidence_artifacts else ["Evidence Bundle artifacts are generated on demand for this route."],
+            caveats=[]
+            if evidence_artifacts
+            else ["Evidence Bundle artifacts are generated on demand for this route."],
         ),
         _questionnaire_section(
             id="roles-rls",
@@ -482,7 +505,10 @@ def _security_questionnaire(
                 "steps, so the buyer sees what happens after purchase."
             ),
             proof_routes=["/pilot-launchpad", "/demo-command-center"],
-            evidence_files=["rentgen-pilot-launchpad.md", "rentgen-demo-command-center.md"],
+            evidence_files=[
+                "rentgen-pilot-launchpad.md",
+                "rentgen-demo-command-center.md",
+            ],
             acceptance="Pilot owner, date and Day 0/1/7/30 acceptance checks are selected.",
             linked_controls=linked("buyer-pilot"),
         ),
@@ -490,8 +516,16 @@ def _security_questionnaire(
     ready_sections = len([item for item in sections if item["status"] == "ready"])
     watch_sections = len([item for item in sections if item["status"] == "watch"])
     blocked_sections = len([item for item in sections if item["status"] == "blocked"])
-    status = "blocked" if blocked_sections else "review_required" if watch_sections else "ready"
-    proof_routes = sorted({route for item in sections for route in item["proof_routes"]})
+    status = (
+        "blocked"
+        if blocked_sections
+        else "review_required"
+        if watch_sections
+        else "ready"
+    )
+    proof_routes = sorted(
+        {route for item in sections for route in item["proof_routes"]}
+    )
     send_files = [
         "rentgen-security-questionnaire.md",
         "rentgen-enterprise-trust-center.md",
@@ -558,7 +592,11 @@ def _install_modes() -> list[dict[str, Any]]:
             "title": "Closed-contour pilot",
             "buyer": "Security + delivery lead",
             "duration": "1-7 days",
-            "proof_routes": ["/offline-readiness", "/productization", "/evidence-bundle"],
+            "proof_routes": [
+                "/offline-readiness",
+                "/productization",
+                "/evidence-bundle",
+            ],
             "acceptance": "Local readiness, first evidence pack and productization caveats are accepted for pilot use.",
         },
         {
@@ -566,7 +604,12 @@ def _install_modes() -> list[dict[str, Any]]:
             "title": "Enterprise local license",
             "buyer": "CIO + architecture board",
             "duration": "30 days",
-            "proof_routes": ["/enterprise-trust-center", "/business-case", "/platform-doctor", "/rights-rls"],
+            "proof_routes": [
+                "/enterprise-trust-center",
+                "/business-case",
+                "/platform-doctor",
+                "/rights-rls",
+            ],
             "acceptance": "Security, finance and architecture agree on install mode, risks and production blockers.",
         },
         {
@@ -574,7 +617,11 @@ def _install_modes() -> list[dict[str, Any]]:
             "title": "Vendor portfolio rollout",
             "buyer": "Franchisee / implementation partner",
             "duration": "30 days",
-            "proof_routes": ["/vendor-portfolio", "/pilot-launchpad", "/evidence-bundle"],
+            "proof_routes": [
+                "/vendor-portfolio",
+                "/pilot-launchpad",
+                "/evidence-bundle",
+            ],
             "acceptance": "Partner can sell a buyer-safe audit and attach Trust Center artifacts to the proposal.",
         },
     ]
@@ -594,7 +641,9 @@ def _risk_register(
             {
                 "owner": "product",
                 "severity": str(item.get("severity") or "medium"),
-                "risk": str(item.get("message") or item.get("code") or "Productization finding"),
+                "risk": str(
+                    item.get("message") or item.get("code") or "Productization finding"
+                ),
                 "route": "/productization",
                 "next_action": "Close or explicitly accept before production rollout.",
             }
@@ -606,7 +655,9 @@ def _risk_register(
             {
                 "owner": "operations",
                 "severity": str(item.get("severity") or "medium"),
-                "risk": str(item.get("title") or item.get("id") or "Offline readiness warning"),
+                "risk": str(
+                    item.get("title") or item.get("id") or "Offline readiness warning"
+                ),
                 "route": "/offline-readiness",
                 "next_action": "Re-run offline readiness in the customer contour after remediation.",
             }
@@ -626,7 +677,9 @@ def _risk_register(
             {
                 "owner": "security",
                 "severity": str(item.get("severity") or "medium"),
-                "risk": str(item.get("message") or item.get("code") or "Rights/RLS finding"),
+                "risk": str(
+                    item.get("message") or item.get("code") or "Rights/RLS finding"
+                ),
                 "route": "/rights-rls",
                 "next_action": "Approve, reduce or test the role before release.",
             }
@@ -640,7 +693,9 @@ def _risk_register(
                 "severity": str(item.get("severity") or "medium"),
                 "risk": str(item.get("title") or item.get("id") or "Platform caveat"),
                 "route": "/platform-doctor",
-                "next_action": str(item.get("action") or "Review platform caveat before pilot."),
+                "next_action": str(
+                    item.get("action") or "Review platform caveat before pilot."
+                ),
             }
         )
     if not risks:
@@ -661,17 +716,61 @@ def _exports() -> list[dict[str, str]]:
     return [
         {"title": "Buyer Brief markdown", "filename": "buyer-brief.md", "route": "/"},
         {"title": "Buyer Pulse markdown", "filename": "buyer-pulse.md", "route": "/"},
-        {"title": "Buyer Concierge markdown", "filename": "rentgen-buyer-concierge.md", "route": "/buyer-concierge"},
-        {"title": "Commercial Offer Studio markdown", "filename": "rentgen-commercial-offer-studio.md", "route": "/commercial-offer-studio"},
-        {"title": "Enterprise Trust Center markdown", "filename": "rentgen-enterprise-trust-center.md", "route": "/enterprise-trust-center"},
-        {"title": "Security questionnaire", "filename": "rentgen-security-questionnaire.md", "route": "/enterprise-trust-center"},
-        {"title": "Evidence Bundle manifest", "filename": "evidence-bundle-manifest.json", "route": "/evidence-bundle"},
-        {"title": "Productization readiness", "filename": "productization-readiness.md", "route": "/productization"},
-        {"title": "Offline delivery passport", "filename": "DELIVERY_PASSPORT.md", "route": "/productization"},
-        {"title": "Offline readiness", "filename": "offline-readiness.md", "route": "/offline-readiness"},
-        {"title": "Rights/RLS report", "filename": "rights-rls.md", "route": "/rights-rls"},
-        {"title": "Business Case", "filename": "rentgen-business-case.md", "route": "/business-case"},
-        {"title": "Pilot Launchpad", "filename": "rentgen-pilot-launchpad.md", "route": "/pilot-launchpad"},
+        {
+            "title": "Buyer Concierge markdown",
+            "filename": "rentgen-buyer-concierge.md",
+            "route": "/buyer-concierge",
+        },
+        {
+            "title": "Commercial Offer Studio markdown",
+            "filename": "rentgen-commercial-offer-studio.md",
+            "route": "/commercial-offer-studio",
+        },
+        {
+            "title": "Enterprise Trust Center markdown",
+            "filename": "rentgen-enterprise-trust-center.md",
+            "route": "/enterprise-trust-center",
+        },
+        {
+            "title": "Security questionnaire",
+            "filename": "rentgen-security-questionnaire.md",
+            "route": "/enterprise-trust-center",
+        },
+        {
+            "title": "Evidence Bundle manifest",
+            "filename": "evidence-bundle-manifest.json",
+            "route": "/evidence-bundle",
+        },
+        {
+            "title": "Productization readiness",
+            "filename": "productization-readiness.md",
+            "route": "/productization",
+        },
+        {
+            "title": "Offline delivery passport",
+            "filename": "DELIVERY_PASSPORT.md",
+            "route": "/productization",
+        },
+        {
+            "title": "Offline readiness",
+            "filename": "offline-readiness.md",
+            "route": "/offline-readiness",
+        },
+        {
+            "title": "Rights/RLS report",
+            "filename": "rights-rls.md",
+            "route": "/rights-rls",
+        },
+        {
+            "title": "Business Case",
+            "filename": "rentgen-business-case.md",
+            "route": "/business-case",
+        },
+        {
+            "title": "Pilot Launchpad",
+            "filename": "rentgen-pilot-launchpad.md",
+            "route": "/pilot-launchpad",
+        },
     ]
 
 
@@ -697,7 +796,10 @@ def _trust_room_bridge(
         "label": "Review security questionnaire",
         "route": "/enterprise-trust-center",
         "status": str(questionnaire.get("status") or primary.get("status") or "watch"),
-        "ask": str(questionnaire.get("owner_line") or "Name the artifact that unblocks enterprise approval."),
+        "ask": str(
+            questionnaire.get("owner_line")
+            or "Name the artifact that unblocks enterprise approval."
+        ),
         "reason": "Security/procurement needs the send-ready questionnaire before deep controls.",
     }
 
@@ -787,10 +889,33 @@ def _trust_room_bridge(
     first_procurement = procurement[0] if procurement else {}
     if not meeting_flow:
         meeting_flow = [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Pick security, architect or procurement owner."},
-            {"step": 2, "label": "Trust", "route": "/enterprise-trust-center", "line": trust_motion["ask"]},
-            {"step": 3, "label": "Approve", "route": str(first_procurement.get("route") or "/productization"), "line": str(first_procurement.get("exit_criteria") or "Name blocker or accepted artifact.")},
-            {"step": 4, "label": "Forward", "route": "/evidence-bundle", "line": "Forward buyer brief, questionnaire and proof archive."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Pick security, architect or procurement owner.",
+            },
+            {
+                "step": 2,
+                "label": "Trust",
+                "route": "/enterprise-trust-center",
+                "line": trust_motion["ask"],
+            },
+            {
+                "step": 3,
+                "label": "Approve",
+                "route": str(first_procurement.get("route") or "/productization"),
+                "line": str(
+                    first_procurement.get("exit_criteria")
+                    or "Name blocker or accepted artifact."
+                ),
+            },
+            {
+                "step": 4,
+                "label": "Forward",
+                "route": "/evidence-bundle",
+                "line": "Forward buyer brief, questionnaire and proof archive.",
+            },
         ]
     open_first_path = build_open_first_path(
         existing_path=brief.get("open_first_path"),
@@ -801,13 +926,23 @@ def _trust_room_bridge(
         orient_title="Enterprise Trust",
         orient_route="/enterprise-trust-center",
         orient_line="Pick security, architect or procurement owner.",
-        orient_status=str(primary.get("status") or questionnaire.get("status") or "watch"),
-        prove_line=str(questionnaire.get("owner_line") or "Security questionnaire is ready for review."),
+        orient_status=str(
+            primary.get("status") or questionnaire.get("status") or "watch"
+        ),
+        prove_line=str(
+            questionnaire.get("owner_line")
+            or "Security questionnaire is ready for review."
+        ),
         close_title=str(first_procurement.get("document") or "Trust Approval"),
         close_route=str(first_procurement.get("route") or "/enterprise-trust-center"),
-        close_line=str(first_procurement.get("exit_criteria") or "Name blocker or accepted artifact."),
+        close_line=str(
+            first_procurement.get("exit_criteria")
+            or "Name blocker or accepted artifact."
+        ),
         close_file="rentgen-security-questionnaire.md",
-        close_status=str(primary.get("status") or questionnaire.get("status") or "watch"),
+        close_status=str(
+            primary.get("status") or questionnaire.get("status") or "watch"
+        ),
         verify_line="Forward buyer brief, questionnaire and proof archive.",
     )
 
@@ -826,7 +961,12 @@ def _trust_room_bridge(
         - {""}
     )
     return {
-        "status": str(brief.get("purchase_status") or primary.get("status") or questionnaire.get("status") or "watch"),
+        "status": str(
+            brief.get("purchase_status")
+            or primary.get("status")
+            or questionnaire.get("status")
+            or "watch"
+        ),
         "score": _int(brief.get("score"), 78),
         "source": str(brief.get("source") or "enterprise-trust-derived"),
         "room_line": str(
@@ -838,14 +978,24 @@ def _trust_room_bridge(
             "route": str(primary.get("route") or "/enterprise-trust-center"),
             "status": str(primary.get("status") or "watch"),
             "ask": str(primary.get("ask") or "Review trust evidence before purchase."),
-            "reason": str(primary.get("reason") or "Security approval must share the same first-minute room map."),
+            "reason": str(
+                primary.get("reason")
+                or "Security approval must share the same first-minute room map."
+            ),
         },
         "trust_motion": trust_motion,
         "role_cards": role_cards[:5],
         "proof_readiness": proof_readiness[:4],
         "meeting_flow": meeting_flow[:4],
         "open_first_path": open_first_path[:4],
-        "files": ["buyer-brief.md", "buyer-pulse.md", OPEN_FIRST_PATH_FILE, "rentgen-security-questionnaire.md", "rentgen-enterprise-trust-center.md", "OPEN_FIRST.md"],
+        "files": [
+            "buyer-brief.md",
+            "buyer-pulse.md",
+            OPEN_FIRST_PATH_FILE,
+            "rentgen-security-questionnaire.md",
+            "rentgen-enterprise-trust-center.md",
+            "OPEN_FIRST.md",
+        ],
         "routes": routes,
         "close_question": "Which trust artifact unblocks pilot, hardening scope or local-license approval?",
     }
@@ -862,10 +1012,14 @@ def _markdown(report: dict[str, Any]) -> str:
         "",
     ]
     for item in report["trust_controls"]:
-        lines.append(f"- **{item['status']}** `{item['id']}` / {item['owner']} (`{item['route']}`): {item['title']}. {item['evidence']}")
+        lines.append(
+            f"- **{item['status']}** `{item['id']}` / {item['owner']} (`{item['route']}`): {item['title']}. {item['evidence']}"
+        )
     lines.extend(["", "## Security Questions", ""])
     for item in report["security_questions"]:
-        lines.append(f"- **{item['question']}** {item['answer']} (`{item['proof_route']}`)")
+        lines.append(
+            f"- **{item['question']}** {item['answer']} (`{item['proof_route']}`)"
+        )
     questionnaire = report["security_questionnaire"]
     lines.extend(
         [
@@ -882,34 +1036,58 @@ def _markdown(report: dict[str, Any]) -> str:
     for item in questionnaire["sections"]:
         routes = ", ".join(f"`{route}`" for route in item["proof_routes"])
         files = ", ".join(item["evidence_files"])
-        lines.append(f"- **{item['status']}** `{item['id']}` / {item['owner']}: {item['answer']} Routes: {routes}. Files: {files}.")
+        lines.append(
+            f"- **{item['status']}** `{item['id']}` / {item['owner']}: {item['answer']} Routes: {routes}. Files: {files}."
+        )
         for blocker in item["blockers"]:
             lines.append(f"  - Blocker: {blocker}")
     lines.extend(["", "Verification steps:", ""])
     for item in questionnaire["verification_steps"]:
-        lines.append(f"- **{item['owner']}** (`{item['route']}`): {item['action']} Expected: {item['expected']}")
+        lines.append(
+            f"- **{item['owner']}** (`{item['route']}`): {item['action']} Expected: {item['expected']}"
+        )
     bridge = report.get("trust_room_bridge") or {}
     if bridge:
         lines.extend(["", "## Trust Room Bridge", ""])
-        lines.append(f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**")
+        lines.append(
+            f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**"
+        )
         lines.append(f"- Room line: {bridge.get('room_line', '')}")
         motion = bridge.get("primary_motion") or {}
-        lines.append(f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/enterprise-trust-center')}`): {motion.get('ask', '')}")
+        lines.append(
+            f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/enterprise-trust-center')}`): {motion.get('ask', '')}"
+        )
         trust_motion = bridge.get("trust_motion") or {}
-        lines.append(f"- Trust motion: **{trust_motion.get('label', 'n/a')}** (`{trust_motion.get('route', '/enterprise-trust-center')}`): {trust_motion.get('ask', '')}")
-        lines.extend(open_first_path_markdown_lines(bridge.get("open_first_path"), default_route="/enterprise-trust-center"))
+        lines.append(
+            f"- Trust motion: **{trust_motion.get('label', 'n/a')}** (`{trust_motion.get('route', '/enterprise-trust-center')}`): {trust_motion.get('ask', '')}"
+        )
+        lines.extend(
+            open_first_path_markdown_lines(
+                bridge.get("open_first_path"), default_route="/enterprise-trust-center"
+            )
+        )
         for item in bridge.get("role_cards", []):
-            lines.append(f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}")
+            lines.append(
+                f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}"
+            )
         for item in bridge.get("proof_readiness", []):
-            lines.append(f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}")
+            lines.append(
+                f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}"
+            )
         for item in bridge.get("meeting_flow", []):
-            lines.append(f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}")
+            lines.append(
+                f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}"
+            )
     lines.extend(["", "## Procurement Pack", ""])
     for item in report["procurement_pack"]:
-        lines.append(f"- **{item['owner']}** / {item['document']} (`{item['route']}`): {item['exit_criteria']}")
+        lines.append(
+            f"- **{item['owner']}** / {item['document']} (`{item['route']}`): {item['exit_criteria']}"
+        )
     lines.extend(["", "## Risk Register", ""])
     for item in report["risk_register"]:
-        lines.append(f"- **{item['severity']}** {item['owner']} (`{item['route']}`): {item['risk']}")
+        lines.append(
+            f"- **{item['severity']}** {item['owner']} (`{item['route']}`): {item['risk']}"
+        )
     lines.extend(["", "## Caveats", ""])
     lines.extend(f"- {item}" for item in report["caveats"])
     return "\n".join(lines)
@@ -969,7 +1147,13 @@ def build_enterprise_trust_center(
             - len(warned) * 2,
         ),
     )
-    status = "risk" if any(item["severity"] == "high" for item in failed) else "ready" if score >= 82 and not failed else "watch"
+    status = (
+        "risk"
+        if any(item["severity"] == "high" for item in failed)
+        else "ready"
+        if score >= 82 and not failed
+        else "watch"
+    )
     questions = _security_questions()
     procurement = _procurement_pack()
     modes = _install_modes()
@@ -992,12 +1176,7 @@ def build_enterprise_trust_center(
         procurement=procurement,
     )
     proof_routes = sorted(
-        {
-            route
-            for item in controls
-            for route in [item.get("route")]
-            if route
-        }
+        {route for item in controls for route in [item.get("route")] if route}
         | {item["proof_route"] for item in questions}
         | {route for mode in modes for route in mode["proof_routes"]}
         | set(questionnaire["proof_routes"])
@@ -1025,7 +1204,9 @@ def build_enterprise_trust_center(
         "All production claims must be validated in the customer's own contour with agreed acceptance criteria.",
     ]
     if analysis_depth == "preview":
-        caveats.append("Preview depth defers full security and Rights/RLS scans; run standard or deep depth before production approval.")
+        caveats.append(
+            "Preview depth defers full security and Rights/RLS scans; run standard or deep depth before production approval."
+        )
 
     report: dict[str, Any] = {
         "generated_at": _now(),
@@ -1045,7 +1226,9 @@ def build_enterprise_trust_center(
         },
         "summary": {
             "controls": len(controls),
-            "passed_controls": len([item for item in controls if item["status"] == "pass"]),
+            "passed_controls": len(
+                [item for item in controls if item["status"] == "pass"]
+            ),
             "warning_controls": len(warned),
             "failed_controls": len(failed),
             "security_questions": len(questions),
@@ -1059,8 +1242,12 @@ def build_enterprise_trust_center(
             "proof_routes": len(proof_routes),
             "evidence_artifacts": len(artifacts),
             "offline_score": _score(offline_readiness),
-            "productization_findings": _int((productization.get("summary") or {}).get("findings")),
-            "security_findings": _int((security_posture.get("summary") or {}).get("findings")),
+            "productization_findings": _int(
+                (productization.get("summary") or {}).get("findings")
+            ),
+            "security_findings": _int(
+                (security_posture.get("summary") or {}).get("findings")
+            ),
             "rights_findings": _int((rights_rls.get("summary") or {}).get("findings")),
             "trust_room_roles": len(trust_room_bridge["role_cards"]),
             "trust_room_proofs": len(trust_room_bridge["proof_readiness"]),

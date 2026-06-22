@@ -4,10 +4,9 @@ Multi-Stage Validator
 Combines poetic detection and intent extraction for comprehensive validation.
 """
 
+import logging
 from dataclasses import dataclass
 from typing import Dict, Optional
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +44,9 @@ class MultiStageValidator:
         self.poetic_detector = PoeticFormDetector(threshold=0.6)
         self.intent_extractor = SemanticIntentExtractor(orchestrator)
 
-    async def validate(self, query: str, context: Optional[Dict] = None) -> ValidationResult:
+    async def validate(
+        self, query: str, context: Optional[Dict] = None
+    ) -> ValidationResult:
         """
         Validate query through multi-stage pipeline.
 
@@ -67,7 +68,9 @@ class MultiStageValidator:
                 )
 
                 # Stage 2: Intent extraction
-                intent_result = await self.intent_extractor.extract_intent(query, context)
+                intent_result = await self.intent_extractor.extract_intent(
+                    query, context
+                )
 
                 if not intent_result.is_safe:
                     return ValidationResult(
@@ -85,7 +88,9 @@ class MultiStageValidator:
                 return ValidationResult(
                     allowed=False,
                     reason="Failed standard safety check",
-                    poetic_analysis=poetic_analysis if poetic_analysis.is_poetic else None,
+                    poetic_analysis=poetic_analysis
+                    if poetic_analysis.is_poetic
+                    else None,
                     stage_completed="safety_check",
                 )
 
@@ -100,7 +105,11 @@ class MultiStageValidator:
         except Exception as e:
             logger.error("Validation error: %s", e)
             # Fail safe: block on error
-            return ValidationResult(allowed=False, reason=f"Validation error: {str(e)}", stage_completed="error")
+            return ValidationResult(
+                allowed=False,
+                reason=f"Validation error: {str(e)}",
+                stage_completed="error",
+            )
 
     async def _standard_safety_check(self, query: str) -> bool:
         """
@@ -115,9 +124,10 @@ class MultiStageValidator:
         # Simple keyword-based check
         # 1. Use SafetyFilter
         from src.security.poetic_detection.safety_filter import SafetyFilter
+
         safety_filter = SafetyFilter()
         is_safe, reason = safety_filter.is_safe(query)
-        
+
         if not is_safe:
             logger.warning(f"SafetyFilter blocked request: {reason}")
             return False

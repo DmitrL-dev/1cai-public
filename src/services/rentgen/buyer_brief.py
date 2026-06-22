@@ -50,7 +50,10 @@ def _primary_motion(*, pulse: dict[str, Any]) -> dict[str, Any]:
             "route": "/launch-room",
             "status": "risk",
             "ask": "Turn current risk into a paid proof or hardening sprint.",
-            "reason": str(executive.get("headline") or "Current signals need owner-visible proof before rollout."),
+            "reason": str(
+                executive.get("headline")
+                or "Current signals need owner-visible proof before rollout."
+            ),
         }
     if purchase_status == "ready":
         return {
@@ -65,7 +68,10 @@ def _primary_motion(*, pulse: dict[str, Any]) -> dict[str, Any]:
         "route": "/launch-room",
         "status": "watch",
         "ask": "Show the buyer one route, one proof packet and one next paid step.",
-        "reason": str(executive.get("headline") or "Use the Launch Room to keep watch items visible."),
+        "reason": str(
+            executive.get("headline")
+            or "Use the Launch Room to keep watch items visible."
+        ),
     }
 
 
@@ -240,8 +246,13 @@ def _buyer_room_plan(
             "route": str(developer.get("route") or "/change"),
             "status": str(developer.get("status") or "risk"),
             "start_with": "Open impact, risky query proof and test route.",
-            "show": str(developer.get("spark") or "Hotspots, affected tests and safe fix evidence."),
-            "proof_file": str(developer.get("proof_file") or "rentgen-developer-report.md"),
+            "show": str(
+                developer.get("spark")
+                or "Hotspots, affected tests and safe fix evidence."
+            ),
+            "proof_file": str(
+                developer.get("proof_file") or "rentgen-developer-report.md"
+            ),
             "close_question": "Would this remove one risky manual review from your release?",
             "why": f"{high_hotspots} high-risk hotspots are visible now.",
         }
@@ -254,8 +265,13 @@ def _buyer_room_plan(
             "route": str(architect.get("route") or "/platform-doctor"),
             "status": str(architect.get("status") or "risk"),
             "start_with": "Open topology, platform caveats and update readiness.",
-            "show": str(architect.get("spark") or "Architecture boundaries, platform and update proof."),
-            "proof_file": str(architect.get("proof_file") or "rentgen-architect-report.md"),
+            "show": str(
+                architect.get("spark")
+                or "Architecture boundaries, platform and update proof."
+            ),
+            "proof_file": str(
+                architect.get("proof_file") or "rentgen-architect-report.md"
+            ),
             "close_question": "Which blocker should become paid hardening scope first?",
             "why": f"{red_areas} red architecture/platform areas need proof before rollout.",
         }
@@ -268,7 +284,9 @@ def _buyer_room_plan(
             "route": str(director.get("route") or "/board-pack"),
             "status": str(director.get("status") or "ready"),
             "start_with": "Open board pack and local-license commercial line.",
-            "show": str(director.get("spark") or "Value, governance and purchase files."),
+            "show": str(
+                director.get("spark") or "Value, governance and purchase files."
+            ),
             "proof_file": str(director.get("proof_file") or "board-pack.md"),
             "close_question": "Can we approve the local proof sprint or license package today?",
             "why": "Buyer pulse is ready and purchase artifacts are available.",
@@ -282,7 +300,9 @@ def _buyer_room_plan(
             "route": str(vendor.get("route") or "/vendor-portfolio"),
             "status": str(vendor.get("status") or "watch"),
             "start_with": "Open vendor portfolio and package the review queue.",
-            "show": str(vendor.get("spark") or "Audit scope, work packages and evidence bundle."),
+            "show": str(
+                vendor.get("spark") or "Audit scope, work packages and evidence bundle."
+            ),
             "proof_file": str(vendor.get("proof_file") or "vendor-portfolio.md"),
             "close_question": "Which review item should become the first paid work package?",
             "why": f"{review_queue} review items can be converted into scoped work.",
@@ -295,7 +315,9 @@ def _buyer_room_plan(
             "route": str(primary.get("route") or "/launch-room"),
             "status": str(primary.get("status") or purchase_status),
             "start_with": "Open one buyer cockpit before deep workbench navigation.",
-            "show": str(primary.get("reason") or "Role cards, proof packet and next paid step."),
+            "show": str(
+                primary.get("reason") or "Role cards, proof packet and next paid step."
+            ),
             "proof_file": "buyer-brief.md",
             "close_question": str(primary.get("ask") or "What is the next paid step?"),
             "why": "No single risk dominates; keep the room on one proof route.",
@@ -317,9 +339,24 @@ def _buyer_room_plan(
             send_files.append(str(filename))
 
     sequence = [
-        {"step": 1, "label": "Start", "route": selected["route"], "line": selected["start_with"]},
-        {"step": 2, "label": "Prove", "route": "/killer-demo", "line": selected["show"]},
-        {"step": 3, "label": "Forward", "route": "/evidence-bundle", "line": "Send files and capture receipt."},
+        {
+            "step": 1,
+            "label": "Start",
+            "route": selected["route"],
+            "line": selected["start_with"],
+        },
+        {
+            "step": 2,
+            "label": "Prove",
+            "route": "/killer-demo",
+            "line": selected["show"],
+        },
+        {
+            "step": 3,
+            "label": "Forward",
+            "route": "/evidence-bundle",
+            "line": "Send files and capture receipt.",
+        },
     ]
 
     return {
@@ -335,15 +372,62 @@ def _purchase_path(*, pulse: dict[str, Any], primary: dict[str, Any]) -> dict[st
     steps = list(path.get("steps") or [])
     if not steps:
         steps = [
-            {"step": 1, "label": "Start", "route": "/launch-room", "artifact": "buyer-brief.md", "file": "buyer-brief.md", "line": "Start from one cockpit."},
-            {"step": 2, "label": "Prove", "route": "/killer-demo", "artifact": "Killer Demo ZIP", "file": "OPEN_FIRST_KILLER_DEMO.md", "line": "Show one proof route."},
-            {"step": 3, "label": "Close", "route": "/killer-demo", "artifact": "Meeting Close Receipt", "file": "MEETING_CLOSE_RECEIPT.md", "line": "Capture accepted roles and next paid step."},
-            {"step": 4, "label": "Activate", "route": "/pilot-launchpad", "artifact": "Post-Demo Activation Handoff", "file": "POST_DEMO_ACTIVATION_HANDOFF.md", "line": "Start paid proof with Day 7 acceptance."},
-            {"step": 5, "label": "Realize", "route": "/outcome-ledger", "artifact": "Outcome Ledger", "file": "rentgen-outcome-ledger.md", "line": "Refresh Day 30 outcome evidence."},
+            {
+                "step": 1,
+                "label": "Start",
+                "route": "/launch-room",
+                "artifact": "buyer-brief.md",
+                "file": "buyer-brief.md",
+                "line": "Start from one cockpit.",
+            },
+            {
+                "step": 2,
+                "label": "Prove",
+                "route": "/killer-demo",
+                "artifact": "Killer Demo ZIP",
+                "file": "OPEN_FIRST_KILLER_DEMO.md",
+                "line": "Show one proof route.",
+            },
+            {
+                "step": 3,
+                "label": "Close",
+                "route": "/killer-demo",
+                "artifact": "Meeting Close Receipt",
+                "file": "MEETING_CLOSE_RECEIPT.md",
+                "line": "Capture accepted roles and next paid step.",
+            },
+            {
+                "step": 4,
+                "label": "Activate",
+                "route": "/pilot-launchpad",
+                "artifact": "Post-Demo Activation Handoff",
+                "file": "POST_DEMO_ACTIVATION_HANDOFF.md",
+                "line": "Start paid proof with Day 7 acceptance.",
+            },
+            {
+                "step": 5,
+                "label": "Realize",
+                "route": "/outcome-ledger",
+                "artifact": "Outcome Ledger",
+                "file": "rentgen-outcome-ledger.md",
+                "line": "Refresh Day 30 outcome evidence.",
+            },
         ]
-    close_step = next((item for item in steps if str(item.get("label") or "").casefold() == "close"), {})
-    activation_step = next((item for item in steps if str(item.get("label") or "").casefold() == "activate"), {})
-    send_files = list(dict.fromkeys(str(item) for item in list(path.get("send_files") or []) if item))
+    close_step = next(
+        (item for item in steps if str(item.get("label") or "").casefold() == "close"),
+        {},
+    )
+    activation_step = next(
+        (
+            item
+            for item in steps
+            if str(item.get("label") or "").casefold() == "activate"
+        ),
+        {},
+    )
+    send_files = list(
+        dict.fromkeys(str(item) for item in list(path.get("send_files") or []) if item)
+    )
     for filename in [
         BUYER_ROOM_PACKET_ZIP,
         "archive-acceptance-receipt.md",
@@ -356,7 +440,9 @@ def _purchase_path(*, pulse: dict[str, Any], primary: dict[str, Any]) -> dict[st
     procurement_handoff = dict(path.get("procurement_handoff") or {})
     if not procurement_handoff:
         procurement_handoff = {
-            "status": str(path.get("status") or pulse.get("purchase_status") or "watch"),
+            "status": str(
+                path.get("status") or pulse.get("purchase_status") or "watch"
+            ),
             "title": "Procurement-ready handoff",
             "owner_line": "Open the Buyer Room Packet, Evidence Bundle, Killer Demo archive and verification packet before forwarding files.",
             "acceptance": "Ticket is accepted when buyer-room, archive and verification packet hashes are recorded.",
@@ -401,7 +487,10 @@ def _purchase_path(*, pulse: dict[str, Any], primary: dict[str, Any]) -> dict[st
         }
     return {
         "status": str(path.get("status") or pulse.get("purchase_status") or "watch"),
-        "headline": str(path.get("headline") or "Launch -> Killer Demo -> Receipt -> Activation -> Outcome."),
+        "headline": str(
+            path.get("headline")
+            or "Launch -> Killer Demo -> Receipt -> Activation -> Outcome."
+        ),
         "buyer_line": str(
             path.get("buyer_line")
             or f"{primary.get('label', 'Buyer path')}: proof must turn into a receipt and activation handoff."
@@ -409,12 +498,24 @@ def _purchase_path(*, pulse: dict[str, Any], primary: dict[str, Any]) -> dict[st
         "primary_route": str(path.get("primary_route") or "/killer-demo"),
         "procurement_handoff": procurement_handoff,
         "buyer_room_packet_artifact": {
-            "title": str((path.get("buyer_room_packet_artifact") or {}).get("title") or "Buyer Room Packet ZIP"),
-            "route": str((path.get("buyer_room_packet_artifact") or {}).get("route") or "/"),
-            "endpoint": str((path.get("buyer_room_packet_artifact") or {}).get("endpoint") or BUYER_ROOM_PACKET_ENDPOINT),
-            "file": str((path.get("buyer_room_packet_artifact") or {}).get("file") or BUYER_ROOM_PACKET_ZIP),
+            "title": str(
+                (path.get("buyer_room_packet_artifact") or {}).get("title")
+                or "Buyer Room Packet ZIP"
+            ),
+            "route": str(
+                (path.get("buyer_room_packet_artifact") or {}).get("route") or "/"
+            ),
+            "endpoint": str(
+                (path.get("buyer_room_packet_artifact") or {}).get("endpoint")
+                or BUYER_ROOM_PACKET_ENDPOINT
+            ),
+            "file": str(
+                (path.get("buyer_room_packet_artifact") or {}).get("file")
+                or BUYER_ROOM_PACKET_ZIP
+            ),
             "hash_header": str(
-                (path.get("buyer_room_packet_artifact") or {}).get("hash_header") or BUYER_ROOM_PACKET_HASH_HEADER
+                (path.get("buyer_room_packet_artifact") or {}).get("hash_header")
+                or BUYER_ROOM_PACKET_HASH_HEADER
             ),
             "line": str(
                 (path.get("buyer_room_packet_artifact") or {}).get("line")
@@ -425,13 +526,23 @@ def _purchase_path(*, pulse: dict[str, Any], primary: dict[str, Any]) -> dict[st
             "title": str(close_step.get("artifact") or "Meeting Close Receipt"),
             "route": str(close_step.get("route") or "/killer-demo"),
             "file": str(close_step.get("file") or "MEETING_CLOSE_RECEIPT.md"),
-            "line": str(close_step.get("line") or "Capture accepted roles, blockers and next paid step."),
+            "line": str(
+                close_step.get("line")
+                or "Capture accepted roles, blockers and next paid step."
+            ),
         },
         "activation_artifact": {
-            "title": str(activation_step.get("artifact") or "Post-Demo Activation Handoff"),
+            "title": str(
+                activation_step.get("artifact") or "Post-Demo Activation Handoff"
+            ),
             "route": str(activation_step.get("route") or "/pilot-launchpad"),
-            "file": str(activation_step.get("file") or "POST_DEMO_ACTIVATION_HANDOFF.md"),
-            "line": str(activation_step.get("line") or "Turn close into paid start and Day 7 proof."),
+            "file": str(
+                activation_step.get("file") or "POST_DEMO_ACTIVATION_HANDOFF.md"
+            ),
+            "line": str(
+                activation_step.get("line")
+                or "Turn close into paid start and Day 7 proof."
+            ),
         },
         "archive_receipt_artifact": {
             "title": "Archive Acceptance Receipt",
@@ -440,12 +551,20 @@ def _purchase_path(*, pulse: dict[str, Any], primary: dict[str, Any]) -> dict[st
             "line": "Record Evidence Bundle ZIP and linked Killer Demo ZIP hashes in procurement.",
         },
         "verification_packet_artifact": {
-            "title": str(verification_artifact.get("title") or "Verification Packet ZIP"),
+            "title": str(
+                verification_artifact.get("title") or "Verification Packet ZIP"
+            ),
             "route": str(verification_artifact.get("route") or "/evidence-bundle"),
-            "endpoint": str(verification_artifact.get("endpoint") or ARCHIVE_VERIFICATION_PACKET_ENDPOINT),
-            "file": str(verification_artifact.get("file") or ARCHIVE_VERIFICATION_PACKET_ZIP),
+            "endpoint": str(
+                verification_artifact.get("endpoint")
+                or ARCHIVE_VERIFICATION_PACKET_ENDPOINT
+            ),
+            "file": str(
+                verification_artifact.get("file") or ARCHIVE_VERIFICATION_PACKET_ZIP
+            ),
             "hash_header": str(
-                verification_artifact.get("hash_header") or ARCHIVE_VERIFICATION_PACKET_HASH_HEADER
+                verification_artifact.get("hash_header")
+                or ARCHIVE_VERIFICATION_PACKET_HASH_HEADER
             ),
             "line": str(
                 verification_artifact.get("line")
@@ -521,7 +640,12 @@ def build_buyer_brief(
                 *[str(item["route"]) for item in proof_readiness],
                 *[str(item.get("route") or "") for item in open_first_path],
                 *[str(item.get("route") or "") for item in purchase_path["steps"]],
-                *[str(item.get("route") or "") for item in (purchase_path["procurement_handoff"].get("open_order") or [])],
+                *[
+                    str(item.get("route") or "")
+                    for item in (
+                        purchase_path["procurement_handoff"].get("open_order") or []
+                    )
+                ],
             }
         ),
         "summary": {
@@ -531,7 +655,9 @@ def build_buyer_brief(
             "open_first_steps": len(open_first_path),
             "purchase_path_steps": len(purchase_path["steps"]),
             "purchase_path_files": len(purchase_path["send_files"]),
-            "procurement_handoff_steps": len(purchase_path["procurement_handoff"].get("open_order") or []),
+            "procurement_handoff_steps": len(
+                purchase_path["procurement_handoff"].get("open_order") or []
+            ),
             "room_plan_files": len(buyer_room_plan["send_files"]),
             "red_areas": _int((pulse.get("executive") or {}).get("red_areas")),
             "review_queue": _int((pulse.get("executive") or {}).get("review_queue")),

@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class DocumentType(Enum):
     """Supported document types"""
+
     PDF = "pdf"
     DOCX = "docx"
     PPTX = "pptx"
@@ -49,6 +50,7 @@ class DoclingProcessor:
 
         try:
             from docling.document_converter import DocumentConverter
+
             self.converter = DocumentConverter()
             self.logger.info("Docling processor initialized successfully")
         except ImportError as e:
@@ -56,9 +58,7 @@ class DoclingProcessor:
             self.converter = None
 
     async def process_document(
-        self,
-        file_path: str,
-        output_format: str = "markdown"
+        self, file_path: str, output_format: str = "markdown"
     ) -> Dict[str, Any]:
         """
         Process document with Docling
@@ -92,7 +92,7 @@ class DoclingProcessor:
                 "pages": getattr(result.document, "num_pages", 0),
                 "has_tables": self._has_tables(result.document),
                 "has_formulas": self._has_formulas(result.document),
-                "has_images": self._has_images(result.document)
+                "has_images": self._has_images(result.document),
             }
 
             # Extract structure
@@ -109,8 +109,8 @@ class DoclingProcessor:
                 extra={
                     "pages": metadata["pages"],
                     "tables": len(tables),
-                    "formulas": len(formulas)
-                }
+                    "formulas": len(formulas),
+                },
             )
 
             return {
@@ -119,21 +119,14 @@ class DoclingProcessor:
                 "structure": structure,
                 "tables": tables,
                 "formulas": formulas,
-                "status": "success"
+                "status": "success",
             }
 
         except Exception as e:
             self.logger.error(f"Document processing failed: {e}")
-            return {
-                "content": "",
-                "metadata": {"error": str(e)},
-                "status": "error"
-            }
+            return {"content": "", "metadata": {"error": str(e)}, "status": "error"}
 
-    async def process_pdf(
-        self,
-        pdf_path: str
-    ) -> Dict[str, Any]:
+    async def process_pdf(self, pdf_path: str) -> Dict[str, Any]:
         """
         Process PDF with advanced features
 
@@ -145,10 +138,7 @@ class DoclingProcessor:
         """
         return await self.process_document(pdf_path, "markdown")
 
-    async def extract_tables(
-        self,
-        file_path: str
-    ) -> List[Dict[str, Any]]:
+    async def extract_tables(self, file_path: str) -> List[Dict[str, Any]]:
         """
         Extract tables from document
 
@@ -161,10 +151,7 @@ class DoclingProcessor:
         result = await self.process_document(file_path, "json")
         return result.get("tables", [])
 
-    async def transcribe_audio(
-        self,
-        audio_path: str
-    ) -> Dict[str, Any]:
+    async def transcribe_audio(self, audio_path: str) -> Dict[str, Any]:
         """
         Transcribe audio file using ASR
 
@@ -184,36 +171,32 @@ class DoclingProcessor:
                 "text": result.document.export_to_markdown(),
                 "duration": getattr(result.document, "duration", 0),
                 "language": getattr(result.document, "language", "unknown"),
-                "status": "success"
+                "status": "success",
             }
 
         except Exception as e:
             self.logger.error(f"Audio transcription failed: {e}")
-            return {
-                "text": "",
-                "status": "error",
-                "error": str(e)
-            }
+            return {"text": "", "status": "error", "error": str(e)}
 
     def _detect_type(self, file_path: str) -> str:
         """Detect document type from file extension"""
-        ext = Path(file_path).suffix.lower().lstrip('.')
+        ext = Path(file_path).suffix.lower().lstrip(".")
 
         type_map = {
-            'pdf': DocumentType.PDF.value,
-            'docx': DocumentType.DOCX.value,
-            'pptx': DocumentType.PPTX.value,
-            'xlsx': DocumentType.XLSX.value,
-            'html': DocumentType.HTML.value,
-            'md': DocumentType.MARKDOWN.value,
-            'wav': DocumentType.AUDIO_WAV.value,
-            'mp3': DocumentType.AUDIO_MP3.value,
-            'png': DocumentType.IMAGE.value,
-            'jpg': DocumentType.IMAGE.value,
-            'jpeg': DocumentType.IMAGE.value
+            "pdf": DocumentType.PDF.value,
+            "docx": DocumentType.DOCX.value,
+            "pptx": DocumentType.PPTX.value,
+            "xlsx": DocumentType.XLSX.value,
+            "html": DocumentType.HTML.value,
+            "md": DocumentType.MARKDOWN.value,
+            "wav": DocumentType.AUDIO_WAV.value,
+            "mp3": DocumentType.AUDIO_MP3.value,
+            "png": DocumentType.IMAGE.value,
+            "jpg": DocumentType.IMAGE.value,
+            "jpeg": DocumentType.IMAGE.value,
         }
 
-        return type_map.get(ext, 'unknown')
+        return type_map.get(ext, "unknown")
 
     def _extract_structure(self, document) -> Dict[str, Any]:
         """Extract document structure"""
@@ -221,7 +204,7 @@ class DoclingProcessor:
             return {
                 "sections": getattr(document, "sections", []),
                 "headings": getattr(document, "headings", []),
-                "reading_order": getattr(document, "reading_order", [])
+                "reading_order": getattr(document, "reading_order", []),
             }
         except:
             return {}
@@ -235,7 +218,7 @@ class DoclingProcessor:
                     "index": i,
                     "rows": len(table.get("rows", [])),
                     "columns": len(table.get("columns", [])),
-                    "data": table.get("data", [])
+                    "data": table.get("data", []),
                 }
                 for i, table in enumerate(tables)
             ]
@@ -276,22 +259,19 @@ class DoclingProcessor:
 
         # Try basic text extraction
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
             return {
                 "content": content,
-                "metadata": {
-                    "file_path": file_path,
-                    "processing": "fallback"
-                },
-                "status": "success"
+                "metadata": {"file_path": file_path, "processing": "fallback"},
+                "status": "success",
             }
         except:
             return {
                 "content": "",
                 "metadata": {"error": "Fallback processing failed"},
-                "status": "error"
+                "status": "error",
             }
 
 
@@ -314,8 +294,4 @@ def get_docling_processor() -> DoclingProcessor:
     return _docling_processor
 
 
-__all__ = [
-    "DoclingProcessor",
-    "DocumentType",
-    "get_docling_processor"
-]
+__all__ = ["DoclingProcessor", "DocumentType", "get_docling_processor"]

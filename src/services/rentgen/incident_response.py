@@ -54,9 +54,13 @@ def _tj_report_dict(report: Any | None, error: str | None = None) -> dict[str, A
     }
 
 
-def _analyze_tj(log_path: str | None, min_duration_ms: float, top_n: int) -> tuple[Any | None, list[str]]:
+def _analyze_tj(
+    log_path: str | None, min_duration_ms: float, top_n: int
+) -> tuple[Any | None, list[str]]:
     if not log_path:
-        return None, ["No Technology Journal path was provided; report is based on symptoms and supplied modules."]
+        return None, [
+            "No Technology Journal path was provided; report is based on symptoms and supplied modules."
+        ]
 
     path = Path(log_path)
     if not path.exists():
@@ -84,7 +88,9 @@ _SYMPTOM_RULES = (
 )
 
 
-def _symptom_signals(description: str | None, symptoms: list[str] | None) -> list[dict[str, Any]]:
+def _symptom_signals(
+    description: str | None, symptoms: list[str] | None
+) -> list[dict[str, Any]]:
     text = " ".join([description or "", *(symptoms or [])]).casefold()
     signals = []
     seen = set()
@@ -133,10 +139,16 @@ def _candidate_modules(
                     sources[module].append("lock_context")
 
     modules = list(sources.keys())[:limit]
-    return modules, {key: dedupe(value) for key, value in sources.items()}, hotspot_by_module
+    return (
+        modules,
+        {key: dedupe(value) for key, value in sources.items()},
+        hotspot_by_module,
+    )
 
 
-def _build_team_context(store: Any, include_team: bool) -> tuple[dict[str, Any] | None, dict[str, dict[str, Any]], list[str]]:
+def _build_team_context(
+    store: Any, include_team: bool
+) -> tuple[dict[str, Any] | None, dict[str, dict[str, Any]], list[str]]:
     if store is None or not include_team:
         return None, {}, []
     try:
@@ -144,13 +156,14 @@ def _build_team_context(store: Any, include_team: bool) -> tuple[dict[str, Any] 
     except Exception as exc:  # pragma: no cover - defensive integration guard
         return None, {}, [f"Team governance context failed: {exc}"]
     owners = {
-        area["domain"]: area.get("owner", {})
-        for area in governance.get("areas", [])
+        area["domain"]: area.get("owner", {}) for area in governance.get("areas", [])
     }
     return governance, owners, []
 
 
-def _owner_for_quality(quality: dict[str, Any] | None, owners: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
+def _owner_for_quality(
+    quality: dict[str, Any] | None, owners: dict[str, dict[str, Any]]
+) -> dict[str, Any] | None:
     if not quality:
         return None
     return owners.get(str(quality.get("domain") or ""))
@@ -167,16 +180,28 @@ def _module_plan(
     max_edges: int,
 ) -> tuple[list[dict[str, Any]], list[str]]:
     if store is None:
-        return [], ["Rentgen store is unavailable; module impact and owner routing are skipped."]
+        return [], [
+            "Rentgen store is unavailable; module impact and owner routing are skipped."
+        ]
 
     rows = []
     caveats = []
     for module in modules:
         try:
-            impact = store.module_impact(module, max_depth=max_depth, max_edges=max_edges)
+            impact = store.module_impact(
+                module, max_depth=max_depth, max_edges=max_edges
+            )
             quality = store.get_module_risk(module)
-            graph_modules = [item.get("name") for item in impact.get("graph_modules", []) if item.get("name")]
-            impacted_hotspots = store.hotspots_for_graph_modules(graph_modules, limit=8) if graph_modules else []
+            graph_modules = [
+                item.get("name")
+                for item in impact.get("graph_modules", [])
+                if item.get("name")
+            ]
+            impacted_hotspots = (
+                store.hotspots_for_graph_modules(graph_modules, limit=8)
+                if graph_modules
+                else []
+            )
         except Exception as exc:  # pragma: no cover - defensive per-module guard
             caveats.append(f"Impact analysis failed for {module}: {exc}")
             continue
@@ -218,14 +243,17 @@ def _build_test_context(
     if store is None or not modules:
         return None, []
     try:
-        return build_test_coverage_matrix(
-            store,
-            changed_modules=modules,
-            max_depth=max_depth,
-            max_edges=max_edges,
-            hotspot_limit=8,
-            match_limit=8,
-        ), []
+        return (
+            build_test_coverage_matrix(
+                store,
+                changed_modules=modules,
+                max_depth=max_depth,
+                max_edges=max_edges,
+                hotspot_limit=8,
+                match_limit=8,
+            ),
+            [],
+        )
     except Exception as exc:  # pragma: no cover - defensive integration guard
         return None, [f"Test coverage matrix failed: {exc}"]
 
@@ -236,7 +264,10 @@ def _score_and_status(
     module_rows: list[dict[str, Any]],
     test_matrix: dict[str, Any] | None,
 ) -> dict[str, Any]:
-    max_risk = max((int((row.get("quality") or {}).get("risk") or 0) for row in module_rows), default=0)
+    max_risk = max(
+        (int((row.get("quality") or {}).get("risk") or 0) for row in module_rows),
+        default=0,
+    )
     total_impact = sum(int(row.get("impact_total") or 0) for row in module_rows)
     gaps = int(((test_matrix or {}).get("summary") or {}).get("gaps") or 0)
 
@@ -249,7 +280,9 @@ def _score_and_status(
     score += min(35, int(max_risk * 0.35))
     score += min(15, gaps * 5)
     for signal in signals:
-        score += {"critical": 25, "high": 15, "medium": 8, "low": 3}.get(signal.get("severity"), 3)
+        score += {"critical": 25, "high": 15, "medium": 8, "low": 3}.get(
+            signal.get("severity"), 3
+        )
     score = min(score, 100)
 
     if score >= 80:
@@ -448,12 +481,16 @@ def _markdown(report: dict[str, Any]) -> str:
     ]
     for action in report["recommended_actions"][:10]:
         target = f" `{action['target']}`" if action.get("target") else ""
-        lines.append(f"- **{action['severity']}** {action['owner']}: {action['title']}{target}")
+        lines.append(
+            f"- **{action['severity']}** {action['owner']}: {action['title']}{target}"
+        )
     if report["module_plan"]:
         lines.extend(["", "## Top Modules", ""])
         for row in report["module_plan"][:8]:
             risk = (row.get("quality") or {}).get("risk", "n/a")
-            lines.append(f"- `{row['module_ref']}`: risk {risk}, impact {row['impact_total']}")
+            lines.append(
+                f"- `{row['module_ref']}`: risk {risk}, impact {row['impact_total']}"
+            )
     return "\n".join(lines)
 
 
@@ -508,8 +545,7 @@ def build_incident_report(
     decision = _score_and_status(tj, signals, module_rows, test_matrix)
     actions = _recommended_actions(tj, module_rows, test_matrix)
     owner_counts = Counter(
-        (row.get("owner") or {}).get("name") or "unassigned"
-        for row in module_rows
+        (row.get("owner") or {}).get("name") or "unassigned" for row in module_rows
     )
 
     report = {

@@ -27,8 +27,7 @@ class ModelManager:
         self.model_name = model_name or self.DEFAULT_MODEL
 
         if hybrid_mode is None:
-            hybrid_mode = os.getenv(
-                "EMBEDDING_HYBRID_MODE", "false").lower() == "true"
+            hybrid_mode = os.getenv("EMBEDDING_HYBRID_MODE", "false").lower() == "true"
         self.hybrid_mode = hybrid_mode
 
         self.model_cpu = None
@@ -90,21 +89,18 @@ class ModelManager:
                 try:
                     module = importlib.import_module("sentence_transformers")
                     transformer_cls = getattr(module, "SentenceTransformer")
-                    model = transformer_cls(
-                        self.model_name, device=f"cuda:{device_id}")
+                    model = transformer_cls(self.model_name, device=f"cuda:{device_id}")
                     self._gpu_models[device_id] = model
                 except Exception as e:
                     logger.warning("Failed to load on GPU %s: {e}", device_id)
 
             if self._gpu_models:
-                self.model_gpu = self._gpu_models[list(
-                    self._gpu_models.keys())[0]]
+                self.model_gpu = self._gpu_models[list(self._gpu_models.keys())[0]]
         else:
             try:
                 module = importlib.import_module("sentence_transformers")
                 transformer_cls = getattr(module, "SentenceTransformer")
-                self.model_gpu = transformer_cls(
-                    self.model_name, device="cuda")
+                self.model_gpu = transformer_cls(self.model_name, device="cuda")
             except Exception as e:
                 logger.warning("Failed to load GPU model: %s", e)
 

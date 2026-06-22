@@ -11,8 +11,7 @@ from collections import Counter
 from functools import lru_cache
 from typing import Any
 
-from src.services.rentgen.metadata_graph import build_metadata_graph, _enrich_object
-
+from src.services.rentgen.metadata_graph import _enrich_object, build_metadata_graph
 
 DATA_TYPES = {
     "Catalog",
@@ -47,7 +46,13 @@ EXCHANGE_TYPES = {
 }
 
 TRANSACTION_TYPES = {"Document", "BusinessProcess", "Task"}
-MASTER_DATA_TYPES = {"Catalog", "Enum", "ChartOfAccounts", "ChartOfCharacteristicTypes", "ChartOfCalculationTypes"}
+MASTER_DATA_TYPES = {
+    "Catalog",
+    "Enum",
+    "ChartOfAccounts",
+    "ChartOfCharacteristicTypes",
+    "ChartOfCalculationTypes",
+}
 
 
 def _preview(obj: dict[str, Any]) -> dict[str, Any]:
@@ -89,7 +94,9 @@ def _role_rights(graph: dict[str, Any], limit: int) -> dict[str, Any]:
         for item in rights.get("dangerous") or []:
             findings.append(
                 {
-                    "severity": "high" if item.get("right") in {"Administration", "Delete"} else "medium",
+                    "severity": "high"
+                    if item.get("right") in {"Administration", "Delete"}
+                    else "medium",
                     "role": role["name"],
                     "right": item.get("right"),
                     "object": item.get("object"),
@@ -142,7 +149,11 @@ def _migration_findings(shapes: list[dict[str, Any]]) -> list[dict[str, Any]]:
         counts = shape.get("counts") or {}
         ref = shape["ref"]
 
-        if metadata_type in REGISTER_TYPES and not shape.get("dimensions") and not shape.get("resources"):
+        if (
+            metadata_type in REGISTER_TYPES
+            and not shape.get("dimensions")
+            and not shape.get("resources")
+        ):
             findings.append(
                 {
                     "severity": "medium",
@@ -153,7 +164,10 @@ def _migration_findings(shapes: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 }
             )
 
-        if metadata_type in {"Document", "Catalog"} and int(counts.get("attributes") or 0) == 0:
+        if (
+            metadata_type in {"Document", "Catalog"}
+            and int(counts.get("attributes") or 0) == 0
+        ):
             findings.append(
                 {
                     "severity": "low",
@@ -167,7 +181,10 @@ def _migration_findings(shapes: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if metadata_type in EXCHANGE_TYPES:
             findings.append(
                 {
-                    "severity": "high" if metadata_type in {"ExternalDataSource", "HTTPService", "WebService"} else "medium",
+                    "severity": "high"
+                    if metadata_type
+                    in {"ExternalDataSource", "HTTPService", "WebService"}
+                    else "medium",
                     "code": "exchange-surface",
                     "ref": ref,
                     "message": "Exchange or integration object can affect external data contracts.",
@@ -189,7 +206,9 @@ def _migration_findings(shapes: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 @lru_cache(maxsize=8)
-def build_data_governance(limit: int = 300, *, config_path: str | None = None) -> dict[str, Any]:
+def build_data_governance(
+    limit: int = 300, *, config_path: str | None = None
+) -> dict[str, Any]:
     graph = build_metadata_graph(config_path)
     if not graph["available"]:
         return {
@@ -206,7 +225,8 @@ def build_data_governance(limit: int = 300, *, config_path: str | None = None) -
     objects = graph["objects"]
     by_type = Counter(obj["type"] for obj in objects)
     data_candidates = [
-        obj for obj in objects
+        obj
+        for obj in objects
         if obj["type"] in DATA_TYPES or obj["type"] in EXCHANGE_TYPES
     ][:limit]
     shapes = [_shape_for_object(graph, obj) for obj in data_candidates]

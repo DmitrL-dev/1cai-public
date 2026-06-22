@@ -1,4 +1,3 @@
-
 """
 Secure Developer AI Agent
 Based on Agents Rule of Two: [AB] Configuration
@@ -183,7 +182,9 @@ class DeveloperAISecure:
                     "applied": False,
                     "blocked": True,
                     "result": result,
-                    "error": result.get("reason", "Repository writer is not configured"),
+                    "error": result.get(
+                        "reason", "Repository writer is not configured"
+                    ),
                 }
 
             # Удаляем из pending
@@ -378,8 +379,14 @@ class DeveloperAISecure:
                 "author": author,
                 "co_author": co_author,
                 "timestamp": datetime.now().isoformat(),
-                "required_evidence": ["repository writer adapter", "target branch", "change set"],
-                "caveats": ["No synthetic commit SHA is produced without a repository adapter."],
+                "required_evidence": [
+                    "repository writer adapter",
+                    "target branch",
+                    "change set",
+                ],
+                "caveats": [
+                    "No synthetic commit SHA is produced without a repository adapter."
+                ],
             }
 
         result = self.repository_writer.write(
@@ -406,7 +413,11 @@ class DeveloperAISecure:
             "Human approval is required before any repository write.",
         ]
         if not self.ai_model:
-            caveats.append("The returned suggestion is an offline contract, not synthesized implementation code.")
+            caveats.append(
+                "The returned suggestion is an offline contract, not synthesized implementation code."
+            )
         if not self.repository_writer:
-            caveats.append("Apply will not create a commit until a repository writer adapter is configured.")
+            caveats.append(
+                "Apply will not create a commit until a repository writer adapter is configured."
+            )
         return caveats

@@ -1,4 +1,3 @@
-
 """
 Natural Language to Cypher Query Generator
 Версия: 2.1.0

@@ -1,14 +1,16 @@
-import sys
-import os
 import asyncio
-from typing import Dict, Any
+import os
+import sys
+from typing import Any, Dict
 
 # Add src to path
 sys.path.append(os.getcwd())
 
-from src.modules.technical_writer.services.api_doc_generator import APIDocGenerator
-from src.modules.technical_writer.services.user_guide_generator import UserGuideGenerator
 from src.modules.technical_writer.domain.models import Audience
+from src.modules.technical_writer.services.api_doc_generator import APIDocGenerator
+from src.modules.technical_writer.services.user_guide_generator import (
+    UserGuideGenerator,
+)
 
 
 async def test_technical_writer():
@@ -44,7 +46,9 @@ async def test_technical_writer():
     guide_gen = UserGuideGenerator()
 
     try:
-        guide = await guide_gen.generate_user_guide(feature="Dashboard", target_audience=Audience.END_USER)
+        guide = await guide_gen.generate_user_guide(
+            feature="Dashboard", target_audience=Audience.END_USER
+        )
         print(f"✅ User Guide Generated for {guide.feature}")
         print(f"   Sections: {len(guide.sections)}")
         print(f"   Markdown length: {len(guide.guide_markdown)} chars")

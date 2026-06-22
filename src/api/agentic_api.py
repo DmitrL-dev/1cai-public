@@ -17,7 +17,6 @@ from src.services.rentgen.agentic_workflows import (
     transition_step,
 )
 
-
 router = APIRouter(prefix="/api/v1/agentic", tags=["Agentic Workflows"])
 
 
@@ -66,9 +65,7 @@ def _enforce_sod(record: dict[str, Any] | None, actor: str | None) -> None:
 
     author = str((record or {}).get("actor") or "").strip()
     if actor and author and actor == author:
-        raise PermissionError(
-            "separation of duties: approver must differ from author"
-        )
+        raise PermissionError("separation of duties: approver must differ from author")
 
 
 @router.post("/plans")
@@ -108,7 +105,11 @@ def transition_plan_step(
 
     try:
         return transition_step(
-            plan_id, step_id=req.step_id, status=req.status, actor=principal_actor(principal), note=req.note
+            plan_id,
+            step_id=req.step_id,
+            status=req.status,
+            actor=principal_actor(principal),
+            note=req.note,
         )
     except Exception as exc:
         raise _handle_error(exc) from exc

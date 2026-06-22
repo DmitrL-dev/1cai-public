@@ -23,7 +23,6 @@ from src.api.dependencies import (
 )
 from src.exporters.archi_exporter import ArchiExporter
 from src.exporters.archi_importer import ArchiImporter
-
 from src.utils.structured_logging import StructuredLogger
 
 logger = StructuredLogger(__name__).logger
@@ -33,8 +32,12 @@ router = APIRouter(prefix="/archi", tags=["archi"])
 # Prometheus metrics
 archi_exports_total = Counter("archi_exports_total", "Total Archi exports", ["status"])
 archi_imports_total = Counter("archi_imports_total", "Total Archi imports", ["status"])
-archi_export_duration = Histogram("archi_export_duration_seconds", "Archi export duration")
-archi_import_duration = Histogram("archi_import_duration_seconds", "Archi import duration")
+archi_export_duration = Histogram(
+    "archi_export_duration_seconds", "Archi export duration"
+)
+archi_import_duration = Histogram(
+    "archi_import_duration_seconds", "Archi import duration"
+)
 
 
 class ExportRequest(BaseModel):
@@ -46,19 +49,29 @@ class ExportRequest(BaseModel):
         max_length=255,
         description="Output filename (safe characters only)",
     )
-    filters: Optional[Dict[str, Any]] = Field(default=None, description="Optional filters for export")
-    max_nodes: int = Field(default=1000, ge=1, le=10000, description="Maximum nodes to export")
-    max_relationships: int = Field(default=2000, ge=1, le=20000, description="Maximum relationships to export")
+    filters: Optional[Dict[str, Any]] = Field(
+        default=None, description="Optional filters for export"
+    )
+    max_nodes: int = Field(
+        default=1000, ge=1, le=10000, description="Maximum nodes to export"
+    )
+    max_relationships: int = Field(
+        default=2000, ge=1, le=20000, description="Maximum relationships to export"
+    )
 
     @field_validator("output_filename")
     @classmethod
     def validate_filename(cls, v):
         """Validate filename for security"""
         if ".." in v or "/" in v or "\\" in v:
-            raise ValueError("Filename cannot contain path separators or parent directory references")
+            raise ValueError(
+                "Filename cannot contain path separators or parent directory references"
+            )
 
         if not re.match(r"^[a-zA-Z0-9_\-\.]+$", v):
-            raise ValueError("Filename can only contain alphanumeric characters, underscores, hyphens, and dots")
+            raise ValueError(
+                "Filename can only contain alphanumeric characters, underscores, hyphens, and dots"
+            )
 
         if not v.endswith(".archimate"):
             v = v + ".archimate"
@@ -99,8 +112,12 @@ def _archimate_counts(file_path: str) -> tuple[int, int]:
     except Exception as exc:
         logger.warning("Unable to count ArchiMate export file %s: %s", file_path, exc)
         return 0, 0
-    elements_count = sum(1 for node in root.iter() if _local_xml_name(node.tag) == "element")
-    relationships_count = sum(1 for node in root.iter() if _local_xml_name(node.tag) == "relationship")
+    elements_count = sum(
+        1 for node in root.iter() if _local_xml_name(node.tag) == "element"
+    )
+    relationships_count = sum(
+        1 for node in root.iter() if _local_xml_name(node.tag) == "relationship"
+    )
     return elements_count, relationships_count
 
 
@@ -135,20 +152,29 @@ async def export_to_archimate(
 
         output_path = os.path.join(exports_dir, request.output_filename)
 
-        export_args = (output_path, request.filters, request.max_nodes, request.max_relationships)
+        export_args = (
+            output_path,
+            request.filters,
+            request.max_nodes,
+            request.max_relationships,
+        )
         if inspect.iscoroutinefunction(exporter.export_to_archimate):
             result_path = await exporter.export_to_archimate(*export_args)
         else:
             # Legacy exporters may still be synchronous; keep them off the event loop.
             loop = asyncio.get_running_loop()
-            result_path = await loop.run_in_executor(None, exporter.export_to_archimate, *export_args)
+            result_path = await loop.run_in_executor(
+                None, exporter.export_to_archimate, *export_args
+            )
         elements_count, relationships_count = _archimate_counts(result_path)
 
         duration = time.time() - start_time
         archi_export_duration.observe(duration)
         archi_exports_total.labels(status="success").inc()
 
-        logger.info(f"Archi export successful: {result_path}", extra={"duration": duration})
+        logger.info(
+            f"Archi export successful: {result_path}", extra={"duration": duration}
+        )
 
         return ExportResponse(
             status="success",
@@ -164,7 +190,8 @@ async def export_to_archimate(
 
 @router.post("/import", response_model=ImportResponse)
 async def import_from_archimate(
-    request: ImportRequest, importer: ArchiImporter = Depends(get_archi_importer)  # ✅ DEPENDENCY INJECTION
+    request: ImportRequest,
+    importer: ArchiImporter = Depends(get_archi_importer),  # ✅ DEPENDENCY INJECTION
 ):
     """
     Import ArchiMate model into Unified Change Graph
@@ -192,7 +219,9 @@ async def import_from_archimate(
         logger.info(f"Archi import successful", extra={"duration": duration, **stats})
 
         return ImportResponse(
-            status="success", nodes_created=stats["nodes_created"], relationships_created=stats["relationships_created"]
+            status="success",
+            nodes_created=stats["nodes_created"],
+            relationships_created=stats["relationships_created"],
         )
     except Exception as e:
         archi_imports_total.labels(status="error").inc()
@@ -234,7 +263,9 @@ async def health_check(graph_service=Depends(get_graph_service)):
     is_available = neo4j_status == "connected"
 
     status = {
-        "status": "legacy_optional_ready" if is_available else "legacy_optional_unavailable",
+        "status": "legacy_optional_ready"
+        if is_available
+        else "legacy_optional_unavailable",
         "core": False,
         "mode": "legacy_optional",
         "requires": ["Neo4j GraphService"],

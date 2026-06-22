@@ -6,18 +6,16 @@ from typing import Any, Dict, List, Optional, Tuple
 from fastapi import UploadFile
 
 from src.db.marketplace_repository import MarketplaceRepository
-from src.modules.marketplace.domain.models import (
-    PluginStatus,
-    PluginVisibility,
-)
+from src.modules.marketplace.domain.models import PluginStatus, PluginVisibility
 from src.security import CurrentUser, get_audit_logger
 from src.utils.structured_logging import StructuredLogger
 
 logger = StructuredLogger(__name__).logger
 audit_logger = get_audit_logger()
 
-MAX_ARTIFACT_SIZE_BYTES = int(
-    os.getenv("MARKETPLACE_MAX_ARTIFACT_SIZE_MB", "25")) * 1024 * 1024
+MAX_ARTIFACT_SIZE_BYTES = (
+    int(os.getenv("MARKETPLACE_MAX_ARTIFACT_SIZE_MB", "25")) * 1024 * 1024
+)
 
 
 class MarketplaceService:
@@ -29,7 +27,9 @@ class MarketplaceService:
     def __init__(self, repo: MarketplaceRepository):
         self.repo = repo
 
-    async def submit_plugin(self, plugin_data: Dict[str, Any], user: CurrentUser) -> Dict[str, Any]:
+    async def submit_plugin(
+        self, plugin_data: Dict[str, Any], user: CurrentUser
+    ) -> Dict[str, Any]:
         """Submit a new plugin."""
         sanitized_name = plugin_data["name"].strip()[:200]
         if not sanitized_name:
@@ -118,7 +118,9 @@ class MarketplaceService:
         )
         return updated
 
-    async def upload_artifact(self, plugin_id: str, file: UploadFile, user: CurrentUser) -> Dict[str, Any]:
+    async def upload_artifact(
+        self, plugin_id: str, file: UploadFile, user: CurrentUser
+    ) -> Dict[str, Any]:
         """Upload plugin artifact."""
         plugin = await self.repo.get_plugin(plugin_id)
         if not plugin:
@@ -158,7 +160,9 @@ class MarketplaceService:
         )
         return updated
 
-    async def delete_plugin(self, plugin_id: str, user: CurrentUser) -> Optional[Dict[str, Any]]:
+    async def delete_plugin(
+        self, plugin_id: str, user: CurrentUser
+    ) -> Optional[Dict[str, Any]]:
         """Soft delete plugin."""
         plugin = await self.repo.get_plugin(plugin_id)
         if not plugin:
@@ -178,14 +182,18 @@ class MarketplaceService:
         )
         return removed
 
-    async def record_install(self, plugin_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+    async def record_install(
+        self, plugin_id: str, user_id: str
+    ) -> Optional[Dict[str, Any]]:
         """Record plugin installation."""
         updated = await self.repo.record_install(plugin_id, user_id)
         if updated:
             logger.info("Plugin installed: %s by user %s", plugin_id, user_id)
         return updated
 
-    async def remove_install(self, plugin_id: str, user_id: str) -> Optional[Dict[str, Any]]:
+    async def remove_install(
+        self, plugin_id: str, user_id: str
+    ) -> Optional[Dict[str, Any]]:
         """Remove plugin installation record."""
         updated = await self.repo.remove_install(plugin_id, user_id)
         if updated:
@@ -196,7 +204,9 @@ class MarketplaceService:
         """Get plugin statistics."""
         return await self.repo.get_plugin_stats(plugin_id)
 
-    async def create_review(self, plugin_id: str, review_data: Dict[str, Any], user: CurrentUser) -> Dict[str, Any]:
+    async def create_review(
+        self, plugin_id: str, review_data: Dict[str, Any], user: CurrentUser
+    ) -> Dict[str, Any]:
         """Create a review."""
         plugin = await self.repo.get_plugin(plugin_id)
         if not plugin:
@@ -267,7 +277,9 @@ class MarketplaceService:
         await self.repo.remove_favorite(plugin_id, user_id)
         logger.info("Plugin %s removed from favorites by user %s", plugin_id, user_id)
 
-    async def report_plugin(self, plugin_id: str, reason: str, details: Optional[str], user: CurrentUser) -> None:
+    async def report_plugin(
+        self, plugin_id: str, reason: str, details: Optional[str], user: CurrentUser
+    ) -> None:
         """Report a plugin."""
         complaint_id = f"complaint_{uuid.uuid4().hex}"
         await self.repo.add_complaint(
@@ -277,8 +289,9 @@ class MarketplaceService:
             reason=reason,
             details=details,
         )
-        logger.warning("Plugin %s reported by user %s: %s",
-                       plugin_id, user.user_id, reason)
+        logger.warning(
+            "Plugin %s reported by user %s: %s", plugin_id, user.user_id, reason
+        )
         audit_logger.log_action(
             actor=user.user_id,
             action="marketplace.plugin.report",
@@ -304,7 +317,9 @@ class MarketplaceService:
             metadata={"status": PluginStatus.APPROVED.value},
         )
 
-    async def reject_plugin(self, plugin_id: str, reason: str, user: CurrentUser) -> None:
+    async def reject_plugin(
+        self, plugin_id: str, reason: str, user: CurrentUser
+    ) -> None:
         """Reject plugin."""
         await self.repo.update_plugin(
             plugin_id,
@@ -325,7 +340,9 @@ class MarketplaceService:
             metadata={"reason": reason},
         )
 
-    async def set_featured(self, plugin_id: str, featured: bool, user: CurrentUser) -> None:
+    async def set_featured(
+        self, plugin_id: str, featured: bool, user: CurrentUser
+    ) -> None:
         """Set featured status."""
         await self.repo.update_plugin(plugin_id, {"featured": featured})
         logger.info(
@@ -341,7 +358,9 @@ class MarketplaceService:
             metadata={"featured": featured},
         )
 
-    async def set_verified(self, plugin_id: str, verified: bool, user: CurrentUser) -> None:
+    async def set_verified(
+        self, plugin_id: str, verified: bool, user: CurrentUser
+    ) -> None:
         """Set verified status."""
         await self.repo.update_plugin(plugin_id, {"verified": verified})
         logger.info(
@@ -358,4 +377,6 @@ class MarketplaceService:
         )
 
     def _check_authorization(self, user: CurrentUser, plugin: Dict[str, Any]) -> bool:
-        return plugin.get("owner_id") == user.user_id or user.has_role("admin", "moderator")
+        return plugin.get("owner_id") == user.user_id or user.has_role(
+            "admin", "moderator"
+        )

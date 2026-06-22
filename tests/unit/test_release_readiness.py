@@ -13,7 +13,11 @@ class HighRiskStore:
 
     def module_impact(self, module_path, max_depth=5, max_edges=600):
         return {
-            "canonical": {"object_name": "X", "module_kind": "Module", "source": "module_path"},
+            "canonical": {
+                "object_name": "X",
+                "module_kind": "Module",
+                "source": "module_path",
+            },
             "graph_modules": [{"name": "X", "fan_in": 10}],
             "entry_subroutines": 2,
             "total": 350,
@@ -43,7 +47,11 @@ class LowRiskStore:
 
     def module_impact(self, module_path, max_depth=5, max_edges=600):
         return {
-            "canonical": {"object_name": "Order", "module_kind": "ObjectModule", "source": "module_path"},
+            "canonical": {
+                "object_name": "Order",
+                "module_kind": "ObjectModule",
+                "source": "module_path",
+            },
             "graph_modules": [{"name": "Order", "fan_in": 1}],
             "entry_subroutines": 1,
             "total": 5,
@@ -57,7 +65,11 @@ class LowRiskStore:
 class NoGraphStore(LowRiskStore):
     def module_impact(self, module_path, max_depth=5, max_edges=600):
         return {
-            "canonical": {"object_name": "OrderForm", "module_kind": "FormModule", "source": "module_path"},
+            "canonical": {
+                "object_name": "OrderForm",
+                "module_kind": "FormModule",
+                "source": "module_path",
+            },
             "graph_modules": [],
             "entry_subroutines": 0,
             "total": 0,
@@ -144,4 +156,7 @@ def test_release_readiness_surfaces_unmeasured_impact(monkeypatch):
     assert report["personas"]["architect"]["unmeasured_impact_modules"] == 1
     assert report["change_plan"]["modules"][0]["impact_measured"] is False
     assert "Unmeasured impact modules: 1" in report["markdown"]
-    assert any(action["kind"] == "gate" and action["severity"] == "medium" for action in report["recommended_actions"])
+    assert any(
+        action["kind"] == "gate" and action["severity"] == "medium"
+        for action in report["recommended_actions"]
+    )

@@ -1,4 +1,3 @@
-
 """
 Pytest Configuration
 Общие fixtures и настройки для всех тестов

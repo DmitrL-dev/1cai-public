@@ -13,7 +13,7 @@ import sys
 import pytest
 
 sys.path.insert(0, r"C:\1cAI\tools")
-from rentgen.store import get_store, RentgenStore, DB_PATH  # noqa: E402
+from rentgen.store import DB_PATH, RentgenStore, get_store  # noqa: E402
 
 pytestmark = pytest.mark.skipif(not DB_PATH.exists(), reason="rentgen.db not built")
 
@@ -55,9 +55,9 @@ def test_get_stats_magnitudes_and_top_fan_in(store):
     )
 
     # #1 by fan_in must be a common (1-segment) module name — no '.' in name.
-    assert "." not in top[0]["name"], (
-        f"top fan-in module should be a 1-segment name, got {top[0]['name']!r}"
-    )
+    assert (
+        "." not in top[0]["name"]
+    ), f"top fan-in module should be a 1-segment name, got {top[0]['name']!r}"
 
 
 # --------------------------------------------------------------------------- #
@@ -88,9 +88,9 @@ def test_worst_returns_sorted_dicts(store):
             assert key in r, f"worst() row missing key {key!r}"
 
     scores = [r["maintainability_score"] for r in rows]
-    assert scores == sorted(scores), (
-        f"maintainability_score should be non-decreasing across worst(); got {scores}"
-    )
+    assert scores == sorted(
+        scores
+    ), f"maintainability_score should be non-decreasing across worst(); got {scores}"
 
 
 # --------------------------------------------------------------------------- #
@@ -101,9 +101,9 @@ def test_search_filters_by_substring(store):
 
     assert isinstance(rows, list)
     assert len(rows) > 0, "search('Module') should be non-empty"
-    assert all("Module" in r["module_path"] for r in rows), (
-        "every search result module_path should contain the query substring"
-    )
+    assert all(
+        "Module" in r["module_path"] for r in rows
+    ), "every search result module_path should contain the query substring"
 
 
 # --------------------------------------------------------------------------- #
@@ -161,9 +161,9 @@ def test_hotspots_explainable_and_sorted(store):
     assert all(isinstance(r, dict) for r in rows)
 
     # risk bounded to 0..100
-    assert all(0 <= r["risk"] <= 100 for r in rows), (
-        f"risk out of 0..100: {[r['risk'] for r in rows]}"
-    )
+    assert all(
+        0 <= r["risk"] <= 100 for r in rows
+    ), f"risk out of 0..100: {[r['risk'] for r in rows]}"
 
     # risk sorted descending (non-increasing)
     risks = [r["risk"] for r in rows]
@@ -172,9 +172,9 @@ def test_hotspots_explainable_and_sorted(store):
     # each row has a non-empty, structured reasons list
     for r in rows:
         reasons = r["reasons"]
-        assert isinstance(reasons, list) and len(reasons) > 0, (
-            f"hotspot {r['module_path']!r} has empty reasons"
-        )
+        assert (
+            isinstance(reasons, list) and len(reasons) > 0
+        ), f"hotspot {r['module_path']!r} has empty reasons"
         for reason in reasons:
             for key in ("factor", "detail", "weight"):
                 assert key in reason, f"reason missing key {key!r}: {reason}"
@@ -187,7 +187,9 @@ def test_impact_analysis_of_heavily_called_bsp_function(store):
     edges = store.get_impact_analysis("ЗначениеРеквизитаОбъекта")
 
     assert isinstance(edges, list)
-    assert len(edges) > 0, "impact analysis of a heavily-called BSP fn should be non-empty"
+    assert (
+        len(edges) > 0
+    ), "impact analysis of a heavily-called BSP fn should be non-empty"
 
     for edge in edges:
         for key in ("caller", "caller_module", "callee", "callee_module", "depth"):

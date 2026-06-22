@@ -28,7 +28,6 @@ if _generated_dir not in sys.path:
 
 try:
     from antlr4 import CommonTokenStream, InputStream  # type: ignore[import-untyped]
-
     from BSLLexer import BSLLexer  # type: ignore[import-not-found]
     from BSLParser import BSLParser  # type: ignore[import-not-found]
     from BSLParserVisitor import BSLParserVisitor  # type: ignore[import-not-found]

@@ -1,12 +1,14 @@
 """Tests for OneCCodeGraphBuilder (Рентген core)."""
 
 import json
-import pytest
 from pathlib import Path
+
+import pytest
+
 from src.ai.code_graph_1c_builder import (
-    OneCCodeGraphBuilder,
     BslFunction,
     EventSubscription,
+    OneCCodeGraphBuilder,
 )
 
 # === BSL Code Fixtures ===

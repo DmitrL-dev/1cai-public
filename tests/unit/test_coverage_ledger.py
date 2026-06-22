@@ -22,16 +22,31 @@ def test_coverage_ledger_combines_executive_intake_and_platform_caveats():
             "risk_summary": {"high_hotspots": 1},
         },
         intake={
-            "decision": {"status": "partial", "score": 55, "headline": "Partial source"},
+            "decision": {
+                "status": "partial",
+                "score": 55,
+                "headline": "Partial source",
+            },
             "coverage": [
                 {"id": "bsl", "title": "BSL", "status": "ready", "count": 5},
-                {"id": "rights", "title": "Rights", "status": "missing", "count": 0, "caveat": "Rights missing"},
+                {
+                    "id": "rights",
+                    "title": "Rights",
+                    "status": "missing",
+                    "count": 0,
+                    "caveat": "Rights missing",
+                },
             ],
         },
         platform={
             "decision": {"status": "risk", "score": 58, "headline": "Platform risk"},
             "checks": [
-                {"id": "platform-version", "title": "Platform version", "status": "warn", "action": "Set version"},
+                {
+                    "id": "platform-version",
+                    "title": "Platform version",
+                    "status": "warn",
+                    "action": "Set version",
+                },
             ],
         },
     )

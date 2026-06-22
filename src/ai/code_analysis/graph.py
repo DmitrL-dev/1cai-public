@@ -1,4 +1,3 @@
-
 """
 Unified Change Graph (experimental)
 -----------------------------------
@@ -167,7 +166,7 @@ class CodeGraphBackend:
 
     async def upsert_node(self, node: Node) -> None:  # pragma: no cover - интерфейс
         """Create or replace a graph node.
-        
+
         Args:
             node: Node payload with stable id, kind, labels and properties.
         """
@@ -175,7 +174,7 @@ class CodeGraphBackend:
 
     async def upsert_edge(self, edge: Edge) -> None:  # pragma: no cover - интерфейс
         """Create or replace a directed edge between existing nodes.
-        
+
         Args:
             edge: Directed relationship payload.
         """
@@ -183,10 +182,10 @@ class CodeGraphBackend:
 
     async def get_node(self, node_id: str) -> Optional[Node]:  # pragma: no cover
         """Return a node by id when it exists.
-        
+
         Args:
             node_id: Stable node identifier.
-        
+
         Returns:
             Matching node or None.
         """
@@ -196,11 +195,11 @@ class CodeGraphBackend:
         self, node_id: str, *, kinds: Optional[Iterable[EdgeKind]] = None
     ) -> List[Node]:  # pragma: no cover
         """Return outbound neighbor nodes for a node.
-        
+
         Args:
             node_id: Source node identifier.
             kinds: Optional edge-kind filter.
-        
+
         Returns:
             Neighbor nodes reachable through matching outbound edges.
         """
@@ -214,7 +213,7 @@ class CodeGraphBackend:
         prop_equals: Optional[Dict[str, Any]] = None,
     ) -> List[Node]:  # pragma: no cover
         """Find nodes by kind, label and exact property matches.
-        
+
         Returns:
             Nodes matching all supplied filters.
         """
@@ -237,7 +236,7 @@ class InMemoryCodeGraphBackend(CodeGraphBackend):
 
     async def upsert_node(self, node: Node) -> None:
         """Create or replace a node by id.
-        
+
         Args:
             node: Node payload to store.
         """
@@ -245,7 +244,7 @@ class InMemoryCodeGraphBackend(CodeGraphBackend):
 
     async def upsert_edge(self, edge: Edge) -> None:
         """Add an edge when both endpoint nodes are present.
-        
+
         Args:
             edge: Directed relationship payload.
         """
@@ -256,10 +255,10 @@ class InMemoryCodeGraphBackend(CodeGraphBackend):
 
     async def get_node(self, node_id: str) -> Optional[Node]:
         """Return a node by id when it exists.
-        
+
         Args:
             node_id: Stable node identifier.
-        
+
         Returns:
             Matching node or None.
         """
@@ -269,11 +268,11 @@ class InMemoryCodeGraphBackend(CodeGraphBackend):
         self, node_id: str, *, kinds: Optional[Iterable[EdgeKind]] = None
     ) -> List[Node]:
         """Return outbound neighbors for a node.
-        
+
         Args:
             node_id: Source node identifier.
             kinds: Optional edge-kind filter.
-        
+
         Returns:
             Neighbor nodes stored in this graph.
         """
@@ -294,7 +293,7 @@ class InMemoryCodeGraphBackend(CodeGraphBackend):
         prop_equals: Optional[Dict[str, Any]] = None,
     ) -> List[Node]:
         """Find nodes by kind, label and exact property filters.
-        
+
         Returns:
             Nodes matching all supplied filters.
         """

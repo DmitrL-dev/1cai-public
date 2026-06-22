@@ -1,4 +1,3 @@
-
 """
 API для импорта данных в базу знаний из различных источников.
 
@@ -30,7 +29,8 @@ class ImportRequest(BaseModel):
     config_name: str = Field(..., description="Название конфигурации")
     source: str = Field(default="manual", description="Источник данных")
     overwrite: bool = Field(
-        default=False, description="Перезаписать существующие данные")
+        default=False, description="Перезаписать существующие данные"
+    )
 
 
 class ModuleImport(BaseModel):
@@ -66,7 +66,9 @@ class BulkImportRequest(BaseModel):
 
 # Эндпоинты
 @router.post("/import/json")
-async def import_from_json(config_name: str, file: UploadFile = File(...), overwrite: bool = False) -> Dict[str, Any]:
+async def import_from_json(
+    config_name: str, file: UploadFile = File(...), overwrite: bool = False
+) -> Dict[str, Any]:
     """Импортирует данные из JSON файла.
 
     Args:
@@ -90,25 +92,35 @@ async def import_from_json(config_name: str, file: UploadFile = File(...), overw
         if "modules" in data:
             for module in data["modules"]:
                 kb.add_module_documentation(
-                    config_name=config_name, module_name=module.get("name", ""), documentation=module
+                    config_name=config_name,
+                    module_name=module.get("name", ""),
+                    documentation=module,
                 )
                 modules_count += 1
 
         if "best_practices" in data:
             for practice in data["best_practices"]:
                 kb.add_best_practice(
-                    config_name=config_name, category=practice.get("category", "general"), practice=practice
+                    config_name=config_name,
+                    category=practice.get("category", "general"),
+                    practice=practice,
                 )
                 practices_count += 1
 
-        return {"success": True, "modules_imported": modules_count, "best_practices_imported": practices_count}
+        return {
+            "success": True,
+            "modules_imported": modules_count,
+            "best_practices_imported": practices_count,
+        }
     except Exception as e:
         logger.error(f"Error importing from JSON: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/import/csv")
-async def import_from_csv(config_name: str, file: UploadFile = File(...), type: str = "modules") -> Dict[str, Any]:
+async def import_from_csv(
+    config_name: str, file: UploadFile = File(...), type: str = "modules"
+) -> Dict[str, Any]:
     """Импортирует данные из CSV файла.
 
     Args:
@@ -131,10 +143,16 @@ async def import_from_csv(config_name: str, file: UploadFile = File(...), type: 
         for row in reader:
             if type == "modules":
                 kb.add_module_documentation(
-                    config_name=config_name, module_name=row.get("name", ""), documentation=row)
+                    config_name=config_name,
+                    module_name=row.get("name", ""),
+                    documentation=row,
+                )
             elif type == "best_practices":
-                kb.add_best_practice(config_name=config_name, category=row.get(
-                    "category", "general"), practice=row)
+                kb.add_best_practice(
+                    config_name=config_name,
+                    category=row.get("category", "general"),
+                    practice=row,
+                )
             count += 1
 
         return {"success": True, "imported": count}
@@ -160,18 +178,26 @@ async def bulk_import(request: BulkImportRequest) -> Dict[str, Any]:
         modules_count = 0
         for module in request.modules:
             kb.add_module_documentation(
-                config_name=request.config_name, module_name=module.name, documentation=module.model_dump()
+                config_name=request.config_name,
+                module_name=module.name,
+                documentation=module.model_dump(),
             )
             modules_count += 1
 
         practices_count = 0
         for practice in request.best_practices:
             kb.add_best_practice(
-                config_name=request.config_name, category=practice.category, practice=practice.model_dump()
+                config_name=request.config_name,
+                category=practice.category,
+                practice=practice.model_dump(),
             )
             practices_count += 1
 
-        return {"success": True, "modules_imported": modules_count, "best_practices_imported": practices_count}
+        return {
+            "success": True,
+            "modules_imported": modules_count,
+            "best_practices_imported": practices_count,
+        }
     except Exception as e:
         logger.error(f"Error in bulk import: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -186,8 +212,12 @@ async def download_json_template() -> StreamingResponse:
     """
     template = {
         "modules": [
-            {"name": "ОбщийМодуль_Пример", "description": "Описание модуля",
-                "code": "// Код модуля", "functions": []}
+            {
+                "name": "ОбщийМодуль_Пример",
+                "description": "Описание модуля",
+                "code": "// Код модуля",
+                "functions": [],
+            }
         ],
         "best_practices": [
             {

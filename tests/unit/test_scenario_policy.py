@@ -1,4 +1,3 @@
-
 """
 Unit tests for Scenario Policy (experimental).
 """

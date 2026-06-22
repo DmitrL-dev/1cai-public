@@ -46,7 +46,9 @@ class AnalyticsService:
         self._metrics_data[component].append(metric_entry)
         logger.debug("Metric collected: %s.{metric_type.value} = {value}", component)
 
-    def analyze_performance(self, component: str, period_days: int = 7) -> Dict[str, Any]:
+    def analyze_performance(
+        self, component: str, period_days: int = 7
+    ) -> Dict[str, Any]:
         """Анализирует производительность компонента за период.
 
         Args:
@@ -62,7 +64,8 @@ class AnalyticsService:
         recent_metrics = [
             m
             for m in metrics
-            if datetime.fromisoformat(m["timestamp"]) >= cutoff and m["type"] == MetricType.PERFORMANCE.value
+            if datetime.fromisoformat(m["timestamp"]) >= cutoff
+            and m["type"] == MetricType.PERFORMANCE.value
         ]
 
         if not recent_metrics:
@@ -121,11 +124,13 @@ class AnalyticsService:
 
         # Collect metrics
         metrics = self._metrics_data.get(component, [])
-        recent = [m for m in metrics if datetime.fromisoformat(
-            m["timestamp"]) >= cutoff]
+        recent = [
+            m for m in metrics if datetime.fromisoformat(m["timestamp"]) >= cutoff
+        ]
 
         performance_improvement = self._calculate_improvement(
-            recent, MetricType.PERFORMANCE)
+            recent, MetricType.PERFORMANCE
+        )
         quality_improvement = self._calculate_improvement(recent, MetricType.QUALITY)
         cost_metrics = [m for m in recent if m["type"] == MetricType.COST.value]
         estimated_costs = sum(m["value"] for m in cost_metrics)
@@ -146,7 +151,9 @@ class AnalyticsService:
             ),
         }
 
-    def _calculate_improvement(self, metrics: List[Dict[str, Any]], metric_type: MetricType) -> float:
+    def _calculate_improvement(
+        self, metrics: List[Dict[str, Any]], metric_type: MetricType
+    ) -> float:
         """Рассчитывает процент улучшения для типа метрики."""
         type_metrics = [m for m in metrics if m["type"] == metric_type.value]
 
@@ -164,7 +171,9 @@ class AnalyticsService:
             return (avg_second - avg_first) / avg_first
         return 0.0
 
-    def _estimate_cost_savings(self, performance_improvement: float, quality_improvement: float) -> float:
+    def _estimate_cost_savings(
+        self, performance_improvement: float, quality_improvement: float
+    ) -> float:
         """Оценивает экономию затрат на основе улучшений."""
         logger.warning(
             "Cost savings requested without calibrated value model: perf=%s quality=%s",
@@ -208,7 +217,8 @@ class AnalyticsService:
             # Generate Insights
             if perf_analysis.get("trend") == "improving":
                 insights.append(
-                    f"{component}: Performance is improving ({perf_analysis.get('trend', 'unknown')})")
+                    f"{component}: Performance is improving ({perf_analysis.get('trend', 'unknown')})"
+                )
 
             if roi_analysis.get("roi_percent", 0) > 0:
                 recommendations.append(

@@ -2,8 +2,10 @@
 Unit tests for ArchiExporter
 """
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
+
 from src.exporters.archi_exporter import ArchiExporter
 
 
@@ -75,7 +77,13 @@ class TestArchiExporter:
 
     def test_create_relationship_with_valid_data(self, exporter):
         """Test relationship creation"""
-        rel = {"id": 456, "source_id": 123, "target_id": 789, "type": "DEPENDS_ON", "properties": {}}
+        rel = {
+            "id": 456,
+            "source_id": 123,
+            "target_id": 789,
+            "type": "DEPENDS_ON",
+            "properties": {},
+        }
 
         element_map = {123: "elem_123", 789: "elem_789"}
 
@@ -88,7 +96,12 @@ class TestArchiExporter:
 
     def test_create_relationship_missing_elements(self, exporter):
         """Test relationship creation with missing elements"""
-        rel = {"id": 456, "source_id": 999, "target_id": 789, "type": "DEPENDS_ON"}  # Not in element_map
+        rel = {
+            "id": 456,
+            "source_id": 999,
+            "target_id": 789,
+            "type": "DEPENDS_ON",
+        }  # Not in element_map
 
         element_map = {789: "elem_789"}
 

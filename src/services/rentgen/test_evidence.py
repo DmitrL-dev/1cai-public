@@ -4,15 +4,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import xml.etree.ElementTree as ET
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-import xml.etree.ElementTree as ET
 
 from src.services.audit_log import record_event
 from src.services.rentgen import artifact_graph
-
 
 ROOT = Path(__file__).resolve().parents[3]
 STORE_PATH = ROOT / "data" / "test_runs.json"
@@ -49,7 +48,9 @@ def _write(items: list[dict[str, Any]], path: Path | None = None) -> None:
     target = path or STORE_PATH
     target.parent.mkdir(parents=True, exist_ok=True)
     tmp = target.with_suffix(target.suffix + ".tmp")
-    tmp.write_text(json.dumps({"items": items}, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.write_text(
+        json.dumps({"items": items}, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     tmp.replace(target)
 
 
@@ -57,7 +58,9 @@ def _audit_path(path: Path | None = None) -> Path:
     return (path or STORE_PATH).parent / "audit_log.ndjson"
 
 
-def _audit(action: str, *, target: str, metadata: dict[str, Any], path: Path | None = None) -> None:
+def _audit(
+    action: str, *, target: str, metadata: dict[str, Any], path: Path | None = None
+) -> None:
     try:
         record_event(
             action=action,
@@ -70,7 +73,9 @@ def _audit(action: str, *, target: str, metadata: dict[str, Any], path: Path | N
         return
 
 
-def _artifact_path_for_store(path: Path | None, artifact_path: Path | None) -> Path | None:
+def _artifact_path_for_store(
+    path: Path | None, artifact_path: Path | None
+) -> Path | None:
     if artifact_path is not None:
         return artifact_path
     if path is not None:
@@ -120,8 +125,12 @@ def record_test_run(
     created_at = _now()
     normalized_results = [
         {
-            "id": _clean(item.get("id") or item.get("name") or item.get("selector"), limit=260),
-            "name": _clean(item.get("name") or item.get("selector") or item.get("id"), limit=260),
+            "id": _clean(
+                item.get("id") or item.get("name") or item.get("selector"), limit=260
+            ),
+            "name": _clean(
+                item.get("name") or item.get("selector") or item.get("id"), limit=260
+            ),
             "framework": _clean(item.get("framework") or framework, limit=80),
             "status": _clean(item.get("status") or "unknown", limit=40).lower(),
             "duration_ms": _float(item.get("duration_ms")),
@@ -132,7 +141,8 @@ def record_test_run(
     ]
     summary = _summary(normalized_results)
     record = {
-        "id": run_id or _id("trun", {"title": title, "framework": framework, "at": created_at}),
+        "id": run_id
+        or _id("trun", {"title": title, "framework": framework, "at": created_at}),
         "title": _clean(title, limit=240),
         "framework": _clean(framework, limit=80),
         "status": summary["status"],
@@ -148,19 +158,27 @@ def record_test_run(
     items = [item for item in _load(path) if item.get("id") != record["id"]]
     items.insert(0, record)
     _write(items[:500], path)
-    record["artifact_sync"] = sync_test_run_to_artifacts(record, artifact_path=_artifact_path_for_store(path, artifact_path))
+    record["artifact_sync"] = sync_test_run_to_artifacts(
+        record, artifact_path=_artifact_path_for_store(path, artifact_path)
+    )
     items[0] = record
     _write(items[:500], path)
     _audit(
         "test.run.record",
         target=record["id"],
-        metadata={"status": record["status"], "framework": record["framework"], "change_set_id": record.get("change_set_id")},
+        metadata={
+            "status": record["status"],
+            "framework": record["framework"],
+            "change_set_id": record.get("change_set_id"),
+        },
         path=path,
     )
     return record
 
 
-def sync_test_run_to_artifacts(record: dict[str, Any], *, artifact_path: Path | None = None) -> dict[str, Any]:
+def sync_test_run_to_artifacts(
+    record: dict[str, Any], *, artifact_path: Path | None = None
+) -> dict[str, Any]:
     sync = {"artifact_id": record["id"], "artifacts": 1, "links": 0, "errors": []}
     try:
         artifact_graph.create_artifact(
@@ -180,7 +198,9 @@ def sync_test_run_to_artifacts(record: dict[str, Any], *, artifact_path: Path | 
             },
             path=artifact_path,
         )
-        if record.get("change_set_id") and artifact_graph.get_artifact(record["change_set_id"], path=artifact_path):
+        if record.get("change_set_id") and artifact_graph.get_artifact(
+            record["change_set_id"], path=artifact_path
+        ):
             artifact_graph.link_artifacts(
                 source_id=record["change_set_id"],
                 target_id=record["id"],
@@ -243,7 +263,9 @@ def import_junit_xml(
     """Import JUnit XML content into the test evidence store."""
 
     root = ET.fromstring(xml_text)
-    cases = [element for element in root.iter() if _local_name(element.tag) == "testcase"]
+    cases = [
+        element for element in root.iter() if _local_name(element.tag) == "testcase"
+    ]
     results = []
     for case in cases:
         name = case.attrib.get("name") or case.attrib.get("classname") or "testcase"
@@ -282,14 +304,24 @@ def import_junit_xml(
     )
 
 
-def list_test_runs(*, status: str | None = None, change_set_id: str | None = None, limit: int = 100, path: Path | None = None) -> dict[str, Any]:
+def list_test_runs(
+    *,
+    status: str | None = None,
+    change_set_id: str | None = None,
+    limit: int = 100,
+    path: Path | None = None,
+) -> dict[str, Any]:
     items = _load(path)
     if status:
         items = [item for item in items if item.get("status") == status]
     if change_set_id:
         items = [item for item in items if item.get("change_set_id") == change_set_id]
     items.sort(key=lambda item: item.get("created_at", ""), reverse=True)
-    return {"items": items[: max(1, limit)], "total": len(items), "path": str(path or STORE_PATH)}
+    return {
+        "items": items[: max(1, limit)],
+        "total": len(items),
+        "path": str(path or STORE_PATH),
+    }
 
 
 def get_test_run(run_id: str, *, path: Path | None = None) -> dict[str, Any] | None:
@@ -299,7 +331,9 @@ def get_test_run(run_id: str, *, path: Path | None = None) -> dict[str, Any] | N
     return None
 
 
-def summarize_test_evidence(*, change_set_id: str | None = None, path: Path | None = None) -> dict[str, Any]:
+def summarize_test_evidence(
+    *, change_set_id: str | None = None, path: Path | None = None
+) -> dict[str, Any]:
     """Summarize stored test-run evidence for policy and release gates."""
 
     items = _load(path)
@@ -307,9 +341,12 @@ def summarize_test_evidence(*, change_set_id: str | None = None, path: Path | No
         items = [item for item in items if item.get("change_set_id") == change_set_id]
     items.sort(key=lambda item: item.get("created_at", ""), reverse=True)
     counts = Counter(str(item.get("status") or "unknown") for item in items)
-    total_results = sum(int((item.get("summary") or {}).get("total") or 0) for item in items)
+    total_results = sum(
+        int((item.get("summary") or {}).get("total") or 0) for item in items
+    )
     failed_results = sum(
-        int((item.get("summary") or {}).get("failed") or 0) + int((item.get("summary") or {}).get("error") or 0)
+        int((item.get("summary") or {}).get("failed") or 0)
+        + int((item.get("summary") or {}).get("error") or 0)
         for item in items
     )
     latest = items[0] if items else None

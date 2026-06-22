@@ -23,7 +23,6 @@ from src.services.rentgen.metadata_insights import (
     security_review,
 )
 
-
 SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2, "info": 3}
 
 
@@ -122,8 +121,12 @@ def _metadata_surface(plan: dict[str, Any]) -> dict[str, Any]:
         "summary": {
             "objects": len(objects),
             "found": sum(1 for item in objects if item.get("found")),
-            "forms": sum(int((item.get("counts") or {}).get("forms") or 0) for item in objects),
-            "rights": sum(int((item.get("counts") or {}).get("rights") or 0) for item in objects),
+            "forms": sum(
+                int((item.get("counts") or {}).get("forms") or 0) for item in objects
+            ),
+            "rights": sum(
+                int((item.get("counts") or {}).get("rights") or 0) for item in objects
+            ),
             "references": sum(len(item.get("references") or []) for item in objects),
         },
     }
@@ -136,7 +139,11 @@ def _form_reviews_for_metadata(
     object_limit: int,
 ) -> dict[str, Any]:
     if not enabled:
-        return {"included": False, "items": [], "summary": {"objects": 0, "forms": 0, "findings": 0}}
+        return {
+            "included": False,
+            "items": [],
+            "summary": {"objects": 0, "forms": 0, "findings": 0},
+        }
 
     items: list[dict[str, Any]] = []
     for obj in metadata.get("objects", []):
@@ -147,7 +154,14 @@ def _form_reviews_for_metadata(
         try:
             review = review_forms(obj["ref"])
         except ValueError as exc:
-            items.append({"identifier": obj["identifier"], "error": str(exc), "forms": [], "summary": {"findings": 0}})
+            items.append(
+                {
+                    "identifier": obj["identifier"],
+                    "error": str(exc),
+                    "forms": [],
+                    "summary": {"findings": 0},
+                }
+            )
             continue
         items.append(review)
 
@@ -156,8 +170,13 @@ def _form_reviews_for_metadata(
         "items": items,
         "summary": {
             "objects": len(items),
-            "forms": sum(int((item.get("summary") or {}).get("forms_reviewed") or 0) for item in items),
-            "findings": sum(int((item.get("summary") or {}).get("findings") or 0) for item in items),
+            "forms": sum(
+                int((item.get("summary") or {}).get("forms_reviewed") or 0)
+                for item in items
+            ),
+            "findings": sum(
+                int((item.get("summary") or {}).get("findings") or 0) for item in items
+            ),
         },
     }
 
@@ -219,7 +238,11 @@ def _recommended_actions(
     actions: list[dict[str, Any]] = []
 
     for violation in gate.get("violations", [])[:20]:
-        severity = "medium" if violation.get("severity") == "warning" else str(violation.get("severity") or "high")
+        severity = (
+            "medium"
+            if violation.get("severity") == "warning"
+            else str(violation.get("severity") or "high")
+        )
         actions.append(
             {
                 "owner": "lead",
@@ -276,7 +299,9 @@ def _recommended_actions(
                 "kind": "tests",
                 "title": "Confirm or add exact YAxUnit/Vanessa mapping for this change",
                 "target": None,
-                "details": {"test_summary": {k: v for k, v in tests.items() if k != "items"}},
+                "details": {
+                    "test_summary": {k: v for k, v in tests.items() if k != "items"}
+                },
             }
         )
 
@@ -327,7 +352,9 @@ def _decision(
     penalty += 20 * len(blockers)
     penalty += 8 * len(warnings)
     penalty += 4 * int(gate.get("summary", {}).get("violation_count") or 0)
-    penalty += 8 * standards_counts.get("high", 0) + 3 * standards_counts.get("medium", 0)
+    penalty += 8 * standards_counts.get("high", 0) + 3 * standards_counts.get(
+        "medium", 0
+    )
     penalty += 5 * form_counts.get("medium", 0) + 10 * form_counts.get("high", 0)
     penalty += 8 * security_counts.get("high", 0) + 3 * security_counts.get("medium", 0)
 
@@ -364,7 +391,9 @@ def _persona_summaries(
                 "hotspots": len(item.get("impacted_hotspots") or []),
             }
         )
-    module_risks.sort(key=lambda item: (item["risk"], item["impact_total"]), reverse=True)
+    module_risks.sort(
+        key=lambda item: (item["risk"], item["impact_total"]), reverse=True
+    )
 
     return {
         "developer": {
@@ -388,7 +417,9 @@ def _persona_summaries(
         "security": {
             "included": security is not None,
             "findings": (security or {}).get("summary", {}).get("findings", 0),
-            "dangerous_rights": (security or {}).get("summary", {}).get("dangerous_rights", 0),
+            "dangerous_rights": (security or {})
+            .get("summary", {})
+            .get("dangerous_rights", 0),
         },
         "manager": {
             "status": decision["status"],
@@ -436,7 +467,9 @@ def render_release_markdown(report: dict[str, Any]) -> str:
         lines.extend(["## Recommended Actions", ""])
         for action in report["recommended_actions"][:20]:
             target = f" `{action['target']}`" if action.get("target") else ""
-            lines.append(f"- **{action['owner']}** [{action['severity']}] {action['title']}{target}")
+            lines.append(
+                f"- **{action['owner']}** [{action['severity']}] {action['title']}{target}"
+            )
         lines.append("")
 
     lines.append(render_markdown_report(report["change_plan"], report["gate"]))
@@ -482,7 +515,9 @@ def build_release_readiness(
     standards_counts = _severity_counts(standards_findings)
 
     metadata = _metadata_surface(plan)
-    metadata_diff = diff_metadata_snapshot(snapshot_id, limit=100) if snapshot_id else None
+    metadata_diff = (
+        diff_metadata_snapshot(snapshot_id, limit=100) if snapshot_id else None
+    )
     form_reviews = _form_reviews_for_metadata(
         metadata,
         enabled=include_forms,
@@ -511,7 +546,8 @@ def build_release_readiness(
     )
 
     report: dict[str, Any] = {
-        "release_name": release_name or f"release-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}",
+        "release_name": release_name
+        or f"release-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}",
         "generated_at": _now(),
         "decision": decision,
         "summary": {
@@ -519,10 +555,14 @@ def build_release_readiness(
             "total_impact_edges": plan.get("total_impact_edges", 0),
             "total_impacted_modules": plan.get("total_impacted_modules", 0),
             "unmeasured_impact_modules": len(plan.get("unmeasured_modules") or []),
-            "gate_violations": int((gate.get("summary") or {}).get("violation_count") or 0),
+            "gate_violations": int(
+                (gate.get("summary") or {}).get("violation_count") or 0
+            ),
             "standards_findings": len(standards_findings),
             "form_findings": len(form_findings),
-            "security_findings": int((security or {}).get("summary", {}).get("findings") or 0),
+            "security_findings": int(
+                (security or {}).get("summary", {}).get("findings") or 0
+            ),
             "test_actions": tests.get("total", 0),
             "metadata_objects": metadata.get("summary", {}).get("found", 0),
         },

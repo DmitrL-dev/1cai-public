@@ -1,6 +1,6 @@
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-import pytest
 
 from src.ai.mcp.server import (
     TOOLS,
@@ -10,7 +10,6 @@ from src.ai.mcp.server import (
 )
 from src.api.testing_api import router
 from src.services.rentgen import artifact_graph, test_evidence
-
 
 JUNIT_XML = """
 <testsuite xmlns="urn:junit" name="Sales">
@@ -40,8 +39,18 @@ def test_record_test_run_links_change_set_and_cases(tmp_path):
         change_set_id="CHG-TEST",
         command="vrunner xunit --settings xunit.json",
         results=[
-            {"id": "SalesSuite::posts_order", "name": "posts_order", "status": "PASSED", "duration_ms": "12.5"},
-            {"id": "SalesSuite::rejects_bad_limit", "name": "rejects_bad_limit", "status": "failed", "duration_ms": "bad"},
+            {
+                "id": "SalesSuite::posts_order",
+                "name": "posts_order",
+                "status": "PASSED",
+                "duration_ms": "12.5",
+            },
+            {
+                "id": "SalesSuite::rejects_bad_limit",
+                "name": "rejects_bad_limit",
+                "status": "failed",
+                "duration_ms": "bad",
+            },
         ],
         evidence=[{"kind": "stdout", "path": "artifacts/xunit.log"}],
         path=store_path,
@@ -101,7 +110,9 @@ def test_testing_api_records_lists_details_and_imports(tmp_path, monkeypatch):
         "/api/v1/testing/runs/import-junit",
         json={"xml_text": JUNIT_XML, "title": "Imported JUnit"},
     )
-    bad_import = client.post("/api/v1/testing/runs/import", json={"xml_text": "<broken"})
+    bad_import = client.post(
+        "/api/v1/testing/runs/import", json={"xml_text": "<broken"}
+    )
 
     assert created.status_code == 200
     assert created.json()["dry_run"] is True
@@ -127,7 +138,9 @@ async def test_mcp_test_evidence_tools_are_registered_and_work(tmp_path, monkeyp
             "results": [{"id": "Smoke::ok", "name": "ok", "status": "passed"}],
         }
     )
-    imported = await handle_test_run_import_junit({"xml_text": JUNIT_XML, "title": "MCP JUnit"})
+    imported = await handle_test_run_import_junit(
+        {"xml_text": JUNIT_XML, "title": "MCP JUnit"}
+    )
     listing = await handle_test_run_list({"limit": 10})
 
     assert recorded["id"] == "TR-MCP"

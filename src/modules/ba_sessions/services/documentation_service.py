@@ -20,9 +20,7 @@ class DocumentationService:
     ) -> Dict[str, Any]:
         """Generate enablement plan"""
         try:
-            from src.ai.agents.business_analyst_agent import (
-                BusinessAnalystAgent,
-            )
+            from src.ai.agents.business_analyst_agent import BusinessAnalystAgent
 
             agent = BusinessAnalystAgent()
 
@@ -45,9 +43,7 @@ class DocumentationService:
     ) -> Dict[str, Any]:
         """Generate guide"""
         try:
-            from src.ai.agents.business_analyst_agent import (
-                BusinessAnalystAgent,
-            )
+            from src.ai.agents.business_analyst_agent import BusinessAnalystAgent
 
             agent = BusinessAnalystAgent()
 
@@ -70,9 +66,7 @@ class DocumentationService:
     ) -> Dict[str, Any]:
         """Generate presentation outline"""
         try:
-            from src.ai.agents.business_analyst_agent import (
-                BusinessAnalystAgent,
-            )
+            from src.ai.agents.business_analyst_agent import BusinessAnalystAgent
 
             agent = BusinessAnalystAgent()
 
@@ -94,9 +88,7 @@ class DocumentationService:
     ) -> Dict[str, Any]:
         """Generate onboarding checklist"""
         try:
-            from src.ai.agents.business_analyst_agent import (
-                BusinessAnalystAgent,
-            )
+            from src.ai.agents.business_analyst_agent import BusinessAnalystAgent
 
             agent = BusinessAnalystAgent()
 

@@ -16,7 +16,6 @@ from src.services.audit_log import (
     verify_chain,
 )
 
-
 router = APIRouter(prefix="/api/v1/audit", tags=["Audit"])
 
 
@@ -40,11 +39,20 @@ def events(
 ) -> dict[str, Any]:
     """List product audit events newest first."""
 
-    return list_events(actor=actor, action=action, category=category, target=target, since=since, limit=limit)
+    return list_events(
+        actor=actor,
+        action=action,
+        category=category,
+        target=target,
+        since=since,
+        limit=limit,
+    )
 
 
 @router.get("/export")
-def export(format: str = Query(default="jsonl", pattern="^(jsonl|json)$")) -> dict[str, Any]:
+def export(
+    format: str = Query(default="jsonl", pattern="^(jsonl|json)$")
+) -> dict[str, Any]:
     """Export product audit log content."""
 
     try:

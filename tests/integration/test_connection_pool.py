@@ -1,4 +1,3 @@
-
 """
 Integration tests for ConnectionPool with AI clients.
 """

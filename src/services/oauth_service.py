@@ -1,4 +1,3 @@
-
 """
 OAuth Service для 1C AI Stack
 ==============================
@@ -20,11 +19,11 @@ from datetime import datetime, timedelta
 from typing import Dict, Optional
 from urllib.parse import urlencode
 
-from src.config import settings
-
 import asyncpg
 import httpx
 from cryptography.fernet import Fernet
+
+from src.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +36,7 @@ class OAuthService:
         # Ключ шифрования токенов
         encryption_key = settings.oauth_encryption_key
         if not encryption_key:
-            raise ValueError(
-                "OAUTH_ENCRYPTION_KEY не установлен в конфигурации")
+            raise ValueError("OAUTH_ENCRYPTION_KEY не установлен в конфигурации")
 
         self.fernet = Fernet(encryption_key.encode())
 
@@ -77,7 +75,9 @@ class OAuthService:
             },
         }
 
-    async def get_authorization_url(self, provider: str, db: asyncpg.Connection, user_id: int) -> str:
+    async def get_authorization_url(
+        self, provider: str, db: asyncpg.Connection, user_id: int
+    ) -> str:
         """
         Сгенерировать OAuth authorization URL
 
@@ -127,7 +127,9 @@ class OAuthService:
         logger.info("Generated OAuth URL for %s, user_id={user_id}", provider)
         return url
 
-    async def exchange_code_for_token(self, provider: str, code: str, state: str, db: asyncpg.Connection) -> Dict:
+    async def exchange_code_for_token(
+        self, provider: str, code: str, state: str, db: asyncpg.Connection
+    ) -> Dict:
         """
         Обменять authorization code на access token
 
@@ -179,7 +181,8 @@ class OAuthService:
         await self._store_tokens(db, provider, user_id, token_data)
 
         logger.info(
-            f"Successfully exchanged code for token, provider={provider}, user_id={user_id}")
+            f"Successfully exchanged code for token, provider={provider}, user_id={user_id}"
+        )
 
         return {
             "provider": provider,
@@ -187,7 +190,9 @@ class OAuthService:
             "expires_in": token_data.get("expires_in", 3600),
         }
 
-    async def refresh_token(self, provider: str, user_id: int, db: asyncpg.Connection) -> Dict:
+    async def refresh_token(
+        self, provider: str, user_id: int, db: asyncpg.Connection
+    ) -> Dict:
         """
         Обновить access token используя refresh token
 
@@ -237,11 +242,14 @@ class OAuthService:
         await self._store_tokens(db, provider, user_id, token_data)
 
         logger.info(
-            f"Successfully refreshed token, provider={provider}, user_id={user_id}")
+            f"Successfully refreshed token, provider={provider}, user_id={user_id}"
+        )
 
         return token_data
 
-    async def get_valid_access_token(self, provider: str, user_id: int, db: asyncpg.Connection) -> str:
+    async def get_valid_access_token(
+        self, provider: str, user_id: int, db: asyncpg.Connection
+    ) -> str:
         """
         Получить валидный access token, обновить если нужно
 
@@ -265,7 +273,8 @@ class OAuthService:
         if datetime.utcnow() >= expires_at - timedelta(minutes=5):
             # Токен истёк или скоро истечёт, обновить
             logger.info(
-                f"Token expired, refreshing for provider={provider}, user_id={user_id}")
+                f"Token expired, refreshing for provider={provider}, user_id={user_id}"
+            )
             await self.refresh_token(provider, user_id, db)
             token_data = await self._get_token_data(db, provider, user_id)
 
@@ -273,7 +282,9 @@ class OAuthService:
         encrypted_token = token_data["access_token"]
         return self._decrypt_token(encrypted_token)
 
-    async def disconnect(self, provider: str, user_id: int, db: asyncpg.Connection) -> None:
+    async def disconnect(
+        self, provider: str, user_id: int, db: asyncpg.Connection
+    ) -> None:
         """
         Отключить OAuth провайдера (удалить токены)
 
@@ -295,7 +306,9 @@ class OAuthService:
         """Расшифровать токен"""
         return self.fernet.decrypt(encrypted_token.encode()).decode()
 
-    async def _store_state(self, db: asyncpg.Connection, state: str, provider: str, user_id: int) -> None:
+    async def _store_state(
+        self, db: asyncpg.Connection, state: str, provider: str, user_id: int
+    ) -> None:
         """Сохранить state в БД для CSRF защиты"""
         # State истекает через 10 минут
         expires_at = datetime.utcnow() + timedelta(minutes=10)
@@ -311,7 +324,9 @@ class OAuthService:
             expires_at,
         )
 
-    async def _verify_state(self, db: asyncpg.Connection, state: str, provider: str) -> Optional[int]:
+    async def _verify_state(
+        self, db: asyncpg.Connection, state: str, provider: str
+    ) -> Optional[int]:
         """
         Проверить state и вернуть user_id
 
@@ -338,7 +353,9 @@ class OAuthService:
 
         return user_id
 
-    async def _store_tokens(self, db: asyncpg.Connection, provider: str, user_id: int, token_data: Dict) -> None:
+    async def _store_tokens(
+        self, db: asyncpg.Connection, provider: str, user_id: int, token_data: Dict
+    ) -> None:
         """Сохранить токены в БД"""
         # Зашифровать токены
         access_token = self._encrypt_token(token_data["access_token"])
@@ -369,7 +386,9 @@ class OAuthService:
             expires_at,
         )
 
-    async def _get_token_data(self, db: asyncpg.Connection, provider: str, user_id: int) -> Optional[Dict]:
+    async def _get_token_data(
+        self, db: asyncpg.Connection, provider: str, user_id: int
+    ) -> Optional[Dict]:
         """Получить token data из БД"""
         row = await db.fetchrow(
             """
@@ -390,7 +409,9 @@ class OAuthService:
             "expires_at": row["expires_at"],
         }
 
-    async def _get_refresh_token(self, db: asyncpg.Connection, provider: str, user_id: int) -> Optional[str]:
+    async def _get_refresh_token(
+        self, db: asyncpg.Connection, provider: str, user_id: int
+    ) -> Optional[str]:
         """Получить refresh token из БД"""
         token_data = await self._get_token_data(db, provider, user_id)
         if not token_data or not token_data["refresh_token"]:
@@ -398,6 +419,12 @@ class OAuthService:
 
         return self._decrypt_token(token_data["refresh_token"])
 
-    async def _delete_tokens(self, db: asyncpg.Connection, provider: str, user_id: int) -> None:
+    async def _delete_tokens(
+        self, db: asyncpg.Connection, provider: str, user_id: int
+    ) -> None:
         """Удалить токены из БД"""
-        await db.execute("DELETE FROM oauth_tokens WHERE provider = $1 AND user_id = $2", provider, user_id)
+        await db.execute(
+            "DELETE FROM oauth_tokens WHERE provider = $1 AND user_id = $2",
+            provider,
+            user_id,
+        )

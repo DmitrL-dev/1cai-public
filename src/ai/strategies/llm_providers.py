@@ -188,4 +188,3 @@ class TabnineStrategy(AIStrategy):
             max_tokens=context.get("max_tokens", 2048),
             context=context.get("code_context"),
         )
-

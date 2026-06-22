@@ -26,8 +26,9 @@ class RiskDatabase:
     def update_status(self, risk_id: str, status: str) -> bool:
         if risk_id in self._risks:
             self._risks[risk_id].status = status
-            logger.info("Risk status updated", extra={
-                        "risk_id": risk_id, "status": status})
+            logger.info(
+                "Risk status updated", extra={"risk_id": risk_id, "status": status}
+            )
             return True
         return False
 
@@ -60,9 +61,15 @@ class RiskService:
         # Simple risk analysis logic (replace with ML model in production)
         risk_factors = {
             "complexity_score": len(requirements.split()) / 100,
-            "integration_points": (len(context.get("integrations", [])) if context else 0),
-            "data_migration": (context.get("data_migration", False) if context else False),
-            "legacy_systems": (len(context.get("legacy_systems", [])) if context else 0),
+            "integration_points": (
+                len(context.get("integrations", [])) if context else 0
+            ),
+            "data_migration": (
+                context.get("data_migration", False) if context else False
+            ),
+            "legacy_systems": (
+                len(context.get("legacy_systems", [])) if context else 0
+            ),
         }
 
         # Calculate total risk score
@@ -184,7 +191,12 @@ class RiskService:
         """Get risk metrics overview."""
         risks = self.db.list_all()
         if not risks:
-            return {"total_risks": 0, "by_impact": {}, "by_status": {}, "by_category": {}}
+            return {
+                "total_risks": 0,
+                "by_impact": {},
+                "by_status": {},
+                "by_category": {},
+            }
 
         by_category = {}
         for risk in risks:

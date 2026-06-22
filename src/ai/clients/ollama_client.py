@@ -1,4 +1,3 @@
-
 """
 Universal Ollama Client
 -----------------------

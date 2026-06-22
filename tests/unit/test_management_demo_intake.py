@@ -61,8 +61,14 @@ def test_demo_story_has_complete_role_reports_and_query_case():
     }
     assert story["query_surgeon_case"]["title"] == "LEFT JOIN без ЕстьNULL"
     assert len(story["role_reports"]) == 6
-    assert all(item["markdown"] and item["next_actions"] for item in story["role_reports"])
-    assert {item["role"] for item in story["role_reports"]} >= {"developer", "architect", "director"}
+    assert all(
+        item["markdown"] and item["next_actions"] for item in story["role_reports"]
+    )
+    assert {item["role"] for item in story["role_reports"]} >= {
+        "developer",
+        "architect",
+        "director",
+    }
     assert "Demo Story" in story["export"]["markdown"]
     assert "Coverage Ledger" in story["export"]["markdown"]
 
@@ -79,14 +85,18 @@ def test_intake_plan_detects_edt_source(tmp_path):
     (tmp_path / "Configuration.xml").write_text("<Configuration/>", encoding="utf-8")
     module = tmp_path / "CommonModules" / "Sales" / "Ext"
     module.mkdir(parents=True)
-    (module / "Module.bsl").write_text("Процедура X()\nКонецПроцедуры", encoding="utf-8")
+    (module / "Module.bsl").write_text(
+        "Процедура X()\nКонецПроцедуры", encoding="utf-8"
+    )
     form = tmp_path / "Documents" / "Order" / "Forms" / "MainForm"
     form.mkdir(parents=True)
     (form / "Form.xml").write_text("<Form/>", encoding="utf-8")
     rights = tmp_path / "Roles" / "Manager"
     rights.mkdir(parents=True)
     (rights / "Rights.xml").write_text("<Rights/>", encoding="utf-8")
-    (module / "SalesTest.bsl").write_text("Процедура Test()\nКонецПроцедуры", encoding="utf-8")
+    (module / "SalesTest.bsl").write_text(
+        "Процедура Test()\nКонецПроцедуры", encoding="utf-8"
+    )
 
     plan = build_intake_plan(str(tmp_path), "auto")
 
@@ -94,7 +104,10 @@ def test_intake_plan_detects_edt_source(tmp_path):
     assert plan["decision"]["status"] == "ready"
     assert plan["inventory"]["bsl_files"] == 2
     assert plan["inventory"]["rights_files"] == 1
-    assert any(item["id"] == "platform" and item["status"] == "missing" for item in plan["coverage"])
+    assert any(
+        item["id"] == "platform" and item["status"] == "missing"
+        for item in plan["coverage"]
+    )
 
 
 def test_intake_plan_blocks_missing_source(tmp_path):

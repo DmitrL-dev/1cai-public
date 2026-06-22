@@ -27,7 +27,8 @@ class Metric(BaseModel):
     trend: Optional[str] = Field(None, description="Trend: up, down, stable")
     status: Optional[str] = Field(None, description="Status: good, warning, critical")
     format: str = Field(
-        default="number", description="Format: number, currency, percentage")
+        default="number", description="Format: number, currency, percentage"
+    )
 
 
 # ==================== EXECUTIVE DASHBOARD ====================

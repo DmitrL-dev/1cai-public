@@ -142,7 +142,9 @@ class WikiService:
                         if inspect.isawaitable(result):
                             await result
                     else:
-                        logger.debug("Wiki semantic index adapter has no index_page method")
+                        logger.debug(
+                            "Wiki semantic index adapter has no index_page method"
+                        )
 
         logger.info(f"Created wiki page: {data.title}", extra={"author_id": author_id})
 
@@ -305,7 +307,9 @@ class WikiService:
             "caveats": caveats,
         }
 
-    async def _search_local_pages(self, query: str, limit: int = 5) -> list[dict[str, Any]]:
+    async def _search_local_pages(
+        self, query: str, limit: int = 5
+    ) -> list[dict[str, Any]]:
         terms = self._tokens(query)
         if not terms:
             return []
@@ -371,7 +375,9 @@ class WikiService:
         if not compact:
             return ""
         lower = compact.lower()
-        first_hit = min((lower.find(term) for term in terms if term in lower), default=0)
+        first_hit = min(
+            (lower.find(term) for term in terms if term in lower), default=0
+        )
         start = max(first_hit - 70, 0)
         snippet = compact[start : start + limit].strip()
         if start > 0:

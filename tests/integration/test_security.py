@@ -1,11 +1,11 @@
-import unittest
-import requests
-import time
 import logging
-import urllib3
-
 import os as _os
 import sys as _sys
+import time
+import unittest
+
+import requests
+import urllib3
 
 _sys.path.insert(0, _os.path.dirname(__file__))
 from service_probe import skip_if_unreachable
@@ -16,9 +16,10 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class TestSecurityLayer(unittest.TestCase):
     def setUp(self):
-        self.wazuh_url = "https://localhost:443" # Mapped from 5601
+        self.wazuh_url = "https://localhost:443"  # Mapped from 5601
         self.opa_url = "http://localhost:8181"
 
     def test_wazuh_dashboard_availability(self):
@@ -45,6 +46,7 @@ class TestSecurityLayer(unittest.TestCase):
             logger.info("OPA returned 200 OK")
         except requests.exceptions.ConnectionError:
             self.fail("OPA is not reachable")
+
 
 if __name__ == "__main__":
     unittest.main()

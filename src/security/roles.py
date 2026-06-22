@@ -1,4 +1,3 @@
-
 """Helpers for managing user roles & permissions from the database."""
 
 from __future__ import annotations

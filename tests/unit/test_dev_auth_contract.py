@@ -66,10 +66,13 @@ def test_dev_auth_rejects_fake_or_missing_tokens(monkeypatch):
     client = _client(monkeypatch)
 
     assert client.get("/api/v1/protected").status_code == 401
-    assert client.get(
-        "/api/v1/protected",
-        headers={"Authorization": "Bearer dev-token"},
-    ).status_code == 401
+    assert (
+        client.get(
+            "/api/v1/protected",
+            headers={"Authorization": "Bearer dev-token"},
+        ).status_code
+        == 401
+    )
 
 
 def test_module_auth_rejects_missing_users_in_production(monkeypatch):

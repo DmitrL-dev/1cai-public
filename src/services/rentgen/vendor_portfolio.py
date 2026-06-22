@@ -33,7 +33,9 @@ def _status(score: int, red_areas: int, platform_status: str) -> str:
     return "watch"
 
 
-def _money_signal(executive: dict[str, Any], platform: dict[str, Any], intake: dict[str, Any]) -> list[dict[str, Any]]:
+def _money_signal(
+    executive: dict[str, Any], platform: dict[str, Any], intake: dict[str, Any]
+) -> list[dict[str, Any]]:
     kpis = executive.get("kpis") or {}
     platform_decision = platform.get("decision") or {}
     intake_decision = intake.get("decision") or {}
@@ -65,9 +67,13 @@ def _money_signal(executive: dict[str, Any], platform: dict[str, Any], intake: d
     ]
 
 
-def _work_packages(executive: dict[str, Any], platform: dict[str, Any], intake: dict[str, Any]) -> list[dict[str, Any]]:
+def _work_packages(
+    executive: dict[str, Any], platform: dict[str, Any], intake: dict[str, Any]
+) -> list[dict[str, Any]]:
     kpis = executive.get("kpis") or {}
-    platform_failed = [item for item in platform.get("checks", []) if item.get("status") != "pass"]
+    platform_failed = [
+        item for item in platform.get("checks", []) if item.get("status") != "pass"
+    ]
     intake_caveats = intake.get("caveats") or []
     packages = [
         {
@@ -109,12 +115,17 @@ def _work_packages(executive: dict[str, Any], platform: dict[str, Any], intake: 
 def _deal_board(report: dict[str, Any]) -> dict[str, Any]:
     status = str((report.get("decision") or {}).get("status") or "watch")
     packages = list(report.get("work_packages") or [])
-    priority_package = next((item for item in packages if item.get("priority") == "P0"), packages[0] if packages else {})
+    priority_package = next(
+        (item for item in packages if item.get("priority") == "P0"),
+        packages[0] if packages else {},
+    )
     if status == "risk":
         motion = "Sell a paid risk burn-down sprint before promising support or upgrade dates."
         route = "/pilot-launchpad"
     elif status == "ready":
-        motion = "Sell a rollout or portfolio license anchored by the audit proof packet."
+        motion = (
+            "Sell a rollout or portfolio license anchored by the audit proof packet."
+        )
         route = "/commercial-offer-studio"
     else:
         motion = "Sell a fixed proof sprint that turns watch items into a priced scope."
@@ -128,7 +139,9 @@ def _deal_board(report: dict[str, Any]) -> dict[str, Any]:
             "evidence": str(priority_package.get("evidence") or ""),
         },
         "next_step": {
-            "label": "Build commercial offer" if status != "risk" else "Build pilot/risk sprint",
+            "label": "Build commercial offer"
+            if status != "risk"
+            else "Build pilot/risk sprint",
             "to": route,
             "reason": "Move from audit evidence to a buyer-safe paid step.",
         },
@@ -147,10 +160,26 @@ def _deal_board(report: dict[str, Any]) -> dict[str, Any]:
             },
         ],
         "proof_packet": [
-            {"title": "Vendor audit markdown", "route": "/vendor-portfolio", "artifact": "rentgen-vendor-audit.md"},
-            {"title": "Business Case", "route": "/business-case", "artifact": "rentgen-business-case.md"},
-            {"title": "Commercial Offer", "route": "/commercial-offer-studio", "artifact": "rentgen-commercial-offer.md"},
-            {"title": "Evidence Bundle", "route": "/evidence-bundle", "artifact": "evidence-bundle-manifest.json"},
+            {
+                "title": "Vendor audit markdown",
+                "route": "/vendor-portfolio",
+                "artifact": "rentgen-vendor-audit.md",
+            },
+            {
+                "title": "Business Case",
+                "route": "/business-case",
+                "artifact": "rentgen-business-case.md",
+            },
+            {
+                "title": "Commercial Offer",
+                "route": "/commercial-offer-studio",
+                "artifact": "rentgen-commercial-offer.md",
+            },
+            {
+                "title": "Evidence Bundle",
+                "route": "/evidence-bundle",
+                "artifact": "evidence-bundle-manifest.json",
+            },
         ],
     }
 
@@ -167,7 +196,9 @@ def _portfolio_decision_board(
     ready_clients = [row["name"] for row in rows if row["status"] == "ready"]
     first_opportunity = opportunities[0] if opportunities else {}
     next_route = "/pilot-launchpad" if risk_clients else "/commercial-offer-studio"
-    next_label = "Sell risk burn-down sprint" if risk_clients else "Sell portfolio rollout"
+    next_label = (
+        "Sell risk burn-down sprint" if risk_clients else "Sell portfolio rollout"
+    )
     return {
         "status": status,
         "next_commercial_move": {
@@ -223,10 +254,26 @@ def _portfolio_decision_board(
             },
         ],
         "proof_packet": [
-            {"title": "Portfolio markdown", "route": "/vendor-portfolio", "artifact": "rentgen-vendor-portfolio.md"},
-            {"title": "Pilot Launchpad", "route": "/pilot-launchpad", "artifact": "rentgen-pilot-launchpad.md"},
-            {"title": "Commercial Offer", "route": "/commercial-offer-studio", "artifact": "rentgen-commercial-offer.md"},
-            {"title": "Evidence Bundle", "route": "/evidence-bundle", "artifact": "evidence-bundle-manifest.json"},
+            {
+                "title": "Portfolio markdown",
+                "route": "/vendor-portfolio",
+                "artifact": "rentgen-vendor-portfolio.md",
+            },
+            {
+                "title": "Pilot Launchpad",
+                "route": "/pilot-launchpad",
+                "artifact": "rentgen-pilot-launchpad.md",
+            },
+            {
+                "title": "Commercial Offer",
+                "route": "/commercial-offer-studio",
+                "artifact": "rentgen-commercial-offer.md",
+            },
+            {
+                "title": "Evidence Bundle",
+                "route": "/evidence-bundle",
+                "artifact": "evidence-bundle-manifest.json",
+            },
         ],
     }
 
@@ -248,13 +295,25 @@ def _vendor_room_bridge(
             "reason": "Vendor Portfolio converts technical findings into commercial work packages.",
         }
 
-    package = deal_board.get("primary_package") or (work_packages[0] if work_packages else {})
+    package = deal_board.get("primary_package") or (
+        work_packages[0] if work_packages else {}
+    )
     vendor_motion = {
-        "label": str((deal_board.get("next_step") or {}).get("label") or "Build vendor offer"),
-        "route": str((deal_board.get("next_step") or {}).get("to") or "/commercial-offer-studio"),
+        "label": str(
+            (deal_board.get("next_step") or {}).get("label") or "Build vendor offer"
+        ),
+        "route": str(
+            (deal_board.get("next_step") or {}).get("to") or "/commercial-offer-studio"
+        ),
         "status": str(primary.get("status") or "watch"),
-        "ask": str(deal_board.get("recommended_motion") or "Move from audit evidence to a buyer-safe paid step."),
-        "reason": str((deal_board.get("next_step") or {}).get("reason") or "The vendor needs a concrete first package."),
+        "ask": str(
+            deal_board.get("recommended_motion")
+            or "Move from audit evidence to a buyer-safe paid step."
+        ),
+        "reason": str(
+            (deal_board.get("next_step") or {}).get("reason")
+            or "The vendor needs a concrete first package."
+        ),
     }
 
     role_cards = list(brief.get("role_cards") or [])
@@ -310,7 +369,9 @@ def _vendor_room_bridge(
                 "title": "Vendor audit",
                 "route": "/vendor-portfolio",
                 "status": "ready",
-                "signal": str(package.get("evidence") or "Primary package is selected."),
+                "signal": str(
+                    package.get("evidence") or "Primary package is selected."
+                ),
                 "file": "rentgen-vendor-audit.md",
             },
             {
@@ -342,10 +403,30 @@ def _vendor_room_bridge(
     meeting_flow = list(brief.get("meeting_flow") or [])
     if not meeting_flow:
         meeting_flow = [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Pick partner, buyer role or pain."},
-            {"step": 2, "label": "Audit", "route": "/vendor-portfolio", "line": "Show work package, evidence and commercial signal."},
-            {"step": 3, "label": "Offer", "route": vendor_motion["route"], "line": vendor_motion["ask"]},
-            {"step": 4, "label": "Forward", "route": "/evidence-bundle", "line": "Send buyer brief, vendor audit and proof archive."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Pick partner, buyer role or pain.",
+            },
+            {
+                "step": 2,
+                "label": "Audit",
+                "route": "/vendor-portfolio",
+                "line": "Show work package, evidence and commercial signal.",
+            },
+            {
+                "step": 3,
+                "label": "Offer",
+                "route": vendor_motion["route"],
+                "line": vendor_motion["ask"],
+            },
+            {
+                "step": 4,
+                "label": "Forward",
+                "route": "/evidence-bundle",
+                "line": "Send buyer brief, vendor audit and proof archive.",
+            },
         ]
     open_first_path = build_open_first_path(
         existing_path=brief.get("open_first_path"),
@@ -356,13 +437,20 @@ def _vendor_room_bridge(
         orient_title="Vendor Portfolio",
         orient_route="/vendor-portfolio",
         orient_line="Show work package, evidence and commercial signal.",
-        orient_status=str(primary.get("status") or vendor_motion.get("status") or "watch"),
+        orient_status=str(
+            primary.get("status") or vendor_motion.get("status") or "watch"
+        ),
         prove_line=str(package.get("evidence") or "Primary package is selected."),
         close_title=str(vendor_motion.get("label") or "Commercial Offer"),
         close_route=str(vendor_motion.get("route") or "/commercial-offer-studio"),
-        close_line=str(vendor_motion.get("ask") or "Move from audit evidence to a buyer-safe paid step."),
+        close_line=str(
+            vendor_motion.get("ask")
+            or "Move from audit evidence to a buyer-safe paid step."
+        ),
         close_file="rentgen-commercial-offer.md",
-        close_status=str(primary.get("status") or vendor_motion.get("status") or "watch"),
+        close_status=str(
+            primary.get("status") or vendor_motion.get("status") or "watch"
+        ),
         verify_line="Send buyer brief, vendor audit and proof archive.",
     )
 
@@ -375,7 +463,10 @@ def _vendor_room_bridge(
             *[str(item.get("route") or "") for item in proof_readiness],
             *[str(item.get("route") or "") for item in meeting_flow],
             *[str(item.get("route") or "") for item in open_first_path],
-            *[str(item.get("route") or "") for item in deal_board.get("proof_packet", [])],
+            *[
+                str(item.get("route") or "")
+                for item in deal_board.get("proof_packet", [])
+            ],
         }
         - {""}
     )
@@ -392,14 +483,24 @@ def _vendor_room_bridge(
             "route": str(primary.get("route") or "/vendor-portfolio"),
             "status": str(primary.get("status") or "watch"),
             "ask": str(primary.get("ask") or "Turn audit evidence into paid scope."),
-            "reason": str(primary.get("reason") or "Vendor Portfolio makes audit evidence buyable."),
+            "reason": str(
+                primary.get("reason")
+                or "Vendor Portfolio makes audit evidence buyable."
+            ),
         },
         "vendor_motion": vendor_motion,
         "role_cards": role_cards[:5],
         "proof_readiness": proof_readiness[:4],
         "meeting_flow": meeting_flow[:4],
         "open_first_path": open_first_path[:4],
-        "files": ["buyer-brief.md", "buyer-pulse.md", OPEN_FIRST_PATH_FILE, "rentgen-vendor-audit.md", "rentgen-commercial-offer.md", "OPEN_FIRST.md"],
+        "files": [
+            "buyer-brief.md",
+            "buyer-pulse.md",
+            OPEN_FIRST_PATH_FILE,
+            "rentgen-vendor-audit.md",
+            "rentgen-commercial-offer.md",
+            "OPEN_FIRST.md",
+        ],
         "routes": routes,
         "close_question": "Which audit package becomes the first paid vendor motion?",
     }
@@ -420,30 +521,52 @@ def _markdown(report: dict[str, Any]) -> str:
         lines.append(f"- **{item['title']}**: {item['value']}. {item['offer']}")
     lines.extend(["", "## Work packages", ""])
     for item in report["work_packages"]:
-        lines.append(f"- **{item['priority']}** {item['title']} ({item['effort']}): {item['outcome']}")
+        lines.append(
+            f"- **{item['priority']}** {item['title']} ({item['effort']}): {item['outcome']}"
+        )
     board = report.get("deal_board") or {}
     if board:
         lines.extend(["", "## Deal Board", ""])
         lines.append(f"- Recommended motion: {board['recommended_motion']}")
-        lines.append(f"- Next step: `{board['next_step']['to']}` - {board['next_step']['reason']}")
+        lines.append(
+            f"- Next step: `{board['next_step']['to']}` - {board['next_step']['reason']}"
+        )
         primary = board["primary_package"]
-        lines.append(f"- Primary package: **{primary['priority']}** {primary['title']} - {primary['evidence']}")
+        lines.append(
+            f"- Primary package: **{primary['priority']}** {primary['title']} - {primary['evidence']}"
+        )
     bridge = report.get("vendor_room_bridge") or {}
     if bridge:
         lines.extend(["", "## Vendor Room Bridge", ""])
-        lines.append(f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**")
+        lines.append(
+            f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**"
+        )
         lines.append(f"- Room line: {bridge.get('room_line', '')}")
         motion = bridge.get("primary_motion") or {}
-        lines.append(f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/vendor-portfolio')}`): {motion.get('ask', '')}")
+        lines.append(
+            f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/vendor-portfolio')}`): {motion.get('ask', '')}"
+        )
         vendor_motion = bridge.get("vendor_motion") or {}
-        lines.append(f"- Vendor motion: **{vendor_motion.get('label', 'n/a')}** (`{vendor_motion.get('route', '/vendor-portfolio')}`): {vendor_motion.get('ask', '')}")
-        lines.extend(open_first_path_markdown_lines(bridge.get("open_first_path"), default_route="/vendor-portfolio"))
+        lines.append(
+            f"- Vendor motion: **{vendor_motion.get('label', 'n/a')}** (`{vendor_motion.get('route', '/vendor-portfolio')}`): {vendor_motion.get('ask', '')}"
+        )
+        lines.extend(
+            open_first_path_markdown_lines(
+                bridge.get("open_first_path"), default_route="/vendor-portfolio"
+            )
+        )
         for item in bridge.get("role_cards", []):
-            lines.append(f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}")
+            lines.append(
+                f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}"
+            )
         for item in bridge.get("proof_readiness", []):
-            lines.append(f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}")
+            lines.append(
+                f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}"
+            )
         for item in bridge.get("meeting_flow", []):
-            lines.append(f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}")
+            lines.append(
+                f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}"
+            )
     ledger = report.get("coverage_ledger") or {}
     if ledger:
         summary = ledger.get("summary") or {}
@@ -475,13 +598,19 @@ def _portfolio_markdown(report: dict[str, Any]) -> str:
         )
     lines.extend(["", "## Opportunities", ""])
     for item in report["opportunities"]:
-        lines.append(f"- **{item['title']}**: {item['clients']} clients, priority {item['priority']}")
+        lines.append(
+            f"- **{item['title']}**: {item['clients']} clients, priority {item['priority']}"
+        )
     board = report.get("decision_board") or {}
     if board:
         lines.extend(["", "## Portfolio Decision Board", ""])
-        lines.append(f"- Next commercial move: `{board['next_commercial_move']['to']}` - {board['next_commercial_move']['reason']}")
+        lines.append(
+            f"- Next commercial move: `{board['next_commercial_move']['to']}` - {board['next_commercial_move']['reason']}"
+        )
         for segment in board["segments"]:
-            lines.append(f"- **{segment['title']}**: {len(segment['clients'])} clients, {segment['motion']}")
+            lines.append(
+                f"- **{segment['title']}**: {len(segment['clients'])} clients, {segment['motion']}"
+            )
     lines.extend(["", "## Caveats", ""])
     lines.extend(f"- {item}" for item in report["caveats"])
     return "\n".join(lines)
@@ -511,16 +640,18 @@ def build_vendor_portfolio(
         red_areas=int(kpis.get("red_areas") or 0),
         platform_status=str(platform_decision.get("status") or "unknown"),
     )
-    configuration = (
-        (platform.get("inventory") or {}).get("configuration_name")
-        or "1C configuration"
-    )
+    configuration = (platform.get("inventory") or {}).get(
+        "configuration_name"
+    ) or "1C configuration"
     report = {
         "generated_at": _now(),
         "client": {
             "name": client_name,
             "configuration": configuration,
-            "configuration_version": (platform.get("inventory") or {}).get("configuration_version") or "",
+            "configuration_version": (platform.get("inventory") or {}).get(
+                "configuration_version"
+            )
+            or "",
         },
         "decision": {
             "status": status,
@@ -571,11 +702,21 @@ def build_vendor_portfolio(
         deal_board=report["deal_board"],
         work_packages=report["work_packages"],
     )
-    report["portfolio"]["vendor_room_roles"] = len(report["vendor_room_bridge"]["role_cards"])
-    report["portfolio"]["vendor_room_proofs"] = len(report["vendor_room_bridge"]["proof_readiness"])
-    report["portfolio"]["vendor_room_steps"] = len(report["vendor_room_bridge"]["meeting_flow"])
-    report["portfolio"]["vendor_room_open_first"] = len(report["vendor_room_bridge"]["open_first_path"])
-    report["portfolio"]["coverage_caveats"] = report["coverage_ledger"]["summary"]["caveats"]
+    report["portfolio"]["vendor_room_roles"] = len(
+        report["vendor_room_bridge"]["role_cards"]
+    )
+    report["portfolio"]["vendor_room_proofs"] = len(
+        report["vendor_room_bridge"]["proof_readiness"]
+    )
+    report["portfolio"]["vendor_room_steps"] = len(
+        report["vendor_room_bridge"]["meeting_flow"]
+    )
+    report["portfolio"]["vendor_room_open_first"] = len(
+        report["vendor_room_bridge"]["open_first_path"]
+    )
+    report["portfolio"]["coverage_caveats"] = report["coverage_ledger"]["summary"][
+        "caveats"
+    ]
     report["vendor_room_bridge"]["coverage_ledger"] = report["coverage_ledger"]
     report["proof_routes"] = sorted(
         {item["to"] for item in report["next_actions"]}
@@ -665,11 +806,17 @@ def build_vendor_portfolio_book(
                 },
             )
             current["clients"] += 1
-            current["evidence"].append(str((audit.get("client") or {}).get("name") or "Client"))
+            current["evidence"].append(
+                str((audit.get("client") or {}).get("name") or "Client")
+            )
 
     avg_score = round(total_score / len(audits))
     risk_count = statuses.get("risk", 0)
-    status = "risk" if risk_count else ("ready" if avg_score >= 82 and statuses.get("watch", 0) == 0 else "watch")
+    status = (
+        "risk"
+        if risk_count
+        else ("ready" if avg_score >= 82 and statuses.get("watch", 0) == 0 else "watch")
+    )
     opportunities = sorted(
         package_counts.values(),
         key=lambda item: (
@@ -701,7 +848,10 @@ def build_vendor_portfolio_book(
             ),
         },
         "portfolio": portfolio_summary,
-        "clients": sorted(rows, key=lambda item: (item["status"] != "risk", -item["score"], item["name"])),
+        "clients": sorted(
+            rows,
+            key=lambda item: (item["status"] != "risk", -item["score"], item["name"]),
+        ),
         "opportunities": opportunities,
         "next_actions": [
             {"label": "Demo Command Center", "to": "/demo-command-center"},

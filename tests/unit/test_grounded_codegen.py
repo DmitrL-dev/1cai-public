@@ -1,7 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from src.ai.mcp.server import TOOLS, app as mcp_app, handle_rentgen_generate_grounded
+from src.ai.mcp.server import TOOLS
+from src.ai.mcp.server import app as mcp_app
+from src.ai.mcp.server import handle_rentgen_generate_grounded
 from src.services.bsl_diagnostics import analyze_bsl
 from src.services.rentgen.grounded_codegen import generate_grounded_bsl
 
@@ -43,7 +45,9 @@ def _change_plan():
                 "impact_total": 325,
                 "quality": {"risk": 74},
                 "performance_risks": [{"severity": "high", "factor": "query-in-loop"}],
-                "impacted_hotspots": [{"module_path": "CommonModules/Sales/Ext/Module.bsl"}],
+                "impacted_hotspots": [
+                    {"module_path": "CommonModules/Sales/Ext/Module.bsl"}
+                ],
                 "covering_tests": [
                     {
                         "id": "mapped:sales-order",
@@ -69,7 +73,13 @@ def test_grounded_codegen_is_deterministic_and_context_rich():
         "module_path": "Documents/SalesOrder/Ext/ObjectModule.bsl",
         "metadata_obj": _metadata_object(),
         "change_plan": _change_plan(),
-        "its_context": [{"section_title": "Posting documents", "source_file": "its.md", "score": 0.9}],
+        "its_context": [
+            {
+                "section_title": "Posting documents",
+                "source_file": "its.md",
+                "score": 0.9,
+            }
+        ],
     }
 
     first = generate_grounded_bsl(**kwargs)
@@ -86,7 +96,9 @@ def test_grounded_codegen_is_deterministic_and_context_rich():
     assert 'Result.Insert("requiresOwnerDecision", True)' in first["code"]
     assert first["artifact"]["language"] == "bsl"
     assert any(control["id"] == "rentgen-risk" for control in first["risk_controls"])
-    assert any(action["selector"] == "SalesOrderPosting" for action in first["test_actions"])
+    assert any(
+        action["selector"] == "SalesOrderPosting" for action in first["test_actions"]
+    )
     assert first["test_actions"][0]["status"] == "guarded-contract"
 
     diagnostics = analyze_bsl(first["code"], module_path=kwargs["module_path"])
@@ -139,7 +151,13 @@ EndFunction
 
     assert result["metrics"]["functions"] == 1
     assert result["metrics"]["metadata_refs"] == 1
-    assert {"select-star", "query-in-loop", "privileged-mode", "dynamic-execute", "undocumented-export"} <= codes
+    assert {
+        "select-star",
+        "query-in-loop",
+        "privileged-mode",
+        "dynamic-execute",
+        "undocumented-export",
+    } <= codes
 
 
 @pytest.mark.asyncio

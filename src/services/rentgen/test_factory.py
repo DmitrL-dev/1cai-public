@@ -22,7 +22,9 @@ def _safe_id(value: str) -> str:
 
 def _object_name(row: dict[str, Any]) -> str:
     canonical = row.get("canonical") or {}
-    return str(canonical.get("object_name") or row.get("module_path") or "changed module")
+    return str(
+        canonical.get("object_name") or row.get("module_path") or "changed module"
+    )
 
 
 def _impact_measured(row: dict[str, Any]) -> bool:
@@ -66,7 +68,9 @@ def _run_now(matrix: dict[str, Any]) -> list[dict[str, Any]]:
                 "object_name": _object_name(row),
                 "priority": priority,
                 "coverage_status": row.get("coverage_status"),
-                "command": (row.get("commands") or ["Create focused YAxUnit/Vanessa test"])[0],
+                "command": (
+                    row.get("commands") or ["Create focused YAxUnit/Vanessa test"]
+                )[0],
                 "reason": f"risk {row.get('risk', 0)}, {_impact_reason(row)}",
                 "route": "/testing",
             }
@@ -131,7 +135,11 @@ def _manual_checks(matrix: dict[str, Any]) -> list[dict[str, Any]]:
                     "route": "/testing",
                 }
             )
-        if row.get("risk", 0) >= 70 or row.get("impact_total", 0) >= 300 or not _impact_measured(row):
+        if (
+            row.get("risk", 0) >= 70
+            or row.get("impact_total", 0) >= 300
+            or not _impact_measured(row)
+        ):
             checks.append(
                 {
                     "module_path": row["module_path"],
@@ -214,12 +222,36 @@ def _test_data_plan(matrix: dict[str, Any]) -> list[dict[str, Any]]:
 
 def _evidence_packet() -> list[dict[str, str]]:
     return [
-        {"title": "Test Factory markdown", "filename": "rentgen-test-factory.md", "route": "/testing"},
-        {"title": "Coverage matrix JSON", "filename": "test-coverage-matrix.json", "route": "/testing"},
-        {"title": "YAxUnit skeletons", "filename": "generated-yaxunit-tests.bsl", "route": "/testing"},
-        {"title": "Vanessa scenarios", "filename": "generated-vanessa.feature", "route": "/testing"},
-        {"title": "Release evidence", "filename": "release-readiness.md", "route": "/release-readiness"},
-        {"title": "Evidence Bundle", "filename": "evidence-bundle-manifest.json", "route": "/evidence-bundle"},
+        {
+            "title": "Test Factory markdown",
+            "filename": "rentgen-test-factory.md",
+            "route": "/testing",
+        },
+        {
+            "title": "Coverage matrix JSON",
+            "filename": "test-coverage-matrix.json",
+            "route": "/testing",
+        },
+        {
+            "title": "YAxUnit skeletons",
+            "filename": "generated-yaxunit-tests.bsl",
+            "route": "/testing",
+        },
+        {
+            "title": "Vanessa scenarios",
+            "filename": "generated-vanessa.feature",
+            "route": "/testing",
+        },
+        {
+            "title": "Release evidence",
+            "filename": "release-readiness.md",
+            "route": "/release-readiness",
+        },
+        {
+            "title": "Evidence Bundle",
+            "filename": "evidence-bundle-manifest.json",
+            "route": "/evidence-bundle",
+        },
     ]
 
 
@@ -245,7 +277,9 @@ def _fallback_matrix(modules: list[str]) -> dict[str, Any]:
             "priority": "high",
             "exact_tests": [],
             "planned_tests": [],
-            "commands": [f"YAxUnit/Vanessa: create and run focused tests for '{module_path}'"],
+            "commands": [
+                f"YAxUnit/Vanessa: create and run focused tests for '{module_path}'"
+            ],
             "test_data_blueprint": [
                 {
                     "name": "main_object",
@@ -293,11 +327,17 @@ def _fallback_matrix(modules: list[str]) -> dict[str, Any]:
             "total_impact_edges": 0,
             "total_impacted_modules": 0,
             "unmeasured_modules": modules,
-            "caveats": ["Rentgen graph store is unavailable; all changed modules are treated as test gaps."],
+            "caveats": [
+                "Rentgen graph store is unavailable; all changed modules are treated as test gaps."
+            ],
         },
-        "caveats": ["Rentgen graph store is unavailable; all changed modules are treated as test gaps."],
+        "caveats": [
+            "Rentgen graph store is unavailable; all changed modules are treated as test gaps."
+        ],
     }
-    report["markdown"] = "Risk-Driven Test Coverage Matrix\n\nStore is unavailable; all modules are gaps."
+    report[
+        "markdown"
+    ] = "Risk-Driven Test Coverage Matrix\n\nStore is unavailable; all modules are gaps."
     return report
 
 
@@ -318,7 +358,9 @@ def _markdown(report: dict[str, Any]) -> str:
         lines.append(f"- `{item['module_path']}`: {item['command']} ({item['reason']})")
     lines.extend(["", "## Generation Tasks", ""])
     for item in report["generation_tasks"]:
-        lines.append(f"- `{item['module_path']}`: {', '.join(item['frameworks'])} / {item['priority']}")
+        lines.append(
+            f"- `{item['module_path']}`: {', '.join(item['frameworks'])} / {item['priority']}"
+        )
     lines.extend(["", "## Manual Checks", ""])
     for item in report["manual_checks"]:
         lines.append(f"- **{item['title']}**: {item['reason']}")

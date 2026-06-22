@@ -17,7 +17,8 @@ class EvolutionRequest(BaseModel):
     """AI evolution request"""
 
     force: bool = Field(
-        default=False, description="Force evolution even if system is healthy")
+        default=False, description="Force evolution even if system is healthy"
+    )
 
 
 class EvolutionResponse(BaseModel):

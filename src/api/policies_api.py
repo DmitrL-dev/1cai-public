@@ -18,7 +18,6 @@ from src.services.rentgen.policy_engine import (
     load_policy,
 )
 
-
 router = APIRouter(prefix="/api/v1/policies", tags=["Policies"])
 
 
@@ -63,7 +62,9 @@ def evaluate(req: PolicyEvaluationRequest) -> dict[str, Any]:
     """Evaluate policy rules against a workflow context."""
 
     try:
-        return evaluate_policy(req.context, domain=req.domain, scope_id=req.scope_id, persist=req.persist)
+        return evaluate_policy(
+            req.context, domain=req.domain, scope_id=req.scope_id, persist=req.persist
+        )
     except Exception as exc:
         raise _handle_error(exc) from exc
 

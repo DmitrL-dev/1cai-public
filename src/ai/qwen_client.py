@@ -1,4 +1,3 @@
-
 """
 Qwen3-Coder Client - Real integration with Ollama
 Версия: 2.1.0

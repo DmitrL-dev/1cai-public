@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Header, Query, Request
+from fastapi import APIRouter, Header, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from src.services.edt_mcp_bridge import (
@@ -62,7 +62,9 @@ def plan(req: PlanRequest) -> dict[str, Any]:
 
 
 @router.get("/connection-config")
-def connection_config(base_url: str = Query(DEFAULT_BASE_URL, min_length=1, max_length=300)) -> dict[str, Any]:
+def connection_config(
+    base_url: str = Query(DEFAULT_BASE_URL, min_length=1, max_length=300)
+) -> dict[str, Any]:
     """Return MCP client snippets for connecting to a local EDT-MCP server."""
 
     try:

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 GOOD_STATUSES = {"ready", "pass", "ok", "covered", "done"}
 PARTIAL_STATUSES = {"watch", "partial", "warn", "planned"}
 BAD_STATUSES = {"risk", "critical", "blocked", "fail", "missing", "unknown"}
@@ -47,7 +46,9 @@ def _add_item(
     evidence: str,
     caveat: str | None = None,
 ) -> None:
-    actual_score = _score_for_status(status) if score is None else max(0, min(100, score))
+    actual_score = (
+        _score_for_status(status) if score is None else max(0, min(100, score))
+    )
     normalized_status = status or _status_for_score(actual_score)
     items.append(
         {
@@ -55,7 +56,8 @@ def _add_item(
             "title": title,
             "status": normalized_status,
             "score": actual_score,
-            "measured": normalized_status.casefold() in GOOD_STATUSES | PARTIAL_STATUSES,
+            "measured": normalized_status.casefold()
+            in GOOD_STATUSES | PARTIAL_STATUSES,
             "source": source,
             "evidence": evidence,
             "caveat": caveat,
@@ -78,18 +80,26 @@ def _executive_items(executive: dict[str, Any], items: list[dict[str, Any]]) -> 
         status="ready" if available else "blocked",
         source="executive.available",
         evidence=f"{_int(kpis.get('modules'))} modules, {_int(kpis.get('call_edges'))} call edges",
-        caveat=None if available else "Local graph/quality store is not built; buyer claims must stay blocked.",
+        caveat=None
+        if available
+        else "Local graph/quality store is not built; buyer claims must stay blocked.",
     )
     coverage_score = coverage.get("score")
     _add_item(
         items,
         id="workflow-coverage",
         title="Product workflow coverage",
-        status="ready" if coverage_score == 100 else "partial" if coverage_score is not None else "unknown",
+        status="ready"
+        if coverage_score == 100
+        else "partial"
+        if coverage_score is not None
+        else "unknown",
         score=coverage_score if coverage_score is not None else 0,
         source="executive.coverage",
         evidence=f"{coverage.get('done', 0)}/{coverage.get('total', 0)} workflow items done",
-        caveat=None if coverage_score == 100 else "Some product workflows are partial/planned; show caveat before purchase or release claim.",
+        caveat=None
+        if coverage_score == 100
+        else "Some product workflows are partial/planned; show caveat before purchase or release claim.",
     )
     offline_decision = offline.get("decision") or {}
     offline_status = str(offline_decision.get("status") or "unknown")
@@ -101,7 +111,9 @@ def _executive_items(executive: dict[str, Any], items: list[dict[str, Any]]) -> 
         score=_int(offline_decision.get("score")),
         source="executive.offline",
         evidence=f"offline status {offline_status}",
-        caveat=None if offline_status == "pass" else "Offline readiness is not fully green; keep external dependency caveats visible.",
+        caveat=None
+        if offline_status == "pass"
+        else "Offline readiness is not fully green; keep external dependency caveats visible.",
     )
     decision_status = str(decision.get("status") or "unknown")
     _add_item(
@@ -112,7 +124,9 @@ def _executive_items(executive: dict[str, Any], items: list[dict[str, Any]]) -> 
         score=_int(decision.get("score")),
         source="executive.decision",
         evidence=str(decision.get("headline") or "No headline"),
-        caveat=None if decision_status == "ready" else "Release decision is not ready; route buyer to proof or hardening motion.",
+        caveat=None
+        if decision_status == "ready"
+        else "Release decision is not ready; route buyer to proof or hardening motion.",
     )
     high_hotspots = _int(risk_summary.get("high_hotspots"))
     _add_item(
@@ -123,7 +137,9 @@ def _executive_items(executive: dict[str, Any], items: list[dict[str, Any]]) -> 
         score=max(0, 100 - high_hotspots * 20),
         source="executive.risk_summary",
         evidence=f"{high_hotspots} high-risk hotspots",
-        caveat=None if high_hotspots == 0 else "High-risk code hotspots must stay visible in role reports and release gates.",
+        caveat=None
+        if high_hotspots == 0
+        else "High-risk code hotspots must stay visible in role reports and release gates.",
     )
 
 
@@ -139,7 +155,9 @@ def _intake_items(intake: dict[str, Any], items: list[dict[str, Any]]) -> None:
         score=_int(decision.get("score")),
         source="intake.decision",
         evidence=str(decision.get("headline") or "No intake headline"),
-        caveat=None if decision.get("status") == "ready" else "Configuration intake is partial; source coverage limits all downstream claims.",
+        caveat=None
+        if decision.get("status") == "ready"
+        else "Configuration intake is partial; source coverage limits all downstream claims.",
     )
     for row in list(intake.get("coverage") or [])[:8]:
         caveat = row.get("caveat")
@@ -166,7 +184,9 @@ def _platform_items(platform: dict[str, Any], items: list[dict[str, Any]]) -> No
         score=_int(decision.get("score")),
         source="platform.decision",
         evidence=str(decision.get("headline") or "No platform headline"),
-        caveat=None if decision.get("status") == "ready" else "Platform facts are incomplete or risky; do not sell upgrade readiness as green.",
+        caveat=None
+        if decision.get("status") == "ready"
+        else "Platform facts are incomplete or risky; do not sell upgrade readiness as green.",
     )
     for row in list(platform.get("checks") or [])[:8]:
         caveat = None if row.get("status") == "pass" else row.get("action")
@@ -215,7 +235,9 @@ def build_coverage_ledger(
     risk = len(items) - ready - partial
     score = round(sum(_int(item.get("score")) for item in items) / len(items))
     caveats = [str(item["caveat"]) for item in items if item.get("caveat")]
-    status = "ready" if risk == 0 and partial == 0 else "partial" if measured else "unknown"
+    status = (
+        "ready" if risk == 0 and partial == 0 else "partial" if measured else "unknown"
+    )
     if risk:
         status = "risk"
 

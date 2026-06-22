@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from src.services.ocr_service import (
     DocumentType,
@@ -23,19 +24,33 @@ class TestOCRService:
     def ocr_service(self, mock_executor):
         """Fixture для OCR сервиса (без AI парсинга для быстрых тестов)"""
         # Mock initialization of providers to avoid ImportErrors
-        with patch.object(OCRService, "_init_deepseek"), patch.object(OCRService, "_init_chandra"), patch.object(
-            OCRService, "_init_tesseract"
-        ):
-            service = OCRService(provider=OCRProvider.CHANDRA_HF, enable_ai_parsing=False)
+        with patch.object(OCRService, "_init_deepseek"), patch.object(
+            OCRService, "_init_chandra"
+        ), patch.object(OCRService, "_init_tesseract"):
+            service = OCRService(
+                provider=OCRProvider.CHANDRA_HF, enable_ai_parsing=False
+            )
             # Mock internal methods
             service._chandra_ocr = AsyncMock(
-                return_value={"text": "Mocked Text", "confidence": 0.95, "metadata": {"method": "mock"}}
+                return_value={
+                    "text": "Mocked Text",
+                    "confidence": 0.95,
+                    "metadata": {"method": "mock"},
+                }
             )
             service._deepseek_ocr = AsyncMock(
-                return_value={"text": "Mocked Text", "confidence": 0.95, "metadata": {"method": "mock"}}
+                return_value={
+                    "text": "Mocked Text",
+                    "confidence": 0.95,
+                    "metadata": {"method": "mock"},
+                }
             )
             service._tesseract_ocr = AsyncMock(
-                return_value={"text": "Mocked Text", "confidence": 0.95, "metadata": {"method": "mock"}}
+                return_value={
+                    "text": "Mocked Text",
+                    "confidence": 0.95,
+                    "metadata": {"method": "mock"},
+                }
             )
             return service
 
@@ -91,7 +106,9 @@ class TestOCRService:
     @pytest.mark.asyncio
     async def test_process_with_document_type(self, ocr_service, sample_image_path):
         """Тест OCR с указанием типа документа"""
-        result = await ocr_service.process_image(sample_image_path, document_type=DocumentType.CONTRACT)
+        result = await ocr_service.process_image(
+            sample_image_path, document_type=DocumentType.CONTRACT
+        )
 
         assert result.document_type == DocumentType.CONTRACT
 
@@ -132,7 +149,11 @@ class TestOCRIntegration:
         with patch("src.services.ocr_service.OCRService") as MockService:
             instance = MockService.return_value
             instance.process_image = AsyncMock(
-                return_value=OCRResult(text="Mocked Text", confidence=0.95, document_type=DocumentType.OTHER)
+                return_value=OCRResult(
+                    text="Mocked Text",
+                    confidence=0.95,
+                    document_type=DocumentType.OTHER,
+                )
             )
             instance.batch_process = AsyncMock(
                 return_value=[
@@ -157,7 +178,11 @@ class TestOCRIntegration:
         with patch("src.services.ocr_service.OCRService") as MockServiceClass:
             service = MockServiceClass.return_value
             service.batch_process = AsyncMock(
-                return_value=[OCRResult(text="Doc 1"), OCRResult(text="Doc 2"), OCRResult(text="Doc 3")]
+                return_value=[
+                    OCRResult(text="Doc 1"),
+                    OCRResult(text="Doc 2"),
+                    OCRResult(text="Doc 3"),
+                ]
             )
 
             # Call the method (simulated)
@@ -179,7 +204,9 @@ class TestOCRIntegration:
             )
 
             # We are testing the interaction, not the real AI
-            result = await service.process_image(sample_image_path, document_type=DocumentType.CONTRACT)
+            result = await service.process_image(
+                sample_image_path, document_type=DocumentType.CONTRACT
+            )
 
             assert result.text
             assert result.structured_data
@@ -202,11 +229,16 @@ class TestOCRIntegration:
             service = mock_get.return_value
             service.process_image = AsyncMock(
                 return_value=OCRResult(
-                    text="Struct Text", confidence=0.9, document_type=DocumentType.INVOICE, structured_data={}
+                    text="Struct Text",
+                    confidence=0.9,
+                    document_type=DocumentType.INVOICE,
+                    structured_data={},
                 )
             )
 
-            result_dict = await ocr_with_structure(sample_image_path, document_type=DocumentType.INVOICE)
+            result_dict = await ocr_with_structure(
+                sample_image_path, document_type=DocumentType.INVOICE
+            )
 
             assert isinstance(result_dict, dict)
             assert "text" in result_dict
@@ -221,9 +253,9 @@ class TestOCRErrorHandling:
     async def test_missing_file(self):
         """Тест обработки несуществующего файла"""
         # We need to mock init to avoid import errors, but let process_image run real logic to hit validation
-        with patch.object(OCRService, "_init_deepseek"), patch.object(OCRService, "_init_chandra"), patch.object(
-            OCRService, "_init_tesseract"
-        ):
+        with patch.object(OCRService, "_init_deepseek"), patch.object(
+            OCRService, "_init_chandra"
+        ), patch.object(OCRService, "_init_tesseract"):
             service = OCRService(enable_ai_parsing=False)
 
             with pytest.raises(ValueError, match="Image file not found"):
@@ -242,9 +274,9 @@ class TestOCRErrorHandling:
         text_file = tmp_path / "test.txt"
         text_file.write_text("Not an image")
 
-        with patch.object(OCRService, "_init_deepseek"), patch.object(OCRService, "_init_chandra"), patch.object(
-            OCRService, "_init_tesseract"
-        ):
+        with patch.object(OCRService, "_init_deepseek"), patch.object(
+            OCRService, "_init_chandra"
+        ), patch.object(OCRService, "_init_tesseract"):
             service = OCRService(enable_ai_parsing=False)
             # Mock providers to raise error
             service._chandra_ocr = AsyncMock(side_effect=Exception("Format error"))

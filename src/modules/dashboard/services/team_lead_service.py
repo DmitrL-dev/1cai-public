@@ -60,8 +60,9 @@ class TeamLeadService:
             )
 
             velocity = (
-                int((tasks_completed_this_week / total_tasks_this_week)
-                    * 100) if total_tasks_this_week > 0 else 0
+                int((tasks_completed_this_week / total_tasks_this_week) * 100)
+                if total_tasks_this_week > 0
+                else 0
             )
 
             # Calculate code quality
@@ -92,8 +93,11 @@ class TeamLeadService:
                 or 1
             )
 
-            code_quality = int((approved_reviews / total_reviews)
-                               * 100) if total_reviews > 0 else 85
+            code_quality = (
+                int((approved_reviews / total_reviews) * 100)
+                if total_reviews > 0
+                else 85
+            )
 
             # Calculate bug rate
             bug_tasks = (
@@ -123,8 +127,11 @@ class TeamLeadService:
                 or 1
             )
 
-            bug_rate = round((bug_tasks / total_tasks_month) * 100,
-                             1) if total_tasks_month > 0 else 0
+            bug_rate = (
+                round((bug_tasks / total_tasks_month) * 100, 1)
+                if total_tasks_month > 0
+                else 0
+            )
 
             # Deployment frequency
             deployments = (
@@ -190,7 +197,11 @@ class TeamLeadService:
                         "tasks_active": row["tasks_count"],
                         "tasks_completed_week": member_completed,
                         "status": (
-                            "overloaded" if row["workload"] > 90 else "normal" if row["workload"] > 60 else "available"
+                            "overloaded"
+                            if row["workload"] > 90
+                            else "normal"
+                            if row["workload"] > 60
+                            else "available"
                         ),
                     }
                 )
@@ -221,7 +232,8 @@ class TeamLeadService:
                 )
 
                 code_quality_trends.append(
-                    {"week": f"Week -{week_offset}", "quality": int(week_quality)})
+                    {"week": f"Week -{week_offset}", "quality": int(week_quality)}
+                )
 
             # Velocity chart (last 6 weeks)
             velocity_chart = []
@@ -242,7 +254,8 @@ class TeamLeadService:
                 )
 
                 velocity_chart.append(
-                    {"week": f"Week -{week_offset}", "completed": week_completed})
+                    {"week": f"Week -{week_offset}", "completed": week_completed}
+                )
 
             # Technical debt
             blocked_tasks = (
@@ -277,7 +290,13 @@ class TeamLeadService:
                 "total_debt_hours": blocked_tasks * 8,
                 "critical_items": critical_bugs,
                 "blocked_tasks": blocked_tasks,
-                "trend": ("improving" if blocked_tasks < 5 else "stable" if blocked_tasks < 10 else "growing"),
+                "trend": (
+                    "improving"
+                    if blocked_tasks < 5
+                    else "stable"
+                    if blocked_tasks < 10
+                    else "growing"
+                ),
             }
 
             return {

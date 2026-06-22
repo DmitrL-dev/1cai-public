@@ -51,7 +51,9 @@ async def list_assistants() -> Dict[str, Any]:
     }
 
 
-@router.post("/chat/{assistant_role}", response_model=ChatResponse, summary="Chat with assistant")
+@router.post(
+    "/chat/{assistant_role}", response_model=ChatResponse, summary="Chat with assistant"
+)
 @limiter.limit("20/minute")
 async def chat_with_assistant(
     api_request: Request,
@@ -100,8 +102,10 @@ async def chat_with_assistant(
             content=response.message.content,
             role=response.message.role,
             timestamp=response.message.timestamp,
-            sources=[{"page_content": doc.page_content, "metadata": doc.metadata}
-                for doc in response.sources],
+            sources=[
+                {"page_content": doc.page_content, "metadata": doc.metadata}
+                for doc in response.sources
+            ],
             confidence=response.confidence,
             conversation_id=request.conversation_id or "default",
         )
@@ -111,10 +115,13 @@ async def chat_with_assistant(
     except Exception as e:
         logger.error(f"Error processing chat: {e}", exc_info=True)
         raise HTTPException(
-            status_code=500, detail="An error occurred while processing chat request")
+            status_code=500, detail="An error occurred while processing chat request"
+        )
 
 
-@router.post("/architect/analyze-requirements", summary="Analyze requirements for architect")
+@router.post(
+    "/architect/analyze-requirements", summary="Analyze requirements for architect"
+)
 @limiter.limit("10/minute")
 async def analyze_requirements(
     api_request: Request,
@@ -127,7 +134,8 @@ async def analyze_requirements(
     try:
         if not request.requirements_text.strip():
             raise HTTPException(
-                status_code=400, detail="Requirements text cannot be empty")
+                status_code=400, detail="Requirements text cannot be empty"
+            )
 
         max_length = 10000
         if len(request.requirements_text) > max_length:
@@ -140,7 +148,8 @@ async def analyze_requirements(
         try:
             result = await asyncio.wait_for(
                 service.analyze_requirements(
-                    requirements_text=request.requirements_text, context=request.context),
+                    requirements_text=request.requirements_text, context=request.context
+                ),
                 timeout=timeout,
             )
         except asyncio.TimeoutError:
@@ -156,7 +165,8 @@ async def analyze_requirements(
     except Exception as e:
         logger.error(f"Error analyzing requirements: {e}", exc_info=True)
         raise HTTPException(
-            status_code=500, detail="An error occurred while analyzing requirements")
+            status_code=500, detail="An error occurred while analyzing requirements"
+        )
 
 
 @router.post("/architect/generate-diagram", summary="Generate architectural diagram")
@@ -216,7 +226,9 @@ async def assess_risks(
     Assess risks of architectural solution
     """
     try:
-        result = await service.assess_risks(architecture=request.architecture, project_context=request.project_context)
+        result = await service.assess_risks(
+            architecture=request.architecture, project_context=request.project_context
+        )
 
         return {"success": True, "data": result, "timestamp": datetime.now()}
 
@@ -226,7 +238,9 @@ async def assess_risks(
 
 
 @router.get("/architect/conversation-history", summary="Architect conversation history")
-async def get_conversation_history(limit: int = 50, service: ArchitectService = Depends(get_architect_service)) -> Dict[str, Any]:
+async def get_conversation_history(
+    limit: int = 50, service: ArchitectService = Depends(get_architect_service)
+) -> Dict[str, Any]:
     """
     Get conversation history with architect assistant
     """

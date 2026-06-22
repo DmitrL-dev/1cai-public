@@ -1,4 +1,7 @@
-from src.services.rentgen.architecture_review import build_architecture_review, infer_layer
+from src.services.rentgen.architecture_review import (
+    build_architecture_review,
+    infer_layer,
+)
 
 
 class FakeStore:
@@ -92,4 +95,7 @@ def test_architecture_review_can_focus_on_changed_modules():
 
     assert report["scope"]["mode"] == "focused"
     assert report["scope"]["focus_graph_modules"] == ["Order.Form"]
-    assert {edge["src"] for edge in report["top_edges"]} == {"Order.Form", "DomainService"}
+    assert {edge["src"] for edge in report["top_edges"]} == {
+        "Order.Form",
+        "DomainService",
+    }

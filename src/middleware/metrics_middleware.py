@@ -1,4 +1,3 @@
-
 """
 Metrics Collection Middleware
 Версия: 2.0.0

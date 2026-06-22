@@ -6,7 +6,10 @@ import json
 from datetime import datetime, timezone
 from typing import Any
 
-from src.services.rentgen.open_first_path import build_open_first_path, open_first_path_markdown_lines
+from src.services.rentgen.open_first_path import (
+    build_open_first_path,
+    open_first_path_markdown_lines,
+)
 
 
 def _now() -> str:
@@ -31,7 +34,9 @@ def _score(report: dict[str, Any] | None, default: int = 0) -> int:
 def _status(report: dict[str, Any] | None, default: str = "watch") -> str:
     if not report:
         return default
-    return str((report.get("decision") or {}).get("status") or report.get("status") or default)
+    return str(
+        (report.get("decision") or {}).get("status") or report.get("status") or default
+    )
 
 
 def _is_risky(report: dict[str, Any] | None) -> bool:
@@ -91,7 +96,10 @@ def _primary_route(
     return {
         "label": str(next_action.get("label") or "Launch Room path"),
         "route": str(next_action.get("route") or "/launch-room"),
-        "reason": str(next_action.get("reason") or "Start from one cockpit and follow the next best action."),
+        "reason": str(
+            next_action.get("reason")
+            or "Start from one cockpit and follow the next best action."
+        ),
     }
 
 
@@ -106,7 +114,9 @@ def _killer_stages(
 ) -> list[dict[str, Any]]:
     launch_summary = launch_room.get("launch_summary") or {}
     board_snapshot = board_pack.get("board_snapshot") or {}
-    value_anchor = launch_summary.get("value_anchor") or board_snapshot.get("value_anchor") or ""
+    value_anchor = (
+        launch_summary.get("value_anchor") or board_snapshot.get("value_anchor") or ""
+    )
     first_stage = (demo_command_center.get("live_stages") or [{}])[0]
     return [
         {
@@ -116,7 +126,9 @@ def _killer_stages(
             "route": "/launch-room",
             "audience": "all",
             "spark": "The product opens as one guided cockpit, not a menu of reports.",
-            "proof": str(first_stage.get("proof") or launch_summary.get("current_truth") or ""),
+            "proof": str(
+                first_stage.get("proof") or launch_summary.get("current_truth") or ""
+            ),
             "close_question": "Which role or pain should we prove first?",
         },
         {
@@ -172,7 +184,9 @@ def _killer_stages(
     ]
 
 
-def _demo_modes(stages: list[dict[str, Any]], board_pack: dict[str, Any]) -> list[dict[str, Any]]:
+def _demo_modes(
+    stages: list[dict[str, Any]], board_pack: dict[str, Any]
+) -> list[dict[str, Any]]:
     board_script = board_pack.get("board_room_script") or []
     return [
         {
@@ -190,7 +204,9 @@ def _demo_modes(stages: list[dict[str, Any]], board_pack: dict[str, Any]) -> lis
             "id": "five-minute",
             "title": "5-minute killer path",
             "minutes": 5,
-            "steps": [{"route": item["route"], "label": item["title"]} for item in stages[:5]],
+            "steps": [
+                {"route": item["route"], "label": item["title"]} for item in stages[:5]
+            ],
             "close": "Open Evidence Bundle and assign recipient.",
         },
         {
@@ -198,9 +214,13 @@ def _demo_modes(stages: list[dict[str, Any]], board_pack: dict[str, Any]) -> lis
             "title": "8-minute board route",
             "minutes": 8,
             "steps": [
-                {"route": str(item.get("route") or "/board-pack"), "label": str(item.get("speaker") or item.get("minute") or "board")}
+                {
+                    "route": str(item.get("route") or "/board-pack"),
+                    "label": str(item.get("speaker") or item.get("minute") or "board"),
+                }
                 for item in board_script[:5]
-            ] or [{"route": item["route"], "label": item["title"]} for item in stages],
+            ]
+            or [{"route": item["route"], "label": item["title"]} for item in stages],
             "close": "Approve the pilot/hardening motion and proof packet.",
         },
         {
@@ -240,16 +260,25 @@ def _role_sparks(
         role = str(card.get("role") or "Stakeholder")
         outcome = outcome_by_role.get(role) or {}
         board = board_by_role.get(role) or {}
-        route = str(card.get("start_route") or outcome.get("proof_route") or "/launch-room")
+        route = str(
+            card.get("start_route") or outcome.get("proof_route") or "/launch-room"
+        )
         if role.lower().startswith(("developer", "qa")):
             route = "/testing"
         roles.append(
             {
                 "role": role,
                 "first_route": route,
-                "spark": str(card.get("spark") or outcome.get("spark") or "Open the proof route."),
+                "spark": str(
+                    card.get("spark") or outcome.get("spark") or "Open the proof route."
+                ),
                 "proof": str(card.get("proof") or board.get("must_believe") or ""),
-                "close": str(outcome.get("owner_action") or board.get("close_line") or card.get("buy_trigger") or ""),
+                "close": str(
+                    outcome.get("owner_action")
+                    or board.get("close_line")
+                    or card.get("buy_trigger")
+                    or ""
+                ),
             }
         )
     if not any(item["role"] == "QA / Release" for item in roles):
@@ -360,11 +389,26 @@ def _commercial_close_packet(
         ]
     if not evidence_requirements:
         evidence_requirements = [
-            {"artifact": "Evidence Bundle ZIP", "route": "/evidence-bundle", "why": "Forwardable proof with SHA-256 manifest."},
-            {"artifact": "Governance proof", "route": "/approvals", "why": "Approval records, scope constraints and audit trail."},
-            {"artifact": "Audit verify", "route": "/audit", "why": "Tamper-evident hash-chain status."},
+            {
+                "artifact": "Evidence Bundle ZIP",
+                "route": "/evidence-bundle",
+                "why": "Forwardable proof with SHA-256 manifest.",
+            },
+            {
+                "artifact": "Governance proof",
+                "route": "/approvals",
+                "why": "Approval records, scope constraints and audit trail.",
+            },
+            {
+                "artifact": "Audit verify",
+                "route": "/audit",
+                "why": "Tamper-evident hash-chain status.",
+            },
         ]
-    if not any(str(item.get("artifact") or "") == "Buyer Room Packet ZIP" for item in evidence_requirements):
+    if not any(
+        str(item.get("artifact") or "") == "Buyer Room Packet ZIP"
+        for item in evidence_requirements
+    ):
         evidence_requirements = [
             {
                 "artifact": "Buyer Room Packet ZIP",
@@ -374,39 +418,66 @@ def _commercial_close_packet(
             *evidence_requirements,
         ]
     killer_archive = proof_packet.get("killer_archive") or {}
-    if killer_archive and not any(str(item.get("artifact") or "") == "Killer Demo ZIP" for item in evidence_requirements):
+    if killer_archive and not any(
+        str(item.get("artifact") or "") == "Killer Demo ZIP"
+        for item in evidence_requirements
+    ):
         killer_requirement = {
             "artifact": "Killer Demo ZIP",
             "route": "/killer-demo",
             "why": "One buyer-forwardable archive with Evidence Bundle, current demo proof, proof-packet JSON, role packets and demo manifest.",
         }
-        insert_at = 1 if evidence_requirements and str(evidence_requirements[0].get("artifact") or "") == "Buyer Room Packet ZIP" else 0
+        insert_at = (
+            1
+            if evidence_requirements
+            and str(evidence_requirements[0].get("artifact") or "")
+            == "Buyer Room Packet ZIP"
+            else 0
+        )
         evidence_requirements = [
             *evidence_requirements[:insert_at],
             killer_requirement,
             *evidence_requirements[insert_at:],
         ]
-    if not any(str(item.get("artifact") or "") == "Meeting Close Receipt" for item in evidence_requirements):
+    if not any(
+        str(item.get("artifact") or "") == "Meeting Close Receipt"
+        for item in evidence_requirements
+    ):
         receipt_requirement = {
             "artifact": "Meeting Close Receipt",
             "route": "/killer-demo",
             "why": "One-page post-demo receipt with accepted roles, blockers, next paid step and proof files to forward.",
         }
-        if evidence_requirements and str(evidence_requirements[0].get("artifact") or "") == "Killer Demo ZIP":
-            evidence_requirements = [evidence_requirements[0], receipt_requirement, *evidence_requirements[1:]]
+        if (
+            evidence_requirements
+            and str(evidence_requirements[0].get("artifact") or "") == "Killer Demo ZIP"
+        ):
+            evidence_requirements = [
+                evidence_requirements[0],
+                receipt_requirement,
+                *evidence_requirements[1:],
+            ]
         else:
             evidence_requirements = [receipt_requirement, *evidence_requirements]
-    if not any(str(item.get("artifact") or "") == "Post-Demo Activation Handoff" for item in evidence_requirements):
+    if not any(
+        str(item.get("artifact") or "") == "Post-Demo Activation Handoff"
+        for item in evidence_requirements
+    ):
         activation_requirement = {
             "artifact": "Post-Demo Activation Handoff",
             "route": "/killer-demo",
             "why": "Connects close receipt, paid start, Day 7 proof and Day 30 acceptance so the buyer knows what happens after the ZIP.",
         }
         insert_at = 2 if len(evidence_requirements) >= 2 else len(evidence_requirements)
-        evidence_requirements = [*evidence_requirements[:insert_at], activation_requirement, *evidence_requirements[insert_at:]]
+        evidence_requirements = [
+            *evidence_requirements[:insert_at],
+            activation_requirement,
+            *evidence_requirements[insert_at:],
+        ]
     verification_packet = proof_packet.get("verification_packet") or {}
     if verification_packet and not any(
-        str(item.get("artifact") or "") == "Verification Packet ZIP" for item in evidence_requirements
+        str(item.get("artifact") or "") == "Verification Packet ZIP"
+        for item in evidence_requirements
     ):
         verification_requirement = {
             "artifact": "Verification Packet ZIP",
@@ -430,7 +501,10 @@ def _commercial_close_packet(
         item
         for _, item in sorted(
             enumerate(evidence_requirements),
-            key=lambda pair: (evidence_priority.get(str(pair[1].get("artifact") or ""), 1000), pair[0]),
+            key=lambda pair: (
+                evidence_priority.get(str(pair[1].get("artifact") or ""), 1000),
+                pair[0],
+            ),
         )
     ]
     if not mutual_action_plan:
@@ -454,9 +528,21 @@ def _commercial_close_packet(
         ]
     if not buyer_commitments:
         buyer_commitments = [
-            {"role": "finance", "commitment": "Accept local value anchor and separate optional AI credits.", "route": "/business-case"},
-            {"role": "security", "commitment": "Confirm required approval and audit evidence.", "route": "/approvals"},
-            {"role": "sponsor", "commitment": "Approve paid next step or explicit hardening scope.", "route": "/commercial-offer-studio"},
+            {
+                "role": "finance",
+                "commitment": "Accept local value anchor and separate optional AI credits.",
+                "route": "/business-case",
+            },
+            {
+                "role": "security",
+                "commitment": "Confirm required approval and audit evidence.",
+                "route": "/approvals",
+            },
+            {
+                "role": "sponsor",
+                "commitment": "Approve paid next step or explicit hardening scope.",
+                "route": "/commercial-offer-studio",
+            },
         ]
     if not close_script:
         close_script = [
@@ -465,7 +551,9 @@ def _commercial_close_packet(
             "If security blocks rollout, we sell hardening scope instead of pretending the risk is gone.",
         ]
 
-    close_ready = bool(close_packet.get("ready_to_close", _status(commercial_offer_studio) == "ready"))
+    close_ready = bool(
+        close_packet.get("ready_to_close", _status(commercial_offer_studio) == "ready")
+    )
     forward_ready = bool(proof_packet.get("ready_to_forward"))
     proof_routes = sorted(
         _commercial_close_routes(commercial_offer_studio)
@@ -479,17 +567,38 @@ def _commercial_close_packet(
         "forward_ready": forward_ready,
         "ready_to_ask": close_ready and forward_ready,
         "close_mode": str(close_packet.get("close_mode") or "open_enterprise_purchase"),
-        "primary_ask": str(close_packet.get("primary_ask") or "Open enterprise local-license procurement with the proof packet attached."),
+        "primary_ask": str(
+            close_packet.get("primary_ask")
+            or "Open enterprise local-license procurement with the proof packet attached."
+        ),
         "one_page_order": {
-            "product": str(one_page_order.get("product") or "1C Rentgen local evidence control plane"),
-            "recommended_purchase": str(one_page_order.get("recommended_purchase") or "Enterprise local license"),
-            "commercial_frame": str(one_page_order.get("commercial_frame") or "fixed paid next step"),
+            "product": str(
+                one_page_order.get("product")
+                or "1C Rentgen local evidence control plane"
+            ),
+            "recommended_purchase": str(
+                one_page_order.get("recommended_purchase") or "Enterprise local license"
+            ),
+            "commercial_frame": str(
+                one_page_order.get("commercial_frame") or "fixed paid next step"
+            ),
             "value_anchor": str(one_page_order.get("value_anchor") or "Business Case"),
-            "ai_rent_baseline": str(one_page_order.get("ai_rent_baseline") or "optional AI credits"),
-            "three_year_ai_rent": str(one_page_order.get("three_year_ai_rent") or "not provided"),
-            "local_license_anchor": str(one_page_order.get("local_license_anchor") or "Business Case"),
-            "break_even": str(one_page_order.get("break_even") or "review Business Case"),
-            "first_invoice_trigger": str(one_page_order.get("first_invoice_trigger") or "Buyer names owner, scope, date and accepted proof artifacts."),
+            "ai_rent_baseline": str(
+                one_page_order.get("ai_rent_baseline") or "optional AI credits"
+            ),
+            "three_year_ai_rent": str(
+                one_page_order.get("three_year_ai_rent") or "not provided"
+            ),
+            "local_license_anchor": str(
+                one_page_order.get("local_license_anchor") or "Business Case"
+            ),
+            "break_even": str(
+                one_page_order.get("break_even") or "review Business Case"
+            ),
+            "first_invoice_trigger": str(
+                one_page_order.get("first_invoice_trigger")
+                or "Buyer names owner, scope, date and accepted proof artifacts."
+            ),
             "route": str(one_page_order.get("route") or "/commercial-offer-studio"),
         },
         "checkout": checkout,
@@ -506,9 +615,15 @@ def _commercial_close_packet(
     }
 
 
-def _close_scripts(board_pack: dict[str, Any], outcome_ledger: dict[str, Any]) -> list[dict[str, str]]:
+def _close_scripts(
+    board_pack: dict[str, Any], outcome_ledger: dict[str, Any]
+) -> list[dict[str, str]]:
     offer = board_pack.get("recommended_offer") or {}
-    motion = str((outcome_ledger.get("summary") or {}).get("recommended_motion") or offer.get("id") or "local pilot")
+    motion = str(
+        (outcome_ledger.get("summary") or {}).get("recommended_motion")
+        or offer.get("id")
+        or "local pilot"
+    )
     return [
         {
             "audience": "developer",
@@ -535,15 +650,51 @@ def _close_scripts(board_pack: dict[str, Any], outcome_ledger: dict[str, Any]) -
 
 def _exports() -> list[dict[str, str]]:
     return [
-        {"title": "Killer Demo Path markdown", "filename": "rentgen-killer-demo-path.md", "route": "/killer-demo"},
-        {"title": "Launch Room markdown", "filename": "rentgen-launch-room.md", "route": "/launch-room"},
-        {"title": "Test Factory markdown", "filename": "rentgen-test-factory.md", "route": "/testing"},
-        {"title": "Safe Autopilot markdown", "filename": "rentgen-safe-autopilot.md", "route": "/safe-autopilot"},
-        {"title": "Board Pack markdown", "filename": "rentgen-board-pack.md", "route": "/board-pack"},
-        {"title": "Outcome Ledger markdown", "filename": "rentgen-outcome-ledger.md", "route": "/outcome-ledger"},
-        {"title": "Governance Proof markdown", "filename": "governance-proof.md", "route": "/approvals"},
-        {"title": "Audit verification/export", "filename": "rentgen-audit-log.jsonl", "route": "/audit"},
-        {"title": "Evidence Bundle manifest", "filename": "evidence-bundle-manifest.json", "route": "/evidence-bundle"},
+        {
+            "title": "Killer Demo Path markdown",
+            "filename": "rentgen-killer-demo-path.md",
+            "route": "/killer-demo",
+        },
+        {
+            "title": "Launch Room markdown",
+            "filename": "rentgen-launch-room.md",
+            "route": "/launch-room",
+        },
+        {
+            "title": "Test Factory markdown",
+            "filename": "rentgen-test-factory.md",
+            "route": "/testing",
+        },
+        {
+            "title": "Safe Autopilot markdown",
+            "filename": "rentgen-safe-autopilot.md",
+            "route": "/safe-autopilot",
+        },
+        {
+            "title": "Board Pack markdown",
+            "filename": "rentgen-board-pack.md",
+            "route": "/board-pack",
+        },
+        {
+            "title": "Outcome Ledger markdown",
+            "filename": "rentgen-outcome-ledger.md",
+            "route": "/outcome-ledger",
+        },
+        {
+            "title": "Governance Proof markdown",
+            "filename": "governance-proof.md",
+            "route": "/approvals",
+        },
+        {
+            "title": "Audit verification/export",
+            "filename": "rentgen-audit-log.jsonl",
+            "route": "/audit",
+        },
+        {
+            "title": "Evidence Bundle manifest",
+            "filename": "evidence-bundle-manifest.json",
+            "route": "/evidence-bundle",
+        },
     ]
 
 
@@ -570,36 +721,73 @@ BUYER_ROOM_PACKET_ENDPOINT = "/api/v1/management/buyer-room-packet"
 BUYER_ROOM_PACKET_HASH_HEADER = "X-Buyer-Room-Packet-Sha256"
 KILLER_DEMO_ARCHIVE_HASH_HEADER = "X-Killer-Demo-Archive-Sha256"
 ARCHIVE_VERIFICATION_PACKET_ZIP = "archive-verification-packet.zip"
-ARCHIVE_VERIFICATION_PACKET_ENDPOINT = "/api/v1/evidence-bundle/archive/verification-packet"
+ARCHIVE_VERIFICATION_PACKET_ENDPOINT = (
+    "/api/v1/evidence-bundle/archive/verification-packet"
+)
 ARCHIVE_VERIFICATION_PACKET_HASH_HEADER = "X-Verification-Packet-Sha256"
 ARCHIVE_VERIFICATION_PACKET_OPEN_FIRST = "OPEN_FIRST_VERIFICATION_PACKET.md"
 
 
-def _role_file_availability(send_files: list[str], available_filenames: set[str]) -> dict[str, Any]:
+def _role_file_availability(
+    send_files: list[str], available_filenames: set[str]
+) -> dict[str, Any]:
     available: list[str] = []
     missing: list[str] = []
     for filename in send_files:
         if filename in available_filenames:
             available.append(filename)
-        elif filename == "killer-demo.md" and "rentgen-killer-demo-path.md" in available_filenames:
+        elif (
+            filename == "killer-demo.md"
+            and "rentgen-killer-demo-path.md" in available_filenames
+        ):
             available.append("rentgen-killer-demo-path.md")
         else:
             missing.append(filename)
     return {
         "available_files": available,
         "missing_files": missing,
-        "availability_status": "ready" if not missing else "partial" if available else "missing",
+        "availability_status": "ready"
+        if not missing
+        else "partial"
+        if available
+        else "missing",
     }
 
 
 def _role_packet_rollup(handoff: list[dict[str, Any]]) -> dict[str, Any]:
     total = len(handoff)
-    ready = len([item for item in handoff if item.get("availability_status") == "ready"])
-    partial = len([item for item in handoff if item.get("availability_status") == "partial"])
-    missing = len([item for item in handoff if item.get("availability_status") == "missing"])
-    available_names = sorted({str(file) for item in handoff for file in item.get("available_files", []) if file})
-    missing_names = sorted({str(file) for item in handoff for file in item.get("missing_files", []) if file})
-    status = "ready" if total and ready == total else "partial" if ready or partial else "missing"
+    ready = len(
+        [item for item in handoff if item.get("availability_status") == "ready"]
+    )
+    partial = len(
+        [item for item in handoff if item.get("availability_status") == "partial"]
+    )
+    missing = len(
+        [item for item in handoff if item.get("availability_status") == "missing"]
+    )
+    available_names = sorted(
+        {
+            str(file)
+            for item in handoff
+            for file in item.get("available_files", [])
+            if file
+        }
+    )
+    missing_names = sorted(
+        {
+            str(file)
+            for item in handoff
+            for file in item.get("missing_files", [])
+            if file
+        }
+    )
+    status = (
+        "ready"
+        if total and ready == total
+        else "partial"
+        if ready or partial
+        else "missing"
+    )
     if not total:
         status = "missing"
     return {
@@ -626,7 +814,10 @@ def _packet_file(item: dict[str, Any], route_by_id: dict[str, str]) -> dict[str,
         "filename": str(item.get("filename") or ""),
         "media_type": str(item.get("media_type") or ""),
         "sha256": str(item.get("sha256") or ""),
-        "route": route_by_id.get(artifact_id, "/evidence-bundle" if artifact_id == "procurement-handoff" else ""),
+        "route": route_by_id.get(
+            artifact_id,
+            "/evidence-bundle" if artifact_id == "procurement-handoff" else "",
+        ),
     }
 
 
@@ -690,7 +881,13 @@ _PACKET_ID_PRIORITY = {
 def _packet_file_rank(item: dict[str, str]) -> tuple[int, int, int, str]:
     filename = str(item.get("filename") or "")
     media_type = str(item.get("media_type") or "")
-    media_rank = 0 if media_type == "text/markdown" else 1 if media_type == "application/json" else 2
+    media_rank = (
+        0
+        if media_type == "text/markdown"
+        else 1
+        if media_type == "application/json"
+        else 2
+    )
     return (
         _PACKET_FILE_PRIORITY.get(filename, 1000),
         media_rank,
@@ -716,16 +913,25 @@ def _json_dict(value: Any) -> dict[str, Any]:
     return parsed if isinstance(parsed, dict) else {}
 
 
-def _open_first_path_from_artifacts(artifacts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _open_first_path_from_artifacts(
+    artifacts: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     for artifact_id in ("open-first-path", "buyer-brief"):
-        artifact = next((item for item in artifacts if str(item.get("id") or "") == artifact_id), None)
+        artifact = next(
+            (item for item in artifacts if str(item.get("id") or "") == artifact_id),
+            None,
+        )
         if not artifact:
             continue
         payload = _json_dict(artifact.get("json") or artifact.get("report"))
         direct_path = payload.get("open_first_path")
         if isinstance(direct_path, list):
             return [dict(item) for item in direct_path if isinstance(item, dict)]
-        brief_path = (payload.get("buyer_brief") or {}).get("open_first_path") if isinstance(payload.get("buyer_brief"), dict) else None
+        brief_path = (
+            (payload.get("buyer_brief") or {}).get("open_first_path")
+            if isinstance(payload.get("buyer_brief"), dict)
+            else None
+        )
         if isinstance(brief_path, list):
             return [dict(item) for item in brief_path if isinstance(item, dict)]
     return []
@@ -752,7 +958,9 @@ def _proof_packet(
     ]
     artifacts = list(bundle.get("artifacts") or [])
     files = list(manifest.get("files") or [])
-    route_by_id = {str(item.get("id")): str(item.get("route") or "") for item in artifacts}
+    route_by_id = {
+        str(item.get("id")): str(item.get("route") or "") for item in artifacts
+    }
 
     selected_ids = {
         "buyer-brief",
@@ -803,8 +1011,10 @@ def _proof_packet(
                 "sha256": "",
             }
             for item in exports
-            if (item["route"].strip("/").replace("/", "-") or "killer-demo") in selected_ids
-            and (item["route"].strip("/").replace("/", "-") or "killer-demo") not in existing_file_ids
+            if (item["route"].strip("/").replace("/", "-") or "killer-demo")
+            in selected_ids
+            and (item["route"].strip("/").replace("/", "-") or "killer-demo")
+            not in existing_file_ids
         )
     selected_artifacts = [
         {
@@ -820,25 +1030,49 @@ def _proof_packet(
         for item in artifacts
         if str(item.get("id") or "") in selected_ids
     ]
-    selected_files = [_packet_file(item, route_by_id) for item in files if str(item.get("id") or "") in selected_ids]
+    selected_files = [
+        _packet_file(item, route_by_id)
+        for item in files
+        if str(item.get("id") or "") in selected_ids
+    ]
     if not selected_files:
         selected_files = [_packet_file(item, route_by_id) for item in files[:12]]
     selected_files = sorted(selected_files, key=_packet_file_rank)
     selected_artifacts = sorted(selected_artifacts, key=_packet_artifact_rank)
-    buyer_brief_file = next((item for item in selected_files if item["filename"] == "buyer-brief.md"), None)
-    buyer_pulse_file = next((item for item in selected_files if item["filename"] == "buyer-pulse.md"), None)
-    open_first_path_file = next((item for item in selected_files if item["filename"] == "open-first-path.md"), None)
-    buyer_room_plan_file = next((item for item in selected_files if item["filename"] == "buyer-room-plan.md"), None)
+    buyer_brief_file = next(
+        (item for item in selected_files if item["filename"] == "buyer-brief.md"), None
+    )
+    buyer_pulse_file = next(
+        (item for item in selected_files if item["filename"] == "buyer-pulse.md"), None
+    )
+    open_first_path_file = next(
+        (item for item in selected_files if item["filename"] == "open-first-path.md"),
+        None,
+    )
+    buyer_room_plan_file = next(
+        (item for item in selected_files if item["filename"] == "buyer-room-plan.md"),
+        None,
+    )
     bundle_sha = str(manifest.get("bundle_sha256") or "")
     bundle_id = str(bundle.get("bundle_id") or "")
     archive_ready = bool(bundle_id and bundle_sha)
-    archive_endpoint = str(procurement_handoff.get("archive_endpoint") or "/api/v1/evidence-bundle/archive")
+    archive_endpoint = str(
+        procurement_handoff.get("archive_endpoint") or "/api/v1/evidence-bundle/archive"
+    )
     archive_filename = str(
         procurement_handoff.get("archive_filename")
-        or (f"{bundle_id}-evidence-archive.zip" if bundle_id else "evidence-archive.zip")
+        or (
+            f"{bundle_id}-evidence-archive.zip" if bundle_id else "evidence-archive.zip"
+        )
     )
-    killer_archive_filename = f"{bundle_id}-killer-demo-archive.zip" if bundle_id else "killer-demo-archive.zip"
-    archive_hash_header = str(procurement_handoff.get("archive_hash_header") or "X-Archive-Sha256")
+    killer_archive_filename = (
+        f"{bundle_id}-killer-demo-archive.zip"
+        if bundle_id
+        else "killer-demo-archive.zip"
+    )
+    archive_hash_header = str(
+        procurement_handoff.get("archive_hash_header") or "X-Archive-Sha256"
+    )
     self_demo_attached = any(
         item["filename"] in {"killer-demo.md", "rentgen-killer-demo-path.md"}
         for item in selected_files
@@ -854,7 +1088,9 @@ def _proof_packet(
     effective_missing_files = [
         item
         for item in missing_files
-        if not (self_demo_attached and str(item.get("filename") or "") == "killer-demo.md")
+        if not (
+            self_demo_attached and str(item.get("filename") or "") == "killer-demo.md"
+        )
     ]
     effective_blockers = [
         item
@@ -864,9 +1100,14 @@ def _proof_packet(
     risk_reviews = [
         item
         for item in review_items
-        if str(item.get("status") or "").casefold() in {"risk", "blocked", "critical", "fail"}
+        if str(item.get("status") or "").casefold()
+        in {"risk", "blocked", "critical", "fail"}
     ]
-    raw_handoff_ready = bool(procurement_handoff.get("ready_to_forward")) if procurement_handoff else archive_ready
+    raw_handoff_ready = (
+        bool(procurement_handoff.get("ready_to_forward"))
+        if procurement_handoff
+        else archive_ready
+    )
     effective_handoff_ready = raw_handoff_ready or (
         bool(procurement_handoff)
         and not effective_missing_files
@@ -890,7 +1131,9 @@ def _proof_packet(
         prove_title="Killer Demo Proof Packet",
         prove_route="/killer-demo",
         prove_line="Show role-ready proof, archive controls and the close-room packet.",
-        prove_file="OPEN_FIRST_KILLER_DEMO.md" if self_demo_attached else "killer-demo.md",
+        prove_file="OPEN_FIRST_KILLER_DEMO.md"
+        if self_demo_attached
+        else "killer-demo.md",
         prove_status="ready" if self_demo_attached else "watch",
         close_title="Meeting Close Receipt",
         close_route="/killer-demo",
@@ -992,7 +1235,9 @@ def _proof_packet(
             "why": "Proves the two archives as one checked pair.",
         },
     ]
-    available_filenames = {str(item.get("filename") or "") for item in files if item.get("filename")}
+    available_filenames = {
+        str(item.get("filename") or "") for item in files if item.get("filename")
+    }
     available_filenames.add(BUYER_ROOM_PACKET_ZIP)
     if archive_ready:
         available_filenames.add(ARCHIVE_VERIFICATION_PACKET_ZIP)
@@ -1023,20 +1268,32 @@ def _proof_packet(
         "room_map": {
             "ready": bool(buyer_brief_file),
             "route": str((buyer_brief_file or {}).get("route") or "/"),
-            "filename": str((buyer_brief_file or {}).get("filename") or "buyer-brief.md"),
+            "filename": str(
+                (buyer_brief_file or {}).get("filename") or "buyer-brief.md"
+            ),
             "sha256": str((buyer_brief_file or {}).get("sha256") or ""),
             "packet_filename": BUYER_ROOM_PACKET_ZIP,
             "packet_endpoint": BUYER_ROOM_PACKET_ENDPOINT,
             "packet_hash_header": BUYER_ROOM_PACKET_HASH_HEADER,
             "plan_ready": bool(buyer_room_plan_file),
             "plan_route": str((buyer_room_plan_file or {}).get("route") or "/"),
-            "plan_filename": str((buyer_room_plan_file or {}).get("filename") or "buyer-room-plan.md"),
+            "plan_filename": str(
+                (buyer_room_plan_file or {}).get("filename") or "buyer-room-plan.md"
+            ),
             "plan_sha256": str((buyer_room_plan_file or {}).get("sha256") or ""),
             "open_first_path_ready": bool(open_first_path_file),
-            "open_first_path_filename": str((open_first_path_file or {}).get("filename") or "open-first-path.md"),
-            "open_first_path_route": str((open_first_path_file or {}).get("route") or "/"),
-            "open_first_path_sha256": str((open_first_path_file or {}).get("sha256") or ""),
-            "pulse_filename": str((buyer_pulse_file or {}).get("filename") or "buyer-pulse.md"),
+            "open_first_path_filename": str(
+                (open_first_path_file or {}).get("filename") or "open-first-path.md"
+            ),
+            "open_first_path_route": str(
+                (open_first_path_file or {}).get("route") or "/"
+            ),
+            "open_first_path_sha256": str(
+                (open_first_path_file or {}).get("sha256") or ""
+            ),
+            "pulse_filename": str(
+                (buyer_pulse_file or {}).get("filename") or "buyer-pulse.md"
+            ),
             "pulse_sha256": str((buyer_pulse_file or {}).get("sha256") or ""),
             "why": "First-minute room map plus single live-room route, proof file, close question and local-license ask.",
         },
@@ -1102,7 +1359,9 @@ def _proof_packet(
             "review_items": len(review_items),
             "risk_review_items": len(risk_reviews),
             "recipients": len(procurement_handoff.get("recipients") or []),
-            "verification_steps": len(procurement_handoff.get("verification_steps") or []),
+            "verification_steps": len(
+                procurement_handoff.get("verification_steps") or []
+            ),
             "covered_by_current_demo": covered_by_current_demo,
             "archive_filename": archive_filename,
             "endpoint": archive_endpoint,
@@ -1113,7 +1372,9 @@ def _proof_packet(
             "buyer_room_packet_filename": BUYER_ROOM_PACKET_ZIP,
             "buyer_room_packet_endpoint": BUYER_ROOM_PACKET_ENDPOINT,
             "buyer_room_packet_hash_header": BUYER_ROOM_PACKET_HASH_HEADER,
-            "open_first_file": str(procurement_handoff.get("open_first_file") or "OPEN_FIRST.md"),
+            "open_first_file": str(
+                procurement_handoff.get("open_first_file") or "OPEN_FIRST.md"
+            ),
             "first_file": "procurement-handoff.md",
             "buyer_line": str(
                 procurement_handoff.get("buyer_line")
@@ -1129,7 +1390,10 @@ def _proof_packet(
             "source": "Evidence Bundle",
             "packets": recipient_packets,
             "packet_count": len(recipient_packets),
-            "first_packet": str((recipient_packets[0] if recipient_packets else {}).get("filename") or ""),
+            "first_packet": str(
+                (recipient_packets[0] if recipient_packets else {}).get("filename")
+                or ""
+            ),
             "why": "Role forwarding notes from Evidence Bundle travel into the close receipt and activation handoff.",
         },
         "files": selected_files[:18],
@@ -1210,7 +1474,9 @@ def _opening_brief(
             "role": item["role"],
             "route": item["first_route"],
             "question": item["spark"],
-            "proof": item.get("proof") or item.get("close") or "Open the role proof route.",
+            "proof": item.get("proof")
+            or item.get("close")
+            or "Open the role proof route.",
         }
         for item in role_sparks[:6]
     ]
@@ -1284,15 +1550,24 @@ def _objection_router(
             for key, item in board_objections.items()
             if "ai" in key or "subscription" in key
         ),
-        str(local_asset.get("finance_line") or "Buy local 1C evidence; keep optional AI credits separate from the core product."),
+        str(
+            local_asset.get("finance_line")
+            or "Buy local 1C evidence; keep optional AI credits separate from the core product."
+        ),
     )
     proof_ready = bool(proof_packet.get("ready_to_forward"))
-    close_ready = bool(close_packet.get("ready_to_ask") or deal_readiness.get("status") == "ready_to_ask")
+    close_ready = bool(
+        close_packet.get("ready_to_ask")
+        or deal_readiness.get("status") == "ready_to_ask"
+    )
     test_gaps = _int(_summary(test_factory).get("gaps"))
     committee_blocked = _int(committee.get("blocked_roles"))
     committee_scope_first = str(committee.get("status") or "") == "scope_first"
     outcome_summary = _summary(outcome_ledger)
-    claim_ready = bool(outcome_summary.get("acceptance_rollup_ready") or (outcome_ledger.get("acceptance_rollup") or {}).get("ready_to_claim"))
+    claim_ready = bool(
+        outcome_summary.get("acceptance_rollup_ready")
+        or (outcome_ledger.get("acceptance_rollup") or {}).get("ready_to_claim")
+    )
 
     def route_status(*, blocked: bool = False, watch: bool = False) -> str:
         if blocked:
@@ -1310,7 +1585,9 @@ def _objection_router(
             "route": "/launch-room",
             "proof_file": "rentgen-launch-room.md",
             "owner": "presenter",
-            "status": route_status(watch=_status(launch_room) not in {"ready", "watch"}),
+            "status": route_status(
+                watch=_status(launch_room) not in {"ready", "watch"}
+            ),
             "close_question": "Which role should we prove first: developer, security or director?",
         },
         {
@@ -1343,7 +1620,9 @@ def _objection_router(
             "route": "/testing",
             "proof_file": "test-factory.md",
             "owner": "tech lead",
-            "status": route_status(blocked=_is_risky(test_factory), watch=test_gaps > 0),
+            "status": route_status(
+                blocked=_is_risky(test_factory), watch=test_gaps > 0
+            ),
             "close_question": "Which changed module should become the first proof and test owner?",
         },
         {
@@ -1366,7 +1645,10 @@ def _objection_router(
             "proof_file": "commercial-offer-studio.md",
             "owner": "sponsor + seller",
             "status": route_status(watch=not close_ready),
-            "close_question": str(committee.get("final_question") or "Can we approve proof, hardening or local pilot as the next paid step?"),
+            "close_question": str(
+                committee.get("final_question")
+                or "Can we approve proof, hardening or local pilot as the next paid step?"
+            ),
         },
         {
             "id": "after-purchase",
@@ -1376,7 +1658,10 @@ def _objection_router(
             "route": "/outcome-ledger",
             "proof_file": "rentgen-outcome-ledger.md",
             "owner": "pilot owner",
-            "status": route_status(blocked=committee_scope_first, watch=(committee_blocked > 0 or not claim_ready)),
+            "status": route_status(
+                blocked=committee_scope_first,
+                watch=(committee_blocked > 0 or not claim_ready),
+            ),
             "close_question": "Can we book Day 7 proof and Day 30 acceptance owner now?",
         },
     ]
@@ -1390,7 +1675,10 @@ def _objection_router(
         "blocked_items": len(blocked),
         "primary_objection": first,
         "items": items,
-        "proof_routes": sorted({str(item["route"]) for item in items} | {"/approvals", "/audit", "/evidence-bundle"}),
+        "proof_routes": sorted(
+            {str(item["route"]) for item in items}
+            | {"/approvals", "/audit", "/evidence-bundle"}
+        ),
         "presenter_line": "Do not debate from memory: pick the objection, open the route, show the file and ask the close question.",
     }
 
@@ -1461,14 +1749,23 @@ def _deal_readiness(
 
     close_packet = commercial_offer_studio.get("close_packet") or {}
     close_mode = str(close_packet.get("close_mode") or "")
-    if close_packet and not bool(close_packet.get("ready_to_close")) and not any(item["id"] == "trust" for item in blockers):
+    if (
+        close_packet
+        and not bool(close_packet.get("ready_to_close"))
+        and not any(item["id"] == "trust" for item in blockers)
+    ):
         blockers.append(
             {
                 "id": "commercial-close",
-                "severity": "high" if close_mode == "sell_hardening_before_rollout" else "medium",
+                "severity": "high"
+                if close_mode == "sell_hardening_before_rollout"
+                else "medium",
                 "title": "Commercial close is not ready without explicit scope.",
                 "route": "/commercial-offer-studio",
-                "action": str(close_packet.get("primary_ask") or "Convert the blocker into paid proof, hardening or pilot scope."),
+                "action": str(
+                    close_packet.get("primary_ask")
+                    or "Convert the blocker into paid proof, hardening or pilot scope."
+                ),
             }
         )
 
@@ -1480,17 +1777,36 @@ def _deal_readiness(
         or (board_pack.get("summary") or {}).get("first_year_visible_value")
         or (outcome_ledger.get("summary") or {}).get("first_year_visible_value")
     )
-    value_anchor = str(launch_summary.get("value_anchor") or (board_pack.get("board_snapshot") or {}).get("value_anchor") or "")
+    value_anchor = str(
+        launch_summary.get("value_anchor")
+        or (board_pack.get("board_snapshot") or {}).get("value_anchor")
+        or ""
+    )
     one_page_order = close_packet.get("one_page_order") or {}
-    three_year_ai_rent = str(one_page_order.get("three_year_ai_rent") or (board_pack.get("board_snapshot") or {}).get("three_year_ai_rent") or "not provided")
-    local_license_anchor = str(one_page_order.get("local_license_anchor") or (board_pack.get("board_snapshot") or {}).get("local_license_anchor") or "Business Case")
-    break_even = str(one_page_order.get("break_even") or (board_pack.get("board_snapshot") or {}).get("break_even") or "review Business Case")
+    three_year_ai_rent = str(
+        one_page_order.get("three_year_ai_rent")
+        or (board_pack.get("board_snapshot") or {}).get("three_year_ai_rent")
+        or "not provided"
+    )
+    local_license_anchor = str(
+        one_page_order.get("local_license_anchor")
+        or (board_pack.get("board_snapshot") or {}).get("local_license_anchor")
+        or "Business Case"
+    )
+    break_even = str(
+        one_page_order.get("break_even")
+        or (board_pack.get("board_snapshot") or {}).get("break_even")
+        or "review Business Case"
+    )
     primary_ask = str(close_packet.get("primary_ask") or "")
     next_paid_step = {
-        "label": str(one_page_order.get("recommended_purchase") or "Enterprise local license"),
+        "label": str(
+            one_page_order.get("recommended_purchase") or "Enterprise local license"
+        ),
         "route": str(one_page_order.get("route") or "/commercial-offer-studio"),
         "owner": "director / CIO",
-        "acceptance": primary_ask or "Finance, security and architecture accept value, install mode and proof packet.",
+        "acceptance": primary_ask
+        or "Finance, security and architecture accept value, install mode and proof packet.",
     }
     if any(item["id"] == "trust" for item in blockers):
         next_paid_step = {
@@ -1508,10 +1824,13 @@ def _deal_readiness(
         }
     elif any(item["id"] == "commercial-close" for item in blockers):
         next_paid_step = {
-            "label": str(one_page_order.get("recommended_purchase") or "Commercial close scope"),
+            "label": str(
+                one_page_order.get("recommended_purchase") or "Commercial close scope"
+            ),
             "route": "/commercial-offer-studio",
             "owner": "director / security / architect",
-            "acceptance": primary_ask or "Paid proof, hardening or pilot scope is explicit before rollout is quoted.",
+            "acceptance": primary_ask
+            or "Paid proof, hardening or pilot scope is explicit before rollout is quoted.",
         }
     elif _score(board_pack) < 80:
         next_paid_step = {
@@ -1537,12 +1856,17 @@ def _deal_readiness(
         role_lower = role.casefold()
         for blocker in blockers:
             blocker_id = blocker["id"]
-            if blocker_id == "trust" and any(token in role_lower for token in ("architect", "security", "cio")):
+            if blocker_id == "trust" and any(
+                token in role_lower for token in ("architect", "security", "cio")
+            ):
                 return blocker
-            if blocker_id == "tests" and any(token in role_lower for token in ("developer", "qa", "release")):
+            if blocker_id == "tests" and any(
+                token in role_lower for token in ("developer", "qa", "release")
+            ):
                 return blocker
             if blocker_id in {"packet", "commercial-close", "board"} and any(
-                token in role_lower for token in ("director", "sponsor", "finance", "cio")
+                token in role_lower
+                for token in ("director", "sponsor", "finance", "cio")
             ):
                 return blocker
         return None
@@ -1550,7 +1874,13 @@ def _deal_readiness(
     def _role_send(role: str) -> list[str]:
         role_lower = role.casefold()
         if any(token in role_lower for token in ("developer", "qa", "release")):
-            return ["buyer-brief.md", "buyer-room-plan.md", "safe-autopilot.md", "test-factory.md", "change-plan.md"]
+            return [
+                "buyer-brief.md",
+                "buyer-room-plan.md",
+                "safe-autopilot.md",
+                "test-factory.md",
+                "change-plan.md",
+            ]
         if any(token in role_lower for token in ("architect", "security", "cio")):
             return [
                 "buyer-brief.md",
@@ -1570,12 +1900,22 @@ def _deal_readiness(
                 "outcome-ledger.md",
                 "evidence-bundle-manifest.json",
             ]
-        return ["buyer-brief.md", "buyer-room-plan.md", "killer-demo.md", "launch-room.md", "evidence-bundle-manifest.json"]
+        return [
+            "buyer-brief.md",
+            "buyer-room-plan.md",
+            "killer-demo.md",
+            "launch-room.md",
+            "evidence-bundle-manifest.json",
+        ]
 
     committee_roles: list[dict[str, Any]] = []
     for item in role_acceptance:
         blocker = _role_blocker(item["role"])
-        status_for_role = "blocked" if blocker else ("accepted" if item["status"] == "ready" else "watch")
+        status_for_role = (
+            "blocked"
+            if blocker
+            else ("accepted" if item["status"] == "ready" else "watch")
+        )
         committee_roles.append(
             {
                 "role": item["role"],
@@ -1588,12 +1928,28 @@ def _deal_readiness(
             }
         )
 
-    accepted_roles = len([item for item in committee_roles if item["status"] == "accepted"])
-    blocked_roles = len([item for item in committee_roles if item["status"] == "blocked"])
-    committee_status = "ready_to_ask" if blocked_roles == 0 and proof_packet.get("ready_to_forward") else "proof_first"
+    accepted_roles = len(
+        [item for item in committee_roles if item["status"] == "accepted"]
+    )
+    blocked_roles = len(
+        [item for item in committee_roles if item["status"] == "blocked"]
+    )
+    committee_status = (
+        "ready_to_ask"
+        if blocked_roles == 0 and proof_packet.get("ready_to_forward")
+        else "proof_first"
+    )
     if any(item["severity"] == "high" for item in blockers):
         committee_status = "scope_first"
-    readiness_score = max(0, min(100, score - 10 * len([item for item in blockers if item["severity"] == "high"]) - 5 * len(blockers)))
+    readiness_score = max(
+        0,
+        min(
+            100,
+            score
+            - 10 * len([item for item in blockers if item["severity"] == "high"])
+            - 5 * len(blockers),
+        ),
+    )
     status = "ready" if readiness_score >= 82 and not blockers else "watch"
     if any(item["severity"] == "high" for item in blockers):
         status = "risk"
@@ -1630,12 +1986,24 @@ def _deal_readiness(
             "This is a local 1C evidence product, not another AI subscription.",
             f"Proof packet is {'forwardable' if proof_packet.get('ready_to_forward') else 'not forwardable yet'} with {proof_packet.get('file_count', 0)} files.",
             f"Offer Studio has {_int(offer_summary.get('offers'))} offers; Outcome Ledger has {_int(outcome_summary.get('success_metrics'))} success metrics.",
-            str(launch_summary.get("one_line") or "One guided route connects role, proof, trust, approval and outcomes."),
+            str(
+                launch_summary.get("one_line")
+                or "One guided route connects role, proof, trust, approval and outcomes."
+            ),
         ],
         "local_asset_case": {
             "headline": "Buy local 1C evidence, not endless generic AI rent.",
-            "value_anchor": value_anchor or (f"{first_year_value} visible first-year value" if first_year_value else "visible first-year value is calculated in Business Case"),
-            "ai_rent_baseline": str(one_page_order.get("ai_rent_baseline") or (board_pack.get("board_snapshot") or {}).get("ai_rent_baseline") or "optional AI credits"),
+            "value_anchor": value_anchor
+            or (
+                f"{first_year_value} visible first-year value"
+                if first_year_value
+                else "visible first-year value is calculated in Business Case"
+            ),
+            "ai_rent_baseline": str(
+                one_page_order.get("ai_rent_baseline")
+                or (board_pack.get("board_snapshot") or {}).get("ai_rent_baseline")
+                or "optional AI credits"
+            ),
             "three_year_ai_rent": three_year_ai_rent,
             "local_license_anchor": local_license_anchor,
             "break_even": break_even,
@@ -1712,16 +2080,27 @@ def _meeting_close_receipt(
     role_packets = [
         {
             "recipient": str(item.get("recipient") or ""),
-            "filename": str(item.get("role_packet") or role_packet_filename(str(item.get("recipient") or "stakeholder"))),
+            "filename": str(
+                item.get("role_packet")
+                or role_packet_filename(str(item.get("recipient") or "stakeholder"))
+            ),
             "status": str(item.get("availability_status") or ""),
             "route": str(item.get("route") or "/killer-demo"),
-            "missing_files": [str(file) for file in item.get("missing_files", []) if file],
+            "missing_files": [
+                str(file) for file in item.get("missing_files", []) if file
+            ],
         }
         for item in proof_packet.get("handoff", [])
     ]
     ready_to_ask = bool(commercial_close_packet.get("ready_to_ask"))
     ready_to_send = bool(proof_packet.get("ready_to_forward"))
-    status = "ready_to_ask" if ready_to_ask else str(committee.get("status") or deal_readiness.get("status") or "proof_first")
+    status = (
+        "ready_to_ask"
+        if ready_to_ask
+        else str(
+            committee.get("status") or deal_readiness.get("status") or "proof_first"
+        )
+    )
     headline = (
         "Proof and close are ready for the paid ask."
         if ready_to_ask
@@ -1746,31 +2125,58 @@ def _meeting_close_receipt(
         },
         "primary_ask": str(commercial_close_packet.get("primary_ask") or ""),
         "next_paid_step": {
-            "label": str(next_paid_step.get("label") or order.get("recommended_purchase") or "Next paid step"),
-            "route": str(next_paid_step.get("route") or order.get("route") or "/commercial-offer-studio"),
+            "label": str(
+                next_paid_step.get("label")
+                or order.get("recommended_purchase")
+                or "Next paid step"
+            ),
+            "route": str(
+                next_paid_step.get("route")
+                or order.get("route")
+                or "/commercial-offer-studio"
+            ),
             "owner": str(next_paid_step.get("owner") or "director / sponsor"),
-            "acceptance": str(next_paid_step.get("acceptance") or order.get("first_invoice_trigger") or ""),
+            "acceptance": str(
+                next_paid_step.get("acceptance")
+                or order.get("first_invoice_trigger")
+                or ""
+            ),
         },
         "proof_packet": {
             "forwardable": ready_to_send,
             "bundle_id": str(proof_packet.get("bundle_id") or "demo-checklist"),
-            "archive_filename": str(killer_archive.get("filename") or "killer-demo-archive.zip"),
-            "archive_endpoint": str(killer_archive.get("endpoint") or "/api/v1/killer-demo/archive"),
-            "archive_hash_header": str(killer_archive.get("sha256_header") or KILLER_DEMO_ARCHIVE_HASH_HEADER),
-            "manifest": str(killer_archive.get("manifest") or "killer-demo-manifest.json"),
-            "open_first": str(killer_archive.get("open_first") or "OPEN_FIRST_KILLER_DEMO.md"),
+            "archive_filename": str(
+                killer_archive.get("filename") or "killer-demo-archive.zip"
+            ),
+            "archive_endpoint": str(
+                killer_archive.get("endpoint") or "/api/v1/killer-demo/archive"
+            ),
+            "archive_hash_header": str(
+                killer_archive.get("sha256_header") or KILLER_DEMO_ARCHIVE_HASH_HEADER
+            ),
+            "manifest": str(
+                killer_archive.get("manifest") or "killer-demo-manifest.json"
+            ),
+            "open_first": str(
+                killer_archive.get("open_first") or "OPEN_FIRST_KILLER_DEMO.md"
+            ),
             "buyer_room_packet": BUYER_ROOM_PACKET_ZIP,
             "buyer_room_packet_endpoint": BUYER_ROOM_PACKET_ENDPOINT,
             "buyer_room_packet_hash_header": BUYER_ROOM_PACKET_HASH_HEADER,
-            "verification_packet": str(verification_packet.get("filename") or ARCHIVE_VERIFICATION_PACKET_ZIP),
+            "verification_packet": str(
+                verification_packet.get("filename") or ARCHIVE_VERIFICATION_PACKET_ZIP
+            ),
             "verification_packet_endpoint": str(
-                verification_packet.get("endpoint") or ARCHIVE_VERIFICATION_PACKET_ENDPOINT
+                verification_packet.get("endpoint")
+                or ARCHIVE_VERIFICATION_PACKET_ENDPOINT
             ),
             "verification_packet_hash_header": str(
-                verification_packet.get("sha256_header") or ARCHIVE_VERIFICATION_PACKET_HASH_HEADER
+                verification_packet.get("sha256_header")
+                or ARCHIVE_VERIFICATION_PACKET_HASH_HEADER
             ),
             "verification_packet_open_first": str(
-                verification_packet.get("open_first") or ARCHIVE_VERIFICATION_PACKET_OPEN_FIRST
+                verification_packet.get("open_first")
+                or ARCHIVE_VERIFICATION_PACKET_OPEN_FIRST
             ),
             "role_packet_rollup": str(role_rollup.get("line") or ""),
             "procurement_status": str(procurement.get("status") or "unknown"),
@@ -1804,7 +2210,9 @@ def _meeting_close_receipt(
             }
             for item in commercial_close_packet.get("checkout", [])
         ],
-        "customer_can_repeat": [str(item) for item in deal_readiness.get("customer_can_repeat", []) if item],
+        "customer_can_repeat": [
+            str(item) for item in deal_readiness.get("customer_can_repeat", []) if item
+        ],
         "close_questions": [
             str(committee.get("final_question") or ""),
             str(primary_objection.get("close_question") or ""),
@@ -1871,7 +2279,9 @@ def meeting_close_receipt_markdown(receipt: dict[str, Any]) -> str:
     if role_packets:
         lines.extend(["", "## Role Packets", ""])
         for item in role_packets:
-            missing = ", ".join(str(file) for file in item.get("missing_files", [])) or "none"
+            missing = (
+                ", ".join(str(file) for file in item.get("missing_files", [])) or "none"
+            )
             lines.append(
                 f"- **{item.get('recipient', '')}**: `{item.get('filename', '')}` "
                 f"({item.get('status', '')}, `{item.get('route', '/killer-demo')}`), missing {missing}"
@@ -1881,9 +2291,13 @@ def meeting_close_receipt_markdown(receipt: dict[str, Any]) -> str:
     if forwarding_packets:
         lines.extend(["", "## Forwarding Kit", ""])
         lines.append(f"- Source: **{forwarding.get('source', 'Evidence Bundle')}**")
-        lines.append(f"- Packets: **{forwarding.get('packet_count', len(forwarding_packets))}**")
+        lines.append(
+            f"- Packets: **{forwarding.get('packet_count', len(forwarding_packets))}**"
+        )
         for item in forwarding_packets:
-            attachments = ", ".join(str(file) for file in item.get("attachments", [])[:6])
+            attachments = ", ".join(
+                str(file) for file in item.get("attachments", [])[:6]
+            )
             lines.append(
                 f"- **{item.get('role', '')}**: `{item.get('filename', '')}` / "
                 f"{item.get('forwarding_subject', '')}. Attachments: {attachments}"
@@ -1900,7 +2314,9 @@ def meeting_close_receipt_markdown(receipt: dict[str, Any]) -> str:
     if commitments:
         lines.extend(["", "## Buyer Commitments", ""])
         for item in commitments:
-            lines.append(f"- **{item.get('role', '')}** (`{item.get('route', '/killer-demo')}`): {item.get('commitment', '')}")
+            lines.append(
+                f"- **{item.get('role', '')}** (`{item.get('route', '/killer-demo')}`): {item.get('commitment', '')}"
+            )
     send_files = receipt.get("send_files") or []
     if send_files:
         lines.extend(["", "## Send Files", ""])
@@ -1952,8 +2368,18 @@ def _post_demo_activation_handoff(
     role_packets = list(receipt.get("role_packets") or [])
     forwarding_kit = receipt.get("forwarding_kit") or {}
     checkout = list(receipt.get("checkout") or [])
-    ready_to_start = bool(receipt.get("ready_to_send")) and bool(next_paid.get("label")) and bool(next_paid.get("route"))
-    status = "paid_scope_ready" if ready_to_start and blockers else "ready_to_start" if ready_to_start else "proof_first"
+    ready_to_start = (
+        bool(receipt.get("ready_to_send"))
+        and bool(next_paid.get("label"))
+        and bool(next_paid.get("route"))
+    )
+    status = (
+        "paid_scope_ready"
+        if ready_to_start and blockers
+        else "ready_to_start"
+        if ready_to_start
+        else "proof_first"
+    )
     route_chain = _unique_strings(
         [
             "/killer-demo",
@@ -1977,7 +2403,10 @@ def _post_demo_activation_handoff(
             "proof-packet.json",
             str(proof.get("manifest") or "killer-demo-manifest.json"),
             *[str(item.get("filename") or "") for item in role_packets],
-            *[str(item.get("filename") or "") for item in forwarding_kit.get("packets", [])],
+            *[
+                str(item.get("filename") or "")
+                for item in forwarding_kit.get("packets", [])
+            ],
         ]
     )
     timeline: list[dict[str, Any]] = []
@@ -1985,9 +2414,15 @@ def _post_demo_activation_handoff(
         timeline.append(
             {
                 "window": str(item.get("window") or "Today"),
-                "owner": str(item.get("owner") or next_paid.get("owner") or "seller + buyer"),
+                "owner": str(
+                    item.get("owner") or next_paid.get("owner") or "seller + buyer"
+                ),
                 "action": str(item.get("action") or ""),
-                "route": str(item.get("route") or next_paid.get("route") or "/commercial-offer-studio"),
+                "route": str(
+                    item.get("route")
+                    or next_paid.get("route")
+                    or "/commercial-offer-studio"
+                ),
                 "proof_file": MEETING_CLOSE_RECEIPT_MD,
                 "exit": str(item.get("exit") or ""),
                 "status": "ready" if receipt.get("ready_to_send") else "watch",
@@ -1997,10 +2432,19 @@ def _post_demo_activation_handoff(
         {
             "window": "Day 0",
             "owner": str(next_paid.get("owner") or "pilot owner"),
-            "action": str(next_paid.get("acceptance") or commercial_close_packet.get("primary_ask") or "Start the paid scope with accepted proof."),
+            "action": str(
+                next_paid.get("acceptance")
+                or commercial_close_packet.get("primary_ask")
+                or "Start the paid scope with accepted proof."
+            ),
             "route": str(next_paid.get("route") or "/pilot-launchpad"),
             "proof_file": MEETING_CLOSE_RECEIPT_MD,
-            "exit": str((commercial_close_packet.get("one_page_order") or {}).get("first_invoice_trigger") or "Paid owner, scope, date and proof recipient are named."),
+            "exit": str(
+                (commercial_close_packet.get("one_page_order") or {}).get(
+                    "first_invoice_trigger"
+                )
+                or "Paid owner, scope, date and proof recipient are named."
+            ),
             "status": "ready" if ready_to_start else "watch",
         }
     )
@@ -2011,9 +2455,16 @@ def _post_demo_activation_handoff(
                 {
                     "window": str(item.get("window") or "Day 30"),
                     "owner": str(item.get("owner") or "pilot owner"),
-                    "action": str(item.get("next_action") or item.get("decision") or item.get("acceptance") or ""),
+                    "action": str(
+                        item.get("next_action")
+                        or item.get("decision")
+                        or item.get("acceptance")
+                        or ""
+                    ),
                     "route": str(item.get("evidence_route") or "/outcome-ledger"),
-                    "proof_file": str(item.get("evidence_file") or "rentgen-outcome-ledger.md"),
+                    "proof_file": str(
+                        item.get("evidence_file") or "rentgen-outcome-ledger.md"
+                    ),
                     "exit": str(item.get("acceptance") or ""),
                     "status": str(item.get("status") or "watch"),
                 }
@@ -2052,13 +2503,19 @@ def _post_demo_activation_handoff(
             "gate": "Killer Demo ZIP hash is recordable",
             "status": "ready" if proof_packet.get("ready_to_forward") else "watch",
             "route": "/killer-demo",
-            "evidence": str(proof.get("archive_hash_header") or KILLER_DEMO_ARCHIVE_HASH_HEADER),
+            "evidence": str(
+                proof.get("archive_hash_header") or KILLER_DEMO_ARCHIVE_HASH_HEADER
+            ),
         },
         {
             "gate": "Verification packet is attached",
-            "status": "ready" if proof_packet.get("verification_packet", {}).get("ready") else "watch",
+            "status": "ready"
+            if proof_packet.get("verification_packet", {}).get("ready")
+            else "watch",
             "route": "/evidence-bundle",
-            "evidence": str(proof.get("verification_packet") or ARCHIVE_VERIFICATION_PACKET_ZIP),
+            "evidence": str(
+                proof.get("verification_packet") or ARCHIVE_VERIFICATION_PACKET_ZIP
+            ),
         },
         {
             "gate": "Paid start owner is named",
@@ -2068,7 +2525,10 @@ def _post_demo_activation_handoff(
         },
         {
             "gate": "Outcome acceptance path is visible",
-            "status": "ready" if acceptance_rollup.get("ready_to_claim") or outcome_summary.get("acceptance_rollup_items") else "watch",
+            "status": "ready"
+            if acceptance_rollup.get("ready_to_claim")
+            or outcome_summary.get("acceptance_rollup_items")
+            else "watch",
             "route": "/outcome-ledger",
             "evidence": "Day 7/30 acceptance rows or default activation timeline.",
         },
@@ -2104,7 +2564,9 @@ def _post_demo_activation_handoff(
             "acceptance": str(next_paid.get("acceptance") or ""),
         },
         "invoice_trigger": str(
-            (commercial_close_packet.get("one_page_order") or {}).get("first_invoice_trigger")
+            (commercial_close_packet.get("one_page_order") or {}).get(
+                "first_invoice_trigger"
+            )
             or next_paid.get("acceptance")
             or "Buyer names paid owner, scope, date, proof recipient and accepted gates."
         ),
@@ -2117,10 +2579,15 @@ def _post_demo_activation_handoff(
         "outcome": {
             "route": "/outcome-ledger",
             "acceptance_rollup_ready": bool(acceptance_rollup.get("ready_to_claim")),
-            "acceptance_items": _int(acceptance_rollup.get("items")) if isinstance(acceptance_rollup.get("items"), int) else len(rollup_items),
+            "acceptance_items": _int(acceptance_rollup.get("items"))
+            if isinstance(acceptance_rollup.get("items"), int)
+            else len(rollup_items),
             "governance_refresh_ready": bool(governance_refresh.get("ready")),
             "next_window": str(acceptance_rollup.get("next_window") or "Day 7"),
-            "owner_line": str(acceptance_rollup.get("owner_line") or "Day 7/30 acceptance must be refreshed before claiming rollout value."),
+            "owner_line": str(
+                acceptance_rollup.get("owner_line")
+                or "Day 7/30 acceptance must be refreshed before claiming rollout value."
+            ),
         },
         "blockers": blockers,
         "why": "This handoff prevents the post-demo drop: buyer receives the paid start, owner, proof gates, Day 7 proof and Day 30 acceptance path in one artifact.",
@@ -2179,7 +2646,9 @@ def post_demo_activation_handoff_markdown(handoff: dict[str, Any]) -> str:
     if blockers:
         lines.extend(["", "## Scope First Blockers", ""])
         for item in blockers:
-            lines.append(f"- **{item.get('severity', '')}** / `{item.get('route', '/killer-demo')}`: {item.get('action', '')}")
+            lines.append(
+                f"- **{item.get('severity', '')}** / `{item.get('route', '/killer-demo')}`: {item.get('action', '')}"
+            )
     lines.extend(
         [
             "",
@@ -2223,7 +2692,9 @@ def _markdown(report: dict[str, Any]) -> str:
     else:
         lines.extend(["## Killer Stages", ""])
     for item in report["killer_stages"]:
-        lines.append(f"- **{item['title']}** ({item['minutes']} min, `{item['route']}`): {item['spark']}")
+        lines.append(
+            f"- **{item['title']}** ({item['minutes']} min, `{item['route']}`): {item['spark']}"
+        )
     lines.extend(["", "## Demo Modes", ""])
     for item in report["demo_modes"]:
         lines.append(f"- **{item['title']}** ({item['minutes']} min): {item['close']}")
@@ -2258,8 +2729,12 @@ def _markdown(report: dict[str, Any]) -> str:
     )
     archive = packet.get("archive") or {}
     if archive:
-        lines.append(f"- ZIP archive: `{archive.get('filename', 'evidence-archive.zip')}` via `{archive.get('route', '/evidence-bundle')}`")
-        lines.append(f"- Archive SHA header: `{archive.get('sha256_header', 'X-Archive-Sha256')}`")
+        lines.append(
+            f"- ZIP archive: `{archive.get('filename', 'evidence-archive.zip')}` via `{archive.get('route', '/evidence-bundle')}`"
+        )
+        lines.append(
+            f"- Archive SHA header: `{archive.get('sha256_header', 'X-Archive-Sha256')}`"
+        )
     killer_archive = packet.get("killer_archive") or {}
     if killer_archive:
         lines.append(
@@ -2290,7 +2765,9 @@ def _markdown(report: dict[str, Any]) -> str:
         )
         missing_names = role_rollup.get("missing_file_names") or []
         if missing_names:
-            lines.append(f"- Role packet missing files: {', '.join(str(item) for item in missing_names[:10])}")
+            lines.append(
+                f"- Role packet missing files: {', '.join(str(item) for item in missing_names[:10])}"
+            )
     procurement = packet.get("procurement_handoff") or {}
     if procurement:
         covered = procurement.get("covered_by_current_demo") or []
@@ -2306,44 +2783,66 @@ def _markdown(report: dict[str, Any]) -> str:
         )
         open_order = procurement.get("open_order") or []
         if open_order:
-            lines.append(f"- Procurement acceptance: {procurement.get('acceptance', '')}")
+            lines.append(
+                f"- Procurement acceptance: {procurement.get('acceptance', '')}"
+            )
             for item in open_order:
-                header = f" / `{item.get('hash_header')}`" if item.get("hash_header") else ""
+                header = (
+                    f" / `{item.get('hash_header')}`" if item.get("hash_header") else ""
+                )
                 lines.append(
                     f"- **{item.get('step')}. {item.get('label', '')}** (`{item.get('route', '/killer-demo')}`): "
                     f"`{item.get('file', '')}`{header} - {item.get('check', '')}"
                 )
         if covered:
-            lines.append(f"- Covered by current demo export: {', '.join(str(item) for item in covered)}")
+            lines.append(
+                f"- Covered by current demo export: {', '.join(str(item) for item in covered)}"
+            )
     for item in packet.get("handoff", []):
         lines.append(f"- **{item['recipient']}**: {item['why']} (`{item['route']}`)")
     close_packet = report.get("commercial_close_packet") or {}
     if close_packet:
         order = close_packet.get("one_page_order") or {}
         lines.extend(["", "## Commercial Close Packet", ""])
-        lines.append(f"- Ready to close: **{bool(close_packet.get('ready_to_close'))}**")
-        lines.append(f"- Ready to ask with proof: **{bool(close_packet.get('ready_to_ask'))}**")
+        lines.append(
+            f"- Ready to close: **{bool(close_packet.get('ready_to_close'))}**"
+        )
+        lines.append(
+            f"- Ready to ask with proof: **{bool(close_packet.get('ready_to_ask'))}**"
+        )
         lines.append(f"- Mode: **{close_packet.get('close_mode', 'unknown')}**")
         lines.append(f"- Primary ask: {close_packet.get('primary_ask', '')}")
-        lines.append(f"- Recommended purchase: **{order.get('recommended_purchase', 'n/a')}** (`{order.get('route', '/commercial-offer-studio')}`)")
-        lines.append(f"- Value anchor: {order.get('value_anchor', 'Business Case')}; AI rent baseline: {order.get('ai_rent_baseline', 'n/a')}")
+        lines.append(
+            f"- Recommended purchase: **{order.get('recommended_purchase', 'n/a')}** (`{order.get('route', '/commercial-offer-studio')}`)"
+        )
+        lines.append(
+            f"- Value anchor: {order.get('value_anchor', 'Business Case')}; AI rent baseline: {order.get('ai_rent_baseline', 'n/a')}"
+        )
         lines.append(
             f"- Three-year AI rent: {order.get('three_year_ai_rent', 'n/a')}; "
             f"local license anchor: {order.get('local_license_anchor', 'n/a')}; "
             f"break-even: {order.get('break_even', 'n/a')}"
         )
         for item in close_packet.get("checkout", []):
-            lines.append(f"- Checkout `{item.get('route', '/killer-demo')}`: {item.get('gate', '')} - {item.get('evidence', '')}")
+            lines.append(
+                f"- Checkout `{item.get('route', '/killer-demo')}`: {item.get('gate', '')} - {item.get('evidence', '')}"
+            )
     receipt = report.get("meeting_close_receipt") or {}
     if receipt:
         proof = receipt.get("proof_packet") or {}
         next_paid = receipt.get("next_paid_step") or {}
         committee_receipt = receipt.get("committee") or {}
         lines.extend(["", "## Meeting Close Receipt", ""])
-        lines.append(f"- File: `{receipt.get('filename', MEETING_CLOSE_RECEIPT_MD)}` / `{receipt.get('json_filename', MEETING_CLOSE_RECEIPT_JSON)}`")
-        lines.append(f"- Status: **{receipt.get('status', 'unknown')}**; ready to send **{bool(receipt.get('ready_to_send'))}**")
+        lines.append(
+            f"- File: `{receipt.get('filename', MEETING_CLOSE_RECEIPT_MD)}` / `{receipt.get('json_filename', MEETING_CLOSE_RECEIPT_JSON)}`"
+        )
+        lines.append(
+            f"- Status: **{receipt.get('status', 'unknown')}**; ready to send **{bool(receipt.get('ready_to_send'))}**"
+        )
         lines.append(f"- Headline: {receipt.get('headline', '')}")
-        lines.append(f"- Next paid step: **{next_paid.get('label', 'n/a')}** (`{next_paid.get('route', '/killer-demo')}`)")
+        lines.append(
+            f"- Next paid step: **{next_paid.get('label', 'n/a')}** (`{next_paid.get('route', '/killer-demo')}`)"
+        )
         lines.append(
             f"- Archive: `{proof.get('archive_filename', 'killer-demo-archive.zip')}`; "
             f"hash header `{proof.get('archive_hash_header', KILLER_DEMO_ARCHIVE_HASH_HEADER)}`"
@@ -2365,9 +2864,15 @@ def _markdown(report: dict[str, Any]) -> str:
             f"- File: `{activation_handoff.get('filename', POST_DEMO_ACTIVATION_MD)}` / "
             f"`{activation_handoff.get('json_filename', POST_DEMO_ACTIVATION_JSON)}`"
         )
-        lines.append(f"- Status: **{activation_handoff.get('status', 'unknown')}**; ready to start **{bool(activation_handoff.get('ready_to_start'))}**")
-        lines.append(f"- Next paid step: **{next_paid.get('label', 'n/a')}** (`{next_paid.get('route', '/pilot-launchpad')}`)")
-        lines.append(f"- Invoice trigger: {activation_handoff.get('invoice_trigger', '')}")
+        lines.append(
+            f"- Status: **{activation_handoff.get('status', 'unknown')}**; ready to start **{bool(activation_handoff.get('ready_to_start'))}**"
+        )
+        lines.append(
+            f"- Next paid step: **{next_paid.get('label', 'n/a')}** (`{next_paid.get('route', '/pilot-launchpad')}`)"
+        )
+        lines.append(
+            f"- Invoice trigger: {activation_handoff.get('invoice_trigger', '')}"
+        )
         lines.append(
             f"- Outcome next window: **{outcome.get('next_window', 'Day 7')}**; "
             f"governance refresh ready **{bool(outcome.get('governance_refresh_ready'))}**"
@@ -2379,17 +2884,25 @@ def _markdown(report: dict[str, Any]) -> str:
             )
     readiness = report.get("deal_readiness") or {}
     lines.extend(["", "## Deal Readiness", ""])
-    lines.append(f"- Status: **{str(readiness.get('status') or 'unknown').upper()}** / score **{readiness.get('score', 0)}**")
+    lines.append(
+        f"- Status: **{str(readiness.get('status') or 'unknown').upper()}** / score **{readiness.get('score', 0)}**"
+    )
     step = readiness.get("next_paid_step") or {}
-    lines.append(f"- Next paid step: **{step.get('label', 'n/a')}** (`{step.get('route', '/killer-demo')}`)")
+    lines.append(
+        f"- Next paid step: **{step.get('label', 'n/a')}** (`{step.get('route', '/killer-demo')}`)"
+    )
     for item in readiness.get("blockers", []):
-        lines.append(f"- Blocker `{item['route']}`: {item['title']} Action: {item['action']}")
+        lines.append(
+            f"- Blocker `{item['route']}`: {item['title']} Action: {item['action']}"
+        )
     asset_case = readiness.get("local_asset_case") or {}
     lines.extend(["", "## Local Asset Case", ""])
     lines.append(f"- **{asset_case.get('headline', 'Local 1C evidence product')}**")
     lines.append(f"- Value anchor: {asset_case.get('value_anchor', 'Business Case')}")
     lines.append(f"- Three-year AI rent: {asset_case.get('three_year_ai_rent', 'n/a')}")
-    lines.append(f"- Local license anchor: {asset_case.get('local_license_anchor', 'n/a')}")
+    lines.append(
+        f"- Local license anchor: {asset_case.get('local_license_anchor', 'n/a')}"
+    )
     lines.append(f"- Break-even: {asset_case.get('break_even', 'n/a')}")
     for item in asset_case.get("why_it_is_asset", []):
         lines.append(f"- {item}")
@@ -2398,12 +2911,16 @@ def _markdown(report: dict[str, Any]) -> str:
         lines.append(f"- {item}")
     lines.extend(["", "## Role Acceptance", ""])
     for item in readiness.get("role_acceptance", []):
-        lines.append(f"- **{item['role']}** ({item['status']}, `{item['route']}`): {item['must_hear']}")
+        lines.append(
+            f"- **{item['role']}** ({item['status']}, `{item['route']}`): {item['must_hear']}"
+        )
     committee = readiness.get("committee_close_board") or {}
     if committee:
         lines.extend(["", "## Committee Close Board", ""])
         lines.append(f"- Status: **{committee.get('status', 'unknown')}**")
-        lines.append(f"- Accepted roles: **{committee.get('accepted_roles', 0)} / {committee.get('total_roles', 0)}**")
+        lines.append(
+            f"- Accepted roles: **{committee.get('accepted_roles', 0)} / {committee.get('total_roles', 0)}**"
+        )
         lines.append(f"- Blocked roles: **{committee.get('blocked_roles', 0)}**")
         lines.append(f"- Final question: {committee.get('final_question', '')}")
         for item in committee.get("roles", []):
@@ -2415,11 +2932,15 @@ def _markdown(report: dict[str, Any]) -> str:
     if router:
         lines.extend(["", "## Objection Router", ""])
         lines.append(f"- Status: **{router.get('status', 'unknown')}**")
-        lines.append(f"- Ready/watch/blocked: **{router.get('ready_items', 0)}** / **{router.get('watch_items', 0)}** / **{router.get('blocked_items', 0)}**")
+        lines.append(
+            f"- Ready/watch/blocked: **{router.get('ready_items', 0)}** / **{router.get('watch_items', 0)}** / **{router.get('blocked_items', 0)}**"
+        )
         lines.append(f"- Presenter line: {router.get('presenter_line', '')}")
         primary = router.get("primary_objection") or {}
         if primary:
-            lines.append(f"- Primary objection: **{primary.get('objection', '')}** (`{primary.get('route', '/killer-demo')}`)")
+            lines.append(
+                f"- Primary objection: **{primary.get('objection', '')}** (`{primary.get('route', '/killer-demo')}`)"
+            )
         for item in router.get("items", []):
             lines.append(
                 f"- **{item.get('audience', '')}** / {item.get('status', '')} / `{item.get('route', '/killer-demo')}`: "
@@ -2513,7 +3034,9 @@ def build_killer_demo_path(
         exports=exports,
         proof_routes=proof_routes,
     )
-    proof_packet["role_packet_rollup"] = _role_packet_rollup(list(proof_packet.get("handoff") or []))
+    proof_packet["role_packet_rollup"] = _role_packet_rollup(
+        list(proof_packet.get("handoff") or [])
+    )
     commercial_close_packet = _commercial_close_packet(
         commercial_offer_studio=commercial_offer_studio,
         proof_packet=proof_packet,
@@ -2543,7 +3066,10 @@ def build_killer_demo_path(
         board_pack=board_pack,
         outcome_ledger=outcome_ledger,
         proof_packet=proof_packet,
-        deal_readiness={**deal_readiness, "commercial_close_packet": commercial_close_packet},
+        deal_readiness={
+            **deal_readiness,
+            "commercial_close_packet": commercial_close_packet,
+        },
     )
     proof_routes = sorted(set(proof_routes) | set(objection_router["proof_routes"]))
     decision = {
@@ -2578,7 +3104,11 @@ def build_killer_demo_path(
     }
     meeting_close_receipt["send_files"] = _unique_strings(
         [
-            *[str(file) for file in meeting_close_receipt.get("send_files", []) if file],
+            *[
+                str(file)
+                for file in meeting_close_receipt.get("send_files", [])
+                if file
+            ],
             POST_DEMO_ACTIVATION_MD,
             POST_DEMO_ACTIVATION_JSON,
         ]
@@ -2589,7 +3119,9 @@ def build_killer_demo_path(
         "route": "/killer-demo",
         "filename": MEETING_CLOSE_RECEIPT_MD,
         "json_filename": MEETING_CLOSE_RECEIPT_JSON,
-        "next_paid_step": str((meeting_close_receipt.get("next_paid_step") or {}).get("label") or ""),
+        "next_paid_step": str(
+            (meeting_close_receipt.get("next_paid_step") or {}).get("label") or ""
+        ),
         "why": str(meeting_close_receipt.get("why") or ""),
     }
     proof_packet["activation_handoff"] = {
@@ -2598,7 +3130,10 @@ def build_killer_demo_path(
         "route": str(post_demo_activation_handoff["route"]),
         "filename": POST_DEMO_ACTIVATION_MD,
         "json_filename": POST_DEMO_ACTIVATION_JSON,
-        "next_window": str((post_demo_activation_handoff.get("outcome") or {}).get("next_window") or "Day 7"),
+        "next_window": str(
+            (post_demo_activation_handoff.get("outcome") or {}).get("next_window")
+            or "Day 7"
+        ),
         "why": str(post_demo_activation_handoff.get("why") or ""),
     }
     report: dict[str, Any] = {
@@ -2621,17 +3156,23 @@ def build_killer_demo_path(
             "role_packets_ready": proof_packet["role_packet_rollup"]["ready"],
             "role_packets_partial": proof_packet["role_packet_rollup"]["partial"],
             "role_packets_missing": proof_packet["role_packet_rollup"]["missing"],
-            "role_packet_missing_files": proof_packet["role_packet_rollup"]["missing_files"],
+            "role_packet_missing_files": proof_packet["role_packet_rollup"][
+                "missing_files"
+            ],
             "deal_readiness_score": deal_readiness["score"],
             "committee_roles": deal_readiness["committee_close_board"]["total_roles"],
-            "committee_blocked_roles": deal_readiness["committee_close_board"]["blocked_roles"],
+            "committee_blocked_roles": deal_readiness["committee_close_board"][
+                "blocked_roles"
+            ],
             "opening_roles": len(opening_brief["role_entries"]),
             "objection_items": len(objection_router["items"]),
             "objection_watch": objection_router["watch_items"],
             "objection_blocked": objection_router["blocked_items"],
             "close_ready": bool(commercial_close_packet["ready_to_close"]),
             "close_receipt_ready": bool(meeting_close_receipt["ready_to_send"]),
-            "activation_handoff_ready": bool(post_demo_activation_handoff["ready_to_start"]),
+            "activation_handoff_ready": bool(
+                post_demo_activation_handoff["ready_to_start"]
+            ),
             "checkout_gates": len(commercial_close_packet["checkout"]),
             "total_minutes": round(sum(float(item["minutes"]) for item in stages), 1),
             "test_gaps": _summary(test_factory).get("gaps", 0),

@@ -1,4 +1,3 @@
-
 """
 Speech-to-Text Service
 Версия: 2.1.0

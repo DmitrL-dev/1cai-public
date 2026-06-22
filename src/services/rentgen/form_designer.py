@@ -10,9 +10,20 @@ from typing import Any
 from src.services.rentgen.metadata_graph import DEFAULT_CONFIG_PATH, get_metadata_object
 from src.services.rentgen.metadata_insights import review_forms
 
-
-REGISTER_TYPES = {"InformationRegister", "AccumulationRegister", "AccountingRegister", "CalculationRegister"}
-OBJECT_FORM_TYPES = {"Document", "Catalog", "DataProcessor", "Report", "BusinessProcess", "Task"}
+REGISTER_TYPES = {
+    "InformationRegister",
+    "AccumulationRegister",
+    "AccountingRegister",
+    "CalculationRegister",
+}
+OBJECT_FORM_TYPES = {
+    "Document",
+    "Catalog",
+    "DataProcessor",
+    "Report",
+    "BusinessProcess",
+    "Task",
+}
 LIST_FORM_TYPES = {"Document", "Catalog", "DocumentJournal", *REGISTER_TYPES}
 
 
@@ -67,7 +78,11 @@ def _default_commands(obj: dict[str, Any], kind: str) -> list[dict[str, str]]:
         commands.extend(
             [
                 {"name": "Write", "caption": "Write", "placement": "primary"},
-                {"name": "WriteAndClose", "caption": "Write and close", "placement": "primary"},
+                {
+                    "name": "WriteAndClose",
+                    "caption": "Write and close",
+                    "placement": "primary",
+                },
             ]
         )
         if obj["type"] == "Document":
@@ -91,7 +106,9 @@ def _default_commands(obj: dict[str, Any], kind: str) -> list[dict[str, str]]:
     return [command for command in commands if command["name"]]
 
 
-def _layout(obj: dict[str, Any], kind: str, fields: list[dict[str, Any]]) -> dict[str, Any]:
+def _layout(
+    obj: dict[str, Any], kind: str, fields: list[dict[str, Any]]
+) -> dict[str, Any]:
     sections: list[dict[str, Any]] = []
     if kind in {"list", "choice"}:
         sections.append(
@@ -101,7 +118,9 @@ def _layout(obj: dict[str, Any], kind: str, fields: list[dict[str, Any]]) -> dic
                 "type": "DynamicList",
                 "data_source": obj["ref"],
                 "columns": fields[:12],
-                "filters": [field for field in fields if field["group"] == "dimension"][:6],
+                "filters": [field for field in fields if field["group"] == "dimension"][
+                    :6
+                ],
             }
         )
     else:
@@ -117,7 +136,13 @@ def _layout(obj: dict[str, Any], kind: str, fields: list[dict[str, Any]]) -> dic
         for item in obj.get("tabular_sections") or []:
             name = str(item.get("name") or "")
             if name:
-                table_sections.append({"name": name, "caption": _display_name(item) or name, "control": "Table"})
+                table_sections.append(
+                    {
+                        "name": name,
+                        "caption": _display_name(item) or name,
+                        "control": "Table",
+                    }
+                )
         if table_sections:
             sections.append(
                 {
@@ -136,7 +161,12 @@ def _layout(obj: dict[str, Any], kind: str, fields: list[dict[str, Any]]) -> dic
     }
 
 
-def _xml_draft(obj: dict[str, Any], kind: str, layout: dict[str, Any], commands: list[dict[str, str]]) -> str:
+def _xml_draft(
+    obj: dict[str, Any],
+    kind: str,
+    layout: dict[str, Any],
+    commands: list[dict[str, str]],
+) -> str:
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         f'<FormBlueprint metadata="{escape(obj["ref"])}" kind="{escape(kind)}">',
@@ -156,7 +186,9 @@ def _xml_draft(obj: dict[str, Any], kind: str, layout: dict[str, Any], commands:
                 f'      <Field name="{escape(field["name"])}" caption="{escape(field["caption"])}" binding="{escape(field["binding"])}" />'
             )
         for table in section.get("tables", []):
-            lines.append(f'      <Table name="{escape(table["name"])}" caption="{escape(table["caption"])}" />')
+            lines.append(
+                f'      <Table name="{escape(table["name"])}" caption="{escape(table["caption"])}" />'
+            )
         lines.append("    </Section>")
     lines.extend(["  </Layout>", "</FormBlueprint>"])
     return "\n".join(lines)
@@ -185,7 +217,12 @@ Procedure ValidateRequiredFields(Cancel)
 EndProcedure"""
 
 
-def _ux_rules(obj: dict[str, Any], kind: str, fields: list[dict[str, Any]], commands: list[dict[str, str]]) -> list[dict[str, Any]]:
+def _ux_rules(
+    obj: dict[str, Any],
+    kind: str,
+    fields: list[dict[str, Any]],
+    commands: list[dict[str, str]],
+) -> list[dict[str, Any]]:
     rules = [
         {
             "severity": "medium",
@@ -235,7 +272,9 @@ def _ux_rules(obj: dict[str, Any], kind: str, fields: list[dict[str, Any]], comm
     return rules
 
 
-def _review(identifier: str, config_path: Path, include_review: bool) -> dict[str, Any] | None:
+def _review(
+    identifier: str, config_path: Path, include_review: bool
+) -> dict[str, Any] | None:
     if not include_review:
         return None
     try:
@@ -266,7 +305,11 @@ def build_form_blueprint(
     review = _review(identifier, config, include_review)
     review_findings = int((review or {}).get("summary", {}).get("findings", 0))
     ux_rules = _ux_rules(obj, kind, fields, commands)
-    readiness_status = "warn" if review_findings or any(rule["severity"] == "medium" for rule in ux_rules) else "pass"
+    readiness_status = (
+        "warn"
+        if review_findings or any(rule["severity"] == "medium" for rule in ux_rules)
+        else "pass"
+    )
 
     report = {
         "generated_at": _now(),

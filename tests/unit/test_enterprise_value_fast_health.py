@@ -11,7 +11,11 @@ from src.api import (
 
 def _executive():
     return {
-        "decision": {"status": "ready", "score": 87, "headline": "Enterprise value path is ready."},
+        "decision": {
+            "status": "ready",
+            "score": 87,
+            "headline": "Enterprise value path is ready.",
+        },
         "kpis": {"red_areas": 0, "review_queue": 1},
         "risk_summary": {"high_hotspots": 0},
     }
@@ -55,12 +59,24 @@ def test_business_case_health_is_fast(monkeypatch):
     # liveness only (no fabricated business numbers). raising=False keeps the test
     # robust if an unused builder import was dropped from the module.
     monkeypatch.setattr(business_case_api, "store_or_none", lambda: None, raising=False)
-    monkeypatch.setattr(business_case_api, "build_executive_dashboard", _fail_deep_build, raising=False)
-    monkeypatch.setattr(business_case_api, "build_platform_doctor", _fail_deep_build, raising=False)
-    monkeypatch.setattr(business_case_api, "build_intake_plan", _fail_deep_build, raising=False)
-    monkeypatch.setattr(business_case_api, "build_value_packs", _fail_deep_build, raising=False)
-    monkeypatch.setattr(business_case_api, "build_vendor_portfolio", _fail_deep_build, raising=False)
-    monkeypatch.setattr(business_case_api, "build_business_case", _fail_deep_build, raising=False)
+    monkeypatch.setattr(
+        business_case_api, "build_executive_dashboard", _fail_deep_build, raising=False
+    )
+    monkeypatch.setattr(
+        business_case_api, "build_platform_doctor", _fail_deep_build, raising=False
+    )
+    monkeypatch.setattr(
+        business_case_api, "build_intake_plan", _fail_deep_build, raising=False
+    )
+    monkeypatch.setattr(
+        business_case_api, "build_value_packs", _fail_deep_build, raising=False
+    )
+    monkeypatch.setattr(
+        business_case_api, "build_vendor_portfolio", _fail_deep_build, raising=False
+    )
+    monkeypatch.setattr(
+        business_case_api, "build_business_case", _fail_deep_build, raising=False
+    )
 
     response = _client(business_case_api).get("/api/v1/business-case/health")
 
@@ -70,10 +86,16 @@ def test_business_case_health_is_fast(monkeypatch):
 
 def test_vendor_portfolio_health_is_fast(monkeypatch):
     monkeypatch.setattr(vendor_portfolio_api, "store_or_none", lambda: None)
-    monkeypatch.setattr(vendor_portfolio_api, "build_executive_dashboard", lambda *args, **kwargs: _executive())
+    monkeypatch.setattr(
+        vendor_portfolio_api,
+        "build_executive_dashboard",
+        lambda *args, **kwargs: _executive(),
+    )
     monkeypatch.setattr(vendor_portfolio_api, "build_platform_doctor", _fail_deep_build)
     monkeypatch.setattr(vendor_portfolio_api, "build_intake_plan", _fail_deep_build)
-    monkeypatch.setattr(vendor_portfolio_api, "build_vendor_portfolio", _fail_deep_build)
+    monkeypatch.setattr(
+        vendor_portfolio_api, "build_vendor_portfolio", _fail_deep_build
+    )
 
     response = _client(vendor_portfolio_api).get("/api/v1/vendor-portfolio/health")
 
@@ -83,8 +105,12 @@ def test_vendor_portfolio_health_is_fast(monkeypatch):
 
 def test_value_packs_health_is_fast(monkeypatch):
     monkeypatch.setattr(value_packs_api, "store_or_none", lambda: None, raising=False)
-    monkeypatch.setattr(value_packs_api, "build_executive_dashboard", _fail_deep_build, raising=False)
-    monkeypatch.setattr(value_packs_api, "build_value_packs", _fail_deep_build, raising=False)
+    monkeypatch.setattr(
+        value_packs_api, "build_executive_dashboard", _fail_deep_build, raising=False
+    )
+    monkeypatch.setattr(
+        value_packs_api, "build_value_packs", _fail_deep_build, raising=False
+    )
 
     response = _client(value_packs_api).get("/api/v1/value-packs/health")
 
@@ -94,13 +120,24 @@ def test_value_packs_health_is_fast(monkeypatch):
 
 def test_enterprise_trust_center_health_is_fast(monkeypatch):
     monkeypatch.setattr(enterprise_trust_center_api, "store_or_none", lambda: None)
-    monkeypatch.setattr(enterprise_trust_center_api, "build_executive_dashboard", lambda *args, **kwargs: _executive())
+    monkeypatch.setattr(
+        enterprise_trust_center_api,
+        "build_executive_dashboard",
+        lambda *args, **kwargs: _executive(),
+    )
     monkeypatch.setattr(enterprise_trust_center_api, "_build_report", _fail_deep_build)
 
-    response = _client(enterprise_trust_center_api).get("/api/v1/enterprise-trust-center/health")
+    response = _client(enterprise_trust_center_api).get(
+        "/api/v1/enterprise-trust-center/health"
+    )
 
     assert response.status_code == 200
     _assert_fast_contract(
         response.json(),
-        {"controls", "failed_controls", "questionnaire_status", "questionnaire_blocked"},
+        {
+            "controls",
+            "failed_controls",
+            "questionnaire_status",
+            "questionnaire_blocked",
+        },
     )

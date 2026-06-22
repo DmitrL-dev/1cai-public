@@ -1,4 +1,3 @@
-
 """
 Security Headers Middleware
 Версия: 2.1.0
@@ -61,7 +60,7 @@ async def security_headers_middleware(
             "default-src 'self'; "
             # Allow Swagger UI scripts
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " # Allow Swagger UI styles
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "  # Allow Swagger UI styles
             "img-src 'self' data: https:; "
             "font-src 'self' data:; "
             # Allow WebSocket (for local dev and Kasperski)
@@ -89,17 +88,17 @@ async def security_headers_middleware(
 
         # Force HTTPS (only in production)
         if request.url.scheme == "https":
-            response.headers["Strict-Transport-Security"] = (
-                "max-age=31536000; includeSubDomains"
-            )
+            response.headers[
+                "Strict-Transport-Security"
+            ] = "max-age=31536000; includeSubDomains"
 
         # Referrer policy
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
         # Permissions policy (disable unnecessary features)
-        response.headers["Permissions-Policy"] = (
-            "camera=(), microphone=(), geolocation=(), interest-cohort=()"
-        )
+        response.headers[
+            "Permissions-Policy"
+        ] = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
 
         # XSS Protection (legacy, but doesn't hurt)
         response.headers["X-XSS-Protection"] = "1; mode=block"

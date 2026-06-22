@@ -1,5 +1,3 @@
-
-
 class LLMNotConfiguredError(RuntimeError):
     """Raised when an LLM client is not configured with credentials."""
 

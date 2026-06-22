@@ -10,8 +10,9 @@ from src.modules.copilot.services.completion_service import CompletionService
 from src.modules.copilot.services.copilot_service import CopilotService
 from src.modules.copilot.services.generation_service import GenerationService
 from src.modules.test_generation.services.generators.js_generator import JSTestGenerator
-from src.modules.test_generation.services.generators.python_generator import PythonTestGenerator
-
+from src.modules.test_generation.services.generators.python_generator import (
+    PythonTestGenerator,
+)
 
 IF_LINE = "\u0415\u0441\u043b\u0438 \u0424\u043b\u0430\u0433"
 FOR_EACH_LINE = "\u0414\u043b\u044f \u041a\u0430\u0436\u0434\u043e\u0433\u043e"

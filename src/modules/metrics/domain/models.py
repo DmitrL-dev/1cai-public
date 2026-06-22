@@ -10,10 +10,12 @@ from pydantic import BaseModel, Field
 class MetricRecord(BaseModel):
     """Metric record"""
 
-    metric_type: str = Field(..., min_length=1, max_length=200,
-                             description="Metric type")
-    service_name: str = Field(..., min_length=1, max_length=100,
-                              description="Service name")
+    metric_type: str = Field(
+        ..., min_length=1, max_length=200, description="Metric type"
+    )
+    service_name: str = Field(
+        ..., min_length=1, max_length=100, description="Service name"
+    )
     value: float = Field(..., description="Metric value")
     timestamp: datetime = Field(default_factory=datetime.now, description="Timestamp")
     tags: Dict[str, str] = Field(default_factory=dict, description="Tags")

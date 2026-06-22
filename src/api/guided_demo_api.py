@@ -64,10 +64,14 @@ def _build_report(req: GuidedDemoRequest) -> dict[str, Any]:
         intake=intake,
         client_name=req.client_name,
     )
-    assumptions = req.assumptions.model_dump(exclude_none=True) if req.assumptions else None
+    assumptions = (
+        req.assumptions.model_dump(exclude_none=True) if req.assumptions else None
+    )
     buyer_brief = build_buyer_brief(
         executive=executive,
-        monthly_ai_subscription_cost=int((assumptions or {}).get("monthly_ai_subscription_cost") or 120_000),
+        monthly_ai_subscription_cost=int(
+            (assumptions or {}).get("monthly_ai_subscription_cost") or 120_000
+        ),
         currency=str((assumptions or {}).get("currency") or "RUB"),
     )
     business_case = build_business_case(

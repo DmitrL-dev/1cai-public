@@ -6,7 +6,6 @@ from typing import Any
 
 from src.services.rentgen.buyer_pulse import ARCHIVE_VERIFICATION_PACKET_ZIP
 
-
 OPEN_FIRST_PATH_FILE = "open-first-path.md"
 
 
@@ -72,7 +71,9 @@ def _fallback_path(
     first_proof = _first(proof_readiness)
     close = _as_dict(purchase_path.get("close_artifact"))
     verification = _as_dict(purchase_path.get("verification_packet_artifact"))
-    purchase_status = _text(purchase_path.get("status"), close_status or orient_status or "watch")
+    purchase_status = _text(
+        purchase_path.get("status"), close_status or orient_status or "watch"
+    )
     primary_route = _text(primary.get("route"), "")
     primary_ask = _text(primary.get("ask"), "")
     primary_status = _text(primary.get("status"), orient_status or purchase_status)
@@ -83,9 +84,18 @@ def _fallback_path(
             "step": 1,
             "stage": "orient",
             "label": "Orient",
-            "title": _text(buyer_room_plan.get("title"), _text(first_meeting.get("label"), orient_title)),
-            "route": _text(buyer_room_plan.get("route"), _text(first_meeting.get("route"), orient_route)),
-            "line": _text(buyer_room_plan.get("start_with"), _text(first_meeting.get("line"), orient_line)),
+            "title": _text(
+                buyer_room_plan.get("title"),
+                _text(first_meeting.get("label"), orient_title),
+            ),
+            "route": _text(
+                buyer_room_plan.get("route"),
+                _text(first_meeting.get("route"), orient_route),
+            ),
+            "line": _text(
+                buyer_room_plan.get("start_with"),
+                _text(first_meeting.get("line"), orient_line),
+            ),
             "file": _text(buyer_room_plan.get("proof_file"), orient_file),
             "status": _text(buyer_room_plan.get("status"), primary_status or "watch"),
             "source": "buyer_room_plan" if has_buyer_plan else source,
@@ -98,7 +108,9 @@ def _fallback_path(
             "route": _text(first_proof.get("route"), prove_route),
             "line": _text(first_proof.get("signal"), prove_line),
             "file": _text(first_proof.get("file"), prove_file),
-            "status": _text(first_proof.get("status"), purchase_status or prove_status or "watch"),
+            "status": _text(
+                first_proof.get("status"), purchase_status or prove_status or "watch"
+            ),
             "source": "proof_readiness" if has_buyer_plan else source,
         },
         {
@@ -106,8 +118,15 @@ def _fallback_path(
             "stage": "close",
             "label": close_label,
             "title": _text(close.get("title"), close_title),
-            "route": _text(close.get("route"), close_route or primary_route or "/killer-demo"),
-            "line": _text(close.get("line"), close_line or primary_ask or "Capture accepted roles, blockers and next paid step."),
+            "route": _text(
+                close.get("route"), close_route or primary_route or "/killer-demo"
+            ),
+            "line": _text(
+                close.get("line"),
+                close_line
+                or primary_ask
+                or "Capture accepted roles, blockers and next paid step.",
+            ),
             "file": _text(close.get("file"), close_file),
             "status": _text(purchase_path.get("status"), close_status or "watch"),
             "source": "purchase_path.close_artifact" if has_buyer_plan else source,
@@ -121,31 +140,53 @@ def _fallback_path(
             "line": _text(verification.get("line"), verify_line),
             "file": _text(verification.get("file"), verify_file),
             "status": _text(verification.get("status"), verify_status),
-            "source": "purchase_path.verification_packet_artifact" if has_buyer_plan else source,
+            "source": "purchase_path.verification_packet_artifact"
+            if has_buyer_plan
+            else source,
         },
     ]
 
 
-def _normalize_item(item: dict[str, Any], fallback: dict[str, Any], step: int) -> dict[str, Any]:
-    merged = {**fallback, **{key: value for key, value in item.items() if value not in (None, "")}}
+def _normalize_item(
+    item: dict[str, Any], fallback: dict[str, Any], step: int
+) -> dict[str, Any]:
+    merged = {
+        **fallback,
+        **{key: value for key, value in item.items() if value not in (None, "")},
+    }
     merged["step"] = _int(merged.get("step"), step)
     merged["stage"] = _text(merged.get("stage"), _text(fallback.get("stage"), ""))
     merged["label"] = _text(merged.get("label"), _text(fallback.get("label"), ""))
-    merged["title"] = _text(merged.get("title"), _text(merged.get("label"), _text(fallback.get("title"), "")))
-    merged["route"] = _text(merged.get("route"), _text(fallback.get("route"), "/launch-room"))
+    merged["title"] = _text(
+        merged.get("title"),
+        _text(merged.get("label"), _text(fallback.get("title"), "")),
+    )
+    merged["route"] = _text(
+        merged.get("route"), _text(fallback.get("route"), "/launch-room")
+    )
     merged["line"] = _text(
         merged.get("line"),
-        _text(merged.get("signal"), _text(merged.get("check"), _text(fallback.get("line"), ""))),
+        _text(
+            merged.get("signal"),
+            _text(merged.get("check"), _text(fallback.get("line"), "")),
+        ),
     )
     merged["file"] = _text(
         merged.get("file"),
         _text(
             merged.get("filename"),
-            _text(merged.get("proof_file"), _text(merged.get("evidence_file"), _text(fallback.get("file"), ""))),
+            _text(
+                merged.get("proof_file"),
+                _text(merged.get("evidence_file"), _text(fallback.get("file"), "")),
+            ),
         ),
     )
-    merged["status"] = _text(merged.get("status"), _text(fallback.get("status"), "watch"))
-    merged["source"] = _text(merged.get("source"), _text(fallback.get("source"), "open-first"))
+    merged["status"] = _text(
+        merged.get("status"), _text(fallback.get("status"), "watch")
+    )
+    merged["source"] = _text(
+        merged.get("source"), _text(fallback.get("source"), "open-first")
+    )
     return merged
 
 
@@ -220,7 +261,11 @@ def build_open_first_path(
     if not existing_items:
         return fallback
     return [
-        _normalize_item(existing_items[index] if index < len(existing_items) else {}, fallback[index], index + 1)
+        _normalize_item(
+            existing_items[index] if index < len(existing_items) else {},
+            fallback[index],
+            index + 1,
+        )
         for index in range(4)
     ]
 

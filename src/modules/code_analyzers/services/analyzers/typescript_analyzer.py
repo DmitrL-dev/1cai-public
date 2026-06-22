@@ -82,13 +82,16 @@ class TypeScriptAnalyzer:
 
             total_lines = len(lines)
             functions = len(
-                [l for l in lines if "function" in l or "=>" in l or "const.*=" in l])
+                [l for l in lines if "function" in l or "=>" in l or "const.*=" in l]
+            )
             variables = len(
-                [l for l in lines if "const " in l or "let " in l or "var " in l])
+                [l for l in lines if "const " in l or "let " in l or "var " in l]
+            )
             comments = len([l for l in lines if "//" in l or "/*" in l])
 
             critical_issues = len(
-                [s for s in suggestions if s["severity"] == "critical"])
+                [s for s in suggestions if s["severity"] == "critical"]
+            )
             high_issues = len([s for s in suggestions if s["severity"] == "high"])
 
             complexity = min(
@@ -104,7 +107,8 @@ class TypeScriptAnalyzer:
             recommendations = []
             if maintainability < 70:
                 recommendations.append(
-                    "Код требует улучшения для лучшей поддерживаемости")
+                    "Код требует улучшения для лучшей поддерживаемости"
+                )
 
             return {
                 "suggestions": suggestions,

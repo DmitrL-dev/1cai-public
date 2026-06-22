@@ -21,11 +21,7 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 try:
-    from rlm_toolkit.providers import (
-        AnthropicProvider,
-        OllamaProvider,
-        OpenAIProvider,
-    )
+    from rlm_toolkit.providers import AnthropicProvider, OllamaProvider, OpenAIProvider
     from rlm_toolkit.providers.base import ResilientProvider
 except ImportError:
     raise ImportError(

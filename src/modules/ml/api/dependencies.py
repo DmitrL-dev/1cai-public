@@ -16,6 +16,7 @@ _training_service: Optional[TrainingService] = None
 _mlflow_service: Optional[MLFlowService] = None
 _ab_test_service: Optional[ABTestService] = None
 
+
 def get_ml_services():
     """Dependency for getting ML services."""
     global _metrics_service, _training_service, _mlflow_service, _ab_test_service
@@ -25,7 +26,7 @@ def get_ml_services():
 
     if _mlflow_service is None:
         _mlflow_service = MLFlowService()
-        
+
     if _training_service is None:
         _training_service = TrainingService()
 

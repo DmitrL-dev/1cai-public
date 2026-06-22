@@ -16,7 +16,9 @@ class _GraphService:
 
 
 class _ArchiExporter:
-    async def export_to_archimate(self, output_path, filters, max_nodes, max_relationships):
+    async def export_to_archimate(
+        self, output_path, filters, max_nodes, max_relationships
+    ):
         with open(output_path, "w", encoding="utf-8") as fh:
             fh.write(
                 """<?xml version="1.0" encoding="utf-8"?>
@@ -78,7 +80,9 @@ def test_archi_export_counts_generated_archimate_file(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     client = _export_client(_ArchiExporter())
 
-    response = client.post("/api/v1/archi/export", json={"output_filename": "unit.archimate"})
+    response = client.post(
+        "/api/v1/archi/export", json={"output_filename": "unit.archimate"}
+    )
 
     assert response.status_code == 200
     payload = response.json()

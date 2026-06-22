@@ -50,7 +50,13 @@ class FakeStore:
 def fake_offline_readiness(strict=False, include_metadata=True):
     return {
         "decision": {"status": "pass", "score": 96, "fails": 0, "warnings": 0},
-        "summary": {"checks": 6, "passes": 6, "warnings": 0, "fails": 0, "external_env": 0},
+        "summary": {
+            "checks": 6,
+            "passes": 6,
+            "warnings": 0,
+            "fails": 0,
+            "external_env": 0,
+        },
         "runtime": {
             "its_rag_mode": "offline",
             "metadata_scan": "included" if include_metadata else "skipped",
@@ -68,7 +74,12 @@ def test_executive_dashboard_builds_manager_decision(monkeypatch):
         FakeStore(),
         coverage_items=[
             {"id": "quality", "status": "done", "stage": "review", "priority": "P0"},
-            {"id": "governance", "status": "partial", "stage": "governance", "priority": "P1"},
+            {
+                "id": "governance",
+                "status": "partial",
+                "stage": "governance",
+                "priority": "P1",
+            },
         ],
     )
 
@@ -87,7 +98,9 @@ def test_executive_dashboard_builds_manager_decision(monkeypatch):
     assert report["coverage_ledger"]["summary"]["items"] >= 5
     assert report["coverage_ledger"]["summary"]["caveats"] >= 1
     assert report["offline"]["runtime"]["metadata_scan"] == "skipped"
-    assert any(action["owner"] == "delivery lead" for action in report["manager_actions"])
+    assert any(
+        action["owner"] == "delivery lead" for action in report["manager_actions"]
+    )
     assert "Executive Dashboard" in report["markdown"]
 
 
@@ -141,7 +154,10 @@ def test_management_buyer_pulse_api(monkeypatch):
     app.include_router(router)
     client = TestClient(app)
 
-    response = client.get("/api/v1/management/buyer-pulse", params={"monthly_ai_subscription_cost": 200_000})
+    response = client.get(
+        "/api/v1/management/buyer-pulse",
+        params={"monthly_ai_subscription_cost": 200_000},
+    )
 
     assert response.status_code == 200
     payload = response.json()
@@ -150,20 +166,26 @@ def test_management_buyer_pulse_api(monkeypatch):
     assert payload["commercial"]["three_year_ai_rent"] == "7 200 000 RUB"
     assert payload["commercial"]["local_license_anchor"] == "1 800 000 RUB"
     assert payload["purchase_path"]["primary_route"] == "/killer-demo"
-    assert payload["purchase_path"]["procurement_handoff"]["title"] == "Procurement-ready handoff"
-    assert payload["purchase_path"]["procurement_handoff"]["open_order"][0]["hash_header"] == (
-        "X-Buyer-Room-Packet-Sha256"
+    assert (
+        payload["purchase_path"]["procurement_handoff"]["title"]
+        == "Procurement-ready handoff"
     )
-    assert payload["purchase_path"]["procurement_handoff"]["open_order"][0]["endpoint"] == (
-        "/api/v1/management/buyer-room-packet"
+    assert payload["purchase_path"]["procurement_handoff"]["open_order"][0][
+        "hash_header"
+    ] == ("X-Buyer-Room-Packet-Sha256")
+    assert payload["purchase_path"]["procurement_handoff"]["open_order"][0][
+        "endpoint"
+    ] == ("/api/v1/management/buyer-room-packet")
+    assert (
+        payload["purchase_path"]["procurement_handoff"]["open_order"][1]["hash_header"]
+        == "X-Archive-Sha256"
     )
-    assert payload["purchase_path"]["procurement_handoff"]["open_order"][1]["hash_header"] == "X-Archive-Sha256"
-    assert payload["purchase_path"]["procurement_handoff"]["open_order"][2]["hash_header"] == (
-        "X-Killer-Demo-Archive-Sha256"
-    )
-    assert payload["purchase_path"]["procurement_handoff"]["open_order"][3]["endpoint"] == (
-        "/api/v1/evidence-bundle/archive/verification-packet"
-    )
+    assert payload["purchase_path"]["procurement_handoff"]["open_order"][2][
+        "hash_header"
+    ] == ("X-Killer-Demo-Archive-Sha256")
+    assert payload["purchase_path"]["procurement_handoff"]["open_order"][3][
+        "endpoint"
+    ] == ("/api/v1/evidence-bundle/archive/verification-packet")
     assert len(payload["purchase_path"]["steps"]) == 5
     assert payload["purchase_path"]["steps"][2]["file"] == "MEETING_CLOSE_RECEIPT.md"
     assert "rentgen-buyer-room-packet.zip" in payload["purchase_path"]["send_files"]
@@ -174,11 +196,17 @@ def test_management_buyer_pulse_api(monkeypatch):
     assert payload["purchase_path"]["buyer_room_packet_artifact"]["endpoint"] == (
         "/api/v1/management/buyer-room-packet"
     )
-    assert payload["purchase_path"]["buyer_room_packet_artifact"]["hash_header"] == "X-Buyer-Room-Packet-Sha256"
+    assert (
+        payload["purchase_path"]["buyer_room_packet_artifact"]["hash_header"]
+        == "X-Buyer-Room-Packet-Sha256"
+    )
     assert payload["purchase_path"]["verification_packet_artifact"]["endpoint"] == (
         "/api/v1/evidence-bundle/archive/verification-packet"
     )
-    assert payload["purchase_path"]["verification_packet_artifact"]["hash_header"] == "X-Verification-Packet-Sha256"
+    assert (
+        payload["purchase_path"]["verification_packet_artifact"]["hash_header"]
+        == "X-Verification-Packet-Sha256"
+    )
     assert payload["launch"]["route"] == "/launch-room"
     assert payload["concierge"]["route"] == "/buyer-concierge"
     assert payload["evidence"]["route"] == "/evidence-bundle"
@@ -195,14 +223,21 @@ def test_management_buyer_brief_api(monkeypatch):
     app.include_router(router)
     client = TestClient(app)
 
-    response = client.get("/api/v1/management/buyer-brief", params={"monthly_ai_subscription_cost": 200_000})
+    response = client.get(
+        "/api/v1/management/buyer-brief",
+        params={"monthly_ai_subscription_cost": 200_000},
+    )
 
     assert response.status_code == 200
     payload = response.json()
     assert payload["source"] == "management-buyer-brief"
     assert payload["pulse"]["source"] == "management-fast-pulse"
     assert payload["commercial"]["three_year_ai_rent"] == "7 200 000 RUB"
-    assert payload["primary_motion"]["route"] in {"/launch-room", "/board-pack", "/configurations"}
+    assert payload["primary_motion"]["route"] in {
+        "/launch-room",
+        "/board-pack",
+        "/configurations",
+    }
     assert payload["coverage_ledger"]["summary"]["items"] >= 5
     assert payload["coverage_ledger"]["summary"]["caveats"] >= 1
     assert payload["summary"]["roles"] == 5
@@ -213,33 +248,70 @@ def test_management_buyer_brief_api(monkeypatch):
     assert payload["summary"]["purchase_path_files"] >= 5
     assert payload["summary"]["procurement_handoff_steps"] == 6
     assert payload["summary"]["room_plan_files"] >= 4
-    assert payload["summary"]["coverage_caveats"] == payload["coverage_ledger"]["summary"]["caveats"]
+    assert (
+        payload["summary"]["coverage_caveats"]
+        == payload["coverage_ledger"]["summary"]["caveats"]
+    )
     assert payload["buyer_room_plan"]["evidence_contract"] == "buyer_room_plan_v1"
     assert payload["buyer_room_plan"]["role"] == "developer"
     assert payload["buyer_room_plan"]["route"] == "/change"
     assert payload["buyer_room_plan"]["proof_file"] == "rentgen-developer-report.md"
     assert payload["buyer_room_plan"]["close_question"]
     assert "buyer-brief.md" in payload["buyer_room_plan"]["send_files"]
-    assert [item["stage"] for item in payload["open_first_path"]] == ["orient", "prove", "close", "verify"]
+    assert [item["stage"] for item in payload["open_first_path"]] == [
+        "orient",
+        "prove",
+        "close",
+        "verify",
+    ]
     assert payload["open_first_path"][0]["source"] == "buyer_room_plan"
     assert payload["open_first_path"][3]["file"] == "archive-verification-packet.zip"
     assert payload["purchase_path"]["primary_route"] == "/killer-demo"
-    assert payload["purchase_path"]["buyer_room_packet_artifact"]["file"] == "rentgen-buyer-room-packet.zip"
-    assert payload["purchase_path"]["close_artifact"]["file"] == "MEETING_CLOSE_RECEIPT.md"
-    assert payload["purchase_path"]["activation_artifact"]["file"] == "POST_DEMO_ACTIVATION_HANDOFF.md"
-    assert payload["purchase_path"]["archive_receipt_artifact"]["file"] == "archive-acceptance-receipt.md"
-    assert payload["purchase_path"]["verification_packet_artifact"]["file"] == "archive-verification-packet.zip"
+    assert (
+        payload["purchase_path"]["buyer_room_packet_artifact"]["file"]
+        == "rentgen-buyer-room-packet.zip"
+    )
+    assert (
+        payload["purchase_path"]["close_artifact"]["file"] == "MEETING_CLOSE_RECEIPT.md"
+    )
+    assert (
+        payload["purchase_path"]["activation_artifact"]["file"]
+        == "POST_DEMO_ACTIVATION_HANDOFF.md"
+    )
+    assert (
+        payload["purchase_path"]["archive_receipt_artifact"]["file"]
+        == "archive-acceptance-receipt.md"
+    )
+    assert (
+        payload["purchase_path"]["verification_packet_artifact"]["file"]
+        == "archive-verification-packet.zip"
+    )
     handoff = payload["purchase_path"]["procurement_handoff"]
     assert handoff["acceptance"]
-    assert any(item["file"] == "rentgen-buyer-room-packet.zip" for item in handoff["attachments"])
-    assert any(item["file"] == "archive-verification-packet.zip" for item in handoff["attachments"])
-    assert any(item["hash_header"] == "X-Buyer-Room-Packet-Sha256" for item in handoff["open_order"])
-    assert any(item["hash_header"] == "X-Verification-Packet-Sha256" for item in handoff["open_order"])
+    assert any(
+        item["file"] == "rentgen-buyer-room-packet.zip"
+        for item in handoff["attachments"]
+    )
+    assert any(
+        item["file"] == "archive-verification-packet.zip"
+        for item in handoff["attachments"]
+    )
+    assert any(
+        item["hash_header"] == "X-Buyer-Room-Packet-Sha256"
+        for item in handoff["open_order"]
+    )
+    assert any(
+        item["hash_header"] == "X-Verification-Packet-Sha256"
+        for item in handoff["open_order"]
+    )
     assert "archive-acceptance-receipt.json" in payload["purchase_path"]["send_files"]
     assert "rentgen-buyer-room-packet.zip" in payload["purchase_path"]["send_files"]
     assert "archive-verification-packet.zip" in payload["purchase_path"]["send_files"]
     assert "killer-demo-manifest.json" in payload["purchase_path"]["send_files"]
-    assert any(item["label"] == "Activate" and item["route"] == "/pilot-launchpad" for item in payload["purchase_path"]["steps"])
+    assert any(
+        item["label"] == "Activate" and item["route"] == "/pilot-launchpad"
+        for item in payload["purchase_path"]["steps"]
+    )
     assert {item["role"] for item in payload["role_cards"]} == {
         "developer",
         "architect",
@@ -247,8 +319,14 @@ def test_management_buyer_brief_api(monkeypatch):
         "security",
         "vendor",
     }
-    assert any(item["role"] == "security" and item["route"] == "/enterprise-trust-center" for item in payload["role_cards"])
-    assert any(item["id"] == "audit-siem" and item["file"] == "rentgen-audit-siem.jsonl" for item in payload["proof_readiness"])
+    assert any(
+        item["role"] == "security" and item["route"] == "/enterprise-trust-center"
+        for item in payload["role_cards"]
+    )
+    assert any(
+        item["id"] == "audit-siem" and item["file"] == "rentgen-audit-siem.jsonl"
+        for item in payload["proof_readiness"]
+    )
     assert {
         "/buyer-concierge",
         "/killer-demo",
@@ -280,13 +358,21 @@ def test_management_buyer_room_packet_api(monkeypatch):
     app.include_router(router)
     client = TestClient(app)
 
-    response = client.get("/api/v1/management/buyer-room-packet", params={"monthly_ai_subscription_cost": 200_000})
+    response = client.get(
+        "/api/v1/management/buyer-room-packet",
+        params={"monthly_ai_subscription_cost": 200_000},
+    )
 
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/zip"
-    assert response.headers["x-buyer-room-packet-sha256"] == hashlib.sha256(response.content).hexdigest()
+    assert (
+        response.headers["x-buyer-room-packet-sha256"]
+        == hashlib.sha256(response.content).hexdigest()
+    )
     assert int(response.headers["x-buyer-room-packet-files"]) >= 14
-    assert response.headers["x-buyer-room-packet-open-first"] == "OPEN_FIRST_BUYER_ROOM.md"
+    assert (
+        response.headers["x-buyer-room-packet-open-first"] == "OPEN_FIRST_BUYER_ROOM.md"
+    )
 
     with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
         names = set(archive.namelist())
@@ -315,13 +401,24 @@ def test_management_buyer_room_packet_api(monkeypatch):
         assert "buyer-brief.md" in open_first
         assert "open-first-path.md" in open_first
         assert "hash-table.json" in open_first
-        open_first_path = json.loads(archive.read("open-first-path.json").decode("utf-8"))
-        assert [item["stage"] for item in open_first_path] == ["orient", "prove", "close", "verify"]
-        assert "Verification Packet ZIP" in archive.read("open-first-path.md").decode("utf-8")
+        open_first_path = json.loads(
+            archive.read("open-first-path.json").decode("utf-8")
+        )
+        assert [item["stage"] for item in open_first_path] == [
+            "orient",
+            "prove",
+            "close",
+            "verify",
+        ]
+        assert "Verification Packet ZIP" in archive.read("open-first-path.md").decode(
+            "utf-8"
+        )
         hash_table = json.loads(archive.read("hash-table.json").decode("utf-8"))
         assert hash_table["open_first"] == "OPEN_FIRST_BUYER_ROOM.md"
         assert any(item["file"] == "open-first-path.md" for item in hash_table["files"])
-        assert any(item["file"] == "procurement-handoff.md" for item in hash_table["files"])
+        assert any(
+            item["file"] == "procurement-handoff.md" for item in hash_table["files"]
+        )
 
 
 def test_management_buyer_room_packet_verify_api(monkeypatch):
@@ -347,9 +444,15 @@ def test_management_buyer_room_packet_verify_api(monkeypatch):
     assert payload["checked_files"] == 14
     assert payload["open_first_status"] == "pass"
     assert payload["hash_table_status"] == "pass"
-    assert payload["expected_headers"]["X-Buyer-Room-Packet-Sha256"] == payload["archive_sha256"]
+    assert (
+        payload["expected_headers"]["X-Buyer-Room-Packet-Sha256"]
+        == payload["archive_sha256"]
+    )
     assert payload["expected_headers"]["X-Buyer-Room-Packet-Files"] == "14"
-    assert payload["expected_headers"]["X-Buyer-Room-Packet-Open-First"] == "OPEN_FIRST_BUYER_ROOM.md"
+    assert (
+        payload["expected_headers"]["X-Buyer-Room-Packet-Open-First"]
+        == "OPEN_FIRST_BUYER_ROOM.md"
+    )
     assert "hash-table.json" in payload["required_files"]
     assert payload["summary"]["findings"] == 0
     assert payload["findings"] == []

@@ -1,4 +1,3 @@
-
 """Admin endpoints for managing user roles and permissions."""
 
 from __future__ import annotations

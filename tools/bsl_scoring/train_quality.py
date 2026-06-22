@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.model_selection import cross_val_score
 from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.model_selection import cross_val_score
 
 # Feature columns to use (all numeric features from features.ndjson)
 FEATURE_COLS = [

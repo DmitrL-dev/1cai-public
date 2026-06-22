@@ -1,10 +1,15 @@
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 import json
-import pytest
 import zipfile
 
-from src.ai.mcp.server import TOOLS, handle_offline_bundle_manifest, handle_offline_bundle_verify
+import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+from src.ai.mcp.server import (
+    TOOLS,
+    handle_offline_bundle_manifest,
+    handle_offline_bundle_verify,
+)
 from src.api.productization_api import router
 from src.services.offline_bundle import (
     build_offline_bundle_archive,
@@ -28,17 +33,23 @@ def test_offline_bundle_manifest_signs_verifies_and_detects_tamper(tmp_path):
         signing_key="secret",
         root=tmp_path,
     )
-    verified = verify_offline_bundle_manifest(manifest_path=manifest_path, signing_key="secret")
+    verified = verify_offline_bundle_manifest(
+        manifest_path=manifest_path, signing_key="secret"
+    )
 
     (tmp_path / "policy.json").write_text('{"ok": false}\n', encoding="utf-8")
-    tampered = verify_offline_bundle_manifest(manifest_path=manifest_path, signing_key="secret")
+    tampered = verify_offline_bundle_manifest(
+        manifest_path=manifest_path, signing_key="secret"
+    )
 
     assert manifest["signature"]["signed"] is True
     assert manifest["summary"]["files"] == 2
     assert manifest["summary"]["missing"] == 0
     assert verified["status"] == "pass"
     assert tampered["status"] == "fail"
-    assert any(item["code"] == "bundle-file-hash-mismatch" for item in tampered["findings"])
+    assert any(
+        item["code"] == "bundle-file-hash-mismatch" for item in tampered["findings"]
+    )
 
 
 def test_offline_bundle_rejects_paths_outside_root(tmp_path):
@@ -69,30 +80,44 @@ def test_offline_bundle_archive_verifies_and_detects_payload_tamper(tmp_path):
         signing_key="secret",
         root=tmp_path,
     )
-    verified = verify_offline_bundle_archive(archive_path=archive_path, signing_key="secret")
+    verified = verify_offline_bundle_archive(
+        archive_path=archive_path, signing_key="secret"
+    )
     with zipfile.ZipFile(archive_path, "r") as built:
         names = set(built.namelist())
         passport = json.loads(built.read("DELIVERY_PASSPORT.json").decode("utf-8"))
 
     tampered_path = tmp_path / "data" / "offline_bundles" / "tampered.zip"
-    with zipfile.ZipFile(archive_path, "r") as source, zipfile.ZipFile(tampered_path, "w", compression=zipfile.ZIP_DEFLATED) as target:
+    with zipfile.ZipFile(archive_path, "r") as source, zipfile.ZipFile(
+        tampered_path, "w", compression=zipfile.ZIP_DEFLATED
+    ) as target:
         for name in source.namelist():
             if name == "payload/policy.json":
                 target.writestr(name, b'{"ok": false}\n')
             else:
                 target.writestr(name, source.read(name))
-    tampered = verify_offline_bundle_archive(archive_path=tampered_path, signing_key="secret")
+    tampered = verify_offline_bundle_archive(
+        archive_path=tampered_path, signing_key="secret"
+    )
 
     assert archive["status"] == "created"
     assert "DELIVERY_PASSPORT.json" in names
     assert "DELIVERY_PASSPORT.md" in names
     assert "VERIFY.txt" in names
-    assert archive["delivery_passport"]["package"]["manifest_sha256"] == archive["manifest"]["manifest_sha256"]
+    assert (
+        archive["delivery_passport"]["package"]["manifest_sha256"]
+        == archive["manifest"]["manifest_sha256"]
+    )
     assert passport["decision"]["status"] in {"ready", "warn", "risk"}
-    assert verified["delivery_passport"]["package"]["manifest_sha256"] == archive["manifest"]["manifest_sha256"]
+    assert (
+        verified["delivery_passport"]["package"]["manifest_sha256"]
+        == archive["manifest"]["manifest_sha256"]
+    )
     assert verified["status"] == "pass"
     assert tampered["status"] == "fail"
-    assert any(item["code"] == "archive-payload-hash-mismatch" for item in tampered["findings"])
+    assert any(
+        item["code"] == "archive-payload-hash-mismatch" for item in tampered["findings"]
+    )
 
 
 def test_productization_api_builds_unsigned_bundle_manifest_without_writing():

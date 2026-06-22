@@ -7,7 +7,6 @@ from typing import Any
 
 from src.services.rentgen.open_first_path import build_open_first_path
 
-
 BUYER_ROOM_PACKET_ZIP = "rentgen-buyer-room-packet.zip"
 BUYER_ROOM_PACKET_ENDPOINT = "/api/v1/management/buyer-room-packet"
 BUYER_ROOM_PACKET_HASH_HEADER = "X-Buyer-Room-Packet-Sha256"
@@ -16,7 +15,9 @@ POST_DEMO_ACTIVATION_MD = "POST_DEMO_ACTIVATION_HANDOFF.md"
 ARCHIVE_ACCEPTANCE_RECEIPT_MD = "archive-acceptance-receipt.md"
 ARCHIVE_ACCEPTANCE_RECEIPT_JSON = "archive-acceptance-receipt.json"
 ARCHIVE_VERIFICATION_PACKET_ZIP = "archive-verification-packet.zip"
-ARCHIVE_VERIFICATION_PACKET_ENDPOINT = "/api/v1/evidence-bundle/archive/verification-packet"
+ARCHIVE_VERIFICATION_PACKET_ENDPOINT = (
+    "/api/v1/evidence-bundle/archive/verification-packet"
+)
 ARCHIVE_VERIFICATION_PACKET_HASH_HEADER = "X-Verification-Packet-Sha256"
 KILLER_DEMO_MANIFEST_JSON = "killer-demo-manifest.json"
 
@@ -43,7 +44,9 @@ def _score(report: dict[str, Any] | None, default: int = 0) -> int:
 def _status(report: dict[str, Any] | None, default: str = "watch") -> str:
     if not report:
         return default
-    return str((report.get("decision") or {}).get("status") or report.get("status") or default)
+    return str(
+        (report.get("decision") or {}).get("status") or report.get("status") or default
+    )
 
 
 def _money(value: Any, currency: str) -> str:
@@ -80,8 +83,12 @@ def _pilot_offers(
             "acceptance": "Buyer names at least one real pain, one proof route and one artifact they can forward.",
             "why_buy": "This removes first-meeting confusion and makes the product concrete before procurement starts.",
             "evidence": [
-                (scenarios.get("left-join-null") or {}).get("title", "1C-specific defect proof"),
-                (scenarios.get("local-enterprise-proof") or {}).get("title", "local enterprise proof"),
+                (scenarios.get("left-join-null") or {}).get(
+                    "title", "1C-specific defect proof"
+                ),
+                (scenarios.get("local-enterprise-proof") or {}).get(
+                    "title", "local enterprise proof"
+                ),
             ],
         },
         {
@@ -193,7 +200,9 @@ def _acceptance_matrix(scenario_hub: dict[str, Any]) -> list[dict[str, Any]]:
         {
             "role": "Developer",
             "must_believe": "The product catches real 1C risks before code review.",
-            "scenario_id": "left-join-null" if "left-join-null" in scenario_ids else "change-blast-radius",
+            "scenario_id": "left-join-null"
+            if "left-join-null" in scenario_ids
+            else "change-blast-radius",
             "proof_route": "/quality",
             "pass_criteria": "A concrete finding includes unsafe pattern, safe rewrite and regression test route.",
         },
@@ -327,9 +336,15 @@ def _activation_contract(
     by_id = {str(item.get("id")): item for item in offers if item.get("id")}
     if _status(productization) in {"fail", "blocked", "critical"}:
         selected = by_id.get("release-pilot") or offers[0]
-        primary_ask = "Approve a paid release pilot or hardening scope before enterprise rollout."
+        primary_ask = (
+            "Approve a paid release pilot or hardening scope before enterprise rollout."
+        )
     elif _score(productization) >= 80:
-        selected = by_id.get("enterprise-local-license") or by_id.get("release-pilot") or offers[0]
+        selected = (
+            by_id.get("enterprise-local-license")
+            or by_id.get("release-pilot")
+            or offers[0]
+        )
         primary_ask = "Start the paid local license pilot with owner, date, install contour and acceptance gates."
     else:
         selected = by_id.get("day-one-proof") or offers[0]
@@ -393,18 +408,42 @@ def _activation_contract(
         },
     ]
     commitments = [
-        {"role": "sponsor", "commitment": "Name paid owner, date and proof recipient.", "route": "/pilot-launchpad"},
-        {"role": "tech lead", "commitment": "Pick one real 1C pain or release/change scope.", "route": "/scenario-hub"},
-        {"role": "security", "commitment": "Review approval/audit evidence and trust caveats.", "route": "/approvals"},
-        {"role": "finance", "commitment": "Accept local value anchor and optional AI-credit separation.", "route": "/business-case"},
-        {"role": "delivery", "commitment": "Refresh Evidence Bundle at each acceptance window.", "route": "/evidence-bundle"},
+        {
+            "role": "sponsor",
+            "commitment": "Name paid owner, date and proof recipient.",
+            "route": "/pilot-launchpad",
+        },
+        {
+            "role": "tech lead",
+            "commitment": "Pick one real 1C pain or release/change scope.",
+            "route": "/scenario-hub",
+        },
+        {
+            "role": "security",
+            "commitment": "Review approval/audit evidence and trust caveats.",
+            "route": "/approvals",
+        },
+        {
+            "role": "finance",
+            "commitment": "Accept local value anchor and optional AI-credit separation.",
+            "route": "/business-case",
+        },
+        {
+            "role": "delivery",
+            "commitment": "Refresh Evidence Bundle at each acceptance window.",
+            "route": "/evidence-bundle",
+        },
     ]
     proof_routes = sorted(
         {str(selected.get("route") or "/pilot-launchpad")}
         | _route_set(gates)
         | _route_set(milestones)
         | _route_set(commitments)
-        | {str(item.get("proof_route") or "") for item in acceptance if item.get("proof_route")}
+        | {
+            str(item.get("proof_route") or "")
+            for item in acceptance
+            if item.get("proof_route")
+        }
     )
     ready_to_activate = bool(
         selected
@@ -492,14 +531,22 @@ def _acceptance_register(
     productization: dict[str, Any],
 ) -> dict[str, Any]:
     proof_routes = set(activation.get("proof_routes") or [])
-    proof_routes |= {str(item.get("proof_route") or "") for item in acceptance if item.get("proof_route")}
+    proof_routes |= {
+        str(item.get("proof_route") or "")
+        for item in acceptance
+        if item.get("proof_route")
+    }
     proof_routes |= _route_set(procurement)
     product_status = _status(productization)
     product_blocked = product_status in {"fail", "blocked", "critical"}
     activation_ready = bool(activation.get("ready_to_activate"))
-    acceptance_by_role = {str(item.get("role") or "").lower(): item for item in acceptance}
+    acceptance_by_role = {
+        str(item.get("role") or "").lower(): item for item in acceptance
+    }
 
-    def status(required_routes: list[str], *, blocked: bool = False, watch: bool = False) -> str:
+    def status(
+        required_routes: list[str], *, blocked: bool = False, watch: bool = False
+    ) -> str:
         if blocked:
             return "blocked"
         if any(route not in proof_routes for route in required_routes):
@@ -551,7 +598,10 @@ def _acceptance_register(
             owner="sponsor + delivery lead",
             window="Day 0",
             decision="Start the paid pilot with named owner, scope, date and proof recipient.",
-            acceptance_text=str(activation.get("invoice_trigger") or "Owner, scope and proof recipient are named."),
+            acceptance_text=str(
+                activation.get("invoice_trigger")
+                or "Owner, scope and proof recipient are named."
+            ),
             evidence_route="/pilot-launchpad",
             evidence_file="rentgen-pilot-launchpad.md",
             required_routes=["/pilot-launchpad"],
@@ -567,7 +617,12 @@ def _acceptance_register(
             acceptance_text=f"`{BUYER_ROOM_PACKET_ZIP}`, `{MEETING_CLOSE_RECEIPT_MD}`, `{POST_DEMO_ACTIVATION_MD}`, `{ARCHIVE_ACCEPTANCE_RECEIPT_MD}` and `{ARCHIVE_VERIFICATION_PACKET_ZIP}` are present in the pilot ticket.",
             evidence_route="/evidence-bundle",
             evidence_file=ARCHIVE_ACCEPTANCE_RECEIPT_MD,
-            required_routes=["/", "/killer-demo", "/pilot-launchpad", "/evidence-bundle"],
+            required_routes=[
+                "/",
+                "/killer-demo",
+                "/pilot-launchpad",
+                "/evidence-bundle",
+            ],
             next_action="Download the Buyer Room Packet, both archives and verification packet, then attach close-room receipts to the paid activation ticket.",
             watch=not activation_ready,
         ),
@@ -589,8 +644,14 @@ def _acceptance_register(
             role="Finance",
             owner="finance owner",
             window="Day 0",
-            decision=str(director.get("must_believe") or "Accept local product value and optional AI-credit separation."),
-            acceptance_text=str(director.get("pass_criteria") or "Money map and local contour are understood without reading code."),
+            decision=str(
+                director.get("must_believe")
+                or "Accept local product value and optional AI-credit separation."
+            ),
+            acceptance_text=str(
+                director.get("pass_criteria")
+                or "Money map and local contour are understood without reading code."
+            ),
             evidence_route="/business-case",
             evidence_file="rentgen-business-case.md",
             required_routes=["/business-case", "/commercial-offer-studio"],
@@ -601,11 +662,22 @@ def _acceptance_register(
             role="Security / governance",
             owner="security owner",
             window="Day 1",
-            decision=str(security.get("must_believe") or "Approve local contour, approvals and audit proof before write-like work."),
-            acceptance_text=str(security.get("pass_criteria") or "Approval records, audit export and trust caveats are visible."),
+            decision=str(
+                security.get("must_believe")
+                or "Approve local contour, approvals and audit proof before write-like work."
+            ),
+            acceptance_text=str(
+                security.get("pass_criteria")
+                or "Approval records, audit export and trust caveats are visible."
+            ),
             evidence_route="/approvals",
             evidence_file="governance-proof.md",
-            required_routes=["/approvals", "/audit", "/evidence-bundle", "/enterprise-trust-center"],
+            required_routes=[
+                "/approvals",
+                "/audit",
+                "/evidence-bundle",
+                "/enterprise-trust-center",
+            ],
             next_action="Review approval/audit evidence and turn unresolved caveats into scope.",
             blocked=product_blocked,
             watch=product_status not in {"pass", "ready"},
@@ -616,8 +688,14 @@ def _acceptance_register(
             role="Architect",
             owner="architecture board",
             window="Day 1",
-            decision=str(architect.get("must_believe") or "Accept platform, topology, extension and rollout risks."),
-            acceptance_text=str(architect.get("pass_criteria") or "Platform and productization caveats have owner or accepted risk."),
+            decision=str(
+                architect.get("must_believe")
+                or "Accept platform, topology, extension and rollout risks."
+            ),
+            acceptance_text=str(
+                architect.get("pass_criteria")
+                or "Platform and productization caveats have owner or accepted risk."
+            ),
             evidence_route="/enterprise-trust-center",
             evidence_file="rentgen-enterprise-trust-center.md",
             required_routes=["/enterprise-trust-center", "/productization"],
@@ -631,11 +709,20 @@ def _acceptance_register(
             role="Developer / tech lead",
             owner="tech lead",
             window="Day 7",
-            decision=str(developer.get("must_believe") or "Trust the product on one real 1C finding."),
-            acceptance_text=str(developer.get("pass_criteria") or "Finding, safe rewrite and regression route are explainable."),
+            decision=str(
+                developer.get("must_believe")
+                or "Trust the product on one real 1C finding."
+            ),
+            acceptance_text=str(
+                developer.get("pass_criteria")
+                or "Finding, safe rewrite and regression route are explainable."
+            ),
             evidence_route=str(developer.get("proof_route") or "/quality"),
             evidence_file="rentgen-guided-demo.md",
-            required_routes=[str(developer.get("proof_route") or "/quality"), "/scenario-hub"],
+            required_routes=[
+                str(developer.get("proof_route") or "/quality"),
+                "/scenario-hub",
+            ],
             next_action="Pick one real 1C pain, run proof and record test/owner action.",
         ),
         item(
@@ -659,7 +746,11 @@ def _acceptance_register(
             acceptance_text="Day 30 decision names measured outcome, caveats and next paid package.",
             evidence_route="/outcome-ledger",
             evidence_file="rentgen-outcome-ledger.md",
-            required_routes=["/outcome-ledger", "/commercial-offer-studio", "/evidence-bundle"],
+            required_routes=[
+                "/outcome-ledger",
+                "/commercial-offer-studio",
+                "/evidence-bundle",
+            ],
             next_action="Refresh Outcome Ledger and select rollout, renewal, hardening or no-go.",
         ),
     ]
@@ -691,8 +782,14 @@ def _pilot_room_bridge(
         "label": str(activation.get("selected_offer_title") or "Start paid pilot"),
         "route": str(activation.get("start_route") or "/pilot-launchpad"),
         "status": "ready" if ready_to_activate else "watch",
-        "ask": str(activation.get("primary_ask") or "Start the paid pilot with owner, date and evidence gates."),
-        "reason": str(activation.get("activation_line") or "Pilot activation needs owner, gates and acceptance evidence."),
+        "ask": str(
+            activation.get("primary_ask")
+            or "Start the paid pilot with owner, date and evidence gates."
+        ),
+        "reason": str(
+            activation.get("activation_line")
+            or "Pilot activation needs owner, gates and acceptance evidence."
+        ),
         "invoice_trigger": str(activation.get("invoice_trigger") or ""),
     }
     if not primary:
@@ -724,12 +821,19 @@ def _pilot_room_bridge(
     if not proof_readiness:
         proof_readiness = [
             {
-                "id": str(item.get("gate") or item.get("route") or "pilot-proof").lower().replace(" ", "-"),
+                "id": str(item.get("gate") or item.get("route") or "pilot-proof")
+                .lower()
+                .replace(" ", "-"),
                 "title": str(item.get("gate") or "Pilot proof"),
                 "route": str(item.get("route") or "/pilot-launchpad"),
                 "status": "ready" if ready_to_activate else "watch",
-                "signal": str(item.get("evidence") or "Required before the buyer can start the paid pilot."),
-                "file": route_to_file.get(str(item.get("route") or ""), "rentgen-pilot-launchpad.md"),
+                "signal": str(
+                    item.get("evidence")
+                    or "Required before the buyer can start the paid pilot."
+                ),
+                "file": route_to_file.get(
+                    str(item.get("route") or ""), "rentgen-pilot-launchpad.md"
+                ),
             }
             for item in activation.get("gates", [])[:4]
         ]
@@ -737,15 +841,30 @@ def _pilot_room_bridge(
     meeting_flow = list(brief.get("meeting_flow") or [])
     if not meeting_flow:
         meeting_flow = [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Name role, pain and the first proof path."},
-            {"step": 2, "label": "Prove", "route": "/killer-demo", "line": "Show one buyer proof and the packet that can be forwarded."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Name role, pain and the first proof path.",
+            },
+            {
+                "step": 2,
+                "label": "Prove",
+                "route": "/killer-demo",
+                "line": "Show one buyer proof and the packet that can be forwarded.",
+            },
             {
                 "step": 3,
                 "label": "Activate",
                 "route": str(activation_motion["route"]),
                 "line": str(activation_motion["ask"]),
             },
-            {"step": 4, "label": "Sign", "route": "/evidence-bundle", "line": "Attach approvals, audit proof, buyer brief and pilot evidence."},
+            {
+                "step": 4,
+                "label": "Sign",
+                "route": "/evidence-bundle",
+                "line": "Attach approvals, audit proof, buyer brief and pilot evidence.",
+            },
         ]
     open_first_path = build_open_first_path(
         existing_path=brief.get("open_first_path"),
@@ -784,7 +903,11 @@ def _pilot_room_bridge(
     )
     fallback_score = 84 if ready_to_activate else 68
     return {
-        "status": str(brief.get("purchase_status") or primary.get("status") or ("ready" if ready_to_activate else "watch")),
+        "status": str(
+            brief.get("purchase_status")
+            or primary.get("status")
+            or ("ready" if ready_to_activate else "watch")
+        ),
         "score": _int(brief.get("score"), fallback_score),
         "source": str(brief.get("source") or "pilot-launchpad-derived"),
         "room_line": str(
@@ -840,8 +963,12 @@ def _risk_burndown(scenario_hub: dict[str, Any]) -> list[dict[str, str]]:
             {
                 "scenario_id": str(item.get("scenario_id") or ""),
                 "buyer_risk": str(scenario.get("pain") or item.get("title") or ""),
-                "close_action": str(scenario.get("buyer_line") or item.get("why") or ""),
-                "route": str(item.get("route") or scenario.get("route") or "/scenario-hub"),
+                "close_action": str(
+                    scenario.get("buyer_line") or item.get("why") or ""
+                ),
+                "route": str(
+                    item.get("route") or scenario.get("route") or "/scenario-hub"
+                ),
             }
         )
     return rows
@@ -858,22 +985,86 @@ def _exports() -> list[dict[str, str]]:
         },
         {"title": "Buyer Brief markdown", "filename": "buyer-brief.md", "route": "/"},
         {"title": "Buyer Pulse markdown", "filename": "buyer-pulse.md", "route": "/"},
-        {"title": "Meeting Close Receipt", "filename": MEETING_CLOSE_RECEIPT_MD, "route": "/killer-demo"},
-        {"title": "Post-Demo Activation Handoff", "filename": POST_DEMO_ACTIVATION_MD, "route": "/pilot-launchpad"},
-        {"title": "Archive Acceptance Receipt", "filename": ARCHIVE_ACCEPTANCE_RECEIPT_MD, "route": "/evidence-bundle"},
-        {"title": "Archive Acceptance Receipt JSON", "filename": ARCHIVE_ACCEPTANCE_RECEIPT_JSON, "route": "/evidence-bundle"},
-        {"title": "Verification Packet ZIP", "filename": ARCHIVE_VERIFICATION_PACKET_ZIP, "route": "/evidence-bundle"},
-        {"title": "Demo Command Center markdown", "filename": "rentgen-demo-command-center.md", "route": "/demo-command-center"},
-        {"title": "Buyer Concierge markdown", "filename": "rentgen-buyer-concierge.md", "route": "/buyer-concierge"},
-        {"title": "Commercial Offer Studio markdown", "filename": "rentgen-commercial-offer-studio.md", "route": "/commercial-offer-studio"},
-        {"title": "Enterprise Trust Center markdown", "filename": "rentgen-enterprise-trust-center.md", "route": "/enterprise-trust-center"},
-        {"title": "Pilot Launchpad markdown", "filename": "rentgen-pilot-launchpad.md", "route": "/pilot-launchpad"},
-        {"title": "Scenario Hub markdown", "filename": "rentgen-scenario-hub.md", "route": "/scenario-hub"},
-        {"title": "Guided Demo markdown", "filename": "rentgen-guided-demo.md", "route": "/guided-demo"},
-        {"title": "Business Case markdown", "filename": "rentgen-business-case.md", "route": "/business-case"},
-        {"title": "Governance Proof markdown", "filename": "governance-proof.md", "route": "/approvals"},
-        {"title": "Audit verification/export", "filename": "rentgen-audit-log.jsonl", "route": "/audit"},
-        {"title": "Evidence Bundle manifest", "filename": "evidence-bundle-manifest.json", "route": "/evidence-bundle"},
+        {
+            "title": "Meeting Close Receipt",
+            "filename": MEETING_CLOSE_RECEIPT_MD,
+            "route": "/killer-demo",
+        },
+        {
+            "title": "Post-Demo Activation Handoff",
+            "filename": POST_DEMO_ACTIVATION_MD,
+            "route": "/pilot-launchpad",
+        },
+        {
+            "title": "Archive Acceptance Receipt",
+            "filename": ARCHIVE_ACCEPTANCE_RECEIPT_MD,
+            "route": "/evidence-bundle",
+        },
+        {
+            "title": "Archive Acceptance Receipt JSON",
+            "filename": ARCHIVE_ACCEPTANCE_RECEIPT_JSON,
+            "route": "/evidence-bundle",
+        },
+        {
+            "title": "Verification Packet ZIP",
+            "filename": ARCHIVE_VERIFICATION_PACKET_ZIP,
+            "route": "/evidence-bundle",
+        },
+        {
+            "title": "Demo Command Center markdown",
+            "filename": "rentgen-demo-command-center.md",
+            "route": "/demo-command-center",
+        },
+        {
+            "title": "Buyer Concierge markdown",
+            "filename": "rentgen-buyer-concierge.md",
+            "route": "/buyer-concierge",
+        },
+        {
+            "title": "Commercial Offer Studio markdown",
+            "filename": "rentgen-commercial-offer-studio.md",
+            "route": "/commercial-offer-studio",
+        },
+        {
+            "title": "Enterprise Trust Center markdown",
+            "filename": "rentgen-enterprise-trust-center.md",
+            "route": "/enterprise-trust-center",
+        },
+        {
+            "title": "Pilot Launchpad markdown",
+            "filename": "rentgen-pilot-launchpad.md",
+            "route": "/pilot-launchpad",
+        },
+        {
+            "title": "Scenario Hub markdown",
+            "filename": "rentgen-scenario-hub.md",
+            "route": "/scenario-hub",
+        },
+        {
+            "title": "Guided Demo markdown",
+            "filename": "rentgen-guided-demo.md",
+            "route": "/guided-demo",
+        },
+        {
+            "title": "Business Case markdown",
+            "filename": "rentgen-business-case.md",
+            "route": "/business-case",
+        },
+        {
+            "title": "Governance Proof markdown",
+            "filename": "governance-proof.md",
+            "route": "/approvals",
+        },
+        {
+            "title": "Audit verification/export",
+            "filename": "rentgen-audit-log.jsonl",
+            "route": "/audit",
+        },
+        {
+            "title": "Evidence Bundle manifest",
+            "filename": "evidence-bundle-manifest.json",
+            "route": "/evidence-bundle",
+        },
     ]
 
 
@@ -889,25 +1080,37 @@ def _markdown(report: dict[str, Any]) -> str:
         "",
     ]
     for item in report["pilot_offers"]:
-        lines.append(f"- **{item['title']}** ({item['duration']}, `{item['route']}`): {item['acceptance']}")
+        lines.append(
+            f"- **{item['title']}** ({item['duration']}, `{item['route']}`): {item['acceptance']}"
+        )
     lines.extend(["", "## Day plan", ""])
     for item in report["day_plan"]:
-        lines.append(f"- **{item['window']}** / {item['owner']}: {item['exit_criteria']}")
+        lines.append(
+            f"- **{item['window']}** / {item['owner']}: {item['exit_criteria']}"
+        )
     lines.extend(["", "## Acceptance matrix", ""])
     for item in report["acceptance_matrix"]:
-        lines.append(f"- **{item['role']}** (`{item['proof_route']}`): {item['pass_criteria']}")
+        lines.append(
+            f"- **{item['role']}** (`{item['proof_route']}`): {item['pass_criteria']}"
+        )
     lines.extend(["", "## Procurement pack", ""])
     for item in report["procurement_pack"]:
         lines.append(f"- **{item['owner']}** / {item['artifact']}: {item['answer']}")
     activation = report.get("activation_contract") or {}
     if activation:
         lines.extend(["", "## Activation Contract", ""])
-        lines.append(f"- Ready to activate: **{bool(activation.get('ready_to_activate'))}**")
-        lines.append(f"- Selected offer: **{activation.get('selected_offer_title', 'n/a')}** (`{activation.get('start_route', '/pilot-launchpad')}`)")
+        lines.append(
+            f"- Ready to activate: **{bool(activation.get('ready_to_activate'))}**"
+        )
+        lines.append(
+            f"- Selected offer: **{activation.get('selected_offer_title', 'n/a')}** (`{activation.get('start_route', '/pilot-launchpad')}`)"
+        )
         lines.append(f"- Primary ask: {activation.get('primary_ask', '')}")
         lines.append(f"- Invoice trigger: {activation.get('invoice_trigger', '')}")
         for item in activation.get("gates", []):
-            lines.append(f"- Gate `{item.get('route', '/pilot-launchpad')}`: {item.get('gate', '')} - {item.get('evidence', '')}")
+            lines.append(
+                f"- Gate `{item.get('route', '/pilot-launchpad')}`: {item.get('gate', '')} - {item.get('evidence', '')}"
+            )
         handoff_files = activation.get("handoff_files") or []
         if handoff_files:
             lines.extend(["", "### Post-Demo Handoff Files", ""])
@@ -916,12 +1119,16 @@ def _markdown(report: dict[str, Any]) -> str:
                     f"- `{item.get('filename', '')}` (`{item.get('route', '/pilot-launchpad')}`): {item.get('reason', '')}"
                 )
         for item in activation.get("milestones", []):
-            lines.append(f"- **{item.get('window', '')}** / {item.get('owner', '')}: {item.get('acceptance', '')}")
+            lines.append(
+                f"- **{item.get('window', '')}** / {item.get('owner', '')}: {item.get('acceptance', '')}"
+            )
     register = report.get("acceptance_register") or {}
     if register:
         lines.extend(["", "## Acceptance Register", ""])
         lines.append(f"- Ready to sign: **{bool(register.get('ready_to_sign'))}**")
-        lines.append(f"- Ready/watch/blocked: **{register.get('ready_items', 0)}** / **{register.get('watch_items', 0)}** / **{register.get('blocked_items', 0)}**")
+        lines.append(
+            f"- Ready/watch/blocked: **{register.get('ready_items', 0)}** / **{register.get('watch_items', 0)}** / **{register.get('blocked_items', 0)}**"
+        )
         lines.append(f"- Owner line: {register.get('owner_line', '')}")
         for item in register.get("items", []):
             lines.append(
@@ -932,10 +1139,14 @@ def _markdown(report: dict[str, Any]) -> str:
     bridge = report.get("pilot_room_bridge") or {}
     if bridge:
         lines.extend(["", "## Pilot Room Bridge", ""])
-        lines.append(f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**")
+        lines.append(
+            f"- Source: **{bridge.get('source', 'n/a')}**; status **{bridge.get('status', 'watch')}** / score **{bridge.get('score', 0)}**"
+        )
         lines.append(f"- Room line: {bridge.get('room_line', '')}")
         motion = bridge.get("primary_motion") or {}
-        lines.append(f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/pilot-launchpad')}`): {motion.get('ask', '')}")
+        lines.append(
+            f"- Primary motion: **{motion.get('label', 'n/a')}** (`{motion.get('route', '/pilot-launchpad')}`): {motion.get('ask', '')}"
+        )
         activation_motion = bridge.get("activation_motion") or {}
         lines.append(
             f"- Activation motion: **{activation_motion.get('label', 'n/a')}** "
@@ -947,11 +1158,17 @@ def _markdown(report: dict[str, Any]) -> str:
                 f"`{item.get('route', '')}` -> `{item.get('file', '')}`: {item.get('line', '')}"
             )
         for item in bridge.get("role_cards", []):
-            lines.append(f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}")
+            lines.append(
+                f"- **{item.get('title', item.get('role', 'role'))}** `{item.get('route', '')}`: {item.get('spark', '')}"
+            )
         for item in bridge.get("proof_readiness", []):
-            lines.append(f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}")
+            lines.append(
+                f"- Proof **{item.get('title', 'proof')}** `{item.get('route', '')}` -> {item.get('file', '')}: {item.get('signal', '')}"
+            )
         for item in bridge.get("meeting_flow", []):
-            lines.append(f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}")
+            lines.append(
+                f"- Step {item.get('step', '')} **{item.get('label', 'step')}** `{item.get('route', '')}`: {item.get('line', '')}"
+            )
     lines.extend(["", "## Caveats", ""])
     lines.extend(f"- {item}" for item in report["caveats"])
     return "\n".join(lines)
@@ -995,7 +1212,13 @@ def build_pilot_launchpad(
         _status(productization),
         _status(vendor_portfolio),
     }
-    status = "risk" if statuses & {"blocked", "critical", "fail"} else "ready" if score >= 82 else "watch"
+    status = (
+        "risk"
+        if statuses & {"blocked", "critical", "fail"}
+        else "ready"
+        if score >= 82
+        else "watch"
+    )
     offers = _pilot_offers(
         business_case=business_case,
         scenario_hub=scenario_hub,

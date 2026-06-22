@@ -4,7 +4,6 @@ Code Analyzer Service
 from typing import Any, Dict
 
 
-
 class CodeAnalyzer:
     """Service for code analysis"""
 
@@ -73,7 +72,9 @@ class CodeAnalyzer:
                 )
 
             # Hardcoded passwords check
-            if ("Пароль" in line or "password" in line.lower()) and ("=" in line or ":=" in line):
+            if ("Пароль" in line or "password" in line.lower()) and (
+                "=" in line or ":=" in line
+            ):
                 if '"' in line or "'" in line:
                     suggestions.append(
                         {
@@ -112,22 +113,29 @@ class CodeAnalyzer:
         functions = len([l for l in lines if "Процедура" in l or "Функция" in l])
         variables = len([l for l in lines if "=" in l])
         comments = len(
-            [l for l in lines if "//" in l or "#" in l or (
-                l.strip().startswith("'") and len(l.strip()) > 1)]
+            [
+                l
+                for l in lines
+                if "//" in l
+                or "#" in l
+                or (l.strip().startswith("'") and len(l.strip()) > 1)
+            ]
         )
 
         critical_issues = len([s for s in suggestions if s["severity"] == "critical"])
         high_issues = len([s for s in suggestions if s["severity"] == "high"])
 
-        complexity = min(100, int((total_lines / 100) * \
-                         50 + (len(suggestions) / 10) * 50))
+        complexity = min(
+            100, int((total_lines / 100) * 50 + (len(suggestions) / 10) * 50)
+        )
         maintainability = max(0, 100 - (critical_issues * 20 + high_issues * 10))
 
         security_issues = len([s for s in suggestions if s["category"] == "security"])
         security_score = max(0, 100 - security_issues * 25)
 
         performance_issues = len(
-            [s for s in suggestions if s["category"] == "performance"])
+            [s for s in suggestions if s["category"] == "performance"]
+        )
         performance_score = max(0, 100 - performance_issues * 15)
 
         code_quality = (maintainability + security_score + performance_score) / 3
@@ -137,13 +145,16 @@ class CodeAnalyzer:
             recommendations.append("Recommended to strengthen security checks in code")
         if performance_score < 70:
             recommendations.append(
-                "Performance issues detected. Consider optimizing queries and algorithms")
+                "Performance issues detected. Consider optimizing queries and algorithms"
+            )
         if maintainability < 70:
             recommendations.append(
-                "Code requires improvement for better maintainability")
+                "Code requires improvement for better maintainability"
+            )
         if critical_issues > 0:
             recommendations.append(
-                f"Detected {critical_issues} critical issues. Immediate fix required")
+                f"Detected {critical_issues} critical issues. Immediate fix required"
+            )
 
         return {
             "suggestions": suggestions,

@@ -8,9 +8,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from src.services.rentgen.metadata_graph import DEFAULT_CONFIG_PATH, build_metadata_graph
+from src.services.rentgen.metadata_graph import (
+    DEFAULT_CONFIG_PATH,
+    build_metadata_graph,
+)
 from src.services.rentgen.path_safety import confine_path
-
 
 DANGEROUS_RIGHTS = {
     "Delete",
@@ -21,7 +23,12 @@ DANGEROUS_RIGHTS = {
     "InteractiveMarkForDeletion",
     "InteractiveClearDeletionMark",
 }
-WRITE_RIGHTS = DANGEROUS_RIGHTS | {"Insert", "InteractiveInsert", "Posting", "UndoPosting"}
+WRITE_RIGHTS = DANGEROUS_RIGHTS | {
+    "Insert",
+    "InteractiveInsert",
+    "Posting",
+    "UndoPosting",
+}
 # Allow-list of recognized EDT Rights.xml RLS row-restriction elements. In the
 # 1C roles schema (xmlns="http://v8.1c.ru/8.2/roles") a row-level restriction is
 # carried by a <restrictionByCondition> (nested in a <right>) holding a
@@ -232,7 +239,10 @@ def _findings(role_reports: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     "code": "broad-role",
                     "role": role["role"],
                     "message": "Role grants a very broad rights surface.",
-                    "details": {"rights": role["rights"], "objects": role.get("objects", 0)},
+                    "details": {
+                        "rights": role["rights"],
+                        "objects": role.get("objects", 0),
+                    },
                 }
             )
         if int(role.get("rls_rules") or 0) == 0 and int(role.get("rights") or 0) > 0:
@@ -246,7 +256,9 @@ def _findings(role_reports: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 }
             )
     order = {"high": 0, "medium": 1, "low": 2}
-    findings.sort(key=lambda item: (order.get(item["severity"], 9), item["role"], item["code"]))
+    findings.sort(
+        key=lambda item: (order.get(item["severity"], 9), item["role"], item["code"])
+    )
     return findings
 
 
@@ -255,9 +267,13 @@ def _scan_role_reports(
     root: Path,
     role_limit: int,
     object_limit: int,
-) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+) -> tuple[
+    dict[str, Any], list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]
+]:
     graph = build_metadata_graph(str(root))
-    roles = [obj for obj in graph.get("objects", []) if obj.get("type") == "Role"][:role_limit]
+    roles = [obj for obj in graph.get("objects", []) if obj.get("type") == "Role"][
+        :role_limit
+    ]
     role_reports = [
         _parse_role_rights(config_path=root, role=role, object_limit=object_limit)
         for role in roles
@@ -266,7 +282,9 @@ def _scan_role_reports(
     return graph, roles, role_reports, matrix
 
 
-def _rights_fingerprint(role_reports: list[dict[str, Any]]) -> dict[tuple[str, str, str], dict[str, Any]]:
+def _rights_fingerprint(
+    role_reports: list[dict[str, Any]]
+) -> dict[tuple[str, str, str], dict[str, Any]]:
     rows: dict[tuple[str, str, str], dict[str, Any]] = {}
     for role in role_reports:
         role_name = str(role.get("role") or role.get("name") or "unknown")
@@ -335,7 +353,9 @@ def _rights_diff(
     caveat = None
     if not baseline_graph.get("available"):
         status = "risk"
-        caveat = "Baseline configuration source is not available; rights diff is incomplete."
+        caveat = (
+            "Baseline configuration source is not available; rights diff is incomplete."
+        )
     return {
         "enabled": True,
         "status": status,
@@ -352,13 +372,17 @@ def _rights_diff(
     }
 
 
-def _decision(summary: dict[str, Any], findings: list[dict[str, Any]]) -> dict[str, Any]:
+def _decision(
+    summary: dict[str, Any], findings: list[dict[str, Any]]
+) -> dict[str, Any]:
     high = sum(1 for item in findings if item["severity"] == "high")
     medium = sum(1 for item in findings if item["severity"] == "medium")
     score = max(0, 100 - high * 16 - medium * 7 - summary["roles_without_rights"] * 3)
     if high:
         status = "risk"
-        headline = "Есть роли с опасными правами; релиз/обновление требует security gate."
+        headline = (
+            "Есть роли с опасными правами; релиз/обновление требует security gate."
+        )
     elif medium:
         status = "watch"
         headline = "Матрица прав собрана, но RLS/широкие роли требуют подтверждения."
@@ -466,11 +490,17 @@ def build_rights_rls(
     summary = {
         "roles": len(roles),
         "roles_scanned": len(role_reports),
-        "roles_with_rights": sum(1 for role in role_reports if int(role.get("rights") or 0)),
-        "roles_without_rights": sum(1 for role in role_reports if role.get("missing_rights_xml")),
+        "roles_with_rights": sum(
+            1 for role in role_reports if int(role.get("rights") or 0)
+        ),
+        "roles_without_rights": sum(
+            1 for role in role_reports if role.get("missing_rights_xml")
+        ),
         "objects": sum(int(role.get("objects") or 0) for role in role_reports),
         "total_rights": sum(int(role.get("rights") or 0) for role in role_reports),
-        "dangerous_rights": sum(int(role.get("dangerous_rights") or 0) for role in role_reports),
+        "dangerous_rights": sum(
+            int(role.get("dangerous_rights") or 0) for role in role_reports
+        ),
         "rls_rules": sum(int(role.get("rls_rules") or 0) for role in role_reports),
         "findings": len(findings),
         "by_right": dict(by_right.most_common(20)),
@@ -537,7 +567,11 @@ def build_rights_rls(
         "matrix": matrix[:object_limit],
         "findings": findings[:200],
         "gate": {
-            "status": "fail" if decision["status"] == "risk" else "warn" if decision["status"] == "watch" else "pass",
+            "status": "fail"
+            if decision["status"] == "risk"
+            else "warn"
+            if decision["status"] == "watch"
+            else "pass",
             "block_release": decision["status"] == "risk",
             "reasons": [item["message"] for item in findings[:10]],
         },

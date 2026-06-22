@@ -1,4 +1,3 @@
-
 """
 Asynchronous client for GigaChat (Sber Devices) LLM.
 

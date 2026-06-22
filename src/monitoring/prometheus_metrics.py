@@ -1,4 +1,3 @@
-
 """
 Prometheus Metrics Export
 Версия: 2.1.0
@@ -32,8 +31,7 @@ logger = StructuredLogger(__name__).logger
 
 # Total requests
 http_requests_total = Counter(
-    "http_requests_total", "Total HTTP requests", [
-        "method", "endpoint", "status_code"]
+    "http_requests_total", "Total HTTP requests", ["method", "endpoint", "status_code"]
 )
 
 # Request duration
@@ -46,14 +44,12 @@ http_request_duration_seconds = Histogram(
 
 # Request size
 http_request_size_bytes = Histogram(
-    "http_request_size_bytes", "HTTP request size in bytes", [
-        "method", "endpoint"]
+    "http_request_size_bytes", "HTTP request size in bytes", ["method", "endpoint"]
 )
 
 # Response size
 http_response_size_bytes = Histogram(
-    "http_response_size_bytes", "HTTP response size in bytes", [
-        "method", "endpoint"]
+    "http_response_size_bytes", "HTTP response size in bytes", ["method", "endpoint"]
 )
 
 
@@ -120,8 +116,7 @@ kimi_reasoning_steps = Histogram(
 )
 
 kimi_tool_calls_total = Counter(
-    "kimi_tool_calls_total", "Total tool calls made by Kimi", [
-        "mode", "tool_name"]
+    "kimi_tool_calls_total", "Total tool calls made by Kimi", ["mode", "tool_name"]
 )
 
 # AI Orchestrator metrics
@@ -174,8 +169,7 @@ scenario_recommender_recommendations_count = Histogram(
 
 # Impact Analyzer metrics
 impact_analyzer_requests_total = Counter(
-    "impact_analyzer_requests_total", "Total impact analysis requests", [
-        "status"]
+    "impact_analyzer_requests_total", "Total impact analysis requests", ["status"]
 )
 
 impact_analyzer_duration_seconds = Histogram(
@@ -218,8 +212,7 @@ llm_provider_health = Gauge(
 )
 
 llm_provider_latency_ms = Gauge(
-    "llm_provider_latency_ms", "LLM provider latency in milliseconds", [
-        "provider"]
+    "llm_provider_latency_ms", "LLM provider latency in milliseconds", ["provider"]
 )
 
 # DNS Manager metrics
@@ -352,8 +345,7 @@ intelligent_cache_size = Gauge(
 )
 
 intelligent_cache_max_size = Gauge(
-    "intelligent_cache_max_size", "Maximum size of Intelligent Cache", [
-        "cache_type"]
+    "intelligent_cache_max_size", "Maximum size of Intelligent Cache", ["cache_type"]
 )
 
 intelligent_cache_hits_total = Counter(
@@ -484,8 +476,7 @@ embedding_quantization_ratio = Gauge(
 )
 
 # Multi-GPU metrics
-embedding_gpu_count = Gauge("embedding_gpu_count",
-                            "Number of available GPU devices")
+embedding_gpu_count = Gauge("embedding_gpu_count", "Number of available GPU devices")
 
 embedding_gpu_requests_total = Counter(
     "embedding_gpu_requests_total", "Total requests per GPU device", ["gpu_id"]
@@ -566,8 +557,7 @@ embedding_predictive_batch_prediction_accuracy = Gauge(
 
 # Weighted GPU Scheduler metrics
 embedding_weighted_gpu_weights = Gauge(
-    "embedding_weighted_gpu_weights", "Current weights for GPU devices", [
-        "gpu_id"]
+    "embedding_weighted_gpu_weights", "Current weights for GPU devices", ["gpu_id"]
 )
 
 embedding_weighted_gpu_load = Gauge(
@@ -642,12 +632,10 @@ db_query_duration_seconds = Histogram(
 )
 
 # Connection pool
-db_pool_size = Gauge(
-    "db_pool_size", "Database connection pool size", ["database"])
+db_pool_size = Gauge("db_pool_size", "Database connection pool size", ["database"])
 
 db_pool_available = Gauge(
-    "db_pool_available_connections", "Available database connections", [
-        "database"]
+    "db_pool_available_connections", "Available database connections", ["database"]
 )
 
 
@@ -655,8 +643,7 @@ db_pool_available = Gauge(
 
 # Cache hits/misses
 cache_operations_total = Counter(
-    "cache_operations_total", "Cache operations", [
-        "operation", "layer", "status"]
+    "cache_operations_total", "Cache operations", ["operation", "layer", "status"]
 )
 
 # Cache size
@@ -669,8 +656,7 @@ cache_size_bytes = Gauge("cache_size_bytes", "Cache size in bytes", ["layer"])
 system_info = Info("system", "System information")
 
 # CPU usage
-system_cpu_usage_percent = Gauge(
-    "system_cpu_usage_percent", "CPU usage percentage")
+system_cpu_usage_percent = Gauge("system_cpu_usage_percent", "CPU usage percentage")
 
 # Memory usage
 system_memory_usage_percent = Gauge(
@@ -682,15 +668,13 @@ system_memory_available_bytes = Gauge(
 )
 
 # Disk usage
-system_disk_usage_percent = Gauge(
-    "system_disk_usage_percent", "Disk usage percentage")
+system_disk_usage_percent = Gauge("system_disk_usage_percent", "Disk usage percentage")
 
 
 # ==================== ERROR METRICS ====================
 
 # Errors by type
-errors_total = Counter("errors_total", "Total errors",
-                       ["error_type", "endpoint"])
+errors_total = Counter("errors_total", "Total errors", ["error_type", "endpoint"])
 
 # Circuit breaker state
 circuit_breaker_state = Gauge(
@@ -759,8 +743,7 @@ def track_request(
     )
 
     if size > 0:
-        http_response_size_bytes.labels(
-            method=method, endpoint=endpoint).observe(size)
+        http_response_size_bytes.labels(method=method, endpoint=endpoint).observe(size)
 
 
 def track_ai_query(
@@ -768,12 +751,10 @@ def track_ai_query(
 ):
     """Track AI query"""
     ai_queries_total.labels(agent_type=agent_type, status=status).inc()
-    ai_response_duration_seconds.labels(
-        agent_type=agent_type).observe(duration)
+    ai_response_duration_seconds.labels(agent_type=agent_type).observe(duration)
 
     if tokens > 0:
-        ai_tokens_used_total.labels(
-            agent_type=agent_type, model="gpt-4").inc(tokens)
+        ai_tokens_used_total.labels(agent_type=agent_type, model="gpt-4").inc(tokens)
 
 
 def track_db_query(database: str, operation: str, duration: float):
@@ -786,8 +767,7 @@ def track_db_query(database: str, operation: str, duration: float):
 
 def track_cache_operation(layer: str, operation: str, status: str):
     """Track cache operation"""
-    cache_operations_total.labels(
-        operation=operation, layer=layer, status=status).inc()
+    cache_operations_total.labels(operation=operation, layer=layer, status=status).inc()
 
 
 def track_ba_session_event(event_type: str) -> None:
@@ -867,10 +847,8 @@ def track_intelligent_cache_operation(
     cache_type: str = "orchestrator",
 ):
     """Track Intelligent Cache operation"""
-    intelligent_cache_operations_total.labels(
-        operation=operation, status=status).inc()
-    intelligent_cache_duration_seconds.labels(
-        operation=operation).observe(duration)
+    intelligent_cache_operations_total.labels(operation=operation, status=status).inc()
+    intelligent_cache_duration_seconds.labels(operation=operation).observe(duration)
 
 
 def track_intelligent_cache_hit(

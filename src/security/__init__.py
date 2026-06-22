@@ -1,4 +1,3 @@
-
 """Security utilities package."""
 
 from .audit import AuditLogger, get_audit_logger

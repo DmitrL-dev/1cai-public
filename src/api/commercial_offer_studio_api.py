@@ -29,7 +29,9 @@ from src.services.rentgen.security_posture import build_security_posture
 from src.services.rentgen.value_packs import build_value_packs
 from src.services.rentgen.vendor_portfolio import build_vendor_portfolio
 
-router = APIRouter(prefix="/api/v1/commercial-offer-studio", tags=["Commercial Offer Studio"])
+router = APIRouter(
+    prefix="/api/v1/commercial-offer-studio", tags=["Commercial Offer Studio"]
+)
 
 
 class CommercialOfferStudioAssumptions(BaseModel):
@@ -74,10 +76,14 @@ def _build_report(req: CommercialOfferStudioRequest) -> dict[str, Any]:
         intake=intake,
         client_name=req.client_name,
     )
-    assumptions = req.assumptions.model_dump(exclude_none=True) if req.assumptions else None
+    assumptions = (
+        req.assumptions.model_dump(exclude_none=True) if req.assumptions else None
+    )
     buyer_brief = build_buyer_brief(
         executive=executive,
-        monthly_ai_subscription_cost=int((assumptions or {}).get("monthly_ai_subscription_cost") or 120_000),
+        monthly_ai_subscription_cost=int(
+            (assumptions or {}).get("monthly_ai_subscription_cost") or 120_000
+        ),
         currency=str((assumptions or {}).get("currency") or "RUB"),
     )
     business_case = build_business_case(
@@ -150,7 +156,9 @@ def _build_report(req: CommercialOfferStudioRequest) -> dict[str, Any]:
             limit=req.security_limit,
             module_limit=req.security_module_limit,
         ),
-        rights_rls=build_rights_rls(config_path=req.config_path, role_limit=60, object_limit=160),
+        rights_rls=build_rights_rls(
+            config_path=req.config_path, role_limit=60, object_limit=160
+        ),
         demo_command_center=demo_command_center,
         pilot_launchpad=pilot_launchpad,
         scenario_hub=scenario_hub,

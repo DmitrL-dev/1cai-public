@@ -1,4 +1,3 @@
-
 """
 Business Analyst AI Agent
 AI ассистент для бизнес-аналитиков
@@ -39,7 +38,9 @@ class BusinessAnalystAgent:
 
     def _extract_acceptance_criteria(self, items: List[str]) -> List[str]:
         markers = ("критер", "приемк", "приёмк", "acceptance", "должен", "должна")
-        return [item for item in items if any(marker in item.lower() for marker in markers)]
+        return [
+            item for item in items if any(marker in item.lower() for marker in markers)
+        ]
 
     def _is_non_functional(self, item: str) -> bool:
         markers = (
@@ -213,7 +214,9 @@ class BusinessAnalystAgent:
         return {
             "agent": self.agent_name,
             "mode": "offline_evidence_extraction",
-            "coverage": "source_text" if process_description.strip() else "no_source_text",
+            "coverage": "source_text"
+            if process_description.strip()
+            else "no_source_text",
             "process_name": "Процесс из переданного описания",
             "actors": actors,
             "steps": steps,

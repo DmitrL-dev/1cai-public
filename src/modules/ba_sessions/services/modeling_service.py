@@ -20,9 +20,7 @@ class ModelingService:
     ) -> Dict[str, Any]:
         """Generate process model"""
         try:
-            from src.ai.agents.business_analyst_agent import (
-                BusinessAnalystAgent,
-            )
+            from src.ai.agents.business_analyst_agent import BusinessAnalystAgent
 
             agent = BusinessAnalystAgent()
 
@@ -45,9 +43,7 @@ class ModelingService:
     ) -> Dict[str, Any]:
         """Generate journey map"""
         try:
-            from src.ai.agents.business_analyst_agent import (
-                BusinessAnalystAgent,
-            )
+            from src.ai.agents.business_analyst_agent import BusinessAnalystAgent
 
             agent = BusinessAnalystAgent()
 
@@ -61,12 +57,12 @@ class ModelingService:
             logger.error(f"Error generating journey map: {e}", exc_info=True)
             raise
 
-    async def validate_process_model(self, process_model: Dict[str, Any]) -> Dict[str, Any]:
+    async def validate_process_model(
+        self, process_model: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Validate process model"""
         try:
-            from src.ai.agents.business_analyst_agent import (
-                BusinessAnalystAgent,
-            )
+            from src.ai.agents.business_analyst_agent import BusinessAnalystAgent
 
             agent = BusinessAnalystAgent()
 

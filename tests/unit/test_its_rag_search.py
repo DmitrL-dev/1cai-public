@@ -14,12 +14,13 @@ async def test_its_search_offline_uses_local_text_files(tmp_path):
         encoding="utf-8",
     )
     (docs_dir / "commands.txt").write_text(
-        "7.4 Команды формы\n\n"
-        "Команды формы размещаются в командной панели.",
+        "7.4 Команды формы\n\n" "Команды формы размещаются в командной панели.",
         encoding="utf-8",
     )
 
-    chunker = ITSChunker(docs_dir=str(docs_dir), manifest_path=str(tmp_path / "manifest.json"))
+    chunker = ITSChunker(
+        docs_dir=str(docs_dir), manifest_path=str(tmp_path / "manifest.json")
+    )
     service = ITSSearchService(mode="offline", chunker=chunker)
 
     results = await service.query("динамический список поиск", limit=2)
@@ -27,4 +28,3 @@ async def test_its_search_offline_uses_local_text_files(tmp_path):
     assert results
     assert results[0].source_file == "forms.txt"
     assert results[0].score > 0
-

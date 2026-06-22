@@ -23,10 +23,13 @@ class ReviewService:
     def ai_reviewer(self) -> Any:
         if self._ai_reviewer is None:
             from src.ai.agents.code_review.ai_reviewer import AICodeReviewer
+
             self._ai_reviewer = AICodeReviewer()
         return self._ai_reviewer
 
-    async def review_pull_request(self, repo_full_name: str, pr_number: int) -> Dict[str, Any]:
+    async def review_pull_request(
+        self, repo_full_name: str, pr_number: int
+    ) -> Dict[str, Any]:
         """
         Review a Pull Request
 
@@ -126,7 +129,9 @@ class ReviewService:
             )
             raise
 
-    async def _post_review_to_github(self, repo_full_name: str, pr_number: int, review_result: Dict[str, Any]) -> None:
+    async def _post_review_to_github(
+        self, repo_full_name: str, pr_number: int, review_result: Dict[str, Any]
+    ) -> None:
         """
         Post review to GitHub
 
@@ -137,7 +142,8 @@ class ReviewService:
         """
         # Format comments for GitHub
         comments = self._format_comments_for_github(
-            review_result.get("file_reviews", []))
+            review_result.get("file_reviews", [])
+        )
 
         # Determine review event type
         overall_status = review_result.get("overall_status", "COMMENTED")
@@ -168,7 +174,9 @@ class ReviewService:
                 extra={"repo": repo_full_name, "pr_number": pr_number},
             )
 
-    def _format_comments_for_github(self, file_reviews: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _format_comments_for_github(
+        self, file_reviews: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """
         Format review comments for GitHub API
 

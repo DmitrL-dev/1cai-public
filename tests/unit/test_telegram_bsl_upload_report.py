@@ -1,4 +1,7 @@
-from src.telegram.bsl_upload_report import decode_uploaded_text, format_bsl_upload_report
+from src.telegram.bsl_upload_report import (
+    decode_uploaded_text,
+    format_bsl_upload_report,
+)
 
 
 def test_format_bsl_upload_report_includes_safe_option_and_test_hint():
@@ -14,7 +17,9 @@ def test_format_bsl_upload_report_includes_safe_option_and_test_hint():
                     "message": "Field from LEFT JOIN is used without an explicit NULL guard.",
                     "details": {
                         "safe_options": ["ЕстьNULL(Скидки.Процент, 0)"],
-                        "test_expectations": ["Missing joined row returns the agreed default."],
+                        "test_expectations": [
+                            "Missing joined row returns the agreed default."
+                        ],
                     },
                 }
             ],
@@ -29,4 +34,6 @@ def test_format_bsl_upload_report_includes_safe_option_and_test_hint():
 
 
 def test_decode_uploaded_text_accepts_cp1251():
-    assert decode_uploaded_text("Процедура Тест()".encode("cp1251")).startswith("Процедура")
+    assert decode_uploaded_text("Процедура Тест()".encode("cp1251")).startswith(
+        "Процедура"
+    )

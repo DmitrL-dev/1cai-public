@@ -11,7 +11,10 @@ from datetime import datetime, timezone
 from typing import Any
 
 from src.services import audit_log
-from src.services.productization_readiness import productization_markdown_report, productization_readiness
+from src.services.productization_readiness import (
+    productization_markdown_report,
+    productization_readiness,
+)
 from src.services.rentgen import approval_workflow
 from src.services.rentgen.board_pack import build_board_pack
 from src.services.rentgen.business_case import build_business_case
@@ -59,7 +62,9 @@ def _now() -> str:
 
 
 def _json_text(payload: Any) -> str:
-    return json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str)
+    return json.dumps(
+        payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"), default=str
+    )
 
 
 def _sha256_text(value: str) -> str:
@@ -67,7 +72,11 @@ def _sha256_text(value: str) -> str:
 
 
 def _status(report: dict[str, Any]) -> str:
-    return str((report.get("decision") or {}).get("status") or report.get("status") or "unknown")
+    return str(
+        (report.get("decision") or {}).get("status")
+        or report.get("status")
+        or "unknown"
+    )
 
 
 def _score(report: dict[str, Any]) -> int | None:
@@ -102,11 +111,21 @@ def _commercial_assumption_receipt(
     escape = business_case.get("subscription_escape_plan") or {}
     currency = str(escape.get("currency") or normalized.get("currency") or "RUB")
     monthly = _int_or_none(normalized.get("monthly_ai_subscription_cost"))
-    annual = _int_or_none(escape.get("annual_ai_rent")) or (monthly * 12 if monthly is not None else None)
-    three_year = _int_or_none(escape.get("three_year_ai_rent")) or (annual * 3 if annual is not None else None)
-    local_license = _int_or_none(escape.get("local_license_anchor")) or _int_or_none(summary.get("local_license_anchor"))
-    break_even = _int_or_none(escape.get("break_even_months")) or _int_or_none(summary.get("subscription_break_even_months"))
-    ai_rent_equivalent = _int_or_none(escape.get("ai_rent_equivalent_months")) or _int_or_none(summary.get("subscription_escape_months"))
+    annual = _int_or_none(escape.get("annual_ai_rent")) or (
+        monthly * 12 if monthly is not None else None
+    )
+    three_year = _int_or_none(escape.get("three_year_ai_rent")) or (
+        annual * 3 if annual is not None else None
+    )
+    local_license = _int_or_none(escape.get("local_license_anchor")) or _int_or_none(
+        summary.get("local_license_anchor")
+    )
+    break_even = _int_or_none(escape.get("break_even_months")) or _int_or_none(
+        summary.get("subscription_break_even_months")
+    )
+    ai_rent_equivalent = _int_or_none(
+        escape.get("ai_rent_equivalent_months")
+    ) or _int_or_none(summary.get("subscription_escape_months"))
     line = str(
         escape.get("decision_line")
         or "Commercial assumptions are carried from the request; build Business Case to materialize the full local-license comparison."
@@ -124,11 +143,19 @@ def _commercial_assumption_receipt(
         "annual_ai_rent_label": _money(annual, currency),
         "three_year_ai_rent_label": _money(three_year, currency),
         "local_license_anchor_label": _money(local_license, currency),
-        "break_even_label": f"{break_even} months" if break_even is not None else "not provided",
+        "break_even_label": f"{break_even} months"
+        if break_even is not None
+        else "not provided",
         "decision_line": line,
         "evidence_files": list(
             escape.get("evidence_files")
-            or [{"title": "Business Case", "filename": "business-case.md", "route": "/business-case"}]
+            or [
+                {
+                    "title": "Business Case",
+                    "filename": "business-case.md",
+                    "route": "/business-case",
+                }
+            ]
         ),
     }
 
@@ -143,7 +170,9 @@ def _artifact(
     summary: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     json_payload = _json_text(report)
-    markdown = str(report.get("markdown") or report.get("export", {}).get("markdown") or "")
+    markdown = str(
+        report.get("markdown") or report.get("export", {}).get("markdown") or ""
+    )
     return {
         "id": id,
         "title": title,
@@ -207,19 +236,19 @@ def _buyer_pulse_markdown(report: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
-        "## Executive Signals",
-        "",
-        f"- Red areas: **{executive.get('red_areas', 0)}**",
-        f"- Review queue: **{executive.get('review_queue', 0)}**",
-        f"- High hotspots: **{executive.get('high_hotspots', 0)}**",
-        f"- Headline: {executive.get('headline', '')}",
-        "",
-        "## How To Use",
-        "",
-        "1. Open Buyer Pulse first when the room asks where to start.",
-        "2. If purchase status is ready, open Launch Room and ask for the paid next step.",
-        "3. If purchase status is watch or risk, open Buyer Concierge or Trust Center and name the blocker.",
-        "4. Keep this file in the ZIP so procurement can see the first-screen assumptions that led to the route.",
+            "## Executive Signals",
+            "",
+            f"- Red areas: **{executive.get('red_areas', 0)}**",
+            f"- Review queue: **{executive.get('review_queue', 0)}**",
+            f"- High hotspots: **{executive.get('high_hotspots', 0)}**",
+            f"- Headline: {executive.get('headline', '')}",
+            "",
+            "## How To Use",
+            "",
+            "1. Open Buyer Pulse first when the room asks where to start.",
+            "2. If purchase status is ready, open Launch Room and ask for the paid next step.",
+            "3. If purchase status is watch or risk, open Buyer Concierge or Trust Center and name the blocker.",
+            "4. Keep this file in the ZIP so procurement can see the first-screen assumptions that led to the route.",
         ]
     )
     return "\n".join(lines)
@@ -234,7 +263,9 @@ def _buyer_pulse_report(
     config_path: str | None,
     target_platform_version: str | None,
 ) -> dict[str, Any]:
-    monthly_ai = _int_or_none((assumptions or {}).get("monthly_ai_subscription_cost")) or 120_000
+    monthly_ai = (
+        _int_or_none((assumptions or {}).get("monthly_ai_subscription_cost")) or 120_000
+    )
     currency = str((assumptions or {}).get("currency") or "RUB")
     pulse = build_buyer_pulse(
         executive=executive,
@@ -256,13 +287,23 @@ def _buyer_pulse_report(
         "summary": {
             "source": pulse["source"],
             "purchase_status": pulse["purchase_status"],
-            "three_year_ai_rent": (pulse.get("commercial") or {}).get("three_year_ai_rent", ""),
-            "local_license_anchor": (pulse.get("commercial") or {}).get("local_license_anchor", ""),
+            "three_year_ai_rent": (pulse.get("commercial") or {}).get(
+                "three_year_ai_rent", ""
+            ),
+            "local_license_anchor": (pulse.get("commercial") or {}).get(
+                "local_license_anchor", ""
+            ),
             "proof_routes": (pulse.get("evidence") or {}).get("proof_routes", 0),
-            "governance_gates": (pulse.get("evidence") or {}).get("governance_gates", 0),
+            "governance_gates": (pulse.get("evidence") or {}).get(
+                "governance_gates", 0
+            ),
             "persona_cards": (pulse.get("concierge") or {}).get("persona_cards", 0),
-            "purchase_path_steps": len((pulse.get("purchase_path") or {}).get("steps") or []),
-            "purchase_path_files": len((pulse.get("purchase_path") or {}).get("send_files") or []),
+            "purchase_path_steps": len(
+                (pulse.get("purchase_path") or {}).get("steps") or []
+            ),
+            "purchase_path_files": len(
+                (pulse.get("purchase_path") or {}).get("send_files") or []
+            ),
         },
         "buyer_pulse": pulse,
         "caveats": [
@@ -363,8 +404,8 @@ def _buyer_brief_markdown(report: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
-        "## Role Cards",
-        "",
+            "## Role Cards",
+            "",
         ]
     )
     for item in brief.get("role_cards") or []:
@@ -380,7 +421,9 @@ def _buyer_brief_markdown(report: dict[str, Any]) -> str:
         )
     lines.extend(["", "## Meeting Flow", ""])
     for item in brief.get("meeting_flow") or []:
-        lines.append(f"- **{item.get('step', '')}. {item.get('label', '')}** (`{item.get('route', '/')}`): {item.get('line', '')}")
+        lines.append(
+            f"- **{item.get('step', '')}. {item.get('label', '')}** (`{item.get('route', '/')}`): {item.get('line', '')}"
+        )
     lines.extend(
         [
             "",
@@ -404,7 +447,9 @@ def _buyer_brief_report(
     config_path: str | None,
     target_platform_version: str | None,
 ) -> dict[str, Any]:
-    monthly_ai = _int_or_none((assumptions or {}).get("monthly_ai_subscription_cost")) or 120_000
+    monthly_ai = (
+        _int_or_none((assumptions or {}).get("monthly_ai_subscription_cost")) or 120_000
+    )
     currency = str((assumptions or {}).get("currency") or "RUB")
     brief = build_buyer_brief(
         executive=executive,
@@ -428,13 +473,19 @@ def _buyer_brief_report(
             "purchase_status": brief["purchase_status"],
             "primary_route": (brief.get("primary_motion") or {}).get("route", ""),
             "primary_label": (brief.get("primary_motion") or {}).get("label", ""),
-            "three_year_ai_rent": (brief.get("commercial") or {}).get("three_year_ai_rent", ""),
+            "three_year_ai_rent": (brief.get("commercial") or {}).get(
+                "three_year_ai_rent", ""
+            ),
             "roles": (brief.get("summary") or {}).get("roles", 0),
             "proof_items": (brief.get("summary") or {}).get("proof_items", 0),
             "meeting_steps": (brief.get("summary") or {}).get("meeting_steps", 0),
             "open_first_steps": (brief.get("summary") or {}).get("open_first_steps", 0),
-            "purchase_path_steps": (brief.get("summary") or {}).get("purchase_path_steps", 0),
-            "purchase_path_files": (brief.get("summary") or {}).get("purchase_path_files", 0),
+            "purchase_path_steps": (brief.get("summary") or {}).get(
+                "purchase_path_steps", 0
+            ),
+            "purchase_path_files": (brief.get("summary") or {}).get(
+                "purchase_path_files", 0
+            ),
             "room_plan_files": (brief.get("summary") or {}).get(
                 "room_plan_files",
                 len((brief.get("buyer_room_plan") or {}).get("send_files") or []),
@@ -608,7 +659,9 @@ def _open_first_path_markdown(report: dict[str, Any]) -> str:
 def _open_first_path_report(buyer_brief_report: dict[str, Any]) -> dict[str, Any]:
     brief = buyer_brief_report.get("buyer_brief") or {}
     path = list(brief.get("open_first_path") or [])
-    export_ready = len(path) >= 4 and [str(item.get("stage") or "") for item in path[:4]] == [
+    export_ready = len(path) >= 4 and [
+        str(item.get("stage") or "") for item in path[:4]
+    ] == [
         "orient",
         "prove",
         "close",
@@ -858,7 +911,9 @@ def _file_sha(manifest: dict[str, Any], filename: str) -> str:
     return ""
 
 
-def _killer_demo_handoff_bridge(*, bundle_id: str, artifact: dict[str, Any] | None) -> dict[str, Any]:
+def _killer_demo_handoff_bridge(
+    *, bundle_id: str, artifact: dict[str, Any] | None
+) -> dict[str, Any]:
     available = artifact is not None
     files = [
         "OPEN_FIRST_KILLER_DEMO.md",
@@ -904,7 +959,11 @@ def _killer_demo_handoff_bridge(*, bundle_id: str, artifact: dict[str, Any] | No
             {
                 "role": "Security / procurement",
                 "source_archive": "linked Killer Demo ZIP",
-                "send_files": ["killer-demo-manifest.json", MEETING_CLOSE_RECEIPT_JSON, POST_DEMO_ACTIVATION_JSON],
+                "send_files": [
+                    "killer-demo-manifest.json",
+                    MEETING_CLOSE_RECEIPT_JSON,
+                    POST_DEMO_ACTIVATION_JSON,
+                ],
                 "reason": "Hashable post-demo overlays that should be recorded next to the Evidence Bundle hash.",
             },
             {
@@ -1000,7 +1059,9 @@ def _procurement_handoff_markdown(handoff: dict[str, Any]) -> str:
     lines.extend(["", "## Recipients", ""])
     for item in handoff.get("recipients", []):
         files = ", ".join(item.get("send_files") or [])
-        packet_file = item.get("packet_file") or role_packet_filename(str(item.get("role") or "stakeholder"))
+        packet_file = item.get("packet_file") or role_packet_filename(
+            str(item.get("role") or "stakeholder")
+        )
         forwarding_file = _forwarding_note_filename(str(packet_file))
         lines.append(
             f"- **{item.get('role', '')}**: {item.get('decision', '')}. "
@@ -1030,7 +1091,9 @@ def _procurement_handoff_markdown(handoff: dict[str, Any]) -> str:
             lines.extend(["", "Role overlays from the linked ZIP:"])
             for overlay in overlays:
                 files = ", ".join(f"`{item}`" for item in overlay.get("send_files", []))
-                lines.append(f"- **{overlay.get('role', '')}**: {files}. {overlay.get('reason', '')}")
+                lines.append(
+                    f"- **{overlay.get('role', '')}**: {files}. {overlay.get('reason', '')}"
+                )
     if verification_packet:
         lines.extend(
             [
@@ -1053,7 +1116,9 @@ def _procurement_handoff_markdown(handoff: dict[str, Any]) -> str:
     lines.extend(["", "## Required Files", ""])
     for item in handoff.get("required_files", []):
         mark = "present" if item.get("present") else "missing"
-        lines.append(f"- **{item.get('title', '')}** `{item.get('filename', '')}` - {mark}")
+        lines.append(
+            f"- **{item.get('title', '')}** `{item.get('filename', '')}` - {mark}"
+        )
     blockers = handoff.get("blockers") or []
     if blockers:
         lines.extend(["", "## Blockers", ""])
@@ -1061,7 +1126,10 @@ def _procurement_handoff_markdown(handoff: dict[str, Any]) -> str:
     review_items = handoff.get("review_items") or []
     if review_items:
         lines.extend(["", "## Review Items", ""])
-        lines.extend(f"- {item.get('title', '')}: {item.get('status', '')}" for item in review_items)
+        lines.extend(
+            f"- {item.get('title', '')}: {item.get('status', '')}"
+            for item in review_items
+        )
     return "\n".join(lines)
 
 
@@ -1094,8 +1162,12 @@ def _archive_acceptance_receipt_markdown(receipt: dict[str, Any]) -> str:
             ]
         )
         if archive.get("archive_manifest_file"):
-            lines.append(f"- Archive manifest: `{archive.get('archive_manifest_file', '')}`")
-        lines.extend(["- Boundary: " + str(archive.get("boundary", "")), "", "Contains:"])
+            lines.append(
+                f"- Archive manifest: `{archive.get('archive_manifest_file', '')}`"
+            )
+        lines.extend(
+            ["- Boundary: " + str(archive.get("boundary", "")), "", "Contains:"]
+        )
         for filename in archive.get("contains", []):
             lines.append(f"- `{filename}`")
         excludes = archive.get("excludes") or []
@@ -1154,8 +1226,10 @@ def _archive_acceptance_receipt(report: dict[str, Any]) -> dict[str, Any]:
         "id": "evidence-archive",
         "title": "Evidence Bundle ZIP",
         "status": "ready" if handoff.get("ready_to_forward") else "review_required",
-        "endpoint": handoff.get("archive_endpoint") or "/api/v1/evidence-bundle/archive",
-        "filename": handoff.get("archive_filename") or f"{report.get('bundle_id', 'rentgen')}-evidence-archive.zip",
+        "endpoint": handoff.get("archive_endpoint")
+        or "/api/v1/evidence-bundle/archive",
+        "filename": handoff.get("archive_filename")
+        or f"{report.get('bundle_id', 'rentgen')}-evidence-archive.zip",
         "hash_header": handoff.get("archive_hash_header") or "X-Archive-Sha256",
         "open_first_file": handoff.get("open_first_file") or "OPEN_FIRST.md",
         "manifest_file": "manifest.json",
@@ -1175,12 +1249,18 @@ def _archive_acceptance_receipt(report: dict[str, Any]) -> dict[str, Any]:
             "buyer-pulse.md",
         ]
         + [
-            str(recipient.get("packet_file") or role_packet_filename(str(recipient.get("role") or "stakeholder")))
+            str(
+                recipient.get("packet_file")
+                or role_packet_filename(str(recipient.get("role") or "stakeholder"))
+            )
             for recipient in handoff.get("recipients", [])
         ]
         + [
             _forwarding_note_filename(
-                str(recipient.get("packet_file") or role_packet_filename(str(recipient.get("role") or "stakeholder")))
+                str(
+                    recipient.get("packet_file")
+                    or role_packet_filename(str(recipient.get("role") or "stakeholder"))
+                )
             )
             for recipient in handoff.get("recipients", [])
         ],
@@ -1191,11 +1271,16 @@ def _archive_acceptance_receipt(report: dict[str, Any]) -> dict[str, Any]:
         "id": "linked-killer-demo-archive",
         "title": "Linked Killer Demo ZIP",
         "status": killer_demo_handoff.get("status") or "missing",
-        "endpoint": killer_demo_handoff.get("archive_endpoint") or "/api/v1/killer-demo/archive",
-        "filename": killer_demo_handoff.get("archive_filename") or f"{report.get('bundle_id', 'rentgen')}-killer-demo-archive.zip",
-        "hash_header": killer_demo_handoff.get("archive_hash_header") or KILLER_DEMO_ARCHIVE_HASH_HEADER,
-        "open_first_file": killer_demo_handoff.get("open_first_file") or "OPEN_FIRST_KILLER_DEMO.md",
-        "manifest_file": killer_demo_handoff.get("manifest_file") or "killer-demo-manifest.json",
+        "endpoint": killer_demo_handoff.get("archive_endpoint")
+        or "/api/v1/killer-demo/archive",
+        "filename": killer_demo_handoff.get("archive_filename")
+        or f"{report.get('bundle_id', 'rentgen')}-killer-demo-archive.zip",
+        "hash_header": killer_demo_handoff.get("archive_hash_header")
+        or KILLER_DEMO_ARCHIVE_HASH_HEADER,
+        "open_first_file": killer_demo_handoff.get("open_first_file")
+        or "OPEN_FIRST_KILLER_DEMO.md",
+        "manifest_file": killer_demo_handoff.get("manifest_file")
+        or "killer-demo-manifest.json",
         "contains": list(killer_demo_handoff.get("files") or []),
         "excludes": [],
         "boundary": "Live-demo close overlays, role packets, receipt, activation handoff and proof-packet manifest.",
@@ -1204,7 +1289,9 @@ def _archive_acceptance_receipt(report: dict[str, Any]) -> dict[str, Any]:
         "bundle_id": report.get("bundle_id"),
         "generated_at": report.get("generated_at"),
         "client_name": (report.get("client") or {}).get("name"),
-        "status": "ready" if handoff.get("ready_to_forward") and killer_demo_handoff.get("available") else "review_required",
+        "status": "ready"
+        if handoff.get("ready_to_forward") and killer_demo_handoff.get("available")
+        else "review_required",
         "buyer_line": (
             "Record both archive downloads in the same procurement ticket: Evidence Bundle ZIP proves source evidence; "
             "linked Killer Demo ZIP proves the live close, meeting receipt and activation handoff; "
@@ -1285,9 +1372,13 @@ def _open_first_markdown(report: dict[str, Any]) -> str:
     for recipient in handoff.get("recipients", []):
         files = ", ".join(f"`{item}`" for item in recipient.get("send_files", []))
         routes = ", ".join(f"`{item}`" for item in recipient.get("routes", []))
-        packet_file = recipient.get("packet_file") or role_packet_filename(str(recipient.get("role") or "stakeholder"))
+        packet_file = recipient.get("packet_file") or role_packet_filename(
+            str(recipient.get("role") or "stakeholder")
+        )
         forwarding_file = _forwarding_note_filename(str(packet_file))
-        lines.append(f"- **{recipient.get('role', '')}**: {recipient.get('decision', '')}")
+        lines.append(
+            f"- **{recipient.get('role', '')}**: {recipient.get('decision', '')}"
+        )
         lines.append(f"  - Packet: `{packet_file}`")
         lines.append(f"  - Forwarding note: `{forwarding_file}`")
         lines.append(f"  - Files: {files}")
@@ -1345,9 +1436,13 @@ def _open_first_markdown(report: dict[str, Any]) -> str:
     elif review_items:
         lines.append("Forward for owner review; record decisions for these items:")
         for item in review_items[:10]:
-            lines.append(f"- **{item.get('status', '')}** `{item.get('filename', '')}` {item.get('title', '')}")
+            lines.append(
+                f"- **{item.get('status', '')}** `{item.get('filename', '')}` {item.get('title', '')}"
+            )
     else:
-        lines.append("No blockers or review items were detected in the procurement handoff.")
+        lines.append(
+            "No blockers or review items were detected in the procurement handoff."
+        )
 
     lines.extend(["", "## Verification", ""])
     for step in handoff.get("verification_steps", []):
@@ -1377,7 +1472,9 @@ def _security_questionnaire_markdown(report: dict[str, Any]) -> str:
     for item in questionnaire["sections"]:
         routes = ", ".join(f"`{route}`" for route in item.get("proof_routes", []))
         files = ", ".join(item.get("evidence_files", []))
-        lines.append(f"- **{item['status']}** `{item['id']}` / {item['owner']} / {item['audience']}: {item['title']}")
+        lines.append(
+            f"- **{item['status']}** `{item['id']}` / {item['owner']} / {item['audience']}: {item['title']}"
+        )
         lines.append(f"  - Answer: {item['answer']}")
         lines.append(f"  - Acceptance: {item['acceptance']}")
         lines.append(f"  - Routes: {routes}")
@@ -1390,12 +1487,16 @@ def _security_questionnaire_markdown(report: dict[str, Any]) -> str:
     lines.extend(f"- {filename}" for filename in questionnaire.get("send_files", []))
     lines.extend(["", "## Verification Steps", ""])
     for item in questionnaire.get("verification_steps", []):
-        lines.append(f"- **{item['owner']}** (`{item['route']}`): {item['action']} Expected: {item['expected']}")
+        lines.append(
+            f"- **{item['owner']}** (`{item['route']}`): {item['action']} Expected: {item['expected']}"
+        )
     high_risks = questionnaire.get("high_risks", [])
     if high_risks:
         lines.extend(["", "## High Risks", ""])
         for item in high_risks:
-            lines.append(f"- **{item['severity']}** {item['owner']} (`{item['route']}`): {item['risk']}")
+            lines.append(
+                f"- **{item['severity']}** {item['owner']} (`{item['route']}`): {item['risk']}"
+            )
     return "\n".join(lines)
 
 
@@ -1411,7 +1512,8 @@ def _security_questionnaire_report(report: dict[str, Any]) -> dict[str, Any]:
         "decision": {
             "status": status,
             "score": score,
-            "headline": questionnaire.get("owner_line") or "Security questionnaire is ready for buyer review.",
+            "headline": questionnaire.get("owner_line")
+            or "Security questionnaire is ready for buyer review.",
         },
         "summary": {
             "sections": len(questionnaire.get("sections") or []),
@@ -1486,16 +1588,29 @@ def _build_procurement_handoff(
         }
         for item in watch[:8]
     ]
-    blockers = [f"Missing required file: {item['filename']} ({item['title']})" for item in missing]
-    status = "blocked" if blockers else "review_required" if risk_reviews else "ready_to_forward"
+    blockers = [
+        f"Missing required file: {item['filename']} ({item['title']})"
+        for item in missing
+    ]
+    status = (
+        "blocked"
+        if blockers
+        else "review_required"
+        if risk_reviews
+        else "ready_to_forward"
+    )
     ready_to_forward = status == "ready_to_forward"
     required_present = len(required_files) - len(missing)
     governance = artifact_by_id.get("governance-proof")
     offer = artifact_by_id.get("commercial-offer-studio")
     board = artifact_by_id.get("board-pack")
     productization = artifact_by_id.get("productization")
-    killer_demo_handoff = _killer_demo_handoff_bridge(bundle_id=bundle_id, artifact=artifact_by_id.get("killer-demo"))
-    verification_packet = _verification_packet_contract(ready=bool(killer_demo_handoff["available"]))
+    killer_demo_handoff = _killer_demo_handoff_bridge(
+        bundle_id=bundle_id, artifact=artifact_by_id.get("killer-demo")
+    )
+    verification_packet = _verification_packet_contract(
+        ready=bool(killer_demo_handoff["available"])
+    )
     gates = [
         {
             "id": "required-files",
@@ -1507,14 +1622,20 @@ def _build_procurement_handoff(
         {
             "id": "manifest",
             "label": "Manifest SHA-256",
-            "status": "pass" if manifest.get("bundle_sha256") and manifest.get("files") else "blocked",
+            "status": "pass"
+            if manifest.get("bundle_sha256") and manifest.get("files")
+            else "blocked",
             "detail": "manifest.json carries SHA-256 for every artifact file",
             "route": "/evidence-bundle",
         },
         {
             "id": "governance",
             "label": "Approval and audit proof",
-            "status": "pass" if governance and governance.get("status") == "ready" else "watch" if governance else "blocked",
+            "status": "pass"
+            if governance and governance.get("status") == "ready"
+            else "watch"
+            if governance
+            else "blocked",
             "detail": "governance-proof.md plus /approvals and /audit routes",
             "route": "/approvals",
         },
@@ -1570,7 +1691,12 @@ def _build_procurement_handoff(
                 "commercial-offer-studio.md",
                 ARCHIVE_VERIFICATION_PACKET_ZIP,
             ],
-            "routes": ["/board-pack", "/business-case", "/outcome-ledger", "/commercial-offer-studio"],
+            "routes": [
+                "/board-pack",
+                "/business-case",
+                "/outcome-ledger",
+                "/commercial-offer-studio",
+            ],
         },
         {
             "role": "Architect / CTO",
@@ -1587,7 +1713,12 @@ def _build_procurement_handoff(
                 "launch-room.md",
                 ARCHIVE_VERIFICATION_PACKET_ZIP,
             ],
-            "routes": ["/enterprise-trust-center", "/platform-doctor", "/productization", "/launch-room"],
+            "routes": [
+                "/enterprise-trust-center",
+                "/platform-doctor",
+                "/productization",
+                "/launch-room",
+            ],
         },
         {
             "role": "Security / procurement",
@@ -1604,7 +1735,12 @@ def _build_procurement_handoff(
                 "rentgen-security-questionnaire.md",
                 ARCHIVE_VERIFICATION_PACKET_ZIP,
             ],
-            "routes": ["/evidence-bundle", "/approvals", "/audit", "/enterprise-trust-center"],
+            "routes": [
+                "/evidence-bundle",
+                "/approvals",
+                "/audit",
+                "/enterprise-trust-center",
+            ],
         },
         {
             "role": "Developer / QA",
@@ -1621,11 +1757,18 @@ def _build_procurement_handoff(
                 "configuration-intake.md",
                 ARCHIVE_VERIFICATION_PACKET_ZIP,
             ],
-            "routes": ["/safe-autopilot", "/testing", "/killer-demo", "/configurations"],
+            "routes": [
+                "/safe-autopilot",
+                "/testing",
+                "/killer-demo",
+                "/configurations",
+            ],
         },
     ]
     for recipient in recipients:
-        recipient["packet_file"] = role_packet_filename(str(recipient.get("role") or "stakeholder"))
+        recipient["packet_file"] = role_packet_filename(
+            str(recipient.get("role") or "stakeholder")
+        )
 
     handoff: dict[str, Any] = {
         "bundle_id": bundle_id,
@@ -1709,8 +1852,16 @@ def _build_procurement_handoff(
             "archive-acceptance-receipt.json",
             "archive-acceptance-receipt.md",
         ]
-        + [str(item.get("packet_file")) for item in recipients if item.get("packet_file")]
-        + [_forwarding_note_filename(str(item.get("packet_file"))) for item in recipients if item.get("packet_file")]
+        + [
+            str(item.get("packet_file"))
+            for item in recipients
+            if item.get("packet_file")
+        ]
+        + [
+            _forwarding_note_filename(str(item.get("packet_file")))
+            for item in recipients
+            if item.get("packet_file")
+        ]
         + [item["filename"] for item in required_files if item["present"]],
     }
     handoff["markdown"] = _procurement_handoff_markdown(handoff)
@@ -1742,15 +1893,21 @@ def _bundle_markdown(report: dict[str, Any]) -> str:
     ]
     for item in report["artifacts"]:
         score = f" / {item['score']}" if item.get("score") is not None else ""
-        lines.append(f"- **{item['title']}**: {item['status']}{score} · `{item['filename']}`")
+        lines.append(
+            f"- **{item['title']}**: {item['status']}{score} · `{item['filename']}`"
+        )
     handoff = report.get("procurement_handoff") or {}
     if handoff:
         lines.extend(["", "## Procurement Handoff", ""])
         lines.append(f"- Status: **{handoff.get('status', 'unknown')}**")
-        lines.append(f"- Ready to forward: **{handoff.get('ready_to_forward', False)}**")
+        lines.append(
+            f"- Ready to forward: **{handoff.get('ready_to_forward', False)}**"
+        )
         lines.append(f"- Archive endpoint: `{handoff.get('archive_endpoint', '')}`")
         lines.append(f"- Bundle SHA-256: `{handoff.get('bundle_sha256', '')}`")
-        lines.append(f"- Required files: **{len(handoff.get('required_files') or [])}**")
+        lines.append(
+            f"- Required files: **{len(handoff.get('required_files') or [])}**"
+        )
         lines.append(f"- Missing files: **{len(handoff.get('missing_files') or [])}**")
         lines.append(f"- Buyer line: {handoff.get('buyer_line', '')}")
         lines.extend(["", "### Verification", ""])
@@ -1811,8 +1968,16 @@ def _status_counts(items: list[dict[str, Any]]) -> dict[str, int]:
 def _recent_audit_events(limit: int = 20) -> list[dict[str, Any]]:
     try:
         events = audit_log.list_events(limit=limit).get("items", [])
-    except Exception as exc:  # pragma: no cover - defensive: evidence export must stay available
-        return [{"action": "audit.read_failed", "outcome": "error", "metadata": {"error": str(exc)}}]
+    except (
+        Exception
+    ) as exc:  # pragma: no cover - defensive: evidence export must stay available
+        return [
+            {
+                "action": "audit.read_failed",
+                "outcome": "error",
+                "metadata": {"error": str(exc)},
+            }
+        ]
     return [
         {
             "id": item.get("id"),
@@ -1870,14 +2035,24 @@ def _governance_caveats(
 ) -> list[str]:
     caveats: list[str] = []
     if not approvals:
-        caveats.append("No local approval records were found; request one from Safe Autopilot before a write/apply demo.")
+        caveats.append(
+            "No local approval records were found; request one from Safe Autopilot before a write/apply demo."
+        )
     if int(audit_report.get("total") or 0) == 0:
-        caveats.append("The product audit log has no events yet; run an approval or governance action to create proof.")
+        caveats.append(
+            "The product audit log has no events yet; run an approval or governance action to create proof."
+        )
     if audit_report.get("broken"):
-        caveats.append("Audit hash-chain verification reported broken entries; investigate before sharing this pack.")
+        caveats.append(
+            "Audit hash-chain verification reported broken entries; investigate before sharing this pack."
+        )
     if int(audit_report.get("legacy") or 0) > 0:
-        caveats.append("Some audit events are legacy entries without hash-chain fields; they are listed but not cryptographically asserted.")
-    caveats.append("SIEM-ready audit export is available from /api/v1/audit/siem-export; live SIEM streaming still depends on customer adapters.")
+        caveats.append(
+            "Some audit events are legacy entries without hash-chain fields; they are listed but not cryptographically asserted."
+        )
+    caveats.append(
+        "SIEM-ready audit export is available from /api/v1/audit/siem-export; live SIEM streaming still depends on customer adapters."
+    )
     return caveats
 
 
@@ -1955,7 +2130,9 @@ def build_governance_proof(
     try:
         approvals_payload = approval_workflow.list_approval_records(limit=25)
         approvals = _approval_record_digest(list(approvals_payload.get("items") or []))
-    except Exception as exc:  # pragma: no cover - defensive: export should degrade gracefully
+    except (
+        Exception
+    ) as exc:  # pragma: no cover - defensive: export should degrade gracefully
         approvals = [
             {
                 "id": "approval.read_failed",
@@ -1969,7 +2146,9 @@ def build_governance_proof(
     recent_events = _recent_audit_events(limit=20)
     try:
         siem_export = audit_log.export_siem_events(output_format="jsonl", limit=1000)
-    except Exception as exc:  # pragma: no cover - defensive: governance proof should degrade gracefully
+    except (
+        Exception
+    ) as exc:  # pragma: no cover - defensive: governance proof should degrade gracefully
         siem_export = {
             "schema": "rentgen.audit.siem.v1",
             "events": 0,
@@ -2007,7 +2186,9 @@ def build_governance_proof(
             "schema": siem_export.get("schema"),
             "endpoint": "/api/v1/audit/siem-export",
             "route": "/audit",
-            "recommended_filename": (siem_export.get("ingestion") or {}).get("recommended_filename"),
+            "recommended_filename": (siem_export.get("ingestion") or {}).get(
+                "recommended_filename"
+            ),
             "format": siem_export.get("format"),
             "events": int(siem_export.get("events") or 0),
             "content_sha256": siem_export.get("content_sha256"),
@@ -2084,7 +2265,9 @@ def _archive_media_type(filename: str) -> str:
     return "application/octet-stream"
 
 
-def _archive_manifest_payload(report: dict[str, Any], files: list[tuple[str, str]]) -> dict[str, Any]:
+def _archive_manifest_payload(
+    report: dict[str, Any], files: list[tuple[str, str]]
+) -> dict[str, Any]:
     entries: list[dict[str, Any]] = []
     for filename, content in files:
         payload = content.encode("utf-8")
@@ -2101,7 +2284,9 @@ def _archive_manifest_payload(report: dict[str, Any], files: list[tuple[str, str
         "bundle_id": report.get("bundle_id"),
         "generated_at": report.get("generated_at"),
         "source_manifest_file": "manifest.json",
-        "source_manifest_bundle_sha256": (report.get("manifest") or {}).get("bundle_sha256"),
+        "source_manifest_bundle_sha256": (report.get("manifest") or {}).get(
+            "bundle_sha256"
+        ),
         "manifest_scope": "All ZIP entries except archive-manifest.json.",
         "file_count": len(entries),
         "files": entries,
@@ -2175,7 +2360,9 @@ def _archive_verify_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _recipient_packet_markdown(report: dict[str, Any], recipient: dict[str, Any]) -> str:
+def _recipient_packet_markdown(
+    report: dict[str, Any], recipient: dict[str, Any]
+) -> str:
     handoff = report.get("procurement_handoff") or {}
     manifest_by_filename = {
         str(item.get("filename") or ""): str(item.get("sha256") or "")
@@ -2192,8 +2379,12 @@ def _recipient_packet_markdown(report: dict[str, Any], recipient: dict[str, Any]
         "archive-acceptance-receipt.json",
         "archive-acceptance-receipt.md",
     }
-    linked_files = set((handoff.get("killer_demo_handoff") or {}).get("post_demo_files") or [])
-    control_attachments = set(str(item) for item in handoff.get("control_attachments", []) if item)
+    linked_files = set(
+        (handoff.get("killer_demo_handoff") or {}).get("post_demo_files") or []
+    )
+    control_attachments = set(
+        str(item) for item in handoff.get("control_attachments", []) if item
+    )
     role = str(recipient.get("role") or "Stakeholder")
     packet_file = str(recipient.get("packet_file") or role_packet_filename(role))
     forwarding_file = _forwarding_note_filename(packet_file)
@@ -2230,7 +2421,9 @@ def _recipient_packet_markdown(report: dict[str, Any], recipient: dict[str, Any]
         else:
             status = "not-manifested"
             source = "Check procurement handoff"
-        lines.append(f"- `{filename}` - **{status}** / {source} / `{sha256 or 'no-sha256-in-manifest'}`")
+        lines.append(
+            f"- `{filename}` - **{status}** / {source} / `{sha256 or 'no-sha256-in-manifest'}`"
+        )
 
     routes = list(recipient.get("routes") or [])
     if routes:
@@ -2262,13 +2455,27 @@ def _recipient_packets(report: dict[str, Any]) -> list[dict[str, Any]]:
         forwarding_filename = _forwarding_note_filename(filename)
         markdown = _recipient_packet_markdown(report, recipient)
         send_files = list(recipient.get("send_files") or [])
-        control_attachments = [str(item) for item in handoff.get("control_attachments", []) if item]
-        attachments = list(dict.fromkeys([filename, *send_files, "archive-acceptance-receipt.md", *control_attachments]))
+        control_attachments = [
+            str(item) for item in handoff.get("control_attachments", []) if item
+        ]
+        attachments = list(
+            dict.fromkeys(
+                [
+                    filename,
+                    *send_files,
+                    "archive-acceptance-receipt.md",
+                    *control_attachments,
+                ]
+            )
+        )
         subject = f"{(report.get('client') or {}).get('name', 'Client')}: 1C Rentgen evidence packet for {role}"
         body_lines = [
             f"Evidence packet for {role}.",
             "",
-            str(recipient.get("decision") or "Review the attached evidence packet and listed proof files."),
+            str(
+                recipient.get("decision")
+                or "Review the attached evidence packet and listed proof files."
+            ),
             "",
             f"Start with {filename}.",
             f"Evidence archive: {handoff.get('archive_filename', '')}",
@@ -2351,7 +2558,10 @@ def evidence_bundle_archive(report: dict[str, Any]) -> dict[str, Any]:
             ]
         )
     files: list[tuple[str, str]] = [
-        ("OPEN_FIRST.md", str(report.get("open_first_markdown") or _open_first_markdown(report))),
+        (
+            "OPEN_FIRST.md",
+            str(report.get("open_first_markdown") or _open_first_markdown(report)),
+        ),
         ("manifest.json", _json_text(report["manifest"])),
         ("VERIFY_ARCHIVE.md", _archive_verify_markdown(report)),
         ("evidence-bundle.md", report.get("markdown") or ""),
@@ -2364,20 +2574,35 @@ def evidence_bundle_archive(report: dict[str, Any]) -> dict[str, Any]:
             files.append((f"{artifact['filename']}.md", artifact["markdown"]))
     if handoff:
         files.append(("procurement-handoff.json", _json_text(handoff)))
-        files.append(("procurement-handoff.md", str(handoff.get("markdown") or _procurement_handoff_markdown(handoff))))
-        recipient_packets = list(handoff.get("recipient_packets") or _recipient_packets(report))
+        files.append(
+            (
+                "procurement-handoff.md",
+                str(handoff.get("markdown") or _procurement_handoff_markdown(handoff)),
+            )
+        )
+        recipient_packets = list(
+            handoff.get("recipient_packets") or _recipient_packets(report)
+        )
         for packet in recipient_packets:
             packet_file = str(packet.get("filename") or "ROLE_STAKEHOLDER.md")
             files.append((packet_file, str(packet.get("markdown") or "")))
-            forwarding_file = str(packet.get("forwarding_filename") or _forwarding_note_filename(packet_file))
+            forwarding_file = str(
+                packet.get("forwarding_filename")
+                or _forwarding_note_filename(packet_file)
+            )
             files.append((forwarding_file, _forwarding_note_text(packet)))
     acceptance_receipt = report.get("archive_acceptance_receipt") or {}
     if acceptance_receipt:
-        files.append(("archive-acceptance-receipt.json", _json_text(acceptance_receipt)))
+        files.append(
+            ("archive-acceptance-receipt.json", _json_text(acceptance_receipt))
+        )
         files.append(
             (
                 "archive-acceptance-receipt.md",
-                str(acceptance_receipt.get("markdown") or _archive_acceptance_receipt_markdown(acceptance_receipt)),
+                str(
+                    acceptance_receipt.get("markdown")
+                    or _archive_acceptance_receipt_markdown(acceptance_receipt)
+                ),
             )
         )
 
@@ -2495,7 +2720,9 @@ def archive_verification_receipt_markdown(receipt: dict[str, Any]) -> str:
         for item in findings[:20]:
             filename = f" `{item.get('filename')}`" if item.get("filename") else ""
             message = f" - {item.get('message')}" if item.get("message") else ""
-            lines.append(f"- **{item.get('severity', 'low')}** `{item.get('code', 'unknown')}`{filename}{message}")
+            lines.append(
+                f"- **{item.get('severity', 'low')}** `{item.get('code', 'unknown')}`{filename}{message}"
+            )
     else:
         lines.append("- No findings.")
     lines.extend(
@@ -2506,7 +2733,9 @@ def archive_verification_receipt_markdown(receipt: dict[str, Any]) -> str:
         ]
     )
     for step in receipt.get("acceptance_steps") or []:
-        lines.append(f"- **{step.get('owner', '')}**: {step.get('action', '')} Expected: {step.get('expected', '')}")
+        lines.append(
+            f"- **{step.get('owner', '')}**: {step.get('action', '')} Expected: {step.get('expected', '')}"
+        )
     return "\n".join(lines).strip()
 
 
@@ -2532,7 +2761,9 @@ def attach_archive_verification_receipt(
         "summary": result.get("summary") or {},
         "expected_headers": headers,
         "findings": result.get("findings") or [],
-        "embedded_evidence": _compact_embedded_verify(result.get("embedded_evidence_verify")),
+        "embedded_evidence": _compact_embedded_verify(
+            result.get("embedded_evidence_verify")
+        ),
         "receipt_files": {
             "json": "archive-verification-receipt.json",
             "markdown": "archive-verification-receipt.md",
@@ -2551,11 +2782,15 @@ def attach_archive_verification_receipt(
         ],
     }
     result["verification_receipt"] = receipt
-    result["verification_receipt_markdown"] = archive_verification_receipt_markdown(receipt)
+    result["verification_receipt_markdown"] = archive_verification_receipt_markdown(
+        receipt
+    )
     return result
 
 
-def verify_evidence_bundle_archive_payload(payload: bytes, *, filename: str = "") -> dict[str, Any]:
+def verify_evidence_bundle_archive_payload(
+    payload: bytes, *, filename: str = ""
+) -> dict[str, Any]:
     """Verify an Evidence Bundle ZIP archive without extracting it."""
 
     findings: list[dict[str, Any]] = []
@@ -2591,7 +2826,13 @@ def verify_evidence_bundle_archive_payload(payload: bytes, *, filename: str = ""
             if "manifest.json" in names:
                 manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
                 if not isinstance(manifest, dict):
-                    findings.append({"severity": "high", "code": "manifest-invalid", "message": "manifest.json is not an object."})
+                    findings.append(
+                        {
+                            "severity": "high",
+                            "code": "manifest-invalid",
+                            "message": "manifest.json is not an object.",
+                        }
+                    )
                     manifest = {}
 
             if "archive-manifest.json" not in names:
@@ -2604,7 +2845,9 @@ def verify_evidence_bundle_archive_payload(payload: bytes, *, filename: str = ""
                 )
                 archive_manifest: dict[str, Any] = {}
             else:
-                archive_manifest = json.loads(archive.read("archive-manifest.json").decode("utf-8"))
+                archive_manifest = json.loads(
+                    archive.read("archive-manifest.json").decode("utf-8")
+                )
                 if not isinstance(archive_manifest, dict):
                     findings.append(
                         {
@@ -2616,7 +2859,10 @@ def verify_evidence_bundle_archive_payload(payload: bytes, *, filename: str = ""
                     archive_manifest = {}
 
             if archive_manifest:
-                if archive_manifest.get("schema_version") != "rentgen.evidence_archive_manifest.v1":
+                if (
+                    archive_manifest.get("schema_version")
+                    != "rentgen.evidence_archive_manifest.v1"
+                ):
                     findings.append(
                         {
                             "severity": "medium",
@@ -2625,7 +2871,11 @@ def verify_evidence_bundle_archive_payload(payload: bytes, *, filename: str = ""
                             "actual": archive_manifest.get("schema_version"),
                         }
                     )
-                if "archive-manifest.json" in {str(item.get("filename") or "") for item in archive_manifest.get("files", []) if isinstance(item, dict)}:
+                if "archive-manifest.json" in {
+                    str(item.get("filename") or "")
+                    for item in archive_manifest.get("files", [])
+                    if isinstance(item, dict)
+                }:
                     findings.append(
                         {
                             "severity": "medium",
@@ -2633,25 +2883,45 @@ def verify_evidence_bundle_archive_payload(payload: bytes, *, filename: str = ""
                             "message": "archive-manifest.json should describe all ZIP entries except itself.",
                         }
                     )
-                if manifest and archive_manifest.get("source_manifest_bundle_sha256") != manifest.get("bundle_sha256"):
+                if manifest and archive_manifest.get(
+                    "source_manifest_bundle_sha256"
+                ) != manifest.get("bundle_sha256"):
                     findings.append(
                         {
                             "severity": "high",
                             "code": "source-manifest-digest-mismatch",
                             "expected": manifest.get("bundle_sha256"),
-                            "actual": archive_manifest.get("source_manifest_bundle_sha256"),
+                            "actual": archive_manifest.get(
+                                "source_manifest_bundle_sha256"
+                            ),
                         }
                     )
                 for entry in archive_manifest.get("files", []):
                     if not isinstance(entry, dict):
-                        findings.append({"severity": "high", "code": "archive-manifest-entry-invalid"})
+                        findings.append(
+                            {
+                                "severity": "high",
+                                "code": "archive-manifest-entry-invalid",
+                            }
+                        )
                         continue
                     entry_name = str(entry.get("filename") or "")
                     if not entry_name:
-                        findings.append({"severity": "high", "code": "archive-manifest-entry-without-filename"})
+                        findings.append(
+                            {
+                                "severity": "high",
+                                "code": "archive-manifest-entry-without-filename",
+                            }
+                        )
                         continue
                     if entry_name not in names:
-                        findings.append({"severity": "high", "code": "archive-entry-missing", "filename": entry_name})
+                        findings.append(
+                            {
+                                "severity": "high",
+                                "code": "archive-entry-missing",
+                                "filename": entry_name,
+                            }
+                        )
                         continue
                     content = archive.read(entry_name)
                     checked += 1
@@ -2678,12 +2948,15 @@ def verify_evidence_bundle_archive_payload(payload: bytes, *, filename: str = ""
                         )
 
             if "archive-acceptance-receipt.json" in names:
-                receipt = json.loads(archive.read("archive-acceptance-receipt.json").decode("utf-8"))
+                receipt = json.loads(
+                    archive.read("archive-acceptance-receipt.json").decode("utf-8")
+                )
                 evidence_archive = next(
                     (
                         item
                         for item in receipt.get("archives", [])
-                        if isinstance(item, dict) and item.get("id") == "evidence-archive"
+                        if isinstance(item, dict)
+                        and item.get("id") == "evidence-archive"
                     ),
                     {},
                 )
@@ -2697,9 +2970,17 @@ def verify_evidence_bundle_archive_payload(payload: bytes, *, filename: str = ""
                             }
                         )
     except zipfile.BadZipFile:
-        findings.append({"severity": "high", "code": "zip-invalid", "message": "Payload is not a readable ZIP archive."})
+        findings.append(
+            {
+                "severity": "high",
+                "code": "zip-invalid",
+                "message": "Payload is not a readable ZIP archive.",
+            }
+        )
     except (UnicodeDecodeError, json.JSONDecodeError, TypeError) as exc:
-        findings.append({"severity": "high", "code": "archive-json-invalid", "message": str(exc)})
+        findings.append(
+            {"severity": "high", "code": "archive-json-invalid", "message": str(exc)}
+        )
 
     severities = Counter(str(item.get("severity") or "low") for item in findings)
     status = "fail" if severities.get("high") else ("warn" if findings else "pass")
@@ -2811,7 +3092,10 @@ def build_evidence_bundle(
         _artifact(
             id="buyer-room-plan",
             title="Buyer Room Plan",
-            route=str((buyer_room_plan_report.get("buyer_room_plan") or {}).get("route") or "/"),
+            route=str(
+                (buyer_room_plan_report.get("buyer_room_plan") or {}).get("route")
+                or "/"
+            ),
             report=buyer_room_plan_report,
             filename="buyer-room-plan",
             summary=buyer_room_plan_report.get("summary", {}),
@@ -2840,7 +3124,10 @@ def build_evidence_bundle(
             route="/platform-doctor",
             report=platform,
             filename="platform-doctor",
-            summary={"checks": len(platform.get("checks", [])), **(platform.get("decision") or {})},
+            summary={
+                "checks": len(platform.get("checks", [])),
+                **(platform.get("decision") or {}),
+            },
         )
     )
 
@@ -2864,7 +3151,10 @@ def build_evidence_bundle(
                 id="demo-story",
                 title="Demo Story",
                 route="/",
-                report={**demo_report, "markdown": demo_report.get("export", {}).get("markdown", "")},
+                report={
+                    **demo_report,
+                    "markdown": demo_report.get("export", {}).get("markdown", ""),
+                },
                 filename="demo-story",
                 summary={
                     "steps": len(demo_report.get("demo_steps", [])),
@@ -2874,7 +3164,9 @@ def build_evidence_bundle(
         )
         for role_report in demo_report.get("role_reports", []):
             role = str(role_report.get("role") or "role")
-            filename = str(role_report.get("download_name") or f"rentgen-{role}-report.md").removesuffix(".md")
+            filename = str(
+                role_report.get("download_name") or f"rentgen-{role}-report.md"
+            ).removesuffix(".md")
             artifacts.append(
                 _artifact(
                     id=f"role-report-{role}",
@@ -3276,21 +3568,30 @@ def build_evidence_bundle(
             config_path=config_path,
             target_platform_version=target_platform_version,
         )
-        demo_command_center_report = demo_command_center_report or build_demo_command_center(
-            executive=executive,
-            scenario_hub=scenario_hub_report,
-            guided_demo=guided_demo_report,
-            pilot_launchpad=pilot_launchpad_report,
-            business_case=business_case_report,
-            productization=productization_report,
-            vendor_portfolio=vendor_report,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        demo_command_center_report = (
+            demo_command_center_report
+            or build_demo_command_center(
+                executive=executive,
+                scenario_hub=scenario_hub_report,
+                guided_demo=guided_demo_report,
+                pilot_launchpad=pilot_launchpad_report,
+                business_case=business_case_report,
+                productization=productization_report,
+                vendor_portfolio=vendor_report,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
         )
-        rights_report = rights_report or build_rights_rls(config_path=config_path, role_limit=60, object_limit=160)
-        offline_readiness = build_offline_readiness(strict=False, include_metadata=False)
-        security_posture = build_security_posture(config_path=config_path, limit=120, module_limit=1200)
+        rights_report = rights_report or build_rights_rls(
+            config_path=config_path, role_limit=60, object_limit=160
+        )
+        offline_readiness = build_offline_readiness(
+            strict=False, include_metadata=False
+        )
+        security_posture = build_security_posture(
+            config_path=config_path, limit=120, module_limit=1200
+        )
         enterprise_trust_center_report = build_enterprise_trust_center(
             executive=executive,
             platform=platform,
@@ -3318,7 +3619,9 @@ def build_evidence_bundle(
                 summary=enterprise_trust_center_report.get("summary", {}),
             )
         )
-        security_questionnaire_report = _security_questionnaire_report(enterprise_trust_center_report)
+        security_questionnaire_report = _security_questionnaire_report(
+            enterprise_trust_center_report
+        )
         artifacts.append(
             _artifact(
                 id="security-questionnaire",
@@ -3385,35 +3688,47 @@ def build_evidence_bundle(
             config_path=config_path,
             target_platform_version=target_platform_version,
         )
-        demo_command_center_report = demo_command_center_report or build_demo_command_center(
-            executive=executive,
-            scenario_hub=scenario_hub_report,
-            guided_demo=guided_demo_report,
-            pilot_launchpad=pilot_launchpad_report,
-            business_case=business_case_report,
-            productization=productization_report,
-            vendor_portfolio=vendor_report,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        demo_command_center_report = (
+            demo_command_center_report
+            or build_demo_command_center(
+                executive=executive,
+                scenario_hub=scenario_hub_report,
+                guided_demo=guided_demo_report,
+                pilot_launchpad=pilot_launchpad_report,
+                business_case=business_case_report,
+                productization=productization_report,
+                vendor_portfolio=vendor_report,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
         )
-        rights_report = rights_report or build_rights_rls(config_path=config_path, role_limit=60, object_limit=160)
-        enterprise_trust_center_report = enterprise_trust_center_report or build_enterprise_trust_center(
-            executive=executive,
-            platform=platform,
-            business_case=business_case_report,
-            productization=productization_report,
-            offline_readiness=build_offline_readiness(strict=False, include_metadata=False),
-            security_posture=build_security_posture(config_path=config_path, limit=120, module_limit=1200),
-            rights_rls=rights_report,
-            demo_command_center=demo_command_center_report,
-            pilot_launchpad=pilot_launchpad_report,
-            scenario_hub=scenario_hub_report,
-            vendor_portfolio=vendor_report,
-            evidence_artifacts=artifacts,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        rights_report = rights_report or build_rights_rls(
+            config_path=config_path, role_limit=60, object_limit=160
+        )
+        enterprise_trust_center_report = (
+            enterprise_trust_center_report
+            or build_enterprise_trust_center(
+                executive=executive,
+                platform=platform,
+                business_case=business_case_report,
+                productization=productization_report,
+                offline_readiness=build_offline_readiness(
+                    strict=False, include_metadata=False
+                ),
+                security_posture=build_security_posture(
+                    config_path=config_path, limit=120, module_limit=1200
+                ),
+                rights_rls=rights_report,
+                demo_command_center=demo_command_center_report,
+                pilot_launchpad=pilot_launchpad_report,
+                scenario_hub=scenario_hub_report,
+                vendor_portfolio=vendor_report,
+                evidence_artifacts=artifacts,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
         )
         commercial_offer_studio_report = build_commercial_offer_studio(
             executive=executive,
@@ -3494,48 +3809,63 @@ def build_evidence_bundle(
             config_path=config_path,
             target_platform_version=target_platform_version,
         )
-        demo_command_center_report = demo_command_center_report or build_demo_command_center(
-            executive=executive,
-            scenario_hub=scenario_hub_report,
-            guided_demo=guided_demo_report,
-            pilot_launchpad=pilot_launchpad_report,
-            business_case=business_case_report,
-            productization=productization_report,
-            vendor_portfolio=vendor_report,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        demo_command_center_report = (
+            demo_command_center_report
+            or build_demo_command_center(
+                executive=executive,
+                scenario_hub=scenario_hub_report,
+                guided_demo=guided_demo_report,
+                pilot_launchpad=pilot_launchpad_report,
+                business_case=business_case_report,
+                productization=productization_report,
+                vendor_portfolio=vendor_report,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
         )
-        rights_report = rights_report or build_rights_rls(config_path=config_path, role_limit=60, object_limit=160)
-        enterprise_trust_center_report = enterprise_trust_center_report or build_enterprise_trust_center(
-            executive=executive,
-            platform=platform,
-            business_case=business_case_report,
-            productization=productization_report,
-            offline_readiness=build_offline_readiness(strict=False, include_metadata=False),
-            security_posture=build_security_posture(config_path=config_path, limit=120, module_limit=1200),
-            rights_rls=rights_report,
-            demo_command_center=demo_command_center_report,
-            pilot_launchpad=pilot_launchpad_report,
-            scenario_hub=scenario_hub_report,
-            vendor_portfolio=vendor_report,
-            evidence_artifacts=artifacts,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        rights_report = rights_report or build_rights_rls(
+            config_path=config_path, role_limit=60, object_limit=160
         )
-        commercial_offer_studio_report = commercial_offer_studio_report or build_commercial_offer_studio(
-            executive=executive,
-            business_case=business_case_report,
-            pilot_launchpad=pilot_launchpad_report,
-            enterprise_trust_center=enterprise_trust_center_report,
-            productization=productization_report,
-            scenario_hub=scenario_hub_report,
-            value_packs=value_packs_report,
-            vendor_portfolio=vendor_report,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        enterprise_trust_center_report = (
+            enterprise_trust_center_report
+            or build_enterprise_trust_center(
+                executive=executive,
+                platform=platform,
+                business_case=business_case_report,
+                productization=productization_report,
+                offline_readiness=build_offline_readiness(
+                    strict=False, include_metadata=False
+                ),
+                security_posture=build_security_posture(
+                    config_path=config_path, limit=120, module_limit=1200
+                ),
+                rights_rls=rights_report,
+                demo_command_center=demo_command_center_report,
+                pilot_launchpad=pilot_launchpad_report,
+                scenario_hub=scenario_hub_report,
+                vendor_portfolio=vendor_report,
+                evidence_artifacts=artifacts,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
+        )
+        commercial_offer_studio_report = (
+            commercial_offer_studio_report
+            or build_commercial_offer_studio(
+                executive=executive,
+                business_case=business_case_report,
+                pilot_launchpad=pilot_launchpad_report,
+                enterprise_trust_center=enterprise_trust_center_report,
+                productization=productization_report,
+                scenario_hub=scenario_hub_report,
+                value_packs=value_packs_report,
+                vendor_portfolio=vendor_report,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
         )
         buyer_concierge_report = build_buyer_concierge(
             executive=executive,
@@ -3617,48 +3947,63 @@ def build_evidence_bundle(
             config_path=config_path,
             target_platform_version=target_platform_version,
         )
-        demo_command_center_report = demo_command_center_report or build_demo_command_center(
-            executive=executive,
-            scenario_hub=scenario_hub_report,
-            guided_demo=guided_demo_report,
-            pilot_launchpad=pilot_launchpad_report,
-            business_case=business_case_report,
-            productization=productization_report,
-            vendor_portfolio=vendor_report,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        demo_command_center_report = (
+            demo_command_center_report
+            or build_demo_command_center(
+                executive=executive,
+                scenario_hub=scenario_hub_report,
+                guided_demo=guided_demo_report,
+                pilot_launchpad=pilot_launchpad_report,
+                business_case=business_case_report,
+                productization=productization_report,
+                vendor_portfolio=vendor_report,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
         )
-        rights_report = rights_report or build_rights_rls(config_path=config_path, role_limit=60, object_limit=160)
-        enterprise_trust_center_report = enterprise_trust_center_report or build_enterprise_trust_center(
-            executive=executive,
-            platform=platform,
-            business_case=business_case_report,
-            productization=productization_report,
-            offline_readiness=build_offline_readiness(strict=False, include_metadata=False),
-            security_posture=build_security_posture(config_path=config_path, limit=120, module_limit=1200),
-            rights_rls=rights_report,
-            demo_command_center=demo_command_center_report,
-            pilot_launchpad=pilot_launchpad_report,
-            scenario_hub=scenario_hub_report,
-            vendor_portfolio=vendor_report,
-            evidence_artifacts=artifacts,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        rights_report = rights_report or build_rights_rls(
+            config_path=config_path, role_limit=60, object_limit=160
         )
-        commercial_offer_studio_report = commercial_offer_studio_report or build_commercial_offer_studio(
-            executive=executive,
-            business_case=business_case_report,
-            pilot_launchpad=pilot_launchpad_report,
-            enterprise_trust_center=enterprise_trust_center_report,
-            productization=productization_report,
-            scenario_hub=scenario_hub_report,
-            value_packs=value_packs_report,
-            vendor_portfolio=vendor_report,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        enterprise_trust_center_report = (
+            enterprise_trust_center_report
+            or build_enterprise_trust_center(
+                executive=executive,
+                platform=platform,
+                business_case=business_case_report,
+                productization=productization_report,
+                offline_readiness=build_offline_readiness(
+                    strict=False, include_metadata=False
+                ),
+                security_posture=build_security_posture(
+                    config_path=config_path, limit=120, module_limit=1200
+                ),
+                rights_rls=rights_report,
+                demo_command_center=demo_command_center_report,
+                pilot_launchpad=pilot_launchpad_report,
+                scenario_hub=scenario_hub_report,
+                vendor_portfolio=vendor_report,
+                evidence_artifacts=artifacts,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
+        )
+        commercial_offer_studio_report = (
+            commercial_offer_studio_report
+            or build_commercial_offer_studio(
+                executive=executive,
+                business_case=business_case_report,
+                pilot_launchpad=pilot_launchpad_report,
+                enterprise_trust_center=enterprise_trust_center_report,
+                productization=productization_report,
+                scenario_hub=scenario_hub_report,
+                value_packs=value_packs_report,
+                vendor_portfolio=vendor_report,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
         )
         buyer_concierge_report = buyer_concierge_report or build_buyer_concierge(
             executive=executive,
@@ -3755,48 +4100,63 @@ def build_evidence_bundle(
             config_path=config_path,
             target_platform_version=target_platform_version,
         )
-        demo_command_center_report = demo_command_center_report or build_demo_command_center(
-            executive=executive,
-            scenario_hub=scenario_hub_report,
-            guided_demo=guided_demo_report,
-            pilot_launchpad=pilot_launchpad_report,
-            business_case=business_case_report,
-            productization=productization_report,
-            vendor_portfolio=vendor_report,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        demo_command_center_report = (
+            demo_command_center_report
+            or build_demo_command_center(
+                executive=executive,
+                scenario_hub=scenario_hub_report,
+                guided_demo=guided_demo_report,
+                pilot_launchpad=pilot_launchpad_report,
+                business_case=business_case_report,
+                productization=productization_report,
+                vendor_portfolio=vendor_report,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
         )
-        rights_report = rights_report or build_rights_rls(config_path=config_path, role_limit=60, object_limit=160)
-        enterprise_trust_center_report = enterprise_trust_center_report or build_enterprise_trust_center(
-            executive=executive,
-            platform=platform,
-            business_case=business_case_report,
-            productization=productization_report,
-            offline_readiness=build_offline_readiness(strict=False, include_metadata=False),
-            security_posture=build_security_posture(config_path=config_path, limit=120, module_limit=1200),
-            rights_rls=rights_report,
-            demo_command_center=demo_command_center_report,
-            pilot_launchpad=pilot_launchpad_report,
-            scenario_hub=scenario_hub_report,
-            vendor_portfolio=vendor_report,
-            evidence_artifacts=artifacts,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        rights_report = rights_report or build_rights_rls(
+            config_path=config_path, role_limit=60, object_limit=160
         )
-        commercial_offer_studio_report = commercial_offer_studio_report or build_commercial_offer_studio(
-            executive=executive,
-            business_case=business_case_report,
-            pilot_launchpad=pilot_launchpad_report,
-            enterprise_trust_center=enterprise_trust_center_report,
-            productization=productization_report,
-            scenario_hub=scenario_hub_report,
-            value_packs=value_packs_report,
-            vendor_portfolio=vendor_report,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        enterprise_trust_center_report = (
+            enterprise_trust_center_report
+            or build_enterprise_trust_center(
+                executive=executive,
+                platform=platform,
+                business_case=business_case_report,
+                productization=productization_report,
+                offline_readiness=build_offline_readiness(
+                    strict=False, include_metadata=False
+                ),
+                security_posture=build_security_posture(
+                    config_path=config_path, limit=120, module_limit=1200
+                ),
+                rights_rls=rights_report,
+                demo_command_center=demo_command_center_report,
+                pilot_launchpad=pilot_launchpad_report,
+                scenario_hub=scenario_hub_report,
+                vendor_portfolio=vendor_report,
+                evidence_artifacts=artifacts,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
+        )
+        commercial_offer_studio_report = (
+            commercial_offer_studio_report
+            or build_commercial_offer_studio(
+                executive=executive,
+                business_case=business_case_report,
+                pilot_launchpad=pilot_launchpad_report,
+                enterprise_trust_center=enterprise_trust_center_report,
+                productization=productization_report,
+                scenario_hub=scenario_hub_report,
+                value_packs=value_packs_report,
+                vendor_portfolio=vendor_report,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
         )
         buyer_concierge_report = buyer_concierge_report or build_buyer_concierge(
             executive=executive,
@@ -3910,48 +4270,63 @@ def build_evidence_bundle(
             config_path=config_path,
             target_platform_version=target_platform_version,
         )
-        demo_command_center_report = demo_command_center_report or build_demo_command_center(
-            executive=executive,
-            scenario_hub=scenario_hub_report,
-            guided_demo=guided_demo_report,
-            pilot_launchpad=pilot_launchpad_report,
-            business_case=business_case_report,
-            productization=productization_report,
-            vendor_portfolio=vendor_report,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        demo_command_center_report = (
+            demo_command_center_report
+            or build_demo_command_center(
+                executive=executive,
+                scenario_hub=scenario_hub_report,
+                guided_demo=guided_demo_report,
+                pilot_launchpad=pilot_launchpad_report,
+                business_case=business_case_report,
+                productization=productization_report,
+                vendor_portfolio=vendor_report,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
         )
-        rights_report = rights_report or build_rights_rls(config_path=config_path, role_limit=60, object_limit=160)
-        enterprise_trust_center_report = enterprise_trust_center_report or build_enterprise_trust_center(
-            executive=executive,
-            platform=platform,
-            business_case=business_case_report,
-            productization=productization_report,
-            offline_readiness=build_offline_readiness(strict=False, include_metadata=False),
-            security_posture=build_security_posture(config_path=config_path, limit=120, module_limit=1200),
-            rights_rls=rights_report,
-            demo_command_center=demo_command_center_report,
-            pilot_launchpad=pilot_launchpad_report,
-            scenario_hub=scenario_hub_report,
-            vendor_portfolio=vendor_report,
-            evidence_artifacts=artifacts,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        rights_report = rights_report or build_rights_rls(
+            config_path=config_path, role_limit=60, object_limit=160
         )
-        commercial_offer_studio_report = commercial_offer_studio_report or build_commercial_offer_studio(
-            executive=executive,
-            business_case=business_case_report,
-            pilot_launchpad=pilot_launchpad_report,
-            enterprise_trust_center=enterprise_trust_center_report,
-            productization=productization_report,
-            scenario_hub=scenario_hub_report,
-            value_packs=value_packs_report,
-            vendor_portfolio=vendor_report,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        enterprise_trust_center_report = (
+            enterprise_trust_center_report
+            or build_enterprise_trust_center(
+                executive=executive,
+                platform=platform,
+                business_case=business_case_report,
+                productization=productization_report,
+                offline_readiness=build_offline_readiness(
+                    strict=False, include_metadata=False
+                ),
+                security_posture=build_security_posture(
+                    config_path=config_path, limit=120, module_limit=1200
+                ),
+                rights_rls=rights_report,
+                demo_command_center=demo_command_center_report,
+                pilot_launchpad=pilot_launchpad_report,
+                scenario_hub=scenario_hub_report,
+                vendor_portfolio=vendor_report,
+                evidence_artifacts=artifacts,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
+        )
+        commercial_offer_studio_report = (
+            commercial_offer_studio_report
+            or build_commercial_offer_studio(
+                executive=executive,
+                business_case=business_case_report,
+                pilot_launchpad=pilot_launchpad_report,
+                enterprise_trust_center=enterprise_trust_center_report,
+                productization=productization_report,
+                scenario_hub=scenario_hub_report,
+                value_packs=value_packs_report,
+                vendor_portfolio=vendor_report,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
         )
         buyer_concierge_report = buyer_concierge_report or build_buyer_concierge(
             executive=executive,
@@ -4136,48 +4511,63 @@ def build_evidence_bundle(
             config_path=config_path,
             target_platform_version=target_platform_version,
         )
-        demo_command_center_report = demo_command_center_report or build_demo_command_center(
-            executive=executive,
-            scenario_hub=scenario_hub_report,
-            guided_demo=guided_demo_report,
-            pilot_launchpad=pilot_launchpad_report,
-            business_case=business_case_report,
-            productization=productization_report,
-            vendor_portfolio=vendor_report,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        demo_command_center_report = (
+            demo_command_center_report
+            or build_demo_command_center(
+                executive=executive,
+                scenario_hub=scenario_hub_report,
+                guided_demo=guided_demo_report,
+                pilot_launchpad=pilot_launchpad_report,
+                business_case=business_case_report,
+                productization=productization_report,
+                vendor_portfolio=vendor_report,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
         )
-        rights_report = rights_report or build_rights_rls(config_path=config_path, role_limit=60, object_limit=160)
-        enterprise_trust_center_report = enterprise_trust_center_report or build_enterprise_trust_center(
-            executive=executive,
-            platform=platform,
-            business_case=business_case_report,
-            productization=productization_report,
-            offline_readiness=build_offline_readiness(strict=False, include_metadata=False),
-            security_posture=build_security_posture(config_path=config_path, limit=120, module_limit=1200),
-            rights_rls=rights_report,
-            demo_command_center=demo_command_center_report,
-            pilot_launchpad=pilot_launchpad_report,
-            scenario_hub=scenario_hub_report,
-            vendor_portfolio=vendor_report,
-            evidence_artifacts=artifacts,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        rights_report = rights_report or build_rights_rls(
+            config_path=config_path, role_limit=60, object_limit=160
         )
-        commercial_offer_studio_report = commercial_offer_studio_report or build_commercial_offer_studio(
-            executive=executive,
-            business_case=business_case_report,
-            pilot_launchpad=pilot_launchpad_report,
-            enterprise_trust_center=enterprise_trust_center_report,
-            productization=productization_report,
-            scenario_hub=scenario_hub_report,
-            value_packs=value_packs_report,
-            vendor_portfolio=vendor_report,
-            client_name=client_name,
-            config_path=config_path,
-            target_platform_version=target_platform_version,
+        enterprise_trust_center_report = (
+            enterprise_trust_center_report
+            or build_enterprise_trust_center(
+                executive=executive,
+                platform=platform,
+                business_case=business_case_report,
+                productization=productization_report,
+                offline_readiness=build_offline_readiness(
+                    strict=False, include_metadata=False
+                ),
+                security_posture=build_security_posture(
+                    config_path=config_path, limit=120, module_limit=1200
+                ),
+                rights_rls=rights_report,
+                demo_command_center=demo_command_center_report,
+                pilot_launchpad=pilot_launchpad_report,
+                scenario_hub=scenario_hub_report,
+                vendor_portfolio=vendor_report,
+                evidence_artifacts=artifacts,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
+        )
+        commercial_offer_studio_report = (
+            commercial_offer_studio_report
+            or build_commercial_offer_studio(
+                executive=executive,
+                business_case=business_case_report,
+                pilot_launchpad=pilot_launchpad_report,
+                enterprise_trust_center=enterprise_trust_center_report,
+                productization=productization_report,
+                scenario_hub=scenario_hub_report,
+                value_packs=value_packs_report,
+                vendor_portfolio=vendor_report,
+                client_name=client_name,
+                config_path=config_path,
+                target_platform_version=target_platform_version,
+            )
         )
         buyer_concierge_report = buyer_concierge_report or build_buyer_concierge(
             executive=executive,
@@ -4331,7 +4721,9 @@ def build_evidence_bundle(
         )
 
     if include_rights:
-        rights_report = rights_report or build_rights_rls(config_path=config_path, role_limit=60, object_limit=160)
+        rights_report = rights_report or build_rights_rls(
+            config_path=config_path, role_limit=60, object_limit=160
+        )
         artifacts.append(
             _artifact(
                 id="rights-rls",
@@ -4350,10 +4742,20 @@ def build_evidence_bundle(
         "client_name": client_name,
         **manifest,
     }
-    manifest_payload["bundle_sha256"] = _sha256_text(_json_text(manifest_payload["files"]))
-    risky = [item for item in artifacts if item["status"] in {"risk", "fail", "critical", "blocked"}]
-    watch = [item for item in artifacts if item["status"] in {"watch", "warn", "partial"}]
-    commercial_assumptions = _commercial_assumption_receipt(business_case_report, business_assumptions)
+    manifest_payload["bundle_sha256"] = _sha256_text(
+        _json_text(manifest_payload["files"])
+    )
+    risky = [
+        item
+        for item in artifacts
+        if item["status"] in {"risk", "fail", "critical", "blocked"}
+    ]
+    watch = [
+        item for item in artifacts if item["status"] in {"watch", "warn", "partial"}
+    ]
+    commercial_assumptions = _commercial_assumption_receipt(
+        business_case_report, business_assumptions
+    )
     procurement_handoff = _build_procurement_handoff(
         bundle_id=bundle_id,
         generated_at=generated_at,
@@ -4399,7 +4801,9 @@ def build_evidence_bundle(
     }
     report["procurement_handoff"]["recipient_packets"] = _recipient_packets(report)
     report["archive_acceptance_receipt"] = _archive_acceptance_receipt(report)
-    report["summary"]["archive_acceptance_steps"] = len(report["archive_acceptance_receipt"]["acceptance_steps"])
+    report["summary"]["archive_acceptance_steps"] = len(
+        report["archive_acceptance_receipt"]["acceptance_steps"]
+    )
     report["markdown"] = _bundle_markdown(report)
     report["open_first_markdown"] = _open_first_markdown(report)
     report["download_name"] = f"{bundle_id}-evidence-bundle.md"
@@ -4418,7 +4822,9 @@ def _intake_markdown(plan: dict[str, Any]) -> str:
         "",
     ]
     for item in plan.get("coverage", []):
-        lines.append(f"- **{item.get('status')}** {item.get('title')}: {item.get('count')}")
+        lines.append(
+            f"- **{item.get('status')}** {item.get('title')}: {item.get('count')}"
+        )
     lines.extend(["", "## Caveats", ""])
     lines.extend(f"- {item}" for item in plan.get("caveats", []))
     return "\n".join(lines)

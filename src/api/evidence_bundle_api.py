@@ -30,7 +30,10 @@ from src.services.rentgen.evidence_bundle import (
     verify_evidence_bundle_archive_payload,
 )
 from src.services.rentgen.executive_dashboard import build_executive_dashboard
-from src.services.rentgen.killer_demo_path import KILLER_DEMO_ARCHIVE_HASH_HEADER, build_killer_demo_path
+from src.services.rentgen.killer_demo_path import (
+    KILLER_DEMO_ARCHIVE_HASH_HEADER,
+    build_killer_demo_path,
+)
 
 router = APIRouter(prefix="/api/v1/evidence-bundle", tags=["Evidence Bundle"])
 
@@ -87,7 +90,9 @@ def _compose_bundle(req: EvidenceBundleRequest) -> dict[str, Any]:
         hotspot_limit=12,
         save_snapshot=False,
     )
-    assumptions = req.assumptions.model_dump(exclude_none=True) if req.assumptions else None
+    assumptions = (
+        req.assumptions.model_dump(exclude_none=True) if req.assumptions else None
+    )
     return build_evidence_bundle(
         executive=executive,
         store=store,
@@ -145,12 +150,18 @@ def _killer_archive_headers(archive_payload: dict[str, Any]) -> dict[str, str]:
         "X-Archive-Files": str(archive_payload["files"]),
         "X-Evidence-Archive-Sha256": str(archive_payload["evidence_sha256"]),
         KILLER_DEMO_MANIFEST_HEADER: str(archive_payload["killer_demo_manifest_file"]),
-        KILLER_DEMO_MANIFEST_HASH_HEADER: str(archive_payload["killer_demo_manifest_sha256"]),
-        KILLER_DEMO_MANIFEST_FILES_HEADER: str(archive_payload["killer_demo_manifest_files"]),
+        KILLER_DEMO_MANIFEST_HASH_HEADER: str(
+            archive_payload["killer_demo_manifest_sha256"]
+        ),
+        KILLER_DEMO_MANIFEST_FILES_HEADER: str(
+            archive_payload["killer_demo_manifest_files"]
+        ),
     }
 
 
-def _killer_demo_report_from_bundle(req: EvidenceBundleRequest, bundle: dict[str, Any]) -> tuple[dict[str, Any] | None, list[str]]:
+def _killer_demo_report_from_bundle(
+    req: EvidenceBundleRequest, bundle: dict[str, Any]
+) -> tuple[dict[str, Any] | None, list[str]]:
     reports = _artifact_reports(bundle)
     required = [
         "launch-room",
@@ -209,7 +220,10 @@ def _missing_killer_demo_verify(missing: list[str]) -> dict[str, Any]:
 
 
 def _dual_status(evidence_result: dict[str, Any], killer_result: dict[str, Any]) -> str:
-    statuses = {str(evidence_result.get("status") or ""), str(killer_result.get("status") or "")}
+    statuses = {
+        str(evidence_result.get("status") or ""),
+        str(killer_result.get("status") or ""),
+    }
     if "fail" in statuses:
         return "fail"
     if "warn" in statuses:
@@ -261,11 +275,17 @@ def _dual_verification_markdown(packet: dict[str, Any]) -> str:
         "",
     ]
     if packet.get("status") == "pass":
-        lines.append("- Record both archive hashes and attach this packet plus both archive verification receipts to the procurement ticket.")
+        lines.append(
+            "- Record both archive hashes and attach this packet plus both archive verification receipts to the procurement ticket."
+        )
     elif packet.get("status") == "warn":
-        lines.append("- Record both archive hashes only after warning findings are accepted by security/procurement.")
+        lines.append(
+            "- Record both archive hashes only after warning findings are accepted by security/procurement."
+        )
     else:
-        lines.append("- Do not forward the archive pair until high findings are fixed and the dual packet passes.")
+        lines.append(
+            "- Do not forward the archive pair until high findings are fixed and the dual packet passes."
+        )
     return "\n".join(lines).strip()
 
 
@@ -286,21 +306,40 @@ def _dual_archive_packet(
         "client_name": req.client_name,
         "summary": {
             "archives": 2,
-            "pass": sum(1 for item in (evidence_result, killer_result) if item.get("status") == "pass"),
-            "warn": sum(1 for item in (evidence_result, killer_result) if item.get("status") == "warn"),
-            "fail": sum(1 for item in (evidence_result, killer_result) if item.get("status") == "fail"),
-            "findings": int(evidence_summary.get("findings", 0)) + int(killer_summary.get("findings", 0)),
-            "high": int(evidence_summary.get("high", 0)) + int(killer_summary.get("high", 0)),
-            "medium": int(evidence_summary.get("medium", 0)) + int(killer_summary.get("medium", 0)),
-            "low": int(evidence_summary.get("low", 0)) + int(killer_summary.get("low", 0)),
+            "pass": sum(
+                1
+                for item in (evidence_result, killer_result)
+                if item.get("status") == "pass"
+            ),
+            "warn": sum(
+                1
+                for item in (evidence_result, killer_result)
+                if item.get("status") == "warn"
+            ),
+            "fail": sum(
+                1
+                for item in (evidence_result, killer_result)
+                if item.get("status") == "fail"
+            ),
+            "findings": int(evidence_summary.get("findings", 0))
+            + int(killer_summary.get("findings", 0)),
+            "high": int(evidence_summary.get("high", 0))
+            + int(killer_summary.get("high", 0)),
+            "medium": int(evidence_summary.get("medium", 0))
+            + int(killer_summary.get("medium", 0)),
+            "low": int(evidence_summary.get("low", 0))
+            + int(killer_summary.get("low", 0)),
         },
         "pair": {
             "evidence_archive_sha256": evidence_result.get("archive_sha256"),
             "killer_archive_sha256": killer_result.get("archive_sha256"),
-            "killer_embedded_evidence_sha256": killer_headers.get("X-Evidence-Archive-Sha256", ""),
+            "killer_embedded_evidence_sha256": killer_headers.get(
+                "X-Evidence-Archive-Sha256", ""
+            ),
             "same_evidence_archive_hash": bool(
                 evidence_result.get("archive_sha256")
-                and killer_headers.get("X-Evidence-Archive-Sha256") == evidence_result.get("archive_sha256")
+                and killer_headers.get("X-Evidence-Archive-Sha256")
+                == evidence_result.get("archive_sha256")
             ),
         },
         "receipt_files": {
@@ -315,7 +354,9 @@ def _dual_archive_packet(
 
 
 def _json_bytes(payload: Any) -> bytes:
-    return json.dumps(payload, ensure_ascii=False, indent=2, default=str).encode("utf-8")
+    return json.dumps(payload, ensure_ascii=False, indent=2, default=str).encode(
+        "utf-8"
+    )
 
 
 def _verification_packet_open_first(packet: dict[str, Any]) -> str:
@@ -347,7 +388,9 @@ def _verification_packet_open_first(packet: dict[str, Any]) -> str:
     )
 
 
-def _hash_table(packet: dict[str, Any], files: list[tuple[str, bytes]]) -> dict[str, Any]:
+def _hash_table(
+    packet: dict[str, Any], files: list[tuple[str, bytes]]
+) -> dict[str, Any]:
     evidence = packet.get("evidence") or {}
     killer = packet.get("killer_demo") or {}
     pair = packet.get("pair") or {}
@@ -393,9 +436,15 @@ def _verification_packet_archive(packet: dict[str, Any]) -> dict[str, Any]:
     evidence_receipt = evidence.get("verification_receipt") or {}
     killer_receipt = killer.get("verification_receipt") or {}
     files: list[tuple[str, bytes]] = [
-        ("OPEN_FIRST_VERIFICATION_PACKET.md", _verification_packet_open_first(packet).encode("utf-8")),
+        (
+            "OPEN_FIRST_VERIFICATION_PACKET.md",
+            _verification_packet_open_first(packet).encode("utf-8"),
+        ),
         ("dual-archive-verification-packet.json", _json_bytes(packet)),
-        ("dual-archive-verification-packet.md", str(packet.get("verification_packet_markdown") or "").encode("utf-8")),
+        (
+            "dual-archive-verification-packet.md",
+            str(packet.get("verification_packet_markdown") or "").encode("utf-8"),
+        ),
         ("evidence-archive-verification-receipt.json", _json_bytes(evidence_receipt)),
         (
             "evidence-archive-verification-receipt.md",
@@ -413,7 +462,14 @@ def _verification_packet_archive(packet: dict[str, Any]) -> dict[str, Any]:
         for filename, content in files:
             archive.writestr(filename, content)
     payload = buffer.getvalue()
-    client_slug = "".join(ch if ch.isalnum() else "-" for ch in str(packet.get("client_name") or "rentgen")).strip("-").lower()
+    client_slug = (
+        "".join(
+            ch if ch.isalnum() else "-"
+            for ch in str(packet.get("client_name") or "rentgen")
+        )
+        .strip("-")
+        .lower()
+    )
     client_slug = client_slug or "rentgen"
     return {
         "filename": f"{client_slug}-archive-verification-packet.zip",
@@ -463,7 +519,9 @@ def verify_archive(req: EvidenceBundleRequest) -> dict[str, Any]:
         filename=str(archive_payload.get("filename") or ""),
     )
     result["expected_headers"] = _evidence_archive_headers(archive_payload)
-    attach_archive_verification_receipt(result, expected_headers=result["expected_headers"])
+    attach_archive_verification_receipt(
+        result, expected_headers=result["expected_headers"]
+    )
     return result
 
 
@@ -477,8 +535,12 @@ def verify_dual_archive(req: EvidenceBundleRequest) -> dict[str, Any]:
         evidence_archive_payload["bytes"],
         filename=str(evidence_archive_payload.get("filename") or ""),
     )
-    evidence_result["expected_headers"] = _evidence_archive_headers(evidence_archive_payload)
-    attach_archive_verification_receipt(evidence_result, expected_headers=evidence_result["expected_headers"])
+    evidence_result["expected_headers"] = _evidence_archive_headers(
+        evidence_archive_payload
+    )
+    attach_archive_verification_receipt(
+        evidence_result, expected_headers=evidence_result["expected_headers"]
+    )
 
     killer_report, missing = _killer_demo_report_from_bundle(req, bundle)
     if killer_report is None:
@@ -493,10 +555,16 @@ def verify_dual_archive(req: EvidenceBundleRequest) -> dict[str, Any]:
             killer_archive_payload["bytes"],
             filename=str(killer_archive_payload.get("filename") or ""),
         )
-        killer_result["expected_headers"] = _killer_archive_headers(killer_archive_payload)
-        attach_archive_verification_receipt(killer_result, expected_headers=killer_result["expected_headers"])
+        killer_result["expected_headers"] = _killer_archive_headers(
+            killer_archive_payload
+        )
+        attach_archive_verification_receipt(
+            killer_result, expected_headers=killer_result["expected_headers"]
+        )
 
-    return _dual_archive_packet(req=req, evidence_result=evidence_result, killer_result=killer_result)
+    return _dual_archive_packet(
+        req=req, evidence_result=evidence_result, killer_result=killer_result
+    )
 
 
 @router.post("/archive/verification-packet")

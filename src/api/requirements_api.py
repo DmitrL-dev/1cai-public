@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from src.api._rentgen_store import store_or_none
 from src.services.its_rag.search import ITSSearchService
+from src.services.rentgen.artifact_graph import trace_artifact
 from src.services.rentgen.change_plan import build_requirement_impact
 from src.services.rentgen.requirements_traceability import (
     build_trace_record,
@@ -17,7 +18,6 @@ from src.services.rentgen.requirements_traceability import (
     save_trace,
     transition_trace,
 )
-from src.services.rentgen.artifact_graph import trace_artifact
 
 router = APIRouter(prefix="/api/v1/requirements", tags=["requirements"])
 
@@ -149,7 +149,9 @@ def transition(trace_id: str, req: TraceTransitionRequest) -> dict[str, Any]:
     """Move a requirement trace through the internal review lifecycle."""
 
     try:
-        return transition_trace(trace_id, status=req.status, actor=req.actor, reason=req.reason)
+        return transition_trace(
+            trace_id, status=req.status, actor=req.actor, reason=req.reason
+        )
     except KeyError as exc:
         raise HTTPException(404, str(exc)) from exc
     except ValueError as exc:
@@ -157,7 +159,9 @@ def transition(trace_id: str, req: TraceTransitionRequest) -> dict[str, Any]:
 
 
 @router.get("/traces/{trace_id}/artifact-trace")
-def artifact_trace(trace_id: str, depth: int = Query(default=3, ge=0, le=12)) -> dict[str, Any]:
+def artifact_trace(
+    trace_id: str, depth: int = Query(default=3, ge=0, le=12)
+) -> dict[str, Any]:
     """Return Artifact Graph trace for a stored requirement trace."""
 
     try:

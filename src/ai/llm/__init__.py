@@ -12,6 +12,7 @@ from typing import Any, Dict
 try:
     from .adaptive_selector import AdaptiveLLMSelector, LLMModel, TaskType
 except Exception:
+
     class TaskType(str, Enum):
         """Minimal task taxonomy for baseline offline mode."""
 
@@ -42,7 +43,9 @@ except Exception:
         ) -> Dict[str, Any]:
             response = {
                 "status": "llm_offline_fallback",
-                "task_type": task_type.value if hasattr(task_type, "value") else str(task_type),
+                "task_type": task_type.value
+                if hasattr(task_type, "value")
+                else str(task_type),
                 "is_injection": False,
                 "confidence": 0.0,
                 "reason": "Adaptive LLM selector is not installed in the baseline profile.",
@@ -56,8 +59,5 @@ except Exception:
                 "context_keys": sorted(str(key) for key in (context or {}).keys()),
             }
 
-__all__ = [
-    "AdaptiveLLMSelector",
-    "LLMModel",
-    "TaskType"
-]
+
+__all__ = ["AdaptiveLLMSelector", "LLMModel", "TaskType"]

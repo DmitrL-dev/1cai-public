@@ -12,7 +12,6 @@ from src.services.rentgen.path_safety import collect_files, confine_path
 from src.services.rentgen.test_coverage_matrix import build_test_coverage_matrix
 from src.services.tj_parser.parser import TJEvent, TJParser
 
-
 LOCK_EVENTS = {"TLOCK", "TTIMEOUT", "TDEADLOCK"}
 LOCK_EVENT_RANK = {"TDEADLOCK": 3, "TTIMEOUT": 2, "TLOCK": 1}
 
@@ -56,7 +55,13 @@ def _event_dict(event: TJEvent) -> dict[str, Any]:
 
 def _load_events(log_path: str | None) -> tuple[list[TJEvent], list[str], bool]:
     if not log_path:
-        return [], ["Technology Journal path was not provided; Lock Radar is waiting for local TJ evidence."], False
+        return (
+            [],
+            [
+                "Technology Journal path was not provided; Lock Radar is waiting for local TJ evidence."
+            ],
+            False,
+        )
 
     # Confine the caller-supplied path to the allowed data roots before any
     # filesystem access. A path outside them (C:\Windows, secrets, .. traversal)
@@ -107,7 +112,11 @@ def _module_sources(
 
     ordered = sorted(sources, key=lambda module: (counts[module], module), reverse=True)
     modules = ordered[:limit]
-    return modules, {module: dedupe(sources[module]) for module in modules}, dict(counts)
+    return (
+        modules,
+        {module: dedupe(sources[module]) for module in modules},
+        dict(counts),
+    )
 
 
 def _max_duration_ms(events: list[dict[str, Any]]) -> float:
@@ -124,16 +133,28 @@ def _module_plan(
     max_edges: int,
 ) -> tuple[list[dict[str, Any]], list[str]]:
     if store is None:
-        return [], ["Rentgen store is unavailable; module impact and test links are skipped."]
+        return [], [
+            "Rentgen store is unavailable; module impact and test links are skipped."
+        ]
 
     rows = []
     caveats = []
     for module in modules:
         try:
-            impact = store.module_impact(module, max_depth=max_depth, max_edges=max_edges)
+            impact = store.module_impact(
+                module, max_depth=max_depth, max_edges=max_edges
+            )
             quality = store.get_module_risk(module)
-            graph_modules = [item.get("name") for item in impact.get("graph_modules", []) if item.get("name")]
-            hotspots = store.hotspots_for_graph_modules(graph_modules, limit=8) if graph_modules else []
+            graph_modules = [
+                item.get("name")
+                for item in impact.get("graph_modules", [])
+                if item.get("name")
+            ]
+            hotspots = (
+                store.hotspots_for_graph_modules(graph_modules, limit=8)
+                if graph_modules
+                else []
+            )
         except Exception as exc:  # pragma: no cover - defensive integration guard
             caveats.append(f"Impact analysis failed for {module}: {exc}")
             continue
@@ -174,14 +195,17 @@ def _test_matrix(
     if store is None or not modules:
         return None, []
     try:
-        return build_test_coverage_matrix(
-            store,
-            changed_modules=modules,
-            max_depth=max_depth,
-            max_edges=max_edges,
-            hotspot_limit=8,
-            match_limit=8,
-        ), []
+        return (
+            build_test_coverage_matrix(
+                store,
+                changed_modules=modules,
+                max_depth=max_depth,
+                max_edges=max_edges,
+                hotspot_limit=8,
+                match_limit=8,
+            ),
+            [],
+        )
     except Exception as exc:  # pragma: no cover - defensive integration guard
         return None, [f"Test coverage matrix failed: {exc}"]
 
@@ -197,7 +221,10 @@ def _decision(
     timeouts = sum(1 for item in events if item["kind"] == "TTIMEOUT")
     deadlocks = sum(1 for item in events if item["kind"] == "TDEADLOCK")
     max_duration = _max_duration_ms(events)
-    max_module_risk = max((int((row.get("quality") or {}).get("risk") or 0) for row in module_plan), default=0)
+    max_module_risk = max(
+        (int((row.get("quality") or {}).get("risk") or 0) for row in module_plan),
+        default=0,
+    )
     gaps = int(((test_matrix or {}).get("summary") or {}).get("gaps") or 0)
 
     risk_score = 0
@@ -223,7 +250,9 @@ def _decision(
         headline = f"Lock waits found: {locks}; validate affected modules and tests."
     else:
         status = "ready"
-        headline = "No lock waits, timeouts or deadlocks found in the supplied TJ slice."
+        headline = (
+            "No lock waits, timeouts or deadlocks found in the supplied TJ slice."
+        )
 
     return {
         "status": status,
@@ -293,11 +322,15 @@ def _actions(
         )
 
     for row in module_plan[:3]:
-        if int(row.get("impact_total") or 0) or int((row.get("quality") or {}).get("risk") or 0):
+        if int(row.get("impact_total") or 0) or int(
+            (row.get("quality") or {}).get("risk") or 0
+        ):
             actions.append(
                 {
                     "owner": "qa",
-                    "severity": "high" if int((row.get("quality") or {}).get("risk") or 0) >= 70 else "medium",
+                    "severity": "high"
+                    if int((row.get("quality") or {}).get("risk") or 0) >= 70
+                    else "medium",
                     "kind": "module-impact",
                     "title": "Add regression checks around locked module impact radius",
                     "target": row.get("module_ref"),
@@ -369,7 +402,9 @@ def _markdown(report: dict[str, Any]) -> str:
     lines.extend(["", "## Top Events", ""])
     for item in report["events"][:10]:
         module = item.get("top_module") or "unknown"
-        lines.append(f"- **{item['kind']}** {item['timestamp']} {item['duration_ms']} ms `{module}`")
+        lines.append(
+            f"- **{item['kind']}** {item['timestamp']} {item['duration_ms']} ms `{module}`"
+        )
     lines.extend(["", "## Actions", ""])
     for item in report["recommended_actions"]:
         lines.append(f"- **{item['severity']}** {item['owner']}: {item['title']}")
@@ -399,7 +434,9 @@ def build_lock_radar(
         ),
         reverse=True,
     )
-    modules, sources, event_counts = _module_sources(events, changed_modules, module_limit)
+    modules, sources, event_counts = _module_sources(
+        events, changed_modules, module_limit
+    )
     module_rows, module_caveats = _module_plan(
         store,
         modules,
@@ -408,11 +445,15 @@ def build_lock_radar(
         max_depth=max_depth,
         max_edges=max_edges,
     )
-    test_matrix, test_caveats = _test_matrix(store, modules, max_depth=max_depth, max_edges=max_edges)
+    test_matrix, test_caveats = _test_matrix(
+        store, modules, max_depth=max_depth, max_edges=max_edges
+    )
     caveats.extend(module_caveats)
     caveats.extend(test_caveats)
     if available and not events:
-        caveats.append("The supplied TJ slice contains no TLOCK, TTIMEOUT or TDEADLOCK events.")
+        caveats.append(
+            "The supplied TJ slice contains no TLOCK, TTIMEOUT or TDEADLOCK events."
+        )
 
     event_kinds = Counter(item["kind"] for item in events)
     decision = _decision(
@@ -439,7 +480,11 @@ def build_lock_radar(
             "test_gaps": decision["test_gaps"],
         },
         "modules": [
-            {"module_ref": module, "sources": sources.get(module, []), "lock_events": event_counts.get(module, 0)}
+            {
+                "module_ref": module,
+                "sources": sources.get(module, []),
+                "lock_events": event_counts.get(module, 0),
+            }
             for module in modules
         ],
         "events": events[:50],

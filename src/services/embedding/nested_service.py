@@ -173,13 +173,18 @@ class NestedEmbeddingService:
 
         logger.debug(
             "Encoded with nested CMS",
-            extra={"code_length": len(code), "weights": weights,
-                                      "embedding_shape": embedding.shape},
+            extra={
+                "code_length": len(code),
+                "weights": weights,
+                "embedding_shape": embedding.shape,
+            },
         )
 
         return embedding
 
-    def update_with_surprise(self, code: str, actual: Any, predicted: Any, context: Optional[Dict] = None):
+    def update_with_surprise(
+        self, code: str, actual: Any, predicted: Any, context: Optional[Dict] = None
+    ):
         """
         Update CMS based on prediction surprise
 
@@ -230,8 +235,11 @@ class NestedEmbeddingService:
 
         logger.debug(
             "Updated CMS with surprise",
-            extra={"surprise": surprise, "surprise_level": surprise_level,
-                "key": key[:16] + "..."},
+            extra={
+                "surprise": surprise,
+                "surprise_level": surprise_level,
+                "key": key[:16] + "...",
+            },
         )
 
     def _compute_weights(self, context: Dict) -> Dict[str, float]:

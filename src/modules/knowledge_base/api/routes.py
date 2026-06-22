@@ -1,4 +1,3 @@
-
 """
 API endpoints для работы с базой знаний по конфигурациям 1С.
 
@@ -23,9 +22,9 @@ router = APIRouter()
 class ConfigurationRequest(BaseModel):
     """Модель запроса информации о конфигурации."""
 
-    configName: Literal["erp", "ut", "zup", "buh", "holding", "buhbit", "do", "ka"] = Field(
-        ..., description="Название конфигурации"
-    )
+    configName: Literal[
+        "erp", "ut", "zup", "buh", "holding", "buhbit", "do", "ka"
+    ] = Field(..., description="Название конфигурации")
 
 
 class ModuleDocumentationRequest(BaseModel):
@@ -55,10 +54,12 @@ class PatternSearchRequest(BaseModel):
 class CodeRecommendationRequest(BaseModel):
     """Модель запроса рекомендаций на основе кода."""
 
-    code: str = Field(..., description="Код для анализа",
-                      max_length=100000)  # Limit length
+    code: str = Field(
+        ..., description="Код для анализа", max_length=100000
+    )  # Limit length
     configName: Optional[str] = Field(
-        None, description="Название конфигурации (опционально)", max_length=50)
+        None, description="Название конфигурации (опционально)", max_length=50
+    )
 
 
 # ==================== API ENDPOINTS ====================
@@ -117,7 +118,8 @@ async def get_configuration_info(config_name: str) -> Dict[str, Any]:
     sanitized_name = config_name.strip().lower()[:50]  # Limit length and normalize
     if not sanitized_name:
         raise HTTPException(
-            status_code=400, detail="Configuration name cannot be empty")
+            status_code=400, detail="Configuration name cannot be empty"
+        )
 
     # Prevent path traversal and dangerous characters
     if ".." in sanitized_name or "/" in sanitized_name or "\\" in sanitized_name:
@@ -128,7 +130,8 @@ async def get_configuration_info(config_name: str) -> Dict[str, Any]:
 
     if not info:
         raise HTTPException(
-            status_code=404, detail=f"Конфигурация {sanitized_name} не найдена")
+            status_code=404, detail=f"Конфигурация {sanitized_name} не найдена"
+        )
 
     return info
 
@@ -172,7 +175,8 @@ async def get_recommendations(request: CodeRecommendationRequest) -> Dict[str, A
             # Prevent path traversal
             if ".." in config_name or "/" in config_name or "\\" in config_name:
                 raise HTTPException(
-                    status_code=400, detail="Invalid configuration name")
+                    status_code=400, detail="Invalid configuration name"
+                )
 
         kb = get_knowledge_base()
         recommendations = kb.get_recommendations(code=code, config_name=config_name)
@@ -188,12 +192,15 @@ async def get_recommendations(request: CodeRecommendationRequest) -> Dict[str, A
                 "error": str(e),
                 "error_type": type(e).__name__,
                 "code_length": len(request.code) if hasattr(request, "code") else 0,
-                "config_name": (request.configName if hasattr(request, "configName") else None),
+                "config_name": (
+                    request.configName if hasattr(request, "configName") else None
+                ),
             },
             exc_info=True,
         )
         raise HTTPException(
-            status_code=500, detail="An error occurred while getting recommendations")
+            status_code=500, detail="An error occurred while getting recommendations"
+        )
 
 
 @router.post(
@@ -222,7 +229,8 @@ async def search_patterns(request: PatternSearchRequest) -> Dict[str, Any]:
             # Prevent path traversal
             if ".." in config_name or "/" in config_name or "\\" in config_name:
                 raise HTTPException(
-                    status_code=400, detail="Invalid configuration name")
+                    status_code=400, detail="Invalid configuration name"
+                )
 
         pattern_type = None
         if request.patternType:
@@ -234,7 +242,8 @@ async def search_patterns(request: PatternSearchRequest) -> Dict[str, Any]:
 
         kb = get_knowledge_base()
         patterns = kb.search_patterns(
-            config_name=config_name, pattern_type=pattern_type, query=query)
+            config_name=config_name, pattern_type=pattern_type, query=query
+        )
 
         return {"patterns": patterns, "total": len(patterns)}
 
@@ -246,13 +255,18 @@ async def search_patterns(request: PatternSearchRequest) -> Dict[str, Any]:
             extra={
                 "error": str(e),
                 "error_type": type(e).__name__,
-                "config_name": (request.configName if hasattr(request, "configName") else None),
-                "pattern_type": (request.patternType if hasattr(request, "patternType") else None),
+                "config_name": (
+                    request.configName if hasattr(request, "configName") else None
+                ),
+                "pattern_type": (
+                    request.patternType if hasattr(request, "patternType") else None
+                ),
             },
             exc_info=True,
         )
         raise HTTPException(
-            status_code=500, detail="An error occurred while searching patterns")
+            status_code=500, detail="An error occurred while searching patterns"
+        )
 
 
 @router.post(
@@ -261,7 +275,9 @@ async def search_patterns(request: PatternSearchRequest) -> Dict[str, Any]:
     summary="Добавление документации модуля",
     description="Добавление документации модуля в базу знаний",
 )
-async def add_module_documentation(request: ModuleDocumentationRequest) -> Dict[str, Any]:
+async def add_module_documentation(
+    request: ModuleDocumentationRequest,
+) -> Dict[str, Any]:
     """Добавляет документацию модуля с валидацией входных данных.
 
     Args:
@@ -278,7 +294,8 @@ async def add_module_documentation(request: ModuleDocumentationRequest) -> Dict[
         config_name = request.configName.strip().lower()[:50]
         if not config_name:
             raise HTTPException(
-                status_code=400, detail="Configuration name cannot be empty")
+                status_code=400, detail="Configuration name cannot be empty"
+            )
 
         # Prevent path traversal
         if ".." in config_name or "/" in config_name or "\\" in config_name:
@@ -297,7 +314,8 @@ async def add_module_documentation(request: ModuleDocumentationRequest) -> Dict[
 
         if not success:
             raise HTTPException(
-                status_code=400, detail="Не удалось добавить документацию модуля")
+                status_code=400, detail="Не удалось добавить документацию модуля"
+            )
 
         return {
             "success": True,
@@ -312,8 +330,12 @@ async def add_module_documentation(request: ModuleDocumentationRequest) -> Dict[
             extra={
                 "error": str(e),
                 "error_type": type(e).__name__,
-                "config_name": (request.configName if hasattr(request, "configName") else None),
-                "module_name": (request.moduleName if hasattr(request, "moduleName") else None),
+                "config_name": (
+                    request.configName if hasattr(request, "configName") else None
+                ),
+                "module_name": (
+                    request.moduleName if hasattr(request, "moduleName") else None
+                ),
             },
             exc_info=True,
         )
@@ -351,7 +373,8 @@ async def add_best_practice(request: BestPracticeRequest) -> Dict[str, Any]:
 
         if not success:
             raise HTTPException(
-                status_code=400, detail="Не удалось добавить best practice")
+                status_code=400, detail="Не удалось добавить best practice"
+            )
 
         return {"success": True, "message": "Best practice добавлена"}
 
@@ -363,7 +386,9 @@ async def add_best_practice(request: BestPracticeRequest) -> Dict[str, Any]:
             extra={
                 "error": str(e),
                 "error_type": type(e).__name__,
-                "config_name": (request.configName if hasattr(request, "configName") else None),
+                "config_name": (
+                    request.configName if hasattr(request, "configName") else None
+                ),
             },
             exc_info=True,
         )
@@ -404,14 +429,18 @@ async def load_from_directory(directory_path: str) -> Dict[str, Any]:
             extra={
                 "error": str(e),
                 "error_type": type(e).__name__,
-                "directory_path": (directory_path if "directory_path" in locals() else None),
+                "directory_path": (
+                    directory_path if "directory_path" in locals() else None
+                ),
             },
             exc_info=True,
         )
         raise HTTPException(status_code=500, detail="Ошибка загрузки из директории")
 
 
-@router.get("/health", tags=["Knowledge Base"], summary="Проверка состояния базы знаний")
+@router.get(
+    "/health", tags=["Knowledge Base"], summary="Проверка состояния базы знаний"
+)
 async def health_check() -> Dict[str, Any]:
     """Проверяет доступность и состояние базы знаний.
 

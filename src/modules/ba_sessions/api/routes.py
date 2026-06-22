@@ -147,7 +147,8 @@ async def build_traceability_matrix(request: TraceabilityRequest) -> Dict[str, A
         )
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to build traceability matrix: {str(e)}")
+            status_code=500, detail=f"Failed to build traceability matrix: {str(e)}"
+        )
 
 
 @router.post("/traceability/risk-register")
@@ -157,10 +158,13 @@ async def build_risk_register(
 ) -> Dict[str, Any]:
     """Build Risk Register."""
     try:
-        return await traceability_service.build_risk_register(requirement_ids, include_incidents)
+        return await traceability_service.build_risk_register(
+            requirement_ids, include_incidents
+        )
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to build risk register: {str(e)}")
+            status_code=500, detail=f"Failed to build risk register: {str(e)}"
+        )
 
 
 @router.post("/traceability/full-report")
@@ -169,7 +173,9 @@ async def build_full_traceability_report(
 ) -> Dict[str, Any]:
     """Build full traceability report."""
     try:
-        return await traceability_service.build_full_traceability_report(requirement_ids)
+        return await traceability_service.build_full_traceability_report(
+            requirement_ids
+        )
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -193,7 +199,8 @@ async def generate_kpis(request: KPIGenerationRequest) -> Dict[str, Any]:
         )
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to generate KPIs: {str(e)}")
+            status_code=500, detail=f"Failed to generate KPIs: {str(e)}"
+        )
 
 
 # === Process & Journey Modelling ===
@@ -211,7 +218,8 @@ async def generate_process_model(request: ProcessModelRequest) -> Dict[str, Any]
         )
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to generate process model: {str(e)}")
+            status_code=500, detail=f"Failed to generate process model: {str(e)}"
+        )
 
 
 @router.post("/process/journey-map")
@@ -226,7 +234,8 @@ async def generate_journey_map(request: JourneyMapRequest) -> Dict[str, Any]:
         )
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to generate journey map: {str(e)}")
+            status_code=500, detail=f"Failed to generate journey map: {str(e)}"
+        )
 
 
 @router.post("/process/validate")
@@ -238,7 +247,8 @@ async def validate_process(
         return await modeling_service.validate_process_model(process_model)
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to validate process: {str(e)}")
+            status_code=500, detail=f"Failed to validate process: {str(e)}"
+        )
 
 
 # === Integrations ===
@@ -256,7 +266,8 @@ async def sync_requirements_to_jira(request: SyncRequirementsRequest) -> Dict[st
         )
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to sync requirements to Jira: {str(e)}")
+            status_code=500, detail=f"Failed to sync requirements to Jira: {str(e)}"
+        )
 
 
 @router.post("/integrations/sync-bpmn-confluence")
@@ -271,7 +282,8 @@ async def sync_bpmn_to_confluence(request: SyncBPMNRequest) -> Dict[str, Any]:
         )
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to sync BPMN to Confluence: {str(e)}")
+            status_code=500, detail=f"Failed to sync BPMN to Confluence: {str(e)}"
+        )
 
 
 @router.post("/integrations/sync-kpi-confluence")
@@ -283,10 +295,13 @@ async def sync_kpi_to_confluence(
 ) -> Dict[str, Any]:
     """Sync KPI to Confluence."""
     try:
-        return await integration_service.sync_kpi_to_confluence(kpi_report, space_key, parent_page_id, use_graph)
+        return await integration_service.sync_kpi_to_confluence(
+            kpi_report, space_key, parent_page_id, use_graph
+        )
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to sync KPI to Confluence: {str(e)}")
+            status_code=500, detail=f"Failed to sync KPI to Confluence: {str(e)}"
+        )
 
 
 @router.post("/integrations/sync-traceability-confluence")
@@ -323,7 +338,8 @@ async def generate_enablement_plan(request: EnablementPlanRequest) -> Dict[str, 
         )
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to generate enablement plan: {str(e)}")
+            status_code=500, detail=f"Failed to generate enablement plan: {str(e)}"
+        )
 
 
 @router.post("/enablement/guide")
@@ -338,7 +354,8 @@ async def generate_guide(request: GuideRequest) -> Dict[str, Any]:
         )
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to generate guide: {str(e)}")
+            status_code=500, detail=f"Failed to generate guide: {str(e)}"
+        )
 
 
 @router.post("/enablement/presentation")
@@ -353,19 +370,24 @@ async def generate_presentation(request: PresentationRequest) -> Dict[str, Any]:
         )
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to generate presentation: {str(e)}")
+            status_code=500, detail=f"Failed to generate presentation: {str(e)}"
+        )
 
 
 @router.post("/enablement/onboarding-checklist")
 async def generate_onboarding_checklist(
     role: str = Body(default="BA", description="Role"),
     include_practical_tasks: bool = Body(
-        default=True, description="Include practical tasks"),
+        default=True, description="Include practical tasks"
+    ),
     use_graph: bool = Body(default=True, description="Use Unified Change Graph"),
 ) -> Dict[str, Any]:
     """Generate onboarding checklist."""
     try:
-        return await documentation_service.generate_onboarding_checklist(role, include_practical_tasks, use_graph)
+        return await documentation_service.generate_onboarding_checklist(
+            role, include_practical_tasks, use_graph
+        )
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to generate onboarding checklist: {str(e)}")
+            status_code=500, detail=f"Failed to generate onboarding checklist: {str(e)}"
+        )

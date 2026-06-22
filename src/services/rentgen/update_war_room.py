@@ -49,7 +49,9 @@ def _configuration(config_path: Path) -> dict[str, Any]:
         "name": _xml_text(root, "Name") or "1C configuration",
         "version": _xml_text(root, "Version"),
         "vendor": _xml_text(root, "Vendor"),
-        "compatibility_mode": _xml_text(root, "CompatibilityMode", "DefaultCompatibilityMode"),
+        "compatibility_mode": _xml_text(
+            root, "CompatibilityMode", "DefaultCompatibilityMode"
+        ),
     }
 
 
@@ -71,11 +73,15 @@ def _extension_inventory(config_path: Path, limit: int = 40) -> dict[str, Any]:
                     {
                         "name": item.stem if item.is_file() else item.name,
                         "path": str(item),
-                        "kind": "folder" if item.is_dir() else item.suffix.lower().lstrip("."),
+                        "kind": "folder"
+                        if item.is_dir()
+                        else item.suffix.lower().lstrip("."),
                     }
                 )
     try:
-        for item in sorted(config_path.glob("*.cfe"), key=lambda value: value.name.casefold()):
+        for item in sorted(
+            config_path.glob("*.cfe"), key=lambda value: value.name.casefold()
+        ):
             if len(items) >= limit:
                 break
             items.append({"name": item.stem, "path": str(item), "kind": "cfe"})
@@ -125,8 +131,12 @@ def _score(checks: list[dict[str, Any]]) -> int:
 
 
 def _decision(score: int, checks: list[dict[str, Any]]) -> dict[str, Any]:
-    high_fail = any(item["status"] == "fail" and item["severity"] == "high" for item in checks)
-    high_attention = any(item["status"] != "pass" and item["severity"] == "high" for item in checks)
+    high_fail = any(
+        item["status"] == "fail" and item["severity"] == "high" for item in checks
+    )
+    high_attention = any(
+        item["status"] != "pass" and item["severity"] == "high" for item in checks
+    )
     if high_fail or score < 60:
         status = "risk"
         headline = "Обновление нельзя обещать без закрытия критичных unknowns, impact или платформенных рисков."
@@ -149,10 +159,14 @@ def _release_compact(
 ) -> tuple[dict[str, Any], list[str]]:
     caveats: list[str] = []
     if not modules:
-        caveats.append("Change set is not provided; release impact and affected tests are not measured.")
+        caveats.append(
+            "Change set is not provided; release impact and affected tests are not measured."
+        )
         return {"included": False, "reason": "no-change-set"}, caveats
     if store is None:
-        caveats.append("Rentgen store is not built; release impact cannot be measured for update war room.")
+        caveats.append(
+            "Rentgen store is not built; release impact cannot be measured for update war room."
+        )
         return {
             "included": False,
             "reason": "store-not-built",
@@ -172,7 +186,11 @@ def _release_compact(
         )
     except Exception as exc:  # pragma: no cover - defensive composition layer
         caveats.append(f"Release readiness failed: {exc}")
-        return {"included": False, "reason": "release-readiness-error", "error": str(exc)}, caveats
+        return {
+            "included": False,
+            "reason": "release-readiness-error",
+            "error": str(exc),
+        }, caveats
 
     return {
         "included": True,
@@ -213,9 +231,14 @@ def _checks(
         checks,
         id="configuration-source",
         title="Источник конфигурации доступен",
-        status="pass" if config.get("exists") and intake_status in {"ready", "partial"} else "fail",
+        status="pass"
+        if config.get("exists") and intake_status in {"ready", "partial"}
+        else "fail",
         severity="high",
-        evidence={"configuration_xml": config.get("exists"), "intake_status": intake_status},
+        evidence={
+            "configuration_xml": config.get("exists"),
+            "intake_status": intake_status,
+        },
         action="Подключите EDT/XML выгрузку до update decision.",
     )
     _check(
@@ -231,7 +254,11 @@ def _checks(
         checks,
         id="platform-doctor",
         title="Platform Doctor не блокирует окно",
-        status="pass" if platform_status == "ready" else "fail" if platform_status == "risk" else "warn",
+        status="pass"
+        if platform_status == "ready"
+        else "fail"
+        if platform_status == "risk"
+        else "warn",
         severity="high",
         evidence=platform.get("decision", {}),
         action="Закройте platform-version, compatibility, DBMS, техжурнал и OpenMetrics caveats.",
@@ -242,7 +269,10 @@ def _checks(
         title="Расширения вынесены в отдельную проверку",
         status="warn" if extensions["count"] else "pass",
         severity="medium",
-        evidence={"extensions_count": extensions["count"], "truncated": extensions["truncated"]},
+        evidence={
+            "extensions_count": extensions["count"],
+            "truncated": extensions["truncated"],
+        },
         action="Проверить заимствованные объекты, переопределенные формы/команды и конфликт с обновлением.",
     )
     _check(
@@ -260,7 +290,9 @@ def _checks(
         evidence={
             "included": release.get("included", False),
             "release_status": release_status,
-            "changed_modules": (release.get("summary") or {}).get("changed_modules", release.get("changed_modules", 0)),
+            "changed_modules": (release.get("summary") or {}).get(
+                "changed_modules", release.get("changed_modules", 0)
+            ),
         },
         action="Перед update window прогнать Release Readiness по diff/modules.",
     )
@@ -348,7 +380,9 @@ def _markdown(report: dict[str, Any]) -> str:
         "",
     ]
     for item in report["checks"]:
-        lines.append(f"- **{item['status']} / {item['severity']}** {item['title']}: {item['action']}")
+        lines.append(
+            f"- **{item['status']} / {item['severity']}** {item['title']}: {item['action']}"
+        )
     lines.extend(["", "## Workstreams", ""])
     for item in report["workstreams"]:
         lines.append(f"- **{item['owner']}** {item['title']}: {item['action']}")

@@ -7,7 +7,6 @@ from typing import Any
 
 from src.services.rentgen.change_plan import dedupe, extract_diff_modules
 
-
 SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2, "info": 3}
 
 INTEGRATION_HINTS = (
@@ -52,7 +51,9 @@ def _text(*values: Any) -> str:
 def infer_layer(module: dict[str, Any], prefix: str) -> str:
     """Infer a coarse architectural layer from EDT path, module kind and names."""
 
-    name = _text(module.get(f"{prefix}_object"), module.get(prefix), module.get(f"{prefix}_path"))
+    name = _text(
+        module.get(f"{prefix}_object"), module.get(prefix), module.get(f"{prefix}_path")
+    )
     path = str(module.get(f"{prefix}_path") or "").replace("\\", "/")
     root = path.split("/", 1)[0] if "/" in path else ""
     kind = str(module.get(f"{prefix}_kind") or "").casefold()
@@ -81,7 +82,14 @@ def infer_layer(module: dict[str, Any], prefix: str) -> str:
         "Constants",
     }:
         return "data"
-    if root in {"Documents", "Catalogs", "Reports", "DataProcessors", "BusinessProcesses", "Tasks"}:
+    if root in {
+        "Documents",
+        "Catalogs",
+        "Reports",
+        "DataProcessors",
+        "BusinessProcesses",
+        "Tasks",
+    }:
         return "application"
     if root == "CommonModules":
         if any(hint in name for hint in INFRA_HINTS):
@@ -91,7 +99,11 @@ def infer_layer(module: dict[str, Any], prefix: str) -> str:
 
 
 def _severity(rule: str, weight: int) -> str:
-    if rule in {"presentation_to_data", "server_to_presentation", "data_to_presentation"}:
+    if rule in {
+        "presentation_to_data",
+        "server_to_presentation",
+        "data_to_presentation",
+    }:
         return "high" if weight >= 10 else "medium"
     if rule == "cycle":
         return "high" if weight >= 25 else "medium"
@@ -149,7 +161,10 @@ def _edge_findings(edge: dict[str, Any], dense_threshold: int) -> list[dict[str,
             )
         )
 
-    if src_layer in {"domain", "application", "integration", "data", "infrastructure"} and dst_layer == "presentation":
+    if (
+        src_layer in {"domain", "application", "integration", "data", "infrastructure"}
+        and dst_layer == "presentation"
+    ):
         findings.append(
             _finding(
                 rule="server_to_presentation",
@@ -173,7 +188,11 @@ def _edge_findings(edge: dict[str, Any], dense_threshold: int) -> list[dict[str,
             )
         )
 
-    if src_layer != dst_layer and LAYER_ORDER[src_layer] < LAYER_ORDER[dst_layer] and weight >= 20:
+    if (
+        src_layer != dst_layer
+        and LAYER_ORDER[src_layer] < LAYER_ORDER[dst_layer]
+        and weight >= 20
+    ):
         findings.append(
             _finding(
                 rule="upward_dependency",
@@ -247,7 +266,9 @@ def _focus_module_names(store, changed_modules: list[str]) -> set[str]:
     return names
 
 
-def _summary(findings: list[dict[str, Any]], edges: list[dict[str, Any]]) -> dict[str, Any]:
+def _summary(
+    findings: list[dict[str, Any]], edges: list[dict[str, Any]]
+) -> dict[str, Any]:
     by_severity = Counter(item["severity"] for item in findings)
     by_rule = Counter(item["rule"] for item in findings)
     layer_edges = Counter(
@@ -285,7 +306,8 @@ def build_architecture_review(
     focus_names = _focus_module_names(store, modules) if modules else set()
     if focus_names:
         edges = [
-            edge for edge in edges
+            edge
+            for edge in edges
             if edge["src"] in focus_names or edge["dst"] in focus_names
         ]
 

@@ -6,6 +6,6 @@ No Docker, no external graph DB — aligns with the platform's token-free, "code
 never leaves the building" thesis.
 """
 
-from .store import RentgenStore, get_store, DB_PATH
+from .store import DB_PATH, RentgenStore, get_store
 
 __all__ = ["RentgenStore", "get_store", "DB_PATH"]

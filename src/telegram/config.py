@@ -1,4 +1,3 @@
-
 """
 Telegram Bot Configuration
 """
@@ -6,6 +5,7 @@ Telegram Bot Configuration
 
 from dataclasses import dataclass
 from typing import Optional
+
 from src.config import settings
 
 
@@ -44,7 +44,9 @@ class TelegramConfig:
             admin_ids=[int(id) for id in settings.telegram_admin_ids.split(",") if id],
             max_requests_per_minute=settings.telegram_rate_limit_min,
             max_requests_per_day=settings.telegram_rate_limit_day,
-            premium_user_ids=set([int(id) for id in settings.telegram_premium_ids.split(",") if id]),
+            premium_user_ids=set(
+                [int(id) for id in settings.telegram_premium_ids.split(",") if id]
+            ),
             enable_code_generation=settings.telegram_enable_codegen,
             enable_dependency_analysis=settings.telegram_enable_deps,
             enable_semantic_search=settings.telegram_enable_search,

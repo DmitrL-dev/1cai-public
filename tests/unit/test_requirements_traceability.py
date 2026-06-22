@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from src.ai.mcp.server import TOOLS, handle_rentgen_requirement_trace
 from src.api import requirements_api
+from src.services.rentgen.artifact_graph import coverage_matrix, trace_artifact
 from src.services.rentgen.change_plan import build_requirement_impact
 from src.services.rentgen.requirements_traceability import (
     build_trace_record,
@@ -12,8 +13,6 @@ from src.services.rentgen.requirements_traceability import (
     save_trace,
     transition_trace,
 )
-from src.services.rentgen.artifact_graph import coverage_matrix, trace_artifact
-
 
 MODULE = "Documents/Order/Ext/ObjectModule.bsl"
 
@@ -77,7 +76,9 @@ def _impact():
     )
 
 
-def test_requirement_trace_record_links_requirement_to_modules_tests_and_metadata(tmp_path):
+def test_requirement_trace_record_links_requirement_to_modules_tests_and_metadata(
+    tmp_path,
+):
     trace_store = tmp_path / "requirements_traces.json"
     artifact_store = tmp_path / "artifact_graph.json"
     impact = _impact()
@@ -124,8 +125,12 @@ def test_requirement_trace_api_persists_and_lists_records(tmp_path, monkeypatch)
     store_path = tmp_path / "requirements_traces.json"
     artifact_store = tmp_path / "artifact_graph.json"
     monkeypatch.setattr(requirements_api, "store_or_none", lambda: FakeStore())
-    monkeypatch.setattr("src.services.rentgen.requirements_traceability.STORE_PATH", store_path)
-    monkeypatch.setattr("src.services.rentgen.artifact_graph.STORE_PATH", artifact_store)
+    monkeypatch.setattr(
+        "src.services.rentgen.requirements_traceability.STORE_PATH", store_path
+    )
+    monkeypatch.setattr(
+        "src.services.rentgen.artifact_graph.STORE_PATH", artifact_store
+    )
 
     app = FastAPI()
     app.include_router(requirements_api.router)
@@ -148,9 +153,15 @@ def test_requirement_trace_api_persists_and_lists_records(tmp_path, monkeypatch)
     details = client.get(f"/api/v1/requirements/traces/{trace['id']}").json()
     transitioned = client.post(
         f"/api/v1/requirements/traces/{trace['id']}/transition",
-        json={"status": "approved", "actor": "architect", "reason": "Ready for change set."},
+        json={
+            "status": "approved",
+            "actor": "architect",
+            "reason": "Ready for change set.",
+        },
     )
-    artifact_trace = client.get(f"/api/v1/requirements/traces/{trace['id']}/artifact-trace").json()
+    artifact_trace = client.get(
+        f"/api/v1/requirements/traces/{trace['id']}/artifact-trace"
+    ).json()
 
     assert traces["total"] == 1
     assert traces["items"][0]["id"] == trace["id"]

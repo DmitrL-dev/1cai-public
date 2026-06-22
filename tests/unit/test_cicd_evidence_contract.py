@@ -1,10 +1,6 @@
 import pytest
 
-from src.integrations.cicd_client import (
-    CICD_EVIDENCE_CONTRACT,
-    CICDClient,
-    CIPlatform,
-)
+from src.integrations.cicd_client import CICD_EVIDENCE_CONTRACT, CICDClient, CIPlatform
 
 
 @pytest.mark.asyncio

@@ -6,8 +6,8 @@ Middleware Configuration for 1C AI Stack
 
 import logging
 import os
-import time
 import threading
+import time
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,9 +17,9 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from src.config import settings
-from src.middleware.security_headers import SecurityHeadersMiddleware
 from src.middleware.ai_security_middleware import AISecurityMiddleware
 from src.middleware.metrics_middleware import MetricsMiddleware
+from src.middleware.security_headers import SecurityHeadersMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -140,15 +140,15 @@ class InMemoryRateLimitMiddleware(BaseHTTPMiddleware):
 
 def setup_middleware(app: FastAPI):
     """Настраивает все middleware для приложения."""
-    
+
     # CORS
     cors_origins = settings.get_cors_origins()
-    
+
     if settings.environment == "development" and "*" in cors_origins:
         logger.warning(
             "CORS allows all origins in development mode. Restrict in production!"
         )
-    
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins,
@@ -179,16 +179,16 @@ def setup_middleware(app: FastAPI):
         ],
         max_age=3600,
     )
-    
+
     # Security Headers
     app.add_middleware(SecurityHeadersMiddleware)
-    
+
     # AI Security (Rule of Two)
     app.add_middleware(AISecurityMiddleware)
-    
+
     # Compression
     app.add_middleware(GZipMiddleware, minimum_size=1000)
-    
+
     # Metrics
     app.add_middleware(MetricsMiddleware)
 
@@ -201,7 +201,7 @@ def setup_middleware(app: FastAPI):
     try:
         from src.middleware.jwt_user_context import JWTUserContextMiddleware
         from src.modules.auth.api.dependencies import get_auth_service
-        
+
         auth_service = get_auth_service()
         app.add_middleware(JWTUserContextMiddleware, auth_service=auth_service)
         logger.info("JWT middleware added")
@@ -209,7 +209,7 @@ def setup_middleware(app: FastAPI):
         if settings.environment == "production":
             raise
         logger.warning(f"Failed to add JWT middleware: {e}")
-    
+
     logger.info("Middleware setup completed")
 
 

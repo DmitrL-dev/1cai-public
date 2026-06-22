@@ -1,9 +1,9 @@
-import os
-import requests
 import logging
+import os
 import unittest
 
 import pytest
+import requests
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -41,7 +41,9 @@ class TestIAM(unittest.TestCase):
         del payload["client_secret"]
 
         logger.info(f"Attempting login for alice at {token_url}...")
-        response = requests.post(token_url, data=payload, auth=(CLIENT_ID, CLIENT_SECRET))
+        response = requests.post(
+            token_url, data=payload, auth=(CLIENT_ID, CLIENT_SECRET)
+        )
 
         if response.status_code != 200:
             logger.error(f"Login failed: {response.text}")

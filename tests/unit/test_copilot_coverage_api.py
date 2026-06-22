@@ -6,7 +6,15 @@ def test_copilot_coverage_map_has_enterprise_spread():
     personas = {persona for item in COVERAGE_ITEMS for persona in item["personas"]}
 
     assert len(COVERAGE_ITEMS) >= 12
-    assert {"architecture", "coding", "review", "testing", "delivery", "governance", "operations"} <= stages
+    assert {
+        "architecture",
+        "coding",
+        "review",
+        "testing",
+        "delivery",
+        "governance",
+        "operations",
+    } <= stages
     # HONESTY: statuses are no longer a blanket {"done"}; partial work is admitted.
     statuses = {item["status"] for item in COVERAGE_ITEMS}
     assert statuses <= {"done", "partial", "planned"}

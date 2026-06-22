@@ -90,7 +90,9 @@ def test_build_change_plan_adds_risk_driven_tests_and_gate():
 
     assert item["impact_total"] == 350
     assert item["covering_tests"]
-    assert any(test["id"] == "performance-regression" for test in item["covering_tests"])
+    assert any(
+        test["id"] == "performance-regression" for test in item["covering_tests"]
+    )
 
     gate = assess_ci_gate(plan, risk_threshold=70, impact_threshold=300)
     assert gate["status"] == "fail"

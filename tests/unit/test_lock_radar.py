@@ -4,7 +4,6 @@ import pytest
 
 from src.services.rentgen.lock_radar import build_lock_radar
 
-
 LOCK_TJ = """12:00:02.000000-200000,TLOCK,p:1:1:1,Usr=Admin,Context='CommonModule.Sales.Module : 50 : Write()'
 12:00:03.000000-0,TDEADLOCK,p:1:1:1,Usr=Admin,Context='CommonModule.Sales.Module : 60 : Post()'
 12:00:04.000000-3000000,TTIMEOUT,p:1:1:1,Usr=Batch,Context='Document.Order.ObjectModule : 100 : Movements.Write()'
@@ -29,7 +28,9 @@ def test_lock_radar_detects_lock_timeout_and_deadlock(tmp_path):
     assert report["summary"]["deadlocks"] == 1
     assert report["summary"]["modules"] == 2
     assert report["events"][0]["kind"] == "TDEADLOCK"
-    assert "CommonModule.Sales.Module" in [item["module_ref"] for item in report["modules"]]
+    assert "CommonModule.Sales.Module" in [
+        item["module_ref"] for item in report["modules"]
+    ]
     assert any(action["kind"] == "deadlock" for action in report["recommended_actions"])
     assert "Lock Radar" in report["markdown"]
 

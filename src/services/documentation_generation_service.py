@@ -1,4 +1,3 @@
-
 """
 Documentation Generation Service
 Автоматическая генерация документации из кода
@@ -47,7 +46,9 @@ class DocumentationGenerator:
         else:
             raise ValueError(f"Неподдерживаемый язык: {language}")
 
-    def _generate_bsl_documentation(self, code: str, function_name: Optional[str], format: str) -> Dict[str, Any]:
+    def _generate_bsl_documentation(
+        self, code: str, function_name: Optional[str], format: str
+    ) -> Dict[str, Any]:
         """Генерация документации для BSL"""
 
         doc = {
@@ -98,7 +99,9 @@ class DocumentationGenerator:
             stripped = line.strip()
 
             # Сохранение комментариев перед функцией
-            if stripped.startswith("//") or (stripped.startswith("'") and not in_function):
+            if stripped.startswith("//") or (
+                stripped.startswith("'") and not in_function
+            ):
                 comment_buffer.append(stripped.lstrip("/'").strip())
                 continue
 
@@ -124,7 +127,8 @@ class DocumentationGenerator:
                     "type": "Функция" if "Функция" in func_type else "Процедура",
                     "signature": line.strip(),
                     "params": self._parse_bsl_params(params_str),
-                    "description": "\n".join(comment_buffer).strip() or f"{func_type} {func_name}",
+                    "description": "\n".join(comment_buffer).strip()
+                    or f"{func_type} {func_name}",
                     "code": "",
                     "examples": [],
                     "notes": [],
@@ -140,7 +144,9 @@ class DocumentationGenerator:
                 function_lines.append(line)
 
                 # Конец функции
-                if re.search(r"\s*Конец(?:Функции|Процедуры)\s*$", stripped, re.IGNORECASE):
+                if re.search(
+                    r"\s*Конец(?:Функции|Процедуры)\s*$", stripped, re.IGNORECASE
+                ):
                     current_function["code"] = "\n".join(function_lines)
 
                     # Извлечение return значения (для функций)
@@ -152,7 +158,8 @@ class DocumentationGenerator:
                         )
                         if return_match:
                             current_function["return_value"] = return_match.group(
-                                1).strip()
+                                1
+                            ).strip()
 
                     functions.append(current_function)
                     current_function = None
@@ -320,7 +327,9 @@ class DocumentationGenerator:
 
         return "".join(lines)
 
-    def _generate_ts_documentation(self, code: str, function_name: Optional[str], format: str) -> Dict[str, Any]:
+    def _generate_ts_documentation(
+        self, code: str, function_name: Optional[str], format: str
+    ) -> Dict[str, Any]:
         """
         Генерация документации для TypeScript/JavaScript
         Использует регулярные выражения для парсинга (AST parsing требует доп. библиотек)
@@ -386,8 +395,11 @@ class DocumentationGenerator:
             for match in re.finditer(pattern, code):
                 func_name = match.group(1)
                 params_str = match.group(2) if len(match.groups()) > 1 else ""
-                return_type = match.group(3).strip() if len(
-                    match.groups()) > 2 and match.group(3) else "any"
+                return_type = (
+                    match.group(3).strip()
+                    if len(match.groups()) > 2 and match.group(3)
+                    else "any"
+                )
 
                 # Извлечение JSDoc комментариев
                 jsdoc = self._extract_jsdoc(code, match.start())
@@ -401,7 +413,9 @@ class DocumentationGenerator:
                         "signature": match.group(0),
                         "params": self._parse_ts_params(params_str),
                         "return_type": return_type,
-                        "description": jsdoc.get("description", f"Function {func_name}"),
+                        "description": jsdoc.get(
+                            "description", f"Function {func_name}"
+                        ),
                         "examples": jsdoc.get("examples", []),
                     }
                 )
@@ -552,7 +566,9 @@ class DocumentationGenerator:
 
         return "".join(lines)
 
-    def _generate_python_documentation(self, code: str, function_name: Optional[str], format: str) -> Dict[str, Any]:
+    def _generate_python_documentation(
+        self, code: str, function_name: Optional[str], format: str
+    ) -> Dict[str, Any]:
         """
         Генерация документации для Python
         Использует AST для парсинга
@@ -572,7 +588,9 @@ class DocumentationGenerator:
 
             # Извлечение функций и классов
             for node in ast.walk(tree):
-                if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
+                if isinstance(node, ast.FunctionDef) or isinstance(
+                    node, ast.AsyncFunctionDef
+                ):
                     func_info = self._extract_python_function(node, code)
                     doc["sections"].append(func_info)
 
@@ -610,8 +628,9 @@ class DocumentationGenerator:
 
             # Тип аннотация
             if arg.annotation:
-                param_type = ast.unparse(arg.annotation) if hasattr(
-                    ast, "unparse") else "Any"
+                param_type = (
+                    ast.unparse(arg.annotation) if hasattr(ast, "unparse") else "Any"
+                )
 
             params.append(
                 {
@@ -624,8 +643,9 @@ class DocumentationGenerator:
         # Return type
         return_type = "Any"
         if node.returns:
-            return_type = ast.unparse(node.returns) if hasattr(
-                ast, "unparse") else "Any"
+            return_type = (
+                ast.unparse(node.returns) if hasattr(ast, "unparse") else "Any"
+            )
 
         # Сигнатура
         args_str = ", ".join([f"{p['name']}: {p['type']}" for p in params])
@@ -694,7 +714,8 @@ class DocumentationGenerator:
                     lines.append("|------|------|-------------|\n")
                     for param in section["parameters"]:
                         lines.append(
-                            f"| `{param['name']}` | `{param['type']}` | {param.get('description', '')} |\n")
+                            f"| `{param['name']}` | `{param['type']}` | {param.get('description', '')} |\n"
+                        )
                     lines.append("\n")
 
                 if section.get("return_type"):

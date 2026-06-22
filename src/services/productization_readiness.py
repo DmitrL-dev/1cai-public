@@ -6,7 +6,6 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-
 ROOT = Path(__file__).resolve().parents[2]
 
 DELIVERABLES: list[dict[str, Any]] = [
@@ -337,7 +336,11 @@ def _check_file(spec: dict[str, Any], *, root: Path) -> dict[str, Any]:
     min_bytes = int(spec.get("min_bytes") or 0)
     if not exists:
         status = "fail" if spec.get("required", False) else "warn"
-        message = "Required deliverable is missing." if spec.get("required", False) else "Optional deliverable is missing."
+        message = (
+            "Required deliverable is missing."
+            if spec.get("required", False)
+            else "Optional deliverable is missing."
+        )
     elif size < min_bytes:
         status = "warn"
         message = f"Deliverable exists but is smaller than expected ({size} < {min_bytes} bytes)."
@@ -357,7 +360,9 @@ def _check_file(spec: dict[str, Any], *, root: Path) -> dict[str, Any]:
     }
 
 
-def _check_named_paths(paths: list[str], *, root: Path, category: str) -> dict[str, Any]:
+def _check_named_paths(
+    paths: list[str], *, root: Path, category: str
+) -> dict[str, Any]:
     checks = []
     for rel_path in paths:
         target = root / rel_path
@@ -365,7 +370,9 @@ def _check_named_paths(paths: list[str], *, root: Path, category: str) -> dict[s
             {
                 "path": rel_path,
                 "status": "pass" if target.exists() else "fail",
-                "size_bytes": target.stat().st_size if target.exists() and target.is_file() else 0,
+                "size_bytes": target.stat().st_size
+                if target.exists() and target.is_file()
+                else 0,
             }
         )
     missing = [item["path"] for item in checks if item["status"] == "fail"]
@@ -445,9 +452,17 @@ def productization_readiness(*, root: Path | None = None) -> dict[str, Any]:
         / max(len(deliverables), 1)
         * 100
     )
-    finding_penalty = severity_counts.get("high", 0) * 20 + severity_counts.get("medium", 0) * 5 + severity_counts.get("low", 0) * 2
+    finding_penalty = (
+        severity_counts.get("high", 0) * 20
+        + severity_counts.get("medium", 0) * 5
+        + severity_counts.get("low", 0) * 2
+    )
     score = max(0, deliverable_score - finding_penalty)
-    release_decision = "blocked" if status == "fail" else ("pilot_ready" if score >= 80 else "engineering_preview")
+    release_decision = (
+        "blocked"
+        if status == "fail"
+        else ("pilot_ready" if score >= 80 else "engineering_preview")
+    )
     if status == "pass":
         release_decision = "production_candidate"
 

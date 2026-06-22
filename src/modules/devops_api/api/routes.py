@@ -23,7 +23,9 @@ def get_ai_evolution_service() -> AIEvolutionService:
     return AIEvolutionService()
 
 
-@router.post("/devops/infrastructure/analyze", response_model=InfrastructureAnalysisResponse)
+@router.post(
+    "/devops/infrastructure/analyze", response_model=InfrastructureAnalysisResponse
+)
 async def analyze_infrastructure(
     compose_file: Optional[str] = Query(None, description="Path to docker-compose.yml")
 ) -> InfrastructureAnalysisResponse:

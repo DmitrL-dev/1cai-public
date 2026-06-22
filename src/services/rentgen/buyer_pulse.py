@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
-
 BUYER_ROOM_PACKET_ZIP = "rentgen-buyer-room-packet.zip"
 BUYER_ROOM_PACKET_ENDPOINT = "/api/v1/management/buyer-room-packet"
 BUYER_ROOM_PACKET_HASH_HEADER = "X-Buyer-Room-Packet-Sha256"
 ARCHIVE_VERIFICATION_PACKET_ZIP = "archive-verification-packet.zip"
-ARCHIVE_VERIFICATION_PACKET_ENDPOINT = "/api/v1/evidence-bundle/archive/verification-packet"
+ARCHIVE_VERIFICATION_PACKET_ENDPOINT = (
+    "/api/v1/evidence-bundle/archive/verification-packet"
+)
 ARCHIVE_VERIFICATION_PACKET_HASH_HEADER = "X-Verification-Packet-Sha256"
 EVIDENCE_ARCHIVE_HASH_HEADER = "X-Archive-Sha256"
 KILLER_DEMO_ARCHIVE_HASH_HEADER = "X-Killer-Demo-Archive-Sha256"
@@ -218,7 +219,12 @@ def _procurement_handoff(*, purchase_status: str) -> dict[str, Any]:
                 "why": "Proves Evidence and Killer Demo archives as one checked pair.",
             },
         ],
-        "routes": ["/evidence-bundle", "/killer-demo", "/pilot-launchpad", "/outcome-ledger"],
+        "routes": [
+            "/evidence-bundle",
+            "/killer-demo",
+            "/pilot-launchpad",
+            "/outcome-ledger",
+        ],
     }
 
 

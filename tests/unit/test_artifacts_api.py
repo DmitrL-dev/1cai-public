@@ -35,7 +35,9 @@ def test_artifacts_api_crud_link_trace_and_matrix(tmp_path, monkeypatch):
     req_id = requirement.json()["id"]
     module_id = module.json()["id"]
 
-    patch = client.patch(f"/api/v1/artifacts/{req_id}", json={"status": "reviewed", "priority": "high"})
+    patch = client.patch(
+        f"/api/v1/artifacts/{req_id}", json={"status": "reviewed", "priority": "high"}
+    )
     link = client.post(
         "/api/v1/artifacts/links",
         json={

@@ -1,5 +1,6 @@
 from src.security.poetic_detection.safety_filter import SafetyFilter
 
+
 class TestSafetyFilter:
     def test_safe_text(self):
         filter = SafetyFilter()

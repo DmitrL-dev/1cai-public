@@ -90,7 +90,9 @@ class PythonAnalyzer:
                     )
 
                 # Проверка хардкода паролей
-                if ("password" in line.lower() or "secret" in line.lower()) and "=" in line:
+                if (
+                    "password" in line.lower() or "secret" in line.lower()
+                ) and "=" in line:
                     if '"' in line or "'" in line:
                         suggestions.append(
                             {
@@ -113,7 +115,8 @@ class PythonAnalyzer:
             comments = len([l for l in lines if "#" in l])
 
             critical_issues = len(
-                [s for s in suggestions if s["severity"] == "critical"])
+                [s for s in suggestions if s["severity"] == "critical"]
+            )
             high_issues = len([s for s in suggestions if s["severity"] == "high"])
 
             complexity = min(
@@ -129,7 +132,8 @@ class PythonAnalyzer:
             recommendations = []
             if security_score < 70:
                 recommendations.append(
-                    "Рекомендуется усилить проверки безопасности в коде")
+                    "Рекомендуется усилить проверки безопасности в коде"
+                )
             if critical_issues > 0:
                 recommendations.append(
                     f"Обнаружено {critical_issues} критических проблем. Требуется немедленное исправление"

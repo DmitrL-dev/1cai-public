@@ -1,4 +1,3 @@
-
 """
 OAuth API Routes для 1C AI Stack
 """
@@ -26,7 +25,9 @@ oauth_service = OAuthService()
 
 
 @router.post("/{provider}/authorize", response_model=OAuthAuthorizeResponse)
-async def authorize_oauth(provider: str, user_id: int = Depends(get_current_user_id)) -> OAuthAuthorizeResponse:
+async def authorize_oauth(
+    provider: str, user_id: int = Depends(get_current_user_id)
+) -> OAuthAuthorizeResponse:
     """Инициирует процесс OAuth авторизации.
 
     Генерирует URL для перенаправления пользователя на страницу провайдера.
@@ -44,10 +45,13 @@ async def authorize_oauth(provider: str, user_id: int = Depends(get_current_user
     try:
         pool = await get_pool()
         async with pool.acquire() as conn:
-            auth_url = await oauth_service.get_authorization_url(provider=provider, db=conn, user_id=user_id)
+            auth_url = await oauth_service.get_authorization_url(
+                provider=provider, db=conn, user_id=user_id
+            )
 
         logger.info(
-            f"OAuth authorization initiated for provider={provider}, user_id={user_id}")
+            f"OAuth authorization initiated for provider={provider}, user_id={user_id}"
+        )
 
         return OAuthAuthorizeResponse(authorization_url=auth_url, provider=provider)
 
@@ -61,7 +65,9 @@ async def authorize_oauth(provider: str, user_id: int = Depends(get_current_user
 
 
 @router.post("/{provider}/callback", response_model=OAuthCallbackResponse)
-async def oauth_callback(provider: str, request: OAuthCallbackRequest) -> OAuthCallbackResponse:
+async def oauth_callback(
+    provider: str, request: OAuthCallbackRequest
+) -> OAuthCallbackResponse:
     """Обрабатывает OAuth callback от провайдера.
 
     Обменивает код авторизации на токен доступа.
@@ -84,10 +90,14 @@ async def oauth_callback(provider: str, request: OAuthCallbackRequest) -> OAuthC
             )
 
         logger.info(
-            f"OAuth callback successful for provider={provider}, user_id={result['user_id']}")
+            f"OAuth callback successful for provider={provider}, user_id={result['user_id']}"
+        )
 
         return OAuthCallbackResponse(
-            status="success", provider=result["provider"], user_id=result["user_id"], expires_in=result["expires_in"]
+            status="success",
+            provider=result["provider"],
+            user_id=result["user_id"],
+            expires_in=result["expires_in"],
         )
 
     except ValueError as e:
@@ -100,7 +110,9 @@ async def oauth_callback(provider: str, request: OAuthCallbackRequest) -> OAuthC
 
 
 @router.get("/{provider}/status", response_model=OAuthStatusResponse)
-async def get_oauth_status(provider: str, user_id: int = Depends(get_current_user_id)) -> OAuthStatusResponse:
+async def get_oauth_status(
+    provider: str, user_id: int = Depends(get_current_user_id)
+) -> OAuthStatusResponse:
     """Проверяет статус подключения OAuth провайдера.
 
     Args:
@@ -118,7 +130,9 @@ async def get_oauth_status(provider: str, user_id: int = Depends(get_current_use
 
         if token_data:
             return OAuthStatusResponse(
-                connected=True, provider=provider, expires_at=token_data["expires_at"].isoformat()
+                connected=True,
+                provider=provider,
+                expires_at=token_data["expires_at"].isoformat(),
             )
         else:
             return OAuthStatusResponse(connected=False, provider=provider)
@@ -129,7 +143,9 @@ async def get_oauth_status(provider: str, user_id: int = Depends(get_current_use
 
 
 @router.delete("/{provider}/disconnect", response_model=OAuthDisconnectResponse)
-async def disconnect_oauth(provider: str, user_id: int = Depends(get_current_user_id)) -> OAuthDisconnectResponse:
+async def disconnect_oauth(
+    provider: str, user_id: int = Depends(get_current_user_id)
+) -> OAuthDisconnectResponse:
     """Отключает OAuth провайдера (удаляет токен).
 
     Args:

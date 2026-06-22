@@ -9,7 +9,6 @@ from typing import Any
 from src.services.rentgen.metadata_graph import DEFAULT_CONFIG_PATH
 from src.services.rentgen.path_safety import collect_files, confine_path
 
-
 # Per-category scan budget. Each metadata category (BSL, XML, forms, rights,
 # tests) is scanned with its OWN budget so one huge category cannot starve
 # another. A single combined cap used to truncate mid-alphabet on shipped
@@ -27,7 +26,9 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _bounded_count(root: Path, suffixes: set[str], *, limit: int = MAX_SCAN_FILES) -> int:
+def _bounded_count(
+    root: Path, suffixes: set[str], *, limit: int = MAX_SCAN_FILES
+) -> int:
     files, _truncated = collect_files(root, suffixes=suffixes, max_files=limit)
     return len(files)
 
@@ -54,7 +55,9 @@ def _bounded_inventory(root: Path, *, limit: int = MAX_SCAN_FILES) -> dict[str, 
     try:
         # BSL pass — also yields the test subset by filename. If this pass is
         # truncated we cannot trust the BSL or test totals, so both go UNKNOWN.
-        bsl_files, bsl_truncated = collect_files(root, suffixes={".bsl"}, max_files=limit)
+        bsl_files, bsl_truncated = collect_files(
+            root, suffixes={".bsl"}, max_files=limit
+        )
         if bsl_truncated:
             counts["bsl_files"] = UNKNOWN
             counts["test_files"] = UNKNOWN
@@ -72,7 +75,9 @@ def _bounded_inventory(root: Path, *, limit: int = MAX_SCAN_FILES) -> dict[str, 
         # this pass is truncated we cannot trust the XML, form or rights totals
         # (a later-sorting Roles/Rights.xml may be beyond the cap), so all three
         # go UNKNOWN rather than a fabricated 0.
-        xml_files, xml_truncated = collect_files(root, suffixes={".xml"}, max_files=limit)
+        xml_files, xml_truncated = collect_files(
+            root, suffixes={".xml"}, max_files=limit
+        )
         if xml_truncated:
             counts["xml_files"] = UNKNOWN
             counts["form_files"] = UNKNOWN
@@ -163,13 +168,25 @@ def _coverage_caveat(count: int | None, *, missing: str, unknown: str) -> str | 
 
 def _scale_label(total_files: int) -> tuple[str, str]:
     if total_files >= 5_000:
-        return "enterprise", "Enterprise-scale source; index incrementally and keep proof artifacts versioned."
+        return (
+            "enterprise",
+            "Enterprise-scale source; index incrementally and keep proof artifacts versioned.",
+        )
     if total_files >= 1_200:
-        return "large", "Large 1C source; start from graph, release and security proof before broad refactoring."
+        return (
+            "large",
+            "Large 1C source; start from graph, release and security proof before broad refactoring.",
+        )
     if total_files >= 250:
-        return "medium", "Medium source; enough surface for impact, tests and value proof."
+        return (
+            "medium",
+            "Medium source; enough surface for impact, tests and value proof.",
+        )
     if total_files > 0:
-        return "compact", "Compact source; first proof should be fast and easy to repeat."
+        return (
+            "compact",
+            "Compact source; first proof should be fast and easy to repeat.",
+        )
     return "empty", "No readable source files were found yet."
 
 
@@ -208,7 +225,11 @@ def _configuration_genome(
             "id": "developer",
             "label": "Developer proof",
             "route": "/quality",
-            "status": "ready" if code_ready else "unknown" if _is_unknown(bsl_files) else "missing",
+            "status": "ready"
+            if code_ready
+            else "unknown"
+            if _is_unknown(bsl_files)
+            else "missing",
             "line": "Changed modules, call graph and query diagnostics can be shown."
             if code_ready
             else "BSL count is undetermined (scan truncated); run incremental indexing to confirm."
@@ -219,7 +240,11 @@ def _configuration_genome(
             "id": "architect",
             "label": "Architecture map",
             "route": "/metadata",
-            "status": "ready" if metadata_ready else "unknown" if _is_unknown(xml_files) else "missing",
+            "status": "ready"
+            if metadata_ready
+            else "unknown"
+            if _is_unknown(xml_files)
+            else "missing",
             "line": "Metadata XML is present, so object and dependency mapping can start."
             if metadata_ready
             else "Metadata XML count is undetermined (scan truncated); run incremental indexing to confirm."
@@ -230,7 +255,11 @@ def _configuration_genome(
             "id": "security",
             "label": "Rights and RLS",
             "route": "/rights-rls",
-            "status": "ready" if rights_ready else "unknown" if _is_unknown(rights_files) else "missing",
+            "status": "ready"
+            if rights_ready
+            else "unknown"
+            if _is_unknown(rights_files)
+            else "missing",
             "line": "Rights.xml is present for role/security review."
             if rights_ready
             else "Rights.xml presence is undetermined (scan truncated); run incremental indexing before security claims."
@@ -278,22 +307,46 @@ def _configuration_genome(
     risk_flags = [
         item
         for item in [
-            {"id": "metadata", "severity": "high", "line": "No metadata XML: architecture map and object impact stay partial."}
+            {
+                "id": "metadata",
+                "severity": "high",
+                "line": "No metadata XML: architecture map and object impact stay partial.",
+            }
             if _is_absent(xml_files)
             else None,
-            {"id": "code", "severity": "high", "line": "No BSL files: developer proof and Query Surgeon stay unavailable."}
+            {
+                "id": "code",
+                "severity": "high",
+                "line": "No BSL files: developer proof and Query Surgeon stay unavailable.",
+            }
             if _is_absent(bsl_files)
             else None,
-            {"id": "forms", "severity": "medium", "line": "No Form.xml files: UI impact caveats remain visible."}
+            {
+                "id": "forms",
+                "severity": "medium",
+                "line": "No Form.xml files: UI impact caveats remain visible.",
+            }
             if _is_absent(form_files)
             else None,
-            {"id": "rights", "severity": "medium", "line": "No Rights.xml files: security/RLS conclusions remain advisory."}
+            {
+                "id": "rights",
+                "severity": "medium",
+                "line": "No Rights.xml files: security/RLS conclusions remain advisory.",
+            }
             if _is_absent(rights_files)
             else None,
-            {"id": "tests", "severity": "medium", "line": "No tests detected: release confidence starts with planned/gap coverage."}
+            {
+                "id": "tests",
+                "severity": "medium",
+                "line": "No tests detected: release confidence starts with planned/gap coverage.",
+            }
             if _is_absent(test_files)
             else None,
-            {"id": "scan-limit", "severity": "medium", "line": "Scan limit reached; some category counts are undetermined — run incremental indexing for the full source."}
+            {
+                "id": "scan-limit",
+                "severity": "medium",
+                "line": "Scan limit reached; some category counts are undetermined — run incremental indexing for the full source.",
+            }
             if inventory["scan_truncated"]
             else None,
         ]
@@ -307,11 +360,36 @@ def _configuration_genome(
             "line": scale_line,
         },
         "source_mix": [
-            {"id": "bsl", "label": "BSL modules", "count": bsl_files, "status": _mix_status(bsl_files)},
-            {"id": "xml", "label": "Metadata XML", "count": xml_files, "status": _mix_status(xml_files)},
-            {"id": "forms", "label": "Forms", "count": form_files, "status": _mix_status(form_files)},
-            {"id": "rights", "label": "Rights", "count": rights_files, "status": _mix_status(rights_files)},
-            {"id": "tests", "label": "Tests", "count": test_files, "status": _mix_status(test_files)},
+            {
+                "id": "bsl",
+                "label": "BSL modules",
+                "count": bsl_files,
+                "status": _mix_status(bsl_files),
+            },
+            {
+                "id": "xml",
+                "label": "Metadata XML",
+                "count": xml_files,
+                "status": _mix_status(xml_files),
+            },
+            {
+                "id": "forms",
+                "label": "Forms",
+                "count": form_files,
+                "status": _mix_status(form_files),
+            },
+            {
+                "id": "rights",
+                "label": "Rights",
+                "count": rights_files,
+                "status": _mix_status(rights_files),
+            },
+            {
+                "id": "tests",
+                "label": "Tests",
+                "count": test_files,
+                "status": _mix_status(test_files),
+            },
         ],
         "readiness_tracks": tracks,
         "risk_flags": risk_flags,
@@ -336,7 +414,9 @@ def _configuration_genome(
     }
 
 
-def build_intake_plan(source_path: str | None = None, source_type: str = "auto") -> dict[str, Any]:
+def build_intake_plan(
+    source_path: str | None = None, source_type: str = "auto"
+) -> dict[str, Any]:
     """Inspect a local source and return an honest first indexing plan.
 
     This does not mutate stores or start imports. It is a pre-flight: what can be
@@ -358,17 +438,21 @@ def build_intake_plan(source_path: str | None = None, source_type: str = "auto")
 
     # Read the cap at call time (single source of truth) so an operator-tuned
     # MAX_SCAN_FILES takes effect rather than a value frozen at import.
-    inventory = _bounded_inventory(resolved, limit=MAX_SCAN_FILES) if exists and is_dir else {
-        "bsl_files": 0,
-        "xml_files": 0,
-        "form_files": 0,
-        "rights_files": 0,
-        "test_files": 0,
-        "scanned_files": 0,
-        "bsl_truncated": 0,
-        "xml_truncated": 0,
-        "scan_truncated": 0,
-    }
+    inventory = (
+        _bounded_inventory(resolved, limit=MAX_SCAN_FILES)
+        if exists and is_dir
+        else {
+            "bsl_files": 0,
+            "xml_files": 0,
+            "form_files": 0,
+            "rights_files": 0,
+            "test_files": 0,
+            "scanned_files": 0,
+            "bsl_truncated": 0,
+            "xml_truncated": 0,
+            "scan_truncated": 0,
+        }
+    )
     bsl_files = inventory["bsl_files"]
     xml_files = inventory["xml_files"]
     form_files = inventory["form_files"]
@@ -453,7 +537,9 @@ def build_intake_plan(source_path: str | None = None, source_type: str = "auto")
     # a partial so it neither inflates to a clean pass nor deflates to a zero.
     partial = sum(1 for item in coverage if item["status"] in ("partial", "unknown"))
     score = round((ready + partial * 0.55) / len(coverage) * 100)
-    estimated_minutes = max(2, min(30, round(_sum_known(bsl_files, xml_files) / 1200) + 2))
+    estimated_minutes = max(
+        2, min(30, round(_sum_known(bsl_files, xml_files) / 1200) + 2)
+    )
     status = "ready" if exists and score >= 70 else "partial" if exists else "blocked"
     genome = _configuration_genome(
         detected=detected,
@@ -480,7 +566,8 @@ def build_intake_plan(source_path: str | None = None, source_type: str = "auto")
             "headline": (
                 "Источник готов к первому анализу."
                 if status == "ready"
-                else "Источник можно анализировать частично." if status == "partial"
+                else "Источник можно анализировать частично."
+                if status == "partial"
                 else "Источник не найден или недоступен."
             ),
         },

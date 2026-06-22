@@ -166,12 +166,12 @@ class SwarmRouter:
         from src.micro_swarm.bsl_domains import (
             BSL_PATTERN_DOMAIN,
             BSL_QUALITY_DOMAIN,
-            QUERY_OPTIMIZER_DOMAIN,
             ERROR_PREDICTOR_DOMAIN,
+            QUERY_OPTIMIZER_DOMAIN,
             extract_bsl_pattern_features,
             extract_bsl_quality_features,
-            extract_query_optimizer_features,
             extract_error_features,
+            extract_query_optimizer_features,
         )
         from src.micro_swarm.model import MicroModel, MicroModelConfig
 

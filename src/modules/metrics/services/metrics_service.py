@@ -5,10 +5,7 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from src.infrastructure.logging.structured_logging import StructuredLogger
-from src.modules.metrics.domain.models import (
-    MetricCollectionRequest,
-    MetricRecord,
-)
+from src.modules.metrics.domain.models import MetricCollectionRequest, MetricRecord
 
 logger = StructuredLogger(__name__).logger
 
@@ -91,7 +88,9 @@ class MetricsService:
         filtered.sort(key=lambda x: x.timestamp, reverse=True)
         return filtered[:limit]
 
-    def get_performance_metrics(self, service_name: str, hours_back: int = 1) -> Dict[str, Any]:
+    def get_performance_metrics(
+        self, service_name: str, hours_back: int = 1
+    ) -> Dict[str, Any]:
         """Get performance metrics for service"""
         start_time = datetime.now() - timedelta(hours=hours_back)
         metrics = [
@@ -132,8 +131,11 @@ class MetricsService:
         events_count = len(recent_metrics)
 
         # Calculate error rate (if error metrics exist)
-        errors = [m for m in recent_metrics if "error" in m.metric_type.lower()
-                                                                              or "fail" in m.metric_type.lower()]
+        errors = [
+            m
+            for m in recent_metrics
+            if "error" in m.metric_type.lower() or "fail" in m.metric_type.lower()
+        ]
         error_rate = (len(errors) / events_count * 100) if events_count > 0 else 0
 
         return {
@@ -154,7 +156,8 @@ class MetricsService:
         recent_errors = [
             m
             for m in self.metrics_storage
-            if m.timestamp >= last_1h and ("error" in m.metric_type.lower() or "fail" in m.metric_type.lower())
+            if m.timestamp >= last_1h
+            and ("error" in m.metric_type.lower() or "fail" in m.metric_type.lower())
         ]
 
         if len(recent_errors) > 100:  # Threshold
@@ -190,14 +193,17 @@ class MetricsService:
         cutoff = datetime.now() - timedelta(days=days_back)
         initial_count = len(self.metrics_storage)
         self.metrics_storage = [
-            m for m in self.metrics_storage if m.timestamp >= cutoff]
+            m for m in self.metrics_storage if m.timestamp >= cutoff
+        ]
         cleared_count = initial_count - len(self.metrics_storage)
 
         # Also clear performance metrics cache
         for service in self.performance_metrics:
             # Keep only last 1000 values
             if len(self.performance_metrics[service]) > 1000:
-                self.performance_metrics[service] = self.performance_metrics[service][-1000:]
+                self.performance_metrics[service] = self.performance_metrics[service][
+                    -1000:
+                ]
 
         return cleared_count
 

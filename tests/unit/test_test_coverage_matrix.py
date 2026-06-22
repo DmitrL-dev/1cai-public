@@ -7,7 +7,6 @@ from src.api import rentgen_api
 from src.services.rentgen import test_inventory
 from src.services.rentgen.test_coverage_matrix import build_test_coverage_matrix
 
-
 MODULE = "Documents/Order/Ext/ObjectModule.bsl"
 
 
@@ -41,7 +40,9 @@ class FakeStore:
             ],
             "entry_subroutines": 2,
             "total": 320,
-            "impacted_modules": [{"module": "CommonModules/Sales/Ext/Module.bsl", "edges": 4}],
+            "impacted_modules": [
+                {"module": "CommonModules/Sales/Ext/Module.bsl", "edges": 4}
+            ],
         }
 
     def hotspots_for_graph_modules(self, module_names, limit=10):
@@ -109,7 +110,9 @@ def test_test_coverage_matrix_api(tmp_path, monkeypatch):
     app.include_router(rentgen_api.router)
     client = TestClient(app)
 
-    response = client.post("/rentgen/test-coverage-matrix", json={"changed_modules": [MODULE]})
+    response = client.post(
+        "/rentgen/test-coverage-matrix", json={"changed_modules": [MODULE]}
+    )
 
     assert response.status_code == 200
     payload = response.json()

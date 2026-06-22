@@ -3,7 +3,6 @@ from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Body, HTTPException, Query
 
-
 from src.utils.structured_logging import StructuredLogger
 
 logger = StructuredLogger(__name__).logger

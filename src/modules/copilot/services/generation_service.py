@@ -114,12 +114,15 @@ class GenerationService:
 
         # Extract function name from prompt
         words = [w for w in re.findall(r"\w+", prompt) if len(w) > 2]
-        func_name = "".join(w.capitalize()
-                            for w in words[:3]) if words else "НоваяФункция"
+        func_name = (
+            "".join(w.capitalize() for w in words[:3]) if words else "НоваяФункция"
+        )
 
         # Detect if needs parameters
-        needs_params = any(word in prompt.lower()
-                           for word in ["параметр", "значение", "данные", "объект"])
+        needs_params = any(
+            word in prompt.lower()
+            for word in ["параметр", "значение", "данные", "объект"]
+        )
 
         params = "Параметр1, Параметр2" if needs_params else ""
 
@@ -157,8 +160,9 @@ class GenerationService:
         """Generate procedure template"""
 
         words = [w for w in re.findall(r"\w+", prompt) if len(w) > 2]
-        proc_name = "".join(w.capitalize()
-                            for w in words[:3]) if words else "НоваяПроцедура"
+        proc_name = (
+            "".join(w.capitalize() for w in words[:3]) if words else "НоваяПроцедура"
+        )
 
         return f"""//
 // {prompt}

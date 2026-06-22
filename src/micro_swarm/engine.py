@@ -34,9 +34,7 @@ class Value:
 
     def __mul__(self, other: "Value | float") -> "Value":
         other = other if isinstance(other, Value) else Value(float(other))
-        return Value(
-            self.data * other.data, (self, other), (other.data, self.data)
-        )
+        return Value(self.data * other.data, (self, other), (other.data, self.data))
 
     def __pow__(self, other: float) -> "Value":
         return Value(
@@ -80,10 +78,10 @@ class Value:
 
     def __truediv__(self, other: "Value | float") -> "Value":
         other = other if isinstance(other, Value) else Value(float(other))
-        return self * other ** -1
+        return self * other**-1
 
     def __rtruediv__(self, other: float) -> "Value":
-        return Value(float(other)) * self ** -1
+        return Value(float(other)) * self**-1
 
     def backward(self) -> None:
         """Compute gradients via reverse-mode autodiff."""

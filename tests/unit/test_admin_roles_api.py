@@ -1,4 +1,3 @@
-
 """Unit tests for admin role management endpoints."""
 
 from __future__ import annotations

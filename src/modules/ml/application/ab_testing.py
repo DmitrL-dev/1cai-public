@@ -1,4 +1,3 @@
-
 """
 A/B тестирование для ML моделей.
 Позволяет тестировать новые модели в продакшене с минимальными рисками.
@@ -166,7 +165,8 @@ class ABTestingDatabase:
     def __init__(self, database_url: str) -> None:
         self.engine = create_engine(database_url)
         self.SessionLocal = sessionmaker(
-            autocommit=False, autoflush=False, bind=self.engine)
+            autocommit=False, autoflush=False, bind=self.engine
+        )
         Base.metadata.create_all(bind=self.engine)
 
     def create_ab_test(self, config: ABTestConfig) -> str:
@@ -199,8 +199,9 @@ class ABTestingDatabase:
         """Получение статуса теста"""
         session = self.SessionLocal()
         try:
-            test = session.query(ABTestRecord).filter(
-                ABTestRecord.id == test_id).first()
+            test = (
+                session.query(ABTestRecord).filter(ABTestRecord.id == test_id).first()
+            )
 
             if test:
                 return asdict(test)
@@ -212,8 +213,9 @@ class ABTestingDatabase:
         """Обновление метрик теста"""
         session = self.SessionLocal()
         try:
-            test = session.query(ABTestRecord).filter(
-                ABTestRecord.id == test_id).first()
+            test = (
+                session.query(ABTestRecord).filter(ABTestRecord.id == test_id).first()
+            )
 
             if test:
                 test.sample_size_control = result.sample_size_control
@@ -261,14 +263,18 @@ class ABTestingDatabase:
             # Получаем данные контрольной группы
             control_data = (
                 session.query(ABTestSession.actual_value)
-                .filter(ABTestSession.test_id == test_id, ABTestSession.group == "control")
+                .filter(
+                    ABTestSession.test_id == test_id, ABTestSession.group == "control"
+                )
                 .all()
             )
 
             # Получаем данные treatment группы
             treatment_data = (
                 session.query(ABTestSession.actual_value)
-                .filter(ABTestSession.test_id == test_id, ABTestSession.group == "treatment")
+                .filter(
+                    ABTestSession.test_id == test_id, ABTestSession.group == "treatment"
+                )
                 .all()
             )
 
@@ -308,12 +314,15 @@ class ABTestManager:
         # Сохранение в активных тестах
         self.active_tests[test_id] = config
 
-        logger.info("Создан A/B тест",
-                    extra={"test_name": config.test_name, "test_id": test_id})
+        logger.info(
+            "Создан A/B тест", extra={"test_name": config.test_name, "test_id": test_id}
+        )
 
         return test_id
 
-    def assign_model_to_user(self, test_id: str, user_id: str, session_id: str) -> Dict[str, Any]:
+    def assign_model_to_user(
+        self, test_id: str, user_id: str, session_id: str
+    ) -> Dict[str, Any]:
         """Назначение модели пользователю"""
 
         if test_id not in self.active_tests:
@@ -404,21 +413,23 @@ class ABTestManager:
         # Доверительный интервал
         diff_mean = treatment_metric - control_metric
         pooled_std = math.sqrt(
-            (np.var(control_data) / len(control_data)) + \
-             (np.var(treatment_data) / len(treatment_data))
+            (np.var(control_data) / len(control_data))
+            + (np.var(treatment_data) / len(treatment_data))
         )
 
         # 95% доверительный интервал
         confidence_level = 0.95
-        t_critical = stats.t.ppf((1 + confidence_level) / 2,
-                                 df=len(control_data) + len(treatment_data) - 2)
+        t_critical = stats.t.ppf(
+            (1 + confidence_level) / 2, df=len(control_data) + len(treatment_data) - 2
+        )
 
         margin_error = t_critical * pooled_std
         confidence_interval = (diff_mean - margin_error, diff_mean + margin_error)
 
         # Мощность теста
-        power = self._calculate_power(len(control_data), len(
-            treatment_data), diff_mean, pooled_std)
+        power = self._calculate_power(
+            len(control_data), len(treatment_data), diff_mean, pooled_std
+        )
 
         # Статистическая значимость
         is_significant = p_value < 0.05
@@ -452,7 +463,9 @@ class ABTestManager:
 
         return result
 
-    def _calculate_power(self, n_control: int, n_treatment: int, effect_size: float, pooled_std: float) -> float:
+    def _calculate_power(
+        self, n_control: int, n_treatment: int, effect_size: float, pooled_std: float
+    ) -> float:
         """Расчет мощности статистического теста"""
 
         # Стандартизированный размер эффекта
@@ -545,8 +558,9 @@ class ABTestManager:
         # Обновление статуса теста
         session = self.db.SessionLocal()
         try:
-            test = session.query(ABTestRecord).filter(
-                ABTestRecord.id == test_id).first()
+            test = (
+                session.query(ABTestRecord).filter(ABTestRecord.id == test_id).first()
+            )
 
             if test:
                 test.status = ABTestStatus.COMPLETED.value

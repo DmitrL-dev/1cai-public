@@ -11,9 +11,9 @@ class CodeContextRequest(BaseModel):
     """Code analysis request"""
 
     content: str = Field(..., max_length=100000, description="Source code for analysis")
-    language: Literal["bsl", "typescript", "javascript", "python", "java", "csharp"] = Field(
-        default="bsl", description="Programming language"
-    )
+    language: Literal[
+        "bsl", "typescript", "javascript", "python", "java", "csharp"
+    ] = Field(default="bsl", description="Programming language")
     fileName: Optional[str] = Field(None, max_length=500, description="File name")
     projectContext: Optional[dict] = Field(None, description="Project context")
     cursorPosition: Optional[dict] = Field(None, description="Cursor position")
@@ -31,8 +31,9 @@ class CodeSuggestion(BaseModel):
     suggestion: Optional[str] = None
     code: Optional[str] = None
     position: dict
-    category: Literal["performance", "security",
-        "best-practice", "style", "bug", "optimization"]
+    category: Literal[
+        "performance", "security", "best-practice", "style", "bug", "optimization"
+    ]
     autoFixable: bool
     confidence: float = Field(..., ge=0, le=1)
 

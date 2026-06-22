@@ -46,7 +46,9 @@ async def assess_risks(request: RiskAssessmentRequest) -> RiskAssessmentResponse
     """Assess project risks."""
     try:
         service = get_risk_service()
-        result = await service.assess_risks(request.requirements, request.context, request.architecture)
+        result = await service.assess_risks(
+            request.requirements, request.context, request.architecture
+        )
         return RiskAssessmentResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

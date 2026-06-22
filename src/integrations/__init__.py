@@ -1,4 +1,3 @@
-
 """
 Integration clients for external systems used by the BA module.
 """

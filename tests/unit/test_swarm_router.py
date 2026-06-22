@@ -15,7 +15,6 @@ from src.micro_swarm.router import (
     TemplateResponder,
 )
 
-
 # --------------- Sample BSL code snippets ---------------
 
 CLEAN_CODE = """\
@@ -80,6 +79,7 @@ COMPLEX_CODE = """\
 
 # --------------- RouterDecision ---------------
 
+
 class TestRouterDecision:
     """Enum has exactly 3 values."""
 
@@ -98,6 +98,7 @@ class TestRouterDecision:
 
 # --------------- SwarmRouter.analyze ---------------
 
+
 class TestSwarmRouterAnalyze:
     """analyze() runs all BSL domains and returns scores."""
 
@@ -109,8 +110,12 @@ class TestSwarmRouterAnalyze:
     def test_contains_bsl_domains(self):
         router = SwarmRouter.default()
         scores = router.analyze(CLEAN_CODE)
-        expected_keys = {"bsl_pattern", "bsl_quality",
-                         "query_optimizer", "error_predictor"}
+        expected_keys = {
+            "bsl_pattern",
+            "bsl_quality",
+            "query_optimizer",
+            "error_predictor",
+        }
         assert expected_keys.issubset(set(scores.keys()))
 
     def test_scores_are_floats(self):
@@ -127,6 +132,7 @@ class TestSwarmRouterAnalyze:
 
 
 # --------------- SwarmRouter.route ---------------
+
 
 class TestSwarmRouterRoute:
     """route() maps scores to RouterDecision."""
@@ -156,6 +162,7 @@ class TestSwarmRouterRoute:
 
 # --------------- SwarmRouter.review (full pipeline) ---------------
 
+
 class TestSwarmRouterReview:
     """review() = analyze + route + respond."""
 
@@ -182,8 +189,7 @@ class TestSwarmRouterReview:
     def test_problematic_code_not_clean(self):
         router = SwarmRouter.default()
         result = router.review(COMPLEX_CODE)
-        assert result.decision in (
-            RouterDecision.TEMPLATE, RouterDecision.LLM_REQUIRED)
+        assert result.decision in (RouterDecision.TEMPLATE, RouterDecision.LLM_REQUIRED)
 
     def test_problematic_code_has_response(self):
         router = SwarmRouter.default()
@@ -199,6 +205,7 @@ class TestSwarmRouterReview:
 
 
 # --------------- TemplateResponder ---------------
+
 
 class TestTemplateResponder:
     """Template responses in Russian for common BSL issues."""
@@ -238,6 +245,7 @@ class TestTemplateResponder:
 
 
 # --------------- Self-training hook ---------------
+
 
 class TestSelfTraining:
     """record_feedback stores LLM verdicts for future training."""

@@ -12,7 +12,6 @@ from src.modules.auth.infrastructure.config import AuthSettings as ModuleAuthSet
 from src.security.auth import AuthSettings
 from src.services import audit_log, enterprise_iam
 
-
 _JWT_SECRET = "unit-test-secret-key-please-rotate"
 
 
@@ -42,7 +41,13 @@ def test_enterprise_iam_readiness_boundaries_and_access(tmp_path):
         {
             "providers": [
                 {"id": "local-jwt", "type": "local_jwt", "enabled": True},
-                {"id": "oidc", "type": "oidc", "enabled": True, "issuer": "https://idp.example", "client_id": "1cai"},
+                {
+                    "id": "oidc",
+                    "type": "oidc",
+                    "enabled": True,
+                    "issuer": "https://idp.example",
+                    "client_id": "1cai",
+                },
             ],
             "boundaries": [],
         },
@@ -77,7 +82,9 @@ def test_enterprise_iam_readiness_boundaries_and_access(tmp_path):
     )
     readiness = enterprise_iam.iam_readiness(
         path=path,
-        auth_settings=AuthSettings(jwt_secret="secret", service_tokens='{"svc":{"token":"t","name":"svc"}}'),
+        auth_settings=AuthSettings(
+            jwt_secret="secret", service_tokens='{"svc":{"token":"t","name":"svc"}}'
+        ),
     )
     events = audit_log.list_events(category="iam", path=tmp_path / "audit_log.ndjson")
 
@@ -92,7 +99,10 @@ def test_enterprise_iam_readiness_boundaries_and_access(tmp_path):
 def test_enterprise_iam_rejects_invalid_provider(tmp_path):
     try:
         enterprise_iam.save_iam_config(
-            {"providers": [{"id": "bad", "type": "unknown", "enabled": True}], "boundaries": []},
+            {
+                "providers": [{"id": "bad", "type": "unknown", "enabled": True}],
+                "boundaries": [],
+            },
             path=tmp_path / "enterprise_iam.json",
         )
     except ValueError as exc:
@@ -125,7 +135,9 @@ def test_enterprise_api_requires_auth_and_admin(tmp_path, monkeypatch):
     )
 
 
-def test_enterprise_api_exposes_readiness_config_boundaries_and_access(tmp_path, monkeypatch):
+def test_enterprise_api_exposes_readiness_config_boundaries_and_access(
+    tmp_path, monkeypatch
+):
     monkeypatch.setattr(enterprise_iam, "CONFIG_PATH", tmp_path / "enterprise_iam.json")
     service = _auth_service()
 
@@ -143,7 +155,12 @@ def test_enterprise_api_exposes_readiness_config_boundaries_and_access(tmp_path,
         json={
             "providers": [
                 {"id": "local-jwt", "type": "local_jwt", "enabled": True},
-                {"id": "oidc", "type": "oidc", "enabled": True, "issuer": "https://idp.example"},
+                {
+                    "id": "oidc",
+                    "type": "oidc",
+                    "enabled": True,
+                    "issuer": "https://idp.example",
+                },
             ],
             "boundaries": [],
         },

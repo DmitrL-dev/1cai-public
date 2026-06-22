@@ -1,16 +1,19 @@
 import logging
 import os
 from typing import Any, Dict, List, Optional
+
 import httpx
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
+
 
 class ODataConfig(BaseModel):
     base_url: str
     username: str
     password: str
     timeout: float = 30.0
+
 
 class OneCODataClient:
     """
@@ -24,14 +27,16 @@ class OneCODataClient:
             base_url=self.config.base_url,
             auth=(self.config.username, self.config.password),
             timeout=self.config.timeout,
-            headers={"Accept": "application/json"}
+            headers={"Accept": "application/json"},
         )
 
     def _load_config_from_env(self) -> ODataConfig:
         return ODataConfig(
-            base_url=os.getenv("ONEC_ODATA_URL", "http://localhost/base/odata/standard.odata"),
+            base_url=os.getenv(
+                "ONEC_ODATA_URL", "http://localhost/base/odata/standard.odata"
+            ),
             username=os.getenv("ONEC_USERNAME", "Administrator"),
-            password=os.getenv("ONEC_PASSWORD", "")
+            password=os.getenv("ONEC_PASSWORD", ""),
         )
 
     async def close(self):
@@ -49,7 +54,9 @@ class OneCODataClient:
             logger.error(f"Failed to fetch metadata: {e}")
             raise
 
-    async def get_catalog(self, catalog_name: str, top: int = 100, select: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+    async def get_catalog(
+        self, catalog_name: str, top: int = 100, select: Optional[List[str]] = None
+    ) -> List[Dict[str, Any]]:
         """
         Fetches items from a Catalog.
         Example: catalog_name="Catalog_Товары"
@@ -60,8 +67,12 @@ class OneCODataClient:
 
         try:
             # Note: 1C OData entity names are usually like Catalog_Name
-            entity_name = f"Catalog_{catalog_name}" if not catalog_name.startswith("Catalog_") else catalog_name
-            
+            entity_name = (
+                f"Catalog_{catalog_name}"
+                if not catalog_name.startswith("Catalog_")
+                else catalog_name
+            )
+
             response = await self.client.get(f"/{entity_name}", params=params)
             response.raise_for_status()
             data = response.json()
@@ -70,15 +81,23 @@ class OneCODataClient:
             logger.error(f"Failed to fetch catalog {catalog_name}: {e}")
             raise
 
-    async def post_document(self, doc_name: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def post_document(
+        self, doc_name: str, data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Creates a new Document.
         Example: doc_name="Document_ЗаказКлиента"
         """
         try:
-            entity_name = f"Document_{doc_name}" if not doc_name.startswith("Document_") else doc_name
-            
-            response = await self.client.post(f"/{entity_name}", json=data, params={"$format": "json"})
+            entity_name = (
+                f"Document_{doc_name}"
+                if not doc_name.startswith("Document_")
+                else doc_name
+            )
+
+            response = await self.client.post(
+                f"/{entity_name}", json=data, params={"$format": "json"}
+            )
             response.raise_for_status()
             return response.json()
         except httpx.HTTPError as e:
@@ -90,5 +109,7 @@ class OneCODataClient:
         Executes a query via a custom HTTP service (if available).
         This requires the 'QueryConsole' pattern to be implemented on 1C side.
         """
-        logger.warning("execute_query requires a configured QueryConsole HTTP service on 1C side")
+        logger.warning(
+            "execute_query requires a configured QueryConsole HTTP service on 1C side"
+        )
         return []

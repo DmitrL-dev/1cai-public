@@ -6,13 +6,13 @@ All return int 0–100. Uses numpy for sigmoid normalization.
 
 import csv
 import json
+import pickle
 import sys
 from pathlib import Path
+from pathlib import Path as _Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-import pickle
-from pathlib import Path as _Path
 
 _MODEL_PATH = (
     _Path(__file__).parent.parent.parent / "gabriel_runs" / "code_quality_model.pkl"

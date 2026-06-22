@@ -11,8 +11,8 @@ from pydantic import BaseModel, Field
 
 from src.api._rentgen_store import store_or_none
 from src.middleware.jwt_user_context import principal_actor, require_auth
-from src.services.edt_mcp_bridge import classify_edt_mcp_tool
 from src.services.audit_log import record_event
+from src.services.edt_mcp_bridge import classify_edt_mcp_tool
 from src.services.rentgen.approval_workflow import create_approval_record
 from src.services.rentgen.safe_autopilot import build_safe_autopilot
 
@@ -50,7 +50,9 @@ def _plan_id(req: SafeAutopilotApprovalRequest, report: dict[str, Any]) -> str:
     return "sap_" + hashlib.sha1(encoded).hexdigest()[:16]
 
 
-def _approval_constraints(req: SafeAutopilotApprovalRequest, report: dict[str, Any]) -> dict[str, Any]:
+def _approval_constraints(
+    req: SafeAutopilotApprovalRequest, report: dict[str, Any]
+) -> dict[str, Any]:
     candidates = (report.get("diff_proposal") or {}).get("candidates", [])
     candidate_targets = [
         str(item.get("target") or "").strip()
@@ -125,7 +127,9 @@ def request_approval(
     )
     handoff = report.get("approval_handoff") or {}
     if not handoff.get("can_request_approval"):
-        raise HTTPException(400, "Safe Autopilot plan is not ready for approval request")
+        raise HTTPException(
+            400, "Safe Autopilot plan is not ready for approval request"
+        )
 
     actor = _actor(principal)
     classification = classify_edt_mcp_tool(req.tool_name)

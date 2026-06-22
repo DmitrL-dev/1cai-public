@@ -28,7 +28,7 @@ import sys
 import pytest
 
 sys.path.insert(0, r"C:\1cAI\tools")
-from rentgen.store import RentgenStore, DB_PATH, get_store  # noqa: E402
+from rentgen.store import DB_PATH, RentgenStore, get_store  # noqa: E402
 
 from src.services.rentgen.change_plan import (  # noqa: E402
     COVERAGE_IN_GRAPH,
@@ -124,9 +124,9 @@ def test_unresolved_module_is_flagged_not_silent_zero(store):
     assert "это не ноль" in item["coverage_caveat"]
 
     assert _GHOST_PATH in plan["unmeasured_modules"]
-    assert any("НЕ измерен" in c for c in plan["caveats"]), (
-        "top-level caveats must warn that some modules were not measured"
-    )
+    assert any(
+        "НЕ измерен" in c for c in plan["caveats"]
+    ), "top-level caveats must warn that some modules were not measured"
 
 
 # --------------------------------------------------------------------------- #
@@ -154,7 +154,9 @@ def test_common_module_still_measured(store):
 def test_mixed_batch_separates_measured_from_unmeasured(store):
     common_path = _a_common_path(store)
 
-    plan = build_change_plan(store, [common_path, _GHOST_PATH], max_depth=1, max_edges=50)
+    plan = build_change_plan(
+        store, [common_path, _GHOST_PATH], max_depth=1, max_edges=50
+    )
     by_path = {item["module_path"]: item for item in plan["modules"]}
 
     assert by_path[common_path]["coverage"] == COVERAGE_IN_GRAPH
@@ -175,7 +177,11 @@ class _UnresolvedFormStore:
 
     def module_impact(self, module_path, max_depth=5, max_edges=600):
         return {
-            "canonical": {"object_name": "x", "module_kind": "form", "source": "module_path"},
+            "canonical": {
+                "object_name": "x",
+                "module_kind": "form",
+                "source": "module_path",
+            },
             "graph_modules": [],
             "entry_subroutines": 0,
             "total": 0,
@@ -205,6 +211,6 @@ def test_ci_gate_warns_on_unmeasured_form_instead_of_passing():
 
     markdown = render_markdown_report(plan, gate)
     assert "НЕ ИЗМЕРЕНО" in markdown
-    assert "Impact edges: 0" not in markdown, (
-        "report must not present a bare 'Impact edges: 0' for an unmeasured module"
-    )
+    assert (
+        "Impact edges: 0" not in markdown
+    ), "report must not present a bare 'Impact edges: 0' for an unmeasured module"

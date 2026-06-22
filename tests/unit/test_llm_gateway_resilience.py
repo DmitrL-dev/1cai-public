@@ -8,9 +8,9 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
+from src.resilience.error_recovery import CircuitState
 from src.services.llm_gateway import LLMGateway
 from src.services.llm_provider_manager import ProviderConfig
-from src.resilience.error_recovery import CircuitState
 
 
 class TestLLMGatewayResilience:
@@ -31,7 +31,9 @@ class TestLLMGatewayResilience:
         mock_manager.providers = {"test-provider": provider}
         mock_manager.get_active_provider.return_value = provider
         mock_manager.get_fallback_chain.return_value = None
-        mock_manager.get_provider.side_effect = lambda name: mock_manager.providers.get(name)
+        mock_manager.get_provider.side_effect = lambda name: mock_manager.providers.get(
+            name
+        )
 
         return LLMGateway(
             manager=mock_manager,

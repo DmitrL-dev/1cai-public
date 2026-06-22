@@ -61,29 +61,152 @@ def _buyer_brief(status="ready", score=88):
         },
         "room_line": "Ask for local license: move from proof to measured rollout outcomes.",
         "role_cards": [
-            {"role": "developer", "title": "Developer", "route": "/change", "status": "ready", "spark": "Show code proof.", "proof_file": "rentgen-developer-report.md"},
-            {"role": "architect", "title": "Architect", "route": "/platform-doctor", "status": "ready", "spark": "Show platform proof.", "proof_file": "rentgen-architect-report.md"},
-            {"role": "director", "title": "Director", "route": "/board-pack", "status": status, "spark": "Show value proof.", "proof_file": "board-pack.md"},
-            {"role": "security", "title": "Security", "route": "/enterprise-trust-center", "status": "ready", "spark": "Show trust proof.", "proof_file": "rentgen-security-questionnaire.md"},
-            {"role": "vendor", "title": "Vendor", "route": "/vendor-portfolio", "status": "ready", "spark": "Show portfolio proof.", "proof_file": "vendor-portfolio.md"},
+            {
+                "role": "developer",
+                "title": "Developer",
+                "route": "/change",
+                "status": "ready",
+                "spark": "Show code proof.",
+                "proof_file": "rentgen-developer-report.md",
+            },
+            {
+                "role": "architect",
+                "title": "Architect",
+                "route": "/platform-doctor",
+                "status": "ready",
+                "spark": "Show platform proof.",
+                "proof_file": "rentgen-architect-report.md",
+            },
+            {
+                "role": "director",
+                "title": "Director",
+                "route": "/board-pack",
+                "status": status,
+                "spark": "Show value proof.",
+                "proof_file": "board-pack.md",
+            },
+            {
+                "role": "security",
+                "title": "Security",
+                "route": "/enterprise-trust-center",
+                "status": "ready",
+                "spark": "Show trust proof.",
+                "proof_file": "rentgen-security-questionnaire.md",
+            },
+            {
+                "role": "vendor",
+                "title": "Vendor",
+                "route": "/vendor-portfolio",
+                "status": "ready",
+                "spark": "Show portfolio proof.",
+                "proof_file": "vendor-portfolio.md",
+            },
         ],
         "proof_readiness": [
-            {"id": "evidence-bundle", "title": "Forwardable evidence", "route": "/evidence-bundle", "status": status, "signal": "Proof routes and hashes.", "file": "OPEN_FIRST.md"},
-            {"id": "governance", "title": "Approval gates", "route": "/approvals", "status": "ready", "signal": "Governance gates.", "file": "governance-proof.md"},
-            {"id": "audit-siem", "title": "Audit / SIEM handoff", "route": "/audit", "status": "ready", "signal": "SIEM export.", "file": "rentgen-audit-siem.jsonl"},
-            {"id": "trust", "title": "Enterprise trust", "route": "/enterprise-trust-center", "status": "ready", "signal": "Trust proof.", "file": "rentgen-security-questionnaire.md"},
+            {
+                "id": "evidence-bundle",
+                "title": "Forwardable evidence",
+                "route": "/evidence-bundle",
+                "status": status,
+                "signal": "Proof routes and hashes.",
+                "file": "OPEN_FIRST.md",
+            },
+            {
+                "id": "governance",
+                "title": "Approval gates",
+                "route": "/approvals",
+                "status": "ready",
+                "signal": "Governance gates.",
+                "file": "governance-proof.md",
+            },
+            {
+                "id": "audit-siem",
+                "title": "Audit / SIEM handoff",
+                "route": "/audit",
+                "status": "ready",
+                "signal": "SIEM export.",
+                "file": "rentgen-audit-siem.jsonl",
+            },
+            {
+                "id": "trust",
+                "title": "Enterprise trust",
+                "route": "/enterprise-trust-center",
+                "status": "ready",
+                "signal": "Trust proof.",
+                "file": "rentgen-security-questionnaire.md",
+            },
         ],
         "meeting_flow": [
-            {"step": 1, "label": "Orient", "route": "/buyer-concierge", "line": "Pick role."},
-            {"step": 2, "label": "Prove", "route": "/killer-demo", "line": "Show proof."},
-            {"step": 3, "label": "Measure", "route": "/outcome-ledger", "line": "Claim measured outcome."},
-            {"step": 4, "label": "Forward", "route": "/evidence-bundle", "line": "Forward packet."},
+            {
+                "step": 1,
+                "label": "Orient",
+                "route": "/buyer-concierge",
+                "line": "Pick role.",
+            },
+            {
+                "step": 2,
+                "label": "Prove",
+                "route": "/killer-demo",
+                "line": "Show proof.",
+            },
+            {
+                "step": 3,
+                "label": "Measure",
+                "route": "/outcome-ledger",
+                "line": "Claim measured outcome.",
+            },
+            {
+                "step": 4,
+                "label": "Forward",
+                "route": "/evidence-bundle",
+                "line": "Forward packet.",
+            },
         ],
         "open_first_path": [
-            {"step": 1, "stage": "orient", "label": "Orient", "title": "Buyer room", "route": "/buyer-concierge", "line": "Pick role.", "file": "open-first-path.md", "status": status, "source": "test"},
-            {"step": 2, "stage": "prove", "label": "Prove", "title": "Killer Demo", "route": "/killer-demo", "line": "Show proof.", "file": "OPEN_FIRST_KILLER_DEMO.md", "status": status, "source": "test"},
-            {"step": 3, "stage": "close", "label": "Claim", "title": "Outcome Ledger", "route": "/outcome-ledger", "line": "Claim measured outcome.", "file": "rentgen-outcome-ledger.md", "status": status, "source": "test"},
-            {"step": 4, "stage": "verify", "label": "Verify", "title": "Verification Packet ZIP", "route": "/evidence-bundle", "line": "Verify.", "file": "archive-verification-packet.zip", "status": "ready", "source": "test"},
+            {
+                "step": 1,
+                "stage": "orient",
+                "label": "Orient",
+                "title": "Buyer room",
+                "route": "/buyer-concierge",
+                "line": "Pick role.",
+                "file": "open-first-path.md",
+                "status": status,
+                "source": "test",
+            },
+            {
+                "step": 2,
+                "stage": "prove",
+                "label": "Prove",
+                "title": "Killer Demo",
+                "route": "/killer-demo",
+                "line": "Show proof.",
+                "file": "OPEN_FIRST_KILLER_DEMO.md",
+                "status": status,
+                "source": "test",
+            },
+            {
+                "step": 3,
+                "stage": "close",
+                "label": "Claim",
+                "title": "Outcome Ledger",
+                "route": "/outcome-ledger",
+                "line": "Claim measured outcome.",
+                "file": "rentgen-outcome-ledger.md",
+                "status": status,
+                "source": "test",
+            },
+            {
+                "step": 4,
+                "stage": "verify",
+                "label": "Verify",
+                "title": "Verification Packet ZIP",
+                "route": "/evidence-bundle",
+                "line": "Verify.",
+                "file": "archive-verification-packet.zip",
+                "status": "ready",
+                "source": "test",
+            },
         ],
     }
 
@@ -137,7 +260,9 @@ def _board_pack(status="ready", score=86, recommended_offer="enterprise-local-li
         },
         "recommended_offer": {
             "id": recommended_offer,
-            "title": "Enterprise local license" if recommended_offer == "enterprise-local-license" else "Platform and trust hardening pack",
+            "title": "Enterprise local license"
+            if recommended_offer == "enterprise-local-license"
+            else "Platform and trust hardening pack",
             "commercial_frame": "annual local license anchor 1 800 000 RUB",
             "route": "/commercial-offer-studio",
         },
@@ -160,7 +285,12 @@ def _board_pack(status="ready", score=86, recommended_offer="enterprise-local-li
         ],
         "board_close_packet": {
             "ready_to_close": status == "ready",
-            "proof_routes": ["/approvals", "/audit", "/evidence-bundle", "/commercial-offer-studio"],
+            "proof_routes": [
+                "/approvals",
+                "/audit",
+                "/evidence-bundle",
+                "/commercial-offer-studio",
+            ],
         },
     }
 
@@ -187,7 +317,12 @@ def _pilot_launchpad(status="ready", score=84):
         ],
         "activation_contract": {
             "ready_to_activate": status == "ready",
-            "proof_routes": ["/approvals", "/audit", "/evidence-bundle", "/pilot-launchpad"],
+            "proof_routes": [
+                "/approvals",
+                "/audit",
+                "/evidence-bundle",
+                "/pilot-launchpad",
+            ],
         },
     }
 
@@ -204,8 +339,14 @@ def test_outcome_ledger_builds_adoption_and_value_loop():
         pilot_launchpad=_pilot_launchpad(),
         demo_command_center=_decision(score=85),
         productization={"status": "pass", "score": 90},
-        value_packs={"decision": {"status": "ready", "score": 82}, "packs": [{"title": "Developer proof pack"}]},
-        vendor_portfolio={"decision": {"status": "ready", "score": 82}, "work_packages": [{"title": "Platform audit"}]},
+        value_packs={
+            "decision": {"status": "ready", "score": 82},
+            "packs": [{"title": "Developer proof pack"}],
+        },
+        vendor_portfolio={
+            "decision": {"status": "ready", "score": 82},
+            "work_packages": [{"title": "Platform audit"}],
+        },
         buyer_brief=_buyer_brief(),
         client_name="ACME",
         config_path="data/configs/unpacked",
@@ -237,7 +378,12 @@ def test_outcome_ledger_builds_adoption_and_value_loop():
         "buyer-brief.md",
         "buyer-pulse.md",
     ]
-    assert [item["stage"] for item in outcome_room["open_first_path"]] == ["orient", "prove", "close", "verify"]
+    assert [item["stage"] for item in outcome_room["open_first_path"]] == [
+        "orient",
+        "prove",
+        "close",
+        "verify",
+    ]
     assert "MEETING_CLOSE_RECEIPT.md" in outcome_room["files"]
     assert "POST_DEMO_ACTIVATION_HANDOFF.md" in outcome_room["files"]
     assert "archive-acceptance-receipt.md" in outcome_room["files"]
@@ -269,14 +415,19 @@ def test_outcome_ledger_builds_adoption_and_value_loop():
     assert report["acceptance_rollup"]["ready_to_claim"] is True
     assert report["acceptance_rollup"]["ready_to_continue"] is True
     assert any(
-        item["id"] == "day0-activation-baseline" and item["evidence_file"] == "archive-acceptance-receipt.md"
+        item["id"] == "day0-activation-baseline"
+        and item["evidence_file"] == "archive-acceptance-receipt.md"
         for item in report["acceptance_rollup"]["items"]
     )
     assert any(
-        item["id"] == "day0-verification-packet" and item["evidence_file"] == "archive-verification-packet.zip"
+        item["id"] == "day0-verification-packet"
+        and item["evidence_file"] == "archive-verification-packet.zip"
         for item in report["acceptance_rollup"]["items"]
     )
-    assert any(item["evidence_route"] == "/pilot-launchpad" for item in report["acceptance_rollup"]["items"])
+    assert any(
+        item["evidence_route"] == "/pilot-launchpad"
+        for item in report["acceptance_rollup"]["items"]
+    )
     spine = report["post_purchase_proof_spine"]
     assert spine["ready_to_measure"] is True
     assert spine["ready_to_claim"] is True
@@ -316,17 +467,24 @@ def test_outcome_ledger_builds_adoption_and_value_loop():
 def test_outcome_ledger_keeps_trust_risk_visible():
     report = build_outcome_ledger(
         executive=_decision(status="watch", score=70),
-        board_pack=_board_pack(status="risk", score=50, recommended_offer="platform-trust-pack"),
+        board_pack=_board_pack(
+            status="risk", score=50, recommended_offer="platform-trust-pack"
+        ),
         buyer_concierge=_buyer_concierge(status="watch", score=72),
         commercial_offer_studio=_commercial_offer(status="watch", score=76),
-        enterprise_trust_center=_trust_center(status="risk", score=45, failed_controls=3),
+        enterprise_trust_center=_trust_center(
+            status="risk", score=45, failed_controls=3
+        ),
         business_case=_business_case(),
         scenario_hub=_decision(status="watch", score=70),
         pilot_launchpad=_pilot_launchpad(status="watch", score=70),
         demo_command_center=_decision(status="watch", score=70),
         productization={"status": "pass", "score": 80},
         value_packs={"decision": {"status": "watch", "score": 70}, "packs": []},
-        vendor_portfolio={"decision": {"status": "watch", "score": 70}, "work_packages": []},
+        vendor_portfolio={
+            "decision": {"status": "watch", "score": 70},
+            "work_packages": [],
+        },
         client_name="ACME",
     )
 
@@ -337,14 +495,19 @@ def test_outcome_ledger_keeps_trust_risk_visible():
     assert report["outcome_room_bridge"]["files"][0] == "rentgen-buyer-room-packet.zip"
     assert report["outcome_room_bridge"]["files"][1] == "open-first-path.md"
     assert report["outcome_room_bridge"]["files"][2] == "buyer-brief.md"
-    assert [item["stage"] for item in report["outcome_room_bridge"]["open_first_path"]] == [
+    assert [
+        item["stage"] for item in report["outcome_room_bridge"]["open_first_path"]
+    ] == [
         "orient",
         "prove",
         "close",
         "verify",
     ]
     assert report["governance_refresh"]["ready"] is False
-    assert any(item["route"] == "/enterprise-trust-center" for item in report["adoption_timeline"])
+    assert any(
+        item["route"] == "/enterprise-trust-center"
+        for item in report["adoption_timeline"]
+    )
 
 
 def test_outcome_ledger_rolls_up_blocked_pilot_acceptance():
@@ -371,17 +534,24 @@ def test_outcome_ledger_rolls_up_blocked_pilot_acceptance():
 
     report = build_outcome_ledger(
         executive=_decision(status="watch", score=70),
-        board_pack=_board_pack(status="risk", score=50, recommended_offer="platform-trust-pack"),
+        board_pack=_board_pack(
+            status="risk", score=50, recommended_offer="platform-trust-pack"
+        ),
         buyer_concierge=_buyer_concierge(status="watch", score=72),
         commercial_offer_studio=_commercial_offer(status="watch", score=76),
-        enterprise_trust_center=_trust_center(status="risk", score=45, failed_controls=3),
+        enterprise_trust_center=_trust_center(
+            status="risk", score=45, failed_controls=3
+        ),
         business_case=_business_case(),
         scenario_hub=_decision(status="watch", score=70),
         pilot_launchpad=pilot,
         demo_command_center=_decision(status="watch", score=70),
         productization={"status": "blocked", "score": 40},
         value_packs={"decision": {"status": "watch", "score": 70}, "packs": []},
-        vendor_portfolio={"decision": {"status": "watch", "score": 70}, "work_packages": []},
+        vendor_portfolio={
+            "decision": {"status": "watch", "score": 70},
+            "work_packages": [],
+        },
         client_name="ACME",
     )
 
@@ -389,7 +559,16 @@ def test_outcome_ledger_rolls_up_blocked_pilot_acceptance():
     assert report["acceptance_rollup"]["ready_to_continue"] is False
     assert report["summary"]["acceptance_rollup_blocked"] == 1
     assert report["post_purchase_proof_spine"]["ready_to_measure"] is False
-    assert any(item["evidence_file"] == "archive-acceptance-receipt.md" for item in report["acceptance_rollup"]["items"])
-    assert any(item["evidence_file"] == "archive-verification-packet.zip" for item in report["acceptance_rollup"]["items"])
-    assert any(item["outcome_route"] == "/platform-doctor" for item in report["acceptance_rollup"]["items"])
+    assert any(
+        item["evidence_file"] == "archive-acceptance-receipt.md"
+        for item in report["acceptance_rollup"]["items"]
+    )
+    assert any(
+        item["evidence_file"] == "archive-verification-packet.zip"
+        for item in report["acceptance_rollup"]["items"]
+    )
+    assert any(
+        item["outcome_route"] == "/platform-doctor"
+        for item in report["acceptance_rollup"]["items"]
+    )
     assert "/productization" in report["proof_routes"]

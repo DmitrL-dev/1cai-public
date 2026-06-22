@@ -1,6 +1,5 @@
 import asyncio
-from src.utils.structured_logging import StructuredLogger
-from src.services.real_time_service import real_time_manager
+
 from src.database import get_pool
 from src.modules.dashboard.services.ba_service import BAService
 from src.modules.dashboard.services.developer_service import DeveloperService
@@ -8,6 +7,8 @@ from src.modules.dashboard.services.executive_service import ExecutiveService
 from src.modules.dashboard.services.owner_service import OwnerService
 from src.modules.dashboard.services.pm_service import PMService
 from src.modules.dashboard.services.team_lead_service import TeamLeadService
+from src.services.real_time_service import real_time_manager
+from src.utils.structured_logging import StructuredLogger
 
 logger = StructuredLogger(__name__).logger
 
@@ -47,7 +48,9 @@ async def start_dashboard_updater() -> None:
                     data = await service_method(pool)
 
                     # Broadcast update
-                    await real_time_manager.broadcast_dashboard_update(dashboard_type, data)
+                    await real_time_manager.broadcast_dashboard_update(
+                        dashboard_type, data
+                    )
 
                 except Exception as e:
                     logger.error(
