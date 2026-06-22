@@ -1,0 +1,85 @@
+# syntax=docker/dockerfile:1
+# ─────────────────────────────────────────────────────────────────────────────
+# 1С:Рентген — production image for the actual product path.
+#
+# Token-free, in-process SQLite store (data/rentgen.db). No Postgres/Neo4j/Redis
+# are required for the product path. The backend is `uvicorn src.main:app` on
+# :8000 and refuses to boot unless JWT_SECRET is set to a strong non-default
+# value (see src/config.py).
+#
+# The database (data/rentgen.db, ~371 MB) and .env are NOT baked into the image —
+# the DB is bind-mounted read-only and secrets are supplied via env_file at run
+# time (see docker-compose.prod.yml).
+#
+# Build:  docker build -f Dockerfile.rentgen -t rentgen:latest .
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ===== Stage 1: builder — compile/install deps into an isolated prefix =====
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+# Build deps for native wheels (cryptography, psycopg2-binary, etc.). They stay
+# in the builder stage and never reach the final image.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        g++ \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python deps into a user prefix so we can copy just that layer.
+COPY requirements.txt ./
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# ===== Stage 2: runtime =====
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# curl is needed only for the container HEALTHCHECK below.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Bring in the installed Python packages from the builder stage.
+COPY --from=builder /root/.local /home/appuser/.local
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app \
+    PATH=/home/appuser/.local/bin:$PATH
+
+# Application code. tools/ is required: src/api/_rentgen_store.py puts tools/ on
+# sys.path and imports rentgen.store (the SQLite query layer over data/rentgen.db).
+COPY src/ ./src/
+COPY tools/ ./tools/
+
+# Non-secret config files the app reads via relative paths from the working dir
+# (config/llm_providers.yaml, config/llm_gateway_simulation.yaml, ...). We copy
+# only these top-level files — NOT the whole config/ tree — to keep the
+# operational config/production/ subtree (and its secrets/) out of the image.
+COPY config/llm_providers.yaml \
+     config/llm_gateway_simulation.yaml \
+     config/architecture.yaml \
+     config/ci-cd.yaml \
+     config/ml_datasets.json \
+     ./config/
+
+# Run as a non-root user. /app is owned by appuser; data/ is created as an empty
+# mount point for the read-only DB bind-mount supplied at run time.
+RUN useradd --create-home --shell /bin/bash --uid 10001 appuser \
+    && mkdir -p /app/data \
+    && chown -R appuser:appuser /app /home/appuser/.local
+USER appuser
+
+EXPOSE 8000
+
+# Liveness against the app's /health endpoint (src/app/factory.py).
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -fsS http://localhost:8000/health || exit 1
+
+# Single worker by default: the in-process SQLite store is opened per-process and
+# the product path is read-mostly. Scale out with replicas behind a proxy rather
+# than many workers sharing one mounted DB file. Override WEB_CONCURRENCY to tune.
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

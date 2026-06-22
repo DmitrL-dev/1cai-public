@@ -6,6 +6,8 @@
 > может переоценивать production readiness. Для актуального направления продукта см. корневой
 > [`README.md`](../README.md) и новый roadmap
 > [`MEGA_REALIZATION_PLAN_2026-06-18.md`](./roadmap/MEGA_REALIZATION_PLAN_2026-06-18.md).
+> Актуальный getting-started (без Docker/Neo4j) — [`01-getting-started/quickstart.md`](./01-getting-started/quickstart.md);
+> устаревшие `START_HERE.md` и нижние разделы про Docker/PostgreSQL/Qdrant/Neo4j к 1С:Рентген не относятся.
 
 ## 1. Setup & Runtime
 - [Установка Python 3.11](./setup/python_311.md) — установка Python 3.11.
@@ -93,7 +95,7 @@
 
 | Задача | Документация |
 |--------|--------------|
-| **🎯 Быстрый старт** | [Quick Start](./01-getting-started/START_HERE.md) |
+| **🎯 Быстрый старт (актуально)** | [Quick Start — 1С:Рентген](./01-getting-started/quickstart.md) |
 | **⚠️ Системные правила** | [System Prompt](./SYSTEM_PROMPT.md) |
 | **🏗️ Архитектура** | [Architecture Overview](./02-architecture/ARCHITECTURE_OVERVIEW.md) |
 | **🛠️ Технологический стек** | [Technology Stack](./02-architecture/TECHNOLOGY_STACK.md) |
@@ -186,10 +188,9 @@ docs/
 ### 👨‍💻 Для Developers
 
 **Start here:**
-1. [Quick Start](./01-getting-started/START_HERE.md) - начать работу
-2. [Code Execution Guide](./08-code-execution/README.md) - NEW!
-3. [AI Agents Guide](./03-ai-agents/README.md) - использование агентов
-4. [Development Guide](./05-development/README.md) - контрибьюция
+1. [Quick Start — 1С:Рентген](./01-getting-started/quickstart.md) - начать работу (актуальный гайд)
+2. [AI Agents Guide](./03-ai-agents/README.md) - использование агентов
+3. [Development Guide](./05-development/README.md) - контрибьюция
 
 **Time:** 2 часа
 

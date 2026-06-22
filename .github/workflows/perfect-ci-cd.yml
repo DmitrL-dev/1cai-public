@@ -1,10 +1,10 @@
 name: Perfect CI/CD Pipeline
 
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
+  # Manual-only: aspirational pipeline (deploys to external infra, pylint --fail-under=8,
+  # k6, frontend build, fictional secrets) that was a permanent-red push/PR gate.
+  # The real push/PR gates are build.yml + ci.yml.
+  workflow_dispatch:
 
 env:
   PYTHON_VERSION: "3.11"

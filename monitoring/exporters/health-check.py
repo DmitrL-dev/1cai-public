@@ -137,7 +137,7 @@ class HealthCheckMiddleware:
                 'timestamp': datetime.now(timezone.utc).isoformat(),
                 'version': os.getenv('APP_VERSION', '1.0.0'),
                 'uptime': int(time.time() - self.start_time),
-                'checks': self.config['detailed_checks'] else checks
+                'checks': checks if self.config.get('detailed_checks') else {}
             }
             
             return JSONResponse(

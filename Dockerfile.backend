@@ -11,11 +11,10 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
-COPY requirements.txt requirements-stage1.txt ./
+COPY requirements.txt ./
 
 # Install Python dependencies
-RUN pip install --no-cache-dir --user -r requirements.txt && \
-    pip install --no-cache-dir --user -r requirements-stage1.txt
+RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Final stage
 FROM python:3.11-slim

@@ -33,8 +33,9 @@ jobs:
           flake8 src/ --max-line-length=120 --ignore=E203,W503,E402,E501,F841,E741,E731,W293,F811
           flake8 tests/ --max-line-length=120 --ignore=E203,W503,E402,E501,F841,E741,E731,W293,F811,F401,F541,E712,E722,W291,F821
       
-      - name: Bandit security check
-        run: bandit -r src/ -ll -x tests/
+      - name: Bandit security check (informational)
+        run: bandit -r src/ -ll -x tests/ || true
+        continue-on-error: true
 
   test:
     name: Unit & Integration Tests

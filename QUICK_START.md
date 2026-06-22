@@ -1,60 +1,79 @@
-# 1C AI Stack - Quick Start Guide
+# 1С:Рентген — Quick Start
 
-## 🚀 Быстрый запуск
+> **Token-free рентген конфигурации 1С.** Граф вызовов, impact/blast-radius, мёртвый код и
+> объяснимый риск-рейтинг. Хранилище — один локальный SQLite-файл (`data/rentgen.db`), in-process.
+> **Docker / PostgreSQL / Neo4j / Redis / Qdrant не нужны.**
 
-### Запустить всё одной командой
+Полный гайд: [`docs/01-getting-started/quickstart.md`](./docs/01-getting-started/quickstart.md).
+
+---
+
+## 🚀 Запустить всё одной командой (Windows)
 
 ```powershell
-.\start-all.ps1
+powershell -ExecutionPolicy Bypass -File scripts\start_rentgen.ps1
 ```
 
-Это запустит:
+Скрипт собирает `data/rentgen.db` при первом запуске (~30 с), поднимает бэкенд (:8000) и портал
+(:3000, либо ближайший свободный порт вроде :3001).
 
-```
+| Что | URL |
+| --- | --- |
+| **Рабочий пульт** | <http://localhost:3000> |
+| **Очаги риска (hotspots)** | <http://localhost:3000/quality> |
+| **Граф вызовов / impact** | <http://localhost:3000/rentgen> |
+| **Backend API** | <http://127.0.0.1:8000> |
+| **Swagger UI** | <http://127.0.0.1:8000/docs> |
+
+**Вход:** на экране логина кнопка **«Dev Mode»** выдаёт настоящий JWT через demo-пользователя.
 
 ---
 
-## 🌐 Доступные сервисы
+## 🧩 Проанализировать свою конфигурацию
 
-После запуска:
+Распакованную конфигурацию 1С (каталог с `.bsl`) можно прогнать одной обёрткой — она пересобирает
+**единый локальный стор** `data/rentgen.db` (одна конфигурация на установку сегодня):
 
-| Сервис          | URL                        | Описание         |
-| --------------- | -------------------------- | ---------------- |
-| **Frontend**    | http://localhost:3001      | React UI         |
-| **Backend API** | http://localhost:8000      | FastAPI          |
-| **Swagger UI**  | http://localhost:8000/docs | API документация |
-| **PostgreSQL**  | localhost:5432             | База данных      |
-| **Redis**       | localhost:6379             | Кэш              |
-| **Qdrant**      | localhost:6333             | Vector DB        |
-| **Neo4j**       | localhost:7687             | Graph DB         |
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\onboard.ps1 -ConfigPath C:\path\to\unpacked-1c-config
+```
+
+Под капотом — три шага (граф → оценки → сборка SQLite). Ручные команды и подробности:
+[`docs/01-getting-started/quickstart.md`](./docs/01-getting-started/quickstart.md) §3.
 
 ---
 
-## 📝 Разработка
+## 📝 Разработка (ручной запуск)
+
+Используйте системный Python 3.11 — вложенный `.venv` сломан. Выставьте `IGNORE_PY_VERSION_CHECK=1`.
 
 ### Backend
 
 ```powershell
-cd c:\1cAI
-
-# Активировать venv
-.\venv\Scripts\Activate.ps1
-
-# Запустить с hot reload
-python -m uvicorn src.main:app --reload
+$env:IGNORE_PY_VERSION_CHECK = "1"
+C:\Python311\python.exe -m uvicorn src.main:app --host 127.0.0.1 --port 8000
 ```
 
-### Frontend
+### Portal
 
 ```powershell
-cd c:\1cAI\frontend-portal
-
-# Запустить dev server
-npm run dev
-
-# Сборка для production
-npm run build
+cd portal
+npm install
+npm run dev          # http://localhost:3000, проксирует /api на :8000
 ```
+
+---
+
+## 🔒 Production
+
+```powershell
+$env:ENVIRONMENT = "production"
+$env:JWT_SECRET  = "<длинная случайная строка>"
+C:\Python311\python.exe -m uvicorn src.main:app --host 127.0.0.1 --port 8000
+```
+
+Приложение **откажется стартовать**, если в production `JWT_SECRET` не задан или равен дефолту
+(hard error в `src/config.py`, `validate_security()`). В dev — только warning.
 
 ---
 
@@ -62,46 +81,22 @@ npm run build
 
 ### Порт занят
 
-Если порт 8000 или 3001 занят:
+`start_rentgen.ps1` сам уходит на следующий свободный порт для портала. Если нужно освободить :8000 вручную:
 
 ```powershell
-# Найти процесс
-netstat -ano | findstr :8000
-
-# Убить процесс
-taskkill /PID <PID> /F
+Get-NetTCPConnection -LocalPort 8000 -State Listen | Select-Object OwningProcess
+Stop-Process -Id <PID> -Force
 ```
 
 ### Backend не запускается
 
-Проверьте что venv активирован и все зависимости установлены:
+Проверьте, что используете именно `C:\Python311\python.exe` (не вложенный `.venv`) и что выставлен
+`IGNORE_PY_VERSION_CHECK=1`. Зависимости: `C:\Python311\python.exe -m pip install -r requirements.txt`.
+
+### Portal не запускается
 
 ```powershell
-.\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
-
-### Frontend не запускается
-
-Переустановите зависимости:
-
-```powershell
-cd frontend-portal
+cd portal
 Remove-Item node_modules -Recurse -Force
 npm install
 ```
-
----
-
-## 📊 Производительность
-
-После миграции на native host:
-
-- ✅ npm install: **10x быстрее** (2-3 мин вместо 30 мин)
-- ✅ Vite startup: **10x быстрее** (711ms вместо 5-10 сек)
-- ✅ Hot reload: **5-10x быстрее** (~1 сек вместо 5-10 сек)
-- ✅ VS Code: **не зависает**
-
----
-
-**Последнее обновление:** 2025-11-23

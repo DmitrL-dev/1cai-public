@@ -1,330 +1,115 @@
-# 🚀 Quick Start Guide
+# Quick Start — 1С:Рентген
 
-## Enterprise 1C AI Development Stack v4.1
+> **Что это.** Рентген конфигурации 1С: граф вызовов всей конфигурации, impact/blast-radius
+> («что я сломаю»), мёртвый код и объяснимый риск-рейтинг — **token-free** (код не уходит в LLM).
+> Анализ живёт в одном самодостаточном SQLite-файле (`data/rentgen.db`), отдаётся in-process.
 
-### Prerequisites
-
-- ✅ Windows 10/11 (WSL2 recommended) or Linux/macOS
-- ✅ Docker Desktop installed and running
-- ✅ Python 3.11 or higher
-- ✅ Git
-- ✅ 16GB RAM minimum (32GB recommended)
-- ✅ 50GB free disk space
+> **Без Docker.** Никакого Docker / PostgreSQL / Neo4j / Redis / Qdrant не нужно. Всё хранилище —
+> локальный SQLite. Внешние сервисы не поднимаются.
 
 ---
 
-## 📦 Installation (5 minutes)
+## 1. Требования
 
-> 🎬 Нужен формат видео? См. сценарий скринкаста: [INSTALLATION_VIDEO_GUIDE.md](./INSTALLATION_VIDEO_GUIDE.md)
+- **Python 3.11** — нужен системный интерпретатор (`C:\Python311\python.exe`).
+  Учтите: вложенный `.venv` в репозитории сломан, поэтому скрипты вызывают `C:\Python311\python.exe`
+  напрямую и выставляют `IGNORE_PY_VERSION_CHECK=1`. Если запускаете команды вручную — делайте так же.
+- **Node.js 18+** — только для портала (Vite dev-сервер на :3000, проксирует `/api` на бэкенд).
+- **Go-сканер** — уже собран и лежит в репозитории: `go\bsl-scan.exe`. Пересобирать не нужно
+  (опционально: `cd go && go build -o bsl-scan.exe ./cmd/bsl-scan`, требует Go 1.25).
 
-### Step 1: Clone Repository
-
-```bash
-git clone https://github.com/DmitrL-dev/1cai-public.git
-cd 1cai-public
-```
-
-### Step 2: Configure Environment
-
-```bash
-# Copy environment template
-copy env.example .env
-
-# Edit .env file and set passwords
-# Minimum required: POSTGRES_PASSWORD
-notepad .env
-```
-
-**Important variables to configure:**
-- `POSTGRES_PASSWORD` - PostgreSQL database password
-- `GITHUB_TOKEN` - For Innovation Engine (optional now)
-- `EXTERNAL_AI_API_KEY` - External AI service API key (optional)
-
-### Step 3: Install Python Dependencies
-
-```bash
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# Windows:
-venv\Scripts\activate
-# Linux/Mac:
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### Step 4: Start Infrastructure
-
-```bash
-# Start Docker services
-docker-compose up -d
-
-# Wait ~30 seconds for services to initialize
-
-# Check status
-docker-compose ps
-
-# Apply database migrations (one time)
-docker-compose run --rm migrations
-```
-
-You should see:
-- ✅ postgres (healthy)
-- ✅ redis (healthy)
-- ✅ nginx (running)
-
-### Step 5: Verify Installation
-
-```bash
-# Check PostgreSQL
-docker-compose exec postgres pg_isready -U admin
-
-# Check Redis
-docker-compose exec redis redis-cli ping
-
-# Access PgAdmin (optional)
-# Open browser: http://localhost:5050
-# Login: admin@1c-ai.local / admin
-```
+> **Данные не входят в репозиторий.** `data/rentgen.db`, граф (`data/rentgen_callgraph.ndjson`) и
+> оценки (`gabriel_runs/scores.json`) — производные конкретной (часто проприетарной) конфигурации 1С,
+> поэтому они в `.gitignore`. Репозиторий — это код; стенд собирается на ваших данных при первом запуске.
 
 ---
 
-## 📁 Prepare 1C Configurations
+## 2. Самый быстрый путь (одна команда, Windows)
 
-### Export from 1C:EDT
-
-1. Open your configuration in 1C:EDT
-2. **File → Export → Configuration to files**
-3. Select XML format
-4. Export to: `./1c_configurations/{CONFIG_NAME}/`
-
-Example structure:
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start_rentgen.ps1
 ```
-1c_configurations/
-├── DO/           # Документооборот
-│   ├── CommonModules/
-│   ├── Documents/
-│   └── Catalogs/
-├── ERP/          # ERP
-├── ZUP/          # Зарплата
-└── BUH/          # Бухгалтерия
-```
+
+Скрипт:
+
+1. собирает `data/rentgen.db` при первом запуске (~30 с) из поставляемых граф/оценок, если их ещё нет;
+2. поднимает бэкенд FastAPI на <http://127.0.0.1:8000>;
+3. поднимает портал на <http://localhost:3000> (или ближайший свободный порт вроде :3001, если :3000 занят).
+
+Откройте:
+
+- **Очаги риска (risk hotspots):** <http://localhost:3000/quality>
+- **Граф вызовов / impact:** <http://localhost:3000/rentgen>
+- **Рабочий пульт:** <http://localhost:3000>
+- **API-доки (Swagger):** <http://127.0.0.1:8000/docs>
+
+**Вход:** на экране логина нажмите кнопку **«Dev Mode»** — она получает настоящий JWT через demo-пользователя,
+а не кладёт фиктивный токен в браузер.
 
 ---
 
-## ▶️ Run Parser
+## 3. Проанализировать СВОЮ конфигурацию
 
-### Parse All Configurations
+Анализ строится из вашей выгрузки конфигурации 1С (распакованная конфигурация в файлах — каталог с `.bsl`).
+Пайплайн из трёх шагов пересобирает **единый локальный стор** `data/rentgen.db`.
 
-```bash
-# Activate venv if not active
-venv\Scripts\activate
+> **Honest note.** Сегодня это CLI-пайплайн, и он держит **одну конфигурацию на установку**:
+> повторный прогон перезаписывает `data/rentgen.db`. UI-загрузки нескольких конфигураций пока нет.
 
-# Run parser
-python scripts/parsers/parse_edt_xml.py
+### Вариант А — одной командой (обёртка)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\onboard.ps1 -ConfigPath C:\path\to\unpacked-1c-config
 ```
 
-### Parse Specific Configuration
+`onboard.ps1` прогоняет все три шага по порядку, проверяет коды возврата и останавливается на первой
+ошибке, затем печатает, куда записан стор, и следующий шаг. Добавьте `-Force`, чтобы пересобрать поверх
+существующего стора без вопросов.
 
-```bash
-# Parse only DO
-python scripts/parsers/parse_edt_xml.py DO
+### Вариант Б — те же три шага вручную
 
-# Parse only ERP
-python scripts/parsers/parse_edt_xml.py ERP
+Все команды — из корня репозитория. Сначала: `$env:IGNORE_PY_VERSION_CHECK = "1"`.
+
+```powershell
+# 1) Граф вызовов -> data/rentgen_callgraph.ndjson  (NDJSON в stdout)
+go\bsl-scan.exe -mode callgraph C:\path\to\unpacked-1c-config > data\rentgen_callgraph.ndjson
+
+# 2) Оценки качества -> gabriel_runs/scores.json
+C:\Python311\python.exe -m tools.bsl_scoring run --config-path C:\path\to\unpacked-1c-config --output gabriel_runs\scores.json
+
+# 3) Сборка единого SQLite-стора -> data/rentgen.db  (~30 с)
+C:\Python311\python.exe tools\rentgen\build_store.py
 ```
 
-### Check Results
+Шаг 3 читает ровно `data/rentgen_callgraph.ndjson` и `gabriel_runs/scores.json` и пишет `data/rentgen.db`
+(существующий файл удаляется и пересоздаётся). Поэтому пути вывода в шагах 1–2 фиксированы — не меняйте их.
 
-```bash
-# Open PgAdmin
-# http://localhost:5050
-
-# Connect to database:
-# Host: postgres
-# Port: 5432
-# Database: knowledge_base
-# User: admin
-# Password: (your POSTGRES_PASSWORD from .env)
-
-# Run query:
-SELECT * FROM v_configuration_summary;
-```
+После пересборки перезапустите бэкенд (или просто запустите `scripts\start_rentgen.ps1` снова —
+он увидит готовый стор и сразу поднимет сервисы).
 
 ---
 
-## 🔍 Access Services
+## 4. Production
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| **PgAdmin** | http://localhost:5050 | admin@1c-ai.local / admin |
-| **PostgreSQL** | localhost:5432 | admin / (your password) |
-| **Redis** | localhost:6379 | - |
-| **Health Check** | http://localhost/health | - |
+Локальный запуск работает с дев-секретом по умолчанию. Для production:
 
----
+- Выставьте окружение и **сильный** `JWT_SECRET`:
 
-## 📊 Verify Data
+  ```powershell
+  $env:ENVIRONMENT = "production"
+  $env:JWT_SECRET  = "<длинная случайная строка>"
+  C:\Python311\python.exe -m uvicorn src.main:app --host 127.0.0.1 --port 8000
+  ```
 
-### SQL Queries to Try
+- Приложение **отказывается стартовать**, если в production `JWT_SECRET` не задан или равен дефолту —
+  это hard error на старте (см. `src/config.py`, `validate_security()`). В dev — громкий warning, стек
+  всё равно поднимется.
 
-```sql
--- Configuration summary
-SELECT * FROM v_configuration_summary;
-
--- List all modules
-SELECT 
-    c.name as config,
-    o.object_type,
-    o.name as object,
-    m.module_type,
-    m.line_count
-FROM modules m
-JOIN configurations c ON c.id = m.configuration_id
-LEFT JOIN objects o ON o.id = m.object_id
-ORDER BY m.line_count DESC
-LIMIT 20;
-
--- Top functions by complexity
-SELECT * FROM v_complex_functions LIMIT 20;
-
--- Most used APIs
-SELECT * FROM v_top_api_usage LIMIT 20;
-```
+Это всё, что требуется для запуска ядра. Бэкенд и портал — обычные процессы (uvicorn + Vite/статика),
+внешних БД и брокеров нет.
 
 ---
 
-## 🛠️ Common Commands
-
-### Docker Management
-
-```bash
-# View logs
-docker-compose logs -f
-
-# View specific service logs
-docker-compose logs -f postgres
-
-# Restart services
-docker-compose restart
-
-# Stop all services
-docker-compose down
-
-# Stop and remove all data (⚠️ WARNING: deletes all data!)
-docker-compose down -v
-```
-
-### Database Management
-
-```bash
-# Access PostgreSQL CLI
-docker-compose exec postgres psql -U admin -d knowledge_base
-
-# Backup database
-docker-compose exec postgres pg_dump -U admin knowledge_base > backup.sql
-
-# Restore database
-docker-compose exec -T postgres psql -U admin knowledge_base < backup.sql
-```
-
----
-
-## ❓ Troubleshooting
-
-### Issue: Docker containers won't start
-
-**Solution:**
-```bash
-# Check Docker is running
-docker ps
-
-# Check Docker Compose logs
-docker-compose logs
-
-# Restart Docker Desktop
-```
-
-### Issue: PostgreSQL connection refused
-
-**Solution:**
-```bash
-# Wait 30 seconds after startup
-# Check PostgreSQL is healthy
-docker-compose ps
-
-# Check logs
-docker-compose logs postgres
-```
-
-### Issue: Parser fails with "module not found"
-
-**Solution:**
-```bash
-# Ensure virtual environment is activated
-venv\Scripts\activate
-
-# Reinstall dependencies
-pip install -r requirements.txt
-```
-
-### Issue: Out of memory
-
-**Solution:**
-- Increase Docker memory limit in Docker Desktop settings
-- Recommended: 8GB for Docker
-
----
-
-## 🎯 Next Steps
-
-After successful setup:
-
-1. ✅ **Explore data in PgAdmin**
-   - Check parsed configurations
-   - Run sample queries
-
-2. ✅ **Read documentation**
-   - [Architecture Overview](../02-architecture/)
-   - [Implementation Plan](../02-architecture/IMPLEMENTATION_PLAN.md)
-
-3. ✅ **Prepare for Stage 1**
-   - Review Neo4j setup (coming next)
-   - Plan data migration from PostgreSQL
-
-4. ✅ **Join community**
-   - GitHub Discussions
-   - Report issues
-
----
-
-## 📞 Get Help
-
-- **GitHub Issues**: [Report bugs](https://github.com/DmitrL-dev/1cai-public/issues)
-- **Discussions**: [Ask questions](https://github.com/DmitrL-dev/1cai-public/discussions)
-- **Documentation**: [Full docs](../)
-
----
-
-## ✅ Success Checklist
-
-- [ ] Docker services running (postgres, redis, nginx)
-- [ ] PostgreSQL accessible (PgAdmin works)
-- [ ] 1C configurations exported to `./1c_configurations/`
-- [ ] Parser executed successfully
-- [ ] Data visible in PgAdmin
-- [ ] Sample queries return results
-
----
-
-**Congratulations! 🎉 Your Enterprise 1C AI Development Stack is running!**
-
-**Current Status:** Stage 0 complete (Week 1/30)  
-**Next:** Stage 1 - Neo4j & Qdrant integration
-
-
-
-
+Подробности продукта, методология и честные оговорки (что факт, что эвристика) —
+[`docs/RENTGEN.md`](../RENTGEN.md). Запуск одной командой и грабли — корневой
+[`README.md`](../../README.md).

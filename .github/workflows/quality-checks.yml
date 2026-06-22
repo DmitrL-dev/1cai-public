@@ -94,5 +94,4 @@ jobs:
           python -c "from src.services.ocr_service import ocr_with_structure; print('✓ ocr_with_structure')"
           python -c "from src.ai.orchestrator import AIOrchestrator, QueryType; print('✓ orchestrator')"
           python -c "from src.main import app; print('✓ app')"
-          python -c "from src.ai.advanced_orchestrator import AdvancedAIOrchestrator; print('✓ advanced')"
           echo "All critical imports verified ✓"

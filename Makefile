@@ -1,7 +1,7 @@
 # Makefile for Enterprise 1C AI Development Stack
 # Quick commands for common tasks
 
-.PHONY: help install test docker-up docker-down migrate clean train-ml eval-ml train-ml-demo eval-ml-demo scrape-its render-uml render-uml-svg adr-new test-bsl export-context generate-docs bsl-ls-up bsl-ls-down bsl-ls-logs feature-init feature-validate release-notes release-tag release-push smoke-tests check-runtime kind-up kind-down helm-deploy terraform-apply terraform-destroy policy-check gitops-apply gitops-sync ba-extract audit-hidden-dirs audit-secrets security-audit validate-standards
+.PHONY: help install install-dev prod-up prod-down prod-logs test docker-up docker-down migrate clean train-ml eval-ml train-ml-demo eval-ml-demo scrape-its render-uml render-uml-svg adr-new test-bsl export-context generate-docs bsl-ls-up bsl-ls-down bsl-ls-logs feature-init feature-validate release-notes release-tag release-push smoke-tests check-runtime kind-up kind-down helm-deploy terraform-apply terraform-destroy policy-check gitops-apply gitops-sync ba-extract audit-hidden-dirs audit-secrets security-audit validate-standards
 
 CONFIG ?= ERPCPM
 EPOCHS ?=
@@ -41,6 +41,9 @@ help:
 	@echo "  make vault-test       - Validate Vault/Kubernetes secrets"
 	@echo ""
 	@echo "Docker:"
+	@echo "  make prod-up          - Build & start production rentgen app (docker-compose.prod.yml)"
+	@echo "  make prod-down        - Stop production rentgen app"
+	@echo "  make prod-logs        - Tail production rentgen logs"
 	@echo "  make docker-up        - Start all Docker services"
 	@echo "  make docker-down      - Stop all Docker services"
 	@echo "  make docker-logs      - View Docker logs"
@@ -210,12 +213,20 @@ linkerd-rotate-certs:
 # Installation
 install:
 	pip install -r requirements.txt
-	pip install -r requirements-stage1.txt
 
 install-dev:
 	pip install -r requirements.txt
-	pip install -r requirements-stage1.txt
 	pip install -r requirements-dev.txt
+
+# Production deploy — single rentgen app service (SQLite product path)
+prod-up:
+	docker compose -f docker-compose.prod.yml up -d --build
+
+prod-down:
+	docker compose -f docker-compose.prod.yml down
+
+prod-logs:
+	docker compose -f docker-compose.prod.yml logs -f
 
 validate-standards:
 	python scripts/validation/validate_scenarios_against_schema.py
@@ -254,20 +265,21 @@ cli-llm-select:
 
 # Docker
 docker-up:
-	docker-compose -f docker-compose.yml -f docker-compose.stage1.yml up -d
+	docker-compose -f docker-compose.yml up -d
 	@echo "Waiting for services to start..."
 	@sleep 10
 	docker-compose ps
 
 docker-down:
-	docker-compose -f docker-compose.yml -f docker-compose.stage1.yml down
+	docker-compose -f docker-compose.yml down
 
 docker-logs:
-	docker-compose -f docker-compose.yml -f docker-compose.stage1.yml logs -f
+	docker-compose -f docker-compose.yml logs -f
 
 docker-clean:
-	docker-compose -f docker-compose.yml -f docker-compose.stage1.yml down -v
+	docker-compose -f docker-compose.yml down -v
 	@echo "⚠️  All data deleted!"
+
 
 # bsl-language-server helpers
 bsl-ls-up:
@@ -449,20 +461,21 @@ cli-llm-select:
 
 # Docker
 docker-up:
-	docker-compose -f docker-compose.yml -f docker-compose.stage1.yml up -d
+	docker-compose -f docker-compose.yml up -d
 	@echo "Waiting for services to start..."
 	@sleep 10
 	docker-compose ps
 
 docker-down:
-	docker-compose -f docker-compose.yml -f docker-compose.stage1.yml down
+	docker-compose -f docker-compose.yml down
 
 docker-logs:
-	docker-compose -f docker-compose.yml -f docker-compose.stage1.yml logs -f
+	docker-compose -f docker-compose.yml logs -f
 
 docker-clean:
-	docker-compose -f docker-compose.yml -f docker-compose.stage1.yml down -v
+	docker-compose -f docker-compose.yml down -v
 	@echo "⚠️  All data deleted!"
+
 
 # bsl-language-server helpers
 bsl-ls-up:

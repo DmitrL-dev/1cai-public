@@ -295,11 +295,11 @@ class HealthChecker:
         try:
             from neo4j import AsyncGraphDatabase
 
-            from neo4j import AsyncGraphDatabase
-
-            neo4j_uri = settings.neo4j_uri
-            neo4j_user = settings.neo4j_user
-            neo4j_pass = settings.neo4j_password
+            neo4j_uri = getattr(settings, "neo4j_uri", None)
+            neo4j_user = getattr(settings, "neo4j_user", None)
+            neo4j_pass = getattr(settings, "neo4j_password", None)
+            if not neo4j_uri:
+                return {"status": "degraded", "error": "Neo4j not configured (optional)"}
 
             driver = AsyncGraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_pass))
 
@@ -328,9 +328,12 @@ class HealthChecker:
         try:
             from qdrant_client import QdrantClient
 
+            qdrant_host = getattr(settings, "qdrant_host", None)
+            if not qdrant_host:
+                return {"status": "degraded", "error": "Qdrant not configured (optional)"}
             client = QdrantClient(
-                host=settings.qdrant_host,
-                port=settings.qdrant_port,
+                host=qdrant_host,
+                port=getattr(settings, "qdrant_port", 6333) or 6333,
                 timeout=5,
             )
 
