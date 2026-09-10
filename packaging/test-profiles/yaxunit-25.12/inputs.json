@@ -34,7 +34,8 @@
   "source_to_binary_reproduction": "not_verified",
   "platform_profile": null,
   "execution_status": "synthetic_platform_verified",
-  "registration_status": "not_registered",
+  "registration_status": "installed_cli_synthetic_verified",
   "execution_evidence": "docs/product/evidence/yaxunit-25.12-platform.json",
-  "scope": "Pinned upstream inputs; synthetic fail/pass behavior verified on 8.3.27.2342. Not a registered executable product profile or typical-configuration acceptance."
+  "scope": "Pinned upstream inputs; synthetic fail/pass verified on 8.3.27.2342 through registered installed CLI profile. Editor integration and typical-configuration acceptance remain pending.",
+  "registration_evidence": "docs/product/evidence/test-profile-installed.json"
 }

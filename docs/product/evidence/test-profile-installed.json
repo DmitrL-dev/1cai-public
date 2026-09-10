@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "accepted": true,
+  "scope": "installed_cli_synthetic_error_propagation",
+  "platform_version": "8.3.27.2342",
+  "platform_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+  "ibcmd_sha256": "38f37715535cea530e58d5ba2e7e072c184b61b12f3e903ac290b299cf39fd38",
+  "engine_sha256": "805a2277c997a3c24be0b0d080696479e91e4a15ed7e27aaf3991a7346522d70",
+  "installed_wheel_sha256": "5a882f1ab67b9ce747c56597cb6bf1eeee7516da2835bda190ff3dd587b4e34c",
+  "local_acceptance_sha256": "202b494898f5cb2e90bed6b25887f7fba755033ed68d7f4dcbe852e57b098265",
+  "original_report_sha256": "76ced2a0cae4cc978bbf83f21e19bfe5e3276b1fdc879b6a1c9c78cccf0ff943",
+  "source_ref": {
+    "snapshot": {
+      "project_id": "7a64d93d-3efb-4491-b8a0-ed8dc51211a1",
+      "snapshot_id": "5ae971688fba1374a914ced523c9a376d1c9e3aa792b1d15a2df151b0db12a58",
+      "manifest_hash": "5ae971688fba1374a914ced523c9a376d1c9e3aa792b1d15a2df151b0db12a58"
+    },
+    "layer_id": "base",
+    "relative_path": "CommonModules/RentgenPlatformProbe/Ext/Module.bsl",
+    "raw_sha256": "f0540440b7a20f136a6c0b97ed5509f55fe7346db735970eb232c3d4f532ddd7"
+  },
+  "proposal_content_id": "527396af74f87eadc8f7b2b5ab1be2b227213e936fad9c7ba9f3ec3068cf4b18",
+  "candidate_sha256": "dc573e18f1a3a7f78a2f12541158df138a425c178922ea92bd2f4a0f7ad791e4",
+  "profile": {
+    "profile_id": "4a096da5b315d2d1dc2f796955ccf5d304e77169acacb85e762ad4a04005c4e9",
+    "name": "Ошибка записи передаётся вызывающему коду",
+    "enabled": true,
+    "modules": [
+      {
+        "name": "ЮТРентгенПроверка",
+        "sha256": "be4deade6934b29dd227230ff1f90e71674f4876bafc76e053457a9d53fc2e3f",
+        "tests": [
+          "ОшибкаЗаписиПередается"
+        ]
+      }
+    ]
+  },
+  "baseline": {
+    "status": "failed",
+    "counts": {
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 0
+    },
+    "cases": [
+      {
+        "classname": "ЮТРентгенПроверка.ОшибкаЗаписиПередается",
+        "name": "ОшибкаЗаписиПередается",
+        "context": "Сервер",
+        "outcome": "failure"
+      }
+    ],
+    "junit_sha256": "4565aa84759b5e5913576688a82d5bf7e2d4bcc4f582915162c88858aff4b9b3",
+    "exit_file_sha256": "07846b783c23904a75834c1932bc2fad41e388e18bc32ffd73ed87bfa3844d87",
+    "framework_exit_code": 1,
+    "evidence": "parsed_unattested",
+    "native_module_sha256": "f0540440b7a20f136a6c0b97ed5509f55fe7346db735970eb232c3d4f532ddd7",
+    "module_text_verified": true,
+    "client_exit_code": 0,
+    "settings_sha256": "5c8f32158f0a500c18700f560d328c15f8e2f9c836730eece2968b55adf9030e"
+  },
+  "candidate": {
+    "status": "passed",
+    "counts": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 1
+    },
+    "cases": [
+      {
+        "classname": "ЮТРентгенПроверка.ОшибкаЗаписиПередается",
+        "name": "ОшибкаЗаписиПередается",
+        "context": "Сервер",
+        "outcome": "passed"
+      }
+    ],
+    "junit_sha256": "43abff2da0325367053c841d6ce8538711ac0123b9d95aaaa81760ceb65b2f9c",
+    "exit_file_sha256": "9585fbece5c402088f2d6a2def7e60d1c7ffecc24b16d32d5823a064b008935b",
+    "framework_exit_code": 0,
+    "evidence": "parsed_unattested",
+    "native_module_sha256": "dc573e18f1a3a7f78a2f12541158df138a425c178922ea92bd2f4a0f7ad791e4",
+    "module_text_verified": true,
+    "client_exit_code": 0,
+    "settings_sha256": "f9650e7b83d1907122c61515700e3e3fb008b58512614bbba6d2b9c62070e5e5"
+  },
+  "isolated_infobases": true,
+  "completed_replay_without_changes": true,
+  "disabled_new_run_refused": true,
+  "live_source_and_head_preserved": true,
+  "evidence": "local_unattested",
+  "runtime_dependencies": "not_fully_pinned",
+  "note": "Projection omits native log text and machine paths; original report hash refers to the complete local record. No typical-configuration or business-process acceptance."
+}

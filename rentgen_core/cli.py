@@ -74,6 +74,11 @@ def _parser():
         "proposal-check",
         "proposal-platform-check",
         "proposal-platform-result",
+        "test-profile-register",
+        "test-profile-list",
+        "test-profile-disable",
+        "proposal-test",
+        "proposal-test-result",
         "draft-save",
         "draft-get",
         "draft-list",
@@ -101,8 +106,14 @@ def _parser():
             )
         elif name == "publication-receipt":
             command.add_argument("--operation-id", required=True, action=_Once)
-        elif name == "proposal-platform-result":
+        elif name in {"proposal-platform-result", "proposal-test-result"}:
             command.add_argument("--operation-id", required=True, action=_Once)
+        elif name == "test-profile-register":
+            command.add_argument(
+                "--profile-json", type=Path, required=True, action=_Once
+            )
+        elif name == "test-profile-disable":
+            command.add_argument("--profile-id", required=True, action=_Once)
         elif name in {
             "state-migrate",
             "state-upgrade-access",
@@ -174,6 +185,7 @@ def _parser():
             "proposal-diff",
             "proposal-check",
             "proposal-platform-check",
+            "proposal-test",
         }:
             command.add_argument("--snapshot", required=True, action=_Once)
             if name == "proposal-create":
@@ -197,6 +209,9 @@ def _parser():
                     "--platform", type=Path, required=True, action=_Once
                 )
                 command.add_argument("--platform-sha256", required=True, action=_Once)
+            if name == "proposal-test":
+                command.add_argument("--operation-id", required=True, action=_Once)
+                command.add_argument("--test-profile", required=True, action=_Once)
         if name == "snapshot-diff":
             command.add_argument("--before", required=True, action=_Once)
             command.add_argument("--after", required=True, action=_Once)
@@ -458,7 +473,7 @@ def _proposal_command(args, runtime, state_ctx):
     # CLI paths are explicit local inputs, never accepted by an MCP tool. No
     # payload, generation or adapter is opened before current editing rights.
     permissions = frozenset({"project:read", "source:edit"})
-    if args.command in {"proposal-check", "proposal-platform-check"}:
+    if args.command in {"proposal-check", "proposal-platform-check", "proposal-test"}:
         permissions = permissions | {"analysis:run"}
     try:
         _proposal_permissions(state_ctx, permissions)
@@ -492,6 +507,19 @@ def _proposal_command(args, runtime, state_ctx):
         )
 
         limits = ProposalLimits(1048576, 1048576, 1572864, 262144)
+        if args.command == "proposal-test":
+            from .test_execution import check_proposal_tests
+
+            raw = _proposal_input(
+                state_ctx,
+                args.proposal_json,
+                limits.max_canonical_bytes,
+                permissions=permissions,
+            )
+            result = check_proposal_tests(
+                ctx, raw, args.test_profile, args.operation_id, limits=limits
+            )
+            return _ProposalCommandResult(result, state_ctx, permissions)
         if args.command == "proposal-platform-check":
             from .native_platform import NativePlatform
             from .platform_check import check_proposal_platform_json
@@ -588,10 +616,19 @@ def _execute(args, *, proposal_scope=None):
             "membership-set",
             "membership-revoke",
             "membership-receipt",
+            "test-profile-register",
+            "test-profile-disable",
         }
         else {"project:read", "source:edit", "analysis:run"}
         if args.command
-        in {"proposal-check", "proposal-platform-check", "proposal-platform-result"}
+        in {
+            "proposal-check",
+            "proposal-platform-check",
+            "proposal-platform-result",
+            "proposal-test",
+            "proposal-test-result",
+            "test-profile-list",
+        }
         else {"project:read", "source:edit"}
         if args.command
         in {
@@ -608,6 +645,33 @@ def _execute(args, *, proposal_scope=None):
         else set()
     )
     ctx = runtime.state_context(principal, args.project, permissions=permissions)
+    if (
+        args.command.startswith("test-profile-")
+        or args.command == "proposal-test-result"
+    ):
+        from . import test_profiles
+
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        if args.command == "test-profile-register":
+            from ._windows_source_tree import read_retained
+
+            value = test_profiles.register_profile(
+                ctx,
+                test_profiles._json(
+                    read_retained(args.profile_json.absolute(), 131072)
+                ),
+            )
+        elif args.command == "test-profile-list":
+            value = test_profiles.list_profiles(ctx)
+        elif args.command == "test-profile-disable":
+            value = test_profiles.disable_profile(ctx, args.profile_id)
+        else:
+            from .platform_runs import get_platform_run
+
+            value = get_platform_run(ctx, args.operation_id, namespace="test-runs")
+        return _ProposalCommandResult(value, ctx, frozenset(permissions))
     if args.command == "proposal-platform-result":
         from .platform_runs import get_platform_run
 
@@ -629,6 +693,7 @@ def _execute(args, *, proposal_scope=None):
         "proposal-diff",
         "proposal-check",
         "proposal-platform-check",
+        "proposal-test",
     }:
         if proposal_scope is not None:
             proposal_scope.context = ctx

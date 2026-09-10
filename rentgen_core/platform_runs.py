@@ -29,10 +29,10 @@ def _authorized(ctx):
             raise exc from None
 
 
-def run_path(ctx, operation_id):
-    return (
-        ctx.state.path.parent / "platform-checks" / validate_operation_id(operation_id)
-    )
+def run_path(ctx, operation_id, *, namespace="platform-checks"):
+    if namespace not in {"platform-checks", "test-runs"}:
+        raise ValueError("Unknown native run namespace")
+    return ctx.state.path.parent / namespace / validate_operation_id(operation_id)
 
 
 def write_record(ctx, run, name, value):
@@ -97,10 +97,10 @@ def _read(path):
         raise _corrupt() from exc
 
 
-def _get(ctx, operation_id):
+def _get(ctx, operation_id, *, namespace="platform-checks"):
     from ._windows_source_tree import pinned_directory
 
-    run = run_path(ctx, operation_id)
+    run = run_path(ctx, operation_id, namespace=namespace)
     if not run.exists():
         raise CoreError("PLATFORM_RUN_NOT_FOUND", "Native run does not exist")
     with pinned_directory(run):
@@ -136,6 +136,8 @@ def _get(ctx, operation_id):
                             "platform_executable_sha256",
                         )
                     )
+                    if namespace == "test-runs":
+                        valid = valid and report["profile_id"] == binding["profile_id"]
             except (KeyError, TypeError):
                 valid = False
             if not valid:
@@ -155,14 +157,14 @@ def _get(ctx, operation_id):
         return {**result, "status": "incomplete"}
 
 
-def get_platform_run(ctx, operation_id):
+def get_platform_run(ctx, operation_id, *, namespace="platform-checks"):
     """Read a run without opening its snapshot, proposal, EXE or source directory."""
     with _authorized(ctx):
-        return _get(ctx, operation_id)
+        return _get(ctx, operation_id, namespace=namespace)
 
 
-def replay_run(ctx, operation_id, binding):
-    saved = get_platform_run(ctx, operation_id)
+def replay_run(ctx, operation_id, binding, *, namespace="platform-checks"):
+    saved = get_platform_run(ctx, operation_id, namespace=namespace)
     if saved["request"] is None or saved["request"]["input"] != binding:
         raise CoreError(
             "PLATFORM_RUN_CONFLICT",
