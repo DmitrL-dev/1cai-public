@@ -2,7 +2,7 @@
 function createRepairUI(vscode, service, views, context, enabled) {
   let busy = false;
   const subscribe = item => {context.subscriptions.push(item);return item;};
-  const check = () => {if (!vscode.workspace.isTrusted) throw new Error('TRUST_REQUIRED'); if (!enabled) throw new Error('REPAIR_REQUIRES_DEV7');};
+  const check = () => {if (!vscode.workspace.isTrusted) throw new Error('TRUST_REQUIRED'); if (!enabled) throw new Error('REPAIR_REQUIRES_DEV7_OR_DEV8');};
   async function show(result) {
     views.refreshDrafts();
     if (result.receipt) await views.openDraft(result.receipt);

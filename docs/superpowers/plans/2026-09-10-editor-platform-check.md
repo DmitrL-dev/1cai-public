@@ -15,3 +15,7 @@ artifacts remain unchanged. Native VS Code controls, no webview or dependencies.
    dev8 and real 1C using the synthetic fixture, then build the development VSIX.
 5. Keep dev7 repair support unchanged. Document dev8 setup and development status;
    verify the published companion separately from the changing development build.
+
+Follow-up: enable the same managed repair on dev8 with exact installed-version
+matching. Accept one real local-model repair, BSL diagnostics, native compilation
+and saved-result recovery through commands of the packaged extension host.

@@ -20,18 +20,23 @@ function createPlatformUI(vscode, service, views, context, enabled) {
     void vscode.window.showInformationMessage('Рентген: '+message);
     return result;
   }
-  async function start(selection) {
+  async function start(selection, suppliedPlatform) {
     check(); if (busy || service.running) throw new Error('PLATFORM_RUNNING');
     const receipt = views.selectedDraft(typeof selection === 'string' ? selection : selection?.token);
     busy = true;
     try {
-      const files = await vscode.window.showOpenDialog({title:'Полный клиент 1С — 1cv8.exe',canSelectFiles:true,canSelectFolders:false,canSelectMany:false,filters:{'Платформа 1С':['exe']}});
-      if (!files?.length) return null;
+      let platform = suppliedPlatform;
+      if (platform === undefined) {
+        const files = await vscode.window.showOpenDialog({title:'Полный клиент 1С — 1cv8.exe',canSelectFiles:true,canSelectFolders:false,canSelectMany:false,filters:{'Платформа 1С':['exe']}});
+        if (!files?.length) return null;
+        platform = files[0].fsPath;
+      }
+      if (typeof platform !== 'string' || !platform) throw new Error('FULL_PLATFORM_REQUIRED');
       check(); await vscode.commands.executeCommand('setContext','rentgen.platformRunning',true);
       const result = await vscode.window.withProgress({location:vscode.ProgressLocation.Notification,title:`Рентген: проверка версии ${receipt.revision} в 1С`,cancellable:true},async(_,token)=>{
         if (token.isCancellationRequested) throw new Error('PLATFORM_CANCELLED');
         const subscription=token.onCancellationRequested(()=>service.cancel());
-        try {return await service.start(receipt,files[0].fsPath);} finally {subscription.dispose();}
+        try {return await service.start(receipt,platform);} finally {subscription.dispose();}
       });
       return await show(result);
     } finally {busy=false; await vscode.commands.executeCommand('setContext','rentgen.platformRunning',false);}

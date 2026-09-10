@@ -38,7 +38,8 @@ exports.activate = async context => {
     const views = createViews(vscode, client, context);
     // Authorize the project before making its panels available.
     await views.refreshSources();
-    const repair = createRepairUI(vscode, createRepairService({root,extensionRoot:context.extensionPath,config,client,trusted:()=>vscode.workspace.isTrusted}),views,context,config.core_version==='0.1.0.dev7');
+    const repairAvailable = ['0.1.0.dev7','0.1.0.dev8'].includes(config.core_version);
+    const repair = createRepairUI(vscode, createRepairService({root,extensionRoot:context.extensionPath,config,client,trusted:()=>vscode.workspace.isTrusted}),views,context,repairAvailable);
     let nativeRunner;
     const nativeClient = createClient(config,{trusted:()=>vscode.workspace.isTrusted,execute:async(command,args)=>{
       const owned = createRunner({timeout:args[3]==='proposal-platform-check'?660000:30000});
@@ -49,7 +50,7 @@ exports.activate = async context => {
     const platform = createPlatformUI(vscode,createPlatformService({root,config,client:nativeClient,
       trusted:()=>vscode.workspace.isTrusted,cancel:()=>nativeRunner?.dispose()}),views,context,config.core_version==='0.1.0.dev8');
     await vscode.commands.executeCommand('setContext', 'rentgen.ready', true);
-    await vscode.commands.executeCommand('setContext','rentgen.repairAvailable',config.core_version==='0.1.0.dev7');
+    await vscode.commands.executeCommand('setContext','rentgen.repairAvailable',repairAvailable);
     await vscode.commands.executeCommand('setContext','rentgen.platformAvailable',config.core_version==='0.1.0.dev8');
     return Object.freeze({ready: true, projectId: config.project_id, ...views,repairRuns:repair.runs,platformRuns:platform.runs});
   } catch (error) {

@@ -11,7 +11,9 @@ const project = '00000000-0000-4000-8000-000000000001';
 const ref = {snapshot: {project_id: project, snapshot_id: 'a'.repeat(64), manifest_hash: 'a'.repeat(64)}, layer_id:'base', relative_path:'Module.bsl', raw_sha256:'b'.repeat(64)};
 const config = {schema:1, core_version:'0.1.0.dev7', project_id:project, python:'C:\\installed\\python.exe', registry:'C:\\registry.sqlite3'};
 
-test('lost process reply is reconciled from receipts with no second execution', async () => {
+for (const core_version of ['0.1.0.dev7','0.1.0.dev8']) {
+test(`${core_version}: lost process reply is reconciled from receipts with no second execution`, async () => {
+  const selectedConfig = {...config,core_version};
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rentgen-repair-'));
   const operation = randomUUID(), draft = randomUUID(); let executions = 0;
   const saved = {project_id:project, draft_id:draft, revision:2, operation_id:operation, source_ref:ref, proposal_content_id:'c'.repeat(64)};
@@ -22,15 +24,16 @@ test('lost process reply is reconciled from receipts with no second execution', 
     throw new Error('CLI_DISPOSED');
   }};
   const client = {async receipt(id) { assert.equal(id, operation); return saved; }};
-  const service = createRepairService({root, extensionRoot:root, config, client, runnerFactory:()=>runner});
+  const service = createRepairService({root, extensionRoot:root, config:selectedConfig, client, runnerFactory:()=>runner});
   const run = await service.start(ref, {model:'qwen3.5:9b', instruction:'Исправь запись'});
   assert.equal(run.receipt.revision,2); assert.equal(run.status,'saved_unverified');
   service.dispose();
-  const reopened = createRepairService({root, extensionRoot:root, config, client, runnerFactory:()=>{throw new Error('Must not execute again');}});
+  const reopened = createRepairService({root, extensionRoot:root, config:selectedConfig, client, runnerFactory:()=>{throw new Error('Must not execute again');}});
   const list = await reopened.list(); assert.equal(list.length,1);
   assert.deepEqual((await reopened.reconcile(list[0].id)).receipt,saved);
   assert.equal(executions,1); reopened.dispose();
 });
+}
 
 test('foreign selection is refused before writing or starting a process', async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rentgen-repair-refused-'));

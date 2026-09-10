@@ -9,8 +9,6 @@ import re
 import sys
 
 import anyio
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
 
 # Explicit trusted adapter directory; -I keeps ambient project/PYTHONPATH out.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -34,6 +32,9 @@ def read_file(path, limit):
 
 
 async def execute(config, source_ref, instruction, model, output):
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+
     env = {"PYTHONUTF8": "1"}
     if config.get("diagnostics_local_app_data"):
         env["LOCALAPPDATA"] = config["diagnostics_local_app_data"]
@@ -122,6 +123,23 @@ async def execute(config, source_ref, instruction, model, output):
         return report
 
 
+def validate_profile(config, installed_core, installed_mcp, executable):
+    if config.get("schema") != 1 or config.get("core_version") not in {
+        "0.1.0.dev7",
+        "0.1.0.dev8",
+    }:
+        raise ValueError("Use a prepared dev7/dev8 profile")
+    if installed_core != config["core_version"] or installed_mcp != "1.30.0":
+        raise ValueError(
+            "Installed core must match the profile exactly; MCP 1.30.0 required"
+        )
+    if (
+        not isinstance(config.get("python"), str)
+        or Path(executable).resolve() != Path(config["python"]).resolve()
+    ):
+        raise ValueError("Interpreter does not match the selected profile")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ["profile", "source-ref", "instruction", "output"]:
@@ -134,13 +152,13 @@ def main():
     )
     args = parser.parse_args()
     config = strict_json(read_file(args.profile / "profile.json", 65536))
-    if config.get("schema") != 1 or config.get("core_version") != "0.1.0.dev7":
-        parser.error("Use a prepared dev7 profile")
-    if version("rentgen-core") != "0.1.0.dev7" or version("mcp") != "1.30.0":
-        parser.error("Run with the installed core dev7 Python and MCP 1.30.0")
-    if Path(sys.executable).resolve() != Path(config["python"]).resolve():
-        parser.error("Interpreter does not match the selected profile")
-    source_ref = strict_json(read_file(args.source_ref, 8192))
+    try:
+        validate_profile(
+            config, version("rentgen-core"), version("mcp"), sys.executable
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
+    source_ref = strict_json(read_file(args.source_ref, 32768))
     if source_ref["snapshot"]["project_id"] != config["project_id"]:
         parser.error("SourceRef must belong to the profile project")
     instruction = read_file(args.instruction, 4096)

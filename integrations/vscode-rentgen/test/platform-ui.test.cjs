@@ -29,3 +29,12 @@ test('diagnostics and incomplete recovery are not presented as successful tests'
   assert.equal(f.calls.filter(c=>c==='inspect').length,1);
   assert.ok(f.calls.some(c=>typeof c==='string'&&c.includes('не подтверждено')));
 });
+
+test('explicit automation path uses the same minted selection and service',async()=>{
+  const f=fixture();let selected;
+  f.vscode.window.showOpenDialog=async()=>{throw new Error('Unexpected picker');};
+  f.service.start=async(receipt,platform)=>{selected={receipt,platform};return {status:'incomplete'};};
+  await assert.rejects(f.commands.get('rentgen.platformCheck')('forged','C:\\1cv8.exe'),/UNKNOWN_VIEW_HANDLE/);
+  await f.commands.get('rentgen.platformCheck')('minted','C:\\1cv8.exe');
+  assert.deepEqual(selected,{receipt:{revision:2},platform:'C:\\1cv8.exe'});
+});
