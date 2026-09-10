@@ -50,30 +50,24 @@ jobs:
         run: python scripts/release/prepare_companion.py build --tag companion-v0.1.4 --output release-assets
       - name: Build development companion
         run: python integrations/vscode-rentgen/build.py --output output/rentgen-companion-0.1.6-development.vsix
-      - name: Build core with pinned tools
+      - name: Build reproducible kit and verify offline CLI and MCP
         run: |
-          python -m venv .venv-build
-          .\.venv-build\Scripts\python.exe -m pip install --require-hashes --only-binary=:all: -r requirements/locks/product-build-py311-windows.txt
+          python -m pip download --require-hashes --only-binary=:all: -r requirements/locks/mcp-py311-windows.txt --dest output/mcp-wheels
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          .\.venv-build\Scripts\python.exe -m build --no-isolation --outdir output/dist
+          python -m pip download --require-hashes --only-binary=:all: -r requirements/locks/product-build-py311-windows.txt --dest output/build-wheels
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python scripts/release/build_core_kit.py --output output/core-kit --runtime-wheelhouse output/mcp-wheels --build-wheelhouse output/build-wheels
       - name: Verify installed snapshot comparison
-        run: |
-          go -C go build -buildvcs=false -trimpath -o ..\output\bsl-scan.exe ./cmd/bsl-scan
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python -m venv .venv-delivery
-          .\.venv-delivery\Scripts\python.exe -m pip install --no-index --no-deps output/dist/rentgen_core-0.1.0.dev8-py3-none-any.whl
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          .\.venv-delivery\Scripts\python.exe -m pip check
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python scripts/verification/verify_snapshot_diff_delivery.py --python .venv-delivery/Scripts/python.exe --scanner output/bsl-scan.exe --output output/verification
+        run: python scripts/verification/verify_snapshot_diff_delivery.py --python output/core-kit/offline-install/environment/Scripts/python.exe --scanner output/core-kit/rentgen-core-0.1.0.dev8-windows-py311/bsl-scan.exe --output output/verification
       - name: Verify installed observer across processes
-        run: python scripts/verification/verify_observer_delivery.py --python .venv-delivery/Scripts/python.exe --scanner output/bsl-scan.exe --output output/observer-verification
+        run: python scripts/verification/verify_observer_delivery.py --python output/core-kit/offline-install/environment/Scripts/python.exe --scanner output/core-kit/rentgen-core-0.1.0.dev8-windows-py311/bsl-scan.exe --output output/observer-verification
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: verified-core-development
           path: |
-            output/dist/*.whl
-            output/dist/*.tar.gz
+            output/core-kit/rentgen-core-0.1.0.dev8-windows-py311.zip
+            output/core-kit/acceptance.json
+            output/core-kit/offline-install/acceptance.json
             output/verification/acceptance.json
             output/observer-verification/acceptance.json
             output/rentgen-companion-0.1.6-development.vsix

@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "component": "rentgen-core",
+  "version": "0.1.0.dev8",
+  "source_commit": "366f94ee1364d24fe2680ca006dcb117bdbbff06",
+  "platform": "Windows x64 / CPython 3.11.9 / Go 1.25.5",
+  "archive": "rentgen-core-0.1.0.dev8-windows-py311.zip",
+  "archive_sha256": "53888f4910f928f1972dadfa271d7113a3f930943ff8e53f9b3fd00780cc051b",
+  "wheel_sha256": "f968c043a2942ec394c2a120d6069852a6d5964126eb3c3c8ba87a499f4a83d9",
+  "sdist_sha256": "aada270cb5e0880959cf81a53c6a84d55a58b2f7bb56661cf6ead37cd66455ee",
+  "dependency_wheels": 30,
+  "verified_manifest_files": 40,
+  "checks": {
+    "wheel_and_sdist_rebuilt_from_sdist_identical": true,
+    "scanner_separate_build_caches_identical": true,
+    "repeated_kit_archive_identical": true,
+    "fresh_environment_install_no_index_require_hashes": true,
+    "pip_check": true,
+    "installed_cli_and_mcp_workflow": true,
+    "mcp_tool_inventory": 21,
+    "draft_revisions": 4
+  },
+  "limitations": [
+    "Local development evidence, not independent signed attestation",
+    "Build tools downloaded with hash verification; runtime installation used only local wheels",
+    "No model, editor, native 1C, business tests or configuration update acceptance in this run",
+    "No OS network isolation or fresh-machine acceptance",
+    "This archive is a development artifact, not a replacement for accepted dev7 release"
+  ]
+}
