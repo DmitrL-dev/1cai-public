@@ -1,0 +1,110 @@
+{
+  "schema": 1,
+  "accepted": true,
+  "scope": "installed_native_process_ownership_and_storage",
+  "wheel_sha256": "1ada2fe24581040b1da544e4c80dc45ca0e3ff59a9d18a48200286e642be7fe6",
+  "platform_version": "8.3.27.2342",
+  "platform_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+  "python_tests": 203,
+  "execution_policy": "native-resources-v1",
+  "original_yaxunit_report_sha256": "0d9a6a0bfdbd2659dff475277b3a4cc686b383ee346f374d919b659b1c2803ff",
+  "yaxunit": {
+    "baseline": {
+      "status": "failed",
+      "counts": {
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 0
+      },
+      "cases": [
+        {
+          "classname": "ЮТРентгенПроверка.ОшибкаЗаписиПередается",
+          "name": "ОшибкаЗаписиПередается",
+          "context": "Сервер",
+          "outcome": "failure"
+        }
+      ],
+      "junit_sha256": "ce593c3f3442f990ea73e99062e2c68a82bb0c490f62674d9daf95896f2e3373",
+      "exit_file_sha256": "07846b783c23904a75834c1932bc2fad41e388e18bc32ffd73ed87bfa3844d87",
+      "framework_exit_code": 1,
+      "evidence": "parsed_unattested",
+      "native_module_sha256": "f0540440b7a20f136a6c0b97ed5509f55fe7346db735970eb232c3d4f532ddd7",
+      "module_text_verified": true,
+      "client_exit_code": 0,
+      "settings_sha256": "3251d3f1e0d9dad7a9e57ba09eac6060d021f02a9c72bcbd469de27c93243fdc"
+    },
+    "candidate": {
+      "status": "passed",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 1
+      },
+      "cases": [
+        {
+          "classname": "ЮТРентгенПроверка.ОшибкаЗаписиПередается",
+          "name": "ОшибкаЗаписиПередается",
+          "context": "Сервер",
+          "outcome": "passed"
+        }
+      ],
+      "junit_sha256": "9ff9dab94d29a0fb7bd261410bfadfcd78759f40805671d250ef315d84f74730",
+      "exit_file_sha256": "9585fbece5c402088f2d6a2def7e60d1c7ffecc24b16d32d5823a064b008935b",
+      "framework_exit_code": 0,
+      "evidence": "parsed_unattested",
+      "native_module_sha256": "dc573e18f1a3a7f78a2f12541158df138a425c178922ea92bd2f4a0f7ad791e4",
+      "module_text_verified": true,
+      "client_exit_code": 0,
+      "settings_sha256": "f8acd087a84f2f7d9bd2111bd4c468d5ce3c84ed5821809e667c9299ed939c38"
+    }
+  },
+  "scratch_cleanup": {
+    "status": "completed",
+    "released_logical_bytes": 1073742614
+  },
+  "retained_logical_bytes": 44467270,
+  "contention": {
+    "accepted": true,
+    "owner_operation": "6a171ccc-6669-43bc-a4c2-e4212304d09f",
+    "refused_operation": "0bd90f15-ce9f-4689-8e19-7a850fdccec7",
+    "error": "NATIVE_EXECUTOR_BUSY",
+    "attempt_files": [
+      "failure.json",
+      "request.json"
+    ],
+    "retry_after_owner_finished_refused": true
+  },
+  "compilation": {
+    "accepted": true,
+    "installed": true,
+    "native_checks": 2,
+    "candidate_statuses": [
+      "passed",
+      "diagnostics_present"
+    ],
+    "report_ids": [
+      "bf2baa4c-5195-4ed3-ae38-aa57e128746c",
+      "f504e89e-dfec-4dbe-a416-0ba65712a42a"
+    ],
+    "head_and_state_preserved": true,
+    "live_sources_preserved": true,
+    "wrong_executable_hash_refused": true,
+    "completed_replay_preserves_all_native_files": true,
+    "result_lookup_without_sources_or_generations": true,
+    "model_calls": 0,
+    "application_execution": false
+  },
+  "completed_replay_without_changes": true,
+  "source_and_head_preserved": true,
+  "evidence": "local_unattested",
+  "limitations": [
+    "periodic accounting, not OS disk quota",
+    "per-project slot, not host-wide quota",
+    "retained bases/results have no age-based archival yet",
+    "job objects are not filesystem/network or broker-service sandbox"
+  ]
+}

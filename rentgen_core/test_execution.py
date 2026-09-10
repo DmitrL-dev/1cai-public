@@ -90,7 +90,15 @@ def check_proposal_tests(ctx, raw_json, profile_id, operation_id, *, limits):
                     folder.mkdir()
                 except FileExistsError:
                     return replay_run(ctx, operation_id, binding, namespace="test-runs")
-                with _run_attempt(ctx, folder, binding):
+                with _run_attempt(ctx, folder, binding) as resources:
+                    platform = NativePlatform(
+                        platform.executable, platform.executable_sha256, resources.job
+                    )
+
+                    def check():
+                        authorize_run(ctx, profile_id)
+                        resources.check()
+
                     before, after = folder / "baseline", folder / "candidate"
                     before.mkdir()
                     after.mkdir()
@@ -107,9 +115,15 @@ def check_proposal_tests(ctx, raw_json, profile_id, operation_id, *, limits):
                             after,
                             proposal.source_ref.relative_path,
                             folder,
-                            lambda: authorize_run(ctx, profile_id),
+                            check,
                         )
-                    authorize_run(ctx, profile_id)
+                    resources.finished()
+                    check()
+                    from .native_scratch import clear_ibcmd_scratch
+
+                    cleanup = clear_ibcmd_scratch(folder)
+                    resources.finished()
+                    check()
                     report = {
                         "schema": 1,
                         "run_id": operation_id,
@@ -122,6 +136,7 @@ def check_proposal_tests(ctx, raw_json, profile_id, operation_id, *, limits):
                             canonical_bytes(inventories[1])
                         ),
                         "tests": tests,
+                        "scratch_cleanup": cleanup,
                         "apply": {"status": "unavailable"},
                         "evidence": "local_unattested",
                         "runtime_dependencies": "not_fully_pinned",

@@ -8,6 +8,7 @@ import subprocess
 import time
 
 from .errors import CoreError
+from .native_process import OwnedJob, OwnedProcess
 
 
 CONTEXTS = (
@@ -37,6 +38,7 @@ def command_line(arguments):
 class NativePlatform:
     executable: Path
     executable_sha256: str
+    job: OwnedJob | None = None
 
     def __post_init__(self):
         if (
@@ -67,19 +69,11 @@ class NativePlatform:
             "/Out",
             log,
         ]
-        startup = subprocess.STARTUPINFO()
-        startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        startup.wShowWindow = 0
         started = time.monotonic()
         with stdout.open("xb") as out, stderr.open("xb") as err:
-            child = subprocess.Popen(
-                command_line(arguments),
-                executable=str(self.executable),
-                startupinfo=startup,
-                stdout=out,
-                stderr=err,
-            )
-            try:
+            with OwnedProcess(
+                command_line(arguments), self.executable, out, err, parent_job=self.job
+            ) as child:
                 while child.poll() is None:
                     authorize()
                     if time.monotonic() >= min(deadline, started + 120):
@@ -97,15 +91,6 @@ class NativePlatform:
                         child.wait(timeout=0.5)
                     except subprocess.TimeoutExpired:
                         pass
-            finally:
-                if child.poll() is None:
-                    subprocess.run(
-                        ["taskkill", "/PID", str(child.pid), "/T", "/F"],
-                        capture_output=True,
-                        timeout=15,
-                        check=False,
-                    )
-                    child.wait(timeout=15)
         authorize()
         outputs = []
         for path in (log, stdout, stderr):

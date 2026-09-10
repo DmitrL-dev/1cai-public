@@ -31,6 +31,8 @@ def _boundary(name):
 
 @contextmanager
 def _run_attempt(ctx, run, binding):
+    from .native_resources import execution_resources
+
     write_record(
         ctx,
         run,
@@ -42,11 +44,13 @@ def _run_attempt(ctx, run, binding):
             "input": binding,
             "requested_by": asdict(ctx.principal),
             "created_at": datetime.now(timezone.utc).isoformat(),
+            "execution_policy": "native-resources-v1",
         },
     )
     try:
         _boundary("request_published")
-        yield
+        with execution_resources(ctx, run) as resources:
+            yield resources
     except (CoreError, KeyboardInterrupt) as exc:
         _authorize(ctx)
         code = exc.code if isinstance(exc, CoreError) else "PLATFORM_INTERRUPTED"
@@ -247,7 +251,10 @@ def check_proposal_platform_json(ctx, raw_json, platform, *, limits, operation_i
                     run.mkdir()
                 except FileExistsError:
                     return replay_run(ctx, run_id, binding)
-                records.enter_context(_run_attempt(ctx, run, binding))
+                resources = records.enter_context(_run_attempt(ctx, run, binding))
+                platform = NativePlatform(
+                    executable, platform.executable_sha256, resources.job
+                )
                 before, after = run / "baseline", run / "candidate"
                 before.mkdir()
                 after.mkdir()
@@ -261,9 +268,9 @@ def check_proposal_platform_json(ctx, raw_json, platform, *, limits, operation_i
                         after,
                         proposal.source_ref.relative_path,
                         run,
-                        lambda: _authorize(ctx),
+                        resources.check,
                     )
-                _authorize(ctx)
+                resources.finished()
                 result = {
                     "schema": 1,
                     "run_id": run_id,

@@ -10,11 +10,12 @@ from ._windows_source_tree import read_retained
 from .errors import CoreError
 from .manifests import canonical_bytes, sha256
 from .native_platform import CONTEXTS, MAX_LOG
+from .native_process import OwnedProcess
 from .platform_check import _pin_inputs
 from .yaxunit_report import parse_report
 
 
-def _ibcmd(executable, run, base, authorize, deadline, name):
+def _ibcmd(executable, run, base, authorize, deadline, name, parent_job=None):
     args = [
         str(executable),
         "extension",
@@ -28,14 +29,14 @@ def _ibcmd(executable, run, base, authorize, deadline, name):
     paths = [run / (name + ".stdout"), run / (name + ".stderr")]
     authorize()
     with paths[0].open("xb") as stdout, paths[1].open("xb") as stderr:
-        child = subprocess.Popen(
-            args,
-            stdout=stdout,
-            stderr=stderr,
-            creationflags=subprocess.CREATE_NO_WINDOW,
-        )
         started = time.monotonic()
-        try:
+        with OwnedProcess(
+            subprocess.list2cmdline(args),
+            executable,
+            stdout,
+            stderr,
+            parent_job=parent_job,
+        ) as child:
             while child.poll() is None:
                 authorize()
                 if time.monotonic() >= min(deadline, started + 90):
@@ -48,14 +49,6 @@ def _ibcmd(executable, run, base, authorize, deadline, name):
                     child.wait(timeout=0.5)
                 except subprocess.TimeoutExpired:
                     pass
-        finally:
-            if child.poll() is None:
-                subprocess.run(
-                    ["taskkill", "/PID", str(child.pid), "/T", "/F"],
-                    capture_output=True,
-                    timeout=15,
-                )
-                child.wait(timeout=15)
     authorize()
     hashes = [sha256(read_retained(p, MAX_LOG)) for p in paths]
     if child.returncode != 0:
@@ -210,7 +203,13 @@ def run_yaxunit(
         )
         steps.append(
             _ibcmd(
-                ibcmd, run, base, authorize, deadline, phase + "-extension-properties"
+                ibcmd,
+                run,
+                base,
+                authorize,
+                deadline,
+                phase + "-extension-properties",
+                platform.job,
             )
         )
         junit, exit_file = run / (phase + ".junit.xml"), run / (phase + ".exit")

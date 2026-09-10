@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import subprocess
+import sys
 import time
 
 import pytest
@@ -9,6 +10,8 @@ import pytest
 from rentgen_core.errors import CoreError
 from rentgen_core.manifests import canonical_bytes
 from rentgen_core.native_platform import NativePlatform
+from rentgen_core import native_platform
+from rentgen_core.native_process import OwnedProcess
 
 pytestmark = pytest.mark.skipif(os.name != "nt", reason="Windows process contract")
 
@@ -20,11 +23,17 @@ def test_successful_process_result_is_hashable(tmp_path, monkeypatch):
         def poll(self):
             return 0
 
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            pass
+
     def launch(*args, **kwargs):
         (tmp_path / "compile.log").write_text("No errors found", "utf-8")
         return Completed()
 
-    monkeypatch.setattr(subprocess, "Popen", launch)
+    monkeypatch.setattr(native_platform, "OwnedProcess", launch)
     platform = NativePlatform(Path("1cv8.exe"), "0" * 64)
     result = platform.invoke(
         tmp_path, "compile", ["DESIGNER"], lambda: None, time.monotonic() + 5
@@ -34,36 +43,36 @@ def test_successful_process_result_is_hashable(tmp_path, monkeypatch):
 
 
 def test_revocation_terminates_the_owned_native_process(tmp_path, monkeypatch):
-    class Running:
-        pid = 987654
-        returncode = None
+    children, checks = [], []
 
-        def poll(self):
-            return self.returncode
+    def launch(command, executable, out, err, **kwargs):
+        child = OwnedProcess(
+            subprocess.list2cmdline(
+                [sys._base_executable, "-c", "import time;time.sleep(120)"]
+            ),
+            sys._base_executable,
+            out,
+            err,
+        )
+        children.append(child)
+        return child
 
-        def wait(self, timeout):
-            assert self.returncode is not None
-
-    child, calls, checks = Running(), [], []
-    monkeypatch.setattr(subprocess, "Popen", lambda *a, **k: child)
-
-    def kill(args, **kwargs):
-        calls.append(args)
-        child.returncode = 1
+    monkeypatch.setattr(native_platform, "OwnedProcess", launch)
 
     def authorize():
         checks.append(True)
         if len(checks) > 1:
             raise CoreError("PROJECT_FORBIDDEN", "Revoked")
 
-    monkeypatch.setattr(subprocess, "run", kill)
     platform = NativePlatform(Path("1cv8.exe"), "0" * 64)
     with pytest.raises(CoreError) as error:
         platform.invoke(
             tmp_path, "compile", ["DESIGNER"], authorize, time.monotonic() + 5
         )
     assert error.value.code == "PROJECT_FORBIDDEN"
-    assert calls == [["taskkill", "/PID", "987654", "/T", "/F"]]
+    assert len(children) == 1
+    assert children[0].returncode is not None
+    assert children[0].job.handle is None
 
 
 def test_absent_roundtrip_module_never_reaches_compiler(tmp_path, monkeypatch):
