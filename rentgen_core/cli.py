@@ -77,6 +77,9 @@ def _parser():
         "test-profile-register",
         "test-profile-list",
         "test-profile-disable",
+        "edt-profile-register",
+        "edt-profile-list",
+        "edt-profile-disable",
         "proposal-test",
         "proposal-test-result",
         "draft-save",
@@ -108,11 +111,11 @@ def _parser():
             command.add_argument("--operation-id", required=True, action=_Once)
         elif name in {"proposal-platform-result", "proposal-test-result"}:
             command.add_argument("--operation-id", required=True, action=_Once)
-        elif name == "test-profile-register":
+        elif name in {"test-profile-register", "edt-profile-register"}:
             command.add_argument(
                 "--profile-json", type=Path, required=True, action=_Once
             )
-        elif name == "test-profile-disable":
+        elif name in {"test-profile-disable", "edt-profile-disable"}:
             command.add_argument("--profile-id", required=True, action=_Once)
         elif name in {
             "state-migrate",
@@ -618,6 +621,8 @@ def _execute(args, *, proposal_scope=None):
             "membership-receipt",
             "test-profile-register",
             "test-profile-disable",
+            "edt-profile-register",
+            "edt-profile-disable",
         }
         else {"project:read", "source:edit", "analysis:run"}
         if args.command
@@ -628,6 +633,7 @@ def _execute(args, *, proposal_scope=None):
             "proposal-test",
             "proposal-test-result",
             "test-profile-list",
+            "edt-profile-list",
         }
         else {"project:read", "source:edit"}
         if args.command
@@ -645,6 +651,26 @@ def _execute(args, *, proposal_scope=None):
         else set()
     )
     ctx = runtime.state_context(principal, args.project, permissions=permissions)
+    if args.command.startswith("edt-profile-"):
+        from . import edt_profiles
+
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        if args.command == "edt-profile-register":
+            from ._windows_source_tree import read_retained
+
+            value = edt_profiles.register_profile(
+                ctx,
+                edt_profiles.parse_json(
+                    read_retained(args.profile_json.absolute(), 131072)
+                ),
+            )
+        elif args.command == "edt-profile-list":
+            value = edt_profiles.list_profiles(ctx)
+        else:
+            value = edt_profiles.disable_profile(ctx, args.profile_id)
+        return _ProposalCommandResult(value, ctx, frozenset(permissions))
     if (
         args.command.startswith("test-profile-")
         or args.command == "proposal-test-result"

@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "date": "2026-09-10",
+  "implementation": "source checkout, after 8f885a7b; not a published package",
+  "platform": "Windows x64",
+  "edt_core": "27.0.2.v202609041212",
+  "java": "Axiom JDK 17.0.16+12",
+  "registered_runtime_files": 1262,
+  "registered_java_files": 179,
+  "registration_seconds": 36.86,
+  "registration_and_input_pinning_seconds": 45.11,
+  "total_seconds": 59.92,
+  "held_input_hashes_verified": true,
+  "mcp_initialize": {
+    "server": "edt-mcp-server",
+    "version": "2.16.1",
+    "protocol": "2025-11-25"
+  },
+  "list_projects_succeeded": true,
+  "owned_process_closed": true,
+  "project_model_readiness_tested": false,
+  "metadata_write_tested": false,
+  "business_data_tested": false,
+  "profile_qualification_remains": "not_run"
+}
