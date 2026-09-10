@@ -1,38 +1,79 @@
 """Native compilation of a pinned proposal in an owned, separate infobase."""
 from contextlib import contextmanager, ExitStack
 from dataclasses import asdict
+from datetime import datetime, timezone
 import hashlib
-import json
 from uuid import uuid4
 
 from .errors import CoreError
 from .manifests import canonical_bytes, sha256
 from .metadata_xml import parse_xml
 from .native_platform import NativePlatform
+from .platform_runs import (
+    PERMISSIONS,
+    _authorize,
+    _authorized,
+    replay_run,
+    run_path,
+    write_record,
+)
 from .proposals import parse_proposal
 from .sources import SnapshotReadLimits
 
 
-PERMISSIONS = frozenset({"project:read", "source:edit", "analysis:run"})
 MAX_TOTAL = 256 * 1024 * 1024
 MAX_FILE = 64 * 1024 * 1024
 
 
-def _authorize(ctx):
-    with ctx.state.transaction(ctx.principal) as tx:
-        tx.require_all(PERMISSIONS)
+def _boundary(name):
+    """Fault injection for local contract tests; never a transport option."""
 
 
 @contextmanager
-def _authorized(ctx):
-    _authorize(ctx)
+def _run_attempt(ctx, run, binding):
+    write_record(
+        ctx,
+        run,
+        "request",
+        {
+            "schema": 1,
+            "run_id": run.name,
+            "project_id": ctx.project_id,
+            "input": binding,
+            "requested_by": asdict(ctx.principal),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        },
+    )
     try:
+        _boundary("request_published")
         yield
-    finally:
-        try:
-            _authorize(ctx)
-        except BaseException as exc:
-            raise exc from None
+    except (CoreError, KeyboardInterrupt) as exc:
+        _authorize(ctx)
+        code = exc.code if isinstance(exc, CoreError) else "PLATFORM_INTERRUPTED"
+        details = {
+            **(exc.details if isinstance(exc, CoreError) else {}),
+            "run_id": run.name,
+        }
+        if not (run / "report.json").exists():
+            write_record(
+                ctx,
+                run,
+                "failure",
+                {
+                    "schema": 1,
+                    "run_id": run.name,
+                    "project_id": ctx.project_id,
+                    "code": code,
+                    "details": details,
+                },
+            )
+        raise CoreError(
+            code,
+            str(exc)
+            if isinstance(exc, CoreError)
+            else "Native check interrupted; query its operation ID",
+            details=details,
+        ) from exc
 
 
 @contextmanager
@@ -147,7 +188,7 @@ def _materialize(ctx, proposal, before, after):
     return tuple(sorted(items, key=lambda i: i["path"]) for items in inventories)
 
 
-def check_proposal_platform_json(ctx, raw_json, platform, *, limits):
+def check_proposal_platform_json(ctx, raw_json, platform, *, limits, operation_id=None):
     """Trusted local entry; CLI authenticates before opening proposal/executable paths."""
     from ._windows_source_tree import pinned_directory, pinned_retained
 
@@ -177,6 +218,17 @@ def check_proposal_platform_json(ctx, raw_json, platform, *, limits):
                 "One captured Designer XML base layer required",
             )
         executable = platform.executable.absolute()
+        run_id = str(uuid4()) if operation_id is None else operation_id
+        run = run_path(ctx, run_id)
+        binding = {
+            "source_ref": asdict(proposal.source_ref),
+            "proposal_content_id": proposal.content_id,
+            "platform_executable": str(executable),
+            "platform_executable_sha256": platform.executable_sha256,
+            "profile": "native-compile-v1",
+        }
+        if run.exists():
+            return replay_run(ctx, run_id, binding)
         with pinned_retained(executable, MAX_FILE) as raw:
             if sha256(raw) != platform.executable_sha256:
                 raise CoreError(
@@ -190,10 +242,12 @@ def check_proposal_platform_json(ctx, raw_json, platform, *, limits):
                     "PLATFORM_WORKSPACE_INVALID", "Unsupported connection path"
                 )
             parent.mkdir(exist_ok=True)
-            with pinned_directory(parent):
-                run_id = str(uuid4())
-                run = parent / run_id
-                run.mkdir()
+            with pinned_directory(parent), ExitStack() as records:
+                try:
+                    run.mkdir()
+                except FileExistsError:
+                    return replay_run(ctx, run_id, binding)
+                records.enter_context(_run_attempt(ctx, run, binding))
                 before, after = run / "baseline", run / "candidate"
                 before.mkdir()
                 after.mkdir()
@@ -226,15 +280,6 @@ def check_proposal_platform_json(ctx, raw_json, platform, *, limits):
                     "apply": {"status": "unavailable"},
                 }
                 result["report_sha256"] = sha256(canonical_bytes(result))
-                encoded = json.dumps(
-                    result, ensure_ascii=False, allow_nan=False
-                ).encode("utf-8")
-                if len(encoded) > 1536 * 1024:
-                    raise CoreError(
-                        "PLATFORM_OUTPUT_LIMIT", "Native result exceeds 1.5 MiB"
-                    )
-                with ctx.state.transaction(ctx.principal) as tx:
-                    tx.require_all(PERMISSIONS)
-                    with (run / "report.json").open("xb") as stream:
-                        stream.write(encoded)
+                write_record(ctx, run, "report", result)
+                _boundary("report_published")
                 return result

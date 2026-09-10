@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+from uuid import uuid4
 
 
 def sha(path):
@@ -132,6 +133,8 @@ def verify(python, scanner, platform, fixture, output):
         proposal_path = output / (name + ".proposal.json")
         proposal_path.write_text(json.dumps(proposal, ensure_ascii=False), "utf-8")
         common = [
+            "--operation-id",
+            str(uuid4()),
             "--snapshot",
             snapshot,
             "--proposal-json",
@@ -160,11 +163,52 @@ def verify(python, scanner, platform, fixture, output):
             output / "state/platform-checks" / result["run_id"] / "report.json"
         )
         assert json.loads(report_file.read_text("utf-8")) == result
+        native_files = {
+            p.relative_to(report_file.parent).as_posix(): (sha(p), p.stat().st_mtime_ns)
+            for p in report_file.parent.rglob("*")
+            if p.is_file()
+        }
+        repeated = command(
+            "proposal-platform-check", *common, "--platform-sha256", sha(platform)
+        )
+        assert repeated == result
+        assert {
+            p.relative_to(report_file.parent).as_posix(): (sha(p), p.stat().st_mtime_ns)
+            for p in report_file.parent.rglob("*")
+            if p.is_file()
+        } == native_files
+        fetched = command(
+            "proposal-platform-result", "--operation-id", result["run_id"]
+        )
+        assert fetched["status"] == "completed" and fetched["report"] == result
         reports.append(result)
         print(
             json.dumps({"proposal": name, "baseline": "passed", "candidate": expected}),
             flush=True,
         )
+    # Only verifier-owned directories are moved, within this exclusively created
+    # output. A result lookup must not need live files or retained generations.
+    moves = [
+        (source, output / "source-offline"),
+        (output / "state/generations", output / "generations-offline"),
+    ]
+    moved = []
+    try:
+        for current, offline in moves:
+            assert current.resolve().is_relative_to(
+                output
+            ) and offline.resolve().is_relative_to(output)
+            assert not offline.exists() and not current.is_symlink()
+            current.rename(offline)
+            moved.append((current, offline))
+        for result in reports:
+            fetched = command(
+                "proposal-platform-result", "--operation-id", result["run_id"]
+            )
+            assert fetched["report"] == result
+    finally:
+        for current, offline in reversed(moved):
+            offline.rename(current)
     assert command("project-head") == head
     assert sha(output / "state/state.sqlite3") == state_hash
     assert {
@@ -181,6 +225,8 @@ def verify(python, scanner, platform, fixture, output):
         "head_and_state_preserved": True,
         "live_sources_preserved": True,
         "wrong_executable_hash_refused": True,
+        "completed_replay_preserves_all_native_files": True,
+        "result_lookup_without_sources_or_generations": True,
         "model_calls": 0,
         "application_execution": False,
     }

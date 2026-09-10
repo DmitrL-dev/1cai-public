@@ -73,6 +73,7 @@ def _parser():
         "proposal-diff",
         "proposal-check",
         "proposal-platform-check",
+        "proposal-platform-result",
         "draft-save",
         "draft-get",
         "draft-list",
@@ -99,6 +100,8 @@ def _parser():
                 "--layers-json", type=Path, required=True, action=_Once
             )
         elif name == "publication-receipt":
+            command.add_argument("--operation-id", required=True, action=_Once)
+        elif name == "proposal-platform-result":
             command.add_argument("--operation-id", required=True, action=_Once)
         elif name in {
             "state-migrate",
@@ -189,6 +192,7 @@ def _parser():
                     "--diagnostics-profile", required=True, action=_Once
                 )
             if name == "proposal-platform-check":
+                command.add_argument("--operation-id", action=_Once)
                 command.add_argument(
                     "--platform", type=Path, required=True, action=_Once
                 )
@@ -504,6 +508,7 @@ def _proposal_command(args, runtime, state_ctx):
                 raw,
                 NativePlatform(args.platform, args.platform_sha256),
                 limits=limits,
+                operation_id=args.operation_id,
             )
             return _ProposalCommandResult(result, state_ctx, permissions)
         if args.command == "proposal-check":
@@ -585,7 +590,8 @@ def _execute(args, *, proposal_scope=None):
             "membership-receipt",
         }
         else {"project:read", "source:edit", "analysis:run"}
-        if args.command in {"proposal-check", "proposal-platform-check"}
+        if args.command
+        in {"proposal-check", "proposal-platform-check", "proposal-platform-result"}
         else {"project:read", "source:edit"}
         if args.command
         in {
@@ -602,6 +608,15 @@ def _execute(args, *, proposal_scope=None):
         else set()
     )
     ctx = runtime.state_context(principal, args.project, permissions=permissions)
+    if args.command == "proposal-platform-result":
+        from .platform_runs import get_platform_run
+
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        return _ProposalCommandResult(
+            get_platform_run(ctx, args.operation_id), ctx, frozenset(permissions)
+        )
     if args.command.startswith("draft-"):
         if proposal_scope is not None:
             proposal_scope.context = ctx
