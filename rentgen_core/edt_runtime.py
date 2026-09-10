@@ -1,6 +1,6 @@
 """Owned local EDT workspace and transport; no arbitrary backend connection."""
 import asyncio
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, ExitStack
 from pathlib import Path
 import secrets
 import socket
@@ -13,6 +13,7 @@ from .edt_profiles import authorize_run, pinned_runtime
 from .errors import CoreError
 from .native_process import OwnedProcess
 from .native_resources import DiskBudget, project_slot
+from .platform_check import _pin_inputs
 from .snapshots import validate_operation_id
 
 
@@ -66,8 +67,8 @@ def _preferences(workspace, port, token):
 
 
 @asynccontextmanager
-async def edt_session(ctx, profile_id, operation_id):
-    """Internal backend session. Caller must materialize retained input and verify output.
+async def edt_session(ctx, profile_id, operation_id, *, plan):
+    """Internal backend session with validated, retained snapshot inputs.
 
     An existing operation directory is never restarted. It requires reconciliation
     by the metadata workflow, which also owns snapshot/UUID and apply semantics.
@@ -75,8 +76,10 @@ async def edt_session(ctx, profile_id, operation_id):
     import httpx
     from mcp import ClientSession
     from mcp.client.streamable_http import streamablehttp_client
+    from .metadata_plans import materialize, validate_plan
 
     authorize_run(ctx, profile_id)
+    plan = validate_plan(ctx, plan)
     validate_operation_id(operation_id)
     root = ctx.state.path.parent
     with project_slot(root) as job, pinned_runtime(ctx, profile_id) as definition:
@@ -91,7 +94,7 @@ async def edt_session(ctx, profile_id, operation_id):
                     "EDT_RECONCILIATION_REQUIRED",
                     "Operation directory already exists; do not restart",
                 ) from exc
-            with pinned_directory(run):
+            with pinned_directory(run), ExitStack() as input_pins:
                 write_record(
                     run / "runtime-request.json",
                     {
@@ -99,10 +102,13 @@ async def edt_session(ctx, profile_id, operation_id):
                         "project_id": ctx.project_id,
                         "operation_id": operation_id,
                         "profile_id": profile_id,
+                        "plan": plan,
                     },
                 )
                 budget = DiskBudget(root, run)
                 budget.check(force=True)
+                inventory = materialize(ctx, plan, run / "input")
+                input_pins.enter_context(_pin_inputs(run / "input", inventory))
                 workspace = run / "workspace"
                 token = secrets.token_hex(32)
                 with socket.socket() as sock:

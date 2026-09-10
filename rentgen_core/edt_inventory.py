@@ -15,8 +15,17 @@ BOOT = (
 
 
 def inventory(root, *, java=False, authorize=lambda: None, hashes=True):
-    root = Path(root)
     starts = ("bin", "lib", "conf", "release") if java else ("plugins", *BOOT)
+    return _inventory(root, starts, authorize=authorize, hashes=hashes)
+
+
+def exported_inventory(root, *, authorize):
+    """Bounded complete export inventory, including unknown files."""
+    return _inventory(root, (".",), authorize=authorize, hashes=True)
+
+
+def _inventory(root, starts, *, authorize, hashes):
+    root = Path(root)
     todo = [root / p for p in starts]
     rows, total, visited = [], 0, 0
     ops = WindowsHandleOps()

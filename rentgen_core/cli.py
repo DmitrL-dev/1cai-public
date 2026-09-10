@@ -80,6 +80,9 @@ def _parser():
         "edt-profile-register",
         "edt-profile-list",
         "edt-profile-disable",
+        "metadata-plan",
+        "metadata-preview",
+        "metadata-result",
         "proposal-test",
         "proposal-test-result",
         "draft-save",
@@ -94,7 +97,20 @@ def _parser():
         command.add_argument("--registry", required=True, type=Path, action=_Once)
         if name not in ("registry-init", "project-register", "project-list"):
             command.add_argument("--project", required=True, action=_Once)
-        if name == "project-register":
+        if name.startswith("metadata-"):
+            command.add_argument("--snapshot", required=True, action=_Once)
+            if name == "metadata-plan":
+                command.add_argument(
+                    "--request-json", type=Path, required=True, action=_Once
+                )
+            if name == "metadata-preview":
+                command.add_argument(
+                    "--plan-json", type=Path, required=True, action=_Once
+                )
+                command.add_argument("--profile-id", required=True, action=_Once)
+            if name in {"metadata-preview", "metadata-result"}:
+                command.add_argument("--operation-id", required=True, action=_Once)
+        elif name == "project-register":
             for option in ("source-root", "state-root"):
                 command.add_argument(
                     "--" + option, type=Path, required=True, action=_Once
@@ -634,6 +650,9 @@ def _execute(args, *, proposal_scope=None):
             "proposal-test-result",
             "test-profile-list",
             "edt-profile-list",
+            "metadata-plan",
+            "metadata-preview",
+            "metadata-result",
         }
         else {"project:read", "source:edit"}
         if args.command
@@ -651,6 +670,33 @@ def _execute(args, *, proposal_scope=None):
         else set()
     )
     ctx = runtime.state_context(principal, args.project, permissions=permissions)
+    if args.command.startswith("metadata-"):
+        import asyncio
+        from .edt_profiles import parse_json
+        from .metadata_plans import create_plan
+        from .metadata_runs import create_preview, get_preview
+
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        runtime = replace(
+            runtime,
+            graph_reader_factory=runtime.graph_reader_factory or _graph_factory(),
+        )
+        selected = runtime.resolve(ctx.principal, ctx.project_id, args.snapshot)
+        if args.command == "metadata-plan":
+            raw = _proposal_input(ctx, args.request_json, 8192, permissions=permissions)
+            value = create_plan(selected, parse_json(raw))
+        elif args.command == "metadata-preview":
+            raw = _proposal_input(ctx, args.plan_json, 32768, permissions=permissions)
+            value = asyncio.run(
+                create_preview(
+                    selected, parse_json(raw), args.profile_id, args.operation_id
+                )
+            )
+        else:
+            value = get_preview(selected, args.operation_id)
+        return _ProposalCommandResult(value, ctx, frozenset(permissions))
     if args.command.startswith("edt-profile-"):
         from . import edt_profiles
 

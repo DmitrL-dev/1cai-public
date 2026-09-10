@@ -78,6 +78,7 @@ only-include = [
   "docs/product/EDT-PROFILES.md",
   "docs/product/EDT-ADAPTER-PLAN.md",
   "docs/product/EDT-EXECUTION.md",
+  "docs/product/METADATA-PREVIEW.md",
   "docs/product/NATIVE-RESOURCES.md",
   "docs/product/evidence/native-resources.json",
   "docs/product/EDITOR-TESTS.md",

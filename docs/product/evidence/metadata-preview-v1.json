@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "date": "2026-09-10",
+  "implementation": "source checkout after 01169e73; not installed new wheel",
+  "plan_id": "fb0d7465817d9b4ecd90b56183607dd1251b9ad96ad8a84e9d013a33338debef",
+  "preview_id": "31ab5c6d1c57dc3a269f48481732b4717a8140ba20b4c6fefe2643f98a09c8fe",
+  "snapshot": {
+    "manifest_hash": "a68d2bafba7f708242c24eca77fad90ed3d10e941b945e54380eb035635c0982",
+    "project_id": "0c48f2e6-3ee8-4bcf-b125-bb0f7bace00d",
+    "snapshot_id": "a68d2bafba7f708242c24eca77fad90ed3d10e941b945e54380eb035635c0982"
+  },
+  "input_files": 5,
+  "cli_verified": [
+    "metadata-plan",
+    "metadata-result",
+    "metadata-preview"
+  ],
+  "readback_and_replay_equal": true,
+  "normalization_changed_files": [
+    "Catalogs/Products.xml",
+    "Catalogs/Products/Forms/ItemForm/Ext/Form.xml"
+  ],
+  "edit_changed_files": [
+    "Catalogs/Products.xml",
+    "Catalogs/Products/Forms/ItemForm/Ext/Form.xml"
+  ],
+  "workflow_platform_check": "not_run",
+  "workflow_business_data_test": "not_run",
+  "apply": {
+    "status": "unavailable",
+    "reasons": [
+      "normalization_not_qualified",
+      "apply_undo_not_implemented"
+    ]
+  },
+  "separate_native_verification": {
+    "candidate_inventory": [
+      {
+        "path": "Catalogs/Products/Forms/ItemForm/Ext/Form.xml",
+        "size": 2251,
+        "sha256": "fd702f5c947c20ee22785bd2ade7710987543610a1e0f35af6078722dfac6507"
+      },
+      {
+        "path": "Catalogs/Products/Forms/ItemForm.xml",
+        "size": 1191,
+        "sha256": "29c4effcc9ddabafc8d319cc89865cffffe3d8758b7428e6414c358b996228e3"
+      },
+      {
+        "path": "Catalogs/Products.xml",
+        "size": 5818,
+        "sha256": "8f1cf1e8d77ffe142a56c6bd4e4252d49e33059d0600aa55f9097a85f0fbfc48"
+      },
+      {
+        "path": "Configuration.xml",
+        "size": 10423,
+        "sha256": "0e2f3a7f0b1f527997364ae63b3246cceff2f3913268872879d7afae9ceddf02"
+      },
+      {
+        "path": "Languages/Russian.xml",
+        "size": 1237,
+        "sha256": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1"
+      }
+    ],
+    "platform_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+    "native_load_update_check_dump": true,
+    "structure": {
+      "catalog_uuid": "fb28b18e-d2a3-4f48-8390-c0d609c9e7c0",
+      "attribute_uuid": "eb298009-8fc5-4a2f-8812-902daeed99df",
+      "attribute": "SKU",
+      "string_length": 32,
+      "form_binding": "Объект.SKU",
+      "form_uuid": "44821c5c-7eaf-4b40-ba04-dc79e0c71268",
+      "field_id": "7",
+      "main_attribute_id": "1"
+    },
+    "business_data_execution": false,
+    "snapshot_binding": true,
+    "product_apply_undo": false
+  }
+}
