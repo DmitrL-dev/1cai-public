@@ -1,0 +1,137 @@
+{
+  "schema": 1,
+  "accepted": true,
+  "platform_executable_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+  "configuration_uuid": "6d89f0d3-787b-4eff-a770-687638cd0a85",
+  "module_uuid": "2fa1e295-e58e-4786-96aa-921f4cd73b37",
+  "native_uuid_preserved": true,
+  "compiler_rejects_broken_bsl": true,
+  "repaired_bsl_roundtrip": true,
+  "baseline_preserved": true,
+  "runtime_values": {
+    "initial": 42,
+    "after_rejection": 42,
+    "repaired": 43
+  },
+  "model_calls": 0,
+  "not_verified": [
+    "forms",
+    "vendor updates",
+    "rollback",
+    "ibcmd"
+  ],
+  "date": "2026-09-10",
+  "platform_version": "8.3.27.2342",
+  "source": "Developer-owned local Windows test, not GitHub CI or independent attestation",
+  "verifier": "scripts/verification/verify_native_platform.py",
+  "verifier_sha256": "5cafef21860fffef94952b9659fe30a37ce1828f809e7a6b7704f0b463a41f11",
+  "full_local_report_sha256": "092a0fd59c94660854d876c5b32c3a192122139a5a57d0dba4926fe5ef9d8e9e",
+  "output_path_contained_spaces_and_cyrillic": true,
+  "steps": [
+    {
+      "name": "create",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.062,
+      "log_sha256": "b879da203c9113ff6921647c2bf610f615fe22acda0fecea0170bb31bd75ce96"
+    },
+    {
+      "name": "baseline",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.188,
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "name": "load-good",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.485,
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "name": "check-good",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.14,
+      "log_sha256": "db2fafff0ffb270936356597f1d2bed48d5f0383744e0832be3af4e824567dc8"
+    },
+    {
+      "name": "update-good",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.172,
+      "log_sha256": "b8bc7e061ae96eb8c90f5519a1033d4a54e6bfc73a74e2ee071aef6f28d00685"
+    },
+    {
+      "name": "execute-good",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.672,
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "name": "first-roundtrip",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.281,
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "name": "load-broken",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.5,
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "name": "check-broken",
+      "exit_code": 101,
+      "timed_out": false,
+      "elapsed_seconds": 3.157,
+      "log_sha256": "b0747cd3d8ff219d3fe152f3d7c49d290f1f45e7aebb51bed93175986ddbee2d"
+    },
+    {
+      "name": "execute-after-rejection",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.656,
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "name": "load-repaired",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.453,
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "name": "check-repaired",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.125,
+      "log_sha256": "db2fafff0ffb270936356597f1d2bed48d5f0383744e0832be3af4e824567dc8"
+    },
+    {
+      "name": "update-repaired",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.219,
+      "log_sha256": "b8bc7e061ae96eb8c90f5519a1033d4a54e6bfc73a74e2ee071aef6f28d00685"
+    },
+    {
+      "name": "execute-repaired",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.625,
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "name": "final-roundtrip",
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.219,
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    }
+  ]
+}

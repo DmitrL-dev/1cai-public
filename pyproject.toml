@@ -69,6 +69,9 @@ only-include = [
   "docs/product/SNAPSHOT-PUBLICATION-ADR.md",
   "docs/product/SNAPSHOT-DIFF.md",
   "docs/product/OBSERVER.md",
+  "scripts/verification/verify_native_platform.py",
+  "docs/product/PLATFORM-ACCEPTANCE.md",
+  "docs/product/evidence/native-platform-8.3.27.2342.json",
 ]
 exclude = ["__pycache__", "*.pyc", "*.pyo"]
 
