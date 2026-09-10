@@ -9,6 +9,8 @@ const { createRepairService } = require('./lib/repair.cjs');
 const { createRepairUI } = require('./lib/repair-ui.cjs');
 const { createPlatformService } = require('./lib/platform.cjs');
 const { createPlatformUI } = require('./lib/platform-ui.cjs');
+const { createEditService } = require('./lib/edit.cjs');
+const { createEditUI } = require('./lib/edit-ui.cjs');
 
 exports.activate = async context => {
   const initialSubscriptions = context.subscriptions.length;
@@ -17,6 +19,7 @@ exports.activate = async context => {
   await vscode.commands.executeCommand('setContext', 'rentgen.repairRunning', false);
   await vscode.commands.executeCommand('setContext', 'rentgen.platformAvailable', false);
   await vscode.commands.executeCommand('setContext', 'rentgen.platformRunning', false);
+  await vscode.commands.executeCommand('setContext', 'rentgen.editAvailable', false);
   if (!vscode.workspace.isTrusted) return Object.freeze({ready: false, error: 'TRUST_REQUIRED'});
   const root = process.env.RENTGEN_EDITOR_PROFILE;
   if (!root) return Object.freeze({ready: false, error: 'EDITOR_PROFILE_REQUIRED'});
@@ -40,6 +43,7 @@ exports.activate = async context => {
     await views.refreshSources();
     const repairAvailable = ['0.1.0.dev7','0.1.0.dev8'].includes(config.core_version);
     const repair = createRepairUI(vscode, createRepairService({root,extensionRoot:context.extensionPath,config,client,trusted:()=>vscode.workspace.isTrusted}),views,context,repairAvailable);
+    const edit=createEditUI(vscode,createEditService({root,config,client,trusted:()=>vscode.workspace.isTrusted}),views,context,repairAvailable);
     let nativeRunner;
     const nativeClient = createClient(config,{trusted:()=>vscode.workspace.isTrusted,execute:async(command,args)=>{
       const owned = createRunner({timeout:args[3]==='proposal-platform-check'?660000:30000});
@@ -52,7 +56,8 @@ exports.activate = async context => {
     await vscode.commands.executeCommand('setContext', 'rentgen.ready', true);
     await vscode.commands.executeCommand('setContext','rentgen.repairAvailable',repairAvailable);
     await vscode.commands.executeCommand('setContext','rentgen.platformAvailable',config.core_version==='0.1.0.dev8');
-    return Object.freeze({ready: true, projectId: config.project_id, ...views,repairRuns:repair.runs,platformRuns:platform.runs});
+    await vscode.commands.executeCommand('setContext','rentgen.editAvailable',repairAvailable);
+    return Object.freeze({ready: true, projectId: config.project_id, ...views,repairRuns:repair.runs,platformRuns:platform.runs,editSessions:edit.sessions});
   } catch (error) {
     for (const subscription of context.subscriptions.splice(initialSubscriptions).reverse()) subscription.dispose();
     void vscode.window.showErrorMessage('Рентген: не удалось открыть профиль. ' + error.message);

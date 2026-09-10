@@ -49,7 +49,7 @@ jobs:
         working-directory: output/accepted-companion
         run: python scripts/release/prepare_companion.py build --tag companion-v0.1.4 --output release-assets
       - name: Build development companion
-        run: python integrations/vscode-rentgen/build.py --output output/rentgen-companion-0.1.5-development.vsix
+        run: python integrations/vscode-rentgen/build.py --output output/rentgen-companion-0.1.6-development.vsix
       - name: Build core with pinned tools
         run: |
           python -m venv .venv-build
@@ -76,6 +76,6 @@ jobs:
             output/dist/*.tar.gz
             output/verification/acceptance.json
             output/observer-verification/acceptance.json
-            output/rentgen-companion-0.1.5-development.vsix
+            output/rentgen-companion-0.1.6-development.vsix
           if-no-files-found: error
           retention-days: 14

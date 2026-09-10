@@ -173,7 +173,7 @@ def prepare(
             "diagnostics_local_app_data": str(diagnostics_local_app_data)
             if diagnostics_local_app_data
             else None,
-            "companion_version": "0.1.5",
+            "companion_version": "0.1.6",
             "companion_sha256": hashlib.sha256(companion).hexdigest(),
             "head_at_setup": head,
         },

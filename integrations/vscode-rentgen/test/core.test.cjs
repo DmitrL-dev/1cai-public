@@ -102,3 +102,14 @@ test('native check binds selected snapshot, proposal and executable; old profile
   reply={...reply,proposal_content_id:'d'.repeat(64)};
   await assert.rejects(client.platformCheck(options),/PLATFORM_RESULT_MISMATCH/);
 });
+
+test('manual publication binds expected revision and operation; foreign receipt is refused',async()=>{
+  const base={project_id:project,draft_id:draft,revision:2,title:'Правка',source_ref:ref,proposal_content_id:'b'.repeat(64)};
+  const operation='00000000-0000-4000-8000-000000000003';let args;
+  let reply={...base,revision:3,operation_id:operation,proposal_content_id:'c'.repeat(64)};
+  const client=createClient({...config,core_version:'0.1.0.dev8'},{execute:async(_,value)=>{args=value;return output(reply);}});
+  assert.deepEqual(await client.saveDraft(base,'C:\\owned\\proposal.json','c'.repeat(64),operation),reply);
+  assert.equal(args[3],'draft-save');assert.equal(args[args.indexOf('--expected-revision')+1],'2');
+  assert.equal(args[args.indexOf('--operation-id')+1],operation);
+  reply={...reply,revision:4};await assert.rejects(client.saveDraft(base,'C:\\owned\\proposal.json','c'.repeat(64),operation),/DRAFT_REVISION_MISMATCH/);
+});

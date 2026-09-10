@@ -162,6 +162,23 @@ function createClient(config, { execute, trusted = () => true }) {
       draftText(value, config.project_id, id, revision);
       return value;
     },
+    async createProposal(ref, refFile, replacementFile) {
+      ref=sourceRef(ref,config.project_id);
+      for(const value of [refFile,replacementFile]) requireValue(typeof value==='string'&&/^[A-Za-z]:\\/.test(value)&&!controls.test(value),'INVALID_EDIT_PATH');
+      const value=(await call('proposal-create',['--snapshot',ref.snapshot.snapshot_id,'--source-ref-json',refFile,'--replacement-file',replacementFile])).proposal;
+      sameRef(value?.source_ref,ref,config.project_id);requireValue(hash.test(value.content_id)&&value.original?.raw_sha256===ref.raw_sha256);
+      decode(value.replacement?.base64,value.replacement?.size_bytes,value.replacement?.raw_sha256);
+      return value;
+    },
+    async saveDraft(base, proposalFile, contentId, operation) {
+      receipt(base,config.project_id);requireValue(uuid.test(operation)&&hash.test(contentId));
+      requireValue(typeof proposalFile==='string'&&/^[A-Za-z]:\\/.test(proposalFile)&&!controls.test(proposalFile),'INVALID_EDIT_PATH');
+      const value=await call('draft-save',['--draft-id',base.draft_id,'--operation-id',operation,'--expected-revision',String(base.revision),
+        '--snapshot',base.source_ref.snapshot.snapshot_id,'--proposal-json',proposalFile,'--title',base.title]);
+      receipt(value,config.project_id);sameRef(value.source_ref,base.source_ref,config.project_id);
+      requireValue(value.draft_id===base.draft_id&&value.revision===base.revision+1&&value.operation_id===operation&&value.proposal_content_id===contentId,'DRAFT_REVISION_MISMATCH');
+      return value;
+    },
     async platformCheck({id, ref, contentId, proposal, platform, platformHash}) {
       requireValue(config.core_version === '0.1.0.dev8', 'PLATFORM_REQUIRES_DEV8');
       requireValue(uuid.test(id) && hash.test(platformHash) && hash.test(contentId));
