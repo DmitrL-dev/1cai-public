@@ -72,6 +72,7 @@ def _parser():
         "proposal-create",
         "proposal-diff",
         "proposal-check",
+        "proposal-platform-check",
         "draft-save",
         "draft-get",
         "draft-list",
@@ -165,7 +166,12 @@ def _parser():
                 )
             if name == "draft-history":
                 command.add_argument("--before-revision", type=int, action=_Once)
-        if name in {"proposal-create", "proposal-diff", "proposal-check"}:
+        if name in {
+            "proposal-create",
+            "proposal-diff",
+            "proposal-check",
+            "proposal-platform-check",
+        }:
             command.add_argument("--snapshot", required=True, action=_Once)
             if name == "proposal-create":
                 command.add_argument(
@@ -182,6 +188,11 @@ def _parser():
                 command.add_argument(
                     "--diagnostics-profile", required=True, action=_Once
                 )
+            if name == "proposal-platform-check":
+                command.add_argument(
+                    "--platform", type=Path, required=True, action=_Once
+                )
+                command.add_argument("--platform-sha256", required=True, action=_Once)
         if name == "snapshot-diff":
             command.add_argument("--before", required=True, action=_Once)
             command.add_argument("--after", required=True, action=_Once)
@@ -443,7 +454,7 @@ def _proposal_command(args, runtime, state_ctx):
     # CLI paths are explicit local inputs, never accepted by an MCP tool. No
     # payload, generation or adapter is opened before current editing rights.
     permissions = frozenset({"project:read", "source:edit"})
-    if args.command == "proposal-check":
+    if args.command in {"proposal-check", "proposal-platform-check"}:
         permissions = permissions | {"analysis:run"}
     try:
         _proposal_permissions(state_ctx, permissions)
@@ -477,6 +488,24 @@ def _proposal_command(args, runtime, state_ctx):
         )
 
         limits = ProposalLimits(1048576, 1048576, 1572864, 262144)
+        if args.command == "proposal-platform-check":
+            from .native_platform import NativePlatform
+            from .platform_check import check_proposal_platform_json
+
+            raw = _proposal_input(
+                state_ctx,
+                args.proposal_json,
+                limits.max_canonical_bytes,
+                permissions=permissions,
+            )
+            _proposal_permissions(state_ctx, permissions)
+            result = check_proposal_platform_json(
+                ctx,
+                raw,
+                NativePlatform(args.platform, args.platform_sha256),
+                limits=limits,
+            )
+            return _ProposalCommandResult(result, state_ctx, permissions)
         if args.command == "proposal-check":
             from .diagnostics import diagnose_proposal_json
 
@@ -556,7 +585,7 @@ def _execute(args, *, proposal_scope=None):
             "membership-receipt",
         }
         else {"project:read", "source:edit", "analysis:run"}
-        if args.command == "proposal-check"
+        if args.command in {"proposal-check", "proposal-platform-check"}
         else {"project:read", "source:edit"}
         if args.command
         in {
@@ -580,7 +609,12 @@ def _execute(args, *, proposal_scope=None):
         return _ProposalCommandResult(
             _draft_command(args, runtime, ctx), ctx, frozenset(permissions)
         )
-    if args.command in {"proposal-create", "proposal-diff", "proposal-check"}:
+    if args.command in {
+        "proposal-create",
+        "proposal-diff",
+        "proposal-check",
+        "proposal-platform-check",
+    }:
         if proposal_scope is not None:
             proposal_scope.context = ctx
             proposal_scope.permissions = frozenset(permissions)

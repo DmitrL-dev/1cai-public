@@ -62,6 +62,7 @@ only-include = [
   "docs/product/WORKFLOW-STATE-ADR.md",
   "packaging/test-profiles/yaxunit-25.12/inputs.json",
   "docs/product/PROPOSAL-CHECK.md",
+  "docs/product/PROPOSAL-PLATFORM-CHECK.md",
   "docs/product/STATE-MIGRATION.md",
   "docs/product/PROJECT-ACCESS.md",
   "docs/product/SNAPSHOT-METADATA.md",
@@ -70,6 +71,7 @@ only-include = [
   "docs/product/SNAPSHOT-DIFF.md",
   "docs/product/OBSERVER.md",
   "scripts/verification/verify_native_platform.py",
+  "scripts/verification/verify_proposal_platform_delivery.py",
   "docs/product/PLATFORM-ACCEPTANCE.md",
   "docs/product/evidence/native-platform-8.3.27.2342.json",
 ]
