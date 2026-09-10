@@ -17,5 +17,10 @@
   "editor_checks": "tests-editor-0.1.8.json",
   "clean_machine_tested": false,
   "typical_configuration_tested": false,
-  "full_product_ready": false
+  "full_product_ready": false,
+  "github_release_assets_downloaded_and_byte_verified": {
+    "core-v0.1.0-dev8": 4,
+    "companion-v0.1.8": 3
+  },
+  "companion_release_ci_run": 34448432224
 }
