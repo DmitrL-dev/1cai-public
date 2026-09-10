@@ -2,6 +2,7 @@
 const { createHash } = require('node:crypto');
 const { win32 } = require('node:path');
 const {PROFILE,validateBsl}=require('./bsl-result.cjs');
+const {validateProfiles,validateTests}=require('./tests-result.cjs');
 
 const MAX_BYTES = 1048576;
 const MAX_OUTPUT = 2097152 + 1; // CLI envelope limit plus newline
@@ -187,6 +188,23 @@ function createClient(config, { execute, trusted = () => true }) {
       const value=await call('proposal-check',['--snapshot',saved.source_ref.snapshot.snapshot_id,
         '--proposal-json',file,'--diagnostics-profile',PROFILE]);
       validateBsl(value,saved,proposal);return value;
+    },
+    async testProfiles() {
+      requireValue(config.core_version==='0.1.0.dev8','TEST_REQUIRES_DEV8');
+      return validateProfiles(await call('test-profile-list'));
+    },
+    async testCheck({id, receipt:saved, proposal, file, profile}) {
+      requireValue(config.core_version==='0.1.0.dev8','TEST_REQUIRES_DEV8');
+      receipt(saved,config.project_id);requireValue(uuid.test(id),'INVALID_OPERATION_ID');validateProfiles([profile]);
+      requireValue(profile.enabled,'TEST_PROFILE_UNAVAILABLE');
+      requireValue(typeof file==='string'&&/^[A-Za-z]:\\/.test(file)&&!controls.test(file),'INVALID_TEST_PATH');
+      return validateTests(await call('proposal-test',['--snapshot',saved.source_ref.snapshot.snapshot_id,'--proposal-json',file,'--test-profile',profile.profile_id,'--operation-id',id]),id,saved,proposal,profile);
+    },
+    async testResult(id) {
+      requireValue(config.core_version==='0.1.0.dev8','TEST_REQUIRES_DEV8');requireValue(uuid.test(id),'INVALID_OPERATION_ID');
+      const value=await call('proposal-test-result',['--operation-id',id]);
+      requireValue(value?.run_id===id&&['completed','failed','incomplete'].includes(value.status),'TEST_RESULT_MISMATCH');
+      return value;
     },
     async platformCheck({id, ref, contentId, proposal, platform, platformHash}) {
       requireValue(config.core_version === '0.1.0.dev8', 'PLATFORM_REQUIRES_DEV8');

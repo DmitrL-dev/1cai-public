@@ -75,6 +75,8 @@ only-include = [
   "scripts/verification/yaxunit_report.py",
   "docs/product/YAXUNIT-PLATFORM-PROFILE.md",
   "docs/product/TEST-PROFILES.md",
+  "docs/product/EDITOR-TESTS.md",
+  "docs/product/evidence/tests-editor-0.1.8.json",
   "docs/product/evidence/test-profile-installed.json",
   "docs/product/evidence/yaxunit-25.12-platform.json",
   "docs/product/PROPOSAL-CHECK.md",

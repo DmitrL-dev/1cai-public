@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "accepted": true,
+  "scope": "synthetic_selected_revision_editor_tests",
+  "companion_version": "0.1.8",
+  "core_version": "0.1.0.dev8",
+  "platform_version": "8.3.27.2342",
+  "vsix_sha256": "05f211ec6971edba9e6abe81685226e27fb63bb0ffcfe8df3ea566c4156cf3e5",
+  "native_run_vsix_sha256": "c7461e36fe781eab1681ecc03eab3d4416adc62bb09b499e5100e224b98a0314",
+  "vsix_difference": [
+    "extension/README.md"
+  ],
+  "selected_revision": 1,
+  "latest_revision": 2,
+  "profile_id": "4a096da5b315d2d1dc2f796955ccf5d304e77169acacb85e762ad4a04005c4e9",
+  "candidate_sha256": "dc573e18f1a3a7f78a2f12541158df138a425c178922ea92bd2f4a0f7ad791e4",
+  "proposal_content_id": "53be1b53aa2224f8701c619d780742baba86e7b204e4ad1d340927267ba4794d",
+  "original_report_sha256": "cfaf0fd187e1910d52dc6d67846d25c8f7cc153411621d4e1f6449d2e5e11a2f",
+  "baseline": {
+    "status": "failed",
+    "counts": {
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 0
+    },
+    "cases": [
+      {
+        "classname": "ЮТРентгенПроверка.ОшибкаЗаписиПередается",
+        "name": "ОшибкаЗаписиПередается",
+        "context": "Сервер",
+        "outcome": "failure"
+      }
+    ],
+    "junit_sha256": "21d557b54fbaceed1fccb609250a674d822c5451e6981081a8acb9f0a1342f21",
+    "exit_file_sha256": "07846b783c23904a75834c1932bc2fad41e388e18bc32ffd73ed87bfa3844d87",
+    "framework_exit_code": 1,
+    "evidence": "parsed_unattested",
+    "native_module_sha256": "f0540440b7a20f136a6c0b97ed5509f55fe7346db735970eb232c3d4f532ddd7",
+    "module_text_verified": true,
+    "client_exit_code": 0,
+    "settings_sha256": "0996fb0f37dc1799d5d61c38a64add311507ef448191d4eb649c4c75eff86ea8"
+  },
+  "candidate": {
+    "status": "passed",
+    "counts": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 1
+    },
+    "cases": [
+      {
+        "classname": "ЮТРентгенПроверка.ОшибкаЗаписиПередается",
+        "name": "ОшибкаЗаписиПередается",
+        "context": "Сервер",
+        "outcome": "passed"
+      }
+    ],
+    "junit_sha256": "d4a84059a38976fa9535fb8cd957b41074588fe7e2b80c84c9346b894379cd2e",
+    "exit_file_sha256": "9585fbece5c402088f2d6a2def7e60d1c7ffecc24b16d32d5823a064b008935b",
+    "framework_exit_code": 0,
+    "evidence": "parsed_unattested",
+    "native_module_sha256": "dc573e18f1a3a7f78a2f12541158df138a425c178922ea92bd2f4a0f7ad791e4",
+    "module_text_verified": true,
+    "client_exit_code": 0,
+    "settings_sha256": "7a99c9b519cbf2bed69f03aae718b7fb1e741e361631cb83fa1892af4a80f627"
+  },
+  "recovery_in_new_editor_process": true,
+  "recovery_test_runs": 0,
+  "disabled_profile_readable": true,
+  "model_calls": 0,
+  "source_head_and_latest_revision_preserved": true,
+  "evidence": "local_unattested",
+  "note": "Projection excludes local native log paths. Synthetic error propagation, not business-process or typical-configuration acceptance."
+}

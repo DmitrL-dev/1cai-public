@@ -13,6 +13,8 @@ const { createEditService } = require('./lib/edit.cjs');
 const { createEditUI } = require('./lib/edit-ui.cjs');
 const {createBslService}=require('./lib/bsl.cjs');
 const {createBslUI}=require('./lib/bsl-ui.cjs');
+const {createTestService}=require('./lib/testing.cjs');
+const {createTestsUI}=require('./lib/tests-ui.cjs');
 
 exports.activate = async context => {
   const initialSubscriptions = context.subscriptions.length;
@@ -55,6 +57,13 @@ exports.activate = async context => {
     }});
     context.subscriptions.push(bslClient);
     const bsl=createBslUI(vscode,createBslService({root,config,client:bslClient,trusted:()=>vscode.workspace.isTrusted,cancel:()=>bslRunner?.dispose()}),views,context,config.core_version==='0.1.0.dev8');
+    let testRunner;
+    const testClient=createClient(config,{trusted:()=>vscode.workspace.isTrusted,execute:async(command,args)=>{
+      const owned=createRunner({timeout:args[3]==='proposal-test'?1000000:30000});testRunner=owned;
+      try{return await owned.execute(command,args);}finally{owned.dispose();if(testRunner===owned)testRunner=null;}
+    }});
+    context.subscriptions.push(testClient);
+    const tests=createTestsUI(vscode,createTestService({root,config,client:testClient,trusted:()=>vscode.workspace.isTrusted,cancel:()=>testRunner?.dispose()}),views,context,config.core_version==='0.1.0.dev8');
     let nativeRunner;
     const nativeClient = createClient(config,{trusted:()=>vscode.workspace.isTrusted,execute:async(command,args)=>{
       const owned = createRunner({timeout:args[3]==='proposal-platform-check'?660000:30000});
@@ -69,7 +78,8 @@ exports.activate = async context => {
     await vscode.commands.executeCommand('setContext','rentgen.platformAvailable',config.core_version==='0.1.0.dev8');
     await vscode.commands.executeCommand('setContext','rentgen.editAvailable',repairAvailable);
     await vscode.commands.executeCommand('setContext','rentgen.bslAvailable',config.core_version==='0.1.0.dev8');
-    return Object.freeze({ready: true, projectId: config.project_id, ...views,repairRuns:repair.runs,platformRuns:platform.runs,editSessions:edit.sessions,bslRuns:bsl.runs});
+    await vscode.commands.executeCommand('setContext','rentgen.testsAvailable',config.core_version==='0.1.0.dev8');
+    return Object.freeze({ready: true, projectId: config.project_id, ...views,repairRuns:repair.runs,platformRuns:platform.runs,editSessions:edit.sessions,bslRuns:bsl.runs,testRuns:tests.runs});
   } catch (error) {
     for (const subscription of context.subscriptions.splice(initialSubscriptions).reverse()) subscription.dispose();
     void vscode.window.showErrorMessage('Рентген: не удалось открыть профиль. ' + error.message);

@@ -49,7 +49,7 @@ jobs:
         working-directory: output/accepted-companion
         run: python scripts/release/prepare_companion.py build --tag companion-v0.1.4 --output release-assets
       - name: Build development companion
-        run: python integrations/vscode-rentgen/build.py --output output/rentgen-companion-0.1.7-development.vsix
+        run: python integrations/vscode-rentgen/build.py --output output/rentgen-companion-0.1.8-development.vsix
       - name: Build reproducible kit and verify offline CLI and MCP
         run: |
           python -m pip download --require-hashes --only-binary=:all: -r requirements/locks/mcp-py311-windows.txt --dest output/mcp-wheels
@@ -70,6 +70,6 @@ jobs:
             output/core-kit/offline-install/acceptance.json
             output/verification/acceptance.json
             output/observer-verification/acceptance.json
-            output/rentgen-companion-0.1.7-development.vsix
+            output/rentgen-companion-0.1.8-development.vsix
           if-no-files-found: error
           retention-days: 14
