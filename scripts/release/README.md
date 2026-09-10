@@ -1,13 +1,13 @@
 # Выпуск компонентов Рентгена
 
 `main` содержит продуктовый код. Пакеты выпускаются отдельными тегами:
-`companion-v0.1.4`, `core-v0.1.0-dev7`. Тег и уже опубликованные байты не
+`companion-v0.1.8`, `core-v0.1.0-dev8`. Тег и уже опубликованные байты не
 перезаписываются. Полная готовность продукта отдельным тегом не заявляется.
 
 ## Companion
 
 В `releases/companion/VERSION` фиксируются проверенный SHA256/размер VSIX и
-заметки для пользователя. `prepare_companion.py build --tag companion-v0.1.4
+заметки для пользователя. `prepare_companion.py build --tag companion-v0.1.8
 --output NEW_DIRECTORY` собирает VSIX, сверяет его с принятым хешем и создаёт
 SHA256SUMS/release.json. Входы должны быть закоммичены. Команда `verify` заново
 проверяет пакет, заметки, состав каталога и commit provenance без пересборки.
@@ -21,6 +21,24 @@ Workflow `release.yml` реагирует только на `companion-v*`: вы
 Собранный VSIX содержит собственные исходники и сборщик. Заметки берутся из
 проверенного файла версии, а не из полной истории рабочего репозитория.
 Параметры публикации: [action-gh-release](https://github.com/softprops/action-gh-release).
+
+## Core
+
+Принятый ZIP берётся из успешного CI для точного `source_commit` манифеста.
+До подготовки выпуска проверяются GitHub digest артефакта и офлайн-установка
+через `scripts/verification/verify_core_kit.py` с внешним SHA256.
+
+```powershell
+py -3.11 scripts/release/prepare_core.py prepare --version 0.1.0.dev8 --kit PATH_TO_ACCEPTED_KIT.zip --output NEW_DIRECTORY
+py -3.11 scripts/release/prepare_core.py verify --version 0.1.0.dev8 --output NEW_DIRECTORY
+```
+
+Команды сверяют принятые SHA256/размер, исходный коммит внутри комплекта,
+wheel/sdist и точный состав файлов выпуска. Манифест и заметки должны быть
+закоммичены. Тег core указывает на `source_commit` сборки; записи выпуска
+фиксируются позже, поскольку SHA256 архива зависит от встроенного коммита.
+Нельзя подменять принятый ZIP сборкой последующего коммита документации.
+Публикуются ZIP, manifest.json, SHA256SUMS и RELEASE_NOTES.md как prerelease.
 
 ## Общие заметки и локальные теги
 

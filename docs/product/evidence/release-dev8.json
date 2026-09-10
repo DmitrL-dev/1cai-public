@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "core_version": "0.1.0.dev8",
+  "companion_version": "0.1.8",
+  "source_commit": "a1e33318eb1cbb3909f8c3e2b7d296e2cb0212af",
+  "ci_run": 34446222846,
+  "artifact_id": 10139838866,
+  "artifact_sha256": "084b5649619efc5ddf7096061bb3874032503266c37700ac80584111d38e5abf",
+  "offline_install_downloaded_kit": true,
+  "hash_locked": true,
+  "verified_files": 40,
+  "mcp_tools": 21,
+  "dependency_wheels": 30,
+  "runtime_python_files_identical_to_source": 50,
+  "companion_sha256": "05f211ec6971edba9e6abe81685226e27fb63bb0ffcfe8df3ea566c4156cf3e5",
+  "native_checks": "native-resources.json",
+  "editor_checks": "tests-editor-0.1.8.json",
+  "clean_machine_tested": false,
+  "typical_configuration_tested": false,
+  "full_product_ready": false
+}

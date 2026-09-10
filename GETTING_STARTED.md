@@ -7,16 +7,16 @@
 ## 1. Установить ядро
 
 В [релизах](https://github.com/DmitrL-dev/1cai-public/releases) выберите
-`core-v0.1.0-dev7` и скачайте `rentgen-core-0.1.0.dev7-windows-py311.zip`.
+`core-v0.1.0-dev8` и скачайте `rentgen-core-0.1.0.dev8-windows-py311.zip`.
 SHA256 архива:
 
 ```text
-660fe8e7b02169f58a73bb2224c9fcf15f347438b04a6555a62f61f787fe7dc2
+b5bcc08b2e709f00d9b2fc84df5f9c85dce318f6ea80f79cdf60d126f7ad73de
 ```
 
-Проверьте `Get-FileHash .\rentgen-core-0.1.0.dev7-windows-py311.zip -Algorithm SHA256`.
+Проверьте `Get-FileHash .\rentgen-core-0.1.0.dev8-windows-py311.zip -Algorithm SHA256`.
 Распакуйте архив в новый каталог и откройте PowerShell внутри папки
-`rentgen-core-0.1.0.dev7-windows-py311`:
+`rentgen-core-0.1.0.dev8-windows-py311`:
 
 ```powershell
 py -3.11 -m venv .venv
@@ -60,10 +60,10 @@ cd 1cai-public
 и собирает companion из исходников. Один VSIX без профиля недостаточен:
 расширению нужны Python, registry и ID проекта.
 
-Готовый companion `0.1.4` также есть в релизах; SHA256:
+Готовый companion `0.1.8` также есть в релизах; SHA256:
 
 ```text
-84320dfb9bc1ff512e653688853c6a90aad43fb9654c4c0fca3473c19d927da5
+05f211ec6971edba9e6abe81685226e27fb63bb0ffcfe8df3ea566c4156cf3e5
 ```
 
 ## 4. Проверить результат
@@ -75,6 +75,12 @@ cd 1cai-public
 Для команды локальной правки установите BSL runtime по инструкции профиля
 и заранее загрузите модель в Ollama. Сохраняемый журнал содержит код и
 инструкцию: учитывайте это при передаче диагностических материалов.
+
+Для проверки сохранённой версии доступны [BSL](docs/product/EDITOR-BSL-CHECK.md),
+[компилятор 1С](docs/product/EDITOR-PLATFORM-CHECK.md) и
+[тесты YAxUnit](docs/product/EDITOR-TESTS.md). Для последних двух нужна
+установленная платформа; тестовый профиль заранее регистрирует администратор.
+Результаты относятся к конкретной ревизии, исходная база не обновляется.
 
 Отдельные инструкции: [управляемая правка](docs/product/LOCAL-REPAIR.md),
 [права проекта](docs/product/PROJECT-ACCESS.md),

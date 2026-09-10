@@ -1,0 +1,11 @@
+{
+  "version": "0.1.8",
+  "sha256": "05f211ec6971edba9e6abe81685226e27fb63bb0ffcfe8df3ea566c4156cf3e5",
+  "size_bytes": 207136,
+  "required_core": "0.1.0.dev8",
+  "stage": "prerelease",
+  "platform_1c_tested": true,
+  "tested_1c_version": "8.3.27.2342",
+  "test_scope": "synthetic Designer XML and YAxUnit profile; no typical-configuration acceptance",
+  "spectorn_integrated": false
+}
