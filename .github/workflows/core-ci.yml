@@ -58,6 +58,8 @@ jobs:
           .\.venv-delivery\Scripts\python.exe -m pip check
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python scripts/verification/verify_snapshot_diff_delivery.py --python .venv-delivery/Scripts/python.exe --scanner output/bsl-scan.exe --output output/verification
+      - name: Verify installed observer across processes
+        run: python scripts/verification/verify_observer_delivery.py --python .venv-delivery/Scripts/python.exe --scanner output/bsl-scan.exe --output output/observer-verification
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: verified-core-development
@@ -65,5 +67,6 @@ jobs:
             output/dist/*.whl
             output/dist/*.tar.gz
             output/verification/acceptance.json
+            output/observer-verification/acceptance.json
           if-no-files-found: error
           retention-days: 14

@@ -21,6 +21,7 @@ classifiers = [
 [project.scripts]
 rentgen = "rentgen_core.cli:main"
 rentgen-mcp = "rentgen_core.stdio_mcp:main"
+rentgen-observer = "rentgen_core.observer_cli:main"
 
 [project.optional-dependencies]
 mcp = ["mcp==1.30.0"]
@@ -67,6 +68,7 @@ only-include = [
   "docs/product/SNAPSHOT-READ-SESSIONS.md",
   "docs/product/SNAPSHOT-PUBLICATION-ADR.md",
   "docs/product/SNAPSHOT-DIFF.md",
+  "docs/product/OBSERVER.md",
 ]
 exclude = ["__pycache__", "*.pyc", "*.pyo"]
 
