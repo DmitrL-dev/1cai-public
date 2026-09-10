@@ -9,7 +9,8 @@
     "core_sdist_matches_accepted_bytes": true,
     "fresh_wheel_install": "passed; pip check and isolated CLI help",
     "local_document_links": "no missing targets",
-    "secret_pattern_scan": "one dummy credential URL in refusal test; no credential finding. Current tree patterns only, not a historical secrets audit."
+    "secret_pattern_scan": "one dummy credential URL in refusal test; no credential finding. Current tree patterns only, not a historical secrets audit.",
+    "fresh_test_environment": "111 passed after installing only requirements-test.txt; missing httpx found by first GitHub run and corrected"
   },
   "limits": [
     "No real 1C platform acceptance",
