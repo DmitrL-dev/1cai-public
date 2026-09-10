@@ -1,6 +1,6 @@
 # Локальное ядро: сборка, установка и первый проект
 
-Срез `rentgen-core 0.1.0.dev7`, Windows x64 / CPython 3.11. Это CLI снимков,
+Срез исходников `rentgen-core 0.1.0.dev8`, Windows x64 / CPython 3.11. Это CLI снимков,
 графа и предложенных правок с BSL-диагностикой и локальным stdio MCP. Полная
 приёмка продукта ведётся в полном репозитории (`docs/product/READINESS.md`). Инструкции не
 устанавливают платформу 1С, EDT или модели и не запускают HTTP-сервер или старый
@@ -47,7 +47,7 @@ SNAPSHOT-METADATA, SNAPSHOT-READ-SESSIONS и SNAPSHOT-PUBLICATION-ADR.
 
 ```powershell
 py -3.11 -m venv .venv-core
-.\.venv-core\Scripts\python.exe -m pip install --no-index --no-deps .\dist\rentgen_core-0.1.0.dev7-py3-none-any.whl
+.\.venv-core\Scripts\python.exe -m pip install --no-index --no-deps .\dist\rentgen_core-0.1.0.dev8-py3-none-any.whl
 .\.venv-core\Scripts\python.exe -m pip check
 .\.venv-core\Scripts\rentgen.exe --help
 ```
@@ -76,7 +76,7 @@ Extra `mcp` добавляет официальный SDK `mcp==1.30.0`; обя�
 ```powershell
 py -3.11 -m venv .venv-mcp
 .\.venv-mcp\Scripts\python.exe -m pip install --require-hashes --only-binary=:all: -r requirements/locks/product-py311-windows.txt
-.\.venv-mcp\Scripts\python.exe -m pip install --no-index --no-deps ".\dist\rentgen_core-0.1.0.dev7-py3-none-any.whl[mcp]"
+.\.venv-mcp\Scripts\python.exe -m pip install --no-index --no-deps ".\dist\rentgen_core-0.1.0.dev8-py3-none-any.whl[mcp]"
 .\.venv-mcp\Scripts\python.exe -m pip check
 .\.venv-mcp\Scripts\rentgen-mcp.exe --registry C:\RentgenState\registry.sqlite3 --scanner C:\RentgenTools\bsl-scan.exe
 ```

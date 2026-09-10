@@ -65,6 +65,7 @@ def _parser():
         "membership-receipt",
         "capture",
         "source-list",
+        "snapshot-diff",
         "source-read",
         "graph-resolve",
         "impact",
@@ -181,6 +182,11 @@ def _parser():
                 command.add_argument(
                     "--diagnostics-profile", required=True, action=_Once
                 )
+        if name == "snapshot-diff":
+            command.add_argument("--before", required=True, action=_Once)
+            command.add_argument("--after", required=True, action=_Once)
+            command.add_argument("--limit", type=int, default=100, action=_Once)
+            command.add_argument("--cursor", action=_Once)
         if name in {"source-list", "source-read", "graph-resolve", "impact"}:
             command.add_argument("--snapshot", action=_Once)
             if name == "source-list":
@@ -561,7 +567,7 @@ def _execute(args, *, proposal_scope=None):
             "draft-restore",
         }
         else {"project:read"}
-        if args.command.startswith("draft-")
+        if args.command.startswith("draft-") or args.command == "snapshot-diff"
         else {"analysis:run"}
         if args.command == "capture"
         else set()
@@ -602,6 +608,25 @@ def _execute(args, *, proposal_scope=None):
         )
     if args.command == "capture":
         return _capture(args, runtime, ctx)
+    if args.command == "snapshot-diff":
+        from .snapshot_diff import compare_snapshots
+
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        runtime = replace(
+            runtime,
+            graph_reader_factory=runtime.graph_reader_factory or _graph_factory(),
+        )
+        before = runtime.resolve(principal, args.project, args.before)
+        after = runtime.resolve(principal, args.project, args.after)
+        report = compare_snapshots(before, after, limit=args.limit, cursor=args.cursor)
+        document = json.loads(json.dumps(report, default=_default, allow_nan=False))
+        return _ProposalCommandResult(
+            document,
+            ctx,
+            frozenset(permissions),
+        )
     if args.command in {"source-list", "source-read", "graph-resolve", "impact"}:
         return _snapshot_command(args, runtime, principal)
     if args.command == "state-migrate":

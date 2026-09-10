@@ -42,3 +42,28 @@ jobs:
         run: go -C go test ./...
       - name: Verify accepted companion
         run: python scripts/release/prepare_companion.py build --tag companion-v0.1.4 --output release-assets
+      - name: Build core with pinned tools
+        run: |
+          python -m venv .venv-build
+          .\.venv-build\Scripts\python.exe -m pip install --require-hashes --only-binary=:all: -r requirements/locks/product-build-py311-windows.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          .\.venv-build\Scripts\python.exe -m build --no-isolation --outdir output/dist
+      - name: Verify installed snapshot comparison
+        run: |
+          go -C go build -buildvcs=false -trimpath -o ..\output\bsl-scan.exe ./cmd/bsl-scan
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m venv .venv-delivery
+          .\.venv-delivery\Scripts\python.exe -m pip install --no-index --no-deps output/dist/rentgen_core-0.1.0.dev8-py3-none-any.whl
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          .\.venv-delivery\Scripts\python.exe -m pip check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python scripts/verification/verify_snapshot_diff_delivery.py --python .venv-delivery/Scripts/python.exe --scanner output/bsl-scan.exe --output output/verification
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: verified-core-development
+          path: |
+            output/dist/*.whl
+            output/dist/*.tar.gz
+            output/verification/acceptance.json
+          if-no-files-found: error
+          retention-days: 14
