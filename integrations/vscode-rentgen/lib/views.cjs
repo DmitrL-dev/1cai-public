@@ -181,6 +181,7 @@ function createViews(vscode, client, context) {
   // Read-only automation API uses the same providers and minted command handles.
   return Object.freeze({refreshSources, refreshDrafts, search, sources: loadSources, drafts: loadDrafts, history: loadHistory,
     selectedSource(token) { const record = sourceHandles.get(token); if (record.kind !== 'source') throw new Error('UNKNOWN_VIEW_HANDLE'); return record.ref; },
+    selectedDraft(token) { const record = draftHandles.get(token); if (!['draft','version'].includes(record.kind)) throw new Error('UNKNOWN_VIEW_HANDLE'); return record.receipt; },
     openDraft(receipt) { return openSelection(row('version', {receipt}, draftHandles).token); },
   });
 }

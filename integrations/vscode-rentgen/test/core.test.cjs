@@ -78,3 +78,27 @@ test('receipt lookup uses literal operation identity and refuses a foreign reply
   reply = {...saved,operation_id:draft}; await assert.rejects(client.receipt(operation));
   reply = {...saved,project_id:draft}; await assert.rejects(client.receipt(operation));
 });
+
+test('native result lookup is a read without snapshot or executable and rejects foreign results',async()=>{
+  const id='00000000-0000-4000-8000-000000000003';let seen;
+  let reply={run_id:id,request:null,status:'incomplete'};
+  const client=createClient({...config,core_version:'0.1.0.dev8'},{execute:async(_,args)=>{seen=args;return output(reply);}});
+  assert.deepEqual(await client.platformResult(id),reply);
+  assert.deepEqual(seen.slice(3),['proposal-platform-result','--registry',config.registry,'--project',project,'--operation-id',id]);
+  reply={...reply,status:'completed',report:{run_id:id,report_sha256:'b'.repeat(64),source_ref:{...ref,snapshot:{...ref.snapshot,project_id:draft}}}};
+  await assert.rejects(client.platformResult(id),/PROJECT_MISMATCH/);
+  reply={run_id:draft,request:null,status:'incomplete'};
+  await assert.rejects(client.platformResult(id),/PLATFORM_RESULT_MISMATCH/);
+});
+
+test('native check binds selected snapshot, proposal and executable; old profiles cannot launch it',async()=>{
+  const options={id:draft,ref,contentId:'b'.repeat(64),proposal:'C:\\путь $()\\proposal.json',platform:'C:\\1cv8.exe',platformHash:'c'.repeat(64)};
+  let seen,reply={run_id:draft,source_ref:ref,proposal_content_id:options.contentId,platform_executable_sha256:options.platformHash};
+  const execute=async(_,args)=>{seen=args;return output(reply);};
+  await assert.rejects(createClient(config,{execute}).platformCheck(options),/PLATFORM_REQUIRES_DEV8/);assert.equal(seen,undefined);
+  const client=createClient({...config,core_version:'0.1.0.dev8'},{execute});
+  assert.deepEqual(await client.platformCheck(options),reply);
+  assert.equal(seen[3],'proposal-platform-check');assert.equal(seen[seen.indexOf('--snapshot')+1],ref.snapshot.snapshot_id);
+  reply={...reply,proposal_content_id:'d'.repeat(64)};
+  await assert.rejects(client.platformCheck(options),/PLATFORM_RESULT_MISMATCH/);
+});

@@ -40,8 +40,16 @@ jobs:
         run: node --test integrations/vscode-rentgen/test/*.test.cjs
       - name: Scanner tests
         run: go -C go test ./...
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: dc61e2ce16f5010b42fb61ae525f644a57b0ab08
+          path: output/accepted-companion
+          persist-credentials: false
       - name: Verify accepted companion
+        working-directory: output/accepted-companion
         run: python scripts/release/prepare_companion.py build --tag companion-v0.1.4 --output release-assets
+      - name: Build development companion
+        run: python integrations/vscode-rentgen/build.py --output output/rentgen-companion-0.1.5-development.vsix
       - name: Build core with pinned tools
         run: |
           python -m venv .venv-build
@@ -68,5 +76,6 @@ jobs:
             output/dist/*.tar.gz
             output/verification/acceptance.json
             output/observer-verification/acceptance.json
+            output/rentgen-companion-0.1.5-development.vsix
           if-no-files-found: error
           retention-days: 14

@@ -1,5 +1,7 @@
 """A release must preserve the accepted VSIX and reviewed human notes."""
 import importlib.util
+import hashlib
+import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -32,6 +34,22 @@ def source_repo(tmp_path, monkeypatch):
             )
         else:
             shutil.copyfile(source, target)
+    # Synthetic acceptance exercises the release contract as development sources
+    # advance. CI separately rebuilds the real 0.1.4 from its pinned commit.
+    package_path = root / "integrations/vscode-rentgen/package.json"
+    package = json.loads(package_path.read_text("utf-8"))
+    package["version"] = "0.1.4"
+    package_path.write_text(json.dumps(package), "utf-8")
+    spec = importlib.util.spec_from_file_location(
+        "fixture_build", package_path.parent / "build.py"
+    )
+    builder = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(builder)
+    raw = builder.build_bytes()
+    manifest_path = root / "releases/companion/0.1.4/manifest.json"
+    manifest = json.loads(manifest_path.read_text("utf-8"))
+    manifest.update(sha256=hashlib.sha256(raw).hexdigest(), size_bytes=len(raw))
+    manifest_path.write_text(json.dumps(manifest), "utf-8")
     (root / ".gitignore").write_text("__pycache__/\n", encoding="utf-8")
     for args in [
         ["init", "-b", "main"],

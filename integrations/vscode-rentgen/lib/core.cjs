@@ -67,7 +67,7 @@ function draftText(value, project, id, revision) {
   return decode(replacement?.base64, replacement?.size_bytes, replacement?.raw_sha256);
 }
 function profileConfig(value) {
-  requireValue(value?.schema === 1 && ['0.1.0.dev4', '0.1.0.dev5', '0.1.0.dev6', '0.1.0.dev7'].includes(value.core_version) && uuid.test(value.project_id), 'INVALID_EDITOR_PROFILE');
+  requireValue(value?.schema === 1 && ['0.1.0.dev4', '0.1.0.dev5', '0.1.0.dev6', '0.1.0.dev7', '0.1.0.dev8'].includes(value.core_version) && uuid.test(value.project_id), 'INVALID_EDITOR_PROFILE');
   for (const name of ['python', 'registry']) {
     requireValue(typeof value[name] === 'string' && win32.isAbsolute(value[name]) &&
       /^[A-Za-z]:\\/.test(value[name]) && !controls.test(value[name]), 'INVALID_EDITOR_PROFILE');
@@ -155,6 +155,38 @@ function createClient(config, { execute, trusted = () => true }) {
       requireValue(uuid.test(id) && Number.isSafeInteger(revision) && revision > 0);
       const value = await call('draft-get', ['--draft-id', id, '--revision', String(revision)]);
       return { receipt: value.receipt, text: draftText(value, config.project_id, id, revision) };
+    },
+    async proposal(id, revision) {
+      requireValue(uuid.test(id) && Number.isSafeInteger(revision) && revision > 0);
+      const value = await call('draft-get', ['--draft-id', id, '--revision', String(revision)]);
+      draftText(value, config.project_id, id, revision);
+      return value;
+    },
+    async platformCheck({id, ref, contentId, proposal, platform, platformHash}) {
+      requireValue(config.core_version === '0.1.0.dev8', 'PLATFORM_REQUIRES_DEV8');
+      requireValue(uuid.test(id) && hash.test(platformHash) && hash.test(contentId));
+      ref = sourceRef(ref, config.project_id);
+      for (const value of [proposal, platform]) requireValue(typeof value === 'string' &&
+        /^[A-Za-z]:\\/.test(value) && !controls.test(value), 'INVALID_PLATFORM_PATH');
+      const value = await call('proposal-platform-check', ['--snapshot', ref.snapshot.snapshot_id,
+        '--proposal-json', proposal, '--platform', platform, '--platform-sha256', platformHash, '--operation-id', id]);
+      requireValue(value?.run_id === id && value.proposal_content_id === contentId &&
+        value.platform_executable_sha256 === platformHash, 'PLATFORM_RESULT_MISMATCH');
+      sameRef(value.source_ref, ref, config.project_id);
+      return value;
+    },
+    async platformResult(id) {
+      requireValue(config.core_version === '0.1.0.dev8', 'PLATFORM_REQUIRES_DEV8');
+      requireValue(uuid.test(id), 'INVALID_OPERATION_ID');
+      const value = await call('proposal-platform-result', ['--operation-id', id]);
+      requireValue(value?.run_id === id && ['completed', 'failed', 'incomplete'].includes(value.status), 'PLATFORM_RESULT_MISMATCH');
+      if (value.request !== null) requireValue(value.request?.run_id === id && value.request.project_id === config.project_id, 'PLATFORM_RESULT_MISMATCH');
+      if (value.status === 'completed') {
+        requireValue(value.report?.run_id === id && hash.test(value.report.report_sha256), 'PLATFORM_RESULT_MISMATCH');
+        sourceRef(value.report.source_ref, config.project_id);
+      }
+      if (value.status === 'failed') requireValue(value.failure?.run_id === id && value.failure.project_id === config.project_id, 'PLATFORM_RESULT_MISMATCH');
+      return value;
     },
     async receipt(operation) {
       requireValue(uuid.test(operation), 'INVALID_OPERATION_ID');

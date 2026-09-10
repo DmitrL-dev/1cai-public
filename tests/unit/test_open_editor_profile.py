@@ -30,7 +30,9 @@ def inputs(tmp_path, monkeypatch):
     editor_cli.parent.mkdir(parents=True)
     editor_cli.write_text("editor cli", encoding="utf-8")
     monkeypatch.setattr(profile, "CLINE_SHA256", profile.digest(files["cline_vsix"]))
-    monkeypatch.setattr(profile, "probe", lambda *_: {"project_id": project_id})
+    monkeypatch.setattr(
+        profile, "probe", lambda *_: ({"project_id": project_id}, "0.1.0.dev7")
+    )
     return {**files, "project_id": project_id, "output": tmp_path / "new profile"}
 
 
@@ -41,6 +43,18 @@ def test_ambiguous_editor_cli_is_not_guessed(inputs):
     with pytest.raises(ValueError, match="Editor CLI"):
         profile.prepare(**inputs)
     assert not inputs["output"].exists()
+
+
+def test_dev8_profile_records_actual_core_version(inputs, monkeypatch):
+    monkeypatch.setattr(
+        profile,
+        "probe",
+        lambda *_: ({"project_id": inputs["project_id"]}, "0.1.0.dev8"),
+    )
+    profile.prepare(**inputs)
+    value = json.loads((inputs["output"] / "profile.json").read_text("utf-8"))
+    assert value["core_version"] == "0.1.0.dev8"
+    assert value["companion_version"] == "0.1.5"
 
 
 def test_existing_profile_is_never_overwritten(inputs):

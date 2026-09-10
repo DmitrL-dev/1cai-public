@@ -64,15 +64,15 @@ def probe(python, registry, project_id):
         "'python':list(sys.version_info[:2]),"
         "'installed':Path(rentgen_core.__file__).resolve().is_relative_to(Path(sys.prefix).resolve())}))",
     )
-    if runtime != {
-        "core": "0.1.0.dev7",
+    if runtime.get("core") not in {"0.1.0.dev7", "0.1.0.dev8"} or runtime != {
+        "core": runtime["core"],
         "mcp": "1.30.0",
         "platform": "win32",
         "python": [3, 11],
         "installed": True,
     }:
         raise ValueError(
-            "Use installed core dev7 with MCP 1.30.0 in Windows Python 3.11"
+            "Use installed core dev7/dev8 with MCP 1.30.0 in Windows Python 3.11"
         )
     head = run(
         "-m",
@@ -85,7 +85,7 @@ def probe(python, registry, project_id):
     )["result"]
     if head["project_id"] != project_id:
         raise ValueError("Core returned a different project")
-    return head
+    return head, runtime["core"]
 
 
 def prepare(
@@ -141,7 +141,7 @@ def prepare(
         or any(ord(c) < 32 for c in ollama_model)
     ):
         raise ValueError("Invalid local model name")
-    head = probe(python, registry, project_id)
+    head, core_version = probe(python, registry, project_id)
     companion = companion_package()
     # No persistent writes before identity/package/access checks have succeeded.
     output.mkdir(parents=True, exist_ok=False)
@@ -168,12 +168,12 @@ def prepare(
             "cline_version": CLINE_VERSION,
             "cline_bundle": "legacy",
             "cline_sha256": CLINE_SHA256,
-            "core_version": "0.1.0.dev7",
+            "core_version": core_version,
             "mcp_tools": list(MCP_EDITOR_TOOLS),
             "diagnostics_local_app_data": str(diagnostics_local_app_data)
             if diagnostics_local_app_data
             else None,
-            "companion_version": "0.1.4",
+            "companion_version": "0.1.5",
             "companion_sha256": hashlib.sha256(companion).hexdigest(),
             "head_at_setup": head,
         },
