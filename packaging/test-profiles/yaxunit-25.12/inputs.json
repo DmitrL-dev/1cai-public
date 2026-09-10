@@ -33,7 +33,8 @@
   "release_asset_digest_verified": true,
   "source_to_binary_reproduction": "not_verified",
   "platform_profile": null,
-  "execution_status": "not_run",
+  "execution_status": "synthetic_platform_verified",
   "registration_status": "not_registered",
-  "scope": "Pinned upstream inputs, not a passed test run or an executable platform profile."
+  "execution_evidence": "docs/product/evidence/yaxunit-25.12-platform.json",
+  "scope": "Pinned upstream inputs; synthetic fail/pass behavior verified on 8.3.27.2342. Not a registered executable product profile or typical-configuration acceptance."
 }

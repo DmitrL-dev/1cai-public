@@ -1,0 +1,63 @@
+{
+  "accepted": true,
+  "scope": "synthetic_error_propagation",
+  "platform_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+  "ibcmd_sha256": "38f37715535cea530e58d5ba2e7e072c184b61b12f3e903ac290b299cf39fd38",
+  "upstream_cfe_sha256": "805a2277c997a3c24be0b0d080696479e91e4a15ed7e27aaf3991a7346522d70",
+  "test_module_sha256": "be4deade6934b29dd227230ff1f90e71674f4876bafc76e053457a9d53fc2e3f",
+  "original_sha256": "f0540440b7a20f136a6c0b97ed5509f55fe7346db735970eb232c3d4f532ddd7",
+  "fixed_sha256": "dc573e18f1a3a7f78a2f12541158df138a425c178922ea92bd2f4a0f7ad791e4",
+  "bad": {
+    "status": "failed",
+    "counts": {
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 0
+    },
+    "cases": [
+      {
+        "classname": "ЮТРентгенПроверка.ОшибкаЗаписиПередается",
+        "name": "ОшибкаЗаписиПередается",
+        "context": "Сервер",
+        "outcome": "failure"
+      }
+    ],
+    "junit_sha256": "fde9d3ead242986d9dbb5e0b22c8839583eb56cc6e2bd41ab9d4867db88fd662",
+    "exit_file_sha256": "07846b783c23904a75834c1932bc2fad41e388e18bc32ffd73ed87bfa3844d87",
+    "framework_exit_code": 1,
+    "evidence": "parsed_unattested",
+    "client_exit_code": 0,
+    "settings_sha256": "247a7b0ff3508f998ccd7d3eca5dbdac977df7fbf5da0bf9018ac6c9575079f2"
+  },
+  "fixed": {
+    "status": "passed",
+    "counts": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 1
+    },
+    "cases": [
+      {
+        "classname": "ЮТРентгенПроверка.ОшибкаЗаписиПередается",
+        "name": "ОшибкаЗаписиПередается",
+        "context": "Сервер",
+        "outcome": "passed"
+      }
+    ],
+    "junit_sha256": "85f249ebde8adce4d59de56da0064ea2cfd4c850f98086065b9a889f99cc051b",
+    "exit_file_sha256": "9585fbece5c402088f2d6a2def7e60d1c7ffecc24b16d32d5823a064b008935b",
+    "framework_exit_code": 0,
+    "evidence": "parsed_unattested",
+    "client_exit_code": 0,
+    "settings_sha256": "e6f083b9eabed22a4150bce02e5785b7cf0d1a76ab253ec682e12e3832e6fe30"
+  },
+  "test_module_and_extension_identity_preserved": true,
+  "profile_registration": "not_registered",
+  "platform_version": "8.3.27.2342",
+  "command_count": 15,
+  "report_parser_tests": 11
+}
