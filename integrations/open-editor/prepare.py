@@ -6,12 +6,14 @@ The adapter is tied to the official Cline 4.1.17 VSIX; do not silently update it
 import argparse
 import hashlib
 import importlib.util
+from io import BytesIO
 import json
 import os
 from pathlib import Path
 import shutil
 import subprocess
 from uuid import UUID
+from zipfile import ZipFile
 
 
 CLINE_VERSION = "4.1.17"
@@ -143,6 +145,10 @@ def prepare(
         raise ValueError("Invalid local model name")
     head, core_version = probe(python, registry, project_id)
     companion = companion_package()
+    with ZipFile(BytesIO(companion)) as archive:
+        companion_version = json.loads(archive.read("extension/package.json"))[
+            "version"
+        ]
     # No persistent writes before identity/package/access checks have succeeded.
     output.mkdir(parents=True, exist_ok=False)
 
@@ -173,7 +179,7 @@ def prepare(
             "diagnostics_local_app_data": str(diagnostics_local_app_data)
             if diagnostics_local_app_data
             else None,
-            "companion_version": "0.1.6",
+            "companion_version": companion_version,
             "companion_sha256": hashlib.sha256(companion).hexdigest(),
             "head_at_setup": head,
         },

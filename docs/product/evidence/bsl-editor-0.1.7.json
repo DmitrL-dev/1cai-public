@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "companion": "0.1.7",
+  "vsix_sha256": "2d8007abb093ac34303487f8388af7dfcb2f4f9f7a4d9574a8c184327c3c289a",
+  "vsix_size_bytes": 180616,
+  "editor_api_version": "1.135.0",
+  "installed_core_version": "0.1.0.dev8",
+  "diagnostics_profile": "bsl-ls-1.0.5-temurin21.0.12.1-win64-bmp-default-v1",
+  "checks": {
+    "revision_2": "diagnostics_present",
+    "revision_2_expected_diagnostic": "DeprecatedMessage",
+    "revision_3": "clean",
+    "revision_3_candidate_sha256": "2bf9ab03126c2dceeeafddcda26ee447ea649cb7141cbac85263e50c720498db",
+    "recovery_in_new_editor_process": true,
+    "analysis_runs_during_recovery": 0,
+    "source_head_draft_revision_and_model_journal_unchanged": true,
+    "companion_contract_tests": 47,
+    "profile_contract_tests": 16
+  },
+  "limits": [
+    "Local development evidence, not signed independent attestation",
+    "One synthetic single-module fixture; no typical-configuration acceptance",
+    "No business tests, native compilation, apply or model requests in this scenario",
+    "Existing dev7 and companion 0.1.4 releases are unchanged"
+  ]
+}

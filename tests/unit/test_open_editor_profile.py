@@ -54,7 +54,7 @@ def test_dev8_profile_records_actual_core_version(inputs, monkeypatch):
     profile.prepare(**inputs)
     value = json.loads((inputs["output"] / "profile.json").read_text("utf-8"))
     assert value["core_version"] == "0.1.0.dev8"
-    assert value["companion_version"] == "0.1.6"
+    assert value["companion_version"] == "0.1.7"
 
 
 def test_existing_profile_is_never_overwritten(inputs):

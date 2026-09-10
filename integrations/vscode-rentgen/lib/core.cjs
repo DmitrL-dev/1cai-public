@@ -1,6 +1,7 @@
 'use strict';
 const { createHash } = require('node:crypto');
 const { win32 } = require('node:path');
+const {PROFILE,validateBsl}=require('./bsl-result.cjs');
 
 const MAX_BYTES = 1048576;
 const MAX_OUTPUT = 2097152 + 1; // CLI envelope limit plus newline
@@ -178,6 +179,14 @@ function createClient(config, { execute, trusted = () => true }) {
       receipt(value,config.project_id);sameRef(value.source_ref,base.source_ref,config.project_id);
       requireValue(value.draft_id===base.draft_id&&value.revision===base.revision+1&&value.operation_id===operation&&value.proposal_content_id===contentId,'DRAFT_REVISION_MISMATCH');
       return value;
+    },
+    async bslCheck({receipt: saved, proposal, file}) {
+      receipt(saved,config.project_id);
+      requireValue(config.core_version==='0.1.0.dev8','BSL_REQUIRES_DEV8');
+      requireValue(typeof file==='string'&&/^[A-Za-z]:\\/.test(file)&&!controls.test(file),'INVALID_BSL_PATH');
+      const value=await call('proposal-check',['--snapshot',saved.source_ref.snapshot.snapshot_id,
+        '--proposal-json',file,'--diagnostics-profile',PROFILE]);
+      validateBsl(value,saved,proposal);return value;
     },
     async platformCheck({id, ref, contentId, proposal, platform, platformHash}) {
       requireValue(config.core_version === '0.1.0.dev8', 'PLATFORM_REQUIRES_DEV8');
