@@ -111,7 +111,7 @@ class DiskBudget:
         if not force and time.monotonic() < self.next_check:
             return
         total = selected = count = 0
-        for name in ("platform-checks", "test-runs"):
+        for name in ("platform-checks", "test-runs", "metadata-runs"):
             root = self.root / name
             if root.exists():
                 size, current, entries = _usage(

@@ -30,11 +30,12 @@ def test_gate_refuses_another_process_and_releases_on_exit(tmp_path):
     )
 
 
-def test_budget_refuses_new_work_and_detects_growth(tmp_path):
+@pytest.mark.parametrize("namespace", ["test-runs", "metadata-runs"])
+def test_budget_refuses_new_work_and_detects_growth(tmp_path, namespace):
     from rentgen_core.native_resources import DiskLimits, DiskBudget
 
     root = tmp_path / "state"
-    run = root / "test-runs" / str(uuid4())
+    run = root / namespace / str(uuid4())
     run.mkdir(parents=True)
     data = run / "data"
     data.write_bytes(b"123")
