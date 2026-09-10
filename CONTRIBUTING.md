@@ -1,177 +1,42 @@
-# Contributing to Enterprise 1C AI Development Stack
+# Разработка Рентгена
 
-Thank you for your interest in contributing! 🎉
+Основной репозиторий: `DmitrL-dev/1cai-public`. Ветки изменений — `codex/...`
+или обычные тематические ветки участников. Собственный код распространяется
+под MIT; зависимости сохраняют свои лицензии.
 
-## How to Contribute
+## Проверки
 
-### Reporting Issues
+Нужны Windows x64, Python 3.11, Go 1.25.5 в PATH и Node 24.15.0.
+Тесты используют временные искусственные проекты. Модель, клиент 1С и
+пользовательская база для этого набора не требуются.
 
-- Use GitHub Issues
-- Provide detailed description
-- Include steps to reproduce
-- Attach logs if applicable
-
-### Code Contributions
-
-1. **Fork the repository**
-2. **Create a feature branch**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-
-3. **Make your changes**
-   - Follow code style guidelines
-   - Add tests for new features
-   - Update documentation
-
-4. **Run tests**
-   ```bash
-   pytest
-   ```
-
-5. **Commit your changes**
-   ```bash
-   git commit -m "feat: add amazing feature"
-   ```
-   
-   Follow [Conventional Commits](https://www.conventionalcommits.org/)
-
-6. **Push to your fork**
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-7. **Create a Pull Request**
-
-## Development Setup
-
-```bash
-# Clone repository
-git clone https://github.com/DmitrL-dev/1cai-public.git
-cd 1cai-public
-
-# Run setup script
-chmod +x scripts/setup.sh
-./scripts/setup.sh
-
-# Activate virtual environment
-source venv/bin/activate
-
-# Install dev dependencies
-pip install -r requirements-dev.txt
+```powershell
+py -3.11 -m venv .venv-test
+.\.venv-test\Scripts\python.exe -m pip install -r requirements-test.txt
+.\.venv-test\Scripts\python.exe -m pytest -q
+node --test integrations/vscode-rentgen/test/*.test.cjs
+go -C go test ./...
 ```
 
-## Code Style
+Сборка ядра описана в [CORE-INSTALLATION.md](docs/product/CORE-INSTALLATION.md).
+Сборка расширения: `python integrations/vscode-rentgen/build.py --output NEW.vsix`.
+VSIX содержит исходники и собственный packager; он не требует npm-зависимостей.
 
-### Python
-- **Black** for formatting
-- **isort** for imports
-- **flake8** for linting
-- **mypy** for type checking
+## Изменения
 
-```bash
-# Format code
-black .
-isort .
+Опишите задачу, изменение поведения и проверки. Для нового публичного контракта
+обновите документацию и добавьте тест реального результата или отказа. Не
+включайте выгрузки заказчиков, локальные профили, API-ключи и журналы с кодом.
+Проверяйте diff перед коммитом. Отчёты о дефектах должны содержать минимальный
+искусственный пример и версии компонентов.
 
-# Check
-flake8
-mypy .
-```
+## Релизы
 
-### Java (EDT Plugin)
-- Follow Google Java Style Guide
-- Use meaningful variable names
-- Add JavaDoc comments
+Core и companion версионируются отдельно. Принятый артефакт одной версии не
+перезаписывается: изменение доставляемых байтов требует новой версии и проверки.
+Теги `companion-v*` запускают сборку, проверку фиксированного SHA256 и создание
+черновика prerelease. Публикация после проверки активов — отдельный шаг.
+Порядок и команды: [scripts/release/README.md](scripts/release/README.md).
 
-### Commit Messages
-
-Format: `<type>(<scope>): <subject>`
-
-Types:
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation
-- `style`: Formatting
-- `refactor`: Code restructuring
-- `test`: Adding tests
-- `chore`: Maintenance
-
-Example:
-```
-feat(parser): add support for BUH configuration
-```
-
-## Testing
-
-### Unit Tests
-```bash
-pytest tests/unit/
-```
-
-### Integration Tests
-```bash
-pytest tests/integration/
-```
-
-### Coverage
-```bash
-pytest --cov=src --cov-report=html
-```
-
-## Documentation
-
-- Update README.md if needed
-- Add docstrings to functions
-- Update architecture.yaml for architectural changes
-- Create/update docs in `docs/` folder
-
-### Audit Tooling
-
-Before отправкой изменений, прогоняйте автоматические проверки:
-
-```bash
-# Проверка ссылок во всех .md файлах
-python check_all_links.py
-
-# Полный аудит (структура, security, README vs code)
-python comprehensive_project_audit_final.py
-python check_security_comprehensive.py
-python check_readme_vs_code.py
-```
-
-Отчёты сохраняются в корне проекта (например, `BROKEN_LINKS_REPORT.txt`).
-
-## Pull Request Process
-
-1. Update CHANGELOG.md
-2. Ensure all tests pass
-3. Update documentation
-4. Request review from maintainers
-5. Address review comments
-6. Merge after approval
-
-## Code Review Checklist
-
-- [ ] Code follows style guidelines
-- [ ] Tests added/updated
-- [ ] Documentation updated
-- [ ] No breaking changes (or documented)
-- [ ] Commits follow convention
-- [ ] PR description is clear
-
-## Community
-
-- Be respectful
-- Be constructive
-- Help others
-- Share knowledge
-
-## License
-
-By contributing, you agree that your contributions will be licensed under the MIT License.
-
-
-
-
-
+При переносе исходников из другого дерева копируйте только проверенные продуктовые
+файлы. Не сливайте историю частных рабочих задач в публичный репозиторий.

@@ -1,0 +1,9 @@
+{
+  "name": "rentgen-editor-acceptance",
+  "displayName": "Rentgen editor acceptance harness",
+  "publisher": "rentgen",
+  "version": "0.0.1",
+  "engines": {"vscode": "^1.101.0"},
+  "main": "./host.cjs",
+  "activationEvents": []
+}

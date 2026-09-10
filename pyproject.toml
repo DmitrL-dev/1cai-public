@@ -1,0 +1,73 @@
+[build-system]
+requires = ["hatchling==1.32.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rentgen-core"
+version = "0.1.0.dev7"
+description = "Local 1C snapshots, shared draft history and pinned BSL diagnostics"
+readme = "packaging/core/README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = []
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Operating System :: Microsoft :: Windows",
+]
+
+[project.scripts]
+rentgen = "rentgen_core.cli:main"
+rentgen-mcp = "rentgen_core.stdio_mcp:main"
+
+[project.optional-dependencies]
+mcp = ["mcp==1.30.0"]
+
+[tool.hatch.build]
+ignore-vcs = true
+
+[tool.hatch.build.targets.wheel]
+only-include = ["rentgen_core", "rentgen_graph", "rentgen_diagnostics"]
+exclude = ["__pycache__", "*.pyc", "*.pyo"]
+
+dev-mode-exact = true
+
+[tool.hatch.build.targets.sdist]
+only-include = [
+  "pyproject.toml",
+  "LICENSE",
+  "rentgen_core",
+  "packaging/core",
+  "rentgen_graph",
+  "rentgen_diagnostics",
+  "go/go.mod",
+  "go/cmd",
+  "go/internal",
+  "go/pkg",
+  "requirements-product-build.txt",
+  "requirements/locks/product-build-py311-windows.txt",
+  "requirements/locks/product-py311-windows.txt",
+  "docs/product/CORE-INSTALLATION.md",
+  "docs/product/CORE-MCP.md",
+  "docs/product/DRAFT-HISTORY.md",
+  "docs/product/DRAFT-HISTORY-DESIGN.md",
+  "docs/product/DRAFT-MCP.md",
+  "docs/product/LARGE-DRAFT-MCP.md",
+  "docs/product/DRAFT-EDITOR.md",
+  "docs/product/PROJECT-DRAFTS-HTTP.md",
+  "docs/product/SOURCE-DISCOVERY.md",
+  "docs/product/WORKFLOW-STATE-ADR.md",
+  "packaging/test-profiles/yaxunit-25.12/inputs.json",
+  "docs/product/PROPOSAL-CHECK.md",
+  "docs/product/STATE-MIGRATION.md",
+  "docs/product/PROJECT-ACCESS.md",
+  "docs/product/SNAPSHOT-METADATA.md",
+  "docs/product/SNAPSHOT-READ-SESSIONS.md",
+  "docs/product/SNAPSHOT-PUBLICATION-ADR.md",
+]
+exclude = ["__pycache__", "*.pyc", "*.pyo"]
+
+[tool.hatch.build.targets.sdist.hooks.custom]
+path = "packaging/core/hatch_build.py"

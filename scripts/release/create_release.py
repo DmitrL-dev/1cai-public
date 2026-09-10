@@ -1,132 +1,133 @@
-
-#!/usr/bin/env python3
-"""
-Create release notes and optional git tag for a new version.
-
-Usage:
-    python scripts/release/create_release.py --version v5.2.0
-        Generates RELEASE_NOTES.md (appends new section) based on commits since last tag.
-
-    python scripts/release/create_release.py --version v5.2.0 --tag --push
-        Additionally creates annotated git tag and pushes it to origin.
-
-Assumptions:
-    - Repository uses semantic version tags prefixed with "v".
-    - Release notes are stored in RELEASE_NOTES.md (tracked).
-"""
-
+"""Generate notes, then separately tag committed notes; pushing needs a named remote."""
 from __future__ import annotations
 
 import argparse
-import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Tuple
+import re
+import subprocess
 
 RELEASE_NOTES_FILE = Path("RELEASE_NOTES.md")
+VERSION = re.compile(
+    r"(?:(?:core|companion)-)?v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?"
+)
 
 
-def run_git(args: List[str]) -> str:
-    result = subprocess.run(["git", *args], check=True, capture_output=True, text=True)
-    return result.stdout.strip()
+def run_git(args):
+    return subprocess.check_output(
+        ["git", *args], text=True, encoding="utf-8", stderr=subprocess.PIPE
+    ).strip()
 
 
-def get_last_tag() -> str | None:
+def get_last_tag(version):
+    family = version.split("v", 1)[0] + "v[0-9]*"
     try:
-        return run_git(["describe", "--tags", "--abbrev=0"])
+        return run_git(
+            [
+                "describe",
+                "--tags",
+                "--abbrev=0",
+                "--match",
+                family,
+                "--exclude",
+                version,
+                "HEAD",
+            ]
+        )
     except subprocess.CalledProcessError:
         return None
 
 
-def get_commits_since(tag: str | None) -> List[Tuple[str, str, str]]:
-    """Return list of commits as (hash, author, subject)."""
-    rev_range = f"{tag}..HEAD" if tag else "HEAD"
-    log_format = "%h%x09%an%x09%s"
-    output = run_git(["log", rev_range, "--pretty=format:" + log_format])
-    if not output:
-        return []
-    commits = []
-    for line in output.splitlines():
-        parts = line.split("\t", 2)
-        if len(parts) == 3:
-            commits.append(tuple(parts))
-    return commits
+def get_commits_since(tag):
+    output = run_git(
+        ["log", f"{tag}..HEAD" if tag else "HEAD", "--pretty=format:%h%x09%an%x09%s"]
+    )
+    return [
+        tuple(line.split("\t", 2))
+        for line in output.splitlines()
+        if len(line.split("\t", 2)) == 3
+    ]
 
 
-def write_release_notes(version: str, commits: List[Tuple[str, str, str]], append_existing: bool = True) -> None:
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    header = f"## {version} — {today}\n"
+def write_release_notes(version, commits, append_existing=True):
+    previous = (
+        RELEASE_NOTES_FILE.read_text("utf-8")
+        if append_existing and RELEASE_NOTES_FILE.exists()
+        else ""
+    )
+    pattern = re.compile(
+        r"^## " + re.escape(version) + r" — [^\n]*\n.*?(?=^## |\Z)", re.M | re.S
+    )
+    existing = pattern.search(previous)
+    header = (
+        existing.group().splitlines()[0]
+        if existing
+        else f"## {version} — {datetime.now(timezone.utc):%Y-%m-%d}"
+    )
+    previous = pattern.sub("", previous)
+    body = "\n".join(
+        f"- {subject} ({commit} — {author})" for commit, author, subject in commits
+    )
+    body = body or "- No changes recorded since the previous tag."
+    RELEASE_NOTES_FILE.write_text(
+        header + "\n\n" + body + "\n\n" + previous, encoding="utf-8"
+    )
 
-    if not commits:
-        body = "- No changes recorded (no commits since previous tag).\n"
-    else:
-        body_lines = [f"- {subject} ({commit} — {author})" for commit, author, subject in commits]
-        body = "\n".join(body_lines) + "\n"
 
-    content = header + "\n" + body + "\n"
-
-    if append_existing and RELEASE_NOTES_FILE.exists():
-        previous = RELEASE_NOTES_FILE.read_text(encoding="utf-8")
-        RELEASE_NOTES_FILE.write_text(content + previous, encoding="utf-8")
-    else:
-        RELEASE_NOTES_FILE.write_text(content, encoding="utf-8")
-
-
-def create_tag(version: str, message: str) -> None:
+def create_tag(version, message):
+    if run_git(["status", "--porcelain=v1", "--untracked-files=normal"]):
+        raise ValueError(
+            "Tagging requires a clean worktree and committed release notes"
+        )
+    committed = run_git(["show", "HEAD:RELEASE_NOTES.md"])
+    if not committed.startswith("## " + version + " — "):
+        raise ValueError("Commit reviewed notes for this version before tagging")
     run_git(["tag", "-a", version, "-m", message])
 
 
-def push_tag(version: str) -> None:
-    run_git(["push", "origin", version])
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate release notes and optional git tag.")
-    parser.add_argument("--version", required=True, help="Target release version (e.g. v5.2.0)")
-    parser.add_argument(
-        "--no-append",
-        action="store_true",
-        help="Overwrite RELEASE_NOTES.md instead of prepending (default: prepend).",
-    )
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--version", required=True)
+    parser.add_argument("--no-append", action="store_true")
     parser.add_argument(
         "--tag",
         action="store_true",
-        help="Create annotated git tag after generating release notes.",
+        help="Tag HEAD after separately committing reviewed notes",
     )
     parser.add_argument(
         "--push",
         action="store_true",
-        help="Push created tag to origin (implies --tag).",
+        help="Create the tag and push only that ref to --remote",
     )
     parser.add_argument(
-        "--message",
-        default=None,
-        help="Custom tag message (default: 'Release <version>').",
+        "--remote", help="Explicit configured remote; no implicit origin"
     )
-
-    args = parser.parse_args()
-
-    previous_tag = get_last_tag()
-    commits = get_commits_since(previous_tag)
-    write_release_notes(args.version, commits, append_existing=not args.no_append)
-
-    print(f"[release] Release notes updated in {RELEASE_NOTES_FILE}")
-    if previous_tag:
-        print(f"[release] Previous tag: {previous_tag}")
-    print(f"[release] Commits included: {len(commits)}")
-
+    parser.add_argument("--message")
+    args = parser.parse_args(argv)
+    if not VERSION.fullmatch(args.version):
+        parser.error("Expected a version such as v1.2.3 or companion-v0.1.4")
+    if args.push and (
+        not args.remote or args.remote not in run_git(["remote"]).splitlines()
+    ):
+        parser.error("Pushing requires an explicit configured --remote")
     if args.tag or args.push:
-        message = args.message or f"Release {args.version}"
-        create_tag(args.version, message)
-        print(f"[release] Created tag {args.version}")
+        create_tag(args.version, args.message or f"Release {args.version}")
         if args.push:
-            push_tag(args.version)
-            print(f"[release] Pushed tag {args.version} to origin")
-
+            ref = "refs/tags/" + args.version
+            run_git(["push", args.remote, ref + ":" + ref])
+        print(
+            f"[release] Created tag {args.version}"
+            + (f" and pushed to {args.remote}" if args.push else "")
+        )
+    else:
+        previous = get_last_tag(args.version)
+        commits = get_commits_since(previous)
+        write_release_notes(args.version, commits, append_existing=not args.no_append)
+        print(
+            f"[release] Notes generated: {len(commits)} commits; previous tag: {previous or 'none'}"
+        )
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-

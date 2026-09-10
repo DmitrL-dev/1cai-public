@@ -1,0 +1,6 @@
+# Preserve accepted dev7 source bytes, including its mixed line endings.
+# Companion's own packager normalizes its text inputs explicitly.
+* -text
+*.png binary
+*.zip binary
+*.vsix binary

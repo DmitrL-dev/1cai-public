@@ -1,0 +1,48 @@
+{
+  "name": "project-companion",
+  "displayName": "Рентген: проект и черновики",
+  "description": "Модули снимка, история черновиков и сравнение сохранённых версий через локальное ядро Рентгена.",
+  "publisher": "rentgen",
+  "version": "0.1.4",
+  "license": "MIT",
+  "engines": {"vscode": "^1.101.0"},
+  "main": "./extension.cjs",
+  "activationEvents": ["onStartupFinished"],
+  "categories": ["Other"],
+  "capabilities": {
+    "untrustedWorkspaces": {"supported": false, "description": "Рентген запускает установленный CLI из доверенного профиля."},
+    "virtualWorkspaces": {"supported": false}
+  },
+  "contributes": {
+    "views": {"explorer": [
+      {"id": "rentgen.sources", "name": "Рентген: модули"},
+      {"id": "rentgen.drafts", "name": "Рентген: черновики"}
+    ]},
+    "viewsWelcome": [
+      {"view": "rentgen.sources", "contents": "Откройте подготовленный профиль через launch.ps1. Для чтения проекта требуется доверие к рабочей папке.", "when": "!rentgen.ready"},
+      {"view": "rentgen.drafts", "contents": "Сохранённые агентом черновики появятся после подключения профиля Рентгена.", "when": "!rentgen.ready"}
+    ],
+    "commands": [
+      {"command": "rentgen.refreshSources", "title": "Рентген: обновить снимок", "icon": "$(refresh)", "enablement": "rentgen.ready"},
+      {"command": "rentgen.searchSources", "title": "Рентген: найти модуль", "icon": "$(search)", "enablement": "rentgen.ready"},
+      {"command": "rentgen.refreshDrafts", "title": "Рентген: обновить черновики", "icon": "$(refresh)", "enablement": "rentgen.ready"},
+      {"command": "rentgen.draftStatus", "title": "Рентген: активные или архивные черновики", "icon": "$(filter)", "enablement": "rentgen.ready"},
+      {"command": "rentgen.repairSource", "title": "Рентген: правка с локальной моделью", "icon": "$(sparkle)", "enablement": "rentgen.ready && rentgen.repairAvailable && !rentgen.repairRunning"},
+      {"command": "rentgen.repairResult", "title": "Рентген: проверить результат правки", "icon": "$(history)", "enablement": "rentgen.ready && rentgen.repairAvailable && !rentgen.repairRunning"},
+      {"command": "rentgen.cancelRepair", "title": "Рентген: остановить правку", "icon": "$(debug-stop)", "enablement": "rentgen.repairRunning"}
+    ],
+    "menus": {"commandPalette": [
+      {"command": "rentgen.repairSource", "when": "false"}
+    ], "view/title": [
+      {"command": "rentgen.searchSources", "when": "view == rentgen.sources && rentgen.ready", "group": "navigation@1"},
+      {"command": "rentgen.refreshSources", "when": "view == rentgen.sources && rentgen.ready", "group": "navigation@2"},
+      {"command": "rentgen.draftStatus", "when": "view == rentgen.drafts && rentgen.ready", "group": "navigation@1"},
+      {"command": "rentgen.refreshDrafts", "when": "view == rentgen.drafts && rentgen.ready", "group": "navigation@2"},
+      {"command": "rentgen.repairResult", "when": "view == rentgen.drafts && rentgen.repairAvailable", "group": "navigation@3"},
+      {"command": "rentgen.cancelRepair", "when": "view == rentgen.sources && rentgen.repairRunning", "group": "navigation@3"}
+    ], "view/item/context": [
+      {"command": "rentgen.repairSource", "when": "view == rentgen.sources && viewItem == rentgen.source && rentgen.repairAvailable", "group": "inline@1"}
+    ]}
+  },
+  "scripts": {"test": "node --test test/*.test.cjs"}
+}

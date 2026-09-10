@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -158,7 +159,15 @@ func ScanCallGraph(root string, workers int) types.CallGraphResult {
 				}
 
 				moduleName := moduleNameFromPath(path, root)
+				sourcePath, err := filepath.Rel(root, path)
+				if err != nil {
+					results <- callGraphFileResult{isErr: true}
+					continue
+				}
 				funcs := extractor.ExtractCallGraph(code, moduleName)
+				for i := range funcs {
+					funcs[i].SourcePath = filepath.ToSlash(sourcePath)
+				}
 				results <- callGraphFileResult{funcs: funcs}
 			}
 		}()
@@ -181,6 +190,16 @@ func ScanCallGraph(root string, workers int) types.CallGraphResult {
 		}
 		allFuncs = append(allFuncs, r.funcs...)
 	}
+	// Worker completion order is incidental; serialized graph order is stable.
+	sort.SliceStable(allFuncs, func(i, j int) bool {
+		if allFuncs[i].SourcePath != allFuncs[j].SourcePath {
+			return allFuncs[i].SourcePath < allFuncs[j].SourcePath
+		}
+		if allFuncs[i].Line != allFuncs[j].Line {
+			return allFuncs[i].Line < allFuncs[j].Line
+		}
+		return allFuncs[i].Name < allFuncs[j].Name
+	})
 
 	return types.CallGraphResult{
 		Functions:  allFuncs,

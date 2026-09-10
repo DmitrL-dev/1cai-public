@@ -1,0 +1,9 @@
+{
+  "version": "0.1.4",
+  "sha256": "84320dfb9bc1ff512e653688853c6a90aad43fb9654c4c0fca3473c19d927da5",
+  "size_bytes": 106457,
+  "required_core": "0.1.0.dev7",
+  "stage": "prerelease",
+  "platform_1c_tested": false,
+  "spectorn_integrated": false
+}

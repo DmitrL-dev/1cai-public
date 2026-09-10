@@ -1,0 +1,39 @@
+{
+  "schema": "rentgen-test-framework-inputs/1",
+  "framework": "yaxunit",
+  "version": "25.12",
+  "release_url": "https://github.com/bia-technologies/yaxunit/releases/tag/25.12",
+  "source_commit": "15f7ae557d17b59bd80daad503efd8a3114690e5",
+  "license": "Apache-2.0",
+  "files": {
+    "YAxUnit-25.12.cfe": {
+      "url": "https://github.com/bia-technologies/yaxunit/releases/download/25.12/YAxUnit-25.12.cfe",
+      "bytes": 5141057,
+      "sha256": "805a2277c997a3c24be0b0d080696479e91e4a15ed7e27aaf3991a7346522d70"
+    },
+    "LICENSE": {
+      "url": "https://raw.githubusercontent.com/bia-technologies/yaxunit/15f7ae557d17b59bd80daad503efd8a3114690e5/LICENSE",
+      "bytes": 11356,
+      "sha256": "43070e2d4e532684de521b885f385d0841030efa2b1a20bafb76133a5e1379c1"
+    },
+    "source.zip": {
+      "url": "https://codeload.github.com/bia-technologies/yaxunit/zip/15f7ae557d17b59bd80daad503efd8a3114690e5",
+      "bytes": 25738908,
+      "sha256": "f956d733cb16a866fbb71b782f98f7d766e36e8697d396481ea2c3c6c66b6a33"
+    }
+  },
+  "notices": {
+    "UPSTREAM-LICENSE.txt": {
+      "sha256": "43070e2d4e532684de521b885f385d0841030efa2b1a20bafb76133a5e1379c1"
+    },
+    "UPSTREAM-COPYRIGHT.txt": {
+      "sha256": "dc552a36ca0e5380b69700a05eda1055b2fb83419bfb49ed19d4758dc00365bd"
+    }
+  },
+  "release_asset_digest_verified": true,
+  "source_to_binary_reproduction": "not_verified",
+  "platform_profile": null,
+  "execution_status": "not_run",
+  "registration_status": "not_registered",
+  "scope": "Pinned upstream inputs, not a passed test run or an executable platform profile."
+}

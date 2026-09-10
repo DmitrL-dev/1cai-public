@@ -1,0 +1,72 @@
+"""Local project foundation using only Python's standard library.
+
+No adapters are migrated yet. This name avoids shadowing legacy tools/rentgen.
+"""
+
+from .context import (
+    Explicit,
+    Principal,
+    ProjectContext,
+    SnapshotRef,
+    UseConfiguredDefault,
+)
+from .errors import CoreError
+from .registry import ProjectRegistry
+from .resolver import ContextResolver, require_permission, require_snapshot
+from .state import ProjectState
+from .source_configuration import (
+    SourceConfiguration,
+    SourceLayerSpec,
+    configure_source_layers,
+    get_source_configuration,
+)
+from .snapshots import (
+    ProjectHead,
+    PublishResult,
+    SnapshotCatalogEntry,
+    SnapshotLayer,
+    get_project_head,
+    get_publication,
+)
+from .publication import capture_and_publish
+from .sources import (
+    SourceRef,
+    SourceEntry,
+    SourcePage,
+    SnapshotSources,
+    SnapshotGraph,
+    SnapshotCapabilities,
+    read_source,
+)
+
+__all__ = [
+    "capture_and_publish",
+    "SourceRef",
+    "SourceEntry",
+    "SourcePage",
+    "SnapshotSources",
+    "SnapshotGraph",
+    "SnapshotCapabilities",
+    "read_source",
+    "ContextResolver",
+    "CoreError",
+    "Explicit",
+    "Principal",
+    "ProjectContext",
+    "ProjectRegistry",
+    "ProjectState",
+    "ProjectHead",
+    "SourceConfiguration",
+    "SourceLayerSpec",
+    "configure_source_layers",
+    "get_source_configuration",
+    "get_project_head",
+    "get_publication",
+    "PublishResult",
+    "SnapshotCatalogEntry",
+    "SnapshotLayer",
+    "SnapshotRef",
+    "UseConfiguredDefault",
+    "require_permission",
+    "require_snapshot",
+]

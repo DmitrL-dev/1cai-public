@@ -1,8 +1,6 @@
 package extractor
 
 import (
-	"fmt"
-	"os"
 	"testing"
 )
 
@@ -57,66 +55,5 @@ func TestExtractCallGraphMultiple(t *testing.T) {
 	t.Logf("Found %d functions", len(funcs))
 	for _, f := range funcs {
 		t.Logf("  %s (func=%v export=%v calls=%v)", f.Name, f.IsFunction, f.IsExport, f.Calls)
-	}
-}
-
-func TestRegexMatches(t *testing.T) {
-	// Test the raw regex against various BSL declarations
-	tests := []struct {
-		line    string
-		matches bool
-	}{
-		{"Процедура Тест(Парам1) Экспорт", true},
-		{"Функция Тест(Парам1)", true},
-		{"Procedure Test(Param1) Export", true},
-		{"Function Test(Param1)", true},
-		{"\tПроцедура Тест()", true},
-		{"  Функция Тест(А, Б, В) Экспорт", true},
-	}
-	for _, tt := range tests {
-		m := reCGFuncStart.MatchString(tt.line)
-		if m != tt.matches {
-			t.Errorf("Line %q: expected match=%v, got %v", tt.line, tt.matches, m)
-		} else {
-			subs := reCGFuncStart.FindStringSubmatch(tt.line)
-			if subs != nil {
-				t.Logf("Line %q → name=%q export=%q", tt.line, subs[1], subs[2])
-			}
-		}
-	}
-}
-
-func TestExtractCallGraphRealFile(t *testing.T) {
-	// Try reading a real BSL file if it exists
-	path := `C:\1cAI\data\configs\unpacked\CommonModules\CRMЛокализация\Ext\Module.bsl`
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Skipf("Real file not available: %v", err)
-	}
-
-	code := string(data)
-	// Show first 200 chars for debugging
-	preview := code
-	if len(preview) > 200 {
-		preview = preview[:200]
-	}
-	t.Logf("File size: %d bytes, preview: %q", len(data), preview)
-
-	// Show hex of first 20 bytes
-	hex := ""
-	for i := 0; i < 20 && i < len(data); i++ {
-		hex += fmt.Sprintf("%02x ", data[i])
-	}
-	t.Logf("First 20 bytes hex: %s", hex)
-
-	funcs := ExtractCallGraph(code, "CRMЛокализация")
-	t.Logf("Extracted %d functions from real file", len(funcs))
-	for i, f := range funcs {
-		if i >= 5 {
-			t.Logf("  ... and %d more", len(funcs)-5)
-			break
-		}
-		t.Logf("  %s (func=%v export=%v complexity=%d calls=%d)",
-			f.Name, f.IsFunction, f.IsExport, f.Complexity, len(f.Calls))
 	}
 }

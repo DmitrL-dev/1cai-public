@@ -51,14 +51,29 @@ type ScanResult struct {
 
 // BslFunction represents an extracted function/procedure with its calls and queries.
 type BslFunction struct {
-	Name       string     `json:"name"`
-	Module     string     `json:"module"`
-	Line       int        `json:"line"`
-	IsExport   bool       `json:"is_export"`
-	IsFunction bool       `json:"is_function"`
-	Complexity int        `json:"complexity"`
-	Calls      []string   `json:"calls,omitempty"`
-	Queries    []BslQuery `json:"queries,omitempty"`
+	Name       string        `json:"name"`
+	Module     string        `json:"module"`
+	Line       int           `json:"line"`
+	EndLine    int           `json:"end_line"`
+	SourcePath string        `json:"source_path"`
+	IsExport   bool          `json:"is_export"`
+	IsFunction bool          `json:"is_function"`
+	Complexity int           `json:"complexity"`
+	Calls      []string      `json:"calls,omitempty"`
+	CallSites  []BslCallSite `json:"call_sites"`
+	Queries    []BslQuery    `json:"queries,omitempty"`
+}
+
+// BslCallSite spans the target expression (excluding call parentheses).
+// Positions are 1-based Unicode characters; the end position is exclusive.
+// Unresolved sites are evidence only and must never bind as local calls.
+type BslCallSite struct {
+	Target    string `json:"target"`
+	Line      int    `json:"line"`
+	Column    int    `json:"column"`
+	EndLine   int    `json:"end_line"`
+	EndColumn int    `json:"end_column"`
+	Kind      string `json:"kind"` // direct, qualified, unresolved
 }
 
 // BslQuery represents an extracted SQL/SDBL query.

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="340" viewBox="0 0 1200 340" role="img" aria-labelledby="title desc">
+  <title id="title">Рентген — открытая среда разработки 1С</title>
+  <desc id="desc">Понимать конфигурацию. Проверять изменения. Сохранять контроль.</desc>
+  <rect width="1200" height="340" rx="24" fill="#101827"/>
+  <g fill="none" stroke="#243c51" stroke-width="1">
+    <path d="M800 0v340M900 0v340M1000 0v340M1100 0v340M720 70h480M720 170h480M720 270h480"/>
+    <circle cx="990" cy="170" r="122"/><circle cx="990" cy="170" r="82"/>
+  </g>
+  <path d="M857 219l68-100 67 67 72-72 71 45" fill="none" stroke="#55dec5" stroke-width="4"/>
+  <g fill="#55dec5"><circle cx="925" cy="119" r="7"/><circle cx="992" cy="186" r="7"/><circle cx="1064" cy="114" r="7"/></g>
+  <g font-family="Segoe UI,Arial,sans-serif">
+    <text x="64" y="70" fill="#55dec5" font-size="16" letter-spacing="3">OPEN SOURCE · MIT · EARLY ACCESS</text>
+    <text x="60" y="157" fill="#f2f6fa" font-size="76" font-weight="700">Рентген</text>
+    <text x="64" y="210" fill="#c0cddb" font-size="27">Открытая среда разработки 1С</text>
+    <text x="64" y="272" fill="#91a5b9" font-size="19">Понимать конфигурацию. Проверять изменения.</text>
+    <text x="64" y="300" fill="#91a5b9" font-size="19">Сохранять контроль.</text>
+  </g>
+</svg>

@@ -1,32 +1,76 @@
-name: Release
+name: Companion prerelease
 
 on:
   push:
-    tags:
-      - 'v*'
+    tags: ['companion-v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: companion-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
-
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
-          python-version: '3.11'
-
-      - name: Generate release notes (idempotent)
-        run: |
-          python scripts/release/create_release.py --version "${GITHUB_REF_NAME}" --no-append
-
-      - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v1
+          python-version: '3.11.9'
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
-          body_path: RELEASE_NOTES.md
+          node-version: '24.15.0'
+      - name: Test companion contracts
+        run: node --test integrations/vscode-rentgen/test/*.test.cjs
+      - name: Build accepted component
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python scripts/release/prepare_companion.py build --tag "$env:RELEASE_TAG" --output release-assets
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: accepted-companion
+          path: release-assets/
+          if-no-files-found: error
+          retention-days: 14
 
+  draft:
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11.9'
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: accepted-companion
+          path: release-assets/
+      - name: Verify downloaded assets
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python scripts/release/prepare_companion.py verify --tag "$env:RELEASE_TAG" --output release-assets
+      - name: Create component draft
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
+        with:
+          draft: true
+          prerelease: true
+          make_latest: 'false'
+          overwrite_files: false
+          fail_on_unmatched_files: true
+          body_path: release-assets/RELEASE_NOTES.md
+          files: |
+            release-assets/*.vsix
+            release-assets/SHA256SUMS
+            release-assets/release.json

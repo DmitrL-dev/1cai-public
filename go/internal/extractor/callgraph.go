@@ -1,55 +1,15 @@
-// Package extractor — callgraph.go
-// Extracts function/procedure boundaries, calls, queries from BSL code
-// for the Рентген call graph analyzer. Designed for 10-50x speedup over Python.
 package extractor
 
 import (
+	"1cai/bsl-scan/pkg/types"
 	"regexp"
 	"sort"
 	"strings"
-
-	"1cai/bsl-scan/pkg/types"
 )
 
-// Cyrillic-aware identifier patterns.
-// Go RE2 \w only matches ASCII, so we use \p{L} for Unicode letters.
-const (
-	idS = `[\p{L}_]`    // identifier start
-	idC = `[\p{L}\d_]*` // identifier continuation
-	id  = idS + idC     // full identifier
-)
+const id = `[\p{L}_][\p{L}\d_]*`
 
-// Compiled regex patterns for BSL call graph extraction.
-var (
-	// Function/procedure declaration: captures (name) and optional (Экспорт/Export)
-	reCGFuncStart = regexp.MustCompile(
-		`(?im)^\s*(?:Функция|Function|Процедура|Procedure)\s+(` + id + `)\s*\([^)]*\)\s*(Экспорт|Export)?\s*$`)
-
-	// Function/procedure end
-	reCGFuncEnd = regexp.MustCompile(
-		`(?im)^\s*(?:КонецФункции|EndFunction|КонецПроцедуры|EndProcedure)\s*$`)
-
-	// Detect function (vs procedure) from declaration line
-	reCGIsFunc = regexp.MustCompile(`(?i)^\s*(?:Функция|Function)\s+`)
-
-	// Module.Method() calls
-	reCGModuleCall = regexp.MustCompile(`(` + id + `)\.(` + id + `)\s*\(`)
-
-	// Direct function calls: Name(
-	reCGDirectCall = regexp.MustCompile(`(` + id + `)\s*\(`)
-
-	// Query text: Запрос.Текст = "..."
-	reCGQueryText = regexp.MustCompile(
-		`(?i)(?:Запрос\.Текст|Query\.Text)\s*=\s*"([^"]*(?:""[^"]*)*)"`)
-
-	// Table names in SQL/SDBL queries
-	reCGQueryTables = regexp.MustCompile(
-		`(?i)(?:ИЗ|FROM|СОЕДИНЕНИЕ|JOIN)\s+(` + id + `(?:\.` + id + `)*)`)
-
-	// Complexity: decision points (whitespace-bounded for Cyrillic)
-	reCGDecision = regexp.MustCompile(
-		`(?i)(?:^|\s)(Если|If|ИначеЕсли|ElsIf|Для|For|Пока|While|И|And|Или|Or)(?:\s|$|;)`)
-)
+var reCGQueryTables = regexp.MustCompile(`(?i)(?:ИЗ|FROM|СОЕДИНЕНИЕ|JOIN)\s+(` + id + `(?:\.` + id + `)*)`)
 
 // BSL keywords — must not be counted as function calls.
 var bslKeywords map[string]bool
@@ -64,6 +24,7 @@ func init() {
 		"неопределено", "null",
 		"процедура", "функция", "конецпроцедуры", "конецфункции",
 		"экспорт", "знач",
+		"вызватьисключение", "выполнить", "перем", "асинх", "ждать",
 		// English equivalents
 		"if", "then", "else", "elsif", "endif",
 		"for", "each", "in", "to", "do", "enddo", "while",
@@ -72,6 +33,7 @@ func init() {
 		"new", "not", "and", "or", "true", "false",
 		"undefined", "procedure", "function",
 		"endprocedure", "endfunction", "export", "val",
+		"raise", "execute", "var", "async", "await",
 	}
 	bslKeywords = make(map[string]bool, len(keywords))
 	for _, k := range keywords {
@@ -79,173 +41,154 @@ func init() {
 	}
 }
 
-// ExtractCallGraph parses BSL source and returns all functions/procedures
-// with their calls, queries, and complexity.
+// ExtractCallGraph uses lexical boundaries, not a full BSL parser. A missing end
+// keyword has EndLine 0; preprocessing and receiver types are not resolved.
 func ExtractCallGraph(code, moduleName string) []types.BslFunction {
-	if strings.TrimSpace(code) == "" {
-		return nil
-	}
-
-	// Strip UTF-8 BOM
-	code = strings.TrimPrefix(code, "\xef\xbb\xbf")
-
-	// Pre-compute line offset table: O(n) once, then O(log n) per lookup
-	lineOffsets := buildLineOffsets(code)
-
-	// Find all function/procedure starts and ends
-	starts := reCGFuncStart.FindAllStringSubmatchIndex(code, -1)
-	ends := reCGFuncEnd.FindAllStringIndex(code, -1)
-
-	if len(starts) == 0 {
-		return nil
-	}
-
-	functions := make([]types.BslFunction, 0, len(starts))
-
-	for i, sm := range starts {
-		// Group 1: function/procedure name
-		name := code[sm[2]:sm[3]]
-
-		// Group 2: Экспорт/Export (optional)
-		isExport := sm[4] != -1
-
-		// Determine function vs procedure from declaration line
-		declLine := code[sm[0]:sm[1]]
-		isFunction := reCGIsFunc.MatchString(declLine)
-
-		startLine := lineAtOffset(lineOffsets, sm[0])
-
-		// Find matching end: first КонецФункции/КонецПроцедуры after this start,
-		// but before the next start (to handle sequential functions correctly)
-		nextStartOffset := len(code)
-		if i+1 < len(starts) {
-			nextStartOffset = starts[i+1][0]
+	tokens := lexBSL(code)
+	pairs := delimiterPairs(tokens)
+	var functions []types.BslFunction
+	for i := 0; i+2 < len(tokens); i++ {
+		if !declarationAt(tokens, i) {
+			continue
 		}
-
-		bodyEnd := nextStartOffset
-		for _, em := range ends {
-			if em[0] > sm[1] && em[0] < nextStartOffset {
-				bodyEnd = em[0] // use start of end-keyword, not end
+		close, ok := pairs[i+2]
+		if !ok {
+			continue
+		}
+		f := types.BslFunction{Name: tokens[i+1].text, Module: moduleName,
+			Line: tokens[i].line, IsFunction: tokenIs(tokens[i], "функция", "function")}
+		bodyStart := close + 1
+		if bodyStart < len(tokens) && tokenIs(tokens[bodyStart], "экспорт", "export") {
+			f.IsExport = true
+			bodyStart++
+		}
+		end := bodyStart
+		for end < len(tokens) {
+			if declarationAt(tokens, end) {
 				break
 			}
+			if tokenIs(tokens[end], "конецпроцедуры", "endprocedure", "конецфункции", "endfunction") {
+				f.EndLine = tokens[end].line
+				break
+			}
+			end++
 		}
-
-		// Extract body: text between declaration and end keyword
-		body := ""
-		if sm[1] < bodyEnd {
-			body = code[sm[1]:bodyEnd]
+		body := tokens[bodyStart:end]
+		f.CallSites, f.Calls = extractCallSites(body)
+		f.Queries = extractTokenQueries(body)
+		f.Complexity = 1
+		for _, t := range body {
+			if t.kind == 'i' && tokenIs(t, "если", "if", "иначеесли", "elsif", "для", "for", "пока", "while", "и", "and", "или", "or") {
+				f.Complexity++
+			}
 		}
-
-		calls := extractCalls(body)
-		queries := extractQueries(body, startLine)
-		complexity := estimateComplexity(body)
-
-		functions = append(functions, types.BslFunction{
-			Name:       name,
-			Module:     moduleName,
-			Line:       startLine,
-			IsExport:   isExport,
-			IsFunction: isFunction,
-			Complexity: complexity,
-			Calls:      calls,
-			Queries:    queries,
-		})
+		functions = append(functions, f)
+		i = end - 1
 	}
-
 	return functions
 }
 
-// extractCalls finds all function/procedure calls in body text.
-// Returns sorted unique list of call targets.
-func extractCalls(body string) []string {
-	if body == "" {
-		return nil
-	}
-
-	seen := make(map[string]struct{})
-
-	// Module.Method() calls
-	for _, m := range reCGModuleCall.FindAllStringSubmatch(body, -1) {
-		module := m[1]
-		method := m[2]
-		seen[module+"."+method] = struct{}{}
-	}
-
-	// Direct calls: Name(
-	for _, m := range reCGDirectCall.FindAllStringSubmatch(body, -1) {
-		name := m[1]
-		if !bslKeywords[strings.ToLower(name)] {
-			seen[name] = struct{}{}
-		}
-	}
-
-	if len(seen) == 0 {
-		return nil
-	}
-
-	calls := make([]string, 0, len(seen))
-	for c := range seen {
-		calls = append(calls, c)
-	}
-	sort.Strings(calls)
-	return calls
+func declarationAt(tokens []bslToken, i int) bool {
+	return i+2 < len(tokens) &&
+		(i == 0 || tokens[i-1].endLine < tokens[i].line) &&
+		tokenIs(tokens[i], "процедура", "procedure", "функция", "function") &&
+		tokens[i+1].kind == 'i' && tokens[i+2].text == "("
 }
 
-// extractQueries finds SQL/SDBL queries (Запрос.Текст = "...") in body text.
-func extractQueries(body string, baseLine int) []types.BslQuery {
-	matches := reCGQueryText.FindAllStringSubmatchIndex(body, -1)
-	if len(matches) == 0 {
-		return nil
+func extractCallSites(tokens []bslToken) ([]types.BslCallSite, []string) {
+	sites := make([]types.BslCallSite, 0)
+	seen := make(map[string]bool)
+	pairs := delimiterPairs(tokens)
+	for i, t := range tokens {
+		if t.kind != 'i' || i+1 >= len(tokens) || tokens[i+1].text != "(" || bslKeywords[strings.ToLower(t.text)] {
+			continue
+		}
+		start := receiverStart(tokens, pairs, i)
+		constructed := start > 0 && tokenIs(tokens[start-1], "новый", "new")
+		kind := "direct"
+		if start < i {
+			kind = "qualified"
+		}
+		var target strings.Builder
+		for j := start; j <= i; j++ {
+			target.WriteString(tokens[j].text)
+			if tokens[j].kind != 'i' && tokens[j].text != "." {
+				kind = "unresolved"
+			}
+		}
+		// A leading dot has an unsupported/missing receiver. Never bind locally.
+		if start > 0 && tokens[start-1].text == "." {
+			kind = "unresolved"
+		}
+		if constructed && kind != "unresolved" {
+			continue
+		}
+		sites = append(sites, types.BslCallSite{Target: target.String(), Kind: kind,
+			Line: tokens[start].line, Column: tokens[start].column,
+			EndLine: t.endLine, EndColumn: t.endColumn})
+		if kind != "unresolved" {
+			seen[target.String()] = true
+		}
 	}
+	var calls []string
+	for target := range seen {
+		calls = append(calls, target)
+	}
+	sort.Strings(calls)
+	return sites, calls
+}
 
-	bodyOffsets := buildLineOffsets(body)
-	queries := make([]types.BslQuery, 0, len(matches))
+// receiverStart walks only postfix receiver syntax. Parenthesized/indexed
+// receivers remain in the target evidence and are classified as unresolved.
+func receiverStart(tokens []bslToken, pairs map[int]int, end int) int {
+	start := end
+	if tokens[end].text == ")" || tokens[end].text == "]" {
+		open, ok := pairs[end]
+		if !ok {
+			return start
+		}
+		start = open
+		if open > 0 && (tokens[open-1].kind == 'i' || tokens[open-1].text == ")" || tokens[open-1].text == "]") && !bslKeywords[strings.ToLower(tokens[open-1].text)] {
+			start = receiverStart(tokens, pairs, open-1)
+		}
+	}
+	if start >= 2 && tokens[start-1].text == "." {
+		start = receiverStart(tokens, pairs, start-2)
+	}
+	return start
+}
 
-	for _, m := range matches {
-		qText := body[m[2]:m[3]]
-		qText = strings.ReplaceAll(qText, `""`, `"`)
-		qLine := baseLine + lineAtOffset(bodyOffsets, m[0]) - 1
-
+// Only literal assignments to the conventional query text property are
+// extracted. This does not infer aliases, concatenations, or runtime queries.
+func extractTokenQueries(tokens []bslToken) []types.BslQuery {
+	var queries []types.BslQuery
+	for i := 0; i+4 < len(tokens); i++ {
+		if !tokenIs(tokens[i], "запрос", "query") || tokens[i+1].text != "." ||
+			!tokenIs(tokens[i+2], "текст", "text") || tokens[i+3].text != "=" || tokens[i+4].kind != 's' {
+			continue
+		}
+		if i > 0 && tokens[i-1].text == "." {
+			continue
+		}
+		if i+5 < len(tokens) && tokens[i+5].text != ";" {
+			continue
+		}
+		raw := tokens[i+4].text
+		if len(raw) < 2 || !strings.HasSuffix(raw, `"`) {
+			continue
+		}
+		qText := strings.ReplaceAll(raw[1:len(raw)-1], `""`, `"`)
+		// The continuation marker/indent is BSL syntax, not query text.
+		lines := strings.Split(qText, "\n")
+		for j := 1; j < len(lines); j++ {
+			lines[j] = strings.TrimPrefix(strings.TrimLeft(lines[j], " \t"), "|")
+		}
+		qText = strings.Join(lines, "\n")
 		var tables []string
 		for _, t := range reCGQueryTables.FindAllStringSubmatch(qText, -1) {
 			tables = append(tables, t[1])
 		}
-
-		queries = append(queries, types.BslQuery{
-			Text:   qText,
-			Line:   qLine,
-			Tables: tables,
-		})
+		queries = append(queries, types.BslQuery{Text: qText, Line: tokens[i].line, Tables: tables})
 	}
-
 	return queries
-}
-
-// estimateComplexity counts decision points for cyclomatic complexity.
-func estimateComplexity(body string) int {
-	return 1 + len(reCGDecision.FindAllString(body, -1))
-}
-
-// buildLineOffsets pre-computes byte offsets of each line start.
-// Returns slice where lineOffsets[i] = byte offset of line (i+1).
-func buildLineOffsets(text string) []int {
-	offsets := make([]int, 0, strings.Count(text, "\n")+1)
-	offsets = append(offsets, 0) // line 1 starts at offset 0
-	for i := 0; i < len(text); i++ {
-		if text[i] == '\n' {
-			offsets = append(offsets, i+1)
-		}
-	}
-	return offsets
-}
-
-// lineAtOffset returns 1-indexed line number for a byte offset.
-// Uses binary search on pre-computed offsets: O(log n).
-func lineAtOffset(offsets []int, offset int) int {
-	// Find last entry <= offset
-	idx := sort.SearchInts(offsets, offset+1) - 1
-	if idx < 0 {
-		idx = 0
-	}
-	return idx + 1 // 1-indexed
 }

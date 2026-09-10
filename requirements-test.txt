@@ -1,0 +1,4 @@
+# Tooling for the public regression suite; runtime has its own hash lock.
+pytest==9.1.1
+PyYAML==6.0.1
+anyio==4.15.1

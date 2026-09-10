@@ -1,0 +1,713 @@
+{
+  "core_version": "0.1.0.dev7",
+  "core_kit_sha256": "660fe8e7b02169f58a73bb2224c9fcf15f347438b04a6555a62f61f787fe7dc2",
+  "core_sdist_sha256": "98ed71cfb71a11224d464edea0260356cfd34be7b424b13de2e57082499986bc",
+  "note": "Import-time hashes; tests adapted to canonical imports and PATH. Subsequent changes are recorded in Git. No private development history imported.",
+  "files": [
+    {
+      "path": "rentgen_core/README.md",
+      "sha256": "f095e6c6321270c2b5f216a5cfa2c5259347fffc07893a02d7d9b632d521ceca",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/__init__.py",
+      "sha256": "c95ec2788423e3571a24bb0084ea9944431ef3374d4151df3dfe74e8288cabfe",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/__main__.py",
+      "sha256": "cfd23b66cbdab9c6db4d2b0484a5391b7c256cf2da34d15f496f56f68ce73a43",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/_schema_upgrade.py",
+      "sha256": "6a163d3827fadefbc98a6caf5fe856700f6120333dd793d0cb9c67bdb4725885",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/_sqlite.py",
+      "sha256": "46754ed76b0a3d627fb95c0f03da4d3c21c3c0537a2352b06dc1002eada9a14b",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/_windows_source_tree.py",
+      "sha256": "2088174291fa476b9088df5109c6da6314bdc0a5d93d77014150744ff12f7bba",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/_workflow_schema.py",
+      "sha256": "75fc2e38bbf87b9041fc29ac13eb76189c4d40e97f7154cad13db0a1d68a41fa",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/access.py",
+      "sha256": "cab3aafcdc184f177b4c2d713d9146a6646fd69b9e6a4847be2586aa3a882ba9",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/access_migration.py",
+      "sha256": "76c1f9e40d56552487495cff1baadae99bed5bc01592b541b8ae97347a0db8ef",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/authorization.py",
+      "sha256": "9e6cc8f2e66cdf96159c2a11edfd6e7c7ee5db85a8b6ee28d90263fcaf1c8598",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/capture.py",
+      "sha256": "e179f84e8a1166d3791f88c75cbeb041d0f71045469239d0955c8fc1df7b5e8b",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/cli.py",
+      "sha256": "195cef9ae972b483a9ada5508b1029b0b203985716343fed2b8a5f9d323f0f0d",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/context.py",
+      "sha256": "ba123c2411735a3502ac7164536d5be7ddcad6f30fff3f611b8e70c621061f61",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/diagnostics.py",
+      "sha256": "f39fe4157d46b4c51c5aa382096f65f7898a55cdf7b7e406f40f81f62306cda3",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/draft_editing.py",
+      "sha256": "e9fd1720b8c3c0ea85ab90b5c20ebae08094942ec2f15aa870635a92cee3c72c",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/drafts.py",
+      "sha256": "bb2595deb13ce2ae4ba4a5bde355b8fb982b6249ace3d2bf22c0185cdff8526f",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/errors.py",
+      "sha256": "3caf33a8abc40ca620cc2b914f980a3d5ae6007960347fd781782541e6ca8428",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/graph.py",
+      "sha256": "a1c9a5d040f249cc9f753a9637df6a1b8286dbe5e571b083c920a68ea07f76c6",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/local.py",
+      "sha256": "dd882f704df06459df9d79ba644891fa14a62af4712e16005378b1902807e08d",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/local_identity.py",
+      "sha256": "6ac2ae40d91fac903f6f37b8dc630325f5cbf2b8d3024f3468cb06b97429d57c",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/manifests.py",
+      "sha256": "91b71c873fc0fec46cd996054cd5c7f90598e4d11bbb4275dec7156d3141971e",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/mcp_drafts.py",
+      "sha256": "e6b196a868dd6761c28d3c78558ec093482d28b97bec5cecbb25deff7567cc6d",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/metadata.py",
+      "sha256": "0384cc133769f98fc38d937fd9b88b19669abb2cdda7a859dddc64ac8d7a565b",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/metadata_xml.py",
+      "sha256": "e2a255ab52da2cab7a45714d31371f8d880d4a246c429ef05fc68cd7a57180a7",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/proposals.py",
+      "sha256": "d0b3c66098869ddc65662e4a517fa8b8eaeb595f85778e4fb68a5c79fa56750c",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/publication.py",
+      "sha256": "2f177192b6f67e9b76dc4a02376b9965298b28e84831f8816dc423a91ae5312a",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/registry.py",
+      "sha256": "e75ad0046c467ea87cb401d25bd67de43750fddc6b140d86e74dac5856d81bf4",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/resolver.py",
+      "sha256": "ebb8e0ebd6cb99660705356b4f3f00272122ba721604aff965ebe369477a1921",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/snapshots.py",
+      "sha256": "472ba7e6befbc538c737ce46c7cb35ab0bfc7f3564a9dce809feabf5737150bd",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/source_catalog.py",
+      "sha256": "a05536acef20b3138cd65cd8b5c48da07c1c1e183b42e5cdf20b2efe8569cee0",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/source_configuration.py",
+      "sha256": "e51375b6bf3815613657375c8f9c7b74297cd3b62982d940f920c74051c5633f",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/source_paths.py",
+      "sha256": "8871590c248f3cb43bbb68ce52c4696fc5e7455cb569d3af0349b9f2ed2a9be3",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/sources.py",
+      "sha256": "cfdec96a3bd5adcf961b2baf1492be37882a6dd20167b5c357d34acf0f201dc5",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/state.py",
+      "sha256": "5c6e538fdc12e0cc9dc486531fd28daaca61973f5b052bb201f46c87426a6909",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/state_migration.py",
+      "sha256": "19cede91b10b7f42cbe343639774474ef0d33b7d154052f21e97f0408e6eb396",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/stdio_mcp.py",
+      "sha256": "1bf81603e0235765ad56d89211901a130db5c8def15d43f66e48dcd78e0cfb41",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_core/workflow_migration.py",
+      "sha256": "419d4d8ce13e9c58e5ecb3d276815708512be398c2bdf4176b51f755988ce820",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_diagnostics/__init__.py",
+      "sha256": "14baed8682f13ad45fffac0dcf5ee4d99b8007e9e28ea47cbc8dd8b3ae83697b",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_diagnostics/_owned_attempt.py",
+      "sha256": "09608aa583eb061610c85468fef262606eaf9c54b8c68e3dd32d2d863b4509b2",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_diagnostics/_runtime_pins.py",
+      "sha256": "3bba1041347a0aea6f806029edbe8dcdf2e425501995c94d34c910a2a7d1760f",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_diagnostics/_windows_process.py",
+      "sha256": "4c69b73e838e75f5a742480f60f9d89512917c975958e20e2b195d0ac3ed0091",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_diagnostics/bsl_language_server.py",
+      "sha256": "fe26b4f1990a907842d290060ef4513c5947542c4b4bb07e239ff8e0e330435f",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_diagnostics/installed.py",
+      "sha256": "dcc2fabf34f03e6b86691106f5f97285520cb9ad220a97fce006a152fe79c615",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_diagnostics/profiles/bsl-ls-1.0.5-temurin21-win64.json",
+      "sha256": "2835e1a268e67be020e99ecd8d2a64c7b390e3752ed99c89d71a5340eb792ca5",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_diagnostics/profiles/temurin21.0.12.1-win64-files.json",
+      "sha256": "8bc41043a586a2f3c6ee425cef8815c127c2ea9cd2e051a216eda20394babafd",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_graph/__init__.py",
+      "sha256": "df3a2a93f7704dd05a8f8062ff5468f256be08ff7af13ab49d3541e619c6cf66",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_graph/build_store.py",
+      "sha256": "b02c6fe089b0a82445aa635a0d5010a9a33e40a460213ca2fd948bbf6acedbfa",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_graph/identity.py",
+      "sha256": "6f7f30e5ae627a31648a00bdebf006823e2cd731aa1977a5eb0dca5f5b57f482",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_graph/snapshot_adapter.py",
+      "sha256": "75984c6daea5de5e9cbb5c10409fb53d7e5b2e583c790eb7e6b34a4d79dddc66",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "rentgen_graph/store.py",
+      "sha256": "c9ad02a95dfb4315d643f8f87bb1e8f79fee75256e8a121037131af41128ebb8",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "requirements-product-build.txt",
+      "sha256": "9a2a81303424ff86a0ce8e52b8a13f3ec22ac3df84ae7b0727863f1b469d9fd1",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "go/cmd/bsl-scan/main.go",
+      "sha256": "f5e3e55517fe0d41c7b0b1a9168a307100f4ce9cd90a011679c4c246e5549364",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "go/go.mod",
+      "sha256": "1950701898484161f66ac49727ad64085a85d02968f675ba994324a92ba248f8",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "go/internal/extractor/bsl_lexer.go",
+      "sha256": "df9a754ed1b1bf4bac94957f0a20b80670800b9a7f8ae2c478971168677060b0",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "go/internal/extractor/callgraph.go",
+      "sha256": "56def474192337336ee192d88ab6e88cf0006e43877b797e913308b962b8a5cc",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "go/internal/extractor/callgraph_lexical_test.go",
+      "sha256": "f6f8e181bd698eafd4e228ab6c946d5d9efc0c3a5a05c6d81f36ff453d681867",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "go/internal/extractor/callgraph_test.go",
+      "sha256": "71419b2819a073dbe6c16d6dcb3698a5dace0e066581b1159b0422664b11e1b1",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "go/internal/extractor/extractor.go",
+      "sha256": "4d7e474686ac2d9ba94bc4c6524e06eacd146530277398a16d067f1ebdba5bab",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "go/internal/extractor/extractor_test.go",
+      "sha256": "88e5566acac1ab6a9266d8f1bc1bfec0466bd4f989622e05db3db381339be490",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "go/internal/scanner/callgraph_identity_test.go",
+      "sha256": "d0125d1a08eba28f0f09877d8bce88b8a1663096da3b9b9f307abd894f4c3cc7",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "go/internal/scanner/scanner.go",
+      "sha256": "44bb50328efb5f5ec65ded37b673d0703956127488464aec4747bc8f9c72cf63",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "go/internal/scanner/scanner_test.go",
+      "sha256": "5966af097d22acd8b449940d646b1e98e647406b1ec067c2bfb25e8f09d14b29",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "go/internal/scanner/strict.go",
+      "sha256": "246670df11e0c5cbfbbeff4630b70ad36c30d87f6fb53b20df81261bac731e30",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "go/internal/scanner/strict_test.go",
+      "sha256": "13f52b37fb672120a807c1b856f7e50ac0dac39ecfa9015b254eba0a41432bd1",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "go/pkg/types/types.go",
+      "sha256": "515c2054bbf902de278fb48f3be52a2c4fa2575ace7219591d3558b8858bf415",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "packaging/core/hatch_build.py",
+      "sha256": "1035b734b141b9895061a094710903c04555220886e487d117ce4a74977fa088",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "docs/product/CORE-INSTALLATION.md",
+      "sha256": "7489ec7c4c9fb3a4c0970ea15dbf2ef08abc27a7cc7c9a9d071237d86c6dbc78",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "docs/product/CORE-MCP.md",
+      "sha256": "1032bef80aa9e2ccf39c33b6efe164364be9901bc6a4aede83bfe9fb59a9d62d",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "docs/product/DRAFT-EDITOR.md",
+      "sha256": "d0a7dd788ff0cf1f6ca530061aaf28a7b4d8dfd69204cf9fdb84e8fae86c07d4",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "docs/product/DRAFT-HISTORY-DESIGN.md",
+      "sha256": "d31fec84723f8feed5c7312cb589e814771ee16617ad7b891fe31d0f64d870ba",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "docs/product/DRAFT-HISTORY.md",
+      "sha256": "a5b392cbd67628f13dcdc489922b747020b160ba50f9aa35c56f1daa6df03df6",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "docs/product/DRAFT-MCP.md",
+      "sha256": "e2cd11dded9bd36a93e056635f763b325493868be307807fdaec608484ef78b1",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "docs/product/LARGE-DRAFT-MCP.md",
+      "sha256": "4bcf75dec95fdae92901fa03daafe86073393dccc9de2725e3e3cb817884e674",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "docs/product/PROJECT-ACCESS.md",
+      "sha256": "d3b69885073560709f00d3cc711588b72b5cf5449e4530be08d783776a94043e",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "docs/product/PROJECT-DRAFTS-HTTP.md",
+      "sha256": "ed998cdee284ca925aa33e3d5a0725d775c86921fe80c0b46d8b511496dfeda5",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "docs/product/PROPOSAL-CHECK.md",
+      "sha256": "ec265d0c0784a06c5519b0a53d45664bfc51566cb35e8f6b5efd2e019bfa5ac1",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "docs/product/SNAPSHOT-METADATA.md",
+      "sha256": "54bb49bb5d3751ad6727dca62dd24ebba03e09bdd19d8e837fdc1f151f5e51c9",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "docs/product/SNAPSHOT-PUBLICATION-ADR.md",
+      "sha256": "159e2876b47c4e24eba11bf05c3859108a1acd67fe06fa6a064be76cbeef08a7",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "docs/product/SNAPSHOT-READ-SESSIONS.md",
+      "sha256": "9a021dd82004e915b5b0968882681d11136ba94837521ab4674f89a034e00b8a",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "docs/product/SOURCE-DISCOVERY.md",
+      "sha256": "b5c6e286152b4f46b44abb4a323130470429d23c48f7e2f06c036b77e1c6907e",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "docs/product/STATE-MIGRATION.md",
+      "sha256": "e6c42a7e2c70ada5d32a4ef3efab0c76288bb2ea0f6250353d3bbf292f18b1ae",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "docs/product/WORKFLOW-STATE-ADR.md",
+      "sha256": "6144e8248e795b79e6ad39cb84e380b524b81a941736256814d0e35508d3095b",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "requirements/locks/product-build-py311-windows.txt",
+      "sha256": "813c3340fdf873354bfe1b330577002279f4e67f860eb948cb8e49201b54e164",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "requirements/locks/product-py311-windows.txt",
+      "sha256": "5afed33fea6a40bd3911db772ce1a4a85bd43ae895cc29dad80bcac0b12d836a",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "packaging/test-profiles/yaxunit-25.12/inputs.json",
+      "sha256": "8ec6de6229946e0b615efe36e4a579d7720bcc94545f7d0fede6156c71d0868d",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "17ea2aa99a9f65047131e6a4b8981bc9f186e9b564568350ac49678675bab5d0",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "515d51444fdeae7ed1c746351f074136445a5ddc0d6261aae879868c06d8de31",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": "packaging/core/README.md",
+      "sha256": "a328c61fe8292d4a469f254595f1ca953939e2e2ef48defa0dc0dfc23aa62c3c",
+      "origin": "accepted-core-sdist"
+    },
+    {
+      "path": ".github/workflows/release.yml",
+      "sha256": "493226197393435fbe2f33d661250d0fda2777c28337dfa8c045028dc7a32737",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "docs/product/EDITOR-REPAIR-ACCEPTANCE.md",
+      "sha256": "1c079f8838a6b847aaf4e3ab75d9a72a8cb304aaad894a8c3795357679bc993e",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "docs/product/EDITOR-REPAIR-DESIGN.md",
+      "sha256": "9e985f4ffefea0d333e7c3e89ceaefa0b2cb595bd6aae9c3178b75b0ed2eed6f",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "docs/product/LOCAL-REPAIR-DESIGN.md",
+      "sha256": "d69d5e7437fc09f1a83be7be0186dd6c526924b52ea3560643940ef4f45d46fd",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "docs/product/LOCAL-REPAIR.md",
+      "sha256": "6d30c951741717ad7952e0453f38b0bed3c8bf1cbdfd1846863795d20a66a048",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "docs/product/OPEN-EDITOR-ACCEPTANCE.md",
+      "sha256": "02be49f07f76aa0717b7abf15fb00ebbe034f5ac340d0a01f4079b9b61996184",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "docs/product/OPEN-EDITOR-DESIGN.md",
+      "sha256": "0dc7da2ca48c763719910577eca7d590acbba615b9d3f0f7a73c1f5db148d351",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/open-editor/README.md",
+      "sha256": "08249aa8f46581ebeadcfbc7905ccb7dbeaa44db2d0d1cc0d766561b73a5309f",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/open-editor/install.ps1",
+      "sha256": "9cd1165020bfe88fcc12af8d16c7d5226f258b94fb98898de32f2e80668c11e6",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/open-editor/install_bsl_runtime.py",
+      "sha256": "43be7bc75bd00d2102f7b8303d6ab1df4f3411ef7d5f42ee39f87c0bb151c09e",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/open-editor/launch.ps1",
+      "sha256": "181d6a0c76cd6371d45ca13e3d701b10ec6fc51fee09b061b445daab505292ea",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/open-editor/prepare.py",
+      "sha256": "8ba667188cf21187549c93585de1955edd2d21aa470e8b1a30f97dce0de18c6a",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/open-editor/repair_model.py",
+      "sha256": "b7cd4d024a5cc8325f32c2cac29a1d3863922e5550b35c76820315efb61f6612",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/open-editor/repair_workflow.py",
+      "sha256": "4e47e4f19fe497d5faf770f6f0edd665d95c478c6dcf7a547f9781799110d904",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/open-editor/run_repair.py",
+      "sha256": "d5a5eebbecdb80ac4c9391cadc3869c72f2ee549d6dc6d0e48c912915245db74",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/vscode-rentgen/LICENSE.txt",
+      "sha256": "9ca655dba61c79a8d08a35b785d1700c8c68a59fb7d09b409dc8997f06ff963a",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/vscode-rentgen/README.md",
+      "sha256": "fd60becfa80ee9a78317a26e9f950b38badba50a8a1f8e7b5a213b84bd2e626b",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/vscode-rentgen/build.py",
+      "sha256": "d450e22b3f0f84067be1f91cf0b3d6e7a4171aca7c327dd6fe0dd67b2917640a",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/vscode-rentgen/extension.cjs",
+      "sha256": "13aad1df63e9b1e79cc018f02d757c2cbd546a4b7840119e2aa1b69d8b0c9891",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/vscode-rentgen/lib/core.cjs",
+      "sha256": "045263cdc726d3b0115fa5799707c9d8542a8dcfd1f1f916c0b1c73019bfa3a9",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/vscode-rentgen/lib/process.cjs",
+      "sha256": "505e40ec259eb9557a2208b30f445c117e374c07169e8275e81d914d4874b271",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/vscode-rentgen/lib/repair-ui.cjs",
+      "sha256": "7113ed90f58a049214b236fb687e60154065d6eb05d6518515478f657dfad907",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/vscode-rentgen/lib/repair.cjs",
+      "sha256": "7608491c9475cf8008a0003421b7663d02154fda6dda6e665a10343c60636f90",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/vscode-rentgen/lib/state.cjs",
+      "sha256": "e8d9556e19cc82f5a40bd1d3251d19b16165b9057b6500227cd0019af0322f1b",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/vscode-rentgen/lib/views.cjs",
+      "sha256": "182ee575ee1a8d4df110f3420d5c0b2a60e4d660d401b6f69da198100ef53c8e",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/vscode-rentgen/package.json",
+      "sha256": "70a1196372ad355e3f3f78e0be1485893cb0ad47a4cff4d99a90425f8b40fab5",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/vscode-rentgen/test/core.test.cjs",
+      "sha256": "0705ef54a5c72b7b16fbd2ffde93a27a2cfde6162d2597d9131e3e60113afbda",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/vscode-rentgen/test/process.test.cjs",
+      "sha256": "12ef7c0deecd6da7e628925ef95c39976e603a26b7a81163717390c2a637953b",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/vscode-rentgen/test/repair-ui.test.cjs",
+      "sha256": "4844cb670bd5f95cb485b0828adf84f2f35d015551e0c8104006f83ba6882d54",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/vscode-rentgen/test/repair.test.cjs",
+      "sha256": "7f314b25820189add63f74c9550afef02446e649c0c0f4a1d4c8712cdcac6acd",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "integrations/vscode-rentgen/test/views.test.cjs",
+      "sha256": "584d0fa54cf8b69d516fd49e269041e68a4c582b676c34504858da0e5a719dc2",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "project_access_test_support.py",
+      "sha256": "30c388afe9c039120b9f08bfd77c42bb06b742fc96f41d001e232be79807bf50",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "releases/companion/0.1.4/RELEASE_NOTES.md",
+      "sha256": "8abef51242408d5d0d8832678927c33f810b10bacbb9a5cec1ff26bef972152e",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "releases/companion/0.1.4/manifest.json",
+      "sha256": "8ee52dc07178ddc0f2d28fade6c0c446080b04264be407cd73e29b1178e3cfc8",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "scripts/release/README.md",
+      "sha256": "4ff9f5e1463924dd89b4ad125b1b78bf9e00ac407ff3925dad585772571c910a",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "scripts/release/create_release.py",
+      "sha256": "45f857d51dcca8525b36931b366bfb2c2bc4b3a6672b00cef19da1919cc10e8a",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "scripts/release/prepare_companion.py",
+      "sha256": "fd0598b83f033ba16c3659ff17a0e90d4976787f1eb5b97ef0d1f6e9b795bd21",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "scripts/verification/companion_host/repair.cjs",
+      "sha256": "93ba95b06f31f9d5259f5769bbfdcd63c2c230fa6c74888bb3a0b808c057636b",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "scripts/verification/open_editor_host/host.cjs",
+      "sha256": "46521f98ac61499d80be0fb388de6e716dc4ff13ae288b47dafdbaf91254193b",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "scripts/verification/open_editor_host/package.json",
+      "sha256": "a13f75ecde39548786c9d67de16a4733b63dbbacfbdb52a80cc561086cbd0a47",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "scripts/verification/run_open_editor_host.py",
+      "sha256": "97a8f812f0cb9d0c00ab37ce55bc185c6a6e1f2a4a694240188e5fd4ea251847",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "scripts/verification/verify_managed_repair.py",
+      "sha256": "47113fa0affe01718e55a834e9414615a53ed5f427e0fb2386438c623fee46f3",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "scripts/verification/verify_open_editor_draft.py",
+      "sha256": "237ab52c75fca91e3840fa291b9b939cf85772e474d7098e0dcded7db834c611",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "tests/unit/test_companion_release.py",
+      "sha256": "23b7bdf3d2de998c09fa0fddf46649d009282a3eff85ed1ac16b768dc3f1bc3f",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "tests/unit/test_local_repair_model.py",
+      "sha256": "3a77e82066ff2051b0b96d83ced0e2b12ba4a4f12225e9a8a6004b8ad50086fe",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "tests/unit/test_local_repair_workflow.py",
+      "sha256": "680053de32570f0e48e63b5d01327110314f7018fc7d7635e9fc7756855d159e",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "tests/unit/test_open_editor_profile.py",
+      "sha256": "3d933d25949906621a07c3c83d9c849c99d94a15cdcc58079222088e95344b51",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "tests/unit/test_project_core_cli.py",
+      "sha256": "0f647cff9130b2988aa931204fdb768e27f22cdad9a450f29b0beba899c3c666",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "tests/unit/test_project_core_cli_options.py",
+      "sha256": "77f3f94eb62a6a5226e17c818a955f5792408c9a614df0056e868002d9d17bca",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "tests/unit/test_project_core_publication.py",
+      "sha256": "af596263d18ce7ed364013216fa5fb4ee7fbb268ba382ea4edcf0ffa6fa989ed",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "tests/unit/test_project_core_snapshot_resolver.py",
+      "sha256": "f1d95ccf0c50f300d2301d538eb9eeed7eb5cd1de7beb5bea186d20dc065ba0f",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "tests/unit/test_project_source_discovery.py",
+      "sha256": "7ef4f073b72a6a44b1e30a67b2cf803dae96be57696749a2f9fb15f81c89c4d3",
+      "origin": "curated-product-input"
+    },
+    {
+      "path": "tests/unit/test_release_notes_git.py",
+      "sha256": "ab6ffa1f7fc9ea7d2d323cb081fd7cf5700e844d7f7765f3a59dac464546811d",
+      "origin": "curated-product-input"
+    }
+  ]
+}

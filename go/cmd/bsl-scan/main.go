@@ -30,7 +30,13 @@ func main() {
 	mode := flag.String("mode", "scan", "mode: scan|callgraph")
 	format := flag.String("format", "json", "output format: json|summary (scan mode only)")
 	minLOC := flag.Int("min-loc", 0, "skip files smaller than N lines (scan mode only)")
+	coveragePath := flag.String("coverage", "", "strict mode coverage JSON output")
+	version := flag.Bool("version", false, "print scanner protocol version")
 	flag.Parse()
+	if *version {
+		fmt.Println("bsl-scan-captured-v1")
+		return
+	}
 
 	args := flag.Args()
 	if len(args) == 0 {
@@ -43,6 +49,14 @@ func main() {
 	}
 
 	root := args[0]
+	if *mode == "callgraph-strict" {
+		if len(args) != 1 || *coveragePath == "" {
+			fmt.Fprintln(os.Stderr, `{"error":"invalid_strict_options"}`)
+			os.Exit(1)
+		}
+		runStrictCallGraph(root, *coveragePath)
+		return
+	}
 
 	// Verify path exists
 	if _, err := os.Stat(root); os.IsNotExist(err) {
@@ -58,6 +72,37 @@ func main() {
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown mode: %s (use scan or callgraph)\n", *mode)
 		os.Exit(1)
+	}
+}
+
+func runStrictCallGraph(root, coveragePath string) {
+	functions, coverage, scanErr := scanner.ScanCallGraphStrict(root)
+	report := struct {
+		FormatVersion int                    `json:"format_version"`
+		Files         []scanner.FileCoverage `json:"files"`
+		Error         string                 `json:"error,omitempty"`
+	}{1, coverage, ""}
+	if scanErr != nil {
+		report.Error = scanErr.Error()
+	}
+	raw, err := json.Marshal(report)
+	if err == nil {
+		err = os.WriteFile(coveragePath, raw, 0600)
+	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, `{"error":"coverage_write_failed"}`)
+		os.Exit(1)
+	}
+	if scanErr != nil {
+		fmt.Fprintf(os.Stderr, "{\"error\":%q}\n", scanErr.Error())
+		os.Exit(1)
+	}
+	enc := json.NewEncoder(os.Stdout)
+	for i := range functions {
+		if err := enc.Encode(&functions[i]); err != nil {
+			fmt.Fprintln(os.Stderr, `{"error":"output_failed"}`)
+			os.Exit(1)
+		}
 	}
 }
 

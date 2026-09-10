@@ -1,0 +1,5 @@
+# Isolated distribution build tools; never run the legacy root setup.py.
+hatchling==1.32.0
+build==1.6.0
+# Runtime import hook for the explicitly selected editable development package.
+editables==0.5
