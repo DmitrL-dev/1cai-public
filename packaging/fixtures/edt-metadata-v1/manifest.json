@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "provenance": "Own synthetic configuration generated through EDT-MCP 2.16.1 on EDT feature 1.35.3.v202609041212",
+  "files": {
+    "baseline/Configuration.xml": "0e2f3a7f0b1f527997364ae63b3246cceff2f3913268872879d7afae9ceddf02",
+    "baseline/Catalogs/Products.xml": "168db4e34757f030eb865f25892e5957dd6a1ac9d428abc452d4f46e05171d72",
+    "baseline/Languages/Russian.xml": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1",
+    "created/Configuration.xml": "0e2f3a7f0b1f527997364ae63b3246cceff2f3913268872879d7afae9ceddf02",
+    "created/Catalogs/Products.xml": "05ac6812aabbe3be13979ae7f8bc3a3787439a9c9303de5bc3605ec0fd9742be",
+    "created/Catalogs/Products/Forms/ItemForm.xml": "29c4effcc9ddabafc8d319cc89865cffffe3d8758b7428e6414c358b996228e3",
+    "created/Catalogs/Products/Forms/ItemForm/Ext/Form.xml": "cfbce5d6ff9e52c224be01649595063784c263c86e87c9f549b7c0dc73316951",
+    "created/Languages/Russian.xml": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1",
+    "renamed/Configuration.xml": "0e2f3a7f0b1f527997364ae63b3246cceff2f3913268872879d7afae9ceddf02",
+    "renamed/Catalogs/Products.xml": "87c0e4d4f133db1856f2082c5d5e8f977ac52fc6cd5d5e16693ccb5c47ef7c45",
+    "renamed/Catalogs/Products/Forms/ItemForm.xml": "29c4effcc9ddabafc8d319cc89865cffffe3d8758b7428e6414c358b996228e3",
+    "renamed/Catalogs/Products/Forms/ItemForm/Ext/Form.xml": "ca7de4d68d1a1a85539a16b3fd46fa1e4002bf3e81a38483c9605ea5102f15bf",
+    "renamed/Languages/Russian.xml": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "edt_feature": "1.35.3.v202609041212",
+  "edt_core": "27.0.2.v202609041212",
+  "edt_platform_support": "0.26.0.v202608270949",
+  "p2_content_sha256": "c266a0698a4491e5a99f7def7b176a9f628ee231047caec8ff0a3fad3d0cc7c3",
+  "eclipse_bootstrap_sha512": "19d008690a7f468e121fcd56f9bc9aaaaf7015a30937f44a56ca510252cc4425c04885b2634ff6af01d28c9ce3ce26984bc1081f4f4b6e845bef8c6ca8c5e34c",
+  "plugin_version": "2.16.1",
+  "plugin_source_tag_commit": "9e7e029b8b70aa8c868b04a9ffe91a95b48e6909",
+  "plugin_zip_sha256": "6b98ded657704a2ded4433351dcb1f34ed14f7a2ede20b854911a6301de959a7",
+  "mcp_protocol": "2025-11-25",
+  "mcp_python_sdk": "1.30.0",
+  "authorization": "Bearer; legacy custom header rejected with 401",
+  "live_required_tool_schemas": 7,
+  "created_catalog_attribute_form": true,
+  "rename_uuid_and_form_binding_preserved": true,
+  "undo_reexport_byte_identical": true,
+  "undo_xml_files": 5,
+  "native_renamed_fixture": {
+    "fixture": "edt-metadata-v1",
+    "phase": "renamed",
+    "platform_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+    "native_load_update_check_dump": true,
+    "structure": {
+      "catalog_uuid": "fb28b18e-d2a3-4f48-8390-c0d609c9e7c0",
+      "attribute_uuid": "eb298009-8fc5-4a2f-8812-902daeed99df",
+      "attribute": "SKU",
+      "string_length": 32,
+      "form_binding": "Объект.SKU",
+      "form_uuid": "44821c5c-7eaf-4b40-ba04-dc79e0c71268",
+      "field_id": "7",
+      "main_attribute_id": "1"
+    },
+    "business_data_execution": false,
+    "product_apply_undo": false
+  },
+  "import_export_byte_identical": false,
+  "import_structural_sample": {
+    "catalog_uuid": "fb28b18e-d2a3-4f48-8390-c0d609c9e7c0",
+    "attribute_uuid": "eb298009-8fc5-4a2f-8812-902daeed99df",
+    "attribute": "Article",
+    "string_length": 32,
+    "form_binding": "Объект.Article",
+    "form_uuid": "44821c5c-7eaf-4b40-ba04-dc79e0c71268",
+    "field_id": "7",
+    "main_attribute_id": "1"
+  },
+  "import_added_properties": [
+    "Catalog.Products.Attribute.Article.MinValue=xsi:nil",
+    "Catalog.Products.Attribute.Article.MaxValue=xsi:nil",
+    "Catalog.Products.Attribute.Article.FillValue=empty string",
+    "Catalog.Products.Form.ItemForm.UseForFoldersAndItems=Items"
+  ],
+  "import_full_semantic_equivalence": false,
+  "negative_verifier_tests": 4,
+  "business_data_execution": false,
+  "product_adapter_ready": false,
+  "full_product_ready": false
+}
