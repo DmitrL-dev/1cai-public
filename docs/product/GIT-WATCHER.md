@@ -36,6 +36,14 @@ cannot publish a conflicting findings state. The lock does not freeze external
 Git activity for the whole callback; the second probe detects a visible HEAD
 change before persistence.
 
+`GitWatcherScheduler` can receive a `SchedulerJournal` pointing to an explicitly
+owned JSON file. It writes a fsync-plus-rename record before and after each
+cycle; a process that dies leaves `phase="running"`, and a later run refuses to
+continue until an operator calls `journal.recover(reason)`. Fatal permission,
+history-rewrite and journal errors are recorded and propagated. This makes
+restarts observable without pretending that the library is a Windows service;
+notifications and service lifetime remain the caller's responsibility.
+
 This is an orchestration boundary, not an analyzer. The callback remains
 responsible for producing trustworthy findings. The optional BSL-LS adapter is
 described in [GIT-BSL-ANALYZER.md](GIT-BSL-ANALYZER.md); other analyzer adapters,
@@ -46,5 +54,6 @@ model_calls=0.
 Unit coverage in tests/unit/test_git_watcher.py checks new/unchanged commits,
 retry after analyzer failure, exact context binding, dirty and foreign
 repositories, HEAD races, history rewrites, scheduler backoff/stop and
-constructor bounds. The BSL-LS Git adapter has separate blob/provenance and
-incomplete-result tests.
+constructor bounds. Journal tests cover interrupted-run recovery, clean stop
+and fatal event retention. The BSL-LS Git adapter has separate blob/provenance
+and incomplete-result tests.

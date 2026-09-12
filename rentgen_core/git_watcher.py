@@ -1,8 +1,12 @@
 """Bounded orchestration for committed Git analysis and durable findings."""
 
 from dataclasses import asdict
+from datetime import datetime, timezone
+import json
+import os
 from pathlib import Path
 import time
+from uuid import UUID, uuid4
 
 from .errors import CoreError
 from .git_observer import FindingReport, observe_git, require_ancestor
@@ -18,6 +22,197 @@ def _option(value, name):
     ):
         raise CoreError("GIT_WATCHER_INVALID", f"Invalid {name}")
     return value
+
+
+class SchedulerJournal:
+    """Atomic local scheduler state with explicit interrupted-run recovery."""
+
+    MAX_BYTES = 1024 * 1024
+
+    def __init__(self, path):
+        self.path = Path(path).resolve()
+        if self.path.exists() and not self.path.is_file():
+            raise CoreError("GIT_WATCHER_INVALID", "Scheduler journal file required")
+        if not self.path.parent.exists() or not self.path.parent.is_dir():
+            raise CoreError("GIT_WATCHER_INVALID", "Scheduler journal parent required")
+
+    @staticmethod
+    def _now():
+        return datetime.now(timezone.utc).isoformat()
+
+    @staticmethod
+    def _run_id(value):
+        if not isinstance(value, str):
+            raise CoreError("GIT_WATCHER_RECOVERY_REQUIRED", "Malformed scheduler run")
+        try:
+            UUID(value)
+        except (ValueError, AttributeError, TypeError) as exc:
+            raise CoreError(
+                "GIT_WATCHER_RECOVERY_REQUIRED", "Malformed scheduler run"
+            ) from exc
+        return value
+
+    def _read(self):
+        if not self.path.exists():
+            return None
+        try:
+            raw = self.path.read_bytes()
+            if len(raw) > self.MAX_BYTES:
+                raise CoreError(
+                    "GIT_WATCHER_RECOVERY_REQUIRED", "Scheduler journal too large"
+                )
+            document = json.loads(raw.decode("utf-8"))
+        except CoreError:
+            raise
+        except (OSError, UnicodeError, ValueError, RecursionError) as exc:
+            raise CoreError(
+                "GIT_WATCHER_RECOVERY_REQUIRED", "Scheduler journal is unreadable"
+            ) from exc
+        if (
+            not isinstance(document, dict)
+            or document.get("schema") != 1
+            or document.get("scheduler") != "git-watcher-v1"
+            or document.get("phase") not in {"running", "recovered", "idle"}
+            or type(document.get("cycle")) is not int
+            or not 0 <= document["cycle"] <= 10_000
+            or type(document.get("failures")) is not int
+            or not 0 <= document["failures"] <= 10_000
+            or not isinstance(document.get("updated_at"), str)
+            or len(document["updated_at"]) > 64
+        ):
+            raise CoreError(
+                "GIT_WATCHER_RECOVERY_REQUIRED", "Malformed scheduler journal"
+            )
+        self._run_id(document.get("run_id"))
+        event = document.get("event")
+        if event is not None and not isinstance(event, dict):
+            raise CoreError(
+                "GIT_WATCHER_RECOVERY_REQUIRED", "Malformed scheduler event"
+            )
+        return document
+
+    def read(self):
+        """Return a validated copy of the current state, or ``None``."""
+        document = self._read()
+        return None if document is None else dict(document)
+
+    def _write(self, document):
+        raw = json.dumps(
+            document,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+        if len(raw) > self.MAX_BYTES:
+            raise CoreError(
+                "GIT_WATCHER_RECOVERY_REQUIRED", "Scheduler journal too large"
+            )
+        temporary = self.path.with_name(self.path.name + ".tmp")
+        if temporary.exists():
+            raise CoreError(
+                "GIT_WATCHER_RECOVERY_REQUIRED", "Scheduler journal recovery required"
+            )
+        try:
+            with temporary.open("xb") as stream:
+                stream.write(raw)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary, self.path)
+        except CoreError:
+            raise
+        except OSError as exc:
+            raise CoreError(
+                "GIT_WATCHER_RECOVERY_REQUIRED", "Scheduler journal write failed"
+            ) from exc
+
+    @staticmethod
+    def _document(run_id, phase, cycle, failures, event=None, *, recovered_reason=None):
+        document = {
+            "schema": 1,
+            "scheduler": "git-watcher-v1",
+            "phase": phase,
+            "run_id": run_id,
+            "cycle": cycle,
+            "failures": failures,
+            "event": event,
+            "updated_at": SchedulerJournal._now(),
+        }
+        if recovered_reason is not None:
+            document["reason"] = _option(recovered_reason, "recovery reason")
+        return document
+
+    def begin(self):
+        current = self._read()
+        if current is not None and current["phase"] == "running":
+            raise CoreError(
+                "GIT_WATCHER_RECOVERY_REQUIRED",
+                "Previous scheduler run needs explicit recovery",
+            )
+        run_id = str(uuid4())
+        self._write(self._document(run_id, "running", 0, 0))
+        return run_id
+
+    def _same_run(self, run_id):
+        current = self._read()
+        if (
+            current is None
+            or current["phase"] != "running"
+            or current["run_id"] != self._run_id(run_id)
+        ):
+            raise CoreError(
+                "GIT_WATCHER_RECOVERY_REQUIRED", "Scheduler run is not active"
+            )
+        return current
+
+    def mark_running(self, run_id, cycle, failures):
+        if type(cycle) is not int or not 0 <= cycle <= 10_000:
+            raise CoreError("GIT_WATCHER_INVALID", "Scheduler cycle is out of bounds")
+        if type(failures) is not int or not 0 <= failures <= 10_000:
+            raise CoreError(
+                "GIT_WATCHER_INVALID", "Scheduler failure count is out of bounds"
+            )
+        self._same_run(run_id)
+        self._write(self._document(run_id, "running", cycle, failures))
+
+    def record(self, run_id, cycle, failures, event, *, keep_running=True):
+        if not isinstance(event, dict):
+            raise CoreError("GIT_WATCHER_INVALID", "Scheduler event must be an object")
+        self._same_run(run_id)
+        self._write(
+            self._document(
+                run_id,
+                "running" if keep_running else "idle",
+                cycle,
+                failures,
+                dict(event),
+            )
+        )
+
+    def stop(self, run_id, cycle=None, failures=None):
+        current = self._same_run(run_id)
+        cycle = current["cycle"] if cycle is None else cycle
+        failures = current["failures"] if failures is None else failures
+        self._write(
+            self._document(run_id, "idle", cycle, failures, {"status": "stopped"})
+        )
+
+    def recover(self, reason):
+        current = self._read()
+        if current is None or current["phase"] != "running":
+            raise CoreError(
+                "GIT_WATCHER_RECOVERY_REQUIRED", "No interrupted scheduler run"
+            )
+        self._write(
+            self._document(
+                current["run_id"],
+                "recovered",
+                current["cycle"],
+                current["failures"],
+                {"status": "recovered"},
+                recovered_reason=reason,
+            )
+        )
 
 
 class GitWatcher:
@@ -144,6 +339,7 @@ class GitWatcherScheduler:
         max_backoff=3600,
         sleep=time.sleep,
         should_stop=lambda: False,
+        journal=None,
     ):
         if not callable(getattr(watcher, "tick", None)):
             raise CoreError("GIT_WATCHER_INVALID", "Watcher with tick() is required")
@@ -157,41 +353,75 @@ class GitWatcherScheduler:
             raise CoreError("GIT_WATCHER_INVALID", "max_backoff is out of bounds")
         if not callable(sleep) or not callable(should_stop):
             raise CoreError("GIT_WATCHER_INVALID", "Scheduler callbacks are required")
+        if journal is not None and not isinstance(journal, SchedulerJournal):
+            raise CoreError("GIT_WATCHER_INVALID", "Typed scheduler journal required")
         self.watcher = watcher
         self.interval = interval
         self.max_cycles = max_cycles
         self.max_backoff = max_backoff
         self.sleep = sleep
         self.should_stop = should_stop
+        self.journal = journal
 
     def run(self):
         """Run until stop/max_cycles, backing off only controlled CoreErrors."""
         events, failures, cycle = [], 0, 0
-        while self.max_cycles is None or cycle < self.max_cycles:
-            if self.should_stop():
-                break
-            try:
-                event = self.watcher.tick()
-                failures = 0
-            except CoreError as exc:
-                if exc.code in {
-                    "PROJECT_FORBIDDEN",
-                    "PROJECT_NOT_FOUND",
-                    "OBSERVER_PROFILE_MISMATCH",
-                    "OBSERVER_BUSY",
-                    "OBSERVER_JOB_FAILED",
-                    "OBSERVER_JOURNAL_FULL",
-                    "GIT_HISTORY_REWRITE",
-                }:
-                    raise
-                failures += 1
-                event = {"status": "error", "code": exc.code, "attempt": failures}
-            events.append(event)
-            cycle += 1
-            if self.max_cycles is not None and cycle >= self.max_cycles:
-                break
-            if self.should_stop():
-                break
-            delay = min(self.max_backoff, self.interval * (2**failures))
-            self.sleep(delay)
-        return events
+        run_id = self.journal.begin() if self.journal is not None else None
+        try:
+            while self.max_cycles is None or cycle < self.max_cycles:
+                if self.should_stop():
+                    break
+                if self.journal is not None:
+                    self.journal.mark_running(run_id, cycle, failures)
+                try:
+                    event = self.watcher.tick()
+                    failures = 0
+                except CoreError as exc:
+                    if exc.code in {
+                        "PROJECT_FORBIDDEN",
+                        "PROJECT_NOT_FOUND",
+                        "OBSERVER_PROFILE_MISMATCH",
+                        "OBSERVER_BUSY",
+                        "OBSERVER_JOB_FAILED",
+                        "OBSERVER_JOURNAL_FULL",
+                        "GIT_HISTORY_REWRITE",
+                    }:
+                        if self.journal is not None:
+                            self.journal.record(
+                                run_id,
+                                cycle,
+                                failures,
+                                {"status": "fatal", "code": exc.code},
+                                keep_running=False,
+                            )
+                        raise
+                    failures += 1
+                    event = {"status": "error", "code": exc.code, "attempt": failures}
+                cycle += 1
+                events.append(event)
+                if self.journal is not None:
+                    self.journal.record(run_id, cycle, failures, event)
+                if self.max_cycles is not None and cycle >= self.max_cycles:
+                    break
+                if self.should_stop():
+                    break
+                delay = min(self.max_backoff, self.interval * (2**failures))
+                self.sleep(delay)
+            return events
+        except BaseException:
+            if self.journal is not None:
+                current = self.journal.read()
+                if current is not None and current["phase"] == "running":
+                    self.journal.record(
+                        run_id,
+                        cycle,
+                        failures,
+                        {"status": "fatal", "code": "GIT_WATCHER_UNEXPECTED"},
+                        keep_running=False,
+                    )
+            raise
+        finally:
+            if self.journal is not None:
+                current = self.journal.read()
+                if current is not None and current["phase"] == "running":
+                    self.journal.stop(run_id, cycle, failures)

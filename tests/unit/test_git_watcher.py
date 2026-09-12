@@ -271,3 +271,53 @@ def test_scheduler_rejects_unbounded_options():
         implementation.GitWatcherScheduler(watcher, interval=4)
     with pytest.raises(CoreError):
         implementation.GitWatcherScheduler(watcher, interval=5, max_cycles=0)
+
+
+def test_scheduler_journal_requires_explicit_recovery_after_interruption(tmp_path):
+    path = tmp_path / "scheduler.json"
+    journal = implementation.SchedulerJournal(path)
+    run_id = journal.begin()
+    assert journal.read()["phase"] == "running"
+
+    with pytest.raises(CoreError) as error:
+        journal.begin()
+    assert error.value.code == "GIT_WATCHER_RECOVERY_REQUIRED"
+
+    journal.recover("operator-confirmed-interruption")
+    assert journal.read()["phase"] == "recovered"
+    next_run = journal.begin()
+    journal.record(next_run, 1, 0, {"status": "unchanged"})
+    journal.stop(next_run)
+    state = journal.read()
+    assert state["phase"] == "idle"
+    assert state["event"] == {"status": "stopped"}
+    assert state["run_id"] != run_id
+
+
+def test_scheduler_persists_events_and_stops_cleanly(tmp_path):
+    journal = implementation.SchedulerJournal(tmp_path / "scheduler.json")
+    watcher = _ScheduledWatcher([{"status": "unchanged"}])
+    events = implementation.GitWatcherScheduler(
+        watcher, interval=5, max_cycles=1, journal=journal
+    ).run()
+
+    assert events == [{"status": "unchanged"}]
+    state = journal.read()
+    assert state["phase"] == "idle"
+    assert state["event"] == {"status": "stopped"}
+    assert state["cycle"] == 1
+
+
+def test_scheduler_journal_keeps_fatal_event(tmp_path):
+    journal = implementation.SchedulerJournal(tmp_path / "scheduler.json")
+    watcher = _ScheduledWatcher([CoreError("PROJECT_FORBIDDEN", "denied")])
+
+    with pytest.raises(CoreError) as error:
+        implementation.GitWatcherScheduler(
+            watcher, interval=5, max_cycles=1, journal=journal
+        ).run()
+
+    assert error.value.code == "PROJECT_FORBIDDEN"
+    state = journal.read()
+    assert state["phase"] == "idle"
+    assert state["event"] == {"status": "fatal", "code": "PROJECT_FORBIDDEN"}

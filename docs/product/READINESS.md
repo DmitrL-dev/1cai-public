@@ -51,10 +51,10 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 | Ежедневная разработка dev8 | AI-правка, ручное исправление новой ревизией, конфликт версий, нативная проверка и восстановление проверены в редакторе | [AI-ошибка сохраняется](DAILY-DEVELOPMENT-ACCEPTANCE.md); [исправление человеком проверено](MANUAL-DRAFT-EDIT.md). Синтетический YAxUnit принят отдельно; бизнес-покрытие и применение не приняты |
 | Реальная платформа 1С | 8.3.27.2342: нативный общий модуль, проверка ошибочного BSL, исполнение 42 → отказ/42 → исправление/43, сохранение UUID | Собственный синтетический сценарий; [полная приёмка не завершена](PLATFORM-ACCEPTANCE.md) |
 | Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; preflight и workspace writer с CAS, backup, re-read, undo conflict и recovery_required | Живая запись через EDT/1С, полноценная native-приёмка и матрица типовых конфигураций не приняты |
-| Обновления конфигураций | Не принято | Требуют проверки сохранения доработок и восстановления |
+| Обновления конфигураций | Path-bytes three-way dry-run с bounded хэшами и явными конфликтами | Object/UUID/BSL semantics, тестовая база, backup/rollback и запись не приняты |
 | Проверка предложения платформой | В dev8: установленный CLI проверил корректное/ошибочное BSL-предложение на сохранённой конфигурации | Один Designer XML слой; компиляция без бизнес-тестов и применения |
-| Observer | Опрос выгрузки, журнал и восстановление; Git probe, durable lifecycle находок, bounded scheduler и read-only BSL-LS Git adapter с clean-commit/HEAD recheck | Нет фонового service manager, уведомлений, полной native-приёмки analyzer на типовой конфигурации и общей приёмки O1 |
-| Бизнес-отчёты | Не принято | Нужны runtime-источники данных и методика O2 |
+| Observer | Опрос выгрузки, журнал и восстановление; Git probe, durable lifecycle находок, bounded scheduler с journal/recovery и read-only BSL-LS Git adapter с clean-commit/HEAD/ancestry recheck | Нет фонового service manager, уведомлений, полной native-приёмки analyzer на типовой конфигурации и общей приёмки O1 |
+| Бизнес-отчёты | Bounded owner-report schema с quality/runtime provenance и fail-closed incomplete/not_available статусами | Нужны подтверждённые runtime-источники данных и методика O2; числовые бизнес-метрики пока не приняты |
 | Spectorn в адаптере | Не подключён | Защита трафика этого сценария не подтверждена |
 
 Первоначально в публичное дерево перенесён source distribution core dev7;
