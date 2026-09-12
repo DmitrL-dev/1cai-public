@@ -83,6 +83,7 @@ only-include = [
   "docs/product/METADATA-APPLY-GATE.md",
   "docs/product/GIT-FINDINGS.md",
   "docs/product/GIT-WATCHER.md",
+  "docs/product/COMPETITOR-MATRIX.md",
   "docs/product/METADATA-MIGRATION.md",
   "scripts/verification/verify_metadata_migration.py",
   "scripts/verification/verify_edt_metadata_fixture.py",
