@@ -5,12 +5,21 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import re
 import sqlite3
 from uuid import uuid4
 
 from . import _sqlite
 from .context import SnapshotRef
 from .errors import CoreError
+from .git_observer import (
+    Finding,
+    FindingRecord,
+    FindingReport,
+    FindingState,
+    GitObservation,
+    reconcile_findings,
+)
 from .publication import capture_and_publish
 from .snapshot_diff import compare_snapshots
 from .snapshots import ProjectHead
@@ -24,6 +33,78 @@ CREATE TABLE jobs (id TEXT PRIMARY KEY, phase TEXT NOT NULL CHECK(phase IN ('cap
  expected TEXT NOT NULL, baseline TEXT, result TEXT, attempts INTEGER NOT NULL DEFAULT 0,
  error TEXT, report TEXT, created_at TEXT NOT NULL);
 """
+
+FINDINGS_MAX_REPORTS = 10000
+FINDINGS_MAX_BYTES = 64 * 1024 * 1024
+FINDINGS_MAX_DOCUMENT_BYTES = 2 * 1024 * 1024
+FINDINGS_SCHEMA = """
+CREATE TABLE finding_state (id INTEGER PRIMARY KEY CHECK(id=1), state TEXT NOT NULL);
+CREATE TABLE finding_reports (commit_id TEXT PRIMARY KEY, receipt TEXT NOT NULL);
+"""
+
+
+def _findings_version(db):
+    version = db.execute("PRAGMA user_version").fetchone()[0]
+    if version not in (0, 1):
+        raise CoreError("OBSERVER_SCHEMA_UNSUPPORTED", "Unsupported observer schema")
+    return version
+
+
+def _finding_state(raw):
+    data = json.loads(raw)
+    report = data["report"]
+    return FindingState(
+        FindingReport(
+            GitObservation(**report["observation"]),
+            report["profile_id"],
+            report["scope_id"],
+            report["complete"],
+            tuple(Finding(**item) for item in report["findings"]),
+        ),
+        tuple(
+            FindingRecord(
+                Finding(**item["finding"]),
+                item["first_seen"],
+                item["last_seen"],
+                item["resolved_at"],
+            )
+            for item in data["records"]
+        ),
+    )
+
+
+def _validate_finding_provenance(report, ctx):
+    observation = report.observation
+    values = (observation.repository, report.profile_id, report.scope_id)
+    if (
+        any(
+            not isinstance(value, str)
+            or not value.strip()
+            or len(value) > 4096
+            or "\x00" in value
+            for value in values
+        )
+        or not isinstance(observation.commit, str)
+        or re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", observation.commit) is None
+        or (
+            observation.ref is not None
+            and (
+                not isinstance(observation.ref, str)
+                or not observation.ref.startswith("refs/")
+                or len(observation.ref) > 4096
+                or any(char.isspace() or ord(char) < 32 for char in observation.ref)
+            )
+        )
+    ):
+        raise CoreError(
+            "FINDINGS_CONTEXT_INVALID", "Explicit Git provenance is required"
+        )
+    if not Path(observation.repository).is_absolute() or observation.repository != str(
+        ctx.source_root.resolve()
+    ):
+        raise CoreError(
+            "FINDINGS_CONTEXT_INVALID", "Repository must match the project source root"
+        )
 
 
 def _now():
@@ -271,6 +352,122 @@ class Observer:
             db.execute(
                 "UPDATE jobs SET phase=CASE WHEN result IS NULL THEN 'capture' ELSE 'report' END,attempts=0,error=NULL WHERE phase='failed'"
             )
+
+    def record_findings(self, report: FindingReport):
+        """Persist a caller-supplied complete report; never probe or analyze Git.
+
+        One repo/ref/profile/scope context is retained per observer profile.
+        Historical commit replays return their original receipt without moving
+        current state. Caller ordering is authoritative; ancestry is not checked.
+        """
+        with self.locked():
+            ctx = self._context(write=True)
+            _validate_finding_provenance(report, ctx)
+            canonical = reconcile_findings(None, report).state.report
+            with _sqlite.transaction(self.database, write=True) as db:
+                if _findings_version(db) == 0:
+                    for statement in FINDINGS_SCHEMA.split(";"):
+                        if statement.strip():
+                            db.execute(statement)
+                    db.execute("PRAGMA user_version=1")
+                row = db.execute(
+                    "SELECT state FROM finding_state WHERE id=1"
+                ).fetchone()
+                previous = _finding_state(row[0]) if row else None
+                if (
+                    previous is not None
+                    and previous.report.context != canonical.context
+                ):
+                    raise CoreError(
+                        "FINDINGS_CONTEXT_CHANGED",
+                        "Different context needs a new profile",
+                    )
+                saved = db.execute(
+                    "SELECT receipt FROM finding_reports WHERE commit_id=?",
+                    (canonical.observation.commit,),
+                ).fetchone()
+                if saved is not None:
+                    receipt = json.loads(saved[0])
+                    if receipt["report"] != json.loads(_json(canonical)):
+                        raise CoreError(
+                            "FINDINGS_REPLAY_CONFLICT",
+                            "Conflicting report for the same commit",
+                        )
+                else:
+                    update = reconcile_findings(previous, canonical)
+                    receipt = {
+                        "schema": 1,
+                        "operation_id": str(uuid4()),
+                        "project_id": self.project_id,
+                        "created_at": _now(),
+                        "baseline": previous is None,
+                        "report": canonical,
+                        "events": update.events,
+                        "model_calls": 0,
+                        "analysis": "caller_supplied",
+                    }
+                    state_json, receipt_json = _json(update.state), _json(receipt)
+                    state_size, receipt_size = (
+                        len(value.encode("utf-8"))
+                        for value in (state_json, receipt_json)
+                    )
+                    count, used = db.execute(
+                        "SELECT count(*),coalesce(sum(length(CAST(receipt AS BLOB))),0) FROM finding_reports"
+                    ).fetchone()
+                    if (
+                        count >= FINDINGS_MAX_REPORTS
+                        or used + state_size + receipt_size > FINDINGS_MAX_BYTES
+                        or max(state_size, receipt_size) > FINDINGS_MAX_DOCUMENT_BYTES
+                    ):
+                        raise CoreError(
+                            "OBSERVER_JOURNAL_FULL",
+                            "Finding journal limit reached; history retained",
+                        )
+                    db.execute(
+                        "INSERT INTO finding_state(id,state) VALUES(1,?) "
+                        "ON CONFLICT(id) DO UPDATE SET state=excluded.state",
+                        (state_json,),
+                    )
+                    _boundary("findings_state_saved")
+                    db.execute(
+                        "INSERT INTO finding_reports(commit_id,receipt) VALUES(?,?)",
+                        (canonical.observation.commit, receipt_json),
+                    )
+                    _boundary("findings_journal_saved")
+                    receipt = json.loads(receipt_json)
+                _boundary("findings_ready")
+                with ctx.state.transaction(ctx.principal) as tx:
+                    tx.require_all({"project:read", "analysis:run"})
+            with ctx.state.transaction(ctx.principal) as tx:
+                tx.require_all({"project:read", "analysis:run"})
+            return receipt
+
+    def findings_status(self, *, limit=10):
+        """Read durable state and recent receipts, reauthorizing before return."""
+        if type(limit) is not int or not 1 <= limit <= 100:
+            raise CoreError("INVALID_QUERY_OPTIONS", "Report limit must be 1 to 100")
+        ctx = self._context(write=True)
+        self._validate(ctx)
+        with _sqlite.transaction(self.database) as db:
+            if _findings_version(db) == 0:
+                document = {"state": None, "reports": [], "reports_truncated": False}
+            else:
+                row = db.execute(
+                    "SELECT state FROM finding_state WHERE id=1"
+                ).fetchone()
+                reports = db.execute(
+                    "SELECT receipt FROM finding_reports ORDER BY rowid DESC LIMIT ?",
+                    (limit + 1,),
+                ).fetchall()
+                document = {
+                    "state": json.loads(row[0]) if row else None,
+                    "reports": [json.loads(item[0]) for item in reports[:limit]],
+                    "reports_truncated": len(reports) > limit,
+                }
+        _boundary("findings_status_ready")
+        with ctx.state.transaction(ctx.principal) as tx:
+            tx.require_all({"project:read", "analysis:run"})
+        return document
 
     def status(self, *, limit=10):
         if type(limit) is not int or not 1 <= limit <= 100:
