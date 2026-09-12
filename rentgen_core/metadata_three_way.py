@@ -245,11 +245,21 @@ def plan_metadata_three_way(
     for object_type, identity in identities:
         values = tuple(records[label].get((object_type, identity)) for label in records)
         property_mergeability, property_changes = _property_changes(values)
-        if (
-            property_mergeability == "unchanged"
-            and _merge_action(*values) != "unchanged"
-        ):
-            property_mergeability = "path_only"
+        if property_mergeability == "unchanged":
+            content_action = _action(
+                None if values[0] is None else values[0]["raw"],
+                None if values[1] is None else values[1]["raw"],
+                None if values[2] is None else values[2]["raw"],
+            )
+            path_action = _action(
+                None if values[0] is None else values[0]["path"],
+                None if values[1] is None else values[1]["path"],
+                None if values[2] is None else values[2]["path"],
+            )
+            if content_action == "unchanged" and path_action != "unchanged":
+                property_mergeability = "path_only"
+            elif content_action != "unchanged":
+                property_mergeability = "unscoped_content"
         rows.append(
             ObjectMergeItem(
                 object_type=object_type,

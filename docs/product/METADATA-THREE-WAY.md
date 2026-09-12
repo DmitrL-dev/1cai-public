@@ -11,7 +11,8 @@ For objects that contain one unambiguous `Properties` element, the result also
 contains `property_changes`. Each changed direct property is represented by its
 name, action, hash and size; the value itself is never returned. The enclosing
 `property_mergeability` is `same_change`, `keep_current`, `take_upstream`,
-`disjoint_changes`, `overlap_conflict`, `path_only` or `unchanged`. This is
+`disjoint_changes`, `overlap_conflict`, `path_only`, `unscoped_content` or
+`unchanged`. This is
 evidence for review: `disjoint_changes` shows that current and upstream touched
 different properties, but the planner still leaves the object action
 conservative and does not synthesize XML. Objects with missing or ambiguous

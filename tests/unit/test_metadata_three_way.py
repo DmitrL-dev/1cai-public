@@ -111,3 +111,19 @@ def test_plan_marks_same_property_change_as_same_change():
     assert row["property_mergeability"] == "same_change"
     assert row["property_changes"][0]["property_name"] == "Name"
     assert row["property_changes"][0]["action"] == "same_change"
+
+
+def test_plan_does_not_call_unscoped_xml_change_a_path_only_change():
+    base = {"Catalogs/Products.xml": catalog("Products")}
+    current = {
+        "Catalogs/Products.xml": catalog("Products").replace(
+            b"<ChildObjects/>", b"<ChildObjects><Attribute/></ChildObjects>"
+        )
+    }
+    upstream = current.copy()
+
+    row = plan_metadata_three_way(base, current, upstream)["objects"][0]
+
+    assert row["action"] == "same_change"
+    assert row["property_mergeability"] == "unscoped_content"
+    assert row["property_changes"] == []
