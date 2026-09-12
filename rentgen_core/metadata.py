@@ -1,4 +1,4 @@
-"""Read-only Designer metadata over one authorized published snapshot.
+"""Read-only Designer and bounded EDT metadata over one authorized snapshot.
 
 No live paths, defaults, inferred canonical IDs, cross-layer merge or cache.
 """
@@ -96,10 +96,14 @@ def _local(tag):
 
 
 def _child(element, name):
-    return (
-        next((item for item in element if _local(item.tag) == name), None)
-        if element is not None
-        else None
+    if element is None:
+        return None
+    exact = next((item for item in element if _local(item.tag) == name), None)
+    if exact is not None:
+        return exact
+    folded = name.casefold()
+    return next(
+        (item for item in element if _local(item.tag).casefold() == folded), None
     )
 
 
@@ -118,6 +122,17 @@ def _localized(element, name):
             content = _text(item, "content")
             if content:
                 values[_text(item, "lang") or ""] = content
+    if not values:
+        keys = [item for item in node if _local(item.tag).casefold() == "key"]
+        values_nodes = [
+            item for item in node if _local(item.tag).casefold() == "value"
+        ]
+        if len(keys) == len(values_nodes):
+            values = {
+                (key.text or "").strip(): (value.text or "").strip()
+                for key, value in zip(keys, values_nodes)
+                if (value.text or "").strip()
+            }
     return (
         values.get("ru")
         or values.get("")
@@ -130,15 +145,30 @@ def _localized(element, name):
 def _candidate(path):
     if path == "Configuration.xml":
         return "Configuration"
+    if path == "Configuration/Configuration.mdo":
+        return "Configuration"
     parts = path.split("/")
     if parts[0] not in FOLDER_TO_TYPE or not path.endswith(".xml"):
-        return None
+        if (
+            parts[0] not in FOLDER_TO_TYPE
+            or not path.endswith(".mdo")
+            or len(parts) != 3
+            or parts[2] != parts[1] + ".mdo"
+        ):
+            return None
+        return FOLDER_TO_TYPE[parts[0]]
     if len(parts) == 2 or (len(parts) == 3 and parts[2] == parts[1] + ".xml"):
         return FOLDER_TO_TYPE[parts[0]]
     return None
 
 
 def _metadata(root, kind):
+    if (
+        _local(root.tag) == kind
+        and root.attrib.get("uuid")
+        and _child(root, "name") is not None
+    ):
+        return root
     if _local(root.tag) != "MetaDataObject":
         return None
     children = [
@@ -291,6 +321,8 @@ def _attach_refs(reader, result):
 
 def _preview(entry, meta, kind):
     props = _child(meta, "Properties")
+    if props is None:
+        props = meta
     return {
         "source_ref": asdict(entry.ref),
         "type": kind,
@@ -343,7 +375,8 @@ def _load(ctx, layers, reader, *, search_options=None, object_path=None):
                 "forms": sum(
                     bool(
                         re.fullmatch(
-                            r"[^/]+/[^/]+/Forms/[^/]+\.xml", entry.ref.relative_path
+                            r"[^/]+/[^/]+/Forms/[^/]+\.(?:xml|form)",
+                            entry.ref.relative_path,
                         )
                     )
                     for entry in selected
@@ -370,12 +403,15 @@ def _load(ctx, layers, reader, *, search_options=None, object_path=None):
             for entry in selected
             if entry.ref.relative_path.lower().endswith(".mdo")
         ]
-        skip_xml = layer.source_format == "edt" or bool(mdo)
+        is_edt = layer.source_format == "edt"
+        skip_xml = bool(mdo) and not is_edt
         local_types, local_matches, local_total = Counter(), [], 0
         local_object, configuration, valid = None, None, True
         if skip_xml:
             all_examined = False
-            decision["reason"] = "EDT .mdo parsing is not implemented"
+            decision[
+                "reason"
+            ] = "EDT .mdo parsing requires an explicit EDT layer declaration"
             for entry in mdo:
                 reader.bytes(entry)
                 mdo_refs.append(entry.ref)
@@ -385,11 +421,13 @@ def _load(ctx, layers, reader, *, search_options=None, object_path=None):
                 reader.session.checkpoint()
                 meta = _metadata(reader.xml(entry), kind)
                 xml_refs.append(entry.ref)
+                if entry.ref.relative_path.lower().endswith(".mdo"):
+                    mdo_refs.append(entry.ref)
                 if meta is None:
                     valid = False
                     decision[
                         "reason"
-                    ] = "Candidate XML root does not match Designer path/type"
+                    ] = "Candidate metadata root does not match path/type"
                     witnesses.setdefault("mismatch", entry.ref)
                     continue
                 local_types[kind] += 1
@@ -427,9 +465,13 @@ def _load(ctx, layers, reader, *, search_options=None, object_path=None):
                 reader.session.checkpoint()
             if valid and local_types:
                 decision.update(
-                    detected="designer_xml",
+                    detected="edt_mdo" if is_edt else "designer_xml",
                     status="supported",
-                    reason="Verified MetaDataObject/Properties and path-matching type",
+                    reason=(
+                        "Verified EDT metadata root and path-matching type"
+                        if is_edt
+                        else "Verified MetaDataObject/Properties and path-matching type"
+                    ),
                 )
                 result.update(
                     status="supported", completeness="supported_layer_inventory"
@@ -476,7 +518,13 @@ def _load(ctx, layers, reader, *, search_options=None, object_path=None):
                 ),
             },
             "opaque_mdo": {
-                "status": "verified_bytes" if mdo_refs else "absent",
+                "status": (
+                    "parsed"
+                    if is_edt and mdo_refs
+                    else "verified_bytes"
+                    if mdo_refs
+                    else "absent"
+                ),
                 "verified_count": len(mdo_refs),
                 "refs_sha256": _refs_digest(
                     ctx.snapshot, [layer.layer_id], "opaque_mdo", mdo_refs
@@ -486,6 +534,15 @@ def _load(ctx, layers, reader, *, search_options=None, object_path=None):
     envelope = {
         "snapshot": asdict(ctx.snapshot),
         "parser": "designer_xml_v1",
+        "parser_profiles": sorted(
+            {
+                "edt_mdo_v1"
+                if layer["format_decision"]["declared"] == "edt"
+                else "designer_xml_v1"
+                for layer in results
+                if layer["format_decision"]["declared"] in ("designer_xml", "edt")
+            }
+        ),
         "evidence_schema": "metadata_scan_v2",
         "identity_status": "source_path_only",
         "layers": results,
@@ -496,7 +553,7 @@ def _load(ctx, layers, reader, *, search_options=None, object_path=None):
         else "unsupported_layers",
         "validation_summary": {
             "metadata_scan": {
-                "selection_policy": "designer_candidates_unless_edt_or_mdo_v1",
+                "selection_policy": "designer_candidates_or_declared_edt_mdo_v1",
                 "selected_layers": layer_ids,
                 "all_selected_candidates_examined": all_examined,
                 "xml_candidates": {
@@ -565,6 +622,8 @@ def _properties(meta, ref, limit):
             walk(child, path + "/" + _local(child.tag) + "[" + str(index) + "]")
 
     props = _child(meta, "Properties")
+    if props is None:
+        props = meta
     if props is not None:
         walk(props, "Properties")
     return _collection(values, limit)
@@ -572,8 +631,17 @@ def _properties(meta, ref, limit):
 
 def _named(meta, tag, ref, limit):
     result = []
+    aliases = {
+        "attribute": "attributes",
+        "form": "forms",
+        "tabularsection": "tabularsections",
+        "dimension": "dimensions",
+        "resource": "resources",
+    }
+    expected = tag.casefold()
+    accepted = {expected, aliases.get(expected, expected)}
     for item in meta.iter():
-        if _local(item.tag) != tag:
+        if _local(item.tag).casefold() not in accepted:
             continue
         props = _child(item, "Properties")
         result.append(
@@ -641,7 +709,9 @@ def _rights(entry, reader, limit):
 def _nested_assets(entry, entries, reader, limit):
     path = entry.ref.relative_path
     parts = path.split("/")
-    prefix = "/".join((parts[0], parts[1].removesuffix(".xml"))) + "/"
+    prefix = "/".join(
+        (parts[0], parts[1].removesuffix(".xml").removesuffix(".mdo"))
+    ) + "/"
     groups = {name: [] for name in ("modules", "forms", "form_documents", "commands")}
     rights = None
     for child in entries:
@@ -658,7 +728,9 @@ def _nested_assets(entry, entries, reader, limit):
             and relative.endswith(".xml")
         ):
             groups["forms" if segments[0] == "Forms" else "commands"].append(child)
-        elif ("Forms" in segments and relative.endswith("/Ext/Form.xml")) or (
+        elif (
+            relative.lower().endswith(".form") and "Forms" in segments
+        ) or ("Forms" in segments and relative.endswith("/Ext/Form.xml")) or (
             parts[0] == "CommonForms" and tail == "Ext/Form.xml"
         ):
             groups["form_documents"].append(child)
@@ -749,7 +821,7 @@ def get_metadata_object(ctx, *, layer_id, relative_path, limits=MetadataLimits()
         if result["layers"][0]["status"] != "supported":
             raise CoreError(
                 "METADATA_FORMAT_UNSUPPORTED",
-                "Layer has no supported Designer metadata",
+                "Layer has no supported metadata format",
                 details={
                     "snapshot": asdict(ctx.snapshot),
                     "layer": result["layers"][0],

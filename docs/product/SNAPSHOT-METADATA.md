@@ -1,10 +1,10 @@
 # Metadata из опубликованного снимка
 
-Первый reader `designer_xml_v1` читает Designer XML из одного pinned
-`ProjectContext`. Живой source root, cwd, environment, default configuration,
-legacy `metadata_graph` и кэш не используются. Модуль зависит только от stdlib
-и `rentgen_core`. HTTP/stdio composition и перевод остальных enrichers имеют
-отдельную приёмку.
+Reader `designer_xml_v1` читает Designer XML, а профиль `edt_mdo_v1` —
+ограниченный EDT `.mdo` из одного pinned `ProjectContext`. Живой source root,
+cwd, environment, default configuration, legacy `metadata_graph` и кэш не
+используются. Модуль зависит только от stdlib и `rentgen_core`. HTTP/stdio
+composition и перевод остальных enrichers имеют отдельную приёмку.
 
 ## API
 
@@ -40,7 +40,8 @@ detail = get_metadata_object(
 | Поле | Смысл |
 |---|---|
 | `snapshot` | Полный exact SnapshotRef: project, snapshot, manifest hash |
-| `parser` | `designer_xml_v1` |
+| `parser` | `designer_xml_v1` сохраняется для совместимости; фактические профили перечислены в `parser_profiles` и `format_decision.detected` |
+| `parser_profiles` | `designer_xml_v1` и/или `edt_mdo_v1` для реально выбранных слоёв |
 | `identity_status` | `source_path_only` |
 | `layers` | Исторические descriptors в порядке ordinal; явные status/completeness/format decision |
 | `evidence_schema` | `metadata_scan_v2`: явная версия представления evidence |
@@ -53,19 +54,25 @@ detail = get_metadata_object(
 ## Формат и полнота
 
 `source_format="unknown"` не превращается автоматически в Designer XML.
-Поддержка определяется по совокупности **пути и прочитанного XML root**:
-`Configuration.xml` или известный metadata folder с `Name.xml` / `Name/Name.xml`,
-корень `MetaDataObject`, единственный тип объекта, совпадающий с типом пути,
-и дочерний `Properties`. Namespace обрабатывается по local names, как в ранее
-существовавших чистых extraction utilities. Это распознавание структуры для
-ограниченного reader, не XML Schema validation и не доказательство происхождения
-выгрузки. `format_decision.evidence` содержит не более трёх проверенных SourceRefs: первый Configuration, первый валидный объект и первое несовпадение root/type, если они встретились. Для EDT это первый проверенный `.mdo`. Поле `evidence_scope="bounded_witnesses"` обозначает примеры, а не полный перечень доказательств.
+Поддержка определяется по совокупности **пути и прочитанного XML root**.
+Designer-слой использует `Configuration.xml` или известный metadata folder с
+`Name.xml` / `Name/Name.xml`, корнем `MetaDataObject`, единственным типом,
+совпадающим с путём, и дочерним `Properties`. Явно объявленный EDT-слой
+использует `Configuration/Configuration.mdo` и корневые
+`<folder>/<Name>/<Name>.mdo` с прямым типом `mdclass:*`, UUID и `<name>`;
+формы `Forms/.../*.form` читаются как bounded XML fields. Namespace
+обрабатывается по local names. Это распознавание структуры для ограниченного
+reader, не XML Schema validation и не доказательство происхождения выгрузки.
+`format_decision.evidence` содержит не более трёх проверенных SourceRefs:
+первый Configuration, первый валидный объект и первое несовпадение root/type,
+если они встретились. Поле `evidence_scope="bounded_witnesses"` обозначает
+примеры, а не полный перечень доказательств.
 
-Явно объявленный EDT слой или наличие `.mdo` даёт `unsupported`, даже если рядом
-есть похожий Designer XML. `.mdo` может быть прочитан как opaque bytes для
-проверки evidence ref, но EDT parser здесь отсутствует. Отсутствие подтверждающего
-XML и несовпадение ожидаемого типа/root тоже дают явное `unsupported`.
-Malformed XML, DTD и resource-limit failures завершают вызов ошибкой.
+`.mdo` разбирается только при явном `source_format="edt"`. В смешанном или
+`unknown` слое `.mdo` остаётся opaque и не повышает completeness, даже если рядом
+есть похожий Designer XML. Несовпадение ожидаемого типа/root даёт явное
+`unsupported`; malformed XML, DTD и resource-limit failures завершают вызов
+ошибкой.
 
 Summary возвращает для каждого слоя:
 
@@ -101,8 +108,8 @@ Object добавляет `object` с source_ref/type/name/synonym/observed_uuid
 - attributes/tabular_sections/dimensions/resources, включая вложенные Properties;
 - строковые references с `resolution="unresolved"`;
 - forms и commands из той же директории объекта и того же слоя;
-- form_documents (`Forms/.../Ext/Form.xml` и собственный `CommonForms/Name/Ext/Form.xml`)
-  с bounded leaf fields;
+- form_documents (`Forms/.../Ext/Form.xml`, EDT `Forms/.../*.form` и собственный
+  `CommonForms/Name/Ext/Form.xml`) с bounded leaf fields;
 - modules с проверенным SourceRef, raw size, encoding metadata и
   `status="verified_bytes"`; BSL здесь не декодируется и не переписывается;
 - rights из `Ext/Rights.xml`, если он присутствует в этом снимке.
@@ -172,8 +179,9 @@ XML/form/module/rights refs и bytes остаются S1. Дополнитель
 Unit-тесты проверяют DTD в UTF-8/UTF-16 LE/BE, invalid encoding/XML, byte/node/depth
 bounds, отсутствие скрытых нулей, смешанное format coverage, полный session inventory,
 точные object selectors, ограничение коллекций и отзыв доступа во время чтения.
-Это не свидетельство live 1C execution, canonical metadata UUID, structural apply,
-полного EDT, форм-дизайнера, HTTP cutover или завершения E1–E4.
+Это не свидетельство live 1C execution, structural apply, полного EDT-покрытия,
+форм-дизайнера, HTTP cutover или завершения E1–E4. EDT `.mdo` покрывает только
+проверенные корневые объекты и bounded form documents.
 
 Первичные API references: [ElementTree custom TreeBuilder](https://docs.python.org/3.11/library/xml.etree.elementtree.html#xml.etree.ElementTree.TreeBuilder),
 [Python XML vulnerabilities](https://docs.python.org/3.11/library/xml.html#xml-vulnerabilities).
@@ -200,22 +208,23 @@ bounds, отсутствие скрытых нулей, смешанное forma
 их не интерпретирует. Manifest hash идентифицирует весь ожидаемый набор.
 
 `validation_summary.metadata_scan` содержит `selected_layers` в порядке ordinal,
-`selection_policy="designer_candidates_unless_edt_or_mdo_v1"`,
+`selection_policy="designer_candidates_or_declared_edt_mdo_v1"`,
 `all_selected_candidates_examined`, а также два независимых счётчика:
 
 - `xml_candidates`: `candidate_count`, `parsed_count`, `matching_root_count`,
   `refs_sha256`. Root/type mismatch не превращается в supported слой; полные
   counts относятся к фактическому проходу, даже если его итог unsupported.
-- `opaque_mdo`: `verified_count`, `refs_sha256`; это raw verification, не XML parse.
+- `opaque_mdo`: `verified_count`, `refs_sha256`; для явного EDT слоя status
+  `parsed`, для неподдержанного смешанного слоя — `verified_bytes`.
 
 Per-layer `format_decision.scan` содержит те же counts/digests для одного слоя
-и status. Declared EDT или любой `.mdo` дают XML status
-`skipped_unsupported_format`, `parsed_count=0`, `matching_root_count=0`.
-XML может пройти generation hash verification, но это не означает XML-разбор.
-Если выбран хотя бы один такой слой, `all_selected_candidates_examined=false`.
-EDT без `.mdo` остаётся unsupported с нулевым opaque count и без выдуманного ref.
-При отсутствии XML candidates в обычном слое status `no_candidates`, поддержка
-тоже не объявляется. `.mdo` count имеет status `verified_bytes` или `absent`.
+и status. Явный EDT слой с корректными `.mdo` получает XML status `examined`,
+`parsed_count` по фактически разобранным корням и `opaque_mdo.status="parsed"`.
+Смешанный или unknown слой с `.mdo` сохраняет `skipped_unsupported_format` и
+`opaque_mdo.status="verified_bytes"`; он не становится supported. EDT без
+кандидатов остаётся unsupported с нулевым opaque count. При отсутствии
+Designer candidates в обычном слое status `no_candidates`, поддержка тоже не
+объявляется.
 
 Digest определяется точно: SHA256 от canonical JSON (`canonical_bytes`) объекта
 с `domain="rentgen.metadata.examined_refs.v1"`, полным `snapshot`,
