@@ -113,6 +113,7 @@ flowchart LR
 | [Расширение](integrations/vscode-rentgen/README.md) | Просмотр, черновики и локальная правка |
 | [Архитектура](ARCHITECTURE.md) | Границы модулей и источник истины |
 | [Готовность](docs/product/READINESS.md) | Что проверено и что ещё предстоит |
+| [Workspace apply](docs/product/METADATA-WORKSPACE.md) | CAS-запись и undo в принадлежащей копии |
 | [Аудит](docs/product/AUDIT-20260912.md) | Приоритетные слабые места и порядок работ |
 | [Разработка](CONTRIBUTING.md) | Сборка, тесты и правила изменений |
 
