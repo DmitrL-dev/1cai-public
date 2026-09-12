@@ -6,6 +6,8 @@
 | `rentgen_graph` | Чтение графа и адаптер scanner |
 | `go` | Scanner BSL, построение данных графа |
 | `rentgen_diagnostics` | Проверка и запуск закреплённого профиля BSL Language Server |
+| `rentgen_core.metadata_runs` / `metadata_apply` | Snapshot-bound EDT preview, бизнес-доказательства и read-only preflight-журнал apply; live writer/undo пока заблокированы |
+| `rentgen_core.git_observer` | Probe committed Git HEAD и чистая reconciliation-функция lifecycle находок; watcher и durable store пока не подключены |
 | `integrations/open-editor` | Подготовка профиля и управление одной локальной правкой |
 | `integrations/vscode-rentgen` | Просмотр снимков/версий и команды редактора |
 
@@ -22,6 +24,19 @@
 Адаптер локальной модели формирует служебные запросы сам. Модель возвращает
 замены текста, после которых запускается диагностика. Журнал диагностики —
 неподписанное локальное свидетельство; он не является разрешением на применение.
+
+Метаданные проходят отдельным контуром: план и preview привязаны к snapshot,
+UUID и двум полным diff (исходник → EDT baseline и baseline → candidate).
+`metadata_apply` повторно проверяет права, head, слои и живые байты и сохраняет
+неизменяемые intent/result. Пока нет квалифицированного writer и квитанции
+записи, результат имеет только `unavailable`/`stale`/`revoked`/`failed`; эта
+граница не превращает preflight в право менять рабочее дерево.
+
+Git-контур принимает только чистый committed HEAD и полный отчёт доверенного
+анализатора. `git_observer` не выполняет fetch, анализ или LLM-вызовы; его
+reconciliation хранит identity находки по `(rule, path, anchor)` и выдаёт
+`new`/`resolved`/`reopened`. Подключение scheduler, постоянного журнала и
+проверки ancestry остаётся следующим этапом O1.
 
 Граница безопасности — доверенный Windows-пользователь и стартовые параметры.
 Другие процессы того же SID и доверенные расширения не изолированы друг от друга.
