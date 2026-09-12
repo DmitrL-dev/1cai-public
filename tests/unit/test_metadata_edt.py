@@ -160,6 +160,30 @@ def test_edt_parse_rejects_path_root_mismatch():
     assert selected is None
 
 
+def test_edt_layer_rejects_mixed_designer_candidate():
+    entries = [
+        entry("Catalogs/Products/Products.mdo", CATALOG),
+        entry("Catalogs/Products.xml", CATALOG),
+    ]
+    reader = Reader(entries)
+    envelope, selected, _ = _load(
+        context(), [LAYER], reader, object_path=entries[0].ref.relative_path
+    )
+
+    layer = envelope["layers"][0]
+    assert layer["status"] == "unsupported"
+    assert selected is None
+    assert layer["format_decision"]["reason"] == (
+        "EDT layer contains a non-EDT metadata candidate"
+    )
+    assert (
+        envelope["validation_summary"]["metadata_scan"][
+            "all_selected_candidates_examined"
+        ]
+        is False
+    )
+
+
 def test_mdo_without_explicit_edt_declaration_stays_opaque():
     entries = [entry("Catalogs/Products/Products.mdo", CATALOG)]
     reader = Reader(entries)

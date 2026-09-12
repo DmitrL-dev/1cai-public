@@ -419,6 +419,14 @@ def _load(ctx, layers, reader, *, search_options=None, object_path=None):
         else:
             for entry, kind in candidates:
                 reader.session.checkpoint()
+                if is_edt and not entry.ref.relative_path.lower().endswith(".mdo"):
+                    all_examined = False
+                    valid = False
+                    decision[
+                        "reason"
+                    ] = "EDT layer contains a non-EDT metadata candidate"
+                    witnesses.setdefault("mismatch", entry.ref)
+                    continue
                 meta = _metadata(reader.xml(entry), kind)
                 xml_refs.append(entry.ref)
                 if entry.ref.relative_path.lower().endswith(".mdo"):

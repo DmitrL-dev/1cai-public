@@ -72,7 +72,8 @@ reader, не XML Schema validation и не доказательство прои
 `unknown` слое `.mdo` остаётся opaque и не повышает completeness, даже если рядом
 есть похожий Designer XML. Несовпадение ожидаемого типа/root даёт явное
 `unsupported`; malformed XML, DTD и resource-limit failures завершают вызов
-ошибкой.
+ошибкой. Явный EDT-слой с Designer-кандидатом одновременно с `.mdo` также
+остаётся `unsupported`, чтобы профили не смешивались молча.
 
 Summary возвращает для каждого слоя:
 
