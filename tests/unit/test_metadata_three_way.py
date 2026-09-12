@@ -127,3 +127,15 @@ def test_plan_does_not_call_unscoped_xml_change_a_path_only_change():
     assert row["action"] == "same_change"
     assert row["property_mergeability"] == "unscoped_content"
     assert row["property_changes"] == []
+
+
+def test_plan_marks_uuid_bound_path_move_as_path_only():
+    base = {"Catalogs/Products.xml": catalog("Products")}
+    current = {"Catalogs/ProductsRenamed.xml": catalog("Products")}
+    upstream = {"Catalogs/ProductsRenamed.xml": catalog("Products")}
+
+    row = plan_metadata_three_way(base, current, upstream)["objects"][0]
+
+    assert row["action"] == "same_change"
+    assert row["property_mergeability"] == "path_only"
+    assert row["property_changes"] == []
