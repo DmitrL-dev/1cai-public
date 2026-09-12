@@ -139,3 +139,19 @@ def test_plan_marks_uuid_bound_path_move_as_path_only():
     assert row["action"] == "same_change"
     assert row["property_mergeability"] == "path_only"
     assert row["property_changes"] == []
+
+
+def test_plan_marks_property_and_unscoped_changes_as_unscoped_content():
+    base = {"Catalogs/Products.xml": catalog("Products")}
+    current = {"Catalogs/Products.xml": catalog("ProductsCustom")}
+    upstream = {
+        "Catalogs/Products.xml": catalog("Products").replace(
+            b"<ChildObjects/>", b"<ChildObjects><Attribute/></ChildObjects>"
+        )
+    }
+
+    row = plan_metadata_three_way(base, current, upstream)["objects"][0]
+
+    assert row["action"] == "conflict"
+    assert row["property_mergeability"] == "unscoped_content"
+    assert row["property_changes"][0]["property_name"] == "Name"

@@ -1,6 +1,7 @@
 """Conservative UUID-aware three-way planning for Designer XML objects."""
 
 from dataclasses import asdict, dataclass
+import copy
 import re
 import xml.etree.ElementTree as ET
 
@@ -57,6 +58,15 @@ def _property_fingerprint(element):
     return sha256(raw), len(raw)
 
 
+def _unscoped_fingerprint(node):
+    scoped = copy.deepcopy(node)
+    for child in list(scoped):
+        if child.tag.rsplit("}", 1)[-1] == _PROPERTIES:
+            scoped.remove(child)
+    raw = ET.tostring(scoped, encoding="utf-8", short_empty_elements=True)
+    return sha256(raw), len(raw)
+
+
 def _object(value, path):
     if not path.lower().endswith(".xml"):
         return None
@@ -105,7 +115,13 @@ def _object(value, path):
                     f"Metadata property is ambiguous: {path}:{property_name}",
                 )
             properties[property_name] = _property_fingerprint(child)
-    return object_type, identity.lower(), names[0], properties
+    return (
+        object_type,
+        identity.lower(),
+        names[0],
+        properties,
+        _unscoped_fingerprint(node),
+    )
 
 
 def _records(tree, label):
@@ -116,7 +132,7 @@ def _records(tree, label):
         if item is None:
             unsupported.append(path)
             continue
-        object_type, identity, name, properties = item
+        object_type, identity, name, properties, unscoped = item
         key = (object_type, identity)
         if key in result:
             raise CoreError(
@@ -127,6 +143,7 @@ def _records(tree, label):
             "path": path,
             "name": name,
             "properties": properties,
+            "unscoped": unscoped,
             "raw": value,
         }
         if len(result) > _MAX_OBJECTS:
@@ -213,6 +230,14 @@ def _property_changes(values):
     return "mixed_changes", changes
 
 
+def _unscoped_action(values):
+    return _action(
+        None if values[0] is None else values[0]["unscoped"],
+        None if values[1] is None else values[1]["unscoped"],
+        None if values[2] is None else values[2]["unscoped"],
+    )
+
+
 def plan_metadata_three_way(
     base,
     current,
@@ -245,7 +270,12 @@ def plan_metadata_three_way(
     for object_type, identity in identities:
         values = tuple(records[label].get((object_type, identity)) for label in records)
         property_mergeability, property_changes = _property_changes(values)
-        if property_mergeability == "unchanged":
+        if (
+            property_mergeability != "not_available"
+            and _unscoped_action(values) != "unchanged"
+        ):
+            property_mergeability = "unscoped_content"
+        elif property_mergeability == "unchanged":
             content_action = _action(
                 None if values[0] is None else values[0]["raw"],
                 None if values[1] is None else values[1]["raw"],
