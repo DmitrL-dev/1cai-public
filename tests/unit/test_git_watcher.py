@@ -274,6 +274,15 @@ def test_scheduler_rejects_unbounded_options():
         implementation.GitWatcherScheduler(watcher, interval=5, max_cycles=0)
 
 
+def test_scheduler_backoff_stays_bounded_for_large_failure_count():
+    watcher = _ScheduledWatcher([])
+    scheduler = implementation.GitWatcherScheduler(
+        watcher, interval=5, max_backoff=3600
+    )
+
+    assert scheduler._backoff_delay(10_000) == 3600
+
+
 def test_scheduler_journal_requires_explicit_recovery_after_interruption(tmp_path):
     path = tmp_path / "scheduler.json"
     journal = implementation.SchedulerJournal(path)

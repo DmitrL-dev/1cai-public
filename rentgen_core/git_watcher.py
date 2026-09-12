@@ -528,6 +528,15 @@ class GitWatcherScheduler:
         self.journal = journal
         self.outbox = outbox
 
+    def _backoff_delay(self, failures):
+        """Return exponential backoff without constructing an unbounded integer."""
+        delay = self.interval
+        remaining = min(failures, 32)
+        while remaining and delay < self.max_backoff:
+            delay = min(self.max_backoff, delay * 2)
+            remaining -= 1
+        return delay
+
     def run(self):
         """Run until stop/max_cycles, backing off only controlled CoreErrors."""
         events, failures, cycle = [], 0, 0
@@ -576,8 +585,7 @@ class GitWatcherScheduler:
                     break
                 if self.should_stop():
                     break
-                delay = min(self.max_backoff, self.interval * (2**failures))
-                self.sleep(delay)
+                self.sleep(self._backoff_delay(failures))
             return events
         except BaseException:
             if not fatal_handled and self.journal is not None:
