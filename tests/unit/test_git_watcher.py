@@ -143,6 +143,32 @@ def test_head_change_after_analysis_is_not_recorded(workspace, monkeypatch):
     assert observer.findings_status()["state"] is None
 
 
+def test_history_rewrite_is_rejected_before_analyzer(workspace):
+    source, observer = workspace
+    calls = []
+
+    def analyzer(observation):
+        calls.append(observation)
+        return report(observer, observation)
+
+    watcher = implementation.GitWatcher(observer, analyzer)
+    first = watcher.tick()
+
+    git(source, "checkout", "--orphan", "rewrite")
+    (source / "Module.bsl").unlink()
+    (source / "Rewrite.bsl").write_text("rewritten\n", encoding="utf-8")
+    git(source, "add", "-A")
+    git(source, "commit", "-m", "rewrite")
+
+    with pytest.raises(CoreError) as error:
+        watcher.tick()
+
+    assert error.value.code == "GIT_HISTORY_REWRITE"
+    assert len(calls) == 1
+    state = observer.findings_status(limit=1)["state"]
+    assert state["report"]["observation"]["commit"] == first["commit"]
+
+
 def test_dirty_repository_and_foreign_repository_fail_before_analyzer(
     workspace, tmp_path
 ):
@@ -231,6 +257,12 @@ def test_scheduler_stops_before_tick_and_does_not_swallow_fatal_errors():
     with pytest.raises(CoreError) as error:
         scheduler.run()
     assert error.value.code == "PROJECT_FORBIDDEN"
+
+    rewritten = _ScheduledWatcher([CoreError("GIT_HISTORY_REWRITE", "rewritten")])
+    scheduler = implementation.GitWatcherScheduler(rewritten, interval=5, max_cycles=1)
+    with pytest.raises(CoreError) as error:
+        scheduler.run()
+    assert error.value.code == "GIT_HISTORY_REWRITE"
 
 
 def test_scheduler_rejects_unbounded_options():

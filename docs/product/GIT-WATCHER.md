@@ -23,6 +23,13 @@ probes HEAD again after the callback; a changed commit returns GIT_HEAD_CHANGED
 and is not recorded. Analyzer exceptions are propagated and the commit remains
 eligible for a later retry.
 
+When a previous finding state exists, the watcher also requires the observed
+commit to descend from the last analyzed commit using a read-only
+`git merge-base --is-ancestor` probe. A force-push or unrelated history returns
+`GIT_HISTORY_REWRITE` before the analyzer runs; an unavailable ancestry probe
+returns `GIT_ANCESTRY_FAILED`. The caller must create a new observer/profile
+baseline explicitly before analyzing a rewritten history.
+
 The watcher serializes its pass with the observer worker lock. The internal
 locked write path is used only by this adapter, so a concurrent source observer
 cannot publish a conflicting findings state. The lock does not freeze external
@@ -32,11 +39,12 @@ change before persistence.
 This is an orchestration boundary, not an analyzer. The callback remains
 responsible for producing trustworthy findings. The optional BSL-LS adapter is
 described in [GIT-BSL-ANALYZER.md](GIT-BSL-ANALYZER.md); other analyzer adapters,
-notifications, branch ancestry policy and Git archive sandbox are not included.
+notifications and Git archive sandbox are not included.
 Caller-supplied reports continue to state analysis="caller_supplied" and
 model_calls=0.
 
 Unit coverage in tests/unit/test_git_watcher.py checks new/unchanged commits,
 retry after analyzer failure, exact context binding, dirty and foreign
-repositories, HEAD races, scheduler backoff/stop and constructor bounds. The
-BSL-LS Git adapter has separate blob/provenance and incomplete-result tests.
+repositories, HEAD races, history rewrites, scheduler backoff/stop and
+constructor bounds. The BSL-LS Git adapter has separate blob/provenance and
+incomplete-result tests.

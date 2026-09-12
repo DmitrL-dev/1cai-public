@@ -13,6 +13,17 @@ from typing import Literal
 from .errors import CoreError
 
 
+_COMMIT_RE = r"(?:[0-9a-f]{40}|[0-9a-f]{64})"
+
+
+def _git_env():
+    env = {
+        key: value for key, value in os.environ.items() if not key.startswith("GIT_")
+    }
+    env.update(GIT_OPTIONAL_LOCKS="0", GIT_TERMINAL_PROMPT="0", GIT_NO_LAZY_FETCH="1")
+    return env
+
+
 @dataclass(frozen=True)
 class GitObservation:
     repository: str
@@ -27,10 +38,7 @@ def observe_git(repository: Path | str) -> GitObservation:
     an atomic snapshot or permission boundary. Never fetches or changes refs.
     """
     root = Path(repository).resolve()
-    env = {
-        key: value for key, value in os.environ.items() if not key.startswith("GIT_")
-    }
-    env.update(GIT_OPTIONAL_LOCKS="0", GIT_TERMINAL_PROMPT="0", GIT_NO_LAZY_FETCH="1")
+    env = _git_env()
 
     def run(*args, allow_one=False):
         try:
@@ -89,6 +97,57 @@ def observe_git(repository: Path | str) -> GitObservation:
     if before != after:
         raise CoreError("GIT_HEAD_CHANGED", "Git HEAD changed during observation")
     return after
+
+
+def require_ancestor(repository: Path | str, base: str, tip: str) -> None:
+    """Require ``tip`` to descend from ``base`` without touching the repo.
+
+    A watcher must not reconcile findings from unrelated histories or accept a
+    force-pushed branch as a normal next observation. Git's exit status 1 is a
+    deliberate negative ancestry result; command failures remain a separate
+    fail-closed error so callers cannot mistake an unavailable probe for a
+    confirmed rewrite.
+    """
+    import re
+
+    if (
+        not isinstance(base, str)
+        or not isinstance(tip, str)
+        or re.fullmatch(_COMMIT_RE, base) is None
+        or re.fullmatch(_COMMIT_RE, tip) is None
+    ):
+        raise CoreError("GIT_ANCESTRY_FAILED", "Invalid commit identity")
+    root = Path(repository).resolve()
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "--no-pager",
+                "-c",
+                "core.fsmonitor=false",
+                "-C",
+                str(root),
+                "merge-base",
+                "--is-ancestor",
+                base,
+                tip,
+            ],
+            env=_git_env(),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise CoreError("GIT_ANCESTRY_FAILED", "Git ancestry probe failed") from exc
+    if result.returncode == 1:
+        raise CoreError(
+            "GIT_HISTORY_REWRITE",
+            "Observed HEAD is not a descendant of the last analyzed commit",
+        )
+    if result.returncode != 0:
+        raise CoreError("GIT_ANCESTRY_FAILED", "Git ancestry probe failed")
 
 
 @dataclass(frozen=True)

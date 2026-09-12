@@ -5,7 +5,7 @@ from pathlib import Path
 import time
 
 from .errors import CoreError
-from .git_observer import FindingReport, observe_git
+from .git_observer import FindingReport, observe_git, require_ancestor
 
 
 def _option(value, name):
@@ -108,6 +108,8 @@ class GitWatcher:
                     "commit": observation.commit,
                     "observation": asdict(observation),
                 }
+            if commit is not None:
+                require_ancestor(repository, commit, observation.commit)
 
             report = self._report(observation)
             latest = observe_git(repository)
@@ -179,6 +181,7 @@ class GitWatcherScheduler:
                     "OBSERVER_BUSY",
                     "OBSERVER_JOB_FAILED",
                     "OBSERVER_JOURNAL_FULL",
+                    "GIT_HISTORY_REWRITE",
                 }:
                     raise
                 failures += 1
