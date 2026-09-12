@@ -4,8 +4,9 @@ from pathlib import Path
 import sys
 import time
 
-from .cli import _Parser, _Once
+from .cli import _Parser, _Once, _fields, _json_file
 from .errors import CoreError
+from .git_observer import Finding, FindingReport, GitObservation
 from .local import LocalRuntime
 from .local_identity import current_windows_principal
 from .observer import Observer
@@ -13,7 +14,17 @@ from .observer import Observer
 
 def _parser():
     parser = _Parser(prog="rentgen-observer", description=__doc__, allow_abbrev=False)
-    parser.add_argument("action", choices=("init", "run", "status", "retry"))
+    parser.add_argument(
+        "action",
+        choices=(
+            "init",
+            "run",
+            "status",
+            "retry",
+            "record-findings",
+            "findings-status",
+        ),
+    )
     for name in ("registry", "profile"):
         parser.add_argument("--" + name, type=Path, required=True, action=_Once)
     parser.add_argument("--project", required=True, action=_Once)
@@ -21,16 +32,43 @@ def _parser():
     parser.add_argument("--interval", type=int, default=60, action=_Once)
     parser.add_argument("--cycles", type=int, action=_Once)
     parser.add_argument("--limit", type=int, default=1, action=_Once)
+    parser.add_argument("--report", type=Path, action=_Once)
     return parser
 
 
-def _emit(observer, result):
+def _finding_report(path):
+    data = _fields(
+        _json_file(path),
+        ("observation", "profile_id", "scope_id", "complete", "findings"),
+    )
+    observation = _fields(data["observation"], ("repository", "commit", "ref"))
+    if not isinstance(data["findings"], list):
+        raise CoreError("INVALID_ARGUMENT", "findings must be a JSON array")
+    findings = tuple(
+        Finding(**_fields(item, ("rule", "path", "anchor", "message", "line")))
+        for item in data["findings"]
+    )
+    try:
+        # Escaped lone surrogates are legal to json.loads but cannot be stored as UTF-8.
+        json.dumps(data, ensure_ascii=False, allow_nan=False).encode("utf-8")
+    except (UnicodeError, ValueError, RecursionError) as exc:
+        raise CoreError("INVALID_ARGUMENT", "Expected a UTF-8 JSON report") from exc
+    return FindingReport(
+        GitObservation(**observation),
+        data["profile_id"],
+        data["scope_id"],
+        data["complete"],
+        findings,
+    )
+
+
+def _emit(observer, result, *, findings=False):
     encoded = json.dumps({"result": result}, ensure_ascii=True, allow_nan=False)
     if len(encoded.encode("utf-8")) > 2 * 1024 * 1024:
         raise CoreError(
             "OBSERVER_RESPONSE_LIMIT", "Response exceeds 2 MiB; reduce --limit"
         )
-    observer._validate(observer._context())
+    observer._validate(observer._context(write=findings))
     print(encoded, flush=True)
 
 
@@ -45,6 +83,10 @@ def main(argv=None):
             )
         if args.action == "run" and args.scanner is None:
             raise CoreError("INVALID_ARGUMENT", "run requires --scanner")
+        if (args.action == "record-findings") != (args.report is not None):
+            raise CoreError(
+                "INVALID_ARGUMENT", "--report is required only for record-findings"
+            )
         from rentgen_graph.snapshot_adapter import (
             RentgenCapturedGoBuilder,
             RentgenGraphReaderFactory,
@@ -66,6 +108,15 @@ def main(argv=None):
         elif args.action == "retry":
             observer.retry()
             _emit(observer, {"status": "retry_enabled"})
+        elif args.action == "record-findings":
+            observer._validate(observer._context(write=True))
+            _emit(
+                observer,
+                observer.record_findings(_finding_report(args.report)),
+                findings=True,
+            )
+        elif args.action == "findings-status":
+            _emit(observer, observer.findings_status(limit=args.limit), findings=True)
         else:
             previous = None
             last_error = False

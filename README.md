@@ -47,10 +47,11 @@
 
 В ветке разработки после dev8 доступен [план и preview правки метаданных через EDT](docs/product/METADATA-PREVIEW.md):
 переименование реквизита по сохранённому снимку, проверка UUID и два отдельных diff.
-Также доступны отдельные библиотеки [подготовки apply](docs/product/METADATA-APPLY.md)
-и [Git-находок](docs/product/GIT-FINDINGS.md): они фиксируют preconditions и lifecycle,
-но не подключены к CLI/observer и не выполняют запись в рабочее дерево.
-Эти команды ещё не входят в опубликованный release; живое применение и отмена в разработке.
+Также доступны отдельные библиотеки [подготовки apply](docs/product/METADATA-APPLY.md),
+[квалификации metadata candidate](docs/product/METADATA-APPLY-GATE.md) и
+[Git-находок](docs/product/GIT-FINDINGS.md): preconditions и lifecycle Git-находок
+доступны через observer CLI, а metadata gate остаётся read-only. Ни один из этих
+срезов не выполняет запись в рабочее дерево; живое применение и отмена в разработке.
 
 Исходная конфигурация не меняется при создании черновика. Отсутствие ошибок BSL
 не подтверждает правильность бизнес-логики и не разрешает применение.

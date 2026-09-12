@@ -9,6 +9,7 @@ from .manifests import canonical_bytes
 
 PROJECT = "RentgenCandidate"
 IDENTIFIER = re.compile(r"[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]{0,79}")
+MIN_RETRY_WINDOW = 0.02
 
 
 def write_record(path, value):
@@ -122,7 +123,11 @@ class EDTClient:
         deadline = time.monotonic() + timeout
         for _ in range(46):
             remaining = deadline - time.monotonic()
-            if remaining <= 0:
+            # A readiness probe performs filesystem journaling around each
+            # request. Do not begin another probe when less than one scheduler
+            # quantum remains; it cannot complete reliably before the caller's
+            # deadline and makes short timeouts nondeterministic.
+            if remaining <= MIN_RETRY_WINDOW:
                 break
             result = await self._call(
                 "get_metadata_details",
@@ -145,9 +150,14 @@ class EDTClient:
                 raise CoreError("EDT_MODEL_REJECTED", "EDT model read failed")
             if time.monotonic() >= deadline:
                 break
-            await guarded_wait(
-                asyncio.sleep(min(2, deadline - time.monotonic())), self.check, 3
-            )
+            # Sleep a small margin past the deadline so a scheduler wake-up that
+            # lands just before it cannot start another request with only a few
+            # microseconds left. The next loop iteration still performs the
+            # authoritative monotonic deadline check.
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            await guarded_wait(asyncio.sleep(min(2, remaining) + 0.001), self.check, 3)
         self.failed = True
         raise CoreError("EDT_MODEL_NOT_READY", "EDT model did not become ready")
 

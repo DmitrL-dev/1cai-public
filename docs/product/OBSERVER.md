@@ -80,8 +80,9 @@ rentgen-observer retry --registry C:\RentgenState\registry.sqlite3 --project PRO
 
 `Observer.record_findings(report: FindingReport)` принимает готовый полный отчёт
 из `rentgen_core.git_observer` и вызывает существующий `reconcile_findings`.
-Операция не запускает Git, scanner, анализатор, LLM, сеть или scheduler. CLI и
-цикл `tick()` не подают в неё отчёты автоматически: действующего Git watcher
+Операция не запускает Git, scanner, анализатор, LLM, сеть или scheduler. CLI
+принимает явно переданный отчёт; цикл `tick()` не подаёт отчёты автоматически:
+действующего Git watcher
 в этом срезе нет. Ответ `analysis="caller_supplied"` означает доверенный ввод
 вызывающего кода, а не доказательство запуска анализа указанного commit.
 
@@ -136,3 +137,68 @@ rentgen-observer retry --registry C:\RentgenState\registry.sqlite3 --project PRO
 откат состояния вместе с событиями и остановку на лимитах без очистки истории.
 Сбой внутри транзакции моделируется исключением; реальный kill процесса
 во время SQLite commit здесь отдельно не проверен.
+
+## Сохранение и чтение Git-находок через CLI
+
+Инициализируйте профиль командой `init`, затем передайте готовый отчёт:
+
+```powershell
+rentgen-observer record-findings --registry C:\RentgenState\registry.sqlite3 --project PROJECT_UUID --profile C:\RentgenState\observer --report C:\RentgenReports\findings.json
+rentgen-observer findings-status --registry C:\RentgenState\registry.sqlite3 --project PROJECT_UUID --profile C:\RentgenState\observer --limit 10
+```
+
+`--report` обязателен только для `record-findings`. Файл — один JSON-объект
+в строгом UTF-8 без BOM размером до 1 МиБ включительно. Повторяющиеся ключи
+(в том числе вложенные), NaN/Infinity, лишние или отсутствующие поля,
+некорректный UTF-8 и одиночные Unicode-суррогаты отклоняются. Структура совпадает
+с DTO `FindingReport`; JSON-массив `findings` преобразуется в набор `Finding`:
+
+```json
+{
+  "observation": {
+    "repository": "C:\\Projects\\MyConfiguration",
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "ref": "refs/heads/main"
+  },
+  "profile_id": "analyzer-v1-settings-v1",
+  "scope_id": "whole-repository",
+  "complete": true,
+  "findings": [
+    {
+      "rule": "example-rule",
+      "path": "CommonModules/Example/Module.bsl",
+      "anchor": "procedure:Example",
+      "message": "Описание находки",
+      "line": 1
+    }
+  ]
+}
+```
+
+Замените repository на точный канонический `source_root` зарегистрированного
+проекта, commit — на полный SHA анализируемого commit. Для detached HEAD
+передайте `"ref": null`; поле всё равно обязательно. CLI передаёт проверки
+provenance, полноты, идентичности и lifecycle существующему API. Эта команда
+не запускает анализатор, Git watcher, scanner или сеть: достоверность отчёта
+остаётся ответственностью вызывающего кода, ответ содержит
+`analysis="caller_supplied"` и `model_calls=0`.
+
+Успешная запись возвращает `{"result": <квитанция>}`; точный replay возвращает
+ту же квитанцию и UUID. `findings-status` возвращает `result.state`, последние
+`result.reports` и `result.reports_truncated`. `--limit` допускает 1–100,
+по умолчанию 1, как у прежней команды `status`. Обычный `status` по-прежнему
+показывает только source-отчёты. Обе новые команды требуют `project:read`
+и `analysis:run`; права проверяются также после сериализации перед выводом.
+
+Ответ ограничен 2 МиБ; превышение возвращает `OBSERVER_RESPONSE_LIMIT`.
+Уменьшение `--limit` сокращает список квитанций, но не размер текущего состояния
+или одной квитанции. Запись может уже сохраниться до ошибки размера ответа;
+replay безопасен и не создаёт новую запись. Ошибки имеют формат
+`{"error": {"code": "...", "message": "..."}}`, код выхода 2; успех — 0.
+Ошибки JSON/структуры дают `INVALID_ARGUMENT`, ошибки полноты и контекста
+сохраняют коды `FINDINGS_*`, отказ в доступе — `PROJECT_FORBIDDEN`.
+
+Тесты `tests/unit/test_observer_findings_cli.py` проверяют baseline, новые
+и разрешённые находки, исторический replay, неполный/конфликтующий отчёт,
+строгий JSON и лимиты, DTO/provenance, отказ и отзыв прав перед выводом,
+а также сохранение прежнего поведения `status`.

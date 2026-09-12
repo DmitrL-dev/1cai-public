@@ -80,6 +80,7 @@ only-include = [
   "docs/product/EDT-EXECUTION.md",
   "docs/product/METADATA-PREVIEW.md",
   "docs/product/METADATA-APPLY.md",
+  "docs/product/METADATA-APPLY-GATE.md",
   "docs/product/GIT-FINDINGS.md",
   "docs/product/METADATA-MIGRATION.md",
   "scripts/verification/verify_metadata_migration.py",
