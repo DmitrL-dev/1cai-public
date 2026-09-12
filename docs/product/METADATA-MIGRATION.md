@@ -70,3 +70,19 @@ python scripts/verification/verify_metadata_migration.py --input-run <катал
 [Машинная сводка принятого запуска](evidence/metadata-migration-v1.json).
 Следующий продуктовый этап — привязать такие проверки к политике применения
 candidate и реализовать журнал применения/отмены с защитой от чужих изменений.
+
+## Привязка к preview
+
+После завершения verifier его `acceptance.json` можно привязать к закрытой
+операции metadata preview. Ядро сверяет `source_preview_id`, полные инвентари
+original/baseline/candidate и положительные/отрицательные фазы; файл отчёта
+сохраняется в каталоге операции один раз. Команда требует те же `--snapshot`,
+`--project` и `--operation-id`, с которыми создавался preview:
+
+```powershell
+rentgen metadata-evidence --registry C:\Rentgen\registry.sqlite3 --project PROJECT_UUID --snapshot SNAPSHOT_ID --operation-id OPERATION_UUID --evidence-json acceptance.json
+```
+
+`metadata-result` после этого показывает `business_data_test.status=passed` и
+сводку хэшей доказательства. Это не разрешает apply и не меняет исходный
+снимок; другая квитанция с тем же operation ID отклоняется.

@@ -82,6 +82,122 @@ def _result(request, preview):
     return {**value, "preview_id": sha256(canonical_bytes(value))}
 
 
+def _validate_business_evidence(evidence, result, raw):
+    preview = result["preview"]
+    require(type(evidence) is dict, "Business evidence must be an object")
+    required = {
+        "schema",
+        "source",
+        "source_preview_id",
+        "platform_sha256",
+        "ibcmd_sha256",
+        "engine_cfe_sha256",
+        "source_inventories",
+        "reports",
+        "records",
+        "value_cases",
+        "full_record_reference_preserved",
+        "schema_restore_preserves_data",
+        "wrong_uuid_compiles_but_loses_data",
+        "product_apply_undo",
+        "unmodified_preview_execution",
+    }
+    require(required <= set(evidence), "Business evidence is incomplete")
+    require(type(evidence["schema"]) is int and evidence["schema"] == 1)
+    require(
+        evidence["source"] == "real 1C/YAxUnit on a new owned file infobase",
+        "Unsupported business evidence source",
+    )
+    require(
+        evidence["source_preview_id"] == result["preview_id"],
+        "Business evidence belongs to another preview",
+    )
+    for key in ("platform_sha256", "ibcmd_sha256", "engine_cfe_sha256"):
+        require(
+            type(evidence[key]) is str and re.fullmatch(r"[0-9a-f]{64}", evidence[key]),
+            "Invalid business evidence tool hash",
+        )
+    inventories = evidence["source_inventories"]
+    require(type(inventories) is dict, "Business evidence inventories are invalid")
+    for source, target in (
+        ("original", "original"),
+        ("normalized", "baseline"),
+        ("renamed", "candidate"),
+    ):
+        require(
+            source in inventories
+            and canonical_bytes(inventories[source])
+            == canonical_bytes(preview["inventories"][target]),
+            "Business evidence inventory does not match preview",
+        )
+    reports = evidence["reports"]
+    require(type(reports) is dict, "Business evidence reports are invalid")
+    positive = ("seed", "reopen-original", "normalized", "renamed", "restored")
+    for phase in positive:
+        report = reports.get(phase)
+        require(
+            type(report) is dict
+            and report.get("status") == "passed"
+            and type(report.get("counts")) is dict
+            and report["counts"].get("errors") == 0
+            and report["counts"].get("failures") == 0,
+            "Positive business phase did not pass: " + phase,
+        )
+    negative = reports.get("wrong-uuid")
+    require(
+        type(negative) is dict
+        and negative.get("status") == "failed"
+        and type(negative.get("counts")) is dict
+        and negative["counts"].get("errors") == 0
+        and negative["counts"].get("failures") == 1,
+        "Expected wrong-UUID negative phase is missing",
+    )
+    require(evidence["records"] == 3)
+    require(evidence["value_cases"] == ["unicode", "empty", "length_32"])
+    for key in (
+        "full_record_reference_preserved",
+        "schema_restore_preserves_data",
+        "wrong_uuid_compiles_but_loses_data",
+        "unmodified_preview_execution",
+    ):
+        require(evidence[key] is True, "Business evidence flag is false: " + key)
+    require(evidence["product_apply_undo"] is False)
+    return {
+        "status": "passed",
+        "scope": "owned_fixture",
+        "source": evidence["source"],
+        "records": evidence["records"],
+        "value_cases": evidence["value_cases"],
+        "positive_phases": list(positive),
+        "negative_phase": "wrong-uuid",
+        "platform_sha256": evidence["platform_sha256"],
+        "ibcmd_sha256": evidence["ibcmd_sha256"],
+        "engine_cfe_sha256": evidence["engine_cfe_sha256"],
+        "evidence_sha256": sha256(raw),
+    }
+
+
+def _read_business_evidence(run, result):
+    path = run / "business-evidence.json"
+    if not path.exists():
+        return None
+    raw = read_retained(path, 2 * 1024**2)
+    evidence = parse_json(raw)
+    return _validate_business_evidence(evidence, result, raw)
+
+
+def _with_business_evidence(result, summary):
+    preview = dict(result["preview"])
+    preview["business_data_test"] = {
+        "status": summary["status"],
+        "scope": summary["scope"],
+        "records": summary["records"],
+        "value_cases": summary["value_cases"],
+        "evidence_sha256": summary["evidence_sha256"],
+    }
+    return {**result, "preview": preview, "business_evidence": summary}
+
+
 def get_preview(ctx, operation_id):
     with authorized(ctx):
         run = run_path(ctx, operation_id)
@@ -103,7 +219,10 @@ def get_preview(ctx, operation_id):
                 canonical_bytes(stored) == canonical_bytes(actual),
                 "Preview or retained outputs were changed",
             )
-            return actual
+            summary = _read_business_evidence(run, actual)
+            return (
+                actual if summary is None else _with_business_evidence(actual, summary)
+            )
 
 
 async def create_preview(ctx, plan, profile_id, operation_id):
@@ -141,3 +260,37 @@ async def create_preview(ctx, plan, profile_id, operation_id):
             result = _result(binding, build_preview(ctx, plan, run))
             write_record(run / "preview.json", result)
         return result
+
+
+def attach_business_evidence(ctx, operation_id, evidence):
+    """Bind the accepted own-fixture data run to an immutable metadata preview."""
+    with authorized(ctx):
+        run = run_path(ctx, operation_id)
+        with pinned_directory(run):
+            request = _request(ctx, run, operation_id)
+            require(
+                (run / "preview.json").exists()
+                and (run / "runtime-closed.json").exists(),
+                "Preview is incomplete; attach evidence only after closure",
+            )
+            closed = parse_json(read_retained(run / "runtime-closed.json", 8192))
+            require(closed == {"status": "closed", "metadata_verified": False})
+            stored = parse_json(read_retained(run / "preview.json", 2 * 1024**2))
+            actual = _result(request, build_preview(ctx, request["plan"], run))
+            require(
+                canonical_bytes(stored) == canonical_bytes(actual),
+                "Preview or retained outputs were changed",
+            )
+            raw = canonical_bytes(evidence)
+            summary = _validate_business_evidence(evidence, actual, raw)
+            path = run / "business-evidence.json"
+            if path.exists():
+                previous = parse_json(read_retained(path, 2 * 1024**2))
+                if canonical_bytes(previous) != raw:
+                    raise CoreError(
+                        "METADATA_EVIDENCE_CONFLICT",
+                        "Business evidence is already bound to another report",
+                    )
+            else:
+                write_record(path, evidence)
+        return _with_business_evidence(actual, summary)

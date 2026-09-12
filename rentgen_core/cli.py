@@ -83,6 +83,7 @@ def _parser():
         "metadata-plan",
         "metadata-preview",
         "metadata-result",
+        "metadata-evidence",
         "proposal-test",
         "proposal-test-result",
         "draft-save",
@@ -108,8 +109,12 @@ def _parser():
                     "--plan-json", type=Path, required=True, action=_Once
                 )
                 command.add_argument("--profile-id", required=True, action=_Once)
-            if name in {"metadata-preview", "metadata-result"}:
+            if name in {"metadata-preview", "metadata-result", "metadata-evidence"}:
                 command.add_argument("--operation-id", required=True, action=_Once)
+            if name == "metadata-evidence":
+                command.add_argument(
+                    "--evidence-json", type=Path, required=True, action=_Once
+                )
         elif name == "project-register":
             for option in ("source-root", "state-root"):
                 command.add_argument(
@@ -653,6 +658,7 @@ def _execute(args, *, proposal_scope=None):
             "metadata-plan",
             "metadata-preview",
             "metadata-result",
+            "metadata-evidence",
         }
         else {"project:read", "source:edit"}
         if args.command
@@ -674,7 +680,7 @@ def _execute(args, *, proposal_scope=None):
         import asyncio
         from .edt_profiles import parse_json
         from .metadata_plans import create_plan
-        from .metadata_runs import create_preview, get_preview
+        from .metadata_runs import attach_business_evidence, create_preview, get_preview
 
         if proposal_scope is not None:
             proposal_scope.context = ctx
@@ -693,6 +699,13 @@ def _execute(args, *, proposal_scope=None):
                 create_preview(
                     selected, parse_json(raw), args.profile_id, args.operation_id
                 )
+            )
+        elif args.command == "metadata-evidence":
+            raw = _proposal_input(
+                ctx, args.evidence_json, 2 * 1024**2, permissions=permissions
+            )
+            value = attach_business_evidence(
+                selected, args.operation_id, parse_json(raw)
             )
         else:
             value = get_preview(selected, args.operation_id)

@@ -30,3 +30,20 @@ def test_explicit_status_replaces_default_once(status):
         _parser().parse_args(
             arguments("draft-list", "--status", "active", "--status", status)
         )
+
+
+def test_metadata_evidence_requires_operation_and_payload():
+    parsed = _parser().parse_args(
+        arguments(
+            "metadata-evidence",
+            "--snapshot",
+            "snapshot",
+            "--operation-id",
+            "operation",
+            "--evidence-json",
+            "evidence.json",
+        )
+    )
+    assert parsed.snapshot == "snapshot"
+    assert parsed.operation_id == "operation"
+    assert str(parsed.evidence_json) == "evidence.json"
