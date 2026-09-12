@@ -123,6 +123,8 @@ def plan_three_way(
         )
     }
     identities = set().union(*(tree.keys() for tree in trees.values()))
+    if len(identities) > max_files:
+        raise CoreError("THREE_WAY_LIMIT", "Union file limit exceeded")
     rows = []
     for identity in identities:
         names = {tree[identity][0] for tree in trees.values() if identity in tree}

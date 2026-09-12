@@ -83,3 +83,5 @@ def test_plan_enforces_file_and_byte_bounds():
         plan_three_way({"A.bsl": b"x"}, {}, {}, max_files=0)
     with pytest.raises(CoreError, match="limit"):
         plan_three_way({"A.bsl": b"xx"}, {}, {}, max_file_bytes=1)
+    with pytest.raises(CoreError, match="limit"):
+        plan_three_way({"A.bsl": b"x"}, {"B.bsl": b"x"}, {"C.bsl": b"x"}, max_files=2)
