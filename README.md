@@ -51,7 +51,8 @@
 [принадлежащей workspace-копии](docs/product/METADATA-WORKSPACE.md),
 [квалификации metadata candidate](docs/product/METADATA-APPLY-GATE.md) и
 [Git-находок](docs/product/GIT-FINDINGS.md), а также bounded
-[Git watcher](docs/product/GIT-WATCHER.md): preconditions и lifecycle Git-находок
+[Git watcher](docs/product/GIT-WATCHER.md) с BSL-LS analyzer adapter
+([описание](docs/product/GIT-BSL-ANALYZER.md)): preconditions и lifecycle Git-находок
 доступны через observer CLI и watcher adapter, а metadata gate остаётся read-only.
 Ни один из этих срезов не выполняет запись в рабочее дерево; живое применение
 и отмена в разработке.

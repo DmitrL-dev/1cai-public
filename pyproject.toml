@@ -83,6 +83,7 @@ only-include = [
   "docs/product/METADATA-WORKSPACE.md",
   "docs/product/METADATA-APPLY-GATE.md",
   "docs/product/GIT-FINDINGS.md",
+  "docs/product/GIT-BSL-ANALYZER.md",
   "docs/product/GIT-WATCHER.md",
   "docs/product/COMPETITOR-MATRIX.md",
   "docs/product/AUDIT-20260912.md",

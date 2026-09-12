@@ -1,10 +1,9 @@
 # Bounded Git watcher
 
 The rentgen_core.git_watcher.GitWatcher class is a synchronous orchestration
-adapter for one committed Git repository. It is intended to be called by a host
-scheduler; the library does not create a background thread, service, model
-request, network connection or subprocess other than the existing read-only
-Git probe.
+adapter for one committed Git repository. A bounded foreground
+`GitWatcherScheduler` is available for repeated calls; the library still does
+not create a background thread, service, model request or network connection.
 
     from rentgen_core.git_watcher import GitWatcher
 
@@ -31,13 +30,13 @@ Git activity for the whole callback; the second probe detects a visible HEAD
 change before persistence.
 
 This is an orchestration boundary, not an analyzer. The callback remains
-responsible for checking the exact commit and producing trustworthy findings.
-The current core does not ship a repository analyzer, automatic scheduler,
-notifications, branch ancestry policy or Git archive sandbox. It also does not
-turn caller-supplied findings into proof that BSL, an LLM or any other analyzer
-actually ran; receipts continue to state analysis="caller_supplied" and
+responsible for producing trustworthy findings. The optional BSL-LS adapter is
+described in [GIT-BSL-ANALYZER.md](GIT-BSL-ANALYZER.md); other analyzer adapters,
+notifications, branch ancestry policy and Git archive sandbox are not included.
+Caller-supplied reports continue to state analysis="caller_supplied" and
 model_calls=0.
 
 Unit coverage in tests/unit/test_git_watcher.py checks new/unchanged commits,
 retry after analyzer failure, exact context binding, dirty and foreign
-repositories, HEAD races and constructor bounds.
+repositories, HEAD races, scheduler backoff/stop and constructor bounds. The
+BSL-LS Git adapter has separate blob/provenance and incomplete-result tests.

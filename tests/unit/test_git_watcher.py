@@ -176,3 +176,66 @@ def test_invalid_constructor_options_are_rejected(workspace):
     with pytest.raises(CoreError) as error:
         implementation.GitWatcher(observer, lambda _: None, profile_id="")
     assert error.value.code == "GIT_WATCHER_INVALID"
+
+
+class _ScheduledWatcher:
+    def __init__(self, outcomes):
+        self.outcomes = list(outcomes)
+        self.calls = 0
+
+    def tick(self):
+        self.calls += 1
+        outcome = self.outcomes.pop(0)
+        if isinstance(outcome, BaseException):
+            raise outcome
+        return outcome
+
+
+def test_scheduler_runs_bounded_loop_with_controlled_backoff():
+    watcher = _ScheduledWatcher(
+        [
+            CoreError("GIT_PROBE_FAILED", "probe"),
+            CoreError("GIT_PROBE_FAILED", "probe"),
+            {"status": "analyzed"},
+            {"status": "unchanged"},
+        ]
+    )
+    sleeps = []
+    scheduler = implementation.GitWatcherScheduler(
+        watcher, interval=5, max_cycles=4, sleep=sleeps.append
+    )
+
+    events = scheduler.run()
+
+    assert watcher.calls == 4
+    assert [event["status"] for event in events] == [
+        "error",
+        "error",
+        "analyzed",
+        "unchanged",
+    ]
+    assert [event.get("attempt") for event in events[:2]] == [1, 2]
+    assert sleeps == [10, 20, 5]
+
+
+def test_scheduler_stops_before_tick_and_does_not_swallow_fatal_errors():
+    watcher = _ScheduledWatcher([{"status": "never"}])
+    scheduler = implementation.GitWatcherScheduler(
+        watcher, interval=5, max_cycles=2, should_stop=lambda: True
+    )
+    assert scheduler.run() == []
+    assert watcher.calls == 0
+
+    fatal = _ScheduledWatcher([CoreError("PROJECT_FORBIDDEN", "denied")])
+    scheduler = implementation.GitWatcherScheduler(fatal, interval=5, max_cycles=1)
+    with pytest.raises(CoreError) as error:
+        scheduler.run()
+    assert error.value.code == "PROJECT_FORBIDDEN"
+
+
+def test_scheduler_rejects_unbounded_options():
+    watcher = _ScheduledWatcher([])
+    with pytest.raises(CoreError):
+        implementation.GitWatcherScheduler(watcher, interval=4)
+    with pytest.raises(CoreError):
+        implementation.GitWatcherScheduler(watcher, interval=5, max_cycles=0)

@@ -2,6 +2,7 @@
 
 from dataclasses import asdict
 from pathlib import Path
+import time
 
 from .errors import CoreError
 from .git_observer import FindingReport, observe_git
@@ -122,3 +123,72 @@ class GitWatcher:
                 "observation": asdict(observation),
                 "receipt": receipt,
             }
+
+
+class GitWatcherScheduler:
+    """Bounded foreground loop for a GitWatcher with explicit backoff.
+
+    The observer's profile lock remains the process lease. This helper does not
+    create threads or hide failures; callers choose a stop predicate and retain
+    the returned events for their own service/notification layer.
+    """
+
+    def __init__(
+        self,
+        watcher,
+        *,
+        interval=60,
+        max_cycles=None,
+        max_backoff=3600,
+        sleep=time.sleep,
+        should_stop=lambda: False,
+    ):
+        if not callable(getattr(watcher, "tick", None)):
+            raise CoreError("GIT_WATCHER_INVALID", "Watcher with tick() is required")
+        if type(interval) is not int or not 5 <= interval <= 86400:
+            raise CoreError("GIT_WATCHER_INVALID", "Interval must be 5..86400 seconds")
+        if max_cycles is not None and (
+            type(max_cycles) is not int or not 1 <= max_cycles <= 10000
+        ):
+            raise CoreError("GIT_WATCHER_INVALID", "max_cycles must be 1..10000")
+        if type(max_backoff) is not int or not interval <= max_backoff <= 86400:
+            raise CoreError("GIT_WATCHER_INVALID", "max_backoff is out of bounds")
+        if not callable(sleep) or not callable(should_stop):
+            raise CoreError("GIT_WATCHER_INVALID", "Scheduler callbacks are required")
+        self.watcher = watcher
+        self.interval = interval
+        self.max_cycles = max_cycles
+        self.max_backoff = max_backoff
+        self.sleep = sleep
+        self.should_stop = should_stop
+
+    def run(self):
+        """Run until stop/max_cycles, backing off only controlled CoreErrors."""
+        events, failures, cycle = [], 0, 0
+        while self.max_cycles is None or cycle < self.max_cycles:
+            if self.should_stop():
+                break
+            try:
+                event = self.watcher.tick()
+                failures = 0
+            except CoreError as exc:
+                if exc.code in {
+                    "PROJECT_FORBIDDEN",
+                    "PROJECT_NOT_FOUND",
+                    "OBSERVER_PROFILE_MISMATCH",
+                    "OBSERVER_BUSY",
+                    "OBSERVER_JOB_FAILED",
+                    "OBSERVER_JOURNAL_FULL",
+                }:
+                    raise
+                failures += 1
+                event = {"status": "error", "code": exc.code, "attempt": failures}
+            events.append(event)
+            cycle += 1
+            if self.max_cycles is not None and cycle >= self.max_cycles:
+                break
+            if self.should_stop():
+                break
+            delay = min(self.max_backoff, self.interval * (2**failures))
+            self.sleep(delay)
+        return events
