@@ -6,7 +6,7 @@
   <a href="https://github.com/DmitrL-dev/1cai-public/releases"><img alt="Early access" src="https://img.shields.io/badge/status-early_access-f0be69?style=flat-square"></a>
 </p>
 
-<p align="center"><a href="GETTING_STARTED.md"><b>Начать работу</b></a> · <a href="https://github.com/DmitrL-dev/1cai-public/releases">Скачать</a> · <a href="ROADMAP.md">План развития</a> · <a href="docs/product/COMPETITOR-MATRIX.md">Рынок и позиционирование</a> · <a href="CONTRIBUTING.md">Участвовать</a></p>
+<p align="center"><a href="GETTING_STARTED.md"><b>Начать работу</b></a> · <a href="https://github.com/DmitrL-dev/1cai-public/releases">Скачать</a> · <a href="ROADMAP.md">План развития</a> · <a href="docs/product/AUDIT-20260912.md">Аудит</a> · <a href="docs/product/COMPETITOR-MATRIX.md">Рынок и позиционирование</a> · <a href="CONTRIBUTING.md">Участвовать</a></p>
 
 Рентген помогает разрабатывать и разбирать конфигурации 1С: фиксирует исходники
 в снимках, связывает код с графом зависимостей и сохраняет предложения агента
@@ -112,6 +112,7 @@ flowchart LR
 | [Расширение](integrations/vscode-rentgen/README.md) | Просмотр, черновики и локальная правка |
 | [Архитектура](ARCHITECTURE.md) | Границы модулей и источник истины |
 | [Готовность](docs/product/READINESS.md) | Что проверено и что ещё предстоит |
+| [Аудит](docs/product/AUDIT-20260912.md) | Приоритетные слабые места и порядок работ |
 | [Разработка](CONTRIBUTING.md) | Сборка, тесты и правила изменений |
 
 Текущий публичный состав заменяет прежнее экспериментальное дерево.
