@@ -114,6 +114,19 @@ def test_probe_timeout_is_explicit(repository, monkeypatch):
     assert error.value.code == "GIT_PROBE_FAILED"
 
 
+def test_probe_rejects_non_utf8_git_output(repository, monkeypatch):
+    module = api()
+
+    class Result:
+        returncode = 0
+        stdout = b"\xff"
+
+    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: Result())
+    with pytest.raises(module.CoreError) as error:
+        module.observe_git(repository)
+    assert error.value.code == "GIT_PROBE_FAILED"
+
+
 def test_probe_rejects_unborn_head_and_non_root(tmp_path, repository):
     module = api()
     empty = tmp_path / "empty"

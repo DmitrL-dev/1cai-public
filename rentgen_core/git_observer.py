@@ -55,7 +55,13 @@ def observe_git(repository: Path | str) -> GitObservation:
             raise CoreError("GIT_PROBE_FAILED", "Local Git probe failed") from exc
         if result.returncode not in ({0, 1} if allow_one else {0}):
             raise CoreError("GIT_PROBE_FAILED", "Local Git command failed")
-        return result.returncode, result.stdout.decode("utf-8", errors="strict").strip()
+        try:
+            output = result.stdout.decode("utf-8", errors="strict").strip()
+        except UnicodeError as exc:
+            raise CoreError(
+                "GIT_PROBE_FAILED", "Local Git output is not UTF-8"
+            ) from exc
+        return result.returncode, output
 
     _, top = run("rev-parse", "--show-toplevel")
     if Path(top).resolve() != root:
