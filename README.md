@@ -48,6 +48,7 @@
 В ветке разработки после dev8 доступен [план и preview правки метаданных через EDT](docs/product/METADATA-PREVIEW.md):
 переименование реквизита по сохранённому снимку, проверка UUID и два отдельных diff.
 Также доступны отдельные библиотеки [подготовки apply](docs/product/METADATA-APPLY.md),
+[принадлежащей workspace-копии](docs/product/METADATA-WORKSPACE.md),
 [квалификации metadata candidate](docs/product/METADATA-APPLY-GATE.md) и
 [Git-находок](docs/product/GIT-FINDINGS.md), а также bounded
 [Git watcher](docs/product/GIT-WATCHER.md): preconditions и lifecycle Git-находок

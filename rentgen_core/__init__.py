@@ -1,6 +1,7 @@
 """Local project foundation using only Python's standard library.
 
-No adapters are migrated yet. This name avoids shadowing legacy tools/rentgen.
+Optional platform and diagnostic adapters remain explicit capabilities. This
+name avoids shadowing legacy tools/rentgen.
 """
 
 from .context import (
