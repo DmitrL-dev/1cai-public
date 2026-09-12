@@ -56,9 +56,11 @@ def test_metadata_evidence_requires_operation_and_payload():
         "metadata-workspace-apply",
         "metadata-workspace-undo",
         "metadata-workspace-status",
+        "metadata-workspace-recover",
     ],
 )
 def test_metadata_workspace_commands_require_explicit_binding(command):
+    target = ("--target", "original") if command.endswith("recover") else ()
     parsed = _parser().parse_args(
         arguments(
             command,
@@ -68,8 +70,42 @@ def test_metadata_workspace_commands_require_explicit_binding(command):
             "operation",
             "--workspace",
             "workspace",
+            *target,
         )
     )
     assert parsed.snapshot == "snapshot"
     assert parsed.operation_id == "operation"
     assert str(parsed.workspace) == "workspace"
+
+
+def test_metadata_workspace_recover_requires_explicit_target():
+    parsed = _parser().parse_args(
+        arguments(
+            "metadata-workspace-recover",
+            "--snapshot",
+            "snapshot",
+            "--operation-id",
+            "operation",
+            "--workspace",
+            "workspace",
+            "--target",
+            "candidate",
+        )
+    )
+    assert parsed.target == "candidate"
+    with pytest.raises(CoreError):
+        _parser().parse_args(
+            arguments(
+                "metadata-workspace-recover",
+                "--snapshot",
+                "snapshot",
+                "--operation-id",
+                "operation",
+                "--workspace",
+                "workspace",
+                "--target",
+                "candidate",
+                "--target",
+                "original",
+            )
+        )

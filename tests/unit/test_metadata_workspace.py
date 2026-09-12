@@ -93,7 +93,56 @@ def test_owned_workspace_undo_refuses_foreign_change(captured, tmp_path):
     assert error.value.code == "METADATA_UNDO_CONFLICT"
 
 
-def test_interrupted_owned_workspace_apply_requires_recovery(
+@pytest.mark.parametrize("target", ["original", "candidate"])
+def test_interrupted_owned_workspace_apply_can_be_recovered(
+    captured, tmp_path, monkeypatch, target
+):
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    original = _bytes(root / "tree")
+    candidate, _ = workspace._candidate(
+        ctx, workspace._read_sealed(root / ".rentgen-workspace.json", "marker_id")
+    )
+    expected = _bytes(candidate)
+    original_replace = workspace.os.replace
+    calls = {"count": 0}
+
+    def interrupt(source, target):
+        calls["count"] += 1
+        if calls["count"] == 2:
+            raise OSError("simulated interruption")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(workspace.os, "replace", interrupt)
+    with pytest.raises(OSError):
+        workspace.apply_workspace(ctx, request["operation_id"], root)
+    monkeypatch.setattr(workspace.os, "replace", original_replace)
+    recovered = workspace.recover_workspace(
+        ctx, request["operation_id"], root, target=target
+    )
+    assert recovered["status"] == "recovered"
+    assert (
+        workspace.get_workspace_status(ctx, request["operation_id"], root)["recovery"]
+        == recovered
+    )
+    if target == "original":
+        assert recovered["target"] == "original"
+        assert _bytes(root / "tree") == original
+        assert (
+            workspace.apply_workspace(ctx, request["operation_id"], root)["status"]
+            == "applied"
+        )
+    else:
+        assert recovered["target"] == "candidate"
+        assert _bytes(root / "tree") == expected
+        assert (
+            workspace.get_workspace_status(ctx, request["operation_id"], root)[
+                "result"
+            ]["status"]
+            == "applied"
+        )
+
+
+def test_interrupted_workspace_recovery_rejects_foreign_tree_file(
     captured, tmp_path, monkeypatch
 ):
     ctx, request, _, root, _ = _prepared(captured, tmp_path)
@@ -110,9 +159,48 @@ def test_interrupted_owned_workspace_apply_requires_recovery(
     with pytest.raises(OSError):
         workspace.apply_workspace(ctx, request["operation_id"], root)
     monkeypatch.setattr(workspace.os, "replace", original_replace)
+    (root / "tree" / "foreign.txt").write_bytes(b"foreign")
     with pytest.raises(api.CoreError) as error:
+        workspace.recover_workspace(
+            ctx, request["operation_id"], root, target="original"
+        )
+    assert error.value.code == "METADATA_WORKSPACE_CONFLICT"
+
+
+def test_recovery_finalizes_result_written_before_state(
+    captured, tmp_path, monkeypatch
+):
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    original_replace = workspace._replace_record
+
+    def interrupt(path, value):
+        raise OSError("simulated finalization interruption")
+
+    monkeypatch.setattr(workspace, "_replace_record", interrupt)
+    with pytest.raises(OSError):
         workspace.apply_workspace(ctx, request["operation_id"], root)
-    assert error.value.code == "METADATA_WORKSPACE_RECOVERY_REQUIRED"
+    monkeypatch.setattr(workspace, "_replace_record", original_replace)
+    assert (root / "workspace-result.json").exists()
+    assert (
+        workspace.get_workspace_status(ctx, request["operation_id"], root)["state"][
+            "phase"
+        ]
+        == "applying"
+    )
+
+    recovered = workspace.recover_workspace(
+        ctx, request["operation_id"], root, target="candidate"
+    )
+    assert recovered["target"] == "candidate"
+    status = workspace.get_workspace_status(ctx, request["operation_id"], root)
+    assert status["state"]["phase"] == "complete"
+    assert status["result"]["status"] == "applied"
+    assert (
+        workspace.recover_workspace(
+            ctx, request["operation_id"], root, target="candidate"
+        )
+        == recovered
+    )
 
 
 def test_tampered_workspace_marker_is_not_replayed(captured, tmp_path):

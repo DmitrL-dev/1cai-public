@@ -88,6 +88,7 @@ def _parser():
         "metadata-workspace-apply",
         "metadata-workspace-undo",
         "metadata-workspace-status",
+        "metadata-workspace-recover",
         "proposal-test",
         "proposal-test-result",
         "draft-save",
@@ -121,6 +122,7 @@ def _parser():
                 "metadata-workspace-apply",
                 "metadata-workspace-undo",
                 "metadata-workspace-status",
+                "metadata-workspace-recover",
             }:
                 command.add_argument("--operation-id", required=True, action=_Once)
             if name == "metadata-evidence":
@@ -130,6 +132,13 @@ def _parser():
             if name.startswith("metadata-workspace-"):
                 command.add_argument(
                     "--workspace", type=Path, required=True, action=_Once
+                )
+            if name == "metadata-workspace-recover":
+                command.add_argument(
+                    "--target",
+                    choices=("original", "candidate"),
+                    required=True,
+                    action=_Once,
                 )
         elif name == "project-register":
             for option in ("source-root", "state-root"):
@@ -679,6 +688,7 @@ def _execute(args, *, proposal_scope=None):
             "metadata-workspace-apply",
             "metadata-workspace-undo",
             "metadata-workspace-status",
+            "metadata-workspace-recover",
         }
         else {"project:read", "source:edit"}
         if args.command
@@ -743,6 +753,10 @@ def _execute(args, *, proposal_scope=None):
         elif args.command == "metadata-workspace-status":
             value = metadata_workspace.get_workspace_status(
                 selected, args.operation_id, args.workspace
+            )
+        elif args.command == "metadata-workspace-recover":
+            value = metadata_workspace.recover_workspace(
+                selected, args.operation_id, args.workspace, target=args.target
             )
         else:
             value = get_preview(selected, args.operation_id)

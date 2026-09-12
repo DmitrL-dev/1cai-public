@@ -20,9 +20,19 @@
    baseline не перезаписывает новые байты молча. После проверки backup исходный
    inventory восстанавливается и выдаётся отдельная sealed undo receipt.
 
+4. `recover_workspace(..., target="original"|"candidate")` продолжает
+   прерванный `apply` только после проверки sealed backup, сохранённого preview
+   и отсутствия чужих байтов. `original` возвращает копию к baseline и оставляет
+   apply доступным для нового запуска; `candidate` завершает применение и выдаёт
+   receipt с `recovered=true`. Выбор цели обязателен, recovery не читает live
+   source и не пытается угадывать, что хотел сделать предыдущий процесс.
+
 Незавершённая фаза `applying` или `undoing`, отсутствующий backup, временный
 receipt либо несовпадение digest дают `METADATA_WORKSPACE_RECOVERY_REQUIRED`.
 Повторный вызов не пытается угадать исход и не запускает автоматический replay.
+Если candidate уже записан и процесс прервался перед финальным state receipt,
+`recover --target candidate` проверяет результат по digest и завершает journal
+идемпотентно; выбор `original` в этом состоянии отклоняется до явного undo.
 Все операции требуют `project:read`, `source:edit`, `analysis:run`.
 
 ## CLI
@@ -39,6 +49,9 @@ rentgen metadata-workspace-undo --registry REGISTRY --project PROJECT \
   --snapshot SNAPSHOT --operation-id OPERATION --workspace WORKSPACE
 rentgen metadata-workspace-status --registry REGISTRY --project PROJECT \
   --snapshot SNAPSHOT --operation-id OPERATION --workspace WORKSPACE
+rentgen metadata-workspace-recover --registry REGISTRY --project PROJECT \
+  --snapshot SNAPSHOT --operation-id OPERATION --workspace WORKSPACE \
+  --target original|candidate
 ```
 
 Команды требуют точный snapshot и исходный operation ID; workspace path задаёт
@@ -58,5 +71,6 @@ receipt протокол должен работать через квалифи
 восстановлением после сбоя процесса.
 
 Регрессии находятся в `tests/unit/test_metadata_workspace.py`: apply/undo,
-stale workspace, foreign change и interruption recovery. Операция не принимает
+stale workspace, foreign change, explicit original/candidate recovery и interruption
+recovery. Операция не принимает
 пути или команды от модели; путь workspace задаёт доверенный вызывающий код.

@@ -131,6 +131,10 @@ def _undo_path(root):
     return root / "workspace-undo.json"
 
 
+def _recovery_path(root):
+    return root / "workspace-recovery.json"
+
+
 def _backup(root):
     return root / ".rentgen-backup"
 
@@ -165,10 +169,10 @@ def _read_sealed(path, key):
         ) from exc
 
 
-def _inventory(root, check):
+def _inventory(root, check, *, allow_empty=False):
     rows = exported_inventory(root, authorize=check)
     _require(
-        1 <= len(rows) <= MAX_FILES,
+        (0 if allow_empty else 1) <= len(rows) <= MAX_FILES,
         "METADATA_WORKSPACE_LIMIT",
         "Workspace file limit exceeded",
     )
@@ -201,6 +205,13 @@ def _replace_record(path, value):
     os.replace(temporary, path)
 
 
+def _write_or_replace_record(path, value):
+    if path.exists():
+        _replace_record(path, value)
+    else:
+        write_record(path, value)
+
+
 def _copy_rows(source, target, rows, *, check, retained=False):
     for row in rows:
         check()
@@ -222,6 +233,84 @@ def _copy_rows(source, target, rows, *, check, retained=False):
             "Workspace input bytes differ from its inventory",
         )
         _write_bytes(target_path, raw)
+
+
+def _discard_owned_directory(path, expected_rows, check):
+    """Remove an internal staging directory only after validating its files."""
+    if path.is_symlink():
+        raise CoreError(
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Workspace staging path is unsafe",
+        )
+    if not path.exists():
+        return
+    if path.is_symlink() or not path.is_dir():
+        raise CoreError(
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Workspace staging path is unsafe",
+        )
+    actual = _inventory(path, check, allow_empty=True)
+    expected = {row["path"]: row for row in expected_rows}
+    _require(
+        all(expected.get(row["path"]) == row for row in actual),
+        "METADATA_WORKSPACE_CONFLICT",
+        "Workspace staging contains foreign bytes",
+    )
+    shutil.rmtree(path)
+
+
+def _changed_paths(before_rows, after_rows):
+    before = {row["path"]: row for row in before_rows}
+    after = {row["path"]: row for row in after_rows}
+    return sorted(
+        set(before) ^ set(after)
+        | {
+            path
+            for path in set(before) & set(after)
+            if before[path]["sha256"] != after[path]["sha256"]
+        }
+    )
+
+
+def _replace_owned_tree(root, source, rows, *, allowed_rows, check, retained=False):
+    """Materialize one validated inventory into tree with restartable staging."""
+    current = _inventory(_tree(root), check)
+    allowed = {}
+    for row in allowed_rows:
+        allowed.setdefault(row["path"], set()).add((row["size"], row["sha256"]))
+    _require(
+        all(
+            (row["size"], row["sha256"]) in allowed.get(row["path"], set())
+            for row in current
+        ),
+        "METADATA_WORKSPACE_CONFLICT",
+        "Workspace tree contains foreign bytes",
+    )
+    stage = root / ".rentgen-recovery-stage"
+    _discard_owned_directory(stage, rows, check)
+    stage.mkdir()
+    _copy_rows(source, stage, rows, check=check, retained=retained)
+    target_paths = {row["path"] for row in rows}
+    for relative in sorted(set(row["path"] for row in current) - target_paths):
+        check()
+        (_tree(root) / relative).unlink()
+    for row in rows:
+        check()
+        source_path, target_path = stage / row["path"], _tree(root) / row["path"]
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        os.replace(source_path, target_path)
+    restored = _inventory(_tree(root), check)
+    _require(
+        restored == rows,
+        "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+        "Recovered workspace differs from its target inventory",
+    )
+    _discard_owned_directory(stage, rows, check)
+
+
+def _cleanup_original_recovery(root, original_rows, candidate_rows, check):
+    _discard_owned_directory(_backup(root), original_rows, check)
+    _discard_owned_directory(_stage(root), candidate_rows, check)
 
 
 def _validate_marker(ctx, operation_id, root, marker):
@@ -389,6 +478,13 @@ def apply_workspace(ctx, operation_id, workspace_root):
     validate_operation_id(operation_id)
     root, marker = _load_root(ctx, operation_id, workspace_root)
     _ensure_clean_phase(root)
+    if _recovery_path(root).exists() and not _result_path(root).exists():
+        recovery = _read_sealed(_recovery_path(root), "recovery_id")
+        if recovery.get("target") == "original":
+            _, candidate_rows = _candidate(ctx, marker)
+            _cleanup_original_recovery(
+                root, marker["original_inventory"], candidate_rows, lambda: _check(ctx)
+            )
     if _result_path(root).exists():
         previous = _read_sealed(_result_path(root), "result_id")
         _require(
@@ -446,7 +542,7 @@ def apply_workspace(ctx, operation_id, workspace_root):
             },
             "state_id",
         )
-        write_record(_state_path(root), state)
+        _write_or_replace_record(_state_path(root), state)
         before_paths = {row["path"] for row in original_rows}
         after_paths = {row["path"] for row in candidate_rows}
         for row in candidate_rows:
@@ -474,20 +570,7 @@ def apply_workspace(ctx, operation_id, workspace_root):
                 "workspace_root": str(root),
                 "before_digest": _digest(original_rows),
                 "after_digest": _digest(candidate_rows),
-                "changed_paths": sorted(
-                    before_paths ^ after_paths
-                    | {
-                        row["path"]
-                        for row in candidate_rows
-                        if row["path"] in before_paths
-                        and next(
-                            item
-                            for item in original_rows
-                            if item["path"] == row["path"]
-                        )["sha256"]
-                        != row["sha256"]
-                    }
-                ),
+                "changed_paths": _changed_paths(original_rows, candidate_rows),
                 "workspace_source_written": True,
                 "live_source_written": False,
                 "created_at": _now(),
@@ -507,6 +590,219 @@ def apply_workspace(ctx, operation_id, workspace_root):
         return result
     except BaseException:
         raise
+
+
+def recover_workspace(ctx, operation_id, workspace_root, *, target):
+    """Recover an interrupted apply to an explicitly selected target inventory.
+
+    Recovery never consults the live source.  ``original`` uses the sealed
+    apply backup; ``candidate`` uses the retained preview export.  A foreign
+    file in the workspace or either staging directory stops the operation.
+    """
+    _check(ctx)
+    validate_operation_id(operation_id)
+    if target not in {"original", "candidate"}:
+        raise CoreError(
+            "METADATA_WORKSPACE_INVALID",
+            "Recovery target must be original or candidate",
+        )
+    root, marker = _load_root(ctx, operation_id, workspace_root)
+    state = (
+        _read_sealed(_state_path(root), "state_id")
+        if _state_path(root).exists()
+        else None
+    )
+    recovery = (
+        _read_sealed(_recovery_path(root), "recovery_id")
+        if _recovery_path(root).exists()
+        else None
+    )
+    if state is not None and state.get("phase") == "complete":
+        _require(
+            recovery is not None and recovery.get("target") == target,
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Workspace is already recovered to another target",
+        )
+        if target == "original":
+            _, candidate_rows = _candidate(ctx, marker)
+            _cleanup_original_recovery(
+                root, marker["original_inventory"], candidate_rows, lambda: _check(ctx)
+            )
+        _check(ctx)
+        return recovery
+    existing_result = (
+        _read_sealed(_result_path(root), "result_id")
+        if _result_path(root).exists()
+        else None
+    )
+    if existing_result is not None:
+        _require(
+            target == "candidate",
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "An applied candidate receipt exists; recover to original through undo",
+        )
+        _require(
+            existing_result.get("status") == "applied"
+            and existing_result.get("project_id") == ctx.project_id
+            and existing_result.get("operation_id") == operation_id
+            and existing_result.get("preview_id") == marker["preview_id"],
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Workspace result is not bound to this operation",
+        )
+        _, candidate_rows = _candidate(ctx, marker)
+        current = _inventory(_tree(root), lambda: _check(ctx))
+        _require(
+            current == candidate_rows
+            and _digest(current) == existing_result.get("after_digest"),
+            "METADATA_WORKSPACE_CONFLICT",
+            "Workspace result exists but the candidate tree differs",
+        )
+        if recovery is not None:
+            _require(
+                recovery.get("target") == "candidate",
+                "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+                "Workspace is already recovered to another target",
+            )
+        else:
+            recovery = _seal(
+                {
+                    "schema": SCHEMA,
+                    "project_id": ctx.project_id,
+                    "operation_id": operation_id,
+                    "preview_id": marker["preview_id"],
+                    "status": "recovered",
+                    "target": "candidate",
+                    "restored_digest": _digest(candidate_rows),
+                    "created_at": _now(),
+                },
+                "recovery_id",
+            )
+            write_record(_recovery_path(root), recovery)
+        _write_or_replace_record(
+            _state_path(root),
+            _seal(
+                {
+                    "schema": SCHEMA,
+                    "project_id": ctx.project_id,
+                    "operation_id": operation_id,
+                    "preview_id": marker["preview_id"],
+                    "phase": "complete",
+                    "before_digest": _digest(marker["original_inventory"]),
+                    "after_digest": _digest(candidate_rows),
+                    "created_at": _now(),
+                    "result_id": existing_result["result_id"],
+                },
+                "state_id",
+            ),
+        )
+        _check(ctx)
+        return recovery
+    if state is not None:
+        _require(
+            state.get("phase") == "applying",
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Workspace has an unsupported interrupted phase",
+        )
+    original_rows = marker["original_inventory"]
+    backup = _backup(root)
+    _require(
+        backup.is_dir() and not backup.is_symlink(),
+        "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+        "Apply backup is absent",
+    )
+    backup_rows = _inventory(backup, lambda: _check(ctx))
+    _require(
+        backup_rows == original_rows,
+        "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+        "Apply backup does not match the original inventory",
+    )
+    candidate, candidate_rows = _candidate(ctx, marker)
+    if target == "original":
+        source, rows, retained = backup, original_rows, False
+    else:
+        source, rows, retained = candidate, candidate_rows, True
+    allowed_rows = original_rows + candidate_rows
+    _replace_owned_tree(
+        root,
+        source,
+        rows,
+        allowed_rows=allowed_rows,
+        check=lambda: _check(ctx),
+        retained=retained,
+    )
+    if target == "candidate":
+        _discard_owned_directory(_stage(root), candidate_rows, lambda: _check(ctx))
+    recovery = _seal(
+        {
+            "schema": SCHEMA,
+            "project_id": ctx.project_id,
+            "operation_id": operation_id,
+            "preview_id": marker["preview_id"],
+            "status": "recovered",
+            "target": target,
+            "restored_digest": _digest(rows),
+            "created_at": _now(),
+        },
+        "recovery_id",
+    )
+    write_record(_recovery_path(root), recovery)
+    if target == "candidate":
+        from . import metadata_apply as apply
+
+        intent, previous = apply._load(ctx, operation_id)
+        _require(
+            previous["status"] == "unavailable",
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Apply receipt already exists for this operation",
+        )
+        result = _seal(
+            {
+                "schema": SCHEMA,
+                "project_id": ctx.project_id,
+                "operation_id": operation_id,
+                "preview_id": marker["preview_id"],
+                "intent_id": intent["intent_id"],
+                "status": "applied",
+                "workspace_root": str(root),
+                "before_digest": _digest(original_rows),
+                "after_digest": _digest(candidate_rows),
+                "changed_paths": _changed_paths(original_rows, candidate_rows),
+                "workspace_source_written": True,
+                "live_source_written": False,
+                "recovered": True,
+                "created_at": _now(),
+            },
+            "result_id",
+        )
+        write_record(_result_path(root), result)
+        result_id = result["result_id"]
+    else:
+        result_id = None
+    state_value = _seal(
+        {
+            "schema": SCHEMA,
+            "project_id": ctx.project_id,
+            "operation_id": operation_id,
+            "preview_id": marker["preview_id"],
+            "phase": "complete",
+            "before_digest": _digest(original_rows),
+            "after_digest": _digest(candidate_rows),
+            "created_at": _now(),
+            **(
+                {"result_id": result_id}
+                if result_id is not None
+                else {"recovery_id": recovery["recovery_id"]}
+            ),
+        },
+        "state_id",
+    )
+    _write_or_replace_record(_state_path(root), state_value)
+    if target == "original":
+        _cleanup_original_recovery(
+            root, original_rows, candidate_rows, lambda: _check(ctx)
+        )
+    _check(ctx)
+    return recovery
 
 
 def undo_workspace(ctx, operation_id, workspace_root):
@@ -628,5 +924,16 @@ def get_workspace_status(ctx, operation_id, workspace_root):
     undo = (
         _read_sealed(_undo_path(root), "undo_id") if _undo_path(root).exists() else None
     )
+    recovery = (
+        _read_sealed(_recovery_path(root), "recovery_id")
+        if _recovery_path(root).exists()
+        else None
+    )
     _check(ctx)
-    return {"marker": marker, "state": state, "result": result, "undo": undo}
+    return {
+        "marker": marker,
+        "state": state,
+        "result": result,
+        "undo": undo,
+        "recovery": recovery,
+    }
