@@ -1,11 +1,13 @@
 # Git evidence и жизненный цикл находок — библиотечный срез O1
 
 Разработка в `codex/edt-metadata-dev9`, после опубликованного dev8.
-`rentgen_core/git_observer.py` предоставляет две независимые операции:
-`observe_git(repository)` и `reconcile_findings(previous, report)`.
-Это подготовленная библиотечная часть направления 4 из [ROADMAP](../../ROADMAP.md).
-Она не подключена к observer, CLI/MCP или редактору; [READINESS](READINESS.md)
-по-прежнему не утверждает готовность Git watcher или общую приёмку O1.
+`rentgen_core/git_observer.py` предоставляет probe и чистую reconciliation-
+функцию, а `rentgen_core/git_watcher.py` связывает их с observer. SQLite
+observer хранит state/events/receipts атомарно; `record-findings` и
+`findings-status` доступны через CLI. Это принятый bounded срез направления 4
+из [ROADMAP](../../ROADMAP.md). [READINESS](READINESS.md) по-прежнему не
+утверждает готовность фонового scheduler, поставляемого analyzer или общей
+приёмки O1.
 
 ## Наблюдение за Git
 
@@ -75,25 +77,23 @@ message и номер строки от 1. Идентичность — `(rule, 
 а не произвольный JSON клиента. Проверка прав, provenance и существующих
 сохранённых состояний должна выполняться будущим application use case.
 
-## Следующая интеграция и границы проверки
+## Следующий этап и границы проверки
 
-Для действующего watcher необходимо отдельно реализовать разрешённый проектный
+Для production watcher необходимо отдельно реализовать разрешённый проектный
 профиль и политику Git, анализ immutable commit, достоверные anchors, ключ
-повторного использования результатов, журнал задач и транзакционное сохранение
-state/events вместе с продвижением обработанного commit. Нужно согласовать
-восстановление после сбоя, конкуренцию, branch rewrite и очистку истории.
-До такой интеграции библиотека не заменяет существующий observer выгрузки.
-Сохранённого Git-журнала, scheduler, фонового процесса, общей диагностики
-конфигурации и бизнес-метрик в этом срезе нет.
+повторного использования результатов, scheduler и уведомления. Нужно
+согласовать восстановление после сбоя, конкуренцию, branch rewrite, ancestry и
+очистку истории. Текущий watcher не запускает analyzer, не создаёт фонового
+процесса и не заменяет общую диагностику конфигурации или бизнес-метрики.
 
 Проверки `tests/unit/test_git_observer.py` используют временные настоящие
 локальные репозитории для baseline, нового commit, staged/unstaged изменений,
 worktree и detached HEAD. Гонка HEAD и timeout моделируются отдельно.
 Lifecycle проверяется детерминированными полными/неполными отчётами, включая
 replay, resolve/reopen, разделение контекстов, дубликаты и лимит истории.
-Это регрессионная проверка библиотеки на Windows/Python 3.11, без реального
-анализатора, выпуска wheel, подключения к установленному observer и приёмки
-на типовой конфигурации 1С.
+Это регрессионная проверка probe/reconciliation на Windows/Python 3.11 с
+временными Git-репозиториями и caller-supplied отчётами; она не заменяет
+приёмку реального analyzer, типовой конфигурации 1С и фонового scheduler.
 
 ```powershell
 python -m pytest tests/unit/test_git_observer.py tests/unit/test_source_observer.py -q

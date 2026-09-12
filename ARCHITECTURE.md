@@ -7,7 +7,7 @@
 | `go` | Scanner BSL, построение данных графа |
 | `rentgen_diagnostics` | Проверка и запуск закреплённого профиля BSL Language Server |
 | `rentgen_core.metadata_runs` / `metadata_apply` | Snapshot-bound EDT preview, бизнес-доказательства и read-only preflight-журнал apply; live writer/undo пока заблокированы |
-| `rentgen_core.git_observer` | Probe committed Git HEAD и чистая reconciliation-функция lifecycle находок; watcher и durable store пока не подключены |
+| `rentgen_core.git_observer` / `git_watcher` | Probe committed Git HEAD, reconciliation lifecycle находок и bounded watcher; observer хранит state/events/receipts в SQLite, автоматический scheduler и analyzer остаются внешними |
 | `integrations/open-editor` | Подготовка профиля и управление одной локальной правкой |
 | `integrations/vscode-rentgen` | Просмотр снимков/версий и команды редактора |
 
@@ -35,8 +35,10 @@ UUID и двум полным diff (исходник → EDT baseline и baselin
 Git-контур принимает только чистый committed HEAD и полный отчёт доверенного
 анализатора. `git_observer` не выполняет fetch, анализ или LLM-вызовы; его
 reconciliation хранит identity находки по `(rule, path, anchor)` и выдаёт
-`new`/`resolved`/`reopened`. Подключение scheduler, постоянного журнала и
-проверки ancestry остаётся следующим этапом O1.
+`new`/`resolved`/`reopened`. `git_watcher` повторно проверяет HEAD до записи,
+а observer атомарно хранит state/events/receipts и отдаёт их через CLI.
+Фоновый scheduler, поставляемый analyzer, branch ancestry policy и уведомления
+остаются следующим этапом O1.
 
 Граница безопасности — доверенный Windows-пользователь и стартовые параметры.
 Другие процессы того же SID и доверенные расширения не изолированы друг от друга.
