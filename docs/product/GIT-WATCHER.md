@@ -40,9 +40,11 @@ change before persistence.
 owned JSON file. It writes a fsync-plus-rename record before and after each
 cycle; a process that dies leaves `phase="running"`, and a later run refuses to
 continue until an operator calls `journal.recover(reason)`. Fatal permission,
-history-rewrite and journal errors are recorded and propagated. This makes
-restarts observable without pretending that the library is a Windows service;
-notifications and service lifetime remain the caller's responsibility.
+history-rewrite and journal errors are recorded and propagated. The returned
+event list retains only the latest 1000 cycles, so an unbounded foreground run
+does not grow memory without limit. This makes restarts observable without
+pretending that the library is a Windows service; notifications and service
+lifetime remain the caller's responsibility.
 
 For delivery, pass a `NotificationOutbox` to the scheduler. Each cycle event is
 stored in an atomic, bounded JSON queue with a monotonic ID. A host adapter reads

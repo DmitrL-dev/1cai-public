@@ -491,6 +491,8 @@ class GitWatcherScheduler:
     the returned events for their own service/notification layer.
     """
 
+    MAX_RETAINED_EVENTS = 1000
+
     def __init__(
         self,
         watcher,
@@ -577,6 +579,8 @@ class GitWatcherScheduler:
                     event = {"status": "error", "code": exc.code, "attempt": failures}
                 cycle += 1
                 events.append(event)
+                if len(events) > self.MAX_RETAINED_EVENTS:
+                    del events[: -self.MAX_RETAINED_EVENTS]
                 if self.journal is not None:
                     self.journal.record(run_id, cycle, failures, event)
                 if self.outbox is not None:

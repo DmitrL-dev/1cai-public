@@ -283,6 +283,18 @@ def test_scheduler_backoff_stays_bounded_for_large_failure_count():
     assert scheduler._backoff_delay(10_000) == 3600
 
 
+def test_scheduler_retains_only_bounded_recent_events():
+    watcher = _ScheduledWatcher([{"status": "unchanged"}] * 1001)
+    scheduler = implementation.GitWatcherScheduler(
+        watcher, interval=5, max_cycles=1001, sleep=lambda _: None
+    )
+
+    events = scheduler.run()
+
+    assert len(events) == implementation.GitWatcherScheduler.MAX_RETAINED_EVENTS
+    assert all(event == {"status": "unchanged"} for event in events)
+
+
 def test_scheduler_journal_requires_explicit_recovery_after_interruption(tmp_path):
     path = tmp_path / "scheduler.json"
     journal = implementation.SchedulerJournal(path)
