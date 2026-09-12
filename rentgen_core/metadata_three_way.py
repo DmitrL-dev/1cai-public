@@ -36,6 +36,25 @@ class ObjectMergeItem:
     base_size_bytes: int | None
     current_size_bytes: int | None
     upstream_size_bytes: int | None
+    property_mergeability: str
+    property_changes: list["PropertyMergeItem"]
+
+
+@dataclass(frozen=True)
+class PropertyMergeItem:
+    property_name: str
+    action: str
+    base_sha256: str | None
+    current_sha256: str | None
+    upstream_sha256: str | None
+    base_size_bytes: int | None
+    current_size_bytes: int | None
+    upstream_size_bytes: int | None
+
+
+def _property_fingerprint(element):
+    raw = ET.tostring(element, encoding="utf-8", short_empty_elements=True)
+    return sha256(raw), len(raw)
 
 
 def _object(value, path):
@@ -72,7 +91,21 @@ def _object(value, path):
         raise CoreError(
             "THREE_WAY_METADATA_INVALID", f"Metadata name is ambiguous: {path}"
         )
-    return object_type, identity.lower(), names[0]
+    properties_nodes = [
+        child for child in node if child.tag.rsplit("}", 1)[-1] == _PROPERTIES
+    ]
+    properties = None
+    if len(properties_nodes) == 1:
+        properties = {}
+        for child in properties_nodes[0]:
+            property_name = child.tag.rsplit("}", 1)[-1]
+            if property_name in properties:
+                raise CoreError(
+                    "THREE_WAY_METADATA_INVALID",
+                    f"Metadata property is ambiguous: {path}:{property_name}",
+                )
+            properties[property_name] = _property_fingerprint(child)
+    return object_type, identity.lower(), names[0], properties
 
 
 def _records(tree, label):
@@ -83,7 +116,7 @@ def _records(tree, label):
         if item is None:
             unsupported.append(path)
             continue
-        object_type, identity, name = item
+        object_type, identity, name, properties = item
         key = (object_type, identity)
         if key in result:
             raise CoreError(
@@ -93,6 +126,7 @@ def _records(tree, label):
         result[key] = {
             "path": path,
             "name": name,
+            "properties": properties,
             "raw": value,
         }
         if len(result) > _MAX_OBJECTS:
@@ -128,6 +162,57 @@ def _digest(value):
     return None if value is None else sha256(value)
 
 
+def _property_action(base, current, upstream):
+    return _action(
+        None if base is None else base[0],
+        None if current is None else current[0],
+        None if upstream is None else upstream[0],
+    )
+
+
+def _property_changes(values):
+    if any(value is None or value["properties"] is None for value in values):
+        return "not_available", []
+    properties = set().union(*(value["properties"] for value in values))
+    changes = []
+    actions = set()
+    for property_name in sorted(properties, key=lambda value: value.encode("utf-8")):
+        fingerprints = tuple(value["properties"].get(property_name) for value in values)
+        action = _property_action(*fingerprints)
+        if action == "unchanged":
+            continue
+        actions.add(action)
+        changes.append(
+            PropertyMergeItem(
+                property_name=property_name,
+                action=action,
+                base_sha256=None if fingerprints[0] is None else fingerprints[0][0],
+                current_sha256=None if fingerprints[1] is None else fingerprints[1][0],
+                upstream_sha256=None if fingerprints[2] is None else fingerprints[2][0],
+                base_size_bytes=None if fingerprints[0] is None else fingerprints[0][1],
+                current_size_bytes=None
+                if fingerprints[1] is None
+                else fingerprints[1][1],
+                upstream_size_bytes=None
+                if fingerprints[2] is None
+                else fingerprints[2][1],
+            )
+        )
+    if not actions:
+        return "unchanged", changes
+    if "conflict" in actions:
+        return "overlap_conflict", changes
+    if "keep_current" in actions and "take_upstream" in actions:
+        return "disjoint_changes", changes
+    if actions == {"same_change"}:
+        return "same_change", changes
+    if actions == {"keep_current"}:
+        return "keep_current", changes
+    if actions == {"take_upstream"}:
+        return "take_upstream", changes
+    return "mixed_changes", changes
+
+
 def plan_metadata_three_way(
     base,
     current,
@@ -159,6 +244,12 @@ def plan_metadata_three_way(
     rows = []
     for object_type, identity in identities:
         values = tuple(records[label].get((object_type, identity)) for label in records)
+        property_mergeability, property_changes = _property_changes(values)
+        if (
+            property_mergeability == "unchanged"
+            and _merge_action(*values) != "unchanged"
+        ):
+            property_mergeability = "path_only"
         rows.append(
             ObjectMergeItem(
                 object_type=object_type,
@@ -180,6 +271,8 @@ def plan_metadata_three_way(
                 upstream_size_bytes=None
                 if values[2] is None
                 else len(values[2]["raw"]),
+                property_mergeability=property_mergeability,
+                property_changes=property_changes,
             )
         )
     rows.sort(key=lambda item: (item.object_type, item.object_uuid))

@@ -71,3 +71,43 @@ def test_plan_rejects_invalid_metadata_xml_object_uuid():
     }
     with pytest.raises(CoreError, match="UUID"):
         plan_metadata_three_way(invalid, {}, {})
+
+
+def test_plan_reports_disjoint_property_changes_without_resolving_object():
+    base = {
+        "Catalogs/Products.xml": catalog("Products").replace(
+            b"</Properties>", b"<Code>CAT</Code></Properties>"
+        )
+    }
+    current = {
+        "Catalogs/Products.xml": catalog("ProductsCustom").replace(
+            b"</Properties>", b"<Code>CAT</Code></Properties>"
+        )
+    }
+    upstream = {
+        "Catalogs/Products.xml": catalog("Products").replace(
+            b"<Code>CAT</Code>", b"<Code>ITEM</Code>"
+        )
+    }
+
+    result = plan_metadata_three_way(base, current, upstream)
+    row = result["objects"][0]
+
+    assert row["action"] == "conflict"
+    assert row["property_mergeability"] == "disjoint_changes"
+    changes = {item["property_name"]: item for item in row["property_changes"]}
+    assert changes["Name"]["action"] == "keep_current"
+    assert changes["Code"]["action"] == "take_upstream"
+    assert all("value" not in item for item in row["property_changes"])
+
+
+def test_plan_marks_same_property_change_as_same_change():
+    base = {"Catalogs/Products.xml": catalog("Products")}
+    current = {"Catalogs/Products.xml": catalog("ProductsCustom")}
+    upstream = {"Catalogs/Products.xml": catalog("ProductsCustom")}
+
+    row = plan_metadata_three_way(base, current, upstream)["objects"][0]
+
+    assert row["property_mergeability"] == "same_change"
+    assert row["property_changes"][0]["property_name"] == "Name"
+    assert row["property_changes"][0]["action"] == "same_change"
