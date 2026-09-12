@@ -145,9 +145,15 @@ def _quality(findings, maximum):
     _hash(observation.commit, "finding.commit")
     if observation.ref is not None:
         _text(observation.ref, "finding.ref")
+    _text(report.profile_id, "finding.profile_id")
+    _text(report.scope_id, "finding.scope_id")
     items = []
     for record in records:
         finding = record.finding
+        _hash(record.first_seen, "finding.first_seen")
+        _hash(record.last_seen, "finding.last_seen")
+        if record.resolved_at is not None:
+            _hash(record.resolved_at, "finding.resolved_at")
         items.append(
             {
                 **asdict(finding),
@@ -184,6 +190,8 @@ def build_owner_report(
     _hash(snapshot_id, "snapshot_id", snapshot=True)
     if type(max_findings) is not int or not 1 <= max_findings <= 10_000:
         raise CoreError("OWNER_REPORT_LIMIT", "Finding report limit is out of bounds")
+    if findings is not None and not isinstance(findings, FindingState):
+        raise CoreError("OWNER_REPORT_INVALID", "Typed finding state required")
     if runtime is not None and not callable(authorize):
         raise CoreError(
             "OWNER_REPORT_AUTHORIZATION", "Runtime report authorization is required"

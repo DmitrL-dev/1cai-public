@@ -57,6 +57,9 @@
 Формат [owner report](docs/product/OWNER-REPORT.md) связывает quality findings и
 подтверждённые runtime-метрики; без runtime adapter бизнес-значения остаются
 `not_available`.
+Для обновлений есть [three-way dry-run](docs/product/THREE-WAY-UPDATES.md): он
+различает сохранение доработки, принятие upstream и конфликт по хэшу, не меняя
+исходное дерево.
 Ни один из этих срезов не выполняет запись в рабочее дерево; живое применение
 и отмена в разработке.
 
@@ -119,6 +122,7 @@ flowchart LR
 | [Готовность](docs/product/READINESS.md) | Что проверено и что ещё предстоит |
 | [Workspace apply](docs/product/METADATA-WORKSPACE.md) | CAS-запись и undo в принадлежащей копии |
 | [Owner report](docs/product/OWNER-REPORT.md) | Источники quality и runtime-метрик с fail-closed статусами |
+| [Three-way updates](docs/product/THREE-WAY-UPDATES.md) | Dry-run переноса base/current/upstream по хэшу |
 | [Аудит](docs/product/AUDIT-20260912.md) | Приоритетные слабые места и порядок работ |
 | [Разработка](CONTRIBUTING.md) | Сборка, тесты и правила изменений |
 
