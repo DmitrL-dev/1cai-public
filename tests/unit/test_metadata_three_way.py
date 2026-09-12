@@ -73,6 +73,20 @@ def test_plan_rejects_invalid_metadata_xml_object_uuid():
         plan_metadata_three_way(invalid, {}, {})
 
 
+def test_plan_rejects_xml_dtd_and_entity_declarations():
+    invalid = {
+        "Catalogs/Products.xml": (
+            b'<!DOCTYPE MetaDataObject [<!ENTITY bomb "Products">]>'
+            b'<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses">'
+            b'<Catalog uuid="11111111-1111-4111-8111-111111111111">'
+            b"<Properties><Name>&bomb;</Name></Properties></Catalog></MetaDataObject>"
+        )
+    }
+
+    with pytest.raises(CoreError, match="DTD|ENTITY"):
+        plan_metadata_three_way(invalid, {}, {})
+
+
 def test_plan_reports_disjoint_property_changes_without_resolving_object():
     base = {
         "Catalogs/Products.xml": catalog("Products").replace(

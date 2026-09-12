@@ -18,6 +18,7 @@ _ROOT = "MetaDataObject"
 _PROPERTIES = "Properties"
 _NAME = "Name"
 _MAX_OBJECTS = 100_000
+_UNSAFE_DECLARATION = re.compile(rb"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -70,6 +71,11 @@ def _unscoped_fingerprint(node):
 def _object(value, path):
     if not path.lower().endswith(".xml"):
         return None
+    if _UNSAFE_DECLARATION.search(value):
+        raise CoreError(
+            "THREE_WAY_METADATA_INVALID",
+            f"DTD and ENTITY declarations are forbidden: {path}",
+        )
     try:
         root = ET.fromstring(value)
     except (ET.ParseError, ValueError, UnicodeError) as exc:

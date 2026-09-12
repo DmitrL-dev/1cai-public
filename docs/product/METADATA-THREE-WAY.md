@@ -34,4 +34,5 @@ plan = plan_metadata_three_way(base_files, current_files, upstream_files)
 Input paths and byte limits are the same bounded limits as
 `plan_three_way()`. Duplicate identities, malformed metadata UUIDs, unsafe
 paths, collisions and oversized trees fail closed. This is the first semantic
-layer for configuration updates; it is not a live apply authority.
+layer for configuration updates. DTD and ENTITY declarations are rejected
+before parsing; it is not a live apply authority.
