@@ -9,7 +9,7 @@ from .manifests import canonical_bytes
 
 PROJECT = "RentgenCandidate"
 IDENTIFIER = re.compile(r"[A-Za-zА-Яа-яЁё_][A-Za-zА-Яа-яЁё_0-9]{0,79}")
-MIN_RETRY_WINDOW = 0.02
+MIN_RETRY_WINDOW = 0.05
 
 
 def write_record(path, value):
@@ -121,13 +121,13 @@ class EDTClient:
         if not (type(catalog) is str and IDENTIFIER.fullmatch(catalog)):
             raise CoreError("EDT_INPUT_INVALID", "Unsupported catalog identifier")
         deadline = time.monotonic() + timeout
-        for _ in range(46):
+        for attempt in range(46):
             remaining = deadline - time.monotonic()
             # A readiness probe performs filesystem journaling around each
             # request. Do not begin another probe when less than one scheduler
             # quantum remains; it cannot complete reliably before the caller's
             # deadline and makes short timeouts nondeterministic.
-            if remaining <= MIN_RETRY_WINDOW:
+            if attempt and remaining <= MIN_RETRY_WINDOW:
                 break
             result = await self._call(
                 "get_metadata_details",
