@@ -324,6 +324,21 @@ def test_scheduler_journal_keeps_fatal_event(tmp_path):
     assert state["event"] == {"status": "fatal", "code": "PROJECT_FORBIDDEN"}
 
 
+def test_scheduler_does_not_duplicate_controlled_fatal_notification(tmp_path):
+    outbox = implementation.NotificationOutbox(tmp_path / "outbox.json")
+    watcher = _ScheduledWatcher([CoreError("PROJECT_FORBIDDEN", "denied")])
+
+    with pytest.raises(CoreError) as error:
+        implementation.GitWatcherScheduler(
+            watcher, interval=5, max_cycles=1, outbox=outbox
+        ).run()
+
+    assert error.value.code == "PROJECT_FORBIDDEN"
+    assert [item["event"] for item in outbox.peek()] == [
+        {"status": "fatal", "code": "PROJECT_FORBIDDEN"}
+    ]
+
+
 def test_scheduler_journal_rejects_corrupt_timestamp(tmp_path):
     journal = implementation.SchedulerJournal(tmp_path / "scheduler.json")
     run_id = journal.begin()

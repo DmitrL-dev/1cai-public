@@ -532,6 +532,7 @@ class GitWatcherScheduler:
         """Run until stop/max_cycles, backing off only controlled CoreErrors."""
         events, failures, cycle = [], 0, 0
         run_id = self.journal.begin() if self.journal is not None else None
+        fatal_handled = False
         try:
             while self.max_cycles is None or cycle < self.max_cycles:
                 if self.should_stop():
@@ -561,6 +562,7 @@ class GitWatcherScheduler:
                             )
                         if self.outbox is not None:
                             self.outbox.enqueue({"status": "fatal", "code": exc.code})
+                        fatal_handled = True
                         raise
                     failures += 1
                     event = {"status": "error", "code": exc.code, "attempt": failures}
@@ -578,7 +580,7 @@ class GitWatcherScheduler:
                 self.sleep(delay)
             return events
         except BaseException:
-            if self.journal is not None:
+            if not fatal_handled and self.journal is not None:
                 current = self.journal.read()
                 if current is not None and current["phase"] == "running":
                     self.journal.record(
@@ -588,10 +590,10 @@ class GitWatcherScheduler:
                         {"status": "fatal", "code": "GIT_WATCHER_UNEXPECTED"},
                         keep_running=False,
                     )
-                if self.outbox is not None:
-                    self.outbox.enqueue(
-                        {"status": "fatal", "code": "GIT_WATCHER_UNEXPECTED"}
-                    )
+            if not fatal_handled and self.outbox is not None:
+                self.outbox.enqueue(
+                    {"status": "fatal", "code": "GIT_WATCHER_UNEXPECTED"}
+                )
             raise
         finally:
             if self.journal is not None:
