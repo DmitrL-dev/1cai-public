@@ -7,6 +7,7 @@ must analyze the exact commit, authorize access and persist state atomically.
 from dataclasses import dataclass
 import os
 from pathlib import Path, PurePosixPath
+import re
 import subprocess
 from typing import Literal
 
@@ -108,8 +109,6 @@ def require_ancestor(repository: Path | str, base: str, tip: str) -> None:
     fail-closed error so callers cannot mistake an unavailable probe for a
     confirmed rewrite.
     """
-    import re
-
     if (
         not isinstance(base, str)
         or not isinstance(tip, str)

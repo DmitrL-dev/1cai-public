@@ -54,6 +54,9 @@
 [Git watcher](docs/product/GIT-WATCHER.md) с BSL-LS analyzer adapter
 ([описание](docs/product/GIT-BSL-ANALYZER.md)): preconditions и lifecycle Git-находок
 доступны через observer CLI и watcher adapter, а metadata gate остаётся read-only.
+Формат [owner report](docs/product/OWNER-REPORT.md) связывает quality findings и
+подтверждённые runtime-метрики; без runtime adapter бизнес-значения остаются
+`not_available`.
 Ни один из этих срезов не выполняет запись в рабочее дерево; живое применение
 и отмена в разработке.
 
@@ -115,6 +118,7 @@ flowchart LR
 | [Архитектура](ARCHITECTURE.md) | Границы модулей и источник истины |
 | [Готовность](docs/product/READINESS.md) | Что проверено и что ещё предстоит |
 | [Workspace apply](docs/product/METADATA-WORKSPACE.md) | CAS-запись и undo в принадлежащей копии |
+| [Owner report](docs/product/OWNER-REPORT.md) | Источники quality и runtime-метрик с fail-closed статусами |
 | [Аудит](docs/product/AUDIT-20260912.md) | Приоритетные слабые места и порядок работ |
 | [Разработка](CONTRIBUTING.md) | Сборка, тесты и правила изменений |
 

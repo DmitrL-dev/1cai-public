@@ -85,6 +85,7 @@ only-include = [
   "docs/product/GIT-FINDINGS.md",
   "docs/product/GIT-BSL-ANALYZER.md",
   "docs/product/GIT-WATCHER.md",
+  "docs/product/OWNER-REPORT.md",
   "docs/product/COMPETITOR-MATRIX.md",
   "docs/product/AUDIT-20260912.md",
   "docs/product/METADATA-MIGRATION.md",
