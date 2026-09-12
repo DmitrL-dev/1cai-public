@@ -53,7 +53,8 @@ replay/resolve/reopen, транзакционной миграцией SQLite и
 [watcher adapter](docs/product/GIT-WATCHER.md), который повторно проверяет HEAD
 до публикации результата. Поставляемый анализатор, автоматический scheduler и
 уведомления остаются следующими этапами. Bounded scheduler уже умеет сохранять
-состояние цикла и требовать явного recovery после оборванного процесса. Для владельца добавлен bounded
+состояние цикла, складывать события в atomic outbox и требовать явного recovery
+после оборванного процесса. Для владельца добавлен bounded
 [owner report](docs/product/OWNER-REPORT.md): quality findings и runtime
 evidence имеют отдельные статусы и источники, а неполные данные не выдаются за
 нули.

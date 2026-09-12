@@ -53,7 +53,7 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 | Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; preflight и workspace writer с CAS, backup, re-read, undo conflict и recovery_required | Живая запись через EDT/1С, полноценная native-приёмка и матрица типовых конфигураций не приняты |
 | Обновления конфигураций | Path-bytes three-way dry-run с bounded хэшами и явными конфликтами | Object/UUID/BSL semantics, тестовая база, backup/rollback и запись не приняты |
 | Проверка предложения платформой | В dev8: установленный CLI проверил корректное/ошибочное BSL-предложение на сохранённой конфигурации | Один Designer XML слой; компиляция без бизнес-тестов и применения |
-| Observer | Опрос выгрузки, журнал и восстановление; Git probe, durable lifecycle находок, bounded scheduler с journal/recovery и read-only BSL-LS Git adapter с clean-commit/HEAD/ancestry recheck | Нет фонового service manager, уведомлений, полной native-приёмки analyzer на типовой конфигурации и общей приёмки O1 |
+| Observer | Опрос выгрузки, журнал и восстановление; Git probe, durable lifecycle находок, bounded scheduler с journal/recovery и atomic notification outbox, read-only BSL-LS Git adapter с clean-commit/HEAD/ancestry recheck | Нет фонового service manager, внешнего канала доставки, полной native-приёмки analyzer на типовой конфигурации и общей приёмки O1 |
 | Бизнес-отчёты | Bounded owner-report schema с quality/runtime provenance и fail-closed incomplete/not_available статусами | Нужны подтверждённые runtime-источники данных и методика O2; числовые бизнес-метрики пока не приняты |
 | Spectorn в адаптере | Не подключён | Защита трафика этого сценария не подтверждена |
 

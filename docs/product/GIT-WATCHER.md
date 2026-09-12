@@ -44,6 +44,13 @@ history-rewrite and journal errors are recorded and propagated. This makes
 restarts observable without pretending that the library is a Windows service;
 notifications and service lifetime remain the caller's responsibility.
 
+For delivery, pass a `NotificationOutbox` to the scheduler. Each cycle event is
+stored in an atomic, bounded JSON queue with a monotonic ID. A host adapter reads
+`outbox.peek(limit)` and calls `outbox.ack(id)` only after its channel accepted
+the event; a corrupt queue, unknown ID or full queue fails closed. The outbox
+does not open a network connection and does not retry an external delivery on
+its own, so an interrupted sender leaves the event pending for explicit retry.
+
 This is an orchestration boundary, not an analyzer. The callback remains
 responsible for producing trustworthy findings. The optional BSL-LS adapter is
 described in [GIT-BSL-ANALYZER.md](GIT-BSL-ANALYZER.md); other analyzer adapters,
@@ -54,6 +61,7 @@ model_calls=0.
 Unit coverage in tests/unit/test_git_watcher.py checks new/unchanged commits,
 retry after analyzer failure, exact context binding, dirty and foreign
 repositories, HEAD races, history rewrites, scheduler backoff/stop and
-constructor bounds. Journal tests cover interrupted-run recovery, clean stop
-and fatal event retention. The BSL-LS Git adapter has separate blob/provenance
-and incomplete-result tests.
+constructor bounds. Journal tests cover interrupted-run recovery, clean stop,
+fatal event retention and corrupt timestamps; outbox tests cover enqueue/peek/
+ack, corruption and scheduler emission. The BSL-LS Git adapter has separate
+blob/provenance and incomplete-result tests.

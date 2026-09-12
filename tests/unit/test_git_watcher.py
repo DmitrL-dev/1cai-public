@@ -335,3 +335,39 @@ def test_scheduler_journal_rejects_corrupt_timestamp(tmp_path):
         journal.read()
     assert error.value.code == "GIT_WATCHER_RECOVERY_REQUIRED"
     assert run_id == data["run_id"]
+
+
+def test_notification_outbox_enqueue_peek_and_ack(tmp_path):
+    outbox = implementation.NotificationOutbox(tmp_path / "outbox.json")
+    notification_id = outbox.enqueue({"status": "analyzed", "commit": "a" * 40})
+    assert notification_id == 1
+    assert outbox.peek() == [
+        {
+            "id": 1,
+            "event": {"status": "analyzed", "commit": "a" * 40},
+            "created_at": outbox.peek()[0]["created_at"],
+        }
+    ]
+    outbox.ack(1)
+    assert outbox.peek() == []
+
+
+def test_notification_outbox_rejects_corruption_and_unknown_ack(tmp_path):
+    outbox = implementation.NotificationOutbox(tmp_path / "outbox.json")
+    with pytest.raises(CoreError) as error:
+        outbox.ack(1)
+    assert error.value.code == "GIT_WATCHER_NOTIFICATION_INVALID"
+    outbox.path.write_text("{}", encoding="utf-8")
+    with pytest.raises(CoreError) as error:
+        outbox.peek()
+    assert error.value.code == "GIT_WATCHER_NOTIFICATION_RECOVERY_REQUIRED"
+
+
+def test_scheduler_emits_cycle_event_to_notification_outbox(tmp_path):
+    outbox = implementation.NotificationOutbox(tmp_path / "outbox.json")
+    watcher = _ScheduledWatcher([{"status": "unchanged"}])
+    implementation.GitWatcherScheduler(
+        watcher, interval=5, max_cycles=1, outbox=outbox
+    ).run()
+
+    assert [item["event"] for item in outbox.peek()] == [{"status": "unchanged"}]

@@ -225,6 +225,157 @@ class SchedulerJournal:
         )
 
 
+class NotificationOutbox:
+    """Bounded atomic event queue for a caller-owned notification adapter."""
+
+    MAX_BYTES = 4 * 1024 * 1024
+    MAX_EVENTS = 1000
+
+    def __init__(self, path):
+        self.path = Path(path).resolve()
+        if self.path.exists() and not self.path.is_file():
+            raise CoreError("GIT_WATCHER_NOTIFICATION_INVALID", "Outbox file required")
+        if not self.path.parent.exists() or not self.path.parent.is_dir():
+            raise CoreError(
+                "GIT_WATCHER_NOTIFICATION_INVALID", "Outbox parent required"
+            )
+
+    def _read(self):
+        if not self.path.exists():
+            return {"schema": 1, "outbox": "git-watcher-v1", "next_id": 1, "events": []}
+        try:
+            raw = self.path.read_bytes()
+            if len(raw) > self.MAX_BYTES:
+                raise CoreError(
+                    "GIT_WATCHER_NOTIFICATION_RECOVERY_REQUIRED", "Outbox is too large"
+                )
+            document = json.loads(raw.decode("utf-8"))
+        except CoreError:
+            raise
+        except (OSError, UnicodeError, ValueError, RecursionError) as exc:
+            raise CoreError(
+                "GIT_WATCHER_NOTIFICATION_RECOVERY_REQUIRED", "Outbox is unreadable"
+            ) from exc
+        if (
+            not isinstance(document, dict)
+            or document.get("schema") != 1
+            or document.get("outbox") != "git-watcher-v1"
+            or type(document.get("next_id")) is not int
+            or not 1 <= document["next_id"] <= 2**63
+            or not isinstance(document.get("events"), list)
+            or len(document["events"]) > self.MAX_EVENTS
+        ):
+            raise CoreError(
+                "GIT_WATCHER_NOTIFICATION_RECOVERY_REQUIRED", "Malformed outbox"
+            )
+        previous = 0
+        for item in document["events"]:
+            if (
+                not isinstance(item, dict)
+                or set(item) != {"id", "event", "created_at"}
+                or type(item["id"]) is not int
+                or not previous < item["id"] < document["next_id"]
+                or not isinstance(item["event"], dict)
+                or not isinstance(item["created_at"], str)
+            ):
+                raise CoreError(
+                    "GIT_WATCHER_NOTIFICATION_RECOVERY_REQUIRED",
+                    "Malformed outbox event",
+                )
+            try:
+                timestamp = datetime.fromisoformat(item["created_at"])
+            except (TypeError, ValueError) as exc:
+                raise CoreError(
+                    "GIT_WATCHER_NOTIFICATION_RECOVERY_REQUIRED",
+                    "Malformed outbox timestamp",
+                ) from exc
+            if timestamp.tzinfo is None or timestamp.utcoffset() is None:
+                raise CoreError(
+                    "GIT_WATCHER_NOTIFICATION_RECOVERY_REQUIRED",
+                    "Outbox timestamp needs timezone",
+                )
+            previous = item["id"]
+        return document
+
+    def _write(self, document):
+        try:
+            raw = json.dumps(
+                document,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            ).encode("utf-8")
+        except (TypeError, ValueError, RecursionError) as exc:
+            raise CoreError(
+                "GIT_WATCHER_NOTIFICATION_INVALID", "Outbox event is not JSON"
+            ) from exc
+        if len(raw) > self.MAX_BYTES:
+            raise CoreError(
+                "GIT_WATCHER_NOTIFICATION_INVALID", "Outbox size limit exceeded"
+            )
+        temporary = self.path.with_name(self.path.name + ".tmp")
+        if temporary.exists():
+            raise CoreError(
+                "GIT_WATCHER_NOTIFICATION_RECOVERY_REQUIRED",
+                "Outbox recovery required",
+            )
+        try:
+            with temporary.open("xb") as stream:
+                stream.write(raw)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary, self.path)
+        except OSError as exc:
+            raise CoreError(
+                "GIT_WATCHER_NOTIFICATION_RECOVERY_REQUIRED", "Outbox write failed"
+            ) from exc
+
+    def enqueue(self, event):
+        if not isinstance(event, dict):
+            raise CoreError(
+                "GIT_WATCHER_NOTIFICATION_INVALID", "Outbox event must be an object"
+            )
+        document = self._read()
+        if len(document["events"]) >= self.MAX_EVENTS:
+            raise CoreError(
+                "GIT_WATCHER_NOTIFICATION_LIMIT", "Outbox event limit reached"
+            )
+        notification_id = document["next_id"]
+        document["next_id"] += 1
+        document["events"].append(
+            {
+                "id": notification_id,
+                "event": dict(event),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+        self._write(document)
+        return notification_id
+
+    def peek(self, limit=100):
+        if type(limit) is not int or not 1 <= limit <= self.MAX_EVENTS:
+            raise CoreError(
+                "GIT_WATCHER_NOTIFICATION_INVALID", "Outbox limit is out of bounds"
+            )
+        return [dict(item) for item in self._read()["events"][:limit]]
+
+    def ack(self, notification_id):
+        if type(notification_id) is not int or not 1 <= notification_id <= 2**63:
+            raise CoreError(
+                "GIT_WATCHER_NOTIFICATION_INVALID", "Invalid notification id"
+            )
+        document = self._read()
+        if not any(item["id"] == notification_id for item in document["events"]):
+            raise CoreError(
+                "GIT_WATCHER_NOTIFICATION_INVALID", "Unknown notification id"
+            )
+        document["events"] = [
+            item for item in document["events"] if item["id"] != notification_id
+        ]
+        self._write(document)
+
+
 class GitWatcher:
     """Run one explicit, race-checked analysis pass for a committed HEAD.
 
@@ -350,6 +501,7 @@ class GitWatcherScheduler:
         sleep=time.sleep,
         should_stop=lambda: False,
         journal=None,
+        outbox=None,
     ):
         if not callable(getattr(watcher, "tick", None)):
             raise CoreError("GIT_WATCHER_INVALID", "Watcher with tick() is required")
@@ -365,6 +517,8 @@ class GitWatcherScheduler:
             raise CoreError("GIT_WATCHER_INVALID", "Scheduler callbacks are required")
         if journal is not None and not isinstance(journal, SchedulerJournal):
             raise CoreError("GIT_WATCHER_INVALID", "Typed scheduler journal required")
+        if outbox is not None and not isinstance(outbox, NotificationOutbox):
+            raise CoreError("GIT_WATCHER_INVALID", "Typed notification outbox required")
         self.watcher = watcher
         self.interval = interval
         self.max_cycles = max_cycles
@@ -372,6 +526,7 @@ class GitWatcherScheduler:
         self.sleep = sleep
         self.should_stop = should_stop
         self.journal = journal
+        self.outbox = outbox
 
     def run(self):
         """Run until stop/max_cycles, backing off only controlled CoreErrors."""
@@ -404,6 +559,8 @@ class GitWatcherScheduler:
                                 {"status": "fatal", "code": exc.code},
                                 keep_running=False,
                             )
+                        if self.outbox is not None:
+                            self.outbox.enqueue({"status": "fatal", "code": exc.code})
                         raise
                     failures += 1
                     event = {"status": "error", "code": exc.code, "attempt": failures}
@@ -411,6 +568,8 @@ class GitWatcherScheduler:
                 events.append(event)
                 if self.journal is not None:
                     self.journal.record(run_id, cycle, failures, event)
+                if self.outbox is not None:
+                    self.outbox.enqueue(event)
                 if self.max_cycles is not None and cycle >= self.max_cycles:
                     break
                 if self.should_stop():
@@ -428,6 +587,10 @@ class GitWatcherScheduler:
                         failures,
                         {"status": "fatal", "code": "GIT_WATCHER_UNEXPECTED"},
                         keep_running=False,
+                    )
+                if self.outbox is not None:
+                    self.outbox.enqueue(
+                        {"status": "fatal", "code": "GIT_WATCHER_UNEXPECTED"}
                     )
             raise
         finally:
