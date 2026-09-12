@@ -83,6 +83,16 @@ class SchedulerJournal:
             raise CoreError(
                 "GIT_WATCHER_RECOVERY_REQUIRED", "Malformed scheduler journal"
             )
+        try:
+            timestamp = datetime.fromisoformat(document["updated_at"])
+        except (TypeError, ValueError) as exc:
+            raise CoreError(
+                "GIT_WATCHER_RECOVERY_REQUIRED", "Malformed scheduler timestamp"
+            ) from exc
+        if timestamp.tzinfo is None or timestamp.utcoffset() is None:
+            raise CoreError(
+                "GIT_WATCHER_RECOVERY_REQUIRED", "Scheduler timestamp needs timezone"
+            )
         self._run_id(document.get("run_id"))
         event = document.get("event")
         if event is not None and not isinstance(event, dict):

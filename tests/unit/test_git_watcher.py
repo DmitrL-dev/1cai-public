@@ -1,5 +1,6 @@
 """Bounded Git watcher orchestration keeps analysis tied to one committed HEAD."""
 
+import json
 import os
 import subprocess
 
@@ -321,3 +322,16 @@ def test_scheduler_journal_keeps_fatal_event(tmp_path):
     state = journal.read()
     assert state["phase"] == "idle"
     assert state["event"] == {"status": "fatal", "code": "PROJECT_FORBIDDEN"}
+
+
+def test_scheduler_journal_rejects_corrupt_timestamp(tmp_path):
+    journal = implementation.SchedulerJournal(tmp_path / "scheduler.json")
+    run_id = journal.begin()
+    data = journal.read()
+    data["updated_at"] = "2026-09-13T00:00:00"
+    journal.path.write_text(json.dumps(data), encoding="utf-8")
+
+    with pytest.raises(CoreError) as error:
+        journal.read()
+    assert error.value.code == "GIT_WATCHER_RECOVERY_REQUIRED"
+    assert run_id == data["run_id"]
