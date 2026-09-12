@@ -1,5 +1,5 @@
 """Durable local source observer. No LLM, source writes, or external reporting."""
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import asdict
 from datetime import datetime, timezone
 import json
@@ -353,14 +353,14 @@ class Observer:
                 "UPDATE jobs SET phase=CASE WHEN result IS NULL THEN 'capture' ELSE 'report' END,attempts=0,error=NULL WHERE phase='failed'"
             )
 
-    def record_findings(self, report: FindingReport):
+    def record_findings(self, report: FindingReport, *, _locked=False):
         """Persist a caller-supplied complete report; never probe or analyze Git.
 
         One repo/ref/profile/scope context is retained per observer profile.
         Historical commit replays return their original receipt without moving
         current state. Caller ordering is authoritative; ancestry is not checked.
         """
-        with self.locked():
+        with nullcontext() if _locked else self.locked():
             ctx = self._context(write=True)
             _validate_finding_provenance(report, ctx)
             canonical = reconcile_findings(None, report).state.report

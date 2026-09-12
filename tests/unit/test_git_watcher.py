@@ -1,0 +1,178 @@
+"""Bounded Git watcher orchestration keeps analysis tied to one committed HEAD."""
+
+import os
+import subprocess
+
+import pytest
+
+import rentgen_core as api
+import rentgen_core.git_watcher as implementation
+from rentgen_core.errors import CoreError
+from rentgen_core.git_observer import Finding, FindingReport, GitObservation
+from rentgen_core.local import LocalRuntime
+from rentgen_core.observer import Observer
+
+pytestmark = pytest.mark.skipif(os.name != "nt", reason="Windows observer lock")
+
+
+def git(root, *args):
+    return subprocess.run(
+        ["git", "-C", str(root), *args],
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    ).stdout.strip()
+
+
+@pytest.fixture
+def workspace(tmp_path):
+    principal = api.Principal("owner", "local_os")
+    source = tmp_path / "source"
+    source.mkdir()
+    git(source, "init", "--initial-branch=main")
+    git(source, "config", "user.name", "Watcher test")
+    git(source, "config", "user.email", "watcher@example.invalid")
+    (source / "Module.bsl").write_text("baseline\n", encoding="utf-8")
+    git(source, "add", "Module.bsl")
+    git(source, "commit", "-m", "baseline")
+    registry = api.ProjectRegistry.create(tmp_path / "registry.sqlite3")
+    project = registry.register(
+        principal, source_root=source, state_root=tmp_path / "state", display_name="A"
+    )
+    observer = Observer(
+        LocalRuntime(registry.path),
+        principal,
+        project.project_id,
+        tmp_path / "observer",
+    )
+    observer.initialize()
+    return source, observer
+
+
+def report(observer, observation, *, profile="analyzer-v1", scope="whole-repository"):
+    return FindingReport(
+        observation,
+        profile,
+        scope,
+        True,
+        (Finding("rule", "Module.bsl", "module", "message", 1),),
+    )
+
+
+def test_tick_analyzes_new_commit_once_and_reuses_durable_state(workspace):
+    source, observer = workspace
+    calls = []
+
+    def analyzer(observation):
+        calls.append(observation)
+        return report(observer, observation)
+
+    watcher = implementation.GitWatcher(observer, analyzer)
+    first = watcher.tick()
+    assert first["status"] == "analyzed"
+    assert first["observation"]["commit"] == git(source, "rev-parse", "HEAD")
+    assert len(calls) == 1
+
+    unchanged = watcher.tick()
+    assert unchanged["status"] == "unchanged"
+    assert unchanged["commit"] == first["commit"]
+    assert len(calls) == 1
+
+    (source / "Module.bsl").write_text("next\n", encoding="utf-8")
+    git(source, "add", "Module.bsl")
+    git(source, "commit", "-m", "next")
+    next_result = watcher.tick()
+    assert next_result["status"] == "analyzed"
+    assert next_result["commit"] != first["commit"]
+    assert len(calls) == 2
+
+
+def test_analyzer_failure_does_not_mark_commit_processed(workspace):
+    _, observer = workspace
+    calls = 0
+
+    def analyzer(observation):
+        nonlocal calls
+        calls += 1
+        raise RuntimeError("analyzer unavailable")
+
+    watcher = implementation.GitWatcher(observer, analyzer)
+    with pytest.raises(RuntimeError):
+        watcher.tick()
+    with pytest.raises(RuntimeError):
+        watcher.tick()
+    assert calls == 2
+    assert observer.findings_status()["state"] is None
+
+
+def test_report_must_bind_exact_observation_and_context(workspace):
+    source, observer = workspace
+    observation = implementation.observe_git(source)
+
+    def wrong_observation(_):
+        return report(
+            observer,
+            GitObservation(observation.repository, "f" * 40, observation.ref),
+        )
+
+    with pytest.raises(CoreError) as error:
+        implementation.GitWatcher(observer, wrong_observation).tick()
+    assert error.value.code == "GIT_WATCHER_CONTEXT"
+
+    def wrong_profile(_):
+        return report(observer, observation, profile="other")
+
+    with pytest.raises(CoreError) as error:
+        implementation.GitWatcher(observer, wrong_profile).tick()
+    assert error.value.code == "GIT_WATCHER_CONTEXT"
+
+
+def test_head_change_after_analysis_is_not_recorded(workspace, monkeypatch):
+    source, observer = workspace
+    first = implementation.observe_git(source)
+    changed = GitObservation(first.repository, "f" * 40, first.ref)
+    observations = iter((first, changed))
+    monkeypatch.setattr(implementation, "observe_git", lambda _: next(observations))
+
+    with pytest.raises(CoreError) as error:
+        implementation.GitWatcher(
+            observer, lambda value: report(observer, value)
+        ).tick()
+    assert error.value.code == "GIT_HEAD_CHANGED"
+    assert observer.findings_status()["state"] is None
+
+
+def test_dirty_repository_and_foreign_repository_fail_before_analyzer(
+    workspace, tmp_path
+):
+    source, observer = workspace
+    (source / "Module.bsl").write_text("dirty\n", encoding="utf-8")
+    called = False
+
+    def analyzer(_):
+        nonlocal called
+        called = True
+        return report(observer, implementation.observe_git(source))
+
+    with pytest.raises(CoreError) as error:
+        implementation.GitWatcher(observer, analyzer).tick()
+    assert error.value.code == "GIT_TRACKED_DIRTY"
+    assert called is False
+
+    foreign = tmp_path / "foreign"
+    foreign.mkdir()
+    with pytest.raises(CoreError) as error:
+        implementation.GitWatcher(observer, analyzer, repository=foreign).tick()
+    assert error.value.code == "GIT_WATCHER_CONTEXT"
+
+
+def test_invalid_constructor_options_are_rejected(workspace):
+    _, observer = workspace
+    with pytest.raises(CoreError) as error:
+        implementation.GitWatcher(observer, None)
+    assert error.value.code == "GIT_WATCHER_INVALID"
+
+    with pytest.raises(CoreError) as error:
+        implementation.GitWatcher(observer, lambda _: None, profile_id="")
+    assert error.value.code == "GIT_WATCHER_INVALID"
