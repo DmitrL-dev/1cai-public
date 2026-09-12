@@ -20,8 +20,11 @@ The eight stdio tools derive identity from the Windows process SID; source/graph
 reads require explicit project and snapshot IDs. Setup and migration remain CLI
 operations. Cancellation does not imply rollback; reconcile the original capture
 operation receipt. See `docs/product/CORE-MCP.md` for bounds and exact tool schemas.
-No HTTP, remote MCP, form/configuration editing, update, observer or full-product
-readiness is implied by this local CLI slice. Those acceptance gates remain open.
+No HTTP, remote MCP, live source/infobase editing, update, observer service or
+full-product readiness is implied by this local CLI slice. The development
+checkout exposes a bounded metadata preview and an owned-workspace writer; its
+CLI commands never grant permission to mutate the registered source root or a
+1C infobase. Those live-apply acceptance gates remain open.
 
 Version 0.1.0.dev1 creates schema3 projects and provides audited membership
 commands and explicit state-upgrade-access (2→3), with verified backup and

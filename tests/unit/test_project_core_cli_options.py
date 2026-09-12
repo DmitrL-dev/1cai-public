@@ -47,3 +47,29 @@ def test_metadata_evidence_requires_operation_and_payload():
     assert parsed.snapshot == "snapshot"
     assert parsed.operation_id == "operation"
     assert str(parsed.evidence_json) == "evidence.json"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "metadata-workspace-create",
+        "metadata-workspace-apply",
+        "metadata-workspace-undo",
+        "metadata-workspace-status",
+    ],
+)
+def test_metadata_workspace_commands_require_explicit_binding(command):
+    parsed = _parser().parse_args(
+        arguments(
+            command,
+            "--snapshot",
+            "snapshot",
+            "--operation-id",
+            "operation",
+            "--workspace",
+            "workspace",
+        )
+    )
+    assert parsed.snapshot == "snapshot"
+    assert parsed.operation_id == "operation"
+    assert str(parsed.workspace) == "workspace"

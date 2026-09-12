@@ -25,6 +25,27 @@ receipt либо несовпадение digest дают `METADATA_WORKSPACE_RE
 Повторный вызов не пытается угадать исход и не запускает автоматический replay.
 Все операции требуют `project:read`, `source:edit`, `analysis:run`.
 
+## CLI
+
+После `metadata-preview` и успешного `metadata` preflight принадлежащую копию
+можно использовать без редактора:
+
+```text
+rentgen metadata-workspace-create --registry REGISTRY --project PROJECT \
+  --snapshot SNAPSHOT --operation-id OPERATION --workspace WORKSPACE
+rentgen metadata-workspace-apply --registry REGISTRY --project PROJECT \
+  --snapshot SNAPSHOT --operation-id OPERATION --workspace WORKSPACE
+rentgen metadata-workspace-undo --registry REGISTRY --project PROJECT \
+  --snapshot SNAPSHOT --operation-id OPERATION --workspace WORKSPACE
+rentgen metadata-workspace-status --registry REGISTRY --project PROJECT \
+  --snapshot SNAPSHOT --operation-id OPERATION --workspace WORKSPACE
+```
+
+Команды требуют точный snapshot и исходный operation ID; workspace path задаёт
+доверенный вызывающий код. Все ответы возвращаются одним JSON-конвертом. Эти
+команды записывают только принадлежащую копию и не превращают preflight в
+разрешение изменения live source или базы 1С.
+
 ## Граница доказательства
 
 Проверяется реальная запись файлов в принадлежащую копию, stale/CAS, backup,

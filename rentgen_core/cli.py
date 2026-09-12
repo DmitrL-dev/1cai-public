@@ -84,6 +84,10 @@ def _parser():
         "metadata-preview",
         "metadata-result",
         "metadata-evidence",
+        "metadata-workspace-create",
+        "metadata-workspace-apply",
+        "metadata-workspace-undo",
+        "metadata-workspace-status",
         "proposal-test",
         "proposal-test-result",
         "draft-save",
@@ -109,11 +113,23 @@ def _parser():
                     "--plan-json", type=Path, required=True, action=_Once
                 )
                 command.add_argument("--profile-id", required=True, action=_Once)
-            if name in {"metadata-preview", "metadata-result", "metadata-evidence"}:
+            if name in {
+                "metadata-preview",
+                "metadata-result",
+                "metadata-evidence",
+                "metadata-workspace-create",
+                "metadata-workspace-apply",
+                "metadata-workspace-undo",
+                "metadata-workspace-status",
+            }:
                 command.add_argument("--operation-id", required=True, action=_Once)
             if name == "metadata-evidence":
                 command.add_argument(
                     "--evidence-json", type=Path, required=True, action=_Once
+                )
+            if name.startswith("metadata-workspace-"):
+                command.add_argument(
+                    "--workspace", type=Path, required=True, action=_Once
                 )
         elif name == "project-register":
             for option in ("source-root", "state-root"):
@@ -659,6 +675,10 @@ def _execute(args, *, proposal_scope=None):
             "metadata-preview",
             "metadata-result",
             "metadata-evidence",
+            "metadata-workspace-create",
+            "metadata-workspace-apply",
+            "metadata-workspace-undo",
+            "metadata-workspace-status",
         }
         else {"project:read", "source:edit"}
         if args.command
@@ -681,6 +701,7 @@ def _execute(args, *, proposal_scope=None):
         from .edt_profiles import parse_json
         from .metadata_plans import create_plan
         from .metadata_runs import attach_business_evidence, create_preview, get_preview
+        from . import metadata_workspace
 
         if proposal_scope is not None:
             proposal_scope.context = ctx
@@ -706,6 +727,22 @@ def _execute(args, *, proposal_scope=None):
             )
             value = attach_business_evidence(
                 selected, args.operation_id, parse_json(raw)
+            )
+        elif args.command == "metadata-workspace-create":
+            value = metadata_workspace.create_workspace(
+                selected, args.operation_id, args.workspace
+            )
+        elif args.command == "metadata-workspace-apply":
+            value = metadata_workspace.apply_workspace(
+                selected, args.operation_id, args.workspace
+            )
+        elif args.command == "metadata-workspace-undo":
+            value = metadata_workspace.undo_workspace(
+                selected, args.operation_id, args.workspace
+            )
+        elif args.command == "metadata-workspace-status":
+            value = metadata_workspace.get_workspace_status(
+                selected, args.operation_id, args.workspace
             )
         else:
             value = get_preview(selected, args.operation_id)
