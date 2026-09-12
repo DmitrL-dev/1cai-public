@@ -1,6 +1,7 @@
 """Bounded orchestration for committed Git analysis and durable findings."""
 
 from dataclasses import asdict
+from contextlib import contextmanager
 from datetime import datetime, timezone
 import json
 import os
@@ -240,6 +241,74 @@ class NotificationOutbox:
                 "GIT_WATCHER_NOTIFICATION_INVALID", "Outbox parent required"
             )
 
+    @contextmanager
+    def _locked(self):
+        """Serialize read-modify-write operations across producer processes."""
+        lock_path = self.path.with_name(self.path.name + ".lock")
+        if lock_path.is_symlink() or (lock_path.exists() and not lock_path.is_file()):
+            raise CoreError(
+                "GIT_WATCHER_NOTIFICATION_INVALID", "Outbox lock file required"
+            )
+        try:
+            descriptor = os.open(
+                lock_path, os.O_RDWR | os.O_CREAT | getattr(os, "O_BINARY", 0), 0o600
+            )
+            stream = os.fdopen(descriptor, "r+b")
+        except OSError as exc:
+            raise CoreError(
+                "GIT_WATCHER_NOTIFICATION_RECOVERY_REQUIRED",
+                "Outbox lock could not be opened",
+            ) from exc
+        acquired = False
+        try:
+            if os.name == "nt":
+                import msvcrt
+
+                stream.seek(0)
+                if stream.read(1) == b"":
+                    stream.seek(0)
+                    stream.write(b"0")
+                    stream.flush()
+                for _ in range(20):
+                    stream.seek(0)
+                    try:
+                        msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+                        acquired = True
+                        break
+                    except OSError:
+                        time.sleep(0.01)
+            else:
+                import fcntl
+
+                for _ in range(20):
+                    try:
+                        fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                        acquired = True
+                        break
+                    except OSError:
+                        time.sleep(0.01)
+            if not acquired:
+                raise CoreError(
+                    "GIT_WATCHER_NOTIFICATION_BUSY",
+                    "Another outbox operation is active",
+                )
+            yield
+        finally:
+            if acquired:
+                try:
+                    if os.name == "nt":
+                        import msvcrt
+
+                        stream.seek(0)
+                        msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+                    else:
+                        import fcntl
+
+                        fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
+                except OSError:
+                    pass
+            stream.close()
+
     def _read(self):
         if not self.path.exists():
             return {"schema": 1, "outbox": "git-watcher-v1", "next_id": 1, "events": []}
@@ -336,44 +405,47 @@ class NotificationOutbox:
             raise CoreError(
                 "GIT_WATCHER_NOTIFICATION_INVALID", "Outbox event must be an object"
             )
-        document = self._read()
-        if len(document["events"]) >= self.MAX_EVENTS:
-            raise CoreError(
-                "GIT_WATCHER_NOTIFICATION_LIMIT", "Outbox event limit reached"
+        with self._locked():
+            document = self._read()
+            if len(document["events"]) >= self.MAX_EVENTS:
+                raise CoreError(
+                    "GIT_WATCHER_NOTIFICATION_LIMIT", "Outbox event limit reached"
+                )
+            notification_id = document["next_id"]
+            document["next_id"] += 1
+            document["events"].append(
+                {
+                    "id": notification_id,
+                    "event": dict(event),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                }
             )
-        notification_id = document["next_id"]
-        document["next_id"] += 1
-        document["events"].append(
-            {
-                "id": notification_id,
-                "event": dict(event),
-                "created_at": datetime.now(timezone.utc).isoformat(),
-            }
-        )
-        self._write(document)
-        return notification_id
+            self._write(document)
+            return notification_id
 
     def peek(self, limit=100):
         if type(limit) is not int or not 1 <= limit <= self.MAX_EVENTS:
             raise CoreError(
                 "GIT_WATCHER_NOTIFICATION_INVALID", "Outbox limit is out of bounds"
             )
-        return [dict(item) for item in self._read()["events"][:limit]]
+        with self._locked():
+            return [dict(item) for item in self._read()["events"][:limit]]
 
     def ack(self, notification_id):
         if type(notification_id) is not int or not 1 <= notification_id <= 2**63:
             raise CoreError(
                 "GIT_WATCHER_NOTIFICATION_INVALID", "Invalid notification id"
             )
-        document = self._read()
-        if not any(item["id"] == notification_id for item in document["events"]):
-            raise CoreError(
-                "GIT_WATCHER_NOTIFICATION_INVALID", "Unknown notification id"
-            )
-        document["events"] = [
-            item for item in document["events"] if item["id"] != notification_id
-        ]
-        self._write(document)
+        with self._locked():
+            document = self._read()
+            if not any(item["id"] == notification_id for item in document["events"]):
+                raise CoreError(
+                    "GIT_WATCHER_NOTIFICATION_INVALID", "Unknown notification id"
+                )
+            document["events"] = [
+                item for item in document["events"] if item["id"] != notification_id
+            ]
+            self._write(document)
 
 
 class GitWatcher:

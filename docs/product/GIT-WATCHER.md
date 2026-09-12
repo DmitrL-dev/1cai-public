@@ -47,7 +47,8 @@ pretending that the library is a Windows service; notifications and service
 lifetime remain the caller's responsibility.
 
 For delivery, pass a `NotificationOutbox` to the scheduler. Each cycle event is
-stored in an atomic, bounded JSON queue with a monotonic ID. A host adapter reads
+stored in an atomic, bounded JSON queue with a monotonic ID; producer and sender
+operations take a short cross-process lock around each read-modify-write. A host adapter reads
 `outbox.peek(limit)` and calls `outbox.ack(id)` only after its channel accepted
 the event; a corrupt queue, unknown ID or full queue fails closed. The outbox
 does not open a network connection and does not retry an external delivery on
