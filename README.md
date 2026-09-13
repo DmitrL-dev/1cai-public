@@ -55,6 +55,9 @@
 [Git watcher](docs/product/GIT-WATCHER.md) с BSL-LS analyzer adapter
 ([описание](docs/product/GIT-BSL-ANALYZER.md)): preconditions и lifecycle Git-находок
 доступны через observer CLI и watcher adapter, а metadata gate остаётся read-only.
+События watcher можно явно отправить из durable outbox через
+[HTTPS webhook](docs/product/NOTIFICATION-DELIVERY.md) с ограничением размера,
+allowlist получателей и подтверждением только после HTTP 2xx.
 Формат [owner report](docs/product/OWNER-REPORT.md) связывает quality findings и
 подтверждённые runtime-метрики; без runtime adapter бизнес-значения остаются
 `not_available`.

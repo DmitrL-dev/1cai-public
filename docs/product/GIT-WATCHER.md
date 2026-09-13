@@ -57,6 +57,9 @@ operations take a short cross-process lock around each read-modify-write. A host
 the event; a corrupt queue, unknown ID or full queue fails closed. The outbox
 does not open a network connection and does not retry an external delivery on
 its own, so an interrupted sender leaves the event pending for explicit retry.
+The optional [HTTPS webhook adapter](NOTIFICATION-DELIVERY.md) delivers a bounded
+batch on an explicit call, with exact host allowlisting, no redirects, stable
+idempotency keys and acknowledgement only after an accepted response.
 
 For a cooperative foreground lifetime wrapper, see
 [SERVICE-HOST.md](SERVICE-HOST.md); it does not install or register a Windows
@@ -65,7 +68,7 @@ service.
 This is an orchestration boundary, not an analyzer. The callback remains
 responsible for producing trustworthy findings. The optional BSL-LS adapter is
 described in [GIT-BSL-ANALYZER.md](GIT-BSL-ANALYZER.md); other analyzer adapters,
-notifications and Git archive sandbox are not included.
+other notification channels and Git archive sandbox are not included.
 Caller-supplied reports continue to state analysis="caller_supplied" and
 model_calls=0.
 

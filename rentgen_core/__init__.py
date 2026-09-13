@@ -39,6 +39,12 @@ from .runtime_metrics import (
     load_runtime_report,
 )
 from .service_host import WindowsServiceHost
+from .notification_delivery import (
+    DeliveryResult,
+    DeliveryStatus,
+    WebhookAdapter,
+    deliver_outbox,
+)
 from .edt_inventory import EDTInventoryLimits, edt_metadata_inventory
 from .metadata_three_way import plan_metadata_three_way
 from .sources import (
@@ -61,6 +67,10 @@ __all__ = [
     "assess_runtime_report",
     "load_runtime_report",
     "WindowsServiceHost",
+    "DeliveryResult",
+    "DeliveryStatus",
+    "WebhookAdapter",
+    "deliver_outbox",
     "OwnerReportStore",
     "EDTInventoryLimits",
     "edt_metadata_inventory",
