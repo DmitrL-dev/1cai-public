@@ -88,6 +88,7 @@ only-include = [
   "docs/product/OWNER-REPORT.md",
   "docs/product/OWNER-REPORT-STORE.md",
   "docs/product/RUNTIME-METRICS.md",
+  "docs/product/SERVICE-HOST.md",
   "docs/product/THREE-WAY-UPDATES.md",
   "docs/product/METADATA-THREE-WAY.md",
   "docs/product/METADATA-THREE-WAY-SEMANTICS.md",

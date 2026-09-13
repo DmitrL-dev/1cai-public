@@ -555,6 +555,19 @@ class GitWatcher:
             }
 
 
+@contextmanager
+def _preserve_primary_error(error):
+    """Retain the run failure when diagnostic persistence also fails."""
+    try:
+        yield
+    except BaseException as secondary:
+        if error is None:
+            raise
+        error.add_note(
+            f"Scheduler persistence failed: {type(secondary).__name__}: {secondary}"
+        )
+
+
 class GitWatcherScheduler:
     """Bounded foreground loop for a GitWatcher with explicit backoff.
 
@@ -576,6 +589,7 @@ class GitWatcherScheduler:
         should_stop=lambda: False,
         journal=None,
         outbox=None,
+        retry_codes=None,
     ):
         if not callable(getattr(watcher, "tick", None)):
             raise CoreError("GIT_WATCHER_INVALID", "Watcher with tick() is required")
@@ -593,6 +607,17 @@ class GitWatcherScheduler:
             raise CoreError("GIT_WATCHER_INVALID", "Typed scheduler journal required")
         if outbox is not None and not isinstance(outbox, NotificationOutbox):
             raise CoreError("GIT_WATCHER_INVALID", "Typed notification outbox required")
+        if retry_codes is not None and (
+            not isinstance(retry_codes, (set, frozenset))
+            or len(retry_codes) > 100
+            or any(
+                type(code) is not str or not 1 <= len(code) <= 128
+                for code in retry_codes
+            )
+        ):
+            raise CoreError(
+                "GIT_WATCHER_INVALID", "Bounded set of retry codes required"
+            )
         self.watcher = watcher
         self.interval = interval
         self.max_cycles = max_cycles
@@ -601,6 +626,7 @@ class GitWatcherScheduler:
         self.should_stop = should_stop
         self.journal = journal
         self.outbox = outbox
+        self.retry_codes = None if retry_codes is None else frozenset(retry_codes)
 
     def _backoff_delay(self, failures):
         """Return exponential backoff without constructing an unbounded integer."""
@@ -616,6 +642,7 @@ class GitWatcherScheduler:
         events, failures, cycle = [], 0, 0
         run_id = self.journal.begin() if self.journal is not None else None
         fatal_handled = False
+        primary_error = None
         try:
             while self.max_cycles is None or cycle < self.max_cycles:
                 if self.should_stop():
@@ -634,18 +661,25 @@ class GitWatcherScheduler:
                         "OBSERVER_JOB_FAILED",
                         "OBSERVER_JOURNAL_FULL",
                         "GIT_HISTORY_REWRITE",
-                    }:
-                        if self.journal is not None:
-                            self.journal.record(
-                                run_id,
-                                cycle,
-                                failures,
-                                {"status": "fatal", "code": exc.code},
-                                keep_running=False,
-                            )
-                        if self.outbox is not None:
-                            self.outbox.enqueue({"status": "fatal", "code": exc.code})
+                    } or (
+                        self.retry_codes is not None
+                        and exc.code not in self.retry_codes
+                    ):
                         fatal_handled = True
+                        if self.journal is not None:
+                            with _preserve_primary_error(exc):
+                                self.journal.record(
+                                    run_id,
+                                    cycle,
+                                    failures,
+                                    {"status": "fatal", "code": exc.code},
+                                    keep_running=False,
+                                )
+                        if self.outbox is not None:
+                            with _preserve_primary_error(exc):
+                                self.outbox.enqueue(
+                                    {"status": "fatal", "code": exc.code}
+                                )
                         raise
                     failures += 1
                     event = {"status": "error", "code": exc.code, "attempt": failures}
@@ -663,24 +697,30 @@ class GitWatcherScheduler:
                     break
                 self.sleep(self._backoff_delay(failures))
             return events
-        except BaseException:
-            if not fatal_handled and self.journal is not None:
-                current = self.journal.read()
-                if current is not None and current["phase"] == "running":
-                    self.journal.record(
-                        run_id,
-                        cycle,
-                        failures,
-                        {"status": "fatal", "code": "GIT_WATCHER_UNEXPECTED"},
-                        keep_running=False,
-                    )
-            if not fatal_handled and self.outbox is not None:
-                self.outbox.enqueue(
-                    {"status": "fatal", "code": "GIT_WATCHER_UNEXPECTED"}
-                )
+        except BaseException as exc:
+            primary_error = exc
+            if not fatal_handled:
+                fatal_handled = True
+                if self.journal is not None:
+                    with _preserve_primary_error(exc):
+                        current = self.journal.read()
+                        if current is not None and current["phase"] == "running":
+                            self.journal.record(
+                                run_id,
+                                cycle,
+                                failures,
+                                {"status": "fatal", "code": "GIT_WATCHER_UNEXPECTED"},
+                                keep_running=False,
+                            )
+                if self.outbox is not None:
+                    with _preserve_primary_error(exc):
+                        self.outbox.enqueue(
+                            {"status": "fatal", "code": "GIT_WATCHER_UNEXPECTED"}
+                        )
             raise
         finally:
-            if self.journal is not None:
-                current = self.journal.read()
-                if current is not None and current["phase"] == "running":
-                    self.journal.stop(run_id, cycle, failures)
+            with _preserve_primary_error(primary_error):
+                if not fatal_handled and self.journal is not None:
+                    current = self.journal.read()
+                    if current is not None and current["phase"] == "running":
+                        self.journal.stop(run_id, cycle, failures)

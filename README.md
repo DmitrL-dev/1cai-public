@@ -134,6 +134,7 @@ flowchart LR
 | [Owner report](docs/product/OWNER-REPORT.md) | Источники quality и runtime-метрик с fail-closed статусами и durable receipts |
 | [Owner report store](docs/product/OWNER-REPORT-STORE.md) | Иммутабельные receipts и локальный CLI сохранения/чтения по snapshot |
 | [Runtime metrics](docs/product/RUNTIME-METRICS.md) | Bounded JSON-export adapter с двойной авторизацией и точной привязкой к snapshot |
+| [Service host](docs/product/SERVICE-HOST.md) | Конечный foreground host для scheduler с cooperative stop и fail-closed retry |
 | [Three-way updates](docs/product/THREE-WAY-UPDATES.md) | Dry-run переноса base/current/upstream по хэшу |
 | [UUID-aware updates](docs/product/METADATA-THREE-WAY.md) | Консервативное сопоставление объектов Designer XML по типу и UUID |
 | [EDT identity inventory](docs/product/EDT-INVENTORY-IDENTITY.md) | Проверенные UUID, владельцы вложенных объектов и evidence слоя в EDT snapshot |

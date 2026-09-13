@@ -40,7 +40,11 @@ change before persistence.
 owned JSON file. It writes a fsync-plus-rename record before and after each
 cycle; a process that dies leaves `phase="running"`, and a later run refuses to
 continue until an operator calls `journal.recover(reason)`. Fatal permission,
-history-rewrite and journal errors are recorded and propagated. The returned
+history-rewrite and journal errors are recorded and propagated. An optional
+bounded `retry_codes` set can narrow transient CoreError codes; it can never
+make the built-in fatal codes retryable. If fatal journal persistence fails,
+the scheduler still attempts the outbox independently and leaves a running
+journal for explicit recovery instead of marking the run stopped. The returned
 event list retains only the latest 1000 cycles, so an unbounded foreground run
 does not grow memory without limit. This makes restarts observable without
 pretending that the library is a Windows service; notifications and service
@@ -53,6 +57,10 @@ operations take a short cross-process lock around each read-modify-write. A host
 the event; a corrupt queue, unknown ID or full queue fails closed. The outbox
 does not open a network connection and does not retry an external delivery on
 its own, so an interrupted sender leaves the event pending for explicit retry.
+
+For a cooperative foreground lifetime wrapper, see
+[SERVICE-HOST.md](SERVICE-HOST.md); it does not install or register a Windows
+service.
 
 This is an orchestration boundary, not an analyzer. The callback remains
 responsible for producing trustworthy findings. The optional BSL-LS adapter is

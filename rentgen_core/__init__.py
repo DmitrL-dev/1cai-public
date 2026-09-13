@@ -32,6 +32,13 @@ from .snapshots import (
 from .publication import capture_and_publish
 from .owner_report import RuntimeMetric, RuntimeMetricReport, build_owner_report
 from .owner_report_store import OwnerReportStore
+from .runtime_metrics import (
+    RuntimeFreshnessPolicy,
+    RuntimeMetricAssessment,
+    assess_runtime_report,
+    load_runtime_report,
+)
+from .service_host import WindowsServiceHost
 from .edt_inventory import EDTInventoryLimits, edt_metadata_inventory
 from .metadata_three_way import plan_metadata_three_way
 from .sources import (
@@ -49,6 +56,11 @@ __all__ = [
     "build_owner_report",
     "RuntimeMetric",
     "RuntimeMetricReport",
+    "RuntimeFreshnessPolicy",
+    "RuntimeMetricAssessment",
+    "assess_runtime_report",
+    "load_runtime_report",
+    "WindowsServiceHost",
     "OwnerReportStore",
     "EDTInventoryLimits",
     "edt_metadata_inventory",
