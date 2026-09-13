@@ -33,6 +33,7 @@ jobs:
       - name: Install test tools
         run: python -m pip install -r requirements-test.txt
       - name: Python contracts
+        id: python_contracts
         env:
           PYTHONUTF8: '1'
         run: |
@@ -48,15 +49,20 @@ jobs:
           retention-days: 14
       - name: Annotate Python contract failures
         if: always()
+        env:
+          PYTHON_CONTRACTS_OUTCOME: ${{ steps.python_contracts.outcome }}
         shell: pwsh
         run: |
+          if ($env:PYTHON_CONTRACTS_OUTCOME -ne 'failure') { exit 0 }
           if (-not (Test-Path output/python-contracts.xml)) { exit 0 }
           [xml]$report = Get-Content output/python-contracts.xml
           $failed = @($report.SelectNodes('//testcase[failure or error]'))
           foreach ($case in $failed) {
             $class = [string]$case.classname
             $name = [string]$case.name
-            Write-Output "::error title=Python contract failure::$class::$name"
+            $message = "$class::$name"
+            $message = $message.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Output "::error title=Python contract failure::$message"
           }
           if ($failed.Count -eq 0) {
             Write-Output '::error title=Python contracts::Pytest exited non-zero without a testcase failure in JUnit'
