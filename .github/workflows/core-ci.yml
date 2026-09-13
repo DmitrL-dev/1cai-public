@@ -35,7 +35,17 @@ jobs:
       - name: Python contracts
         env:
           PYTHONUTF8: '1'
-        run: python -m pytest -q --tb=short
+        run: |
+          New-Item -ItemType Directory -Force output | Out-Null
+          python -m pytest -q --tb=short --junitxml=output/python-contracts.xml
+      - name: Upload Python contract report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0 # v7
+        with:
+          name: python-contract-report
+          path: output/python-contracts.xml
+          if-no-files-found: warn
+          retention-days: 14
       - name: Companion contracts
         run: node --test integrations/vscode-rentgen/test/*.test.cjs
       - name: Scanner tests
