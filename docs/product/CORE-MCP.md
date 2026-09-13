@@ -40,8 +40,8 @@ a different project returns `MCP_PROJECT_FORBIDDEN`. Checks precede dispatch and
 registry/source access. Unknown names still return `UNKNOWN_TOOL`. Requests cannot
 set or widen startup scope. Current membership/permission checks remain in force.
 
-Without either option the original 21-tool contract is retained. Project-only
-startup exposes the 20 tools with explicit project selectors, excluding
+Without either option the current 22-tool contract is retained. Project-only
+startup exposes the 21 tools with explicit project selectors, excluding
 `rentgen_project_list`. Explicitly combining project scope with that registry-wide
 tool is a startup error. Tool-only scope may access the SID's authorized projects.
 Unknown/duplicate tool names, invalid/repeated project selectors and incompatible
@@ -54,7 +54,7 @@ output permission checks. State schema 4 is unchanged.
 
 ## Tool contract
 
-Unrestricted startup exposes twenty-one tools; the previous dev2 artifacts expose ten. All tools return MCP text content containing JSON and equivalent
+Unrestricted startup exposes twenty-two tools; the previous dev2 artifacts expose ten. All tools return MCP text content containing JSON and equivalent
 `structuredContent`. Success uses `{result, request_id}`; operational errors use
 the core `{error: {code, message, request_id, details}}` envelope and `isError=true`.
 Unknown tools return `UNKNOWN_TOOL`. Schemas reject unknown fields, null or blank
@@ -83,6 +83,7 @@ Semantic failures after schema validation keep their existing core error codes.
 | `rentgen_impact` | `project_id`, `snapshot_id`, `layer_id`, `relative_path` | `depth` (1–5, default 1) |
 | `rentgen_proposal_create` | `project_id`, `snapshot_id`, `source_ref`, `replacement_base64` | none |
 | `rentgen_proposal_check` | `project_id`, `snapshot_id`, `proposal`, `diagnostics_profile` | none |
+| `rentgen_native_archive` | `project_id`, `snapshot_id`, `operation_id`, `namespace` | `profile_id` for `test-runs` and `metadata-runs` |
 
 Project and operation IDs are canonical lowercase UUIDs. Snapshot IDs are
 lowercase SHA-256 digests. Every source/graph request requires an explicit
@@ -140,6 +141,13 @@ one explicit snapshot. Neither tool writes the live source. `proposal_create`
 returns a bounded diff; `proposal_check` verifies the original from the same
 snapshot and runs the separately installed fixed BSL profile. Results explicitly
 say `ephemeral_unattested`, `tests: not_run` and `apply: unavailable`.
+
+`rentgen_native_archive` requires `project:read` and `project:admin`. It
+re-resolves the explicit snapshot before creating the validated logical archive
+and returns the durable archive receipt. `namespace` is one of
+`platform-checks`, `test-runs` or `metadata-runs`; the latter two also require
+the exact 64-character `profile_id`. Evidence remains readable and counted
+against the disk budget, and the tool never deletes or moves retained files.
 
 Only the documented profile ID is selectable. A tool cannot choose Java, JAR,
 working directory, environment or analyzer options. Permissions are checked before

@@ -110,6 +110,7 @@ _PROPOSAL_DOCUMENT = _object(
     }
 )
 _PROPOSAL_TOOLS = frozenset({"rentgen_proposal_create", "rentgen_proposal_check"})
+_NATIVE_ARCHIVE_TOOL = "rentgen_native_archive"
 TOOL_SCHEMAS = {
     "rentgen_proposal_check": _object(
         {
@@ -158,6 +159,20 @@ TOOL_SCHEMAS = {
     "rentgen_impact": _object(
         {**_SOURCE, "depth": {"type": "integer", "minimum": 1, "maximum": 5}}, _SOURCE
     ),
+    _NATIVE_ARCHIVE_TOOL: _object(
+        {
+            "project_id": _UUID,
+            "snapshot_id": _HASH,
+            "operation_id": _UUID,
+            "namespace": {
+                "type": "string",
+                "pattern": r"^(platform-checks|test-runs|metadata-runs)$",
+                "maxLength": 14,
+            },
+            "profile_id": _HASH,
+        },
+        ["project_id", "snapshot_id", "operation_id", "namespace"],
+    ),
 }
 _DESCRIPTIONS = {
     "rentgen_proposal_check": "Run the installed pinned BSL analyzer on an exact ephemeral proposal. Requires editing and analysis rights. Reports single-module diagnostics; tests are not run and apply is unavailable.",
@@ -170,6 +185,7 @@ _DESCRIPTIONS = {
     "rentgen_source_read": "Read up to 1 MiB of exact retained bytes as base64 with SourceRef and raw hash.",
     "rentgen_graph_resolve": "Resolve a retained source module in an explicit snapshot's graph.",
     "rentgen_impact": "Return bounded static impact from an explicit snapshot's graph.",
+    _NATIVE_ARCHIVE_TOOL: "Create an admin-only logical archive for one completed native run after re-resolving its exact project snapshot. Evidence remains readable and counted; no files are deleted or moved.",
 }
 TOOL_SCHEMAS.update(mcp_drafts.schemas(_object, _UUID, _HASH, _PROPOSAL_DOCUMENT))
 _DESCRIPTIONS.update(mcp_drafts.DESCRIPTIONS)
@@ -643,7 +659,7 @@ def _proposal_dispatch(runtime, principal, name, args, *, state_ctx=None):
 def _family_limit(family):
     if family == "draft":
         return MAX_RESULT_BYTES
-    if family == "proposal":
+    if family in {"proposal", "admin"}:
         return MAX_PROPOSAL_RESULT_BYTES
     raise ValueError("Unknown protected output family")
 
@@ -808,6 +824,36 @@ def _execute(
             result = _proposal_dispatch(
                 runtime, principal, name, arguments, state_ctx=proposal_context
             )
+        elif name == _NATIVE_ARCHIVE_TOOL:
+            from .native_resources import archive_native_run
+
+            permissions = frozenset({"project:read", "project:admin"})
+            family = "admin"
+            # Keep the authenticated, snapshot-free context available so a
+            # resolution failure after revocation can be redacted by the final
+            # permission check, just like the local CLI command.
+            proposal_context = runtime.state_context(
+                principal, arguments["project_id"], permissions=permissions
+            )
+            if runtime.graph_reader_factory is None:
+                from rentgen_graph.snapshot_adapter import RentgenGraphReaderFactory
+
+                runtime = replace(
+                    runtime, graph_reader_factory=RentgenGraphReaderFactory()
+                )
+            ctx = runtime.resolve(
+                principal, arguments["project_id"], arguments["snapshot_id"]
+            )
+            proposal_context = ctx
+            value = archive_native_run(
+                ctx,
+                arguments["operation_id"],
+                namespace=arguments["namespace"],
+                profile_id=arguments.get("profile_id"),
+            )
+            result = _ProposalToolResult(
+                {"archive": value}, proposal_context, permissions, family
+            )
         else:
             result = _dispatch(runtime, principal, name, arguments)
         if isinstance(result, _ProposalToolResult):
@@ -934,7 +980,9 @@ def create_server(runtime, principal, *, cancellations=None, scope=None):
                 description=_DESCRIPTIONS[name],
                 inputSchema=schema,
                 annotations=ToolAnnotations(
-                    readOnlyHint=name not in mcp_drafts.WRITES | {"rentgen_capture"},
+                    readOnlyHint=name
+                    not in mcp_drafts.WRITES
+                    | {"rentgen_capture", _NATIVE_ARCHIVE_TOOL},
                     destructiveHint=False,
                     openWorldHint=False,
                 ),
