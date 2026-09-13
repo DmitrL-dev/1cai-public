@@ -6,7 +6,7 @@
 
 ## Дополнение к кандидату 14 сентября 2026
 
-В текущем исходном кандидате собрано 1190 тестов; Product CI запускается для
+В текущем исходном кандидате собрано 1249 тестов; Product CI запускается для
 каждого SHA в [публичном workflow](https://github.com/DmitrL-dev/1cai-public/actions/workflows/core-ci.yml).
 Три Windows symlink-теста могут
 пропускаться из-за отсутствия privilege. Кандидат включает bounded foreground
@@ -34,6 +34,11 @@ UUID справочника, реквизита и формы; [сводка и 
 findings/outbox → owner-report аудита и frozen retained-register producer для
 одного offline runtime export. Оба режима по умолчанию fail-closed и не
 включают live 1С, сеть или произвольный процесс.
+
+Native EDT adapter теперь принят для повторения выбранного preview и apply/undo
+в новой принадлежащей файловой копии: admission выполняется до его журналов,
+readback связывает native preview и workspace receipt, а после undo проверяется
+исходный inventory. Это не запись в рабочую конфигурацию и не live apply.
 
 Приёмка остаётся частичной: продуктовая запись в рабочую
 конфигурацию, типовые `.cf/.cfe`, полноценная семантика расширений, BSL/форм/СКД

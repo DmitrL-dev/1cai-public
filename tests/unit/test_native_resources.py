@@ -100,10 +100,13 @@ def test_cleanup_rejects_junction_without_touching_external_files(tmp_path):
         junction.rmdir()  # Remove only the verified junction itself, no recursive walk.
 
 
-def test_admission_reserves_whole_run_headroom_before_creating_directory(tmp_path):
+@pytest.mark.parametrize("namespace", ["platform-checks", "metadata-runs"])
+def test_admission_reserves_whole_run_headroom_before_creating_directory(
+    tmp_path, namespace
+):
     from rentgen_core.native_resources import DiskLimits, reserve_run
 
-    parent = tmp_path / "platform-checks"
+    parent = tmp_path / namespace
     old = parent / str(uuid4())
     old.mkdir(parents=True)
     evidence = old / "request.json"
@@ -122,13 +125,14 @@ def test_admission_reserves_whole_run_headroom_before_creating_directory(tmp_pat
     assert evidence.read_bytes() == b"123456"
 
 
+@pytest.mark.parametrize("namespace", ["test-runs", "metadata-runs"])
 def test_admission_checks_free_headroom_and_keeps_external_working_infobase(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, namespace
 ):
     from collections import namedtuple
     from rentgen_core import native_resources
 
-    parent = tmp_path / "test-runs"
+    parent = tmp_path / namespace
     parent.mkdir()
     working = tmp_path / "working-infobase"
     working.mkdir()
@@ -164,9 +168,54 @@ def test_admission_checks_free_headroom_and_keeps_external_working_infobase(
     assert sentinel.read_bytes() == b"user database"
 
 
-def test_admission_serializes_other_processes_at_retention_boundary(tmp_path):
-    parent = tmp_path / "test-runs"
-    parent.mkdir()
+def test_admission_counts_metadata_and_all_retained_outcomes(tmp_path, monkeypatch):
+    from rentgen_core import native_resources as resources
+
+    monkeypatch.setattr(resources, "RETAINED_RUN_LIMIT", 5)
+    limits = resources.DiskLimits(run_bytes=10, project_bytes=1000, free_bytes=0)
+    retained = []
+    for namespace, status in (
+        ("platform-checks", "completed"),
+        ("test-runs", "failed"),
+        ("metadata-runs", "unknown"),
+        ("metadata-runs", None),
+    ):
+        previous = tmp_path / namespace / str(uuid4())
+        previous.mkdir(parents=True)
+        if status is not None:
+            (previous / "outcome.json").write_text(status)
+        retained.append(previous)
+    admitted = tmp_path / "metadata-runs" / str(uuid4())
+    receipt = resources.reserve_run(tmp_path, admitted, limits=limits)
+    assert receipt["retained_run_limit"] == 5
+    assert receipt["retention"] == "retain_all_no_eviction"
+    for namespace in resources.NAMESPACES:
+        refused = tmp_path / namespace / str(uuid4())
+        with pytest.raises(CoreError) as error:
+            resources.reserve_run(tmp_path, refused, limits=limits)
+        assert error.value.code == "NATIVE_RETENTION_LIMIT"
+        assert error.value.details == {
+            "retained_runs": 5,
+            "retained_run_limit": 5,
+            "run_id": refused.name,
+            "admitted": False,
+        }
+        assert not refused.exists()
+    assert [
+        (run / "outcome.json").read_text() if (run / "outcome.json").exists() else None
+        for run in retained
+    ] == ["completed", "failed", "unknown", None]
+
+
+@pytest.mark.parametrize(
+    "namespaces", [("test-runs",), ("metadata-runs",), ("test-runs", "metadata-runs")]
+)
+def test_admission_serializes_other_processes_at_retention_boundary(
+    tmp_path, namespaces
+):
+    parents = [tmp_path / name for name in namespaces]
+    for parent in parents:
+        parent.mkdir()
     code = """
 import sys
 from pathlib import Path
@@ -186,13 +235,13 @@ except CoreError as e: print(e.code)
                 "-c",
                 code,
                 str(tmp_path),
-                str(parent / str(uuid4())),
+                str(parents[index % len(parents)] / str(uuid4())),
             ],
             env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        for _ in range(4)
+        for index in range(4)
     ]
     outcomes = []
     try:
@@ -211,16 +260,17 @@ except CoreError as e: print(e.code)
         "NATIVE_RETENTION_LIMIT",
         "NATIVE_ADMISSION_BUSY",
     }
-    assert len(list(parent.iterdir())) == 1
+    assert sum(len(list(parent.iterdir())) for parent in parents) == 1
 
 
+@pytest.mark.parametrize("namespace", ["test-runs", "metadata-runs"])
 def test_controller_crash_releases_admission_lock_but_retains_unknown_run(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, namespace
 ):
     from rentgen_core import native_resources
     from test_native_process import wait_file
 
-    parent = tmp_path / "test-runs"
+    parent = tmp_path / namespace
     parent.mkdir()
     unknown = parent / str(uuid4())
     ready = tmp_path / "ready"
@@ -257,10 +307,13 @@ with _file_slot(root, 'native-admission.lock', 'NATIVE_ADMISSION_BUSY'):
     assert (unknown / "request.json").read_bytes() == b"unknown outcome"
 
 
-def test_admission_rejects_reparse_run_without_touching_external_database(tmp_path):
+@pytest.mark.parametrize("namespace", ["test-runs", "metadata-runs"])
+def test_admission_rejects_reparse_run_without_touching_external_database(
+    tmp_path, namespace
+):
     from rentgen_core.native_resources import reserve_run
 
-    parent = tmp_path / "test-runs"
+    parent = tmp_path / namespace
     parent.mkdir()
     external = tmp_path / "working-infobase"
     external.mkdir()

@@ -4,11 +4,95 @@
 отмена **недоступны**. Этот срез не закрывает D1/D2 и не подтверждает выполнение
 цепочки preview → apply → re-read → undo на 1С.
 
+Отдельный внутренний API `metadata_native_apply` выполняет EDT-операцию в новой
+принадлежащей операции среде и публикует проверенные байты только в новую
+принадлежащую Рентгену файловую копию. Его `applied` не означает live apply;
+`live_apply_allowed=false` и `live_source_written=false` обязательны.
+
 `rentgen_core.metadata_apply.preflight_apply` проверяет завершённый сохранённый
 preview и записывает намерение до чтения живых файлов. Вызов требует отдельный
 канонический UUID операции, UUID preview, точный `preview_id` и `ProjectHead`,
 связанный с выбранным `SnapshotRef`. Пути источника и состояния берутся из
 контекста проекта; исполняемый файл, URL, инструмент EDT и токен не принимаются.
+
+## Native EDT и принадлежащая копия
+
+`await metadata_native_apply.apply_native_workspace(ctx, preview_operation_id,
+operation_id, workspace_root, expected_preview_id=..., expected_plan_id=...,
+expected_head=..., timeout=600)` принимает только завершённый сохранённый preview,
+точные токены preview/plan, выбранный SnapshotRef и ProjectHead. Поддерживается
+существующая операция rename реквизита справочника в одном Designer XML base
+слое. Runtime-профиль берётся из preview; передать другой EDT client, executable,
+URL, token или произвольный tool через этот API нельзя.
+
+`workspace_root` должен быть новым абсолютным каталогом вне живого источника
+и project state. State также обязан находиться вне живого источника. До запуска
+EDT создаётся эксклюзивный `metadata-native-apply/<UUID>/intent.json` с SHA256
+намерения, точным head, preview/plan/profile, полными inventory hashes и путём
+копии. Существующий native operation ID не перезапускается, а существующий
+runtime operation нельзя присвоить новой операции. Авторизация проверяется
+до чтения входа, во время runtime и перед публикацией; head, настройка слоёв
+и полный живой inventory перепроверяются до и после EDT.
+
+До создания native intent, preflight и файловой копии выполняется
+`edt_runtime.edt_admission`: общий retained-run/free-space/project-budget gate
+резервирует `metadata-runs/<UUID>` единожды, удерживая project slot и проверенный
+runtime. `edt_session` принимает внутренний одноразовый handle активного
+admission; модель не может передать произвольную квитанцию вместо него. Отказ
+quota/admission не оставляет native journal, preflight или owned workspace.
+Успешная резервация сохраняется даже при последующем сбое: такой UUID требует
+разбора и не запускается заново.
+
+EDT импортирует retained snapshot в новый runtime workspace, экспортирует
+baseline, проверяет UUID и владельца и сравнивает **весь** baseline с выбранным
+preview до rename. Подтверждение rename использует contentHash только что
+полученного native preview. После экспорта и закрытия owned runtime повторно
+проверяются UUID/owner, snapshot/layer, все original/baseline/candidate inventories
+и оба diff. Любое отличие, включая неизвестный файл, блокирует публикацию.
+Положительный ответ EDT сам по себе результата не подтверждает.
+
+Операция удерживает cooperative lock файловой копии во время EDT. Затем
+`metadata_workspace.apply_workspace` заново получает lock, проверяет исходное
+дерево/head/preview и публикует байты сохранённого candidate, совпавшие с native
+экспортом. Существующий writer создаёт backup и журнал отдельных файловых
+замен. Его CAS также проверяет изменения между двумя захватами lock.
+Нормализация сравнивается точно, но её общая семантическая безопасность этим
+не квалифицируется; этот adapter не является отдельным квалифицированным live
+executor и не меняет `require_live_apply`, CLI, MCP или команды редактора.
+
+`timeout` — целое число секунд от 1 до 600 для native последовательности.
+Сохраняются также ограничения runtime на каждый вызов, число вызовов и размер
+вывода. Timeout, отмена, обрыв транспорта, потеря ответа и прерывание публикации
+оставляют `OUTCOME_UNKNOWN`; запись не повторяется автоматически. Отсутствующий
+terminal result при корректном intent также читается как `OUTCOME_UNKNOWN`:
+он может означать активную операцию или сбой. Повреждённый журнал требует
+восстановления и не даёт разрешения на повтор. Повтор точного завершённого
+запроса возвращает исторический результат без EDT; иной запрос с тем же UUID
+вызывает conflict.
+
+`get_native_apply_result(ctx, operation_id)` читает историческую квитанцию.
+Для `applied` он заново читает native preview, проверяет `native_preview_id`,
+plan/profile и все inventory hashes. Затем под cooperative lock проверяются
+ownership marker, сохранённый preflight и полная sealed workspace-result:
+result ID, проект/операция/preview, before/after inventories и изменённые пути.
+Текущее дерево должно совпадать с candidate, либо с original при подтверждённой
+связанной undo-квитанции. Утраченный или подменённый результат, повреждённая
+привязка и чужие байты вызывают отказ вместо возврата `applied`. Чтение не
+восстанавливает отсутствующие квитанции и не запускает EDT.
+`undo_native_workspace(ctx, operation_id, workspace_root)` явно восстанавливает
+backup подтверждённого apply только при совпадении дерева с candidate.
+`restore_native_workspace(...)` восстанавливает **original** после прерванной
+локальной публикации; он не повторяет EDT и не продолжает публикацию candidate.
+Если собственная квитанция native adapter потеряна после завершения файлового
+apply, restore использует сохранившийся complete workspace receipt для CAS undo.
+Частичная финализация workspace receipt требует существующего протокола
+восстановления workspace; adapter не объявляет такую запись завершённой.
+Если native вызов прервался до файловой публикации, исходная копия сохранена,
+а незавершённый EDT workspace остаётся для разбора. Чужие изменения вызывают
+conflict и не перезаписываются. Успешный undo/restore имеет собственную
+workspace-квитанцию и не переписывает исторический native result.
+
+## Read-only preflight
 
 Поддержанный состав проверки — один слой Designer XML типа base с корнем `.`.
 Каталог состояния должен находиться вне живого дерева источников: этот срез не
@@ -103,8 +187,9 @@ snapshot, retained preview и живой источник. Устаревшее 
 `undo_metadata(ctx, operation_id)` требует доступ к существующей квитанции, затем
 возвращает `METADATA_UNDO_UNAVAILABLE`: у preflight нет квитанции применения и
 принадлежащего операции результата для восстановления. Чужая последующая правка
-никогда не заменяется baseline. Полноценная проверка undo conflict между текущим
-состоянием и подтверждённым результатом apply остаётся частью будущего writer.
+никогда не заменяется baseline. Проверка undo conflict между текущим
+состоянием и подтверждённым результатом apply реализована только для новой
+принадлежащей Рентгену копии в `metadata_workspace` и `metadata_native_apply`.
 
 ## Граница приёмки
 
@@ -115,8 +200,9 @@ Unit-тесты используют собственную конфигурац
 успешной записи EDT или 1С. CLI, MCP, observer и установленная поставка этого API
 в данном срезе не интегрированы.
 
-Для следующего среза необходимы квалификация нормализации, принадлежащая операции
-рабочая копия, протокол многокомпонентной записи и восстановления, собственная
-квитанция публикации, re-read EDT/1С и восстановление точного baseline с проверкой
-последующей чужой правки. Основание: [EDT-METADATA-DESIGN.md](EDT-METADATA-DESIGN.md)
+Для live apply необходимы квалификация нормализации, квалифицированный executor,
+протокол публикации в управляемый живой проект, re-read EDT/1С и восстановление
+точного baseline с проверкой последующей чужой правки. Owned workspace protocol
+и его native smoke описаны выше; они не предоставляют live capability.
+Основание: [EDT-METADATA-DESIGN.md](EDT-METADATA-DESIGN.md)
 и [EDT-ADAPTER-PLAN.md](EDT-ADAPTER-PLAN.md).

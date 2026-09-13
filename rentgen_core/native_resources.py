@@ -64,12 +64,12 @@ def reserve_run(root, run, *, limits=None):
     """Bound retained attempts before allocating any per-operation artifacts.
 
     Completed, failed and unknown outcomes all consume a slot indefinitely.
-    Only the two synchronous native callers use this admission boundary.
+    Compilation, YAxUnit and EDT share this admission boundary.
     """
     root, run = Path(root).absolute(), Path(run).absolute()
     limits = DiskLimits() if limits is None else limits
     validate_operation_id(run.name)
-    if run.parent.parent != root or run.parent.name not in NAMESPACES[:2]:
+    if run.parent.parent != root or run.parent.name not in NAMESPACES:
         raise CoreError("NATIVE_STORAGE_INVALID", "Not an owned native run")
     created = False
     try:
