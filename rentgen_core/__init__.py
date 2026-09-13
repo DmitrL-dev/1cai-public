@@ -30,6 +30,7 @@ from .snapshots import (
     get_publication,
 )
 from .publication import capture_and_publish
+from .owner_report_store import OwnerReportStore
 from .sources import (
     SourceRef,
     SourceEntry,
@@ -42,6 +43,7 @@ from .sources import (
 
 __all__ = [
     "capture_and_publish",
+    "OwnerReportStore",
     "SourceRef",
     "SourceEntry",
     "SourcePage",

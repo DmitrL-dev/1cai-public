@@ -212,3 +212,193 @@ def test_tampered_workspace_marker_is_not_replayed(captured, tmp_path):
     with pytest.raises(api.CoreError) as error:
         workspace.get_workspace_status(ctx, request["operation_id"], root)
     assert error.value.code == "METADATA_WORKSPACE_RECOVERY_REQUIRED"
+
+
+def test_original_recovery_does_not_consume_backup_of_new_apply(
+    captured, tmp_path, monkeypatch
+):
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    original_replace = workspace.os.replace
+    calls = {"count": 0}
+
+    def interrupt(source, target):
+        calls["count"] += 1
+        if calls["count"] == 2:
+            raise OSError("simulated interruption")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(workspace.os, "replace", interrupt)
+    with pytest.raises(OSError):
+        workspace.apply_workspace(ctx, request["operation_id"], root)
+    monkeypatch.setattr(workspace.os, "replace", original_replace)
+
+    workspace.recover_workspace(ctx, request["operation_id"], root, target="original")
+    workspace.apply_workspace(ctx, request["operation_id"], root)
+    with pytest.raises(api.CoreError) as error:
+        workspace.recover_workspace(
+            ctx, request["operation_id"], root, target="original"
+        )
+    assert error.value.code == "METADATA_WORKSPACE_RECOVERY_REQUIRED"
+    assert (
+        workspace.undo_workspace(ctx, request["operation_id"], root)["status"]
+        == "undone"
+    )
+
+
+def test_candidate_recovery_resumes_after_recovery_receipt_is_written(
+    captured, tmp_path, monkeypatch
+):
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    original_replace = workspace.os.replace
+    calls = {"count": 0}
+
+    def interrupt(source, target):
+        calls["count"] += 1
+        if calls["count"] == 2:
+            raise OSError("simulated apply interruption")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(workspace.os, "replace", interrupt)
+    with pytest.raises(OSError):
+        workspace.apply_workspace(ctx, request["operation_id"], root)
+    monkeypatch.setattr(workspace.os, "replace", original_replace)
+
+    original_write = workspace.write_record
+    calls = {"count": 0}
+
+    def interrupt_result(path, value):
+        calls["count"] += 1
+        if calls["count"] == 2:
+            raise OSError("simulated recovery interruption")
+        return original_write(path, value)
+
+    monkeypatch.setattr(workspace, "write_record", interrupt_result)
+    with pytest.raises(OSError):
+        workspace.recover_workspace(
+            ctx, request["operation_id"], root, target="candidate"
+        )
+    monkeypatch.setattr(workspace, "write_record", original_write)
+
+    recovered = workspace.recover_workspace(
+        ctx, request["operation_id"], root, target="candidate"
+    )
+    assert recovered["status"] == "recovered"
+    assert (
+        workspace.get_workspace_status(ctx, request["operation_id"], root)["state"][
+            "phase"
+        ]
+        == "complete"
+    )
+
+
+def test_recovery_receipt_cannot_be_replayed_for_another_target(
+    captured, tmp_path, monkeypatch
+):
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    original_replace = workspace.os.replace
+    calls = {"count": 0}
+
+    def interrupt(source, target):
+        calls["count"] += 1
+        if calls["count"] == 2:
+            raise OSError("simulated apply interruption")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(workspace.os, "replace", interrupt)
+    with pytest.raises(OSError):
+        workspace.apply_workspace(ctx, request["operation_id"], root)
+    monkeypatch.setattr(workspace.os, "replace", original_replace)
+
+    recovered = workspace.recover_workspace(
+        ctx, request["operation_id"], root, target="candidate"
+    )
+    assert recovered["target"] == "candidate"
+    with pytest.raises(api.CoreError) as error:
+        workspace.recover_workspace(
+            ctx, request["operation_id"], root, target="original"
+        )
+    assert error.value.code == "METADATA_WORKSPACE_RECOVERY_REQUIRED"
+    assert (
+        workspace._digest(workspace._inventory(root / "tree", lambda: None))
+        == recovered["restored_digest"]
+    )
+
+
+def test_reapply_recovers_after_staging_before_new_state(
+    captured, tmp_path, monkeypatch
+):
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    original_replace = workspace.os.replace
+    calls = {"count": 0}
+
+    def interrupt(source, target):
+        calls["count"] += 1
+        if calls["count"] == 2:
+            raise OSError("simulated apply interruption")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(workspace.os, "replace", interrupt)
+    with pytest.raises(OSError):
+        workspace.apply_workspace(ctx, request["operation_id"], root)
+    monkeypatch.setattr(workspace.os, "replace", original_replace)
+    workspace.recover_workspace(ctx, request["operation_id"], root, target="original")
+
+    original_write_state = workspace._write_or_replace_record
+
+    def interrupt_state(path, value):
+        if path.name == "workspace-state.json" and value.get("phase") == "applying":
+            raise OSError("simulated prejournal interruption")
+        return original_write_state(path, value)
+
+    monkeypatch.setattr(workspace, "_write_or_replace_record", interrupt_state)
+    with pytest.raises(OSError):
+        workspace.apply_workspace(ctx, request["operation_id"], root)
+    monkeypatch.setattr(workspace, "_write_or_replace_record", original_write_state)
+    assert (root / ".rentgen-backup").is_dir()
+    assert (root / ".rentgen-stage").is_dir()
+
+    result = workspace.apply_workspace(ctx, request["operation_id"], root)
+    assert result["status"] == "applied"
+
+
+def test_reapply_recovery_accepts_candidate_after_receipt_cleanup_interrupt(
+    captured, tmp_path, monkeypatch
+):
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    original_replace = workspace.os.replace
+    calls = {"count": 0}
+
+    def interrupt(source, target):
+        calls["count"] += 1
+        if calls["count"] == 2:
+            raise OSError("simulated apply interruption")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(workspace.os, "replace", interrupt)
+    with pytest.raises(OSError):
+        workspace.apply_workspace(ctx, request["operation_id"], root)
+    monkeypatch.setattr(workspace.os, "replace", original_replace)
+    workspace.recover_workspace(ctx, request["operation_id"], root, target="original")
+
+    original_unlink = workspace.Path.unlink
+
+    def interrupt_receipt(path, *args, **kwargs):
+        if path.name == "workspace-recovery.json":
+            raise OSError("simulated recovery cleanup interruption")
+        return original_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(workspace.Path, "unlink", interrupt_receipt)
+    with pytest.raises(OSError):
+        workspace.apply_workspace(ctx, request["operation_id"], root)
+    monkeypatch.setattr(workspace.Path, "unlink", original_unlink)
+    assert (
+        workspace.get_workspace_status(ctx, request["operation_id"], root)["state"][
+            "phase"
+        ]
+        == "applying"
+    )
+
+    recovered = workspace.recover_workspace(
+        ctx, request["operation_id"], root, target="candidate"
+    )
+    assert recovered["target"] == "candidate"

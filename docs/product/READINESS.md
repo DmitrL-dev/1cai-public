@@ -54,7 +54,7 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 | Обновления конфигураций | Path-bytes и UUID-aware Designer XML three-way dry-run с bounded хэшами, явными конфликтами и evidence по прямым свойствам (`same_change`/`disjoint_changes`/`overlap_conflict`) | Property/extension/BSL merge semantics, тестовая база, backup/rollback и запись не приняты |
 | Проверка предложения платформой | В dev8: установленный CLI проверил корректное/ошибочное BSL-предложение на сохранённой конфигурации | Один Designer XML слой; компиляция без бизнес-тестов и применения |
 | Observer | Опрос выгрузки, журнал и восстановление; Git probe, durable lifecycle находок, bounded scheduler с journal/recovery и atomic notification outbox, read-only BSL-LS Git adapter с clean-commit/HEAD/ancestry recheck | Нет фонового service manager, внешнего канала доставки, полной native-приёмки analyzer на типовой конфигурации и общей приёмки O1 |
-| Бизнес-отчёты | Bounded owner-report schema с quality/runtime provenance и fail-closed incomplete/not_available статусами | Нужны подтверждённые runtime-источники данных и методика O2; числовые бизнес-метрики пока не приняты |
+| Бизнес-отчёты | Bounded owner-report schema с quality/runtime provenance, durable immutable receipts и fail-closed incomplete/not_available статусами | Нужны подтверждённые runtime-источники данных и методика O2; числовые бизнес-метрики пока не приняты |
 | Spectorn в адаптере | Не подключён | Защита трафика этого сценария не подтверждена |
 
 Первоначально в публичное дерево перенесён source distribution core dev7;

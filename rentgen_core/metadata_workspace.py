@@ -478,13 +478,21 @@ def apply_workspace(ctx, operation_id, workspace_root):
     validate_operation_id(operation_id)
     root, marker = _load_root(ctx, operation_id, workspace_root)
     _ensure_clean_phase(root)
-    if _recovery_path(root).exists() and not _result_path(root).exists():
-        recovery = _read_sealed(_recovery_path(root), "recovery_id")
-        if recovery.get("target") == "original":
-            _, candidate_rows = _candidate(ctx, marker)
-            _cleanup_original_recovery(
-                root, marker["original_inventory"], candidate_rows, lambda: _check(ctx)
-            )
+    recovery = (
+        _read_sealed(_recovery_path(root), "recovery_id")
+        if _recovery_path(root).exists()
+        else None
+    )
+    if recovery is not None and not _result_path(root).exists():
+        _require(
+            recovery.get("target") == "original"
+            and recovery.get("status") == "recovered"
+            and recovery.get("project_id") == ctx.project_id
+            and recovery.get("operation_id") == operation_id
+            and recovery.get("preview_id") == marker["preview_id"],
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Workspace recovery receipt is not an original recovery",
+        )
     if _result_path(root).exists():
         previous = _read_sealed(_result_path(root), "result_id")
         _require(
@@ -519,16 +527,42 @@ def apply_workspace(ctx, operation_id, workspace_root):
         "Workspace was changed before apply",
     )
     stage, backup = _stage(root), _backup(root)
-    _require(
-        not stage.exists() and not backup.exists(),
-        "METADATA_WORKSPACE_RECOVERY_REQUIRED",
-        "Workspace staging or backup already exists",
-    )
-    stage.mkdir()
-    backup.mkdir()
+    reapply_prepared = False
+    if recovery is not None:
+        # A crash after both new inventories were staged but before the new
+        # applying state was durable leaves the old complete/original receipt.
+        # Reuse only the two fully validated owned directories; any partial
+        # combination remains fail-closed for manual recovery.
+        if stage.exists() or backup.exists():
+            _require(
+                stage.is_dir()
+                and not stage.is_symlink()
+                and backup.is_dir()
+                and not backup.is_symlink(),
+                "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+                "Workspace reapply staging is incomplete",
+            )
+            _require(
+                _inventory(backup, check) == original_rows
+                and _inventory(stage, check) == candidate_rows,
+                "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+                "Workspace reapply staging differs from its inventories",
+            )
+            reapply_prepared = True
+        else:
+            _cleanup_original_recovery(root, original_rows, candidate_rows, check)
+    if not reapply_prepared:
+        _require(
+            not stage.exists() and not backup.exists(),
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Workspace staging or backup already exists",
+        )
+        stage.mkdir()
+        backup.mkdir()
     try:
-        _copy_rows(_tree(root), backup, original_rows, check=check)
-        _copy_rows(candidate, stage, candidate_rows, check=check, retained=True)
+        if not reapply_prepared:
+            _copy_rows(_tree(root), backup, original_rows, check=check)
+            _copy_rows(candidate, stage, candidate_rows, check=check, retained=True)
         state = _seal(
             {
                 "schema": SCHEMA,
@@ -543,6 +577,11 @@ def apply_workspace(ctx, operation_id, workspace_root):
             "state_id",
         )
         _write_or_replace_record(_state_path(root), state)
+        # The new applying journal is durable before the old recovery receipt
+        # is removed.  A crash before this point leaves a retryable complete
+        # state; a crash after it is handled by normal applying recovery.
+        if recovery is not None and _recovery_path(root).exists():
+            _recovery_path(root).unlink()
         before_paths = {row["path"] for row in original_rows}
         after_paths = {row["path"] for row in candidate_rows}
         for row in candidate_rows:
@@ -617,14 +656,86 @@ def recover_workspace(ctx, operation_id, workspace_root, *, target):
         if _recovery_path(root).exists()
         else None
     )
-    if state is not None and state.get("phase") == "complete":
+    if recovery is not None:
+        stale_reapply = (
+            state is not None
+            and state.get("phase") == "applying"
+            and recovery.get("target") == "original"
+            and target == "candidate"
+            and state.get("before_digest") == marker["original_digest"]
+        )
+        candidate_digest = _digest(
+            get_preview(ctx, marker["preview_operation_id"])["preview"]["inventories"][
+                "candidate"
+            ]
+        )
         _require(
-            recovery is not None and recovery.get("target") == target,
+            set(recovery)
+            == {
+                "schema",
+                "project_id",
+                "operation_id",
+                "preview_id",
+                "status",
+                "target",
+                "restored_digest",
+                "created_at",
+                "recovery_id",
+            }
+            and recovery["schema"] == SCHEMA
+            and recovery["project_id"] == ctx.project_id
+            and recovery["operation_id"] == operation_id
+            and recovery["preview_id"] == marker["preview_id"]
+            and recovery["status"] == "recovered"
+            and recovery["target"] in {"original", "candidate"}
+            and (recovery["target"] == target or stale_reapply)
+            and recovery["restored_digest"]
+            == (
+                marker["original_digest"]
+                if recovery["target"] == "original"
+                else candidate_digest
+            ),
             "METADATA_WORKSPACE_RECOVERY_REQUIRED",
-            "Workspace is already recovered to another target",
+            "Workspace recovery receipt is not bound to this operation",
+        )
+        if stale_reapply:
+            recovery = None
+    if state is not None and state.get("phase") == "complete":
+        if (
+            target == "candidate"
+            and recovery is not None
+            and recovery.get("target") == "candidate"
+            and state.get("result_id")
+            and _result_path(root).exists()
+        ):
+            result = _read_sealed(_result_path(root), "result_id")
+            _, candidate_rows = _candidate(ctx, marker)
+            _require(
+                result["result_id"] == state["result_id"]
+                and result.get("status") == "applied"
+                and _digest(_inventory(_tree(root), lambda: _check(ctx)))
+                == _digest(candidate_rows),
+                "METADATA_WORKSPACE_CONFLICT",
+                "Recovered candidate workspace changed",
+            )
+            _check(ctx)
+            return recovery
+        _require(
+            recovery is not None
+            and recovery.get("target") == target
+            and state.get("recovery_id") == recovery["recovery_id"]
+            and "result_id" not in state,
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Workspace is already complete or recovered to another target",
         )
         if target == "original":
             _, candidate_rows = _candidate(ctx, marker)
+            _require(
+                _digest(_inventory(_tree(root), lambda: _check(ctx)))
+                == marker["original_digest"],
+                "METADATA_WORKSPACE_CONFLICT",
+                "Recovered original workspace changed",
+            )
             _cleanup_original_recovery(
                 root, marker["original_inventory"], candidate_rows, lambda: _check(ctx)
             )
@@ -732,20 +843,27 @@ def recover_workspace(ctx, operation_id, workspace_root, *, target):
     )
     if target == "candidate":
         _discard_owned_directory(_stage(root), candidate_rows, lambda: _check(ctx))
-    recovery = _seal(
-        {
-            "schema": SCHEMA,
-            "project_id": ctx.project_id,
-            "operation_id": operation_id,
-            "preview_id": marker["preview_id"],
-            "status": "recovered",
-            "target": target,
-            "restored_digest": _digest(rows),
-            "created_at": _now(),
-        },
-        "recovery_id",
-    )
-    write_record(_recovery_path(root), recovery)
+    if recovery is None:
+        # A reapply crash may leave the previous original receipt in place.
+        # Remove that stale name before create-only publication; a further
+        # interruption is still recoverable from the applying state and the
+        # validated backup/candidate sources.
+        if _recovery_path(root).exists():
+            _recovery_path(root).unlink()
+        recovery = _seal(
+            {
+                "schema": SCHEMA,
+                "project_id": ctx.project_id,
+                "operation_id": operation_id,
+                "preview_id": marker["preview_id"],
+                "status": "recovered",
+                "target": target,
+                "restored_digest": _digest(rows),
+                "created_at": _now(),
+            },
+            "recovery_id",
+        )
+        write_record(_recovery_path(root), recovery)
     if target == "candidate":
         from . import metadata_apply as apply
 
