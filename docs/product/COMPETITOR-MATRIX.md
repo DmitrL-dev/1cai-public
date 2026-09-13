@@ -50,7 +50,7 @@
 | Приоритет | Результат | Критерий выхода |
 | --- | --- | --- |
 | P0 | Metadata apply/undo на рабочей копии | Трёхфазный журнал intent → write → re-read, stale/revoke/conflict/recovery, round-trip на реальной 1С, без blind retry |
-| P0 | Git watcher + поставляемые adapters BSL/других анализаторов | Новый commit анализируется один раз, результат привязан к exact tree, сбой повторяется безопасно, history переживает restart |
+| P0 | Git watcher + поставляемые adapters BSL/других анализаторов | Новый commit анализируется один раз, результат привязан к exact tree, сбой повторяется безопасно, history переживает restart; native ServiceMain boundary добавлена, live service deployment ещё впереди |
 | P0 | Spectorn route | Зафиксирован весь маршрут upstream, policy при недоступности и отсутствие обхода защиты; secret не попадает в логи |
 | P1 | Обновление конфигурации | Three-way merge базовой/текущей/новой конфигураций, конфликт на уровне object/UUID/BSL, тестовая база и откат |
 | P1 | Владелец продукта | Версионируемый отчёт по quality, тестам, изменениям, рискам и источникам; бизнес-метрики только из подтверждённых runtime-данных |

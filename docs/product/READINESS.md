@@ -6,7 +6,7 @@
 
 ## Дополнение к кандидату 13 сентября 2026
 
-В текущем кандидате локально проходят 975 тестов; три Windows symlink-теста
+В текущем кандидате локально проходят 1045 тестов; три Windows symlink-теста
 пропущены из-за отсутствия privilege. Кандидат включает bounded foreground
 service-host, explicit SCM installer planning и явную freshness-policy для
 runtime-метрик поверх публичного owner-report CLI с проверкой опубликованного snapshot и выделенным
@@ -25,8 +25,9 @@ rows↔metrics и canonical source digest; SARIF adapter
 
 Приёмка остаётся частичной: нативный EDT import/export, запись в рабочую
 конфигурацию, типовые `.cf/.cfe`, полноценная семантика расширений, BSL/форм/СКД
-round-trip, native ServiceMain/daemon, внешняя доставка уведомлений и Spectorn
-adapter ещё не подтверждены. До таких evidence нельзя повышать dev8 prerelease
+round-trip, live SCM daemon/deployment, внешняя доставка уведомлений и Spectorn
+adapter ещё не подтверждены. Native ServiceMain/SCM boundary теперь есть как
+mocked adapter proof, но это не live service acceptance. До таких evidence нельзя повышать dev8 prerelease
 или объявлять production-ready.
 
 В ветке `codex/edt-metadata-dev9` выполнен [эксперимент редактирования метаданных
@@ -82,7 +83,7 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 | Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; preflight и workspace writer с проверкой inventory, backup, re-read, undo conflict и явным recovery; native business roundtrip подтверждает данные после переименования | Внешний concurrent CAS, живая запись через EDT/1С, product apply/undo и матрица типовых конфигураций не приняты |
 | Обновления конфигураций | Path-bytes и UUID-aware Designer XML three-way dry-run с bounded хэшами, явными конфликтами и evidence по прямым свойствам (`same_change`/`disjoint_changes`/`overlap_conflict`) | Property/extension/BSL merge semantics, тестовая база, backup/rollback и запись не приняты |
 | Проверка предложения платформой | В dev8: установленный CLI проверил корректное/ошибочное BSL-предложение на сохранённой конфигурации | Один Designer XML слой; компиляция без бизнес-тестов и применения |
-| Observer | Опрос выгрузки, журнал и восстановление; Git probe, durable lifecycle находок, per-commit snapshot binding для owner report, bounded scheduler и foreground service-host adapter с journal/recovery и atomic notification outbox, explicit HTTPS webhook delivery, bounded Git/snapshot source evidence, read-only BSL-LS Git adapter, bounded SARIF 2.1.0 import subset и явный SCM installer с query/start/stop/uninstall plan | Нет native ServiceMain/фонового service manager, live receiver acceptance и дедупликации, полного Git tree/temporal evidence, producer-specific Sonar/Vanessa/YAxUnit execution и общей приёмки O1 |
+| Observer | Опрос выгрузки, журнал и восстановление; Git probe, durable lifecycle находок, per-commit snapshot binding для owner report, bounded scheduler и foreground service-host adapter с journal/recovery и atomic notification outbox, explicit HTTPS webhook delivery, bounded Git/snapshot source evidence, read-only BSL-LS Git adapter, bounded SARIF 2.1.0 import subset, native ServiceMain/SCM boundary proof и явный SCM installer с query/start/stop/uninstall plan | Нет live SCM deployment/daemon acceptance, live receiver acceptance и дедупликации, полного Git tree/temporal evidence, producer-specific Sonar/Vanessa/YAxUnit execution и общей приёмки O1 |
 | Бизнес-отчёты | Bounded owner-report schema с quality/runtime provenance, durable immutable receipts и fail-closed incomplete/not_available статусами; quality не публикуется без явной binding; `owner-report-build` собирает отчёт из durable observer findings; runtime loader проверяет период и freshness; onec-register-export-v1 adapter связывает rows↔metrics и canonical source digest | Нужны подтверждённый 1С producer, commit↔snapshot evidence и методика O2; числовые бизнес-метрики не принимаются только по самосогласованному JSON |
 | Spectorn в адаптере | Не подключён | Защита трафика этого сценария не подтверждена |
 
