@@ -1,4 +1,4 @@
-# Состояние публичной поставки — 12 сентября 2026
+# Состояние публичной поставки — 13 сентября 2026
 
 Актуальная [карта рынка и выбранное направление](COMPETITOR-MATRIX.md)
 поясняют, какие соседние инструменты мы интегрируем и какие незакрытые
@@ -6,19 +6,22 @@
 
 ## Дополнение к кандидату 13 сентября 2026
 
-В текущем tree `f7fb95ae` локально проходят 619 тестов. Кандидат добавляет
-bounded foreground service-host для watcher-а и явную freshness-policy для
+В текущем кандидате локально проходят 970 тестов; три Windows symlink-теста
+пропущены из-за отсутствия privilege. Кандидат включает bounded foreground
+service-host, explicit SCM installer planning и явную freshness-policy для
 runtime-метрик поверх публичного owner-report CLI с проверкой опубликованного snapshot и выделенным
 `<state-root>\owner-reports`, immutable receipts и bounded summary для списка.
 Read-only EDT inventory теперь связывает проверенные UUID, прямых XML-владельцев
 и декларацию слоя с `SourceRef`; three-way plan дополнительно показывает
 атомарные UUID-bound области BSL, форм и СКД с явными
 `supported`/`conflict`/`unsupported` причинами. Эти возможности собраны в wheel и
-sdist и не меняют live source или базу 1С.
+sdist и не меняют live source или базу 1С. Runtime register export adapter
+проверяет context, rows↔metrics и canonical source digest; SARIF adapter
+импортирует только attested bounded subset внешнего отчёта.
 
 Приёмка остаётся частичной: нативный EDT import/export, запись в рабочую
 конфигурацию, типовые `.cf/.cfe`, полноценная семантика расширений, BSL/форм/СКД
-round-trip, фоновый Windows service, внешняя доставка уведомлений и Spectorn
+round-trip, native ServiceMain/daemon, внешняя доставка уведомлений и Spectorn
 adapter ещё не подтверждены. До таких evidence нельзя повышать dev8 prerelease
 или объявлять production-ready.
 
@@ -75,8 +78,8 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 | Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; preflight и workspace writer с проверкой inventory, backup, re-read, undo conflict и явным recovery; native business roundtrip подтверждает данные после переименования | Внешний concurrent CAS, живая запись через EDT/1С, product apply/undo и матрица типовых конфигураций не приняты |
 | Обновления конфигураций | Path-bytes и UUID-aware Designer XML three-way dry-run с bounded хэшами, явными конфликтами и evidence по прямым свойствам (`same_change`/`disjoint_changes`/`overlap_conflict`) | Property/extension/BSL merge semantics, тестовая база, backup/rollback и запись не приняты |
 | Проверка предложения платформой | В dev8: установленный CLI проверил корректное/ошибочное BSL-предложение на сохранённой конфигурации | Один Designer XML слой; компиляция без бизнес-тестов и применения |
-| Observer | Опрос выгрузки, журнал и восстановление; Git probe, durable lifecycle находок, per-commit snapshot binding для owner report, bounded scheduler и foreground service-host adapter с journal/recovery и atomic notification outbox, explicit HTTPS webhook delivery, bounded Git/snapshot source evidence, read-only BSL-LS Git adapter с clean-commit/HEAD/ancestry recheck | Нет SCM-инсталлятора/фонового service manager, live receiver acceptance и дедупликации, полного Git tree/temporal evidence, полной native-приёмки analyzer на типовой конфигурации и общей приёмки O1 |
-| Бизнес-отчёты | Bounded owner-report schema с quality/runtime provenance, durable immutable receipts и fail-closed incomplete/not_available статусами; quality не публикуется без явной binding; runtime loader проверяет период и freshness | Нужны подтверждённые runtime-источники, commit↔snapshot evidence и методика O2; числовые бизнес-метрики пока не приняты |
+| Observer | Опрос выгрузки, журнал и восстановление; Git probe, durable lifecycle находок, per-commit snapshot binding для owner report, bounded scheduler и foreground service-host adapter с journal/recovery и atomic notification outbox, explicit HTTPS webhook delivery, bounded Git/snapshot source evidence, read-only BSL-LS Git adapter, bounded SARIF 2.1.0 import subset и явный SCM installer с query/start/stop/uninstall plan | Нет native ServiceMain/фонового service manager, live receiver acceptance и дедупликации, полного Git tree/temporal evidence, producer-specific Sonar/Vanessa/YAxUnit execution и общей приёмки O1 |
+| Бизнес-отчёты | Bounded owner-report schema с quality/runtime provenance, durable immutable receipts и fail-closed incomplete/not_available статусами; quality не публикуется без явной binding; runtime loader проверяет период и freshness; onec-register-export-v1 adapter связывает rows↔metrics и canonical source digest | Нужны подтверждённый 1С producer, commit↔snapshot evidence и методика O2; числовые бизнес-метрики не принимаются только по самосогласованному JSON |
 | Spectorn в адаптере | Не подключён | Защита трафика этого сценария не подтверждена |
 
 Первоначально в публичное дерево перенесён source distribution core dev7;

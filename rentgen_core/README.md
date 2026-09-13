@@ -26,6 +26,13 @@ checkout exposes a bounded metadata preview and an owned-workspace writer; its
 CLI commands never grant permission to mutate the registered source root or a
 1C infobase. Those live-apply acceptance gates remain open.
 
+The public package also exposes a bounded `WindowsServiceInstaller` for
+explicit SCM command planning/execution, a retained `load_onec_register_export`
+adapter for context-bound runtime evidence, and the optional
+`rentgen_diagnostics.parse_sarif` adapter for attested SARIF findings. These
+adapters do not start a daemon, run 1C/SQL, execute analyzers or make external
+network calls; their deployment and producer evidence remain caller-owned.
+
 Version 0.1.0.dev1 creates schema3 projects and provides audited membership
 commands and explicit state-upgrade-access (2→3), with verified backup and
 operation receipts. Existing schema2 snapshots remain readable. The packaged

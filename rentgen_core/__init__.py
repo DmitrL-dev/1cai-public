@@ -38,7 +38,14 @@ from .runtime_metrics import (
     assess_runtime_report,
     load_runtime_report,
 )
+from .runtime_source import load_onec_register_export
 from .service_host import WindowsServiceHost
+from .service_installer import (
+    ServiceInstallPlan,
+    ServiceInstallSpec,
+    ServiceOperationResult,
+    WindowsServiceInstaller,
+)
 from .notification_delivery import (
     DeliveryResult,
     DeliveryStatus,
@@ -67,7 +74,12 @@ __all__ = [
     "RuntimeMetricAssessment",
     "assess_runtime_report",
     "load_runtime_report",
+    "load_onec_register_export",
     "WindowsServiceHost",
+    "ServiceInstallPlan",
+    "ServiceInstallSpec",
+    "ServiceOperationResult",
+    "WindowsServiceInstaller",
     "DeliveryResult",
     "DeliveryStatus",
     "WebhookAdapter",
