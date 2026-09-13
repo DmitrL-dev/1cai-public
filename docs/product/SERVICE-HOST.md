@@ -120,12 +120,14 @@ existing explicit recovery workflow. See Microsoft's
 **The installed `rentgen-service.exe` console-script launcher is not proven as
 an SCM service image.** A pip launcher can create a child Python process while
 SCM owns the launcher process. The dispatcher must run in the actual service
-process. A deployment needs a verified same-process Python embedding/frozen
-executable, or an independently managed ImagePath invoking the installed Python
-interpreter and this module directly. This change builds neither a native
-launcher nor that deployment integration. The current installer deliberately
-does not accept arbitrary `python -m` arguments. See
-[SERVICE-INSTALLER.md](SERVICE-INSTALLER.md) for its unchanged grammar.
+process. The installer now supports a fixed direct-interpreter ImagePath using
+`python.exe`/`pythonw.exe` with exactly
+`-I -m rentgen_core.service_entry --service --config <path>`, alongside its native
+EXE grammar. The package must be installed in that interpreter's site-packages;
+`-I` excludes working-directory and user-site imports. The executable basename
+does not prove interpreter integrity or same-process behavior, and this change
+does not build a native launcher or perform live SCM acceptance. See
+[SERVICE-INSTALLER.md](SERVICE-INSTALLER.md) for validation and deployment bounds.
 
 The installer defaults to `NT AUTHORITY\LocalService`. That principal's project
 membership and exact Observer profile binding must be provisioned separately;

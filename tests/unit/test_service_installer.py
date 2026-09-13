@@ -398,3 +398,202 @@ def test_hardlinks_are_allowed_without_claiming_unique_ownership(files):
     plan = installer_type(sc_executable=sc).plan("install", spec)
     assert str(executable) in plan.commands[1][plan.commands[1].index("binPath=") + 1]
     assert plan.commands[0][0] == str(sc)
+
+
+PYTHON_SERVICE_ARGS = (
+    "-I",
+    "-m",
+    "rentgen_core.service_entry",
+    "--service",
+    "--config",
+)
+
+
+@pytest.mark.parametrize("basename", ["python.exe", "pythonw.exe", "PYTHON.EXE"])
+def test_direct_python_imagepath_is_exact_and_deterministic(files, basename):
+    spec_type, installer_type = api()
+    directory = files[0].parent / "Python runtime"
+    directory.mkdir()
+    interpreter = directory / basename
+    interpreter.touch()
+    config = files[1].with_name("observer settings.json")
+    config.write_text('{"password":"private-value"}')
+    spec = spec_type(
+        "Rentgen.Observer",
+        "Rentgen Observer",
+        interpreter,
+        PYTHON_SERVICE_ARGS + (str(config),),
+    )
+    expected_args = PYTHON_SERVICE_ARGS + (str(config.resolve()),)
+    assert spec.arguments == expected_args
+    assert spec.binary_path == '"' + str(
+        interpreter.resolve()
+    ) + '" ' + subprocess.list2cmdline(expected_args)
+    executor = Executor([])
+    installer = installer_type(executor=executor, sc_executable=files[2])
+    for operation in ("install", "update"):
+        plan = installer.plan(operation, spec)
+        assert plan == getattr(installer, operation)(spec, dry_run=True)
+        assert (
+            plan.commands[1][plan.commands[1].index("binPath=") + 1] == spec.binary_path
+        )
+        assert "private-value" not in repr(plan)
+    assert executor.calls == []
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        (),
+        ("--service",),
+        ("--service", "--config", "{config}"),
+        ("-m", "rentgen_core.service_entry", "--service", "--config", "{config}"),
+        ("-i", "-m", "rentgen_core.service_entry", "--service", "--config", "{config}"),
+        ("-I", "-m", "other.module", "--service", "--config", "{config}"),
+        ("-I", "-c", "private-value", "--service", "--config", "{config}"),
+        ("-I", "-m", "rentgen_core.service_entry", "--console", "--config", "{config}"),
+        ("-I", "-m", "rentgen_core.service_entry", "--service", "--config={config}"),
+        PYTHON_SERVICE_ARGS + ("{config}", "--service"),
+        PYTHON_SERVICE_ARGS + ("{config}", "--password=private-value"),
+        ("-I", "-m", "rentgen_core.service_entry", "--config", "{config}", "--service"),
+    ],
+)
+def test_python_rejects_other_flags_modules_and_native_shortcuts(files, arguments):
+    spec_type, _ = api()
+    interpreter = files[0].with_name("python.exe")
+    interpreter.touch()
+    args = tuple(value.replace("{config}", str(files[1])) for value in arguments)
+    with pytest.raises(CoreError) as raised:
+        spec_type("Rentgen", "Rentgen", interpreter, args)
+    assert raised.value.code == "SERVICE_SPEC_INVALID"
+    assert "private-value" not in str(raised.value.to_dict("test"))
+
+
+@pytest.mark.parametrize(
+    "basename", ["py.exe", "python3.exe", "python-launcher.exe", "service.exe"]
+)
+def test_python_arguments_require_exact_interpreter_basename(files, basename):
+    spec_type, _ = api()
+    executable = files[0].with_name(basename)
+    executable.touch()
+    with pytest.raises(CoreError) as raised:
+        spec_type(
+            "Rentgen", "Rentgen", executable, PYTHON_SERVICE_ARGS + (str(files[1]),)
+        )
+    assert raised.value.code == "SERVICE_SPEC_INVALID"
+
+
+@pytest.mark.parametrize(
+    "operation,outcomes,expected",
+    [
+        ("install", [1060, 0], ["query", "create"]),
+        ("update", [0, 0], ["query", "config"]),
+    ],
+)
+def test_python_operations_keep_whole_imagepath_and_revalidate_config(
+    files, monkeypatch, operation, outcomes, expected
+):
+    spec_type, installer_type = api()
+    monkeypatch.setattr("rentgen_core.service_installer.sys.platform", "win32")
+    interpreter = files[0].with_name("python.exe")
+    interpreter.touch()
+    spec = spec_type(
+        "Rentgen", "Rentgen", interpreter, PYTHON_SERVICE_ARGS + (str(files[1]),)
+    )
+    executor = Executor(outcomes)
+    installer = installer_type(executor=executor, sc_executable=files[2])
+    getattr(installer, operation)(spec)
+    assert verbs(executor) == expected
+    command, options = executor.calls[-1]
+    assert command[command.index("binPath=") + 1] == spec.binary_path
+    assert options["shell"] is False
+    files[1].unlink()
+    before = len(executor.calls)
+    with pytest.raises(CoreError) as raised:
+        getattr(installer, operation)(spec)
+    assert raised.value.code == "SERVICE_SPEC_INVALID"
+    assert len(executor.calls) == before
+
+
+@pytest.mark.parametrize("target_name", ["python.exe", "pythonw.exe", "other.exe"])
+def test_python_canonical_target_must_also_be_an_interpreter(
+    files, monkeypatch, target_name
+):
+    from pathlib import Path
+
+    spec_type, _ = api()
+    directory = files[0].parent / "installed"
+    directory.mkdir()
+    source = files[0].with_name("python.exe")
+    source.touch()
+    target = directory / target_name
+    target.touch()
+    config_target = directory / "canonical.json"
+    config_target.touch()
+    original = Path.resolve
+
+    def resolve(path, *args, **kwargs):
+        if path == source:
+            return target
+        if path == files[1]:
+            return config_target
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", resolve)
+    if target_name == "other.exe":
+        with pytest.raises(CoreError):
+            spec_type(
+                "Rentgen", "Rentgen", source, PYTHON_SERVICE_ARGS + (str(files[1]),)
+            )
+    else:
+        spec = spec_type(
+            "Rentgen", "Rentgen", source, PYTHON_SERVICE_ARGS + (str(files[1]),)
+        )
+        assert spec.executable == str(target)
+        assert spec.arguments == PYTHON_SERVICE_ARGS + (str(config_target),)
+
+
+@pytest.mark.parametrize(
+    "config_path",
+    [
+        "relative.json",
+        r"\\server\share\settings.json",
+        r"\\?\C:\settings.json",
+        r"C:\data\..\settings.json",
+        r"C:\data\settings.json:stream",
+        r"C:\%APPDATA%\settings.json",
+        r"C:\data\password=private-value.json",
+        "C:\\data\\settings\n.json",
+    ],
+)
+def test_python_config_uses_existing_path_and_sanitization_boundary(files, config_path):
+    spec_type, _ = api()
+    interpreter = files[0].with_name("python.exe")
+    interpreter.touch()
+    with pytest.raises(CoreError) as raised:
+        spec_type(
+            "Rentgen", "Rentgen", interpreter, PYTHON_SERVICE_ARGS + (config_path,)
+        )
+    assert raised.value.code == "SERVICE_SPEC_INVALID"
+    assert "private-value" not in str(raised.value.to_dict("test"))
+
+
+def test_alias_basename_cannot_enable_python_grammar(files, monkeypatch):
+    from pathlib import Path
+
+    spec_type, _ = api()
+    target = files[0].with_name("python.exe")
+    target.touch()
+    original = Path.resolve
+    monkeypatch.setattr(
+        Path,
+        "resolve",
+        lambda path, *args, **kwargs: target
+        if path == files[0]
+        else original(path, *args, **kwargs),
+    )
+    with pytest.raises(CoreError) as raised:
+        spec_type(
+            "Rentgen", "Rentgen", files[0], PYTHON_SERVICE_ARGS + (str(files[1]),)
+        )
+    assert raised.value.code == "SERVICE_SPEC_INVALID"

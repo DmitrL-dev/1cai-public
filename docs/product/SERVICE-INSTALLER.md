@@ -16,11 +16,11 @@ The installed `rentgen-service` console entry point proves CLI packaging only.
 Its pip-generated EXE can launch a child Python process; this is not evidence
 that SCM will connect to the correct dispatcher process. Do not substitute that
 launcher for the placeholder executable below without validating a same-process
-service image. A verified Python embedding/frozen wrapper or separately managed
-direct interpreter ImagePath remains deployment work. The installer grammar is
-unchanged and does not accept `python -m`/arbitrary interpreter arguments. Native
-wrapper packaging, service ACLs, signing, recovery policies and live deployment
-acceptance remain open; no production acceptance is claimed here.
+service image. The installer supports a strictly fixed direct-interpreter
+ImagePath as described below, alongside its existing native EXE grammar. It does
+not build or verify a native wrapper. Interpreter integrity, service ACLs,
+signing, recovery policies and live deployment acceptance remain open; no
+production acceptance is claimed here.
 
 ## API and plan
 
@@ -44,6 +44,48 @@ plan = installer.install(spec, start=True, dry_run=True)
 # installer.install(spec, start=True)
 ```
 
+For the Python implementation, use the actual installed interpreter executable
+and this exact argument tuple:
+
+```python
+spec = ServiceInstallSpec(
+    service_name="Rentgen.Observer",
+    display_name="Rentgen Observer",
+    executable=r"C:\Python311\python.exe",
+    arguments=(
+        "-I", "-m", "rentgen_core.service_entry", "--service", "--config",
+        r"C:\Rentgen\settings.json",
+    ),
+)
+plan = installer.install(spec, start=True, dry_run=True)
+# ImagePath: "C:\Python311\python.exe" -I -m rentgen_core.service_entry --service --config C:\Rentgen\settings.json
+```
+
+The supplied executable basename and its canonical target basename must each be
+`python.exe` or `pythonw.exe` (case-insensitive). Exactly six arguments are
+required, including the config path. Other modules, interpreter flags, `-c`,
+`--console`, missing/extra/reordered arguments and the short native grammar are
+rejected for these interpreter names. Other executable names cannot use this
+Python grammar. The config path undergoes the same existence, canonicalization
+and public-path validation as the native grammar; its contents are never read.
+
+This ImagePath asks SCM to start the interpreter directly, where `-m` executes
+the service module in that interpreter process. It bypasses the pip console
+launcher. `-I` excludes the working directory and user site from the import path
+and ignores Python environment settings, so the package must be installed in
+the selected interpreter's ordinary site-packages. These Python behaviors are
+documented in the [command-line reference](https://docs.python.org/3/using/cmdline.html#cmdoption-I).
+Isolated mode does not establish trust in installed packages or their startup
+hooks. The basename check does not establish that a supplied executable is a
+genuine interpreter instead of a renamed program or redirecting launcher.
+Verify the deployed executable and its process behavior independently.
+
+Install and update use the entire quoted ImagePath in one existing `sc create`
+or `sc config` call. Update preserves account/type and performs no restart.
+Direct-interpreter tests use placeholder files and fake executors; live SCM
+RUNNING/STOPPED, LocalService access, stop during a tick and recovery behavior
+remain acceptance work in an explicitly authorized deployment environment.
+
 Names, executable and argument tuples are immutable. Plans contain immutable
 argv tuples and are deterministic for a spec and installer. Dry-run runs no
 subprocess and contacts no SCM. Spec construction checks file metadata; dry-run
@@ -65,9 +107,13 @@ if the service binary has subsequently disappeared.
 - Display name: 1–120 characters; word characters, spaces, `.`, `(`, `)`, `-`.
 - Existing local absolute `.exe` path; optional existing local absolute `.json`
   config path; each path is at most 240 characters and resolved canonically.
-- Arguments are an immutable tuple of at most three strings. Allowed grammar:
-  optional `--service`, followed by optional `--config <path>`. There is no
-  arbitrary argument, password, token, account, environment or shell channel.
+- Arguments are an immutable tuple. Native EXEs retain the existing grammar of
+  at most three strings: optional `--service`, followed by optional
+  `--config <path>`. `python.exe`/`pythonw.exe` require exactly six strings:
+  `-I -m rentgen_core.service_entry --service --config <path>`. There is no
+  arbitrary module, argument, password, token, account, environment or shell
+  channel. The executable is always quoted; argument quoting uses Windows CRT
+  escaping and the existing deterministic `binary_path` representation.
 - Control characters, CR/LF, credential markers, UNC/device paths, alternate
   streams, traversal, shell expansion and invalid path characters are rejected.
 - Config contents are never opened by this adapter. Callers must treat names and
