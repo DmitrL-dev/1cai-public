@@ -119,8 +119,19 @@ namespace=..., profile_id=...)` логически архивирует один
 также действуют разрешения существующего reader. `namespace` допускает только
 `platform-checks`, `test-runs`, `metadata-runs`; UUID канонический. Для компиляции
 `profile_id=None`, для YAxUnit и EDT требуется точный сохранённый SHA-256 профиля.
-API не принимает путь к каталогу или информационной базе. HTTP/MCP/CLI-команда
-для него в этом срезе не добавлена.
+API не принимает путь к каталогу или информационной базе. Тот же bounded вызов
+доступен локальному CLI только с явными project, snapshot, operation, namespace
+и profile selectors:
+
+```text
+rentgen native-archive --registry C:\\Rentgen\\registry.sqlite3 \
+  --project <project-id> --snapshot <snapshot-id> \
+  --operation-id <operation-id> --namespace metadata-runs \
+  --profile-id <profile-sha256>
+```
+
+CLI повторно разрешает выбранный snapshot и требует project:admin; он не
+принимает путь к retained-каталогу, команду EDT или параметры удаления.
 
 Операция удерживает общий executor lock, проверяет отсутствие живого именованного
 job и занимает admission lock. Занятый lock и живые потомки приводят к отказу,

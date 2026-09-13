@@ -90,6 +90,7 @@ def _parser():
         "metadata-workspace-undo",
         "metadata-workspace-status",
         "metadata-workspace-recover",
+        "native-archive",
         "proposal-test",
         "proposal-test-result",
         "draft-save",
@@ -145,6 +146,16 @@ def _parser():
                     required=True,
                     action=_Once,
                 )
+        elif name == "native-archive":
+            command.add_argument("--snapshot", required=True, action=_Once)
+            command.add_argument("--operation-id", required=True, action=_Once)
+            command.add_argument(
+                "--namespace",
+                choices=("platform-checks", "test-runs", "metadata-runs"),
+                required=True,
+                action=_Once,
+            )
+            command.add_argument("--profile-id", action=_Once)
         elif name == "project-register":
             for option in ("source-root", "state-root"):
                 command.add_argument(
@@ -816,6 +827,7 @@ def _execute(args, *, proposal_scope=None):
             "test-profile-disable",
             "edt-profile-register",
             "edt-profile-disable",
+            "native-archive",
         }
         else {"project:read", "source:edit", "analysis:run"}
         if args.command
@@ -853,6 +865,24 @@ def _execute(args, *, proposal_scope=None):
         else set()
     )
     ctx = runtime.state_context(principal, args.project, permissions=permissions)
+    if args.command == "native-archive":
+        from .native_resources import archive_native_run
+
+        runtime = replace(
+            runtime,
+            graph_reader_factory=runtime.graph_reader_factory or _graph_factory(),
+        )
+        ctx = runtime.resolve(principal, args.project, args.snapshot)
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        value = archive_native_run(
+            ctx,
+            args.operation_id,
+            namespace=args.namespace,
+            profile_id=args.profile_id,
+        )
+        return _ProposalCommandResult(value, ctx, frozenset(permissions))
     if args.command.startswith("owner-report-"):
         if proposal_scope is not None:
             proposal_scope.context = ctx
