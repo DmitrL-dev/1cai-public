@@ -402,3 +402,231 @@ def test_reapply_recovery_accepts_candidate_after_receipt_cleanup_interrupt(
         ctx, request["operation_id"], root, target="candidate"
     )
     assert recovered["target"] == "candidate"
+
+
+@pytest.mark.parametrize("damage", ["corrupt", "missing", "foreign"])
+def test_undo_rejects_invalid_backup_before_mutating_tree(captured, tmp_path, damage):
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    workspace.apply_workspace(ctx, request["operation_id"], root)
+    backup = root / ".rentgen-backup"
+    leaf = next(backup.rglob("*.xml"))
+    if damage == "corrupt":
+        leaf.write_bytes(b"corrupt backup")
+    elif damage == "missing":
+        leaf.unlink()
+    else:
+        (backup / "foreign.txt").write_bytes(b"foreign backup file")
+    before = _bytes(root)
+
+    with pytest.raises(api.CoreError) as error:
+        workspace.undo_workspace(ctx, request["operation_id"], root)
+    assert error.value.code == "METADATA_WORKSPACE_RECOVERY_REQUIRED"
+    assert _bytes(root) == before, "Invalid backup must fail before any undo mutation"
+
+
+@pytest.mark.parametrize(
+    "boundary", ["first_file", "undo_receipt", "undoing_state", "complete_state"]
+)
+def test_interrupted_undo_preserves_backup_and_recovers_original(
+    captured, tmp_path, monkeypatch, boundary
+):
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    original = _bytes(root / "tree")
+    workspace.apply_workspace(ctx, request["operation_id"], root)
+    original_replace, original_write = workspace.os.replace, workspace.write_record
+    stopped = False
+
+    def interrupt_replace(source, target):
+        nonlocal stopped
+        if not stopped and boundary == "first_file" and "tree" in target.parts:
+            original_replace(source, target)
+            stopped = True
+            raise OSError("interrupted undo replacement")
+        if not stopped and target.name == "workspace-state.json":
+            phase = json.loads(source.read_bytes())["phase"]
+            if (boundary, phase) in {
+                ("undoing_state", "undoing"),
+                ("complete_state", "complete"),
+            }:
+                stopped = True
+                raise OSError("interrupted undo state publication")
+        return original_replace(source, target)
+
+    def interrupt_write(path, value):
+        if boundary == "undo_receipt" and path.name == "workspace-undo.json":
+            raise OSError("interrupted undo receipt")
+        return original_write(path, value)
+
+    monkeypatch.setattr(workspace.os, "replace", interrupt_replace)
+    monkeypatch.setattr(workspace, "write_record", interrupt_write)
+    with pytest.raises(OSError, match="interrupted undo"):
+        workspace.undo_workspace(ctx, request["operation_id"], root)
+    monkeypatch.setattr(workspace.os, "replace", original_replace)
+    monkeypatch.setattr(workspace, "write_record", original_write)
+    assert _bytes(root / ".rentgen-backup") == original
+    with pytest.raises(api.CoreError):
+        workspace.undo_workspace(ctx, request["operation_id"], root)
+    before_recovery = _bytes(root)
+    with pytest.raises(api.CoreError):
+        workspace.recover_workspace(
+            ctx, request["operation_id"], root, target="candidate"
+        )
+    assert _bytes(root) == before_recovery
+
+    recovered = workspace.recover_workspace(
+        ctx, request["operation_id"], root, target="original"
+    )
+    assert recovered["status"] == "recovered" and recovered["target"] == "original"
+    assert _bytes(root / "tree") == original
+    assert _bytes(root / ".rentgen-backup") == original
+    assert not (root / ".rentgen-undo-stage").exists()
+    status = workspace.get_workspace_status(ctx, request["operation_id"], root)
+    assert status["undo"]["status"] == "undone"
+    assert status["state"]["phase"] == "complete"
+    assert (
+        workspace.undo_workspace(ctx, request["operation_id"], root) == status["undo"]
+    )
+    assert (
+        workspace.recover_workspace(
+            ctx, request["operation_id"], root, target="original"
+        )
+        == recovered
+    )
+
+
+@pytest.mark.parametrize("foreign_root", ["tree", ".rentgen-undo-stage"])
+def test_undo_recovery_preserves_foreign_files(
+    captured, tmp_path, monkeypatch, foreign_root
+):
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    workspace.apply_workspace(ctx, request["operation_id"], root)
+    original_replace = workspace.os.replace
+
+    def interrupt(source, target):
+        if "tree" in target.parts:
+            raise OSError("interrupted undo")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(workspace.os, "replace", interrupt)
+    with pytest.raises(OSError):
+        workspace.undo_workspace(ctx, request["operation_id"], root)
+    monkeypatch.setattr(workspace.os, "replace", original_replace)
+    folder = root / foreign_root
+    folder.mkdir(exist_ok=True)
+    (folder / "foreign.txt").write_bytes(b"foreign")
+    before = _bytes(root)
+    with pytest.raises(api.CoreError):
+        workspace.recover_workspace(
+            ctx, request["operation_id"], root, target="original"
+        )
+    assert _bytes(root) == before
+
+
+def test_undo_recovery_resumes_after_recovery_receipt_replace(
+    captured, tmp_path, monkeypatch
+):
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    original = _bytes(root / "tree")
+    original_replace = workspace.os.replace
+
+    def interrupt_tree(source, target):
+        if "tree" in target.parts:
+            raise OSError("interrupted tree write")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(workspace.os, "replace", interrupt_tree)
+    with pytest.raises(OSError):
+        workspace.apply_workspace(ctx, request["operation_id"], root)
+    monkeypatch.setattr(workspace.os, "replace", original_replace)
+    workspace.recover_workspace(ctx, request["operation_id"], root, target="candidate")
+    monkeypatch.setattr(workspace.os, "replace", interrupt_tree)
+    with pytest.raises(OSError):
+        workspace.undo_workspace(ctx, request["operation_id"], root)
+
+    def interrupt_receipt(source, target):
+        if target.name == "workspace-recovery.json":
+            raise OSError("interrupted recovery receipt")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(workspace.os, "replace", interrupt_receipt)
+    with pytest.raises(OSError, match="interrupted recovery receipt"):
+        workspace.recover_workspace(
+            ctx, request["operation_id"], root, target="original"
+        )
+    monkeypatch.setattr(workspace.os, "replace", original_replace)
+    assert _bytes(root / "tree") == original
+    assert _bytes(root / ".rentgen-backup") == original
+    recovered = workspace.recover_workspace(
+        ctx, request["operation_id"], root, target="original"
+    )
+    assert recovered["status"] == "recovered"
+    assert not (root / "workspace-recovery.json.tmp").exists()
+    assert (
+        workspace.get_workspace_status(ctx, request["operation_id"], root)["recovery"]
+        == recovered
+    )
+
+
+def test_undo_recovery_rejects_corrupt_prior_receipt_before_mutation(
+    captured, tmp_path, monkeypatch
+):
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    workspace.apply_workspace(ctx, request["operation_id"], root)
+    original_replace = workspace.os.replace
+
+    def interrupt(source, target):
+        if "tree" in target.parts:
+            raise OSError("interrupted undo")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(workspace.os, "replace", interrupt)
+    with pytest.raises(OSError):
+        workspace.undo_workspace(ctx, request["operation_id"], root)
+    monkeypatch.setattr(workspace.os, "replace", original_replace)
+    (root / "workspace-recovery.json").write_bytes(b"corrupt receipt")
+    before = _bytes(root)
+    with pytest.raises(api.CoreError):
+        workspace.recover_workspace(
+            ctx, request["operation_id"], root, target="original"
+        )
+    assert _bytes(root) == before
+
+
+@pytest.mark.parametrize("invalid_record", ["state", "undo"])
+def test_undo_recovery_rejects_invalid_sealed_record_schema(
+    captured, tmp_path, monkeypatch, invalid_record
+):
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    workspace.apply_workspace(ctx, request["operation_id"], root)
+    original_replace = workspace.os.replace
+
+    def interrupt(source, target):
+        if (
+            target.name == "workspace-state.json"
+            and json.loads(source.read_bytes())["phase"] == "complete"
+        ):
+            raise OSError("interrupted undo completion")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(workspace.os, "replace", interrupt)
+    with pytest.raises(OSError):
+        workspace.undo_workspace(ctx, request["operation_id"], root)
+    monkeypatch.setattr(workspace.os, "replace", original_replace)
+    path = root / (
+        "workspace-state.json" if invalid_record == "state" else "workspace-undo.json"
+    )
+    key = "state_id" if invalid_record == "state" else "undo_id"
+    value = workspace._read_sealed(path, key)
+    del value[key]
+    if invalid_record == "state":
+        value["foreign_field"] = True
+    else:
+        del value["created_at"]
+    path.write_bytes(workspace.canonical_bytes(workspace._seal(value, key)))
+    before = _bytes(root)
+    with pytest.raises(api.CoreError) as error:
+        workspace.recover_workspace(
+            ctx, request["operation_id"], root, target="original"
+        )
+    assert error.value.code == "METADATA_WORKSPACE_RECOVERY_REQUIRED"
+    assert _bytes(root) == before

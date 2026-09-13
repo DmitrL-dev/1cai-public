@@ -29,8 +29,11 @@ adapter ещё не подтверждены. До таких evidence нель�
 переименовании и возврате схемы на собственной фикстуре 1С/YAxUnit.
 Продуктовый preview уже связывается с бизнес-доказательством; [журнал подготовки
 apply](METADATA-APPLY.md) проверяет точный preview, head, права и живые байты.
-[Workspace writer](METADATA-WORKSPACE.md) применяет candidate и выполняет CAS-undo
-только в отдельно принадлежащей копии; live source и база 1С намеренно не меняются.
+[Workspace writer](METADATA-WORKSPACE.md) применяет candidate и выполняет undo
+с проверкой inventory только в отдельно принадлежащей копии. Перед undo проверяется
+полный backup; он сохраняется при отмене и её явном восстановлении к original.
+Внешняя конкурентная запись между проверкой и заменой файлов пока не защищена;
+live source и база 1С намеренно не меняются.
 Выпуски dev8/0.1.8 этой возможностью не дополняются задним числом.
 
 В core `0.1.0.dev8` доступны сравнение снимков и
@@ -67,8 +70,8 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 | Companion 0.1.8 | Сборка VSIX с фиксированным SHA256, просмотр и сравнение, локальная правка, чтение квитанций | Требует доверенного отдельного профиля |
 | Локальная модель | Один искусственный сценарий Qwen3.5:9b с независимой проверкой BSL | Не доказывает качество на произвольных задачах |
 | Ежедневная разработка dev8 | AI-правка, ручное исправление новой ревизией, конфликт версий, нативная проверка и восстановление проверены в редакторе | [AI-ошибка сохраняется](DAILY-DEVELOPMENT-ACCEPTANCE.md); [исправление человеком проверено](MANUAL-DRAFT-EDIT.md). Синтетический YAxUnit принят отдельно; бизнес-покрытие и применение не приняты |
-| Реальная платформа 1С | 8.3.27.2342: нативный общий модуль, проверка ошибочного BSL, исполнение 42 → отказ/42 → исправление/43, сохранение UUID | Собственный синтетический сценарий; [полная приёмка не завершена](PLATFORM-ACCEPTANCE.md) |
-| Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; preflight и workspace writer с CAS, backup, re-read, undo conflict и явным original/candidate recovery | Живая запись через EDT/1С, полноценная native-приёмка и матрица типовых конфигураций не приняты |
+| Реальная платформа 1С | 8.3.27.2342: нативный общий модуль, проверка ошибочного BSL, исполнение 42 → отказ/42 → исправление/43, сохранение UUID; отдельная запись/чтение/переименование/удаление данных в синтетическом каталоге ([evidence](NATIVE-BUSINESS-ROUNDTRIP-20260913.md)) | Собственные синтетические сценарии; [полная приёмка не завершена](PLATFORM-ACCEPTANCE.md) |
+| Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; preflight и workspace writer с проверкой inventory, backup, re-read, undo conflict и явным recovery; native business roundtrip подтверждает данные после переименования | Внешний concurrent CAS, живая запись через EDT/1С, product apply/undo и матрица типовых конфигураций не приняты |
 | Обновления конфигураций | Path-bytes и UUID-aware Designer XML three-way dry-run с bounded хэшами, явными конфликтами и evidence по прямым свойствам (`same_change`/`disjoint_changes`/`overlap_conflict`) | Property/extension/BSL merge semantics, тестовая база, backup/rollback и запись не приняты |
 | Проверка предложения платформой | В dev8: установленный CLI проверил корректное/ошибочное BSL-предложение на сохранённой конфигурации | Один Designer XML слой; компиляция без бизнес-тестов и применения |
 | Observer | Опрос выгрузки, журнал и восстановление; Git probe, durable lifecycle находок, per-commit snapshot binding для owner report, bounded scheduler и foreground service-host adapter с journal/recovery и atomic notification outbox, explicit HTTPS webhook delivery, bounded Git/snapshot source evidence, read-only BSL-LS Git adapter с clean-commit/HEAD/ancestry recheck | Нет SCM-инсталлятора/фонового service manager, live receiver acceptance и дедупликации, полного Git tree/temporal evidence, полной native-приёмки analyzer на типовой конфигурации и общей приёмки O1 |

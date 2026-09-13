@@ -1,0 +1,1340 @@
+{
+  "accepted": true,
+  "write_read_after_reopen_equal": true,
+  "rename_preserves_existing_value_and_reference": true,
+  "updated_sku_persists_after_reopen": true,
+  "negative_missing_record_and_old_field_confirmed": true,
+  "test_record_physically_deleted": true,
+  "record_ref": "sha256:6122735dbbf440b2d7b520017f8f7f0dc7dc7f70f40494157ba1cc86725026d7",
+  "structures": {
+    "created": {
+      "catalog_uuid": "fb28b18e-d2a3-4f48-8390-c0d609c9e7c0",
+      "attribute_uuid": "eb298009-8fc5-4a2f-8812-902daeed99df",
+      "attribute": "Article",
+      "string_length": 32,
+      "form_binding": "Объект.Article",
+      "form_uuid": "44821c5c-7eaf-4b40-ba04-dc79e0c71268",
+      "field_id": "7",
+      "main_attribute_id": "1"
+    },
+    "renamed": {
+      "catalog_uuid": "fb28b18e-d2a3-4f48-8390-c0d609c9e7c0",
+      "attribute_uuid": "eb298009-8fc5-4a2f-8812-902daeed99df",
+      "attribute": "SKU",
+      "string_length": 32,
+      "form_binding": "Объект.SKU",
+      "form_uuid": "44821c5c-7eaf-4b40-ba04-dc79e0c71268",
+      "field_id": "7",
+      "main_attribute_id": "1"
+    }
+  },
+  "permissions": {
+    "status": "passed",
+    "read": true,
+    "insert": true,
+    "update": true,
+    "delete": true,
+    "exit_code": 0,
+    "active_descendants": 0
+  },
+  "active_descendants_before_job_close": 0,
+  "storage": {
+    "project_bytes": 3634056,
+    "run_bytes": 3634056,
+    "free_bytes": 149954363392
+  },
+  "schema": 1,
+  "scope": "owned synthetic catalog native business roundtrip",
+  "platform_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+  "platform_version": "8.3.27.2342",
+  "fixture_files_verified": 13,
+  "runtime_launches": 10,
+  "native_steps": [
+    {
+      "name": "create",
+      "exit_code": 0,
+      "log": "Создание информационной базы (\"File=\"<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase\";Locale=ru_RU;\") успешно завершено\n",
+      "log_sha256": "292ea5ca92062519093ab133d9f49021e53d29c31f065d48afbe8e0178a9072f",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3062,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "CREATEINFOBASE",
+        "File=\"<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase\";Locale=ru_RU;",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\create.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" CREATEINFOBASE \"File=\"\"<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase\"\";Locale=ru_RU;\" /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\create.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "created-load",
+      "exit_code": 0,
+      "log": "",
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3469,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "DESIGNER",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/LoadConfigFromFiles",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\created-source",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\created-load.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" DESIGNER /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /LoadConfigFromFiles <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\created-source /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\created-load.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "created-check",
+      "exit_code": 0,
+      "log": "Ошибок не обнаружено\n",
+      "log_sha256": "db2fafff0ffb270936356597f1d2bed48d5f0383744e0832be3af4e824567dc8",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3233,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "DESIGNER",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/CheckConfig",
+        "-Server",
+        "-ExternalConnection",
+        "-ThinClient",
+        "-ThickClientManagedApplication",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\created-check.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" DESIGNER /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /CheckConfig -Server -ExternalConnection -ThinClient -ThickClientManagedApplication /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\created-check.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "created-update",
+      "exit_code": 0,
+      "log": "Обработка структуры базы данных...\n\nСбор служебной информации...\n\nНовый объект: Справочник.Products\nПринятие изменений...\n\nОбновление конфигурации успешно завершено\n",
+      "log_sha256": "cd3a1abe84ff27e5beaace4e90f9547942ac03d9f29dae39f7458200239eadd4",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3375,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "DESIGNER",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/UpdateDBCfg",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\created-update.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" DESIGNER /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /UpdateDBCfg /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\created-update.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "created-dump",
+      "exit_code": 0,
+      "log": "",
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3312,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "DESIGNER",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/DumpConfigToFiles",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\created-roundtrip",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\created-dump.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" DESIGNER /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /DumpConfigToFiles <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\created-roundtrip /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\created-dump.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "rights-preflight",
+      "exit_code": 0,
+      "log": "",
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3671,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "ENTERPRISE",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/C",
+        "preflight|Article|unused|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\rights-preflight.json",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\rights-preflight.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" ENTERPRISE /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /C preflight|Article|unused|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\rights-preflight.json /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\rights-preflight.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "missing-before",
+      "exit_code": 0,
+      "log": "",
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3421,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "ENTERPRISE",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/C",
+        "read|Article|unused|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\missing-before.json",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\missing-before.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" ENTERPRISE /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /C read|Article|unused|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\missing-before.json /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\missing-before.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "write-article",
+      "exit_code": 0,
+      "log": "",
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3453,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "ENTERPRISE",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/C",
+        "create|Article|Артикул-исходный-001|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\write-article.json",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\write-article.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" ENTERPRISE /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /C create|Article|Артикул-исходный-001|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\write-article.json /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\write-article.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "read-article",
+      "exit_code": 0,
+      "log": "",
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3453,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "ENTERPRISE",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/C",
+        "read|Article|unused|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\read-article.json",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\read-article.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" ENTERPRISE /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /C read|Article|unused|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\read-article.json /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\read-article.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "renamed-load",
+      "exit_code": 0,
+      "log": "",
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3171,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "DESIGNER",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/LoadConfigFromFiles",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\renamed-source",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\renamed-load.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" DESIGNER /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /LoadConfigFromFiles <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\renamed-source /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\renamed-load.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "renamed-check",
+      "exit_code": 0,
+      "log": "Ошибок не обнаружено\n",
+      "log_sha256": "db2fafff0ffb270936356597f1d2bed48d5f0383744e0832be3af4e824567dc8",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 2983,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "DESIGNER",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/CheckConfig",
+        "-Server",
+        "-ExternalConnection",
+        "-ThinClient",
+        "-ThickClientManagedApplication",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\renamed-check.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" DESIGNER /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /CheckConfig -Server -ExternalConnection -ThinClient -ThickClientManagedApplication /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\renamed-check.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "renamed-update",
+      "exit_code": 0,
+      "log": "Обработка структуры базы данных...\n\nСбор служебной информации...\n\nПринятие изменений...\n\nОбновление конфигурации успешно завершено\n",
+      "log_sha256": "80a1b813043c1d4c899096b849f97892d30e59d8f2bd86efb840468171c4200d",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3000,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "DESIGNER",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/UpdateDBCfg",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\renamed-update.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" DESIGNER /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /UpdateDBCfg /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\renamed-update.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "renamed-dump",
+      "exit_code": 0,
+      "log": "",
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3062,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "DESIGNER",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/DumpConfigToFiles",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\renamed-roundtrip",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\renamed-dump.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" DESIGNER /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /DumpConfigToFiles <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\renamed-roundtrip /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\renamed-dump.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "read-migrated",
+      "exit_code": 0,
+      "log": "",
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3390,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "ENTERPRISE",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/C",
+        "read|SKU|unused|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\read-migrated.json",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\read-migrated.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" ENTERPRISE /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /C read|SKU|unused|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\read-migrated.json /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\read-migrated.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "write-sku",
+      "exit_code": 0,
+      "log": "",
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3407,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "ENTERPRISE",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/C",
+        "update|SKU|SKU-обновлённый-002|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\write-sku.json",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\write-sku.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" ENTERPRISE /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /C update|SKU|SKU-обновлённый-002|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\write-sku.json /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\write-sku.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "read-sku",
+      "exit_code": 0,
+      "log": "",
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3389,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "ENTERPRISE",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/C",
+        "read|SKU|unused|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\read-sku.json",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\read-sku.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" ENTERPRISE /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /C read|SKU|unused|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\read-sku.json /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\read-sku.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "wrong-field",
+      "exit_code": 0,
+      "log": "",
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3406,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "ENTERPRISE",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/C",
+        "read|Article|unused|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\wrong-field.json",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\wrong-field.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" ENTERPRISE /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /C read|Article|unused|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\wrong-field.json /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\wrong-field.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "cleanup",
+      "exit_code": 0,
+      "log": "",
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3437,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "ENTERPRISE",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/C",
+        "delete|SKU|unused|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\cleanup.json",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\cleanup.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" ENTERPRISE /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /C delete|SKU|unused|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\cleanup.json /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\cleanup.log",
+      "active_descendants_after_close": 0
+    },
+    {
+      "name": "missing-after",
+      "exit_code": 0,
+      "log": "",
+      "log_sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_ms": 3608,
+      "arguments": [
+        "C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe",
+        "ENTERPRISE",
+        "/F",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase",
+        "/C",
+        "read|SKU|unused|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\missing-after.json",
+        "/DisableStartupDialogs",
+        "/DisableStartupMessages",
+        "/Out",
+        "<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\missing-after.log"
+      ],
+      "command_line": "\"C:\\Program Files\\1cv8\\8.3.27.2342\\bin\\1cv8.exe\" ENTERPRISE /F <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\infobase /C read|SKU|unused|<worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\missing-after.json /DisableStartupDialogs /DisableStartupMessages /Out <worktree>\\output\\native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab\\metadata-runs\\business\\missing-after.log",
+      "active_descendants_after_close": 0
+    }
+  ],
+  "module_uuid": "07df268b-8978-434a-b345-d24cf08f4eb9",
+  "product_apply_undo": false,
+  "full_cf_cfe_qualification": false,
+  "form_ui_execution": false,
+  "observations": {
+    "missing-before": {
+      "status": "failed",
+      "error": "{ОбщийМодуль.РентгенПроверкаБизнесОперации.Модуль(22)}: RECORD_NOT_FOUND",
+      "exit_code": 0,
+      "active_descendants": 0
+    },
+    "write-article": {
+      "status": "passed",
+      "field": "Article",
+      "value": "Артикул-исходный-001",
+      "ref": "sha256:6122735dbbf440b2d7b520017f8f7f0dc7dc7f70f40494157ba1cc86725026d7",
+      "count": 1,
+      "exit_code": 0,
+      "active_descendants": 0
+    },
+    "read-article": {
+      "status": "passed",
+      "field": "Article",
+      "value": "Артикул-исходный-001",
+      "ref": "sha256:6122735dbbf440b2d7b520017f8f7f0dc7dc7f70f40494157ba1cc86725026d7",
+      "count": 1,
+      "exit_code": 0,
+      "active_descendants": 0
+    },
+    "read-migrated": {
+      "status": "passed",
+      "field": "SKU",
+      "value": "Артикул-исходный-001",
+      "ref": "sha256:6122735dbbf440b2d7b520017f8f7f0dc7dc7f70f40494157ba1cc86725026d7",
+      "count": 1,
+      "exit_code": 0,
+      "active_descendants": 0
+    },
+    "write-sku": {
+      "status": "passed",
+      "field": "SKU",
+      "value": "SKU-обновлённый-002",
+      "ref": "sha256:6122735dbbf440b2d7b520017f8f7f0dc7dc7f70f40494157ba1cc86725026d7",
+      "count": 1,
+      "exit_code": 0,
+      "active_descendants": 0
+    },
+    "read-sku": {
+      "status": "passed",
+      "field": "SKU",
+      "value": "SKU-обновлённый-002",
+      "ref": "sha256:6122735dbbf440b2d7b520017f8f7f0dc7dc7f70f40494157ba1cc86725026d7",
+      "count": 1,
+      "exit_code": 0,
+      "active_descendants": 0
+    },
+    "wrong-field": {
+      "status": "failed",
+      "error": "{ОбщийМодуль.РентгенПроверкаБизнесОперации.Модуль(30)}: Поле объекта не обнаружено (Article)",
+      "exit_code": 0,
+      "active_descendants": 0
+    },
+    "cleanup": {
+      "status": "passed",
+      "field": "SKU",
+      "value": "SKU-обновлённый-002",
+      "ref": "sha256:6122735dbbf440b2d7b520017f8f7f0dc7dc7f70f40494157ba1cc86725026d7",
+      "count": 0,
+      "exit_code": 0,
+      "active_descendants": 0
+    },
+    "missing-after": {
+      "status": "failed",
+      "error": "{ОбщийМодуль.РентгенПроверкаБизнесОперации.Модуль(22)}: RECORD_NOT_FOUND",
+      "exit_code": 0,
+      "active_descendants": 0
+    }
+  },
+  "helper_sha256": "59ee7ff24636e70606ce97feefe8733942f880fe6240683bb0fd172de1f24e46",
+  "evidence_kind": "host_observed_unattested",
+  "date": "2026-09-13",
+  "run_id": "7b6f0621-3fe6-4787-b9dd-e0bab5b20fab",
+  "configuration_uuid": "c5bbdafc-ac33-454e-98bb-5492e6f90b3d",
+  "native_test_module_uuid_verified": true,
+  "native_step_count": 19,
+  "closure": {
+    "active_descendants": 0,
+    "steps_completed": 19,
+    "finished_utc": "2026-09-13T06:33:21.938290+00:00",
+    "exclusive_read_open_succeeded": true,
+    "file_bytes": 3416064,
+    "file_sha256": "c234cffc261849eed5deb4f3df640150620510c1402fcea4bee6e29890608a2b",
+    "owned_native_process_count": 0,
+    "checked_utc": "2026-09-13T06:33:51.5142087Z"
+  },
+  "preflight": {
+    "fixture_files": 13,
+    "fixture_matches_manifest": true,
+    "platform_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+    "platform_bytes": 1815632,
+    "owned_exclusive_output": true,
+    "native_base_preexisted": false,
+    "module_uuid": "07df268b-8978-434a-b345-d24cf08f4eb9",
+    "started_utc": "2026-09-13T06:32:18.445884+00:00"
+  },
+  "top_level_command": "python output/native_business_roundtrip_20260913.py",
+  "command_path_normalization": "<worktree> is the host checkout root. Exact absolute argv and command lines remain in the retained local steps.json. Synthetic record references are SHA256-redacted.",
+  "bounded_execution": {
+    "total_seconds": 600,
+    "native_command_seconds": 120,
+    "run_bytes": 1073741824,
+    "minimum_free_bytes": 1073741824,
+    "maximum_entries": 10000,
+    "maximum_log_bytes": 131072,
+    "maximum_runtime_result_bytes_exclusive": 65536
+  },
+  "verification": {
+    "command": "python -m pytest -q output/test_native_business_roundtrip_20260913.py tests/unit/test_edt_metadata_fixture.py tests/unit/test_metadata_migration_fixture.py",
+    "passed": 17,
+    "exit_code": 0,
+    "new_helper_tests": 10,
+    "new_helper_negative_cases": 9,
+    "tdd_red": "10 failures before helper existed; saved native-business-tdd-red-20260913.log",
+    "platform_red": {
+      "run_id": "365db3ce-d070-4119-a345-443d495c61e8",
+      "stage": "created-check",
+      "exit_code": 101,
+      "reason": "Helper function used the reserved BSL keyword Выполнить; renamed to ПроверитьОперацию before new exclusive run",
+      "active_descendants_after_close": 0
+    }
+  },
+  "fixture_artifacts": [
+    {
+      "path": "packaging/fixtures/edt-metadata-v1/baseline/Catalogs/Products.xml",
+      "size": 4468,
+      "sha256": "168db4e34757f030eb865f25892e5957dd6a1ac9d428abc452d4f46e05171d72"
+    },
+    {
+      "path": "packaging/fixtures/edt-metadata-v1/baseline/Configuration.xml",
+      "size": 10423,
+      "sha256": "0e2f3a7f0b1f527997364ae63b3246cceff2f3913268872879d7afae9ceddf02"
+    },
+    {
+      "path": "packaging/fixtures/edt-metadata-v1/baseline/Languages/Russian.xml",
+      "size": 1237,
+      "sha256": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1"
+    },
+    {
+      "path": "packaging/fixtures/edt-metadata-v1/created/Catalogs/Products.xml",
+      "size": 5716,
+      "sha256": "05ac6812aabbe3be13979ae7f8bc3a3787439a9c9303de5bc3605ec0fd9742be"
+    },
+    {
+      "path": "packaging/fixtures/edt-metadata-v1/created/Catalogs/Products/Forms/ItemForm.xml",
+      "size": 1191,
+      "sha256": "29c4effcc9ddabafc8d319cc89865cffffe3d8758b7428e6414c358b996228e3"
+    },
+    {
+      "path": "packaging/fixtures/edt-metadata-v1/created/Catalogs/Products/Forms/ItemForm/Ext/Form.xml",
+      "size": 2200,
+      "sha256": "cfbce5d6ff9e52c224be01649595063784c263c86e87c9f549b7c0dc73316951"
+    },
+    {
+      "path": "packaging/fixtures/edt-metadata-v1/created/Configuration.xml",
+      "size": 10423,
+      "sha256": "0e2f3a7f0b1f527997364ae63b3246cceff2f3913268872879d7afae9ceddf02"
+    },
+    {
+      "path": "packaging/fixtures/edt-metadata-v1/created/Languages/Russian.xml",
+      "size": 1237,
+      "sha256": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1"
+    },
+    {
+      "path": "packaging/fixtures/edt-metadata-v1/renamed/Catalogs/Products.xml",
+      "size": 5712,
+      "sha256": "87c0e4d4f133db1856f2082c5d5e8f977ac52fc6cd5d5e16693ccb5c47ef7c45"
+    },
+    {
+      "path": "packaging/fixtures/edt-metadata-v1/renamed/Catalogs/Products/Forms/ItemForm.xml",
+      "size": 1191,
+      "sha256": "29c4effcc9ddabafc8d319cc89865cffffe3d8758b7428e6414c358b996228e3"
+    },
+    {
+      "path": "packaging/fixtures/edt-metadata-v1/renamed/Catalogs/Products/Forms/ItemForm/Ext/Form.xml",
+      "size": 2196,
+      "sha256": "ca7de4d68d1a1a85539a16b3fd46fa1e4002bf3e81a38483c9605ea5102f15bf"
+    },
+    {
+      "path": "packaging/fixtures/edt-metadata-v1/renamed/Configuration.xml",
+      "size": 10423,
+      "sha256": "0e2f3a7f0b1f527997364ae63b3246cceff2f3913268872879d7afae9ceddf02"
+    },
+    {
+      "path": "packaging/fixtures/edt-metadata-v1/renamed/Languages/Russian.xml",
+      "size": 1237,
+      "sha256": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1"
+    }
+  ],
+  "retained_artifacts": [
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/acceptance.json",
+      "size": 4515,
+      "sha256": "61543823001602b4a3f44359691ad39e1aa609cd8111d445ac40b02cf91becd9"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/closed.json",
+      "size": 114,
+      "sha256": "c01f36e878f6ee88b13613110bd3e317aefe82c1879777b707cbad3db585befe"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/exclusive-base-check.json",
+      "size": 243,
+      "sha256": "ff572e15855aac287256697ad0a4ff19ab6b818711de5276f416c95e7eb668db"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/cleanup.json",
+      "size": 155,
+      "sha256": "5b251828bb3df54f861c20d4dc9b06faf8588225475b18b6675c6015889334f2"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/cleanup.log",
+      "size": 3,
+      "sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/cleanup.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/cleanup.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/create.log",
+      "size": 274,
+      "sha256": "292ea5ca92062519093ab133d9f49021e53d29c31f065d48afbe8e0178a9072f"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/create.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/create.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-check.log",
+      "size": 43,
+      "sha256": "db2fafff0ffb270936356597f1d2bed48d5f0383744e0832be3af4e824567dc8"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-check.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-check.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-dump.log",
+      "size": 3,
+      "sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-dump.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-dump.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-load.log",
+      "size": 3,
+      "sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-load.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-load.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-roundtrip/Catalogs/Products/Forms/ItemForm/Ext/Form.xml",
+      "size": 2255,
+      "sha256": "d3c5ec17116a47af556f07e3c6482577ad914ddc7acb42479989e0ea08604055"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-roundtrip/Catalogs/Products/Forms/ItemForm.xml",
+      "size": 1191,
+      "sha256": "29c4effcc9ddabafc8d319cc89865cffffe3d8758b7428e6414c358b996228e3"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-roundtrip/Catalogs/Products.xml",
+      "size": 5822,
+      "sha256": "d349a5576f12850a655af857b9d91b17d3f0a6dc50933416f31f59de279fb475"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-roundtrip/CommonModules/РентгенПроверкаБизнесОперации/Ext/Module.bsl",
+      "size": 2745,
+      "sha256": "e6c6208dab315236cd46b650db642763a4974d04d123983cc48aae720e097caa"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-roundtrip/CommonModules/РентгенПроверкаБизнесОперации.xml",
+      "size": 1499,
+      "sha256": "80d91506e4dc2dc3b814193a1f723569ea6a656871395102632194746ad43410"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-roundtrip/ConfigDumpInfo.xml",
+      "size": 1748,
+      "sha256": "60ce368f995e10d9dc81b57a1664b61818123fad7da9e69ad24f244eaa81435f"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-roundtrip/Configuration.xml",
+      "size": 10515,
+      "sha256": "dee9bdbffc5fa0721c314a24e1e7dc0ace83a9e0dd621a918d7a12fa6df85329"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-roundtrip/Ext/ManagedApplicationModule.bsl",
+      "size": 1124,
+      "sha256": "a42ab5ce2ebfb59c3c61206cd579d16e9623718397a100d9c4063b563cdd8c91"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-roundtrip/Languages/Russian.xml",
+      "size": 1237,
+      "sha256": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-source/Catalogs/Products/Forms/ItemForm/Ext/Form.xml",
+      "size": 2200,
+      "sha256": "cfbce5d6ff9e52c224be01649595063784c263c86e87c9f549b7c0dc73316951"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-source/Catalogs/Products/Forms/ItemForm.xml",
+      "size": 1191,
+      "sha256": "29c4effcc9ddabafc8d319cc89865cffffe3d8758b7428e6414c358b996228e3"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-source/Catalogs/Products.xml",
+      "size": 5716,
+      "sha256": "05ac6812aabbe3be13979ae7f8bc3a3787439a9c9303de5bc3605ec0fd9742be"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-source/CommonModules/РентгенПроверкаБизнесОперации/Ext/Module.bsl",
+      "size": 2742,
+      "sha256": "05e2c3e5debd8f126de12fa6bc3969e534ffd536d546f88277300bce619f7f79"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-source/CommonModules/РентгенПроверкаБизнесОперации.xml",
+      "size": 1435,
+      "sha256": "385650446e5e168a93d1ce534e1fbbbc815cdb11e113e7f575c7bc70a5310bef"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-source/Configuration.xml",
+      "size": 10509,
+      "sha256": "a138a665fede414478b503dc7ca10c51db5f59880f5f1f1cc47ab9c5159a718c"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-source/Ext/ManagedApplicationModule.bsl",
+      "size": 1121,
+      "sha256": "1404e484b906adafe52cd41b3c5f8153ce5c02cb9581cb96522bb443dfdde3d6"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-source/Languages/Russian.xml",
+      "size": 1237,
+      "sha256": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-update.log",
+      "size": 303,
+      "sha256": "cd3a1abe84ff27e5beaace4e90f9547942ac03d9f29dae39f7458200239eadd4"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-update.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/created-update.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/infobase/1Cv8.1CD",
+      "size": 3416064,
+      "sha256": "c234cffc261849eed5deb4f3df640150620510c1402fcea4bee6e29890608a2b"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/infobase/1Cv8.1CD.cfl",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/infobase/1Cv8.1CL.cfl",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/infobase/1Cv8.cgr.cfl",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/infobase/1Cv8Log/1Cv8.lgf",
+      "size": 725,
+      "sha256": "3c410d6daffb1e9760c00ce033557adb8444e236865dd248d4c71fcfe3c9e68b"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/infobase/1Cv8Log/20260913000000.lgp",
+      "size": 7876,
+      "sha256": "5bcfec095841e88b8be48da075e4f8357b243395a6a16a82000c16d147c50f3c"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/infobase/1Cv8snc.1CD",
+      "size": 98304,
+      "sha256": "d17b969e8cb3da6c3de44af5253a56ead1203abf1d6304e53f2990f8074a5457"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/infobase/1Cv8snc.1CD.cfl",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/infobase/1Cv8snc.1CL.cfl",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/infobase/1Cv8tmp.1CD.cfl",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/infobase/1Cv8tmp.1CL.cfl",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/missing-after.json",
+      "size": 162,
+      "sha256": "6f003544fba06e79133002e2aaf385a1977859f4186654200946b78a2c37c3cc"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/missing-after.log",
+      "size": 3,
+      "sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/missing-after.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/missing-after.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/missing-before.json",
+      "size": 162,
+      "sha256": "6f003544fba06e79133002e2aaf385a1977859f4186654200946b78a2c37c3cc"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/missing-before.log",
+      "size": 3,
+      "sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/missing-before.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/missing-before.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/read-article.json",
+      "size": 164,
+      "sha256": "3d7b11b2bf01810654c99945389939c86825977c10a926427c2b102ddd55b191"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/read-article.log",
+      "size": 3,
+      "sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/read-article.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/read-article.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/read-migrated.json",
+      "size": 160,
+      "sha256": "371d0bb6789b401ab03bd96f210e3ae7d489311fbd0b058760931f5ce12a13be"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/read-migrated.log",
+      "size": 3,
+      "sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/read-migrated.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/read-migrated.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/read-sku.json",
+      "size": 155,
+      "sha256": "16924989f7d9d1b5057cdb4a967351d8216178d75f19e415a94f841f229b3412"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/read-sku.log",
+      "size": 3,
+      "sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/read-sku.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/read-sku.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-check.log",
+      "size": 43,
+      "sha256": "db2fafff0ffb270936356597f1d2bed48d5f0383744e0832be3af4e824567dc8"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-check.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-check.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-dump.log",
+      "size": 3,
+      "sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-dump.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-dump.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-load.log",
+      "size": 3,
+      "sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-load.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-load.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-roundtrip/Catalogs/Products/Forms/ItemForm/Ext/Form.xml",
+      "size": 2251,
+      "sha256": "fd702f5c947c20ee22785bd2ade7710987543610a1e0f35af6078722dfac6507"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-roundtrip/Catalogs/Products/Forms/ItemForm.xml",
+      "size": 1191,
+      "sha256": "29c4effcc9ddabafc8d319cc89865cffffe3d8758b7428e6414c358b996228e3"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-roundtrip/Catalogs/Products.xml",
+      "size": 5818,
+      "sha256": "8f1cf1e8d77ffe142a56c6bd4e4252d49e33059d0600aa55f9097a85f0fbfc48"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-roundtrip/CommonModules/РентгенПроверкаБизнесОперации/Ext/Module.bsl",
+      "size": 2745,
+      "sha256": "e6c6208dab315236cd46b650db642763a4974d04d123983cc48aae720e097caa"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-roundtrip/CommonModules/РентгенПроверкаБизнесОперации.xml",
+      "size": 1499,
+      "sha256": "80d91506e4dc2dc3b814193a1f723569ea6a656871395102632194746ad43410"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-roundtrip/ConfigDumpInfo.xml",
+      "size": 1744,
+      "sha256": "16c43f6719692e6d5f07a3efe4889b827be5532b628c82c06b9628e79a09a64f"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-roundtrip/Configuration.xml",
+      "size": 10515,
+      "sha256": "dee9bdbffc5fa0721c314a24e1e7dc0ace83a9e0dd621a918d7a12fa6df85329"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-roundtrip/Ext/ManagedApplicationModule.bsl",
+      "size": 1124,
+      "sha256": "a42ab5ce2ebfb59c3c61206cd579d16e9623718397a100d9c4063b563cdd8c91"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-roundtrip/Languages/Russian.xml",
+      "size": 1237,
+      "sha256": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-source/Catalogs/Products/Forms/ItemForm/Ext/Form.xml",
+      "size": 2196,
+      "sha256": "ca7de4d68d1a1a85539a16b3fd46fa1e4002bf3e81a38483c9605ea5102f15bf"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-source/Catalogs/Products/Forms/ItemForm.xml",
+      "size": 1191,
+      "sha256": "29c4effcc9ddabafc8d319cc89865cffffe3d8758b7428e6414c358b996228e3"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-source/Catalogs/Products.xml",
+      "size": 5712,
+      "sha256": "87c0e4d4f133db1856f2082c5d5e8f977ac52fc6cd5d5e16693ccb5c47ef7c45"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-source/CommonModules/РентгенПроверкаБизнесОперации/Ext/Module.bsl",
+      "size": 2742,
+      "sha256": "05e2c3e5debd8f126de12fa6bc3969e534ffd536d546f88277300bce619f7f79"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-source/CommonModules/РентгенПроверкаБизнесОперации.xml",
+      "size": 1435,
+      "sha256": "385650446e5e168a93d1ce534e1fbbbc815cdb11e113e7f575c7bc70a5310bef"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-source/Configuration.xml",
+      "size": 10509,
+      "sha256": "a138a665fede414478b503dc7ca10c51db5f59880f5f1f1cc47ab9c5159a718c"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-source/Ext/ManagedApplicationModule.bsl",
+      "size": 1121,
+      "sha256": "1404e484b906adafe52cd41b3c5f8153ce5c02cb9581cb96522bb443dfdde3d6"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-source/Languages/Russian.xml",
+      "size": 1237,
+      "sha256": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-update.log",
+      "size": 247,
+      "sha256": "80a1b813043c1d4c899096b849f97892d30e59d8f2bd86efb840468171c4200d"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-update.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/renamed-update.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/rights-preflight.json",
+      "size": 99,
+      "sha256": "c89f2390d8010b97951b29eb70e0ff3ba11c3cfe5403bface69d219db9405e5b"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/rights-preflight.log",
+      "size": 3,
+      "sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/rights-preflight.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/rights-preflight.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/write-article.json",
+      "size": 164,
+      "sha256": "3d7b11b2bf01810654c99945389939c86825977c10a926427c2b102ddd55b191"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/write-article.log",
+      "size": 3,
+      "sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/write-article.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/write-article.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/write-sku.json",
+      "size": 155,
+      "sha256": "16924989f7d9d1b5057cdb4a967351d8216178d75f19e415a94f841f229b3412"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/write-sku.log",
+      "size": 3,
+      "sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/write-sku.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/write-sku.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/wrong-field.json",
+      "size": 205,
+      "sha256": "cffeb35f5536f68ba214696ee9322dbcc9daf97817057922c7776193056aa0cc"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/wrong-field.log",
+      "size": 3,
+      "sha256": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/wrong-field.stderr",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/metadata-runs/business/wrong-field.stdout",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/native-executor.lock",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/observations.json",
+      "size": 2217,
+      "sha256": "a8b39931f2b513e71cc4296712525a102b1769723a1dbaad78ea6f69db256d43"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/permissions.json",
+      "size": 149,
+      "sha256": "d3b9cde5d4f944cc0ab3f0a21f1dbe20b8b79d1bff40ce53f9075c865ff4ef0d"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/preflight.json",
+      "size": 369,
+      "sha256": "04eff08c15ddc41e15328d19d09d54724fd2e23bb248786c201cb430af2aaf4a"
+    },
+    {
+      "path": "output/native-business-roundtrip-7b6f0621-3fe6-4787-b9dd-e0bab5b20fab/steps.json",
+      "size": 35087,
+      "sha256": "94c67d9fb746a3095ade478d505cf4d445a1f09c91bd368b79d94d427829d512"
+    }
+  ],
+  "helper_artifacts": [
+    {
+      "path": "output/native_business_roundtrip_20260913.py",
+      "size": 15215,
+      "sha256": "59ee7ff24636e70606ce97feefe8733942f880fe6240683bb0fd172de1f24e46"
+    },
+    {
+      "path": "output/test_native_business_roundtrip_20260913.py",
+      "size": 2433,
+      "sha256": "a60be6d36b71feca8a64ff0740664fcbf04bd1d39dc638573424770b57765f4b"
+    },
+    {
+      "path": "output/native-business-tdd-red-20260913.log",
+      "size": 8167,
+      "sha256": "69f8a4d743aa0ddeedbe9b8d325e66c3695b5312f8c725ff3c270ea3d2f80634"
+    },
+    {
+      "path": "output/native-business-focused-20260913.log",
+      "size": 101,
+      "sha256": "f113f8dff8ecd55dff0a79523c2cd53afb63bdbcbb31ddcbc8bd95b28ebf77ce"
+    }
+  ],
+  "failed_attempt_artifacts": [
+    {
+      "path": "output/native-business-roundtrip-365db3ce-d070-4119-a345-443d495c61e8/steps.json",
+      "size": 10340,
+      "sha256": "5e032a206bf5cace01166b56f3691b32d517944d49480d45a6faffade391da47"
+    },
+    {
+      "path": "output/native-business-roundtrip-365db3ce-d070-4119-a345-443d495c61e8/closed.json",
+      "size": 113,
+      "sha256": "40178ea5ec8dff9850715a0785af3f18ab3b1cb5ed049eab6cb83b05d9811997"
+    },
+    {
+      "path": "output/native-business-roundtrip-365db3ce-d070-4119-a345-443d495c61e8/metadata-runs/business/created-check.log",
+      "size": 4959,
+      "sha256": "e2404623674d75d86c28da80908eff7de32835641ff40ce66570c3879b27982a"
+    }
+  ],
+  "limits": [
+    "One owned synthetic catalog record on the installed Windows full client",
+    "Product metadata apply/undo and EDT live writer are not exercised",
+    "Managed-form binding is checked in native XML, with no UI execution",
+    "No full .cf/.cfe or typical-configuration compatibility matrix",
+    "No real business runtime metrics source or production-data qualification",
+    "Ignored helper scripts and raw local proof are host-only and are not shipped in the package",
+    "Runtime input pinning covers source files and 1cv8.exe; dependent platform DLLs are not fully pinned"
+  ]
+}

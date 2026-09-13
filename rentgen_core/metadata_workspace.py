@@ -143,6 +143,25 @@ def _stage(root):
     return root / ".rentgen-stage"
 
 
+def _undo_stage(root):
+    return root / ".rentgen-undo-stage"
+
+
+def _verified_backup(root, original_rows, check):
+    backup = _backup(root)
+    _require(
+        backup.is_dir() and not backup.is_symlink(),
+        "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+        "Apply backup is absent or unsafe",
+    )
+    _require(
+        _inventory(backup, check) == original_rows,
+        "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+        "Apply backup does not match the original inventory",
+    )
+    return backup
+
+
 def _seal(value, key):
     return {**value, key: sha256(canonical_bytes(value))}
 
@@ -272,7 +291,17 @@ def _changed_paths(before_rows, after_rows):
     )
 
 
-def _replace_owned_tree(root, source, rows, *, allowed_rows, check, retained=False):
+def _replace_owned_tree(
+    root,
+    source,
+    rows,
+    *,
+    allowed_rows,
+    check,
+    retained=False,
+    stage=None,
+    cleanup=True,
+):
     """Materialize one validated inventory into tree with restartable staging."""
     current = _inventory(_tree(root), check)
     allowed = {}
@@ -286,7 +315,7 @@ def _replace_owned_tree(root, source, rows, *, allowed_rows, check, retained=Fal
         "METADATA_WORKSPACE_CONFLICT",
         "Workspace tree contains foreign bytes",
     )
-    stage = root / ".rentgen-recovery-stage"
+    stage = stage if stage is not None else root / ".rentgen-recovery-stage"
     _discard_owned_directory(stage, rows, check)
     stage.mkdir()
     _copy_rows(source, stage, rows, check=check, retained=retained)
@@ -305,7 +334,8 @@ def _replace_owned_tree(root, source, rows, *, allowed_rows, check, retained=Fal
         "METADATA_WORKSPACE_RECOVERY_REQUIRED",
         "Recovered workspace differs from its target inventory",
     )
-    _discard_owned_directory(stage, rows, check)
+    if cleanup:
+        _discard_owned_directory(stage, rows, check)
 
 
 def _cleanup_original_recovery(root, original_rows, candidate_rows, check):
@@ -651,6 +681,14 @@ def recover_workspace(ctx, operation_id, workspace_root, *, target):
         if _state_path(root).exists()
         else None
     )
+    temporary = _state_path(root).with_name(_state_path(root).name + ".tmp")
+    pending = _read_sealed(temporary, "state_id") if temporary.exists() else None
+    if (
+        (state is not None and state.get("phase") == "undoing")
+        or (pending is not None and pending.get("phase") == "undoing")
+        or _undo_path(root).exists()
+    ):
+        return _recover_undo(ctx, operation_id, root, marker, state, pending, target)
     recovery = (
         _read_sealed(_recovery_path(root), "recovery_id")
         if _recovery_path(root).exists()
@@ -923,6 +961,204 @@ def recover_workspace(ctx, operation_id, workspace_root, *, target):
     return recovery
 
 
+def _undo_receipt(ctx, operation_id, root, marker, result):
+    value = {
+        "schema": SCHEMA,
+        "project_id": ctx.project_id,
+        "operation_id": operation_id,
+        "preview_id": marker["preview_id"],
+        "result_id": result["result_id"],
+        "status": "undone",
+        "workspace_root": str(root),
+        "restored_digest": marker["original_digest"],
+        "live_source_written": False,
+    }
+    if _undo_path(root).exists():
+        previous = _read_sealed(_undo_path(root), "undo_id")
+        _require(
+            set(previous) == set(value) | {"created_at", "undo_id"}
+            and type(previous.get("created_at")) is str
+            and {
+                key: item
+                for key, item in previous.items()
+                if key not in {"created_at", "undo_id"}
+            }
+            == value,
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Undo receipt is not bound to this operation",
+        )
+        return previous
+    return _seal({**value, "created_at": _now()}, "undo_id")
+
+
+def _complete_undo(root, state, undo, check):
+    if not _undo_path(root).exists():
+        write_record(_undo_path(root), undo)
+    _replace_record(
+        _state_path(root),
+        _seal(
+            {
+                **{key: value for key, value in state.items() if key != "state_id"},
+                "phase": "complete",
+                "undo_id": undo["undo_id"],
+            },
+            "state_id",
+        ),
+    )
+    check()
+
+
+def _recover_undo(ctx, operation_id, root, marker, state, pending, target):
+    _require(
+        target == "original",
+        "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+        "Interrupted undo can only be completed to original",
+    )
+    result = _read_sealed(_result_path(root), "result_id")
+    _, candidate_rows = _candidate(ctx, marker)
+    _require(
+        result.get("status") == "applied"
+        and result.get("project_id") == ctx.project_id
+        and result.get("operation_id") == operation_id
+        and result.get("preview_id") == marker["preview_id"]
+        and result.get("before_digest") == marker["original_digest"]
+        and result.get("after_digest") == _digest(candidate_rows),
+        "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+        "Applied receipt is not bound to this undo",
+    )
+    undo = _undo_receipt(ctx, operation_id, root, marker, result)
+    # The immutable undo timestamp makes recovery publication restartable.
+    recovery = _seal(
+        {
+            "schema": SCHEMA,
+            "project_id": ctx.project_id,
+            "operation_id": operation_id,
+            "preview_id": marker["preview_id"],
+            "status": "recovered",
+            "target": "original",
+            "restored_digest": marker["original_digest"],
+            "created_at": undo["created_at"],
+        },
+        "recovery_id",
+    )
+    previous_recovery = None
+    if _recovery_path(root).exists():
+        previous_recovery = _read_sealed(_recovery_path(root), "recovery_id")
+        _require(
+            set(previous_recovery) == set(recovery)
+            and all(
+                previous_recovery[key] == recovery[key]
+                for key in (
+                    "schema",
+                    "project_id",
+                    "operation_id",
+                    "preview_id",
+                    "status",
+                )
+            )
+            and previous_recovery["target"] in {"original", "candidate"}
+            and previous_recovery["restored_digest"]
+            == (
+                marker["original_digest"]
+                if previous_recovery["target"] == "original"
+                else result["after_digest"]
+            ),
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Recovery receipt is not bound to this operation",
+        )
+    recovery_temp = _recovery_path(root).with_name(_recovery_path(root).name + ".tmp")
+    if recovery_temp.exists():
+        _require(
+            _read_sealed(recovery_temp, "recovery_id") == recovery,
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Pending recovery receipt differs from the confirmed undo",
+        )
+    for record in (state, pending):
+        if record is None:
+            continue
+        original_phase = record.get("phase") == "complete" and record.get("result_id")
+        fields = {
+            "schema",
+            "project_id",
+            "operation_id",
+            "preview_id",
+            "phase",
+            "before_digest",
+            "after_digest",
+            "created_at",
+            "state_id",
+        }
+        if record.get("phase") == "complete":
+            fields.add("result_id" if original_phase else "undo_id")
+        _require(
+            set(record) == fields
+            and type(record.get("created_at")) is str
+            and record.get("schema") == SCHEMA
+            and record.get("project_id") == ctx.project_id
+            and record.get("operation_id") == operation_id
+            and record.get("preview_id") == marker["preview_id"]
+            and record.get("phase") in {"undoing", "complete"}
+            and record.get("before_digest")
+            == (marker["original_digest"] if original_phase else result["after_digest"])
+            and record.get("after_digest")
+            == (result["after_digest"] if original_phase else marker["original_digest"])
+            and (not original_phase or record["result_id"] == result["result_id"])
+            and ("undo_id" not in record or record["undo_id"] == undo["undo_id"]),
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Undo state is not bound to this operation",
+        )
+
+    def check():
+        _check(ctx)
+
+    original_rows = marker["original_inventory"]
+    backup = _verified_backup(root, original_rows, check)
+    if _undo_path(root).exists():
+        _require(
+            _inventory(_tree(root), check) == original_rows,
+            "METADATA_UNDO_CONFLICT",
+            "Workspace changed after the undo receipt",
+        )
+        _discard_owned_directory(_undo_stage(root), original_rows, check)
+    else:
+        _replace_owned_tree(
+            root,
+            backup,
+            original_rows,
+            allowed_rows=original_rows + candidate_rows,
+            check=check,
+            retained=True,
+            stage=_undo_stage(root),
+            cleanup=False,
+        )
+        write_record(_undo_path(root), undo)
+    # A fully validated temporary state may be superseded only after the exact
+    # original tree and its durable undo receipt are established.
+    if pending is not None:
+        _state_path(root).with_name(_state_path(root).name + ".tmp").unlink()
+    state = _seal(
+        {
+            "schema": SCHEMA,
+            "project_id": ctx.project_id,
+            "operation_id": operation_id,
+            "preview_id": marker["preview_id"],
+            "phase": "undoing",
+            "before_digest": result["after_digest"],
+            "after_digest": marker["original_digest"],
+            "created_at": undo["created_at"],
+        },
+        "state_id",
+    )
+    _complete_undo(root, state, undo, check)
+    _discard_owned_directory(_undo_stage(root), original_rows, check)
+    if recovery_temp.exists():
+        os.replace(recovery_temp, _recovery_path(root))
+    elif previous_recovery != recovery:
+        _write_or_replace_record(_recovery_path(root), recovery)
+    check()
+    return recovery
+
+
 def undo_workspace(ctx, operation_id, workspace_root):
     """Restore the exact original workspace only when candidate CAS still holds."""
     _check(ctx)
@@ -958,12 +1194,8 @@ def undo_workspace(ctx, operation_id, workspace_root):
         "METADATA_UNDO_CONFLICT",
         "Workspace changed after apply; undo refuses to overwrite it",
     )
-    backup = _backup(root)
-    _require(
-        backup.is_dir(),
-        "METADATA_WORKSPACE_RECOVERY_REQUIRED",
-        "Apply backup is absent",
-    )
+    original_rows = marker["original_inventory"]
+    backup = _verified_backup(root, original_rows, lambda: _check(ctx))
     state = _seal(
         {
             "schema": SCHEMA,
@@ -978,49 +1210,19 @@ def undo_workspace(ctx, operation_id, workspace_root):
         "state_id",
     )
     _replace_record(_state_path(root), state)
-    current_paths = {row["path"] for row in current}
-    original_rows = marker["original_inventory"]
-    original_paths = {row["path"] for row in original_rows}
-    for relative in sorted(current_paths - original_paths):
-        (_tree(root) / relative).unlink()
-    for row in original_rows:
-        _check(ctx)
-        source, target = backup / row["path"], _tree(root) / row["path"]
-        target.parent.mkdir(parents=True, exist_ok=True)
-        os.replace(source, target)
-    restored = _inventory(_tree(root), lambda: _check(ctx))
-    _require(
-        restored == original_rows,
-        "METADATA_WORKSPACE_RECOVERY_REQUIRED",
-        "Undo result differs from original",
+    _replace_owned_tree(
+        root,
+        backup,
+        original_rows,
+        allowed_rows=candidate_rows,
+        check=lambda: _check(ctx),
+        retained=True,
+        stage=_undo_stage(root),
+        cleanup=False,
     )
-    undo = _seal(
-        {
-            "schema": SCHEMA,
-            "project_id": ctx.project_id,
-            "operation_id": operation_id,
-            "preview_id": marker["preview_id"],
-            "result_id": result["result_id"],
-            "status": "undone",
-            "workspace_root": str(root),
-            "restored_digest": marker["original_digest"],
-            "live_source_written": False,
-            "created_at": _now(),
-        },
-        "undo_id",
-    )
-    write_record(_undo_path(root), undo)
-    _replace_record(
-        _state_path(root),
-        _seal(
-            {
-                **{key: value for key, value in state.items() if key != "state_id"},
-                "phase": "complete",
-                "undo_id": undo["undo_id"],
-            },
-            "state_id",
-        ),
-    )
+    undo = _undo_receipt(ctx, operation_id, root, marker, result)
+    _complete_undo(root, state, undo, lambda: _check(ctx))
+    _discard_owned_directory(_undo_stage(root), original_rows, lambda: _check(ctx))
     _check(ctx)
     return undo
 
