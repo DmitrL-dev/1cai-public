@@ -6,8 +6,9 @@
 
 ## Дополнение к кандидату 13 сентября 2026
 
-В текущем tree `909e3e5a` локально проходят 553 теста. Кандидат добавляет
-публичный owner-report CLI с проверкой опубликованного snapshot и выделенным
+В текущем tree `f7fb95ae` локально проходят 619 тестов. Кандидат добавляет
+bounded foreground service-host для watcher-а и явную freshness-policy для
+runtime-метрик поверх публичного owner-report CLI с проверкой опубликованного snapshot и выделенным
 `<state-root>\owner-reports`, immutable receipts и bounded summary для списка.
 Read-only EDT inventory теперь связывает проверенные UUID, прямых XML-владельцев
 и декларацию слоя с `SourceRef`; three-way plan дополнительно показывает
