@@ -577,6 +577,10 @@ def _owner_report_profile(path):
         raise CoreError(
             "OBSERVER_PROFILE_INVALID", "Absolute local observer profile is required"
         ) from None
+    if not path.is_dir() or path.is_symlink():
+        raise CoreError(
+            "OBSERVER_PROFILE_NOT_FOUND", "Observer profile directory is unavailable"
+        )
     return path
 
 

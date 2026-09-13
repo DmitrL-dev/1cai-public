@@ -181,6 +181,22 @@ def test_owner_report_cli_build_rejects_relative_profile_before_store_io(command
     assert not (ctx.state.path.parent / "owner-reports").exists()
 
 
+def test_owner_report_cli_build_rejects_missing_profile(command, tmp_path):
+    ctx, invoke = command
+    result = invoke(
+        "owner-report-build",
+        "--store",
+        ctx.state.path.parent / "owner-reports",
+        "--snapshot",
+        "b" * 64,
+        "--profile",
+        tmp_path / "missing-profile",
+        success=False,
+    )
+    assert result["error"]["code"] == "OBSERVER_PROFILE_NOT_FOUND"
+    assert not (ctx.state.path.parent / "owner-reports").exists()
+
+
 def test_owner_report_cli_rejects_report_snapshot_mismatch(command, tmp_path):
     ctx, invoke = command
     store = ctx.state.path.parent / "owner-reports"
