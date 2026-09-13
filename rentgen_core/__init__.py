@@ -30,7 +30,10 @@ from .snapshots import (
     get_publication,
 )
 from .publication import capture_and_publish
+from .owner_report import RuntimeMetric, RuntimeMetricReport, build_owner_report
 from .owner_report_store import OwnerReportStore
+from .edt_inventory import EDTInventoryLimits, edt_metadata_inventory
+from .metadata_three_way import plan_metadata_three_way
 from .sources import (
     SourceRef,
     SourceEntry,
@@ -43,7 +46,13 @@ from .sources import (
 
 __all__ = [
     "capture_and_publish",
+    "build_owner_report",
+    "RuntimeMetric",
+    "RuntimeMetricReport",
     "OwnerReportStore",
+    "EDTInventoryLimits",
+    "edt_metadata_inventory",
+    "plan_metadata_three_way",
     "SourceRef",
     "SourceEntry",
     "SourcePage",

@@ -24,6 +24,7 @@ from .snapshots import ProjectHead, validate_operation_id
 from .sources import SourceRef
 
 _MAX_JSON_BYTES = 1024 * 1024
+_OWNER_REPORT_OUTPUT_LIMIT = 2 * 1024**2 + 8192
 
 
 class _Parser(argparse.ArgumentParser):
@@ -98,6 +99,9 @@ def _parser():
         "draft-archive",
         "draft-restore",
         "draft-receipt",
+        "owner-report-save",
+        "owner-report-get",
+        "owner-report-list",
     ):
         command = commands.add_parser(name, allow_abbrev=False)
         command.add_argument("--registry", required=True, type=Path, action=_Once)
@@ -195,6 +199,18 @@ def _parser():
             command.add_argument("--scanner", type=Path, action=_Once)
             command.add_argument("--operation-id", action=_Once)
             command.add_argument("--expected-head-json", type=Path, action=_Once)
+        elif name.startswith("owner-report-"):
+            command.add_argument("--store", type=Path, required=True, action=_Once)
+            command.add_argument("--snapshot", required=True, action=_Once)
+            if name == "owner-report-save":
+                command.add_argument(
+                    "--report-json", type=Path, required=True, action=_Once
+                )
+                command.add_argument("--report-id", action=_Once)
+            elif name == "owner-report-get":
+                command.add_argument("--report-id", required=True, action=_Once)
+            else:
+                command.add_argument("--limit", type=int, default=100, action=_Once)
         if name.startswith("draft-"):
             if name not in {"draft-list", "draft-receipt"}:
                 command.add_argument("--draft-id", required=True, action=_Once)
@@ -486,9 +502,10 @@ class _ProposalScope:
 
 @dataclass(frozen=True)
 class _ProposalCommandResult:
-    value: dict
+    value: object
     context: object
     permissions: frozenset = frozenset({"project:read", "source:edit"})
+    output_limit: int = 2 * 1024**2
 
 
 def _proposal_permissions(ctx, permissions=frozenset({"project:read", "source:edit"})):
@@ -516,6 +533,90 @@ def _proposal_input(
     if len(raw) > limit:
         raise CoreError("INVALID_ARGUMENT", "Proposal input exceeds its byte limit")
     return raw
+
+
+def _owner_report_store(ctx, path):
+    """Resolve an owner-report store below the authenticated project state."""
+    from .owner_report_store import OwnerReportStore
+
+    candidate = Path(path).absolute()
+    state_root = Path(ctx.state.path).parent.absolute()
+    expected = state_root / "owner-reports"
+    if candidate != expected:
+        raise CoreError(
+            "OWNER_REPORT_STORE_INVALID",
+            "Owner-report store must be the project's owner-reports directory",
+        )
+    return OwnerReportStore(candidate)
+
+
+def _require_owner_report_snapshot(ctx, snapshot_id, permissions):
+    SnapshotRef(ctx.project_id, snapshot_id, snapshot_id)
+    _proposal_permissions(ctx, permissions)
+    with ctx.state.transaction(ctx.principal) as tx:
+        tx.get_snapshot(snapshot_id)
+
+
+def _owner_report_command(args, ctx, permissions):
+    from .edt_profiles import parse_json
+
+    _require_owner_report_snapshot(ctx, args.snapshot, permissions)
+    store = _owner_report_store(ctx, args.store)
+
+    def authorize():
+        _proposal_permissions(ctx, permissions)
+
+    if args.command == "owner-report-save":
+        raw = _proposal_input(
+            ctx, args.report_json, 2 * 1024**2, permissions=permissions
+        )
+        report = parse_json(raw)
+        if (
+            not isinstance(report, dict)
+            or report.get("project_id") != ctx.project_id
+            or report.get("snapshot_id") != args.snapshot
+        ):
+            raise CoreError(
+                "OWNER_REPORT_STORE_CONTEXT",
+                "Owner report does not match selected project and snapshot",
+            )
+        store.initialize()
+        value = store.save(report, report_id=args.report_id, authorize=authorize)
+    elif args.command == "owner-report-get":
+        value = store.get(
+            args.report_id,
+            expected_project_id=ctx.project_id,
+            expected_snapshot_id=args.snapshot,
+            authorize=authorize,
+        )
+    else:
+        receipts = store.list(
+            expected_project_id=ctx.project_id,
+            expected_snapshot_id=args.snapshot,
+            authorize=authorize,
+            limit=args.limit,
+        )
+        value = [
+            {
+                key: receipt[key]
+                for key in (
+                    "schema",
+                    "report_id",
+                    "project_id",
+                    "snapshot_id",
+                    "status",
+                    "created_at",
+                    "receipt_id",
+                )
+            }
+            for receipt in receipts
+        ]
+    output_limit = (
+        _OWNER_REPORT_OUTPUT_LIMIT
+        if args.command in {"owner-report-save", "owner-report-get"}
+        else 2 * 1024**2
+    )
+    return _ProposalCommandResult(value, ctx, frozenset(permissions), output_limit)
 
 
 def _proposal_command(args, runtime, state_ctx):
@@ -654,7 +755,11 @@ def _execute(args, *, proposal_scope=None):
     if args.command == "project-head":
         return runtime.head(principal, args.project)
     permissions = (
-        {"project:admin"}
+        {"project:read", "analysis:run"}
+        if args.command == "owner-report-save"
+        else {"project:read"}
+        if args.command in {"owner-report-get", "owner-report-list"}
+        else {"project:admin"}
         if args.command
         in {
             "layers-set",
@@ -706,6 +811,11 @@ def _execute(args, *, proposal_scope=None):
         else set()
     )
     ctx = runtime.state_context(principal, args.project, permissions=permissions)
+    if args.command.startswith("owner-report-"):
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        return _owner_report_command(args, ctx, frozenset(permissions))
     if args.command.startswith("metadata-"):
         import asyncio
         from .edt_profiles import parse_json
@@ -1066,9 +1176,9 @@ def main(argv=None) -> int:
                 encoded = json.dumps(
                     envelope, ensure_ascii=False, allow_nan=False, separators=(",", ":")
                 ).encode("utf-8")
-                if len(encoded) > 2097152:
+                if len(encoded) > result.output_limit:
                     raise CoreError(
-                        "OUTPUT_LIMIT_EXCEEDED", "Proposal result exceeds 2 MiB"
+                        "OUTPUT_LIMIT_EXCEEDED", "Command result exceeds its byte limit"
                     )
             except BaseException:
                 _proposal_permissions(result.context, result.permissions)

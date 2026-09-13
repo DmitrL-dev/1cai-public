@@ -90,6 +90,8 @@ only-include = [
   "docs/product/RUNTIME-METRICS.md",
   "docs/product/THREE-WAY-UPDATES.md",
   "docs/product/METADATA-THREE-WAY.md",
+  "docs/product/METADATA-THREE-WAY-SEMANTICS.md",
+  "docs/product/EDT-INVENTORY-IDENTITY.md",
   "docs/product/COMPETITOR-MATRIX.md",
   "docs/product/AUDIT-20260912.md",
   "docs/product/METADATA-MIGRATION.md",

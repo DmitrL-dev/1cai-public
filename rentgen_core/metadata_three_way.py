@@ -19,6 +19,53 @@ _PROPERTIES = "Properties"
 _NAME = "Name"
 _MAX_OBJECTS = 100_000
 _UNSAFE_DECLARATION = re.compile(rb"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
+_MD_NS = "http://v8.1c.ru/8.3/MDClasses"
+_FORM_ROOT = "{http://v8.1c.ru/8.3/xcf/logform}Form"
+_DCS_ROOT = "{http://v8.1c.ru/8.1/data-composition-system/schema}DataCompositionSchema"
+_EXTENSION_PROPERTIES = frozenset(
+    {"ObjectBelonging", "ExtendedConfigurationObject", "ConfigurationExtensionPurpose"}
+)
+_MODULE_OWNERS = {
+    "Ext/Module.bsl": {"CommonModule"},
+    "Ext/Form/Module.bsl": {"Form", "CommonForm"},
+    "Ext/ObjectModule.bsl": {
+        "Catalog",
+        "Document",
+        "Report",
+        "DataProcessor",
+        "ExternalReport",
+        "ExternalDataProcessor",
+        "ChartOfAccounts",
+        "ChartOfCharacteristicTypes",
+        "ChartOfCalculationTypes",
+        "BusinessProcess",
+        "Task",
+        "ExchangePlan",
+    },
+    "Ext/ManagerModule.bsl": {
+        "Catalog",
+        "Document",
+        "Report",
+        "DataProcessor",
+        "ChartOfAccounts",
+        "ChartOfCharacteristicTypes",
+        "ChartOfCalculationTypes",
+        "BusinessProcess",
+        "Task",
+        "ExchangePlan",
+        "InformationRegister",
+        "AccumulationRegister",
+        "AccountingRegister",
+        "CalculationRegister",
+    },
+    "Ext/RecordSetModule.bsl": {
+        "InformationRegister",
+        "AccumulationRegister",
+        "AccountingRegister",
+        "CalculationRegister",
+    },
+    "Ext/CommandModule.bsl": {"Command", "CommonCommand"},
+}
 
 
 @dataclass(frozen=True)
@@ -71,7 +118,8 @@ def _unscoped_fingerprint(node):
 def _object(value, path):
     if not path.lower().endswith(".xml"):
         return None
-    if _UNSAFE_DECLARATION.search(value):
+    # Scan ASCII declarations even in UTF-16/32 before ElementTree can expand them.
+    if _UNSAFE_DECLARATION.search(value.replace(b"\x00", b"")):
         raise CoreError(
             "THREE_WAY_METADATA_INVALID",
             f"DTD and ENTITY declarations are forbidden: {path}",
@@ -98,18 +146,19 @@ def _object(value, path):
         return None
     if _UUID.fullmatch(identity) is None:
         raise CoreError("THREE_WAY_METADATA_INVALID", f"Invalid metadata UUID: {path}")
+    properties_nodes = [
+        child for child in node if child.tag.rsplit("}", 1)[-1] == _PROPERTIES
+    ]
     names = [
         child.text
-        for child in node.iter()
+        for properties_node in properties_nodes
+        for child in properties_node
         if child.tag.rsplit("}", 1)[-1] == _NAME and child.text
     ]
     if len(names) != 1:
         raise CoreError(
             "THREE_WAY_METADATA_INVALID", f"Metadata name is ambiguous: {path}"
         )
-    properties_nodes = [
-        child for child in node if child.tag.rsplit("}", 1)[-1] == _PROPERTIES
-    ]
     properties = None
     if len(properties_nodes) == 1:
         properties = {}
@@ -127,6 +176,7 @@ def _object(value, path):
         names[0],
         properties,
         _unscoped_fingerprint(node),
+        node,
     )
 
 
@@ -138,7 +188,7 @@ def _records(tree, label):
         if item is None:
             unsupported.append(path)
             continue
-        object_type, identity, name, properties, unscoped = item
+        object_type, identity, name, properties, unscoped, node = item
         key = (object_type, identity)
         if key in result:
             raise CoreError(
@@ -151,6 +201,7 @@ def _records(tree, label):
             "properties": properties,
             "unscoped": unscoped,
             "raw": value,
+            "node": node,
         }
         if len(result) > _MAX_OBJECTS:
             raise CoreError("THREE_WAY_LIMIT", "Metadata object limit exceeded")
@@ -242,6 +293,135 @@ def _unscoped_action(values):
         None if values[1] is None else values[1]["unscoped"],
         None if values[2] is None else values[2]["unscoped"],
     )
+
+
+def _direct_property(node, name):
+    return node.find(f"{{{_MD_NS}}}Properties/{{{_MD_NS}}}{name}")
+
+
+def _companion_kind(path):
+    if path.lower().endswith(".bsl"):
+        return "bsl"
+    if path.endswith("/Ext/Form.xml"):
+        return "form"
+    if path.endswith("/Ext/Template.xml"):
+        return "data_composition_schema"
+    return None
+
+
+def _companion_reason(kind, scope, raw, owner):
+    if owner is None:
+        return "owner_not_found"
+    object_type, record = owner
+    node = record["node"]
+    if node.tag != f"{{{_MD_NS}}}{object_type}":
+        return "owner_namespace_unsupported"
+    if kind == "bsl":
+        if scope not in _MODULE_OWNERS:
+            return "scope_unsupported"
+        if object_type not in _MODULE_OWNERS[scope]:
+            return "owner_type_unsupported"
+        try:
+            text = raw.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            return "bsl_encoding_unsupported"
+        if "\x00" in text:
+            return "bsl_encoding_unsupported"
+    else:
+        expected_types = (
+            {"Form", "CommonForm"} if kind == "form" else {"Template", "CommonTemplate"}
+        )
+        if object_type not in expected_types:
+            return "owner_type_unsupported"
+        # XML has already passed the bounded, declaration-free parser in _records.
+        root = ET.fromstring(raw)
+        expected_root = _FORM_ROOT if kind == "form" else _DCS_ROOT
+        if root.tag != expected_root:
+            return "xml_shape_unsupported"
+        if kind == "data_composition_schema":
+            template_type = _direct_property(node, "TemplateType")
+            if template_type is None or template_type.text != "DataCompositionSchema":
+                return "template_type_unsupported"
+    return None
+
+
+def _semantic_records(tree, records):
+    owners = {record["path"]: (key, record) for key, record in records.items()}
+    result = {}
+    for path, raw in tree.items():
+        kind = _companion_kind(path)
+        if kind is None:
+            continue
+        stem, separator, suffix = path.rpartition("/Ext/")
+        scope = "Ext/" + suffix if separator else path
+        owner = owners.get(stem + ".xml") if separator else None
+        identity = ("", "") if owner is None else owner[0]
+        reason = _companion_reason(
+            kind, scope, raw, None if owner is None else (identity[0], owner[1])
+        )
+        key = (*identity, path if owner is None else scope)
+        result[key] = {"path": path, "raw": raw, "kind": kind, "reason": reason}
+    for identity, record in records.items():
+        declarations = [
+            element
+            for name in sorted(_EXTENSION_PROPERTIES)
+            if (element := _direct_property(record["node"], name)) is not None
+        ]
+        if declarations:
+            result[(*identity, "Properties/Extension")] = {
+                "path": record["path"],
+                "raw": b"".join(
+                    ET.tostring(element, encoding="utf-8") for element in declarations
+                ),
+                "kind": "extension",
+                "reason": "extension_ownership_unverified",
+            }
+    return result
+
+
+def _semantic_plan(trees, records):
+    versions = [
+        _semantic_records(tree, records[label]) for label, tree in trees.items()
+    ]
+    identities = set().union(*(version.keys() for version in versions))
+    path_owners = {}
+    for version in versions:
+        for key, value in version.items():
+            path_owners.setdefault(value["path"], set()).add(key[:2])
+    rows = []
+    for object_type, identity, scope in sorted(identities):
+        values = [version.get((object_type, identity, scope)) for version in versions]
+        existing = [value for value in values if value is not None]
+        action = _merge_action(*values)
+        reasons = sorted({value["reason"] for value in existing if value["reason"]})
+        if identity:
+            bindings = set().union(*(path_owners[value["path"]] for value in existing))
+            if len(bindings - {("", "")}) > 1:
+                reasons = ["owner_identity_changed"]
+            elif ("", "") in bindings:
+                reasons = ["owner_binding_incomplete"]
+        if reasons:
+            status, reason = "unsupported", reasons[0]
+        elif action == "conflict":
+            status, reason = "conflict", "atomic_overlap"
+        else:
+            status, reason = "supported", "atomic_scope_only"
+        row = {
+            "object_type": object_type or None,
+            "object_uuid": identity or None,
+            "kind": existing[0]["kind"],
+            "scope": scope,
+            "granularity": "atomic_bytes",
+            "action": action,
+            "status": status,
+            "reason": reason,
+        }
+        for label, value in zip(trees, values):
+            row[label + "_path"] = None if value is None else value["path"]
+            row[label + "_sha256"] = None if value is None else sha256(value["raw"])
+            row[label + "_size_bytes"] = None if value is None else len(value["raw"])
+        rows.append(row)
+    return {"schema": 1, "mode": "read_only", "coverage": "partial", "scopes": rows}
 
 
 def plan_metadata_three_way(
@@ -344,4 +524,5 @@ def plan_metadata_three_way(
         "counts": counts,
         "objects": [asdict(row) for row in rows],
         "unsupported_files": sorted(unsupported, key=lambda path: path.encode("utf-8")),
+        "semantics": _semantic_plan(trees, records),
     }

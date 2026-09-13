@@ -58,6 +58,10 @@
 Формат [owner report](docs/product/OWNER-REPORT.md) связывает quality findings и
 подтверждённые runtime-метрики; без runtime adapter бизнес-значения остаются
 `not_available`.
+Для snapshot-анализа добавлены read-only [EDT-инвентарь UUID и владельцев](docs/product/EDT-INVENTORY-IDENTITY.md)
+и [семантические companion-scope для three-way](docs/product/METADATA-THREE-WAY-SEMANTICS.md).
+Сформированный owner report можно сохранить и прочитать через
+[durable store и CLI](docs/product/OWNER-REPORT-STORE.md); каталог привязан к state-root проекта.
 Для обновлений есть [three-way dry-run](docs/product/THREE-WAY-UPDATES.md): он
 различает сохранение доработки, принятие upstream и конфликт по хэшу, не меняя
 исходное дерево.
@@ -123,9 +127,12 @@ flowchart LR
 | [Готовность](docs/product/READINESS.md) | Что проверено и что ещё предстоит |
 | [Workspace apply](docs/product/METADATA-WORKSPACE.md) | CAS-запись и undo в принадлежащей копии |
 | [Owner report](docs/product/OWNER-REPORT.md) | Источники quality и runtime-метрик с fail-closed статусами и durable receipts |
+| [Owner report store](docs/product/OWNER-REPORT-STORE.md) | Иммутабельные receipts и локальный CLI сохранения/чтения по snapshot |
 | [Runtime metrics](docs/product/RUNTIME-METRICS.md) | Bounded JSON-export adapter с двойной авторизацией и точной привязкой к snapshot |
 | [Three-way updates](docs/product/THREE-WAY-UPDATES.md) | Dry-run переноса base/current/upstream по хэшу |
 | [UUID-aware updates](docs/product/METADATA-THREE-WAY.md) | Консервативное сопоставление объектов Designer XML по типу и UUID |
+| [EDT identity inventory](docs/product/EDT-INVENTORY-IDENTITY.md) | Проверенные UUID, владельцы вложенных объектов и evidence слоя в EDT snapshot |
+| [Three-way semantics](docs/product/METADATA-THREE-WAY-SEMANTICS.md) | Atomic BSL/form/СКД scopes с явными supported/conflict/unsupported статусами |
 | [Аудит](docs/product/AUDIT-20260912.md) | Приоритетные слабые места и порядок работ |
 | [Разработка](CONTRIBUTING.md) | Сборка, тесты и правила изменений |
 

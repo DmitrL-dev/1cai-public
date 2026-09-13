@@ -109,3 +109,57 @@ def test_metadata_workspace_recover_requires_explicit_target():
                 "original",
             )
         )
+
+
+def test_owner_report_commands_have_explicit_context_and_bounded_paging():
+    saved = _parser().parse_args(
+        arguments(
+            "owner-report-save",
+            "--store",
+            "state/owner-reports",
+            "--snapshot",
+            "snapshot",
+            "--report-json",
+            "report.json",
+        )
+    )
+    assert saved.store.parts[-2:] == ("state", "owner-reports")
+    assert saved.report_id is None
+    loaded = _parser().parse_args(
+        arguments(
+            "owner-report-get",
+            "--store",
+            "state/owner-reports",
+            "--snapshot",
+            "snapshot",
+            "--report-id",
+            "report-id",
+        )
+    )
+    assert loaded.report_id == "report-id"
+    listed = _parser().parse_args(
+        arguments(
+            "owner-report-list",
+            "--store",
+            "state/owner-reports",
+            "--snapshot",
+            "snapshot",
+            "--limit",
+            "7",
+        )
+    )
+    assert listed.limit == 7
+    with pytest.raises(CoreError, match="Repeated option: --limit"):
+        _parser().parse_args(
+            arguments(
+                "owner-report-list",
+                "--store",
+                "state/owner-reports",
+                "--snapshot",
+                "snapshot",
+                "--limit",
+                "7",
+                "--limit",
+                "8",
+            )
+        )
