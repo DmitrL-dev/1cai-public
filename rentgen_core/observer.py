@@ -19,6 +19,13 @@ from .git_observer import (
     FindingState,
     GitObservation,
     reconcile_findings,
+    observe_git,
+)
+from .git_snapshot_evidence import (
+    EVIDENCE_SCHEMA,
+    GitSnapshotEvidence,
+    read_evidence,
+    save_evidence,
 )
 from .publication import capture_and_publish
 from .snapshot_diff import compare_snapshots
@@ -48,8 +55,25 @@ CREATE TABLE finding_binding (
 
 def _findings_version(db):
     version = db.execute("PRAGMA user_version").fetchone()[0]
-    if version not in (0, 1):
+    if version not in (0, 1, 2):
         raise CoreError("OBSERVER_SCHEMA_UNSUPPORTED", "Unsupported observer schema")
+    if (
+        version < 2
+        and db.execute(
+            "SELECT 1 FROM sqlite_master WHERE name='git_snapshot_evidence'"
+        ).fetchone()
+        is not None
+    ):
+        raise CoreError(
+            "OBSERVER_SCHEMA_UNSUPPORTED", "Legacy profile has unversioned evidence"
+        )
+    if version == 2:
+        columns = db.execute("PRAGMA table_info(git_snapshot_evidence)").fetchall()
+        if [(row[1], row[2], row[3], row[5]) for row in columns] != [
+            ("commit_id", "TEXT", 0, 1),
+            ("evidence", "TEXT", 1, 0),
+        ]:
+            raise CoreError("OBSERVER_SCHEMA_UNSUPPORTED", "Invalid evidence schema")
     return version
 
 
@@ -356,10 +380,69 @@ class Observer:
                 "UPDATE jobs SET phase=CASE WHEN result IS NULL THEN 'capture' ELSE 'report' END,attempts=0,error=NULL WHERE phase='failed'"
             )
 
+    def verify_git_snapshot(
+        self, observation: GitObservation
+    ) -> GitSnapshotEvidence | None:
+        """Probe stable sources between clean Git observations; None means no head.
+
+        This does not compute a Git tree digest or prove excluded/untracked files.
+        The confined source probe checks both content passes and project head.
+        """
+        ctx = self._context(write=True)
+        self._validate(ctx)
+        if not isinstance(observation, GitObservation) or observation.repository != str(
+            ctx.source_root.resolve()
+        ):
+            raise CoreError("GIT_SNAPSHOT_CONTEXT", "Repository must match source root")
+        if observe_git(ctx.source_root) != observation:
+            raise CoreError("GIT_HEAD_CHANGED", "Git HEAD changed before source probe")
+        head, digest = probe_sources(ctx)
+        with ctx.state.transaction(ctx.principal) as tx:
+            tx.require_all({"project:read", "analysis:run"})
+            if tx.get_project_head() != head:
+                raise CoreError(
+                    "HEAD_CONFLICT", "Published head changed after source probe"
+                )
+            catalog = (
+                tx.get_snapshot(head.snapshot.snapshot_id) if head.snapshot else None
+            )
+            if catalog is not None and catalog.source_digest != digest:
+                raise CoreError(
+                    "GIT_SNAPSHOT_MISMATCH",
+                    "Published snapshot differs from observed sources",
+                )
+        if observe_git(ctx.source_root) != observation:
+            raise CoreError("GIT_HEAD_CHANGED", "Git HEAD changed during source probe")
+        with ctx.state.transaction(ctx.principal) as tx:
+            tx.require_all({"project:read", "analysis:run"})
+            if tx.get_project_head() != head:
+                raise CoreError(
+                    "HEAD_CONFLICT", "Published head changed during verification"
+                )
+        return (
+            None
+            if catalog is None
+            else GitSnapshotEvidence(
+                self.project_id, observation, head.snapshot.snapshot_id, digest
+            )
+        )
+
+    def _check_git_evidence(self, evidence, observation, catalog):
+        if (
+            not isinstance(evidence, GitSnapshotEvidence)
+            or evidence.project_id != self.project_id
+            or evidence.observation != observation
+            or evidence.snapshot_id != catalog.snapshot.snapshot_id
+            or evidence.source_digest != catalog.source_digest
+        ):
+            raise CoreError(
+                "GIT_SNAPSHOT_EVIDENCE_INVALID", "Evidence context or digest mismatch"
+            )
+
     def record_findings(
-        self, report: FindingReport, *, snapshot_id=None, _locked=False
+        self, report: FindingReport, *, snapshot_id=None, evidence=None, _locked=False
     ):
-        """Persist a caller-supplied complete report; never probe or analyze Git.
+        """Persist a caller report, rechecking any new source/Git evidence.
 
         One repo/ref/profile/scope context is retained per observer profile.
         Historical commit replays return their original receipt without moving
@@ -367,22 +450,49 @@ class Observer:
         ``snapshot_id`` is an explicit caller assertion that the finding commit
         was analyzed against that published snapshot. Without it, the durable
         findings remain unbound and are never presented as snapshot quality.
+        Typed ``evidence`` requests verified binding; new evidence is checked
+        against live sources, while a durable identical replay is historical.
         """
         with nullcontext() if _locked else self.locked():
             ctx = self._context(write=True)
             _validate_finding_provenance(report, ctx)
+            if evidence is not None:
+                if not isinstance(evidence, GitSnapshotEvidence):
+                    raise CoreError(
+                        "GIT_SNAPSHOT_EVIDENCE_INVALID", "Typed evidence required"
+                    )
+                if snapshot_id is not None and snapshot_id != evidence.snapshot_id:
+                    raise CoreError(
+                        "GIT_SNAPSHOT_EVIDENCE_INVALID", "Snapshot arguments disagree"
+                    )
+                snapshot_id = evidence.snapshot_id
             if snapshot_id is not None:
                 SnapshotRef(self.project_id, snapshot_id, snapshot_id)
                 with ctx.state.transaction(ctx.principal) as tx:
                     tx.require_all({"project:read", "analysis:run"})
-                    tx.get_snapshot(snapshot_id)
+                    catalog = tx.get_snapshot(snapshot_id)
+                if evidence is not None:
+                    self._check_git_evidence(evidence, report.observation, catalog)
+                    with _sqlite.transaction(self.database) as db:
+                        _findings_version(db)
+                        saved_evidence = read_evidence(db, report.observation.commit)
+                    if saved_evidence is not None:
+                        if saved_evidence != evidence:
+                            raise CoreError(
+                                "FINDINGS_REPLAY_CONFLICT",
+                                "Conflicting Git snapshot evidence",
+                            )
+                    elif self.verify_git_snapshot(report.observation) != evidence:
+                        raise CoreError(
+                            "GIT_SNAPSHOT_EVIDENCE_INVALID", "Evidence is not verified"
+                        )
             canonical = reconcile_findings(None, report).state.report
             with _sqlite.transaction(self.database, write=True) as db:
                 if _findings_version(db) == 0:
                     for statement in FINDINGS_SCHEMA.split(";"):
                         if statement.strip():
                             db.execute(statement)
-                    db.execute("PRAGMA user_version=1")
+
                 else:
                     # Profiles created before explicit snapshot bindings remain
                     # readable; their existing state is intentionally unbound.
@@ -390,6 +500,12 @@ class Observer:
                         "CREATE TABLE IF NOT EXISTS finding_binding ("
                         "snapshot_id TEXT NOT NULL, commit_id TEXT PRIMARY KEY)"
                     )
+                if _findings_version(db) < 2:
+                    db.execute(EVIDENCE_SCHEMA)
+                    db.execute("PRAGMA user_version=2")
+                    _findings_version(db)
+                if evidence is not None:
+                    save_evidence(db, evidence, _json(evidence))
                 row = db.execute(
                     "SELECT state FROM finding_state WHERE id=1"
                 ).fetchone()
@@ -523,7 +639,8 @@ class Observer:
             self._validate(ctx)
             with ctx.state.transaction(ctx.principal) as tx:
                 tx.require_all({"project:read", "analysis:run"})
-                tx.get_snapshot(snapshot_id)
+                catalog = tx.get_snapshot(snapshot_id)
+            evidence = None
             with _sqlite.transaction(self.database) as db:
                 if _findings_version(db) == 0:
                     findings = None
@@ -545,6 +662,14 @@ class Observer:
                         if binding_table is not None and findings is not None
                         else None
                     )
+                    if findings is not None:
+                        evidence = read_evidence(db, findings.report.observation.commit)
+            provenance = None
+            if evidence is not None and binding == (snapshot_id,):
+                self._check_git_evidence(evidence, findings.report.observation, catalog)
+                provenance = "git_source_verified"
+            elif binding == (snapshot_id,):
+                provenance = "caller_asserted"
             quality_reason = None
             if findings is not None and binding != (snapshot_id,):
                 findings = None
@@ -559,6 +684,8 @@ class Observer:
                 authorize=authorize,
                 max_findings=max_findings,
             )
+            if provenance is not None:
+                report["quality"]["provenance"] = provenance
             if quality_reason is not None:
                 report["quality"] = {
                     "status": "not_available",

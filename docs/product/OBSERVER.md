@@ -78,14 +78,23 @@ rentgen-observer retry --registry C:\RentgenState\registry.sqlite3 --project PRO
 
 ## Сохранение lifecycle Git-находок через Python API
 
-`Observer.record_findings(report: FindingReport, snapshot_id=None)` принимает готовый полный отчёт
-из `rentgen_core.git_observer` и вызывает существующий `reconcile_findings`.
-Операция не запускает Git, scanner, анализатор, LLM, сеть или scheduler. CLI
-принимает явно переданный отчёт; source-capture цикл `tick()` не подаёт отчёты
-качества автоматически. Отдельный `GitWatcher` остаётся адаптером, который
-передаёт результат анализатора через тот же caller-supplied API. Ответ
-`analysis="caller_supplied"` означает доверенный ввод
-вызывающего кода, а не доказательство запуска анализа указанного commit.
+`Observer.record_findings(report: FindingReport, snapshot_id=None, evidence=None)` принимает
+готовый полный отчёт из `rentgen_core.git_observer` и вызывает существующий
+`reconcile_findings`. По умолчанию операция не запускает Git, scanner, анализатор,
+LLM, сеть или scheduler. CLI принимает явно переданный отчёт; source-capture цикл
+`tick()` не подаёт отчёты качества автоматически. Отдельный `GitWatcher` остаётся
+адаптером, который передаёт результат анализатора через тот же API и может передать
+проверенный `GitSnapshotEvidence`. При `evidence=` observer повторно проверяет
+контекст, стабильность HEAD и digest исходников перед атомарной записью; ответ
+квитанции по-прежнему содержит `analysis="caller_supplied"`: это описывает
+происхождение самого отчёта и не аттестует анализатор. Доказанная связь отчёта с
+наблюдённым Git-источником и опубликованным snapshot отражается отдельно как
+`quality.provenance="git_source_verified"` в `owner_report()` (и как
+`snapshot_binding="git_source_verified"` в результате `GitWatcher.tick()`). Без
+evidence `analysis="caller_supplied"` означает доверенный ввод вызывающего кода,
+а не доказательство запуска анализа указанного commit. Для точного исторического
+replay уже сохранённого evidence новая live-проверка не выполняется; новая запись
+с evidence проходит её повторно.
 
 В отчёте обязательны `complete=True`, `profile_id`, `scope_id` и provenance
 `observation.repository/ref/commit`. Repository должен точно совпадать с
@@ -119,10 +128,12 @@ binding другого, текущего commit.
 для уже принятого commit вызывают `FINDINGS_REPLAY_CONFLICT`; перестановка
 находок конфликтом не считается.
 
-Старые профили с `PRAGMA user_version=0` мигрируют до версии 1 при первой
+Старые профили с `PRAGMA user_version=0` или `1` мигрируют до версии 2 при первой
 успешной записи, в той же транзакции; прежние binding, jobs и source-отчёты
-сохраняются. Ошибка первой записи откатывает также миграцию. Неизвестная версия
-схемы отклоняется. Перезапуск использует сохранённое состояние и квитанции.
+сохраняются, а для версии 2 добавляется строгая таблица Git evidence. Ошибка
+первой записи откатывает также миграцию. Несовместимая таблица evidence и
+неизвестная версия схемы отклоняются. Перезапуск использует сохранённое состояние,
+evidence и квитанции.
 
 `Observer.findings_status(limit=10)` возвращает состояние и последние квитанции;
 `limit` допускает 1–100, `reports_truncated=True` указывает на остальные записи.

@@ -63,9 +63,12 @@ allowlist получателей и подтверждением только п
 `not_available`.
 Observer умеет собрать такой отчёт из durable findings для опубликованного
 snapshot без повторного запуска Git/LLM; для статуса quality вызывающий слой
-должен явно передать `snapshot_id` в `record_findings`, а лимит выдачи
+должен явно передать `snapshot_id` в ручной `record_findings`; GitWatcher при
+чистом tracked source автоматически добавляет проверяемое Git/snapshot evidence,
+а лимит выдачи
 `max_findings` выбирается явно. Сохранение receipt остаётся отдельной
 операцией owner-report store.
+Подробности [Git/snapshot evidence](docs/product/GIT-SNAPSHOT-EVIDENCE.md).
 Для snapshot-анализа добавлены read-only [EDT-инвентарь UUID и владельцев](docs/product/EDT-INVENTORY-IDENTITY.md)
 и [семантические companion-scope для three-way](docs/product/METADATA-THREE-WAY-SEMANTICS.md).
 Сформированный owner report можно сохранить и прочитать через

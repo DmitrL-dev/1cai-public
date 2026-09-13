@@ -539,6 +539,7 @@ class GitWatcher:
             if commit is not None:
                 require_ancestor(repository, commit, observation.commit)
 
+            evidence = self.observer.verify_git_snapshot(observation)
             report = self._report(observation)
             latest = observe_git(repository)
             if latest != observation:
@@ -546,9 +547,14 @@ class GitWatcher:
                     "GIT_HEAD_CHANGED",
                     "Git HEAD changed while the commit was being analyzed",
                 )
-            receipt = self.observer.record_findings(report, _locked=True)
+            receipt = self.observer.record_findings(
+                report, evidence=evidence, _locked=True
+            )
             return {
                 "status": "analyzed",
+                "snapshot_binding": "git_source_verified"
+                if evidence
+                else "unbound_no_snapshot",
                 "commit": observation.commit,
                 "observation": asdict(observation),
                 "receipt": receipt,

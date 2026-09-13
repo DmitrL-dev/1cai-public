@@ -201,7 +201,7 @@ def test_old_profile_migrates_without_losing_source_jobs(observer):
     assert observer.findings_status()["state"] is None
     observer.record_findings(report(observer))
     with sqlite3.connect(observer.database) as db:
-        assert db.execute("PRAGMA user_version").fetchone()[0] == 1
+        assert db.execute("PRAGMA user_version").fetchone()[0] == 2
         assert db.execute("SELECT error FROM meta").fetchone()[0] == "legacy-marker"
         assert db.execute("SELECT count(*) FROM jobs").fetchone()[0] == 0
 
