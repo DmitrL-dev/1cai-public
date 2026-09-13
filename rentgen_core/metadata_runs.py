@@ -264,9 +264,20 @@ async def create_preview(ctx, plan, profile_id, operation_id):
 
 def attach_business_evidence(ctx, operation_id, evidence):
     """Bind the accepted own-fixture data run to an immutable metadata preview."""
+    from .native_resources import _file_slot, _archived, _pinned_archive_root
+
     with authorized(ctx):
         run = run_path(ctx, operation_id)
-        with pinned_directory(run):
+        root = ctx.state.path.parent
+        with (
+            _file_slot(root, "native-admission.lock", "NATIVE_ADMISSION_BUSY"),
+            _pinned_archive_root(root),
+            pinned_directory(run),
+        ):
+            if _archived(root, run) is not None:
+                raise CoreError(
+                    "NATIVE_RUN_ARCHIVED", "Archived runs cannot accept evidence"
+                )
             request = _request(ctx, run, operation_id)
             require(
                 (run / "preview.json").exists()

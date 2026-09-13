@@ -82,6 +82,7 @@ class ServiceInstallSpec:
 
     No arbitrary argument or service-account credential channel is supported.
     Configuration contents are never read, copied or placed on a command line.
+    The known pip console launcher is not a supported SCM process image.
     """
 
     service_name: str
@@ -97,8 +98,15 @@ class ServiceInstallSpec:
         if not re.fullmatch(r"[\w .()-]+", display) or display != display.strip():
             raise _invalid()
         executable = _file(self.executable, ".exe")
-        python_source = Path(self.executable).name.lower() in _PYTHON_EXECUTABLES
-        python_target = Path(executable).name.lower() in _PYTHON_EXECUTABLES
+        source_name = Path(self.executable).name.lower()
+        target_name = Path(executable).name.lower()
+        if "rentgen-service.exe" in {source_name, target_name}:
+            raise CoreError(
+                "SERVICE_IMAGE_UNSUPPORTED",
+                "Console launcher cannot be an SCM image; use the direct interpreter",
+            )
+        python_source = source_name in _PYTHON_EXECUTABLES
+        python_target = target_name in _PYTHON_EXECUTABLES
         object.__setattr__(self, "executable", executable)
         args = self.arguments
         if type(args) is not tuple or len(args) > 6:

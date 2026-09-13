@@ -14,11 +14,18 @@ the separate foreground Git scheduler lifetime.
 
 The installed `rentgen-service` console entry point proves CLI packaging only.
 Its pip-generated EXE can launch a child Python process; this is not evidence
-that SCM will connect to the correct dispatcher process. Do not substitute that
-launcher for the placeholder executable below without validating a same-process
-service image. The installer supports a strictly fixed direct-interpreter
-ImagePath as described below, alongside its existing native EXE grammar. It does
-not build or verify a native wrapper. Interpreter integrity, service ACLs,
+that SCM will connect to the correct dispatcher process. The installer rejects
+the known `rentgen-service.exe` basename (case-insensitively) in both the supplied
+path and its canonical target with `SERVICE_IMAGE_UNSUPPORTED`. This fixed
+diagnostic directs the caller to the direct interpreter and never includes the
+path, argv or configuration contents. It applies during spec construction and
+install/update revalidation, before the first SCM command, including dry-run
+spec construction. Renaming a console launcher does not make it a supported
+native service image: this guard is not a binary trust or launcher detection
+mechanism. Native images still require independent evidence that SCM's actual
+process owns the dispatcher. The installer supports a strictly fixed
+direct-interpreter ImagePath as described below, alongside its existing native
+EXE grammar. It does not build or verify a native wrapper. Interpreter integrity, service ACLs,
 signing, recovery policies and live deployment acceptance remain open; no
 production acceptance is claimed here.
 
@@ -198,7 +205,8 @@ not native symlink/junction acceptance evidence.
 ## Typed errors and evidence
 
 All validation/SCM errors use `CoreError`. Codes include `SERVICE_SPEC_INVALID`,
-`SERVICE_PLATFORM_UNSUPPORTED`, `SERVICE_SCM_UNAVAILABLE`, `SERVICE_SCM_TIMEOUT`,
+`SERVICE_IMAGE_UNSUPPORTED`, `SERVICE_PLATFORM_UNSUPPORTED`,
+`SERVICE_SCM_UNAVAILABLE`, `SERVICE_SCM_TIMEOUT`,
 `SERVICE_SCM_PROTOCOL`, `SERVICE_SCM_FAILED`, and `SERVICE_ALREADY_EXISTS`.
 Only numeric return codes, fixed command verbs and rollback outcome labels are
 included in error details. Timeouts explicitly report an unknown command outcome.
@@ -206,8 +214,8 @@ included in error details. Timeouts explicitly report an unknown command outcome
 Focused verification (no live SCM mutation):
 
 ```text
-python -m pytest tests/unit/test_service_entry.py tests/unit/test_service_installer.py tests/unit/test_service_host.py -q
-python -m black --check rentgen_core/service_entry.py tests/unit/test_service_entry.py rentgen_core/service_installer.py tests/unit/test_service_installer.py
-python -m ruff check rentgen_core/service_entry.py tests/unit/test_service_entry.py rentgen_core/service_installer.py tests/unit/test_service_installer.py
+python -m pytest tests/unit/test_service_entry.py tests/unit/test_service_installer.py tests/unit/test_service_host.py tests/unit/test_service_image_boundary.py -q
+python -m black --check rentgen_core/service_entry.py tests/unit/test_service_entry.py rentgen_core/service_installer.py tests/unit/test_service_installer.py tests/unit/test_service_image_boundary.py
+python -m ruff check rentgen_core/service_entry.py tests/unit/test_service_entry.py rentgen_core/service_installer.py tests/unit/test_service_installer.py tests/unit/test_service_image_boundary.py
 git diff --check
 ```

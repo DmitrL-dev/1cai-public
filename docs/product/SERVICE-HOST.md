@@ -207,7 +207,13 @@ existing explicit recovery workflow. See Microsoft's
 **The installed `rentgen-service.exe` console-script launcher is not proven as
 an SCM service image.** A pip launcher can create a child Python process while
 SCM owns the launcher process. The dispatcher must run in the actual service
-process. The installer now supports a fixed direct-interpreter ImagePath using
+process. `ServiceInstallSpec` rejects the known `rentgen-service.exe` basename
+case-insensitively in either the supplied path or its canonical target with
+`SERVICE_IMAGE_UNSUPPORTED`, before any SCM command. Install/update repeat this
+validation before their first SCM query. The error contains no path or argv.
+This guard does not identify every launcher or certify a renamed binary; the
+native EXE contract still requires independent same-process deployment evidence.
+The installer supports a fixed direct-interpreter ImagePath using
 `python.exe`/`pythonw.exe` with exactly
 `-I -m rentgen_core.service_entry --service --config <path>`, alongside its native
 EXE grammar. The package must be installed in that interpreter's site-packages;
