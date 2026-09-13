@@ -31,6 +31,9 @@ class _Tx:
         if self.runtime.revoked:
             raise CoreError("PROJECT_FORBIDDEN", "Project access denied")
 
+    def get_snapshot(self, snapshot_id):
+        return {"snapshot_id": snapshot_id}
+
 
 @dataclass
 class _Context:
@@ -272,6 +275,7 @@ def test_owner_report_tools_are_snapshot_bound_and_reauthorized(monkeypatch):
     assert result.meta["rentgenOutputScope"]["family"] == "report"
     assert calls[0] == ("init", Path("C:/Rentgen/owner-reports"))
     assert calls[1] == ("get", report_id, PROJECT, SNAPSHOT)
+    resolve_count = len(runtime.resolve_calls)
 
     report_stream = io.BytesIO()
     report_document = {
@@ -321,6 +325,7 @@ def test_owner_report_tools_are_snapshot_bound_and_reauthorized(monkeypatch):
         listed.structuredContent["result"]["owner_reports"][0]["report_id"] == report_id
     )
     assert calls[-1] == ("list", PROJECT, SNAPSHOT, 7)
+    assert len(runtime.resolve_calls) == resolve_count
 
 
 def test_owner_report_tools_reject_unknown_fields_and_bad_ids():

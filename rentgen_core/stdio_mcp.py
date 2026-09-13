@@ -880,16 +880,12 @@ def _execute(
             proposal_context = runtime.state_context(
                 principal, arguments["project_id"], permissions=permissions
             )
-            if runtime.graph_reader_factory is None:
-                from rentgen_graph.snapshot_adapter import RentgenGraphReaderFactory
-
-                runtime = replace(
-                    runtime, graph_reader_factory=RentgenGraphReaderFactory()
-                )
-            ctx = runtime.resolve(
-                principal, arguments["project_id"], arguments["snapshot_id"]
+            ctx = proposal_context
+            SnapshotRef(
+                ctx.project_id, arguments["snapshot_id"], arguments["snapshot_id"]
             )
-            proposal_context = ctx
+            with ctx.state.transaction(ctx.principal) as tx:
+                tx.get_snapshot(arguments["snapshot_id"])
             store = OwnerReportStore(Path(ctx.state.path).parent / "owner-reports")
 
             def authorize():
