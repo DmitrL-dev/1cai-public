@@ -6,7 +6,7 @@
 
 ## Дополнение к кандидату 13 сентября 2026
 
-В текущем кандидате локально проходят 971 тест; три Windows symlink-теста
+В текущем кандидате локально проходят 975 тестов; три Windows symlink-теста
 пропущены из-за отсутствия privilege. Кандидат включает bounded foreground
 service-host, explicit SCM installer planning и явную freshness-policy для
 runtime-метрик поверх публичного owner-report CLI с проверкой опубликованного snapshot и выделенным

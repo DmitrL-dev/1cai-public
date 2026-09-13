@@ -71,7 +71,8 @@ snapshot без повторного запуска Git/LLM; для статус
 чистом tracked source автоматически добавляет проверяемое Git/snapshot evidence,
 а лимит выдачи
 `max_findings` выбирается явно. Сохранение receipt остаётся отдельной
-операцией owner-report store.
+операцией owner-report store; команда `owner-report-build` выполняет эту сборку
+и сохранение без промежуточного JSON.
 Подробности [Git/snapshot evidence](docs/product/GIT-SNAPSHOT-EVIDENCE.md).
 Для snapshot-анализа добавлены read-only [EDT-инвентарь UUID и владельцев](docs/product/EDT-INVENTORY-IDENTITY.md)
 и [семантические companion-scope для three-way](docs/product/METADATA-THREE-WAY-SEMANTICS.md).
