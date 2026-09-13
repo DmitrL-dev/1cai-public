@@ -1,6 +1,7 @@
 import io
 import json
 from dataclasses import dataclass, field
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -51,13 +52,23 @@ class _Runtime:
         if self.revoked:
             raise CoreError("PROJECT_FORBIDDEN", "Project access denied")
         return _Context(
-            project, principal, SimpleNamespace(transaction=lambda _: _Tx(self))
+            project,
+            principal,
+            SimpleNamespace(
+                path=Path("C:/Rentgen/state.sqlite3"),
+                transaction=lambda _: _Tx(self),
+            ),
         )
 
     def resolve(self, principal, project, snapshot):
         self.resolve_calls.append((principal, project, snapshot))
         return _Context(
-            project, principal, SimpleNamespace(transaction=lambda _: _Tx(self))
+            project,
+            principal,
+            SimpleNamespace(
+                path=Path("C:/Rentgen/state.sqlite3"),
+                transaction=lambda _: _Tx(self),
+            ),
         )
 
 
@@ -200,3 +211,130 @@ def test_native_archive_error_is_redacted_after_revoke(monkeypatch):
     assert result.isError is True
     assert result.structuredContent["error"]["code"] == "PROJECT_FORBIDDEN"
     assert "should not leak" not in result.structuredContent["error"]["message"]
+
+
+def test_owner_report_tools_are_snapshot_bound_and_reauthorized(monkeypatch):
+    runtime = _Runtime()
+    principal = SimpleNamespace(id="tester", authority="local_os")
+    report_id = "33333333-3333-4333-8333-333333333333"
+    calls = []
+
+    class FakeStore:
+        def __init__(self, root):
+            calls.append(("init", root))
+
+        def get(
+            self, selected, *, expected_project_id, expected_snapshot_id, authorize
+        ):
+            calls.append(("get", selected, expected_project_id, expected_snapshot_id))
+            authorize()
+            return {
+                "schema": 1,
+                "report_id": selected,
+                "project_id": expected_project_id,
+                "snapshot_id": expected_snapshot_id,
+                "status": "stored",
+                "created_at": "2026-09-14T00:00:00+00:00",
+                "report": {"business_metrics": {"status": "not_available"}},
+                "receipt_id": "d" * 64,
+            }
+
+        def list(self, *, expected_project_id, expected_snapshot_id, authorize, limit):
+            calls.append(("list", expected_project_id, expected_snapshot_id, limit))
+            authorize()
+            return [
+                {
+                    "schema": 1,
+                    "report_id": report_id,
+                    "project_id": expected_project_id,
+                    "snapshot_id": expected_snapshot_id,
+                    "status": "stored",
+                    "created_at": "2026-09-14T00:00:00+00:00",
+                    "receipt_id": "e" * 64,
+                }
+            ]
+
+    monkeypatch.setattr("rentgen_core.owner_report_store.OwnerReportStore", FakeStore)
+    scope = stdio_mcp.McpScope(
+        project_id=PROJECT,
+        allowed_tools={"rentgen_owner_report_get", "rentgen_owner_report_list"},
+    )
+    result = stdio_mcp._execute(
+        runtime,
+        principal,
+        "rentgen_owner_report_get",
+        {"project_id": PROJECT, "snapshot_id": SNAPSHOT, "report_id": report_id},
+        scope=scope,
+    )
+    assert result.isError is False
+    assert result.structuredContent["result"]["owner_report"]["report_id"] == report_id
+    assert result.meta["rentgenOutputScope"]["permissions"] == ["project:read"]
+    assert result.meta["rentgenOutputScope"]["family"] == "report"
+    assert calls[0] == ("init", Path("C:/Rentgen/owner-reports"))
+    assert calls[1] == ("get", report_id, PROJECT, SNAPSHOT)
+
+    report_stream = io.BytesIO()
+    report_document = {
+        "jsonrpc": "2.0",
+        "id": 8,
+        "result": result.model_dump(by_alias=True, mode="json", exclude_none=True),
+    }
+    stdio_mcp._GuardedOutput(report_stream, runtime, principal)._write(
+        json.dumps(report_document, separators=(",", ":"))
+    )
+    report_emitted = json.loads(report_stream.getvalue())
+    assert (
+        report_emitted["result"]["structuredContent"]["result"]["owner_report"][
+            "report_id"
+        ]
+        == report_id
+    )
+    assert "_meta" not in report_emitted["result"]
+
+    runtime.revoked = True
+    report_revoked_stream = io.BytesIO()
+    report_revoked_result = result.model_dump(
+        by_alias=True, mode="json", exclude_none=True
+    )
+    report_revoked_result.pop("structuredContent")
+    stdio_mcp._GuardedOutput(report_revoked_stream, runtime, principal)._write(
+        json.dumps(
+            {"jsonrpc": "2.0", "id": 8, "result": report_revoked_result},
+            separators=(",", ":"),
+        )
+    )
+    report_revoked = json.loads(report_revoked_stream.getvalue())
+    assert report_revoked["result"]["structuredContent"]["error"]["code"] == (
+        "PROJECT_FORBIDDEN"
+    )
+    runtime.revoked = False
+
+    listed = stdio_mcp._execute(
+        runtime,
+        principal,
+        "rentgen_owner_report_list",
+        {"project_id": PROJECT, "snapshot_id": SNAPSHOT, "limit": 7},
+        scope=scope,
+    )
+    assert listed.isError is False
+    assert (
+        listed.structuredContent["result"]["owner_reports"][0]["report_id"] == report_id
+    )
+    assert calls[-1] == ("list", PROJECT, SNAPSHOT, 7)
+
+
+def test_owner_report_tools_reject_unknown_fields_and_bad_ids():
+    with pytest.raises(CoreError):
+        stdio_mcp.validate_arguments(
+            "rentgen_owner_report_get",
+            {
+                "project_id": PROJECT,
+                "snapshot_id": SNAPSHOT,
+                "report_id": "not-a-uuid",
+            },
+        )
+    with pytest.raises(CoreError):
+        stdio_mcp.validate_arguments(
+            "rentgen_owner_report_list",
+            {"project_id": PROJECT, "snapshot_id": SNAPSHOT, "limit": 0},
+        )

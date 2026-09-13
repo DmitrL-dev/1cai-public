@@ -40,8 +40,8 @@ a different project returns `MCP_PROJECT_FORBIDDEN`. Checks precede dispatch and
 registry/source access. Unknown names still return `UNKNOWN_TOOL`. Requests cannot
 set or widen startup scope. Current membership/permission checks remain in force.
 
-Without either option the current 22-tool contract is retained. Project-only
-startup exposes the 21 tools with explicit project selectors, excluding
+Without either option the current 24-tool contract is retained. Project-only
+startup exposes the 23 tools with explicit project selectors, excluding
 `rentgen_project_list`. Explicitly combining project scope with that registry-wide
 tool is a startup error. Tool-only scope may access the SID's authorized projects.
 Unknown/duplicate tool names, invalid/repeated project selectors and incompatible
@@ -54,7 +54,7 @@ output permission checks. State schema 4 is unchanged.
 
 ## Tool contract
 
-Unrestricted startup exposes twenty-two tools; the previous dev2 artifacts expose ten. All tools return MCP text content containing JSON and equivalent
+Unrestricted startup exposes twenty-four tools; the previous dev2 artifacts expose ten. All tools return MCP text content containing JSON and equivalent
 `structuredContent`. Success uses `{result, request_id}`; operational errors use
 the core `{error: {code, message, request_id, details}}` envelope and `isError=true`.
 Unknown tools return `UNKNOWN_TOOL`. Schemas reject unknown fields, null or blank
@@ -84,6 +84,8 @@ Semantic failures after schema validation keep their existing core error codes.
 | `rentgen_proposal_create` | `project_id`, `snapshot_id`, `source_ref`, `replacement_base64` | none |
 | `rentgen_proposal_check` | `project_id`, `snapshot_id`, `proposal`, `diagnostics_profile` | none |
 | `rentgen_native_archive` | `project_id`, `snapshot_id`, `operation_id`, `namespace` | `profile_id` for `test-runs` and `metadata-runs` |
+| `rentgen_owner_report_get` | `project_id`, `snapshot_id`, `report_id` | none |
+| `rentgen_owner_report_list` | `project_id`, `snapshot_id` | `limit` (1–1000, default 100) |
 
 Project and operation IDs are canonical lowercase UUIDs. Snapshot IDs are
 lowercase SHA-256 digests. Every source/graph request requires an explicit
@@ -148,6 +150,12 @@ and returns the durable archive receipt. `namespace` is one of
 `platform-checks`, `test-runs` or `metadata-runs`; the latter two also require
 the exact 64-character `profile_id`. Evidence remains readable and counted
 against the disk budget, and the tool never deletes or moves retained files.
+
+`rentgen_owner_report_get` and `rentgen_owner_report_list` read only the
+authenticated project's derived `owner-reports` store. They require
+`project:read`, bind every receipt to the selected snapshot, return bounded
+sealed receipts and recheck access at the final output boundary. The MCP
+adapter never accepts a report-store path from the caller.
 
 Only the documented profile ID is selectable. A tool cannot choose Java, JAR,
 working directory, environment or analyzer options. Permissions are checked before

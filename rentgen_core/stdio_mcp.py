@@ -111,6 +111,9 @@ _PROPOSAL_DOCUMENT = _object(
 )
 _PROPOSAL_TOOLS = frozenset({"rentgen_proposal_create", "rentgen_proposal_check"})
 _NATIVE_ARCHIVE_TOOL = "rentgen_native_archive"
+_OWNER_REPORT_TOOLS = frozenset(
+    {"rentgen_owner_report_get", "rentgen_owner_report_list"}
+)
 TOOL_SCHEMAS = {
     "rentgen_proposal_check": _object(
         {
@@ -173,6 +176,17 @@ TOOL_SCHEMAS = {
         },
         ["project_id", "snapshot_id", "operation_id", "namespace"],
     ),
+    "rentgen_owner_report_get": _object(
+        {"project_id": _UUID, "snapshot_id": _HASH, "report_id": _UUID}
+    ),
+    "rentgen_owner_report_list": _object(
+        {
+            "project_id": _UUID,
+            "snapshot_id": _HASH,
+            "limit": {"type": "integer", "minimum": 1, "maximum": 1000},
+        },
+        ["project_id", "snapshot_id"],
+    ),
 }
 _DESCRIPTIONS = {
     "rentgen_proposal_check": "Run the installed pinned BSL analyzer on an exact ephemeral proposal. Requires editing and analysis rights. Reports single-module diagnostics; tests are not run and apply is unavailable.",
@@ -186,6 +200,8 @@ _DESCRIPTIONS = {
     "rentgen_graph_resolve": "Resolve a retained source module in an explicit snapshot's graph.",
     "rentgen_impact": "Return bounded static impact from an explicit snapshot's graph.",
     _NATIVE_ARCHIVE_TOOL: "Create an admin-only logical archive for one completed native run after re-resolving its exact project snapshot. Evidence remains readable and counted; no files are deleted or moved.",
+    "rentgen_owner_report_get": "Read one immutable owner report receipt for an exact project snapshot. The server derives the report store from authenticated project state and rechecks project:read before output.",
+    "rentgen_owner_report_list": "List bounded immutable owner report receipts for an exact project snapshot. The server derives the report store from authenticated project state and rechecks project:read before output.",
 }
 TOOL_SCHEMAS.update(mcp_drafts.schemas(_object, _UUID, _HASH, _PROPOSAL_DOCUMENT))
 _DESCRIPTIONS.update(mcp_drafts.DESCRIPTIONS)
@@ -661,6 +677,8 @@ def _family_limit(family):
         return MAX_RESULT_BYTES
     if family in {"proposal", "admin"}:
         return MAX_PROPOSAL_RESULT_BYTES
+    if family == "report":
+        return MAX_RESULT_BYTES
     raise ValueError("Unknown protected output family")
 
 
@@ -854,6 +872,64 @@ def _execute(
             result = _ProposalToolResult(
                 {"archive": value}, proposal_context, permissions, family
             )
+        elif name in _OWNER_REPORT_TOOLS:
+            from .owner_report_store import OwnerReportStore
+
+            permissions = frozenset({"project:read"})
+            family = "report"
+            proposal_context = runtime.state_context(
+                principal, arguments["project_id"], permissions=permissions
+            )
+            if runtime.graph_reader_factory is None:
+                from rentgen_graph.snapshot_adapter import RentgenGraphReaderFactory
+
+                runtime = replace(
+                    runtime, graph_reader_factory=RentgenGraphReaderFactory()
+                )
+            ctx = runtime.resolve(
+                principal, arguments["project_id"], arguments["snapshot_id"]
+            )
+            proposal_context = ctx
+            store = OwnerReportStore(Path(ctx.state.path).parent / "owner-reports")
+
+            def authorize():
+                _proposal_permissions(ctx, permissions)
+
+            if name == "rentgen_owner_report_get":
+                value = store.get(
+                    arguments["report_id"],
+                    expected_project_id=ctx.project_id,
+                    expected_snapshot_id=arguments["snapshot_id"],
+                    authorize=authorize,
+                )
+                result = _ProposalToolResult(
+                    {"owner_report": value}, proposal_context, permissions, family
+                )
+            else:
+                receipts = store.list(
+                    expected_project_id=ctx.project_id,
+                    expected_snapshot_id=arguments["snapshot_id"],
+                    authorize=authorize,
+                    limit=arguments.get("limit", 100),
+                )
+                value = [
+                    {
+                        key: receipt[key]
+                        for key in (
+                            "schema",
+                            "report_id",
+                            "project_id",
+                            "snapshot_id",
+                            "status",
+                            "created_at",
+                            "receipt_id",
+                        )
+                    }
+                    for receipt in receipts
+                ]
+                result = _ProposalToolResult(
+                    {"owner_reports": value}, proposal_context, permissions, family
+                )
         else:
             result = _dispatch(runtime, principal, name, arguments)
         if isinstance(result, _ProposalToolResult):
@@ -1092,6 +1168,8 @@ class _GuardedOutput:
                     "diagnostic",
                     "draft",
                     "archive",
+                    "owner_report",
+                    "owner_reports",
                 } & body.keys()
                 if type(body.get("draft")) is dict and "diagnostic" in body["draft"]:
                     draft_diagnostic = True
@@ -1115,10 +1193,10 @@ class _GuardedOutput:
                     "project_id",
                     "permissions",
                     "request_id",
-                } | ({"family"} if family in {"draft", "admin"} else set())
+                } | ({"family"} if family in {"draft", "admin", "report"} else set())
                 if (
                     type(scope) is not dict
-                    or family not in {"draft", "proposal", "admin"}
+                    or family not in {"draft", "proposal", "admin", "report"}
                     or set(scope) != expected_keys
                 ):
                     raise ValueError("Invalid internal output scope")
@@ -1129,6 +1207,10 @@ class _GuardedOutput:
                         and family != "proposal"
                     )
                     or ("archive" in protected_keys and family != "admin")
+                    or (
+                        bool({"owner_report", "owner_reports"} & protected_keys)
+                        and family != "report"
+                    )
                 ):
                     raise ValueError("Invalid internal output family")
                 validate_project_id(scope["project_id"])
@@ -1145,6 +1227,8 @@ class _GuardedOutput:
                     )
                 elif family == "admin":
                     allowed = (["project:admin", "project:read"],)
+                elif family == "report":
+                    allowed = (["project:read"],)
                 else:
                     allowed = (
                         ["project:read", "source:edit"],
