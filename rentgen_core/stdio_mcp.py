@@ -167,7 +167,7 @@ TOOL_SCHEMAS = {
             "namespace": {
                 "type": "string",
                 "pattern": r"^(platform-checks|test-runs|metadata-runs)$",
-                "maxLength": 14,
+                "maxLength": 15,
             },
             "profile_id": _HASH,
         },
@@ -1087,7 +1087,12 @@ class _GuardedOutput:
         for payload in payloads:
             body = payload.get("result") if type(payload) is dict else None
             if type(body) is dict:
-                protected_keys |= {"proposal", "diagnostic", "draft"} & body.keys()
+                protected_keys |= {
+                    "proposal",
+                    "diagnostic",
+                    "draft",
+                    "archive",
+                } & body.keys()
                 if type(body.get("draft")) is dict and "diagnostic" in body["draft"]:
                     draft_diagnostic = True
         protected = bool(protected_keys)
@@ -1110,16 +1115,20 @@ class _GuardedOutput:
                     "project_id",
                     "permissions",
                     "request_id",
-                } | ({"family"} if family == "draft" else set())
+                } | ({"family"} if family in {"draft", "admin"} else set())
                 if (
                     type(scope) is not dict
-                    or family not in {"draft", "proposal"}
+                    or family not in {"draft", "proposal", "admin"}
                     or set(scope) != expected_keys
                 ):
                     raise ValueError("Invalid internal output scope")
-                if ("draft" in protected_keys and family != "draft") or (
-                    bool({"proposal", "diagnostic"} & protected_keys)
-                    and family != "proposal"
+                if (
+                    ("draft" in protected_keys and family != "draft")
+                    or (
+                        bool({"proposal", "diagnostic"} & protected_keys)
+                        and family != "proposal"
+                    )
+                    or ("archive" in protected_keys and family != "admin")
                 ):
                     raise ValueError("Invalid internal output family")
                 validate_project_id(scope["project_id"])
@@ -1128,18 +1137,19 @@ class _GuardedOutput:
                 validate_operation_id(scope["request_id"])
                 request_id = scope["request_id"]
                 permissions = scope["permissions"]
-                allowed = (
-                    (
+                if family == "draft":
+                    allowed = (
                         ["project:read"],
                         ["project:read", "source:edit"],
                         ["analysis:run", "project:read", "source:edit"],
                     )
-                    if family == "draft"
-                    else (
+                elif family == "admin":
+                    allowed = (["project:admin", "project:read"],)
+                else:
+                    allowed = (
                         ["project:read", "source:edit"],
                         ["analysis:run", "project:read", "source:edit"],
                     )
-                )
                 if type(permissions) is not list or permissions not in allowed:
                     raise ValueError("Invalid internal output permissions")
                 if (

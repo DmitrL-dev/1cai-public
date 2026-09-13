@@ -1,3 +1,5 @@
+import io
+import json
 from dataclasses import dataclass, field
 from types import SimpleNamespace
 
@@ -46,6 +48,8 @@ class _Runtime:
 
     def state_context(self, principal, project, permissions=()):
         self.context_calls.append((principal, project, frozenset(permissions)))
+        if self.revoked:
+            raise CoreError("PROJECT_FORBIDDEN", "Project access denied")
         return _Context(
             project, principal, SimpleNamespace(transaction=lambda _: _Tx(self))
         )
@@ -78,6 +82,9 @@ def test_native_archive_schema_requires_explicit_binding():
         "namespace",
     ]
     stdio_mcp.validate_arguments("rentgen_native_archive", _args())
+    platform_args = _args(namespace="platform-checks")
+    platform_args.pop("profile_id")
+    stdio_mcp.validate_arguments("rentgen_native_archive", platform_args)
     with pytest.raises(CoreError):
         stdio_mcp.validate_arguments(
             "rentgen_native_archive", _args(namespace="unknown")
@@ -125,6 +132,52 @@ def test_native_archive_dispatch_is_admin_scoped_and_returns_receipt(monkeypatch
     ]
     assert runtime.resolve_calls == [(principal, PROJECT, SNAPSHOT)]
     assert calls[0][1:] == (OPERATION, "metadata-runs", PROFILE)
+
+    stream = io.BytesIO()
+    guarded = stdio_mcp._GuardedOutput(stream, runtime, principal)
+    document = {
+        "jsonrpc": "2.0",
+        "id": 7,
+        "result": result.model_dump(by_alias=True, mode="json", exclude_none=True),
+    }
+    guarded._write(json.dumps(document, separators=(",", ":")))
+    emitted = json.loads(stream.getvalue())
+    assert emitted["result"]["structuredContent"]["result"]["archive"]["status"] == (
+        "archived"
+    )
+    assert "_meta" not in emitted["result"]
+
+    runtime.revoked = True
+    revoked_stream = io.BytesIO()
+    revoked_result = result.model_dump(by_alias=True, mode="json", exclude_none=True)
+    revoked_result.pop("structuredContent")
+    stdio_mcp._GuardedOutput(revoked_stream, runtime, principal)._write(
+        json.dumps(
+            {"jsonrpc": "2.0", "id": 7, "result": revoked_result},
+            separators=(",", ":"),
+        )
+    )
+    revoked = json.loads(revoked_stream.getvalue())
+    assert revoked["result"]["structuredContent"]["error"]["code"] == (
+        "PROJECT_FORBIDDEN"
+    )
+
+    tampered_stream = io.BytesIO()
+    tampered_result = result.model_dump(by_alias=True, mode="json", exclude_none=True)
+    tampered_result["_meta"]["rentgenOutputScope"]["permissions"] = [
+        "project:read",
+        "source:edit",
+    ]
+    stdio_mcp._GuardedOutput(tampered_stream, _Runtime(), principal)._write(
+        json.dumps(
+            {"jsonrpc": "2.0", "id": 7, "result": tampered_result},
+            separators=(",", ":"),
+        )
+    )
+    tampered = json.loads(tampered_stream.getvalue())
+    assert tampered["result"]["structuredContent"]["error"]["code"] == (
+        "PROJECT_ACCESS_UNAVAILABLE"
+    )
 
 
 def test_native_archive_error_is_redacted_after_revoke(monkeypatch):
