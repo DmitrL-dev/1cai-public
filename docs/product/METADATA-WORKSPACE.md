@@ -49,6 +49,27 @@ receipt либо несовпадение digest останавливают об
 идемпотентно; выбор `original` в этом состоянии отклоняется до явного undo.
 Все операции требуют `project:read`, `source:edit`, `analysis:run`.
 
+`apply`, `undo` и `recover` удерживают отдельный `workspace-operation.lock`
+на весь цикл, включая проверку preconditions, staging, публикацию receipts и
+cleanup. В Windows используется `msvcrt` byte-range lock, в POSIX предусмотрен
+`flock`: одна неблокирующая попытка, занятый lock даёт `METADATA_WORKSPACE_BUSY`.
+Lock не удаляется после операции и освобождается ОС при закрытии процесса.
+Каталог, reparse point/симлинк, hardlink или неполный lock дают
+`METADATA_WORKSPACE_LOCK_INVALID`; их содержимое не исправляется автоматически.
+Создание workspace по-прежнему резервирует новое имя через атомарный `mkdir`.
+
+До создания lock проверяются canonical root, допустимое расположение, identity
+root/tree и marker: bounded read-only чтение обычного файла, seal и привязка к
+project/operation/source_root. Отсутствующий, чужой, повреждённый или linked marker
+отклоняется без записи lock/state/tree. Это чтение не удерживает directory pin;
+retained marker не читается и root не pin-ится contender-ом.
+После захвата lock API заново читает marker/state/inventory. Перед записью или
+заменой файла, публикацией receipt, удалением и cleanup перепроверяются права,
+identity lock/root/tree и отсутствие обнаруженных links в пути публикации.
+Windows pin удерживает родительский каталог root: pin самого root несовместим
+с заменой receipts. Эти проверки обнаруживают уже произошедшую подмену пути,
+но не превращают проверку и следующий системный вызов в одну атомарную операцию.
+
 ## CLI
 
 После `metadata-preview` и успешного `metadata` preflight принадлежащую копию
@@ -85,10 +106,10 @@ receipt протокол должен работать через квалифи
 рабочей базе, с native re-read, формами, данными, конфликтом чужой правки и
 восстановлением после сбоя процесса.
 
-Остаточная граница: между проверкой inventory и `os.replace`/удалением нет
-эксклюзивной защиты от внешнего писателя или второго workspace caller. Поэтому
-конкурентная чужая правка во время операции может быть потеряна; это не полный
-CAS-протокол и не атомарная транзакция над деревом. Каталоги workspace также
+Остаточная граница: внешние писатели, игнорирующие `workspace-operation.lock`,
+не исключены между проверкой inventory/identity и `os.replace`/удалением.
+Их конкурентная правка во время операции может быть потеряна; это не полный
+CAS-протокол и не атомарная транзакция над деревом. Вложенные каталоги workspace
 не удерживаются на весь цикл публикации/очистки. До устранения этой границы
 нельзя переносить writer на live source. Backup после undo сохраняется для
 разбора; автоматический GC и recovery старого undo с уже потреблённым backup
@@ -97,5 +118,13 @@ CAS-протокол и не атомарная транзакция над де
 Регрессии находятся в `tests/unit/test_metadata_workspace.py`: apply/undo,
 stale workspace, foreign change, explicit original/candidate apply recovery,
 corrupt/missing/foreign backup, undo stage, прерывания замены файлов и публикации
-undo/state/recovery receipts. Операция не принимает
+undo/state/recovery receipts.
+Также проверены busy admission каждого mutation API, lock в отдельном процессе,
+release после ошибки, отказ для hardlink/каталога/пустого lock и подмена tree
+до публикации state. POSIX fallback не квалифицирован этим Windows-прогоном.
+Отдельный публичный caller во время замены state получает BUSY до retained-чтения
+marker, не создавая мешающий активному writer-у directory pin. Для отсутствующего,
+чужого, malformed/oversized и linked marker проверен отказ каждого mutation API
+без изменения байтов и состава каталога.
+Операция не принимает
 пути или команды от модели; путь workspace задаёт доверенный вызывающий код.

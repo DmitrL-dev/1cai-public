@@ -1,20 +1,24 @@
 """Owned workspace writer for a snapshot-bound metadata candidate.
 
 The writer mutates only a directory explicitly created by Rentgen.  It never
-writes the registered project source root or a 1C infobase.  Each mutation is
-CAS-bound to the original/candidate inventories and leaves a receipt that can
-be replayed for reading, not for silently retrying a partial write.
+writes the registered project source root or a 1C infobase. Mutations check the
+original/candidate inventories and serialize cooperating workspace callers.
+Receipts support readback, not silent replay; external writers ignore this lock.
 """
 
+from contextlib import contextmanager, nullcontext
+from contextvars import ContextVar
 from datetime import datetime, timezone
+from functools import wraps
 import os
 from pathlib import Path
 import shutil
+import stat
 
-from ._windows_source_tree import read_retained
+from ._windows_source_tree import pinned_directory, read_retained
 from .edt_inventory import exported_inventory
 from .edt_profiles import PERMISSIONS, parse_json
-from .edt_execution import write_record
+from .edt_execution import write_record as _write_record
 from .errors import CoreError
 from .manifests import canonical_bytes, sha256
 from .metadata_runs import get_preview, run_path as preview_run_path
@@ -28,6 +32,180 @@ MAX_RECORD = 2 * 1024**2
 MAX_FILES = 8192
 MAX_FILE = 256 * 1024**2
 MAX_TOTAL = 4 * 1024**3
+_ACTIVE_BOUNDARY = ContextVar("metadata_workspace_boundary", default=None)
+
+
+def _identity(path, *, directory=False, code="METADATA_WORKSPACE_CONFLICT"):
+    try:
+        info = path.lstat()
+    except OSError as exc:
+        raise CoreError(code, "Workspace path is unavailable") from exc
+    _require(
+        (stat.S_ISDIR(info.st_mode) if directory else stat.S_ISREG(info.st_mode))
+        and not bool(getattr(info, "st_file_attributes", 0) & 0x400)
+        and (directory or info.st_nlink == 1),
+        code,
+        "Workspace path is a link or has an unexpected type",
+    )
+    return info.st_dev, info.st_ino
+
+
+@contextmanager
+def _workspace_lock(root):
+    """One cooperative writer per owned workspace; never remove the lock file."""
+    code = "METADATA_WORKSPACE_LOCK_INVALID"
+    root = Path(root)
+    # A root directory pin also blocks our receipt replacements on Windows.
+    # Pin its parent; observe root/tree identity again at publication boundaries.
+    pin = pinned_directory(root.parent) if os.name == "nt" else nullcontext()
+    with pin:
+        root_identity = _identity(root, directory=True)
+        tree_identity = _identity(_tree(root), directory=True)
+        lock = root / "workspace-operation.lock"
+        if os.path.lexists(lock):
+            _identity(lock, code=code)
+        flags = os.O_RDWR | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        flags |= getattr(os, "O_NONBLOCK", 0)
+        try:
+            try:
+                descriptor = os.open(lock, flags | os.O_CREAT | os.O_EXCL, 0o600)
+                created = True
+            except FileExistsError:
+                descriptor = os.open(lock, flags)
+                created = False
+        except OSError as exc:
+            raise CoreError(code, "Workspace lock could not be opened") from exc
+        acquired = False
+        try:
+            info = os.fstat(descriptor)
+            identity = (info.st_dev, info.st_ino)
+            _require(
+                stat.S_ISREG(info.st_mode)
+                and info.st_nlink == 1
+                and _identity(lock, code=code) == identity,
+                code,
+                "Workspace lock identity differs from its path",
+            )
+            if created:
+                os.write(descriptor, b"0")
+                os.fsync(descriptor)
+            _require(
+                os.fstat(descriptor).st_size == 1, code, "Workspace lock is incomplete"
+            )
+            try:
+                if os.name == "nt":
+                    import msvcrt
+
+                    os.lseek(descriptor, 0, os.SEEK_SET)
+                    msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
+                else:
+                    import fcntl
+
+                    fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                acquired = True
+            except OSError as exc:
+                raise CoreError(
+                    "METADATA_WORKSPACE_BUSY", "Another workspace operation is active"
+                ) from exc
+
+            def check(*paths):
+                _require(
+                    _identity(lock, code=code) == identity
+                    and os.fstat(descriptor).st_size == 1,
+                    code,
+                    "Workspace lock was replaced or changed",
+                )
+                _require(
+                    _identity(root, directory=True) == root_identity
+                    and _identity(_tree(root), directory=True) == tree_identity,
+                    "METADATA_WORKSPACE_CONFLICT",
+                    "Workspace directory identity changed",
+                )
+                for path in paths:
+                    _require(
+                        path.is_relative_to(root) and ".." not in path.parts,
+                        "METADATA_WORKSPACE_UNSAFE",
+                        "Publication path is outside workspace",
+                    )
+                    parent = root
+                    for part in path.relative_to(root).parts[:-1]:
+                        parent /= part
+                        _identity(parent, directory=True)
+                    if os.path.lexists(path):
+                        _identity(path, directory=path.is_dir())
+
+            check()
+            yield check
+            check()
+        finally:
+            try:
+                if acquired:
+                    if os.name == "nt":
+                        os.lseek(descriptor, 0, os.SEEK_SET)
+                        msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
+                    else:
+                        fcntl.flock(descriptor, fcntl.LOCK_UN)
+            finally:
+                os.close(descriptor)
+
+
+def _workspace_operation(function):
+    @wraps(function)
+    def serialized(ctx, operation_id, workspace_root, **kwargs):
+        _check(ctx)
+        validate_operation_id(operation_id)
+        root = _workspace_root(workspace_root)
+        _owned_paths(ctx, root)
+        _require(
+            root.is_dir(), "METADATA_WORKSPACE_NOT_FOUND", "Owned workspace is absent"
+        )
+        root_identity = _identity(root, directory=True)
+        tree_identity = _identity(_tree(root), directory=True)
+        _prevalidate_marker(ctx, operation_id, root)
+        with _workspace_lock(root) as identity_check:
+            _require(
+                _identity(root, directory=True) == root_identity
+                and _identity(_tree(root), directory=True) == tree_identity,
+                "METADATA_WORKSPACE_CONFLICT",
+                "Workspace directory identity changed during admission",
+            )
+            # Retained marker reads pin root and must not run in a losing caller:
+            # those pins can block an admitted writer's receipt replacement.
+            root, _ = _load_root(ctx, operation_id, root)
+
+            def boundary(*paths):
+                _check(ctx)
+                identity_check(*paths)
+
+            token = _ACTIVE_BOUNDARY.set(boundary)
+            try:
+                # The function reloads marker, state and inventories after admission.
+                return function(ctx, operation_id, root, **kwargs)
+            finally:
+                _ACTIVE_BOUNDARY.reset(token)
+
+    return serialized
+
+
+def _boundary(*paths):
+    check = _ACTIVE_BOUNDARY.get()
+    if check is not None:
+        check(*paths)
+
+
+def write_record(path, value):
+    _boundary(path)
+    _write_record(path, value)
+
+
+def _publish_replace(source, target):
+    _boundary(source, target)
+    os.replace(source, target)
+
+
+def _publish_unlink(path):
+    _boundary(path)
+    path.unlink()
 
 
 def _now():
@@ -166,16 +344,54 @@ def _seal(value, key):
     return {**value, key: sha256(canonical_bytes(value))}
 
 
+def _parse_sealed(raw, key):
+    value = parse_json(raw)
+    _require(
+        type(value) is dict
+        and key in value
+        and _seal({k: v for k, v in value.items() if k != key}, key) == value,
+        "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+        "Receipt hash differs",
+    )
+    return value
+
+
+def _prevalidate_marker(ctx, operation_id, root):
+    """Reject unowned roots without writes or a directory pin before admission."""
+    code = "METADATA_WORKSPACE_RECOVERY_REQUIRED"
+    path = _marker_path(root)
+    try:
+        identity = _identity(path, code=code)
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+        descriptor = os.open(path, flags)
+        with os.fdopen(descriptor, "rb") as stream:
+            info = os.fstat(stream.fileno())
+            _require(
+                stat.S_ISREG(info.st_mode)
+                and info.st_nlink == 1
+                and not bool(getattr(info, "st_file_attributes", 0) & 0x400)
+                and (info.st_dev, info.st_ino) == identity
+                and info.st_size <= MAX_RECORD,
+                code,
+                "Workspace marker is unsafe or too large",
+            )
+            raw = stream.read(MAX_RECORD + 1)
+            _require(
+                len(raw) <= MAX_RECORD and _identity(path, code=code) == identity,
+                code,
+                "Workspace marker changed during admission",
+            )
+        _validate_marker(ctx, operation_id, root, _parse_sealed(raw, "marker_id"))
+    except (CoreError, OSError, ValueError, TypeError) as exc:
+        raise CoreError(
+            code, "Workspace ownership marker is absent or invalid"
+        ) from exc
+
+
 def _read_sealed(path, key):
     try:
-        value = parse_json(read_retained(path, MAX_RECORD))
-        valid = (
-            type(value) is dict
-            and key in value
-            and _seal({k: v for k, v in value.items() if k != key}, key) == value
-        )
-        _require(valid, "METADATA_WORKSPACE_RECOVERY_REQUIRED", "Receipt hash differs")
-        return value
+        return _parse_sealed(read_retained(path, MAX_RECORD), key)
     except (CoreError, OSError, ValueError, TypeError) as exc:
         if (
             isinstance(exc, CoreError)
@@ -206,6 +422,7 @@ def _inventory(root, check, *, allow_empty=False):
 
 def _write_bytes(path, raw):
     path.parent.mkdir(parents=True, exist_ok=True)
+    _boundary(path)
     with path.open("xb") as stream:
         stream.write(raw)
         stream.flush()
@@ -221,7 +438,7 @@ def _replace_record(path, value):
         "Receipt replacement has an unresolved temporary file",
     )
     write_record(temporary, value)
-    os.replace(temporary, path)
+    _publish_replace(temporary, path)
 
 
 def _write_or_replace_record(path, value):
@@ -275,6 +492,7 @@ def _discard_owned_directory(path, expected_rows, check):
         "METADATA_WORKSPACE_CONFLICT",
         "Workspace staging contains foreign bytes",
     )
+    _boundary(path)
     shutil.rmtree(path)
 
 
@@ -322,12 +540,12 @@ def _replace_owned_tree(
     target_paths = {row["path"] for row in rows}
     for relative in sorted(set(row["path"] for row in current) - target_paths):
         check()
-        (_tree(root) / relative).unlink()
+        _publish_unlink(_tree(root) / relative)
     for row in rows:
         check()
         source_path, target_path = stage / row["path"], _tree(root) / row["path"]
         target_path.parent.mkdir(parents=True, exist_ok=True)
-        os.replace(source_path, target_path)
+        _publish_replace(source_path, target_path)
     restored = _inventory(_tree(root), check)
     _require(
         restored == rows,
@@ -502,6 +720,7 @@ def _ensure_clean_phase(root):
         )
 
 
+@_workspace_operation
 def apply_workspace(ctx, operation_id, workspace_root):
     """Apply a retained candidate to an owned workspace with file-level CAS."""
     _check(ctx)
@@ -611,17 +830,17 @@ def apply_workspace(ctx, operation_id, workspace_root):
         # is removed.  A crash before this point leaves a retryable complete
         # state; a crash after it is handled by normal applying recovery.
         if recovery is not None and _recovery_path(root).exists():
-            _recovery_path(root).unlink()
+            _publish_unlink(_recovery_path(root))
         before_paths = {row["path"] for row in original_rows}
         after_paths = {row["path"] for row in candidate_rows}
         for row in candidate_rows:
             check()
             source, target = stage / row["path"], _tree(root) / row["path"]
             target.parent.mkdir(parents=True, exist_ok=True)
-            os.replace(source, target)
+            _publish_replace(source, target)
         for relative in sorted(before_paths - after_paths):
             check()
-            (_tree(root) / relative).unlink()
+            _publish_unlink(_tree(root) / relative)
         after = _inventory(_tree(root), check)
         _require(
             after == candidate_rows,
@@ -661,6 +880,7 @@ def apply_workspace(ctx, operation_id, workspace_root):
         raise
 
 
+@_workspace_operation
 def recover_workspace(ctx, operation_id, workspace_root, *, target):
     """Recover an interrupted apply to an explicitly selected target inventory.
 
@@ -887,7 +1107,7 @@ def recover_workspace(ctx, operation_id, workspace_root, *, target):
         # interruption is still recoverable from the applying state and the
         # validated backup/candidate sources.
         if _recovery_path(root).exists():
-            _recovery_path(root).unlink()
+            _publish_unlink(_recovery_path(root))
         recovery = _seal(
             {
                 "schema": SCHEMA,
@@ -1135,7 +1355,7 @@ def _recover_undo(ctx, operation_id, root, marker, state, pending, target):
     # A fully validated temporary state may be superseded only after the exact
     # original tree and its durable undo receipt are established.
     if pending is not None:
-        _state_path(root).with_name(_state_path(root).name + ".tmp").unlink()
+        _publish_unlink(_state_path(root).with_name(_state_path(root).name + ".tmp"))
     state = _seal(
         {
             "schema": SCHEMA,
@@ -1152,13 +1372,14 @@ def _recover_undo(ctx, operation_id, root, marker, state, pending, target):
     _complete_undo(root, state, undo, check)
     _discard_owned_directory(_undo_stage(root), original_rows, check)
     if recovery_temp.exists():
-        os.replace(recovery_temp, _recovery_path(root))
+        _publish_replace(recovery_temp, _recovery_path(root))
     elif previous_recovery != recovery:
         _write_or_replace_record(_recovery_path(root), recovery)
     check()
     return recovery
 
 
+@_workspace_operation
 def undo_workspace(ctx, operation_id, workspace_root):
     """Restore the exact original workspace only when candidate CAS still holds."""
     _check(ctx)

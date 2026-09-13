@@ -1,6 +1,10 @@
 """The owned workspace writer proves file CAS and undo without live 1C writes."""
 
 import json
+import os
+from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 import rentgen_core as api
@@ -630,3 +634,299 @@ def test_undo_recovery_rejects_invalid_sealed_record_schema(
         )
     assert error.value.code == "METADATA_WORKSPACE_RECOVERY_REQUIRED"
     assert _bytes(root) == before
+
+
+@pytest.mark.parametrize("operation", ["apply", "undo", "recover"])
+def test_workspace_mutation_refuses_busy_operation_lock(
+    captured, tmp_path, monkeypatch, operation
+):
+    import msvcrt
+
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    if operation == "undo":
+        workspace.apply_workspace(ctx, request["operation_id"], root)
+    elif operation == "recover":
+        original_replace = workspace.os.replace
+
+        def interrupt(source, target):
+            if "tree" in target.parts:
+                raise OSError("interrupted apply")
+            return original_replace(source, target)
+
+        monkeypatch.setattr(workspace.os, "replace", interrupt)
+        with pytest.raises(OSError):
+            workspace.apply_workspace(ctx, request["operation_id"], root)
+        monkeypatch.setattr(workspace.os, "replace", original_replace)
+    lock = root / "workspace-operation.lock"
+    if not lock.exists():
+        lock.write_bytes(b"0")
+    before = _bytes(root)
+    with lock.open("r+b") as stream:
+        msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+        try:
+            with pytest.raises(api.CoreError) as error:
+                if operation == "recover":
+                    workspace.recover_workspace(
+                        ctx, request["operation_id"], root, target="original"
+                    )
+                else:
+                    getattr(workspace, operation + "_workspace")(
+                        ctx, request["operation_id"], root
+                    )
+            assert error.value.code == "METADATA_WORKSPACE_BUSY"
+        finally:
+            stream.seek(0)
+            msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+    assert _bytes(root) == before
+
+
+def test_workspace_lock_excludes_second_process_and_releases_after_error(
+    captured, tmp_path, monkeypatch
+):
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    code = """from pathlib import Path
+import sys
+from rentgen_core.metadata_workspace import _workspace_lock
+from rentgen_core.errors import CoreError
+try:
+    with _workspace_lock(Path(sys.argv[1])):
+        print('acquired')
+except CoreError as error:
+    print(error.code)
+"""
+    env = {**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[2])}
+
+    def another_process():
+        return subprocess.check_output(
+            [sys.executable, "-c", code, str(root)], env=env, timeout=10
+        ).strip()
+
+    with pytest.raises(RuntimeError):
+        with workspace._workspace_lock(root):
+            assert another_process() == b"METADATA_WORKSPACE_BUSY"
+            raise RuntimeError("operation failed")
+    assert another_process() == b"acquired"
+    original_write = workspace.write_record
+    observed_publication = []
+
+    def assert_lock_at_publication(path, value):
+        if path.name == "workspace-result.json":
+            observed_publication.append(another_process())
+        return original_write(path, value)
+
+    monkeypatch.setattr(workspace, "write_record", assert_lock_at_publication)
+    assert (
+        workspace.apply_workspace(ctx, request["operation_id"], root)["status"]
+        == "applied"
+    )
+    assert observed_publication == [b"METADATA_WORKSPACE_BUSY"]
+    assert another_process() == b"acquired"
+
+
+@pytest.mark.parametrize(
+    "unsafe", ["directory", "symlink", "junction", "hardlink", "empty"]
+)
+def test_workspace_operation_lock_rejects_unsafe_path(captured, tmp_path, unsafe):
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    lock = root / "workspace-operation.lock"
+    external = tmp_path / "external-lock"
+    external.write_bytes(b"0")
+    if unsafe == "directory":
+        lock.mkdir()
+    elif unsafe == "symlink":
+        try:
+            lock.symlink_to(external)
+        except OSError as exc:
+            pytest.skip("File symlinks unavailable: " + str(exc))
+    elif unsafe == "hardlink":
+        os.link(external, lock)
+    elif unsafe == "junction":
+        external_directory = tmp_path / "external-directory"
+        external_directory.mkdir()
+        subprocess.run(
+            ["cmd", "/c", "mklink", "/J", str(lock), str(external_directory)],
+            check=True,
+            capture_output=True,
+            timeout=10,
+        )
+    else:
+        lock.write_bytes(b"")
+    original_tree = _bytes(root / "tree")
+    with pytest.raises(api.CoreError) as error:
+        workspace.apply_workspace(ctx, request["operation_id"], root)
+    assert error.value.code == "METADATA_WORKSPACE_LOCK_INVALID"
+    assert _bytes(root / "tree") == original_tree
+    assert external.read_bytes() == b"0"
+    assert not (root / "workspace-state.json").exists()
+
+
+def test_workspace_rechecks_tree_identity_before_publishing_apply_state(
+    captured, tmp_path, monkeypatch
+):
+    import shutil
+
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    original_copy = workspace._copy_rows
+
+    def substitute_tree(source, target, rows, **kwargs):
+        original_copy(source, target, rows, **kwargs)
+        if target.name == ".rentgen-stage":
+            (root / "tree").rename(root / "original-tree")
+            shutil.copytree(root / "original-tree", root / "tree")
+
+    monkeypatch.setattr(workspace, "_copy_rows", substitute_tree)
+    with pytest.raises(api.CoreError) as error:
+        workspace.apply_workspace(ctx, request["operation_id"], root)
+    assert error.value.code == "METADATA_WORKSPACE_CONFLICT"
+    assert _bytes(root / "tree") == _bytes(root / "original-tree")
+    assert not (root / "workspace-state.json").exists()
+
+
+def test_public_contender_does_not_pin_marker_before_busy_admission(
+    captured, tmp_path, monkeypatch
+):
+    import queue
+    import threading
+
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    code = """from pathlib import Path
+import sys
+import rentgen_core as api
+from rentgen_core import metadata_workspace as workspace
+from rentgen_core._windows_source_tree import pinned_retained
+from rentgen_graph.snapshot_adapter import RentgenGraphReaderFactory
+ctx = api.ContextResolver(
+    api.ProjectRegistry(Path(sys.argv[1])),
+    graph_reader_factory=RentgenGraphReaderFactory(),
+).resolve_context(api.Principal('owner', 'local_os'), api.Explicit(sys.argv[2]), sys.argv[3])
+original_read = workspace.read_retained
+def observe_marker(path, maximum):
+    if path.name == '.rentgen-workspace.json':
+        with pinned_retained(path, maximum) as raw:
+            print('marker-pinned', flush=True)
+            sys.stdin.readline()
+            return raw
+    return original_read(path, maximum)
+workspace.read_retained = observe_marker
+try:
+    workspace.apply_workspace(ctx, sys.argv[4], Path(sys.argv[5]))
+    print('applied', flush=True)
+except api.CoreError as error:
+    print(error.code, flush=True)
+"""
+    env = {**os.environ, "PYTHONPATH": str(Path(__file__).resolve().parents[2])}
+    original_replace = workspace.os.replace
+    observations = []
+
+    def contend_at_publication(source, target):
+        if target.name != "workspace-state.json":
+            return original_replace(source, target)
+        process = subprocess.Popen(
+            [
+                sys.executable,
+                "-c",
+                code,
+                str(ctx.source_root.parent / "registry.sqlite3"),
+                ctx.project_id,
+                ctx.snapshot.snapshot_id,
+                request["operation_id"],
+                str(root),
+            ],
+            env=env,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        events = queue.Queue()
+        threading.Thread(
+            target=lambda: events.put(process.stdout.readline()), daemon=True
+        ).start()
+        sharing_error = None
+        try:
+            observed = events.get(timeout=10).strip()
+            observations.append(observed)
+            try:
+                original_replace(source, target)
+            except OSError as exc:
+                sharing_error = exc
+        finally:
+            try:
+                process.communicate(input="\n", timeout=10)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.communicate(timeout=5)
+                raise
+        assert observed == "METADATA_WORKSPACE_BUSY", (
+            "Public contender read the marker before acquiring the lock; "
+            f"publication error: {sharing_error!r}"
+        )
+        assert sharing_error is None
+
+    monkeypatch.setattr(workspace.os, "replace", contend_at_publication)
+    assert (
+        workspace.apply_workspace(ctx, request["operation_id"], root)["status"]
+        == "applied"
+    )
+    assert observations == ["METADATA_WORKSPACE_BUSY"]
+
+
+@pytest.mark.parametrize(
+    "invalid",
+    [
+        "absent",
+        "project_id",
+        "operation_id",
+        "source_root",
+        "malformed",
+        "array",
+        "oversized",
+        "directory",
+        "hardlink",
+    ],
+)
+def test_unowned_admission_does_not_create_lock_or_change_bytes(
+    captured, tmp_path, invalid
+):
+    ctx, request, _, root, marker = _prepared(captured, tmp_path)
+    marker_path = root / ".rentgen-workspace.json"
+    if invalid == "absent":
+        root = tmp_path / "foreign-workspace"
+        (root / "tree").mkdir(parents=True)
+        (root / "tree" / "foreign.bin").write_bytes(b"foreign tree bytes")
+    elif invalid in {"project_id", "operation_id", "source_root"}:
+        marker[invalid] = (
+            "87654321-1234-4234-8234-123456789abc"
+            if invalid != "source_root"
+            else str(tmp_path / "foreign-source")
+        )
+        del marker["marker_id"]
+        marker_path.write_bytes(
+            workspace.canonical_bytes(workspace._seal(marker, "marker_id"))
+        )
+    elif invalid == "malformed":
+        marker_path.write_bytes(b"{broken")
+    elif invalid == "array":
+        marker_path.write_bytes(b"[]")
+    elif invalid == "oversized":
+        marker_path.write_bytes(b" " * (workspace.MAX_RECORD + 1))
+    elif invalid == "directory":
+        marker_path.unlink()
+        marker_path.mkdir()
+    else:
+        os.link(marker_path, tmp_path / "foreign-marker.json")
+    (root / "workspace-state.json").write_bytes(b"foreign state bytes")
+    before = _bytes(root)
+    entries = sorted(str(path.relative_to(root)) for path in root.rglob("*"))
+    for function, kwargs in (
+        (workspace.apply_workspace, {}),
+        (workspace.undo_workspace, {}),
+        (workspace.recover_workspace, {"target": "original"}),
+    ):
+        with pytest.raises(api.CoreError):
+            function(ctx, request["operation_id"], root, **kwargs)
+        assert _bytes(root) == before
+        assert (
+            sorted(str(path.relative_to(root)) for path in root.rglob("*")) == entries
+        )
+        assert not (root / "workspace-operation.lock").exists()
