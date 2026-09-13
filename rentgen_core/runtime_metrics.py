@@ -14,6 +14,7 @@ from .owner_report import (
     _MAX_METRICS,
     _timestamp,
 )
+from .source_paths import validate_source_path
 
 
 MAX_BYTES = 2 * 1024**2
@@ -55,7 +56,12 @@ def _retained_locator(path):
             and not path.drive.startswith("\\\\")
             and not any(ord(char) < 32 for char in str(path))
         )
-    except (OSError, TypeError, ValueError):
+        if valid:
+            # Reject alternate data streams and other path syntax that the
+            # Windows retained reader must never interpret as a file locator.
+            for part in path.parts[1:]:
+                validate_source_path(part)
+    except (CoreError, OSError, TypeError, ValueError):
         valid = False
     if not valid:
         _invalid("Absolute runtime export path is required")
