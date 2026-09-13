@@ -1,4 +1,4 @@
-"""The fixture planner must not expose database mutation or a process launcher."""
+"""Planning owned database creation must not grant execution or live apply."""
 from dataclasses import replace
 
 import pytest
@@ -24,22 +24,29 @@ def intent():
     )
 
 
-def test_fixture_plan_has_only_file_import_and_export_commands(profile, intent):
+def test_fixture_plan_creates_owned_infobase_before_file_roundtrip(profile, intent):
     plan = api.plan_fixture_commands(profile, intent, fixture_root=r"C:\Owned fixture")
     run = r"C:\Owned fixture\ibcmd-fixtures" + "\\" + intent.operation_id
     common = (
         profile.executable,
         "config",
     )
-    paths = (f"--data={run}\\data", f"--db-path={run}\\unused-infobase")
+    paths = (f"--data={run}\\data", f"--db-path={run}\\infobase")
+    assert len(plan.commands) == 3
     assert plan.commands[0].argv == (
+        profile.executable,
+        "infobase",
+        "create",
+        *paths,
+    )
+    assert plan.commands[1].argv == (
         *common,
         "import",
         *paths,
         f"--out={run}\\candidate.cf",
         run + r"\input",
     )
-    assert plan.commands[1].argv == (
+    assert plan.commands[2].argv == (
         *common,
         "export",
         *paths,
@@ -51,8 +58,7 @@ def test_fixture_plan_has_only_file_import_and_export_commands(profile, intent):
     assert plan.live_apply_allowed is False
     assert plan.input_digest == intent.input_digest
     assert plan.platform_sha256 == profile.sha256
-    assert plan.commands[0].cwd == run
-    assert plan.commands[1].cwd == run
+    assert all(command.cwd == run for command in plan.commands)
     assert all(command.timeout_seconds == 120 for command in plan.commands)
     assert all(command.max_output_bytes == 2 * 1024**2 for command in plan.commands)
     assert all(command.shell is False for command in plan.commands)
@@ -134,25 +140,40 @@ class FakeExecutor:
         self.commands.extend(command.argv for command in validated.commands)
 
 
-@pytest.mark.parametrize("tamper", ["argv", "grant", "digest", "timeout", "shell"])
+@pytest.mark.parametrize(
+    "tamper",
+    ["argv", "grant", "digest", "timeout", "shell", "no_create", "order", "db_path"],
+)
 def test_fake_executor_receives_nothing_after_plan_tampering(profile, intent, tamper):
-    assert hasattr(api, "validate_fixture_commands")
     plan = api.plan_fixture_commands(profile, intent, fixture_root=r"C:\Fixture")
     if tamper == "argv":
         command = replace(
             plan.commands[0], argv=(profile.executable, "config", "apply")
         )
-        plan = replace(plan, commands=(command, plan.commands[1]))
+        plan = replace(plan, commands=(command, *plan.commands[1:]))
     elif tamper == "grant":
         plan = replace(plan, execution_allowed=True)
     elif tamper == "digest":
         plan = replace(plan, input_digest="c" * 64)
     elif tamper == "timeout":
         command = replace(plan.commands[0], timeout_seconds=9999)
-        plan = replace(plan, commands=(command, plan.commands[1]))
-    else:
+        plan = replace(plan, commands=(command, *plan.commands[1:]))
+    elif tamper == "shell":
         command = replace(plan.commands[0], shell=True)
-        plan = replace(plan, commands=(command, plan.commands[1]))
+        plan = replace(plan, commands=(command, *plan.commands[1:]))
+    elif tamper == "no_create":
+        plan = replace(plan, commands=plan.commands[1:])
+    elif tamper == "order":
+        plan = replace(plan, commands=tuple(reversed(plan.commands)))
+    else:
+        command = replace(
+            plan.commands[0],
+            argv=tuple(
+                "--db-path=C:\\User infobase" if arg.startswith("--db-path=") else arg
+                for arg in plan.commands[0].argv
+            ),
+        )
+        plan = replace(plan, commands=(command, *plan.commands[1:]))
     executor = FakeExecutor()
     with pytest.raises(CoreError, match="Invalid ibcmd fixture"):
         executor.inspect(plan, profile, intent)
@@ -162,7 +183,6 @@ def test_fake_executor_receives_nothing_after_plan_tampering(profile, intent, ta
 def test_fake_executor_can_inspect_exact_plan_without_running_processes(
     profile, intent
 ):
-    assert hasattr(api, "validate_fixture_commands")
     plan = api.plan_fixture_commands(profile, intent, fixture_root=r"C:\Fixture")
     executor = FakeExecutor()
     executor.inspect(plan, profile, intent)

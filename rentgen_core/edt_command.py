@@ -64,7 +64,7 @@ def _windows_path(value):
 def plan_fixture_commands(
     profile: IBCmdProfile, request: FixtureCommandRequest, *, fixture_root: str
 ) -> FixtureCommandPlan:
-    """Describe two commands; paths, ownership and bytes are not opened or pinned."""
+    """Describe create/import/export; ownership and bytes are not opened or pinned."""
     _require(type(profile) is IBCmdProfile and type(request) is FixtureCommandRequest)
     _require(type(profile.version) is str and profile.version == SUPPORTED_VERSION)
     _require(_windows_path(profile.executable).name.lower() == "ibcmd.exe")
@@ -80,9 +80,13 @@ def plan_fixture_commands(
     run = _windows_path(fixture_root) / "ibcmd-fixtures" / request.operation_id
     common = (
         f"--data={run / 'data'}",
-        f"--db-path={run / 'unused-infobase'}",
+        f"--db-path={run / 'infobase'}",
     )
     commands = (
+        FixtureCommand(
+            (profile.executable, "infobase", "create", *common),
+            str(run),
+        ),
         FixtureCommand(
             (
                 profile.executable,

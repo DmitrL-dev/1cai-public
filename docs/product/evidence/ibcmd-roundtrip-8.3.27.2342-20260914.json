@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "date": "2026-09-14",
+  "scope": "owned_fixture_create_import_export",
+  "provenance": {
+    "source": "coordinator_report_of_local_experiment",
+    "evidence": "local_unattested",
+    "run_label": "rentgen-ibcmd-roundtrip2-28b4b0707eaa4942842f2b63c1346512",
+    "absolute_temporary_path_omitted": true,
+    "raw_process_logs_included": false
+  },
+  "fixture": "packaging/fixtures/edt-metadata-v1/created",
+  "ibcmd_version": "8.3.27.2342",
+  "ibcmd_sha256": "38f37715535cea530e58d5ba2e7e072c184b61b12f3e903ac290b299cf39fd38",
+  "precondition_discovery": {
+    "import_export_without_infobase": "failed",
+    "required_file": "<db-path>/1Cv8.1CD",
+    "resolution": "create a new owned infobase before import and export"
+  },
+  "steps": [
+    {"command": "infobase create", "exit_code": 0},
+    {"command": "config import", "exit_code": 0},
+    {"command": "config export", "exit_code": 0}
+  ],
+  "output": {
+    "path": "candidate.cf",
+    "size_bytes": 79086,
+    "sha256": "624510f53ffb2d35cdebc2c41da4edabe63ee2ba61dd46a2e624fdf1c81c28c0",
+    "hash_scope": "one observed run; cross-run byte reproducibility not asserted"
+  },
+  "restored_xml": {
+    "created": true,
+    "full_file_hashes_included": false,
+    "verification": "scripts/verification/verify_edt_metadata_fixture.py:verify_structure",
+    "phase": "created",
+    "structure": {
+      "catalog_uuid": "fb28b18e-d2a3-4f48-8390-c0d609c9e7c0",
+      "attribute_uuid": "eb298009-8fc5-4a2f-8812-902daeed99df",
+      "attribute": "Article",
+      "string_length": 32,
+      "form_binding_suffix": "Article",
+      "form_uuid": "44821c5c-7eaf-4b40-ba04-dc79e0c71268",
+      "field_id": "7",
+      "main_attribute_id": "1"
+    }
+  },
+  "product_executor_used": false,
+  "user_configuration_accessed": false,
+  "live_apply": false,
+  "qualification": "fixture command sequence and selected structural invariants only"
+}
