@@ -10,9 +10,7 @@
 установку, ACL, подпись, recovery actions и production deployment отдельными
 операциями владельца.
 
-Результат ограничен bounded worker: конфигурация задаёт конечный бюджет циклов,
-а при `--console` тот же worker запускается без SCM для локального smoke-теста.
-Это не обещает бессрочный daemon, автоматический restart или изоляцию ОС.
+Результат поддерживает два явных режима worker: `max_cycles=null` работает до STOP/SHUTDOWN, а целое значение задаёт конечный бюджет для smoke и controlled runs. При `--console` тот же worker запускается без SCM. Автоматический restart и изоляция ОС не обещаются.
 
 ## Architecture
 
@@ -27,8 +25,7 @@
 2. `ObserverWorker` строит существующий `LocalRuntime` с
    `RentgenGraphReaderFactory` и `RentgenCapturedGoBuilder`, создаёт `Observer`
    с текущим Windows token principal и выполняет `_tick()` под его lock. Worker
-   ограничен `max_cycles`, ждёт через interruptible `Event`, различает
-   retryable ошибки и fatal ошибки существующего Observer-контракта и выполняет
+   ограничен `max_cycles` (или работает до остановки при null), ждёт через interruptible `Event` и считает любую ошибку Observer fatal без автоматического retry; выполняет
    cleanup ровно один раз.
 3. `NativeService` владеет lifecycle и Win32 seam. В service mode вызываются
    `StartServiceCtrlDispatcherW`, `RegisterServiceCtrlHandlerExW` и
@@ -55,9 +52,7 @@ console planning остаются тестируемыми без SCM.
 
 ## Failure and recovery contract
 
-- До регистрации SCM конфигурация и runtime binding проходят все проверки; при
-  ошибке процесс сообщает generic `SERVICE_CONFIG_INVALID`/`SERVICE_START_FAILED`
-  без echo входного значения.
+- До создания runtime factory конфигурация и runtime binding проходят все проверки; в service mode dispatcher и `START_PENDING` публикуются до тяжёлого worker startup. При ошибке процесс сообщает generic `SERVICE_CONFIG_INVALID`/`SERVICE_START_FAILED` без echo входного значения.
 - STOP/SHUTDOWN не прерывает активный `_tick()` и не убивает дочерние процессы;
   worker завершает текущую операцию, освобождает lock и закрывает только свои
   ресурсы. Повторный stop идемпотентен.
@@ -83,6 +78,7 @@ console planning остаются тестируемыми без SCM.
 Локальные тесты не являются live SCM installation, service-account, reboot,
 recovery-policy, signing или native 1C acceptance. Такие доказательства
 потребуют отдельного разрешённого Windows окружения и не входят в этот commit.
+
 
 
 
