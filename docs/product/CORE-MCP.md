@@ -186,6 +186,11 @@ Installation, CLI equivalents and result interpretation: [PROPOSAL-CHECK.md](PRO
   proposal, 24 KiB arguments and diff, 128 KiB complete output frame including
   duplicate text/structured content, request ID and newline. Original module
   limit is 1 MiB. Oversize results fail; no partial successful diagnostic is sent.
+- Owner-report tools use the general 2 MiB complete output-frame limit because
+  the sealed report is duplicated in text and structured content. A valid
+  receipt that exceeds this MCP frame bound returns `OUTPUT_LIMIT_EXCEEDED`;
+  use the local CLI for a larger full receipt while the bounded list remains
+  available through MCP.
 - One tool worker runs at a time, with at most eight running/queued tool calls.
   Excess calls return `SERVER_BUSY`. SDK initialize/list/ping/cancellation handling
   remains on the event loop and is responsive while capture runs in the worker.
