@@ -1,4 +1,4 @@
-# Состояние публичной поставки — 13 сентября 2026
+# Состояние публичной поставки — 14 сентября 2026
 
 Актуальная [карта рынка и выбранное направление](COMPETITOR-MATRIX.md)
 поясняют, какие соседние инструменты мы интегрируем и какие незакрытые
@@ -6,8 +6,10 @@
 
 ## Дополнение к кандидату 13 сентября 2026
 
-В текущем кандидате локально проходят 1045 тестов; три Windows symlink-теста
-пропущены из-за отсутствия privilege. Кандидат включает bounded foreground
+В текущем кандидате собрано 1136 тестов; полный Product CI для принятого SHA
+завершился успешно в [run 34764276493](https://github.com/DmitrL-dev/1cai-public/actions/runs/34764276493).
+Три Windows symlink-теста могут
+пропускаться из-за отсутствия privilege. Кандидат включает bounded foreground
 service-host, explicit SCM installer planning и явную freshness-policy для
 runtime-метрик поверх публичного owner-report CLI с проверкой опубликованного snapshot и выделенным
 `<state-root>\owner-reports`, immutable receipts и bounded summary для списка.
@@ -23,7 +25,12 @@ retained-файл по исходному no-follow локатору без пр
 rows↔metrics и canonical source digest; SARIF adapter
 импортирует только attested bounded subset внешнего отчёта.
 
-Приёмка остаётся частичной: нативный EDT import/export, запись в рабочую
+Отдельно на собственной синтетической EDT-фикстуре проверен нативный
+`ibcmd`-цикл `infobase create → config import → config export` с сохранением
+UUID справочника, реквизита и формы; [сводка и границы](EDT-COMMAND-BOUNDARY.md).
+Это evidence для конкретной среды и fixture, а не продуктовый исполнитель.
+
+Приёмка остаётся частичной: продуктовая запись в рабочую
 конфигурацию, типовые `.cf/.cfe`, полноценная семантика расширений, BSL/форм/СКД
 round-trip, live SCM daemon/deployment, внешняя доставка уведомлений и Spectorn
 adapter ещё не подтверждены. Native ServiceMain/SCM boundary теперь есть как
@@ -80,10 +87,10 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 | Локальная модель | Один искусственный сценарий Qwen3.5:9b с независимой проверкой BSL | Не доказывает качество на произвольных задачах |
 | Ежедневная разработка dev8 | AI-правка, ручное исправление новой ревизией, конфликт версий, нативная проверка и восстановление проверены в редакторе | [AI-ошибка сохраняется](DAILY-DEVELOPMENT-ACCEPTANCE.md); [исправление человеком проверено](MANUAL-DRAFT-EDIT.md). Синтетический YAxUnit принят отдельно; бизнес-покрытие и применение не приняты |
 | Реальная платформа 1С | 8.3.27.2342: нативный общий модуль, проверка ошибочного BSL, исполнение 42 → отказ/42 → исправление/43, сохранение UUID; отдельная запись/чтение/переименование/удаление данных в синтетическом каталоге ([evidence](NATIVE-BUSINESS-ROUNDTRIP-20260913.md)) | Собственные синтетические сценарии; [полная приёмка не завершена](PLATFORM-ACCEPTANCE.md) |
-| Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; preflight и workspace writer с проверкой inventory, backup, re-read, undo conflict и явным recovery; native business roundtrip подтверждает данные после переименования | Внешний concurrent CAS, живая запись через EDT/1С, product apply/undo и матрица типовых конфигураций не приняты |
+| Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; owned `ibcmd` create/import/export round-trip с structural evidence; preflight и workspace writer с проверкой inventory, backup, re-read, undo conflict и явным recovery; native business roundtrip подтверждает данные после переименования | Внешний concurrent CAS, живая запись через EDT/1С, product apply/undo и матрица типовых конфигураций не приняты |
 | Обновления конфигураций | Path-bytes и UUID-aware Designer XML three-way dry-run с bounded хэшами, явными конфликтами и evidence по прямым свойствам (`same_change`/`disjoint_changes`/`overlap_conflict`) | Property/extension/BSL merge semantics, тестовая база, backup/rollback и запись не приняты |
 | Проверка предложения платформой | В dev8: установленный CLI проверил корректное/ошибочное BSL-предложение на сохранённой конфигурации | Один Designer XML слой; компиляция без бизнес-тестов и применения |
-| Observer | Опрос выгрузки, журнал и восстановление; Git probe, durable lifecycle находок, per-commit snapshot binding для owner report, bounded scheduler и foreground service-host adapter с journal/recovery и atomic notification outbox, explicit HTTPS webhook delivery, bounded Git/snapshot source evidence, read-only BSL-LS Git adapter, bounded SARIF 2.1.0 import subset, native ServiceMain/SCM boundary proof и явный SCM installer с query/start/stop/uninstall plan | Нет live SCM deployment/daemon acceptance, live receiver acceptance и дедупликации, полного Git tree/temporal evidence, producer-specific Sonar/Vanessa/YAxUnit execution и общей приёмки O1 |
+| Observer | Опрос выгрузки, журнал и восстановление; Git probe, durable lifecycle находок, per-commit snapshot binding для owner report, bounded scheduler и foreground service-host adapter с journal/recovery и atomic notification outbox, explicit HTTPS webhook delivery, bounded Git/snapshot source evidence, read-only BSL-LS Git adapter, bounded SARIF 2.1.0 import subset, native ServiceMain/SCM boundary proof, явный SCM installer с query/start/stop/uninstall plan и bounded native admission/retention | Нет live SCM deployment/daemon acceptance, live receiver acceptance и дедупликации, полного Git tree/temporal evidence, producer-specific Sonar/Vanessa/YAxUnit execution и общей приёмки O1 |
 | Бизнес-отчёты | Bounded owner-report schema с quality/runtime provenance, durable immutable receipts и fail-closed incomplete/not_available статусами; quality не публикуется без явной binding; `owner-report-build` собирает отчёт из durable observer findings; runtime loader проверяет период и freshness; onec-register-export-v1 adapter связывает rows↔metrics и canonical source digest | Нужны подтверждённый 1С producer, commit↔snapshot evidence и методика O2; числовые бизнес-метрики не принимаются только по самосогласованному JSON |
 | Spectorn в адаптере | Не подключён | Защита трафика этого сценария не подтверждена |
 
