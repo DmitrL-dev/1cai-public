@@ -8,6 +8,7 @@ import pytest
 
 import rentgen_core as api
 from rentgen_core.owner_report import build_owner_report
+from rentgen_core.git_observer import Finding, FindingReport, GitObservation
 
 pytestmark = pytest.mark.skipif(os.name != "nt", reason="Windows owner-report lock")
 
@@ -119,6 +120,65 @@ def test_owner_report_cli_save_get_and_list(command, tmp_path):
             )
         }
     ]
+
+
+def test_owner_report_cli_builds_from_durable_observer_findings(
+    command, project_fixture
+):
+    ctx, resolver = project_fixture
+    _, invoke = command
+    from rentgen_core.local import LocalRuntime
+    from rentgen_core.observer import Observer
+
+    profile = ctx.state.path.parent / "observer-profile"
+    observer = Observer(
+        LocalRuntime(resolver.registry.path),
+        ctx.principal,
+        ctx.project_id,
+        profile,
+    )
+    observer.initialize()
+    observer.record_findings(
+        FindingReport(
+            GitObservation(str(ctx.source_root.resolve()), "a" * 40, "refs/heads/main"),
+            "bsl-v1",
+            "whole-project",
+            True,
+            (Finding("RULE1", "CommonModules/Main/Ext/Module.bsl", "1:1", "issue", 1),),
+        ),
+        snapshot_id="b" * 64,
+    )
+
+    stored = invoke(
+        "owner-report-build",
+        "--store",
+        ctx.state.path.parent / "owner-reports",
+        "--snapshot",
+        "b" * 64,
+        "--profile",
+        profile,
+    )
+    receipt = stored["result"]
+    assert receipt["status"] == "stored"
+    assert receipt["report"]["quality"]["status"] == "available"
+    assert receipt["report"]["quality"]["total"] == 1
+    assert receipt["report"]["business_metrics"]["status"] == "not_available"
+
+
+def test_owner_report_cli_build_rejects_relative_profile_before_store_io(command):
+    ctx, invoke = command
+    result = invoke(
+        "owner-report-build",
+        "--store",
+        ctx.state.path.parent / "owner-reports",
+        "--snapshot",
+        "b" * 64,
+        "--profile",
+        "observer-profile",
+        success=False,
+    )
+    assert result["error"]["code"] == "OBSERVER_PROFILE_INVALID"
+    assert not (ctx.state.path.parent / "owner-reports").exists()
 
 
 def test_owner_report_cli_rejects_report_snapshot_mismatch(command, tmp_path):

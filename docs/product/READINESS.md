@@ -15,7 +15,9 @@ Read-only EDT inventory теперь связывает проверенные U
 и декларацию слоя с `SourceRef`; three-way plan дополнительно показывает
 атомарные UUID-bound области BSL, форм и СКД с явными
 `supported`/`conflict`/`unsupported` причинами. Эти возможности собраны в wheel и
-sdist и не меняют live source или базу 1С. Оба runtime loader-а читают
+sdist и не меняют live source или базу 1С. Owner report теперь можно собрать
+из durable observer findings командой `owner-report-build`, без ручного JSON;
+оба runtime loader-а читают
 retained-файл по исходному no-follow локатору без предварительного
 `Path.resolve()`. Runtime register export adapter проверяет context,
 rows↔metrics и canonical source digest; SARIF adapter
@@ -81,7 +83,7 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 | Обновления конфигураций | Path-bytes и UUID-aware Designer XML three-way dry-run с bounded хэшами, явными конфликтами и evidence по прямым свойствам (`same_change`/`disjoint_changes`/`overlap_conflict`) | Property/extension/BSL merge semantics, тестовая база, backup/rollback и запись не приняты |
 | Проверка предложения платформой | В dev8: установленный CLI проверил корректное/ошибочное BSL-предложение на сохранённой конфигурации | Один Designer XML слой; компиляция без бизнес-тестов и применения |
 | Observer | Опрос выгрузки, журнал и восстановление; Git probe, durable lifecycle находок, per-commit snapshot binding для owner report, bounded scheduler и foreground service-host adapter с journal/recovery и atomic notification outbox, explicit HTTPS webhook delivery, bounded Git/snapshot source evidence, read-only BSL-LS Git adapter, bounded SARIF 2.1.0 import subset и явный SCM installer с query/start/stop/uninstall plan | Нет native ServiceMain/фонового service manager, live receiver acceptance и дедупликации, полного Git tree/temporal evidence, producer-specific Sonar/Vanessa/YAxUnit execution и общей приёмки O1 |
-| Бизнес-отчёты | Bounded owner-report schema с quality/runtime provenance, durable immutable receipts и fail-closed incomplete/not_available статусами; quality не публикуется без явной binding; runtime loader проверяет период и freshness; onec-register-export-v1 adapter связывает rows↔metrics и canonical source digest | Нужны подтверждённый 1С producer, commit↔snapshot evidence и методика O2; числовые бизнес-метрики не принимаются только по самосогласованному JSON |
+| Бизнес-отчёты | Bounded owner-report schema с quality/runtime provenance, durable immutable receipts и fail-closed incomplete/not_available статусами; quality не публикуется без явной binding; `owner-report-build` собирает отчёт из durable observer findings; runtime loader проверяет период и freshness; onec-register-export-v1 adapter связывает rows↔metrics и canonical source digest | Нужны подтверждённый 1С producer, commit↔snapshot evidence и методика O2; числовые бизнес-метрики не принимаются только по самосогласованному JSON |
 | Spectorn в адаптере | Не подключён | Защита трафика этого сценария не подтверждена |
 
 Первоначально в публичное дерево перенесён source distribution core dev7;

@@ -99,6 +99,7 @@ def _parser():
         "draft-archive",
         "draft-restore",
         "draft-receipt",
+        "owner-report-build",
         "owner-report-save",
         "owner-report-get",
         "owner-report-list",
@@ -202,7 +203,12 @@ def _parser():
         elif name.startswith("owner-report-"):
             command.add_argument("--store", type=Path, required=True, action=_Once)
             command.add_argument("--snapshot", required=True, action=_Once)
-            if name == "owner-report-save":
+            if name == "owner-report-build":
+                command.add_argument(
+                    "--profile", type=Path, required=True, action=_Once
+                )
+                command.add_argument("--report-id", action=_Once)
+            elif name == "owner-report-save":
                 command.add_argument(
                     "--report-json", type=Path, required=True, action=_Once
                 )
@@ -557,7 +563,24 @@ def _require_owner_report_snapshot(ctx, snapshot_id, permissions):
         tx.get_snapshot(snapshot_id)
 
 
-def _owner_report_command(args, ctx, permissions):
+def _owner_report_profile(path):
+    try:
+        path = path if isinstance(path, Path) else Path(path)
+        if (
+            not path.is_absolute()
+            or ".." in path.parts
+            or path.drive.startswith("\\\\")
+            or any(ord(char) < 32 for char in str(path))
+        ):
+            raise ValueError
+    except (OSError, TypeError, ValueError):
+        raise CoreError(
+            "OBSERVER_PROFILE_INVALID", "Absolute local observer profile is required"
+        ) from None
+    return path
+
+
+def _owner_report_command(args, ctx, permissions, *, runtime=None):
     from .edt_profiles import parse_json
 
     _require_owner_report_snapshot(ctx, args.snapshot, permissions)
@@ -566,7 +589,21 @@ def _owner_report_command(args, ctx, permissions):
     def authorize():
         _proposal_permissions(ctx, permissions)
 
-    if args.command == "owner-report-save":
+    if args.command == "owner-report-build":
+        if runtime is None:
+            raise CoreError("OBSERVER_PROFILE_INVALID", "Observer runtime is required")
+        from .observer import Observer
+
+        observer = Observer(
+            runtime,
+            ctx.principal,
+            ctx.project_id,
+            _owner_report_profile(args.profile),
+        )
+        report = observer.owner_report(args.snapshot)
+        store.initialize()
+        value = store.save(report, report_id=args.report_id, authorize=authorize)
+    elif args.command == "owner-report-save":
         raw = _proposal_input(
             ctx, args.report_json, 2 * 1024**2, permissions=permissions
         )
@@ -613,7 +650,8 @@ def _owner_report_command(args, ctx, permissions):
         ]
     output_limit = (
         _OWNER_REPORT_OUTPUT_LIMIT
-        if args.command in {"owner-report-save", "owner-report-get"}
+        if args.command
+        in {"owner-report-build", "owner-report-save", "owner-report-get"}
         else 2 * 1024**2
     )
     return _ProposalCommandResult(value, ctx, frozenset(permissions), output_limit)
@@ -756,7 +794,7 @@ def _execute(args, *, proposal_scope=None):
         return runtime.head(principal, args.project)
     permissions = (
         {"project:read", "analysis:run"}
-        if args.command == "owner-report-save"
+        if args.command in {"owner-report-build", "owner-report-save"}
         else {"project:read"}
         if args.command in {"owner-report-get", "owner-report-list"}
         else {"project:admin"}
@@ -815,7 +853,7 @@ def _execute(args, *, proposal_scope=None):
         if proposal_scope is not None:
             proposal_scope.context = ctx
             proposal_scope.permissions = frozenset(permissions)
-        return _owner_report_command(args, ctx, frozenset(permissions))
+        return _owner_report_command(args, ctx, frozenset(permissions), runtime=runtime)
     if args.command.startswith("metadata-"):
         import asyncio
         from .edt_profiles import parse_json

@@ -26,6 +26,12 @@ report = build_owner_report(
 report = observer.owner_report(snapshot_id, max_findings=1000)
 ```
 
+Тот же bounded путь доступен через `rentgen owner-report-build`: команда
+принимает абсолютный локальный `--profile`, вызывает durable observer с текущей
+авторизацией и сразу сохраняет результат в `<state-root>\owner-reports` через
+immutable store. Она не запускает анализатор и не читает runtime export; для
+бизнес-метрик нужен отдельный typed runtime adapter.
+
 Метод читает durable `finding_state`, требует опубликованный snapshot и права
 `project:read` + `analysis:run`, повторяет проверку прав перед возвратом и
 оставляет `business_metrics` в `not_available`, пока вызывающий runtime adapter
