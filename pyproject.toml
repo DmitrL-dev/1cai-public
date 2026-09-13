@@ -100,6 +100,7 @@ only-include = [
   "docs/product/METADATA-THREE-WAY.md",
   "docs/product/METADATA-THREE-WAY-SEMANTICS.md",
   "docs/product/EDT-INVENTORY-IDENTITY.md",
+  "docs/product/EDT-COMMAND-BOUNDARY.md",
   "docs/product/COMPETITOR-MATRIX.md",
   "docs/product/AUDIT-20260912.md",
   "docs/product/METADATA-MIGRATION.md",

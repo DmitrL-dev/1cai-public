@@ -7,6 +7,7 @@ from ._windows_source_tree import pinned_directory, pinned_retained
 from .errors import CoreError
 from .manifests import canonical_bytes, sha256
 from .native_platform import NativePlatform
+from .native_resources import reserve_run
 from .platform_check import _materialize, _pin_inputs, _run_attempt
 from .platform_runs import get_platform_run, replay_run, run_path, write_record
 from .proposals import parse_proposal
@@ -87,10 +88,12 @@ def check_proposal_tests(ctx, raw_json, profile_id, operation_id, *, limits):
             parent.mkdir(exist_ok=True)
             with pinned_directory(parent):
                 try:
-                    folder.mkdir()
+                    admission = reserve_run(ctx.state.path.parent, folder)
                 except FileExistsError:
                     return replay_run(ctx, operation_id, binding, namespace="test-runs")
-                with _run_attempt(ctx, folder, binding) as resources:
+                with _run_attempt(
+                    ctx, folder, binding, admission=admission
+                ) as resources:
                     platform = NativePlatform(
                         platform.executable, platform.executable_sha256, resources.job
                     )

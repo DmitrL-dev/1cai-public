@@ -102,3 +102,58 @@ def test_revoked_access_prevents_report(candidate, definition, monkeypatch):
     assert not (
         ctx.state.path.parent / "test-runs" / operation / "report.json"
     ).exists()
+
+
+def test_test_admission_counts_incomplete_compiler_attempt_and_preserves_it(
+    candidate, definition, monkeypatch
+):
+    from rentgen_core import native_resources
+
+    ctx, raw, _ = candidate
+    profile_id = profiles.register_profile(ctx, definition)["profile_id"]
+    unknown = ctx.state.path.parent / "platform-checks" / str(uuid4())
+    unknown.mkdir(parents=True)
+    (unknown / "request.json").write_bytes(b"unknown outcome evidence")
+    (unknown / "infobase").mkdir()
+    database = unknown / "infobase" / "1Cv8.1CD"
+    database.write_bytes(b"retained database")
+    calls = []
+    monkeypatch.setattr(execution, "run_yaxunit", lambda *args: calls.append(1))
+    monkeypatch.setattr(native_resources, "RETAINED_RUN_LIMIT", 1, raising=False)
+    operation = str(uuid4())
+    with pytest.raises(CoreError) as error:
+        execution.check_proposal_tests(ctx, raw, profile_id, operation, limits=LIMITS)
+    assert error.value.code == "NATIVE_RETENTION_LIMIT"
+    assert error.value.details["admitted"] is False
+    assert not (ctx.state.path.parent / "test-runs" / operation).exists()
+    assert (unknown / "request.json").read_bytes() == b"unknown outcome evidence"
+    assert database.read_bytes() == b"retained database"
+    assert not calls
+
+
+def test_failed_test_retains_scratch_database_request_and_failure(
+    candidate, definition, monkeypatch
+):
+    ctx, raw, _ = candidate
+    profile_id = profiles.register_profile(ctx, definition)["profile_id"]
+    operation = str(uuid4())
+    folder = ctx.state.path.parent / "test-runs" / operation
+    scratch = folder / "baseline-extension-properties-data"
+    database = folder / "baseline-infobase" / "1Cv8.1CD"
+
+    def fail(*args):
+        scratch.mkdir()
+        (scratch / "log").write_bytes(b"incomplete scratch")
+        database.parent.mkdir()
+        database.write_bytes(b"retained database")
+        raise CoreError("PLATFORM_TIMEOUT", "Interrupted native test")
+
+    monkeypatch.setattr(execution, "run_yaxunit", fail)
+    with pytest.raises(CoreError) as error:
+        execution.check_proposal_tests(ctx, raw, profile_id, operation, limits=LIMITS)
+    assert error.value.code == "PLATFORM_TIMEOUT"
+    assert (scratch / "log").read_bytes() == b"incomplete scratch"
+    assert database.read_bytes() == b"retained database"
+    saved = get_platform_run(ctx, operation, namespace="test-runs")
+    assert saved["request"]["admission"]["retention"] == "retain_all_no_eviction"
+    assert saved["status"] == "failed"

@@ -9,6 +9,7 @@ from .errors import CoreError
 from .manifests import canonical_bytes, sha256
 from .metadata_xml import parse_xml
 from .native_platform import NativePlatform
+from .native_resources import reserve_run
 from .platform_runs import (
     PERMISSIONS,
     _authorize,
@@ -30,7 +31,7 @@ def _boundary(name):
 
 
 @contextmanager
-def _run_attempt(ctx, run, binding):
+def _run_attempt(ctx, run, binding, *, admission):
     from .native_resources import execution_resources
 
     write_record(
@@ -45,6 +46,7 @@ def _run_attempt(ctx, run, binding):
             "requested_by": asdict(ctx.principal),
             "created_at": datetime.now(timezone.utc).isoformat(),
             "execution_policy": "native-resources-v1",
+            "admission": admission,
         },
     )
     try:
@@ -248,10 +250,12 @@ def check_proposal_platform_json(ctx, raw_json, platform, *, limits, operation_i
             parent.mkdir(exist_ok=True)
             with pinned_directory(parent), ExitStack() as records:
                 try:
-                    run.mkdir()
+                    admission = reserve_run(ctx.state.path.parent, run)
                 except FileExistsError:
                     return replay_run(ctx, run_id, binding)
-                resources = records.enter_context(_run_attempt(ctx, run, binding))
+                resources = records.enter_context(
+                    _run_attempt(ctx, run, binding, admission=admission)
+                )
                 platform = NativePlatform(
                     executable, platform.executable_sha256, resources.job
                 )

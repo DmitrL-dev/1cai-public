@@ -1,6 +1,6 @@
 """One native executor per project state, with bounded periodic disk accounting."""
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 import hashlib
 import os
 from pathlib import Path
@@ -11,17 +11,21 @@ import time
 from ._windows_source_tree import pinned_directory, WindowsHandleOps, _retained_stamp
 from .errors import CoreError
 from .native_process import OwnedJob
+from .snapshots import validate_operation_id
+
+NAMESPACES = ("platform-checks", "test-runs", "metadata-runs")
+RETAINED_RUN_LIMIT = 256
 
 
 @contextmanager
-def project_slot(root):
+def _file_slot(root, name, busy_code):
     import msvcrt
 
     root = Path(root).absolute()
     with pinned_directory(root):
-        lock = root / "native-executor.lock"
+        lock = root / name
         descriptor = os.open(lock, os.O_RDWR | os.O_CREAT | os.O_BINARY, 0o600)
-        acquired, job = False, None
+        acquired = False
         try:
             ops = WindowsHandleOps()
             handle = msvcrt.get_osfhandle(descriptor)
@@ -32,20 +36,114 @@ def project_slot(root):
                 acquired = True
             except OSError as exc:
                 raise CoreError(
-                    "NATIVE_EXECUTOR_BUSY", "Another native executor holds this project"
+                    busy_code, "Another native operation holds this project lock"
                 ) from exc
-            identity = hashlib.sha256(str(root).casefold().encode()).hexdigest()
-            job = OwnedJob("Local\\RentgenCore.Native." + identity)
-            yield job
+            yield
         finally:
             try:
-                if job:
-                    job.close()
-            finally:
                 if acquired:
                     os.lseek(descriptor, 0, os.SEEK_SET)
                     msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
+            finally:
                 os.close(descriptor)
+
+
+@contextmanager
+def project_slot(root):
+    root = Path(root).absolute()
+    with _file_slot(root, "native-executor.lock", "NATIVE_EXECUTOR_BUSY"):
+        identity = hashlib.sha256(str(root).casefold().encode()).hexdigest()
+        job = OwnedJob("Local\\RentgenCore.Native." + identity)
+        try:
+            yield job
+        finally:
+            job.close()
+
+
+def reserve_run(root, run, *, limits=None):
+    """Bound retained attempts before allocating any per-operation artifacts.
+
+    Completed, failed and unknown outcomes all consume a slot indefinitely.
+    Only the two synchronous native callers use this admission boundary.
+    """
+    root, run = Path(root).absolute(), Path(run).absolute()
+    limits = DiskLimits() if limits is None else limits
+    validate_operation_id(run.name)
+    if run.parent.parent != root or run.parent.name not in NAMESPACES[:2]:
+        raise CoreError("NATIVE_STORAGE_INVALID", "Not an owned native run")
+    created = False
+    try:
+        with _file_slot(root, "native-admission.lock", "NATIVE_ADMISSION_BUSY"):
+            with pinned_directory(run.parent):
+                if run.exists():
+                    raise FileExistsError(str(run))
+                retained = 0
+                for name in NAMESPACES:
+                    parent = root / name
+                    if not parent.exists():
+                        continue
+                    with pinned_directory(parent), os.scandir(parent) as entries:
+                        for entry in entries:
+                            info = entry.stat(follow_symlinks=False)
+                            if (
+                                not stat.S_ISDIR(info.st_mode)
+                                or info.st_file_attributes & 0x400
+                            ):
+                                raise CoreError(
+                                    "NATIVE_STORAGE_INVALID", "Unsafe retained run"
+                                )
+                            retained += 1
+                            if retained >= RETAINED_RUN_LIMIT:
+                                raise CoreError(
+                                    "NATIVE_RETENTION_LIMIT",
+                                    "Native retained-run limit reached",
+                                    details={
+                                        "retained_runs": retained,
+                                        "retained_run_limit": RETAINED_RUN_LIMIT,
+                                    },
+                                )
+                budget = DiskBudget(root, run, limits)
+                budget.check(force=True)
+                if (
+                    budget.last["project_bytes"] + limits.run_bytes
+                    > limits.project_bytes
+                    or budget.last["free_bytes"] - limits.run_bytes < limits.free_bytes
+                ):
+                    raise CoreError(
+                        "NATIVE_STORAGE_LIMIT",
+                        "Insufficient headroom for a native run",
+                        details={**budget.last, "reserve_bytes": limits.run_bytes},
+                    )
+                run.mkdir()
+                created = True
+                return {
+                    "policy": "native-admission-v1",
+                    "retention": "retain_all_no_eviction",
+                    "retained_run_limit": RETAINED_RUN_LIMIT,
+                    "reserve_bytes": limits.run_bytes,
+                    "disk_limits": asdict(limits),
+                }
+    except (CoreError, OSError) as exc:
+        if created:
+            raise CoreError(
+                "NATIVE_ADMISSION_INCOMPLETE",
+                "Native run directory retained after admission failure; query its status",
+                details={
+                    "run_id": run.name,
+                    "admitted": True,
+                    "status": "incomplete",
+                    "cause": exc.code
+                    if isinstance(exc, CoreError)
+                    else "FILESYSTEM_ERROR",
+                },
+            ) from exc
+        if not isinstance(exc, CoreError):
+            raise
+        raise CoreError(
+            exc.code,
+            str(exc),
+            details={**exc.details, "run_id": run.name, "admitted": False},
+        ) from exc
 
 
 @dataclass(frozen=True)
@@ -111,7 +209,7 @@ class DiskBudget:
         if not force and time.monotonic() < self.next_check:
             return
         total = selected = count = 0
-        for name in ("platform-checks", "test-runs", "metadata-runs"):
+        for name in NAMESPACES:
             root = self.root / name
             if root.exists():
                 size, current, entries = _usage(
