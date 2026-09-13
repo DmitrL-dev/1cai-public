@@ -1,4 +1,91 @@
-# Native Observer service entrypoint and bounded Git host
+# Native Observer service entrypoint and bounded Git audit composition
+
+## Git audit composition (schema 2)
+
+`rentgen_core.service_composition.GitAuditWorker` connects the existing
+`GitWatcherScheduler`, read-only `BslGitAnalyzer`, durable Observer findings,
+`SchedulerJournal`, `NotificationOutbox` and owner-report builder/store through
+the same `rentgen-service` console and native SCM entrypoint. It uses only built-in
+components. Schema 1 source Observer configurations keep their existing behavior.
+
+```json
+{
+  "schema": 2,
+  "service_name": "Rentgen.GitAudit",
+  "registry": "C:\\Rentgen\\registry.sqlite3",
+  "profile": "C:\\Rentgen\\git-observer-profile",
+  "project": "6e461c4d-e19c-4e37-85b3-3aa0961580b7",
+  "diagnostics_root": "C:\\Rentgen\\diagnostics",
+  "interval_seconds": 60,
+  "max_cycles": 1,
+  "mode": "dry-run"
+}
+```
+
+Use the same `--console --config <absolute-local.json>` grammar. `mode` defaults
+to `dry-run`: only strict configuration and existing local paths are validated;
+no worker, Git/BSL process, journal, outbox or report is created. This is not a
+runtime-readiness or authorization check. Explicit `mode: "read-only"` enables
+the audit. These are the only accepted modes. `max_cycles` defaults to 1 and must
+be an integer from 1 to 10000; null/unbounded runs are rejected for schema 2.
+`interval_seconds` is required and bounded to 5–86400. All other shown fields
+are required; unknown fields, duplicate JSON keys, identity overrides, arbitrary
+commands, scanner selection and notification URLs are rejected. Schema 2 uses
+the same 16 KiB JSON, public metadata and canonical local path rules as schema 1.
+
+`diagnostics_root` is an explicitly selected existing installation base. The
+fixed installed BSL profile resolves under `<diagnostics_root>\Rentgen\runtimes`
+and writes bounded scratch attempts under `Rentgen\diagnostic-runs`; the existing
+adapter verifies its pinned runtime before execution. No download, source
+capture/publish, source edit, Git fetch/checkout, model, runtime exporter or
+notification sender is attached. Read-only refers to repository sources/refs:
+the enabled audit writes local evidence and BSL scratch data.
+
+The current Windows principal must already have project access and an existing
+matching Observer profile. The worker acquires that profile's lease before
+RUNNING and retains it until cleanup; an internal leased view lets GitWatcher
+reuse that ownership without acquiring a nested lease. Scheduler journal and
+outbox paths are fixed as `git-journal.json` and `git-outbox.json` in the profile.
+Their initial canonical paths must stay at those exact locations. Existing
+journal/outbox leaves, their `.lock`/`.tmp` siblings and the profile `worker.lock`
+must be regular single-link files without symlink/reparse redirection. This
+schema 2 startup check rejects static hardlink aliases before auxiliary lock
+initialization; schema 1's path contract is unchanged. Profile,
+state and scratch directories cannot overlap sources. This does not add an
+OS sandbox or protection against later path replacement; existing deployment
+ACL and filesystem-identity obligations still apply.
+
+Each tick requires a previously published snapshot whose supported source
+digest matches clean Git, then runs the existing watcher. Complete BSL evidence
+and an owner report with matching commit and `git_source_verified` provenance
+are mandatory before a success event is enqueued. Missing snapshot, incomplete
+analysis or unavailable quality fails closed. This worker does not update a
+stale snapshot; a separately authorized publisher must do that first. Runtime
+business metrics remain `not_available`. Reports are saved in the existing
+project state `owner-reports` store; each success outbox event includes its
+`owner_report_id`. Unchanged commit/snapshot pairs reuse a receipt within one
+lifetime; a new lifetime may create a new receipt.
+
+One scheduler owns the finite cycle budget and existing restricted transient
+backoff. Its wait uses the service stop Event, so STOP/SHUTDOWN or a console
+stop wakes interval/backoff waiting. An active tick finishes before cleanup;
+there is no forced termination or wall-clock stop deadline. Journal, findings,
+reports and outbox remain separate durable stores, not one transaction: later
+failure may leave findings or a report without a success notification. Existing
+bounded stores, full-queue failures and explicit interrupted-journal recovery
+apply; no auto-ack, retention, restart or recovery is introduced.
+
+If the scheduler returns with an unresolved final `error` event because the
+cycle budget or stop prevented another retry, the worker raises that event's
+CoreError code. The entrypoint reports `SERVICE_WORKER_FAILED` rather than a
+successful stopped lifetime. A later successful cycle clears a prior transient
+failure; stopping before the first tick or after success remains graceful.
+
+`tests/unit/test_service_composition.py` checks strict/default config, actual
+Git/Observer/store wiring with a typed fake BSL executor, fail-closed evidence,
+output-path containment and cooperative stop; the same pipeline is exercised
+through a mocked SCM lifecycle. No live SCM install/start/apply, service-account
+acceptance or native BSL acceptance is implied.
 
 ## Source Observer entrypoint
 

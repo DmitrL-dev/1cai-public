@@ -102,6 +102,47 @@ class ServiceConfig:
     max_cycles: int | None = None
 
 
+@dataclass(frozen=True)
+class GitServiceConfig:
+    service_name: str
+    registry: Path
+    profile: Path
+    project: str
+    diagnostics_root: Path
+    interval_seconds: int
+    max_cycles: int = 1
+    mode: str = "dry-run"
+
+
+def _git_config(data):
+    required = (_FIELDS - {"scanner", "max_cycles"}) | {"diagnostics_root"}
+    if not required <= set(data) <= required | {"max_cycles", "mode"}:
+        raise _invalid()
+    name = _text(data["service_name"])
+    interval, cycles = data["interval_seconds"], data.get("max_cycles", 1)
+    mode = data.get("mode", "dry-run")
+    if (
+        not re.fullmatch(r"[A-Za-z][A-Za-z0-9_.-]{0,79}", name)
+        or type(interval) is not int
+        or not 5 <= interval <= 86400
+        or type(cycles) is not int
+        or not 1 <= cycles <= 10000
+        or type(mode) is not str
+        or mode not in {"dry-run", "read-only"}
+    ):
+        raise _invalid()
+    return GitServiceConfig(
+        name,
+        _local_path(data["registry"]),
+        _local_path(data["profile"], directory=True),
+        validate_project_id(data["project"]),
+        _local_path(data["diagnostics_root"], directory=True),
+        interval,
+        cycles,
+        mode,
+    )
+
+
 def _unique(pairs):
     result = {}
     for name, value in pairs:
@@ -132,6 +173,12 @@ def load_config(path):
         data = json.loads(
             raw.decode("utf-8"), object_pairs_hook=_unique, parse_constant=_constant
         )
+        if (
+            type(data) is dict
+            and type(data.get("schema")) is int
+            and data["schema"] == 2
+        ):
+            return _git_config(data)
         if (
             type(data) is not dict
             or set(data) not in (_FIELDS, _FIELDS - {"max_cycles"})
@@ -204,6 +251,15 @@ class ObserverWorker:
             lease.__exit__(None, None, None)
 
 
+def create_worker(config):
+    """Select only the two built-in compositions; JSON cannot load plugins."""
+    if isinstance(config, GitServiceConfig):
+        from .service_composition import GitAuditWorker
+
+        return GitAuditWorker(config)
+    return ObserverWorker(config)
+
+
 @dataclass(frozen=True)
 class RunResult:
     cycles: int = 0
@@ -226,13 +282,16 @@ def _execute(
         except BaseException:
             error_code = "SERVICE_CONFIG_INVALID"
             return RunResult(cycles, error_code)
+        if isinstance(config, GitServiceConfig) and config.mode == "dry-run":
+            return RunResult()
         if not stop.is_set():
             worker = factory(config)
             try:
                 # Resolve cleanup first so a failing tick accessor still releases
                 # owned resources. Descriptors are caller code and may raise.
                 cleanup = getattr(worker, "close", None)
-                tick = getattr(worker, "tick", None)
+                scheduled = isinstance(config, GitServiceConfig)
+                tick = getattr(worker, "run" if scheduled else "tick", None)
                 if not callable(cleanup) or not callable(tick):
                     raise TypeError("Invalid worker contract")
             except BaseException:
@@ -242,8 +301,13 @@ def _execute(
                     "SERVICE_WORKER_FAILED", "Worker interface unavailable"
                 ) from None
             ready()
-            while not stop.is_set() and (
-                config.max_cycles is None or cycles < config.max_cycles
+            if scheduled:
+                # One scheduler owns the entire bounded lifetime and its backoff.
+                cycles = tick(stop)
+            while (
+                not scheduled
+                and not stop.is_set()
+                and (config.max_cycles is None or cycles < config.max_cycles)
             ):
                 tick()
                 cycles += 1
@@ -265,11 +329,12 @@ def _execute(
     return RunResult(cycles, error_code)
 
 
-def run_console(config_path, *, worker_factory=ObserverWorker, stop_event=None):
+def run_console(config_path, *, worker_factory=create_worker, stop_event=None):
     """Run in this thread; injected factory owns partial-startup cleanup.
 
-    The returned worker supplies tick()/close(); close is called once. Its tick,
-    factory and cleanup must return on their own. No event payload is retained.
+    Source workers supply tick()/close(); Git workers supply run(stop)/close().
+    Cleanup is called once. Worker operations must return on their own. Git
+    dry-run validates configuration without constructing a worker.
     """
     return _execute(
         lambda: load_config(config_path),
@@ -407,7 +472,7 @@ class NativeService:
     RUNNING; cleanup and thread termination precede the sole STOPPED report.
     """
 
-    def __init__(self, config_path, *, worker_factory=ObserverWorker, scm=None):
+    def __init__(self, config_path, *, worker_factory=create_worker, scm=None):
         self._path, self._factory, self._scm = config_path, worker_factory, scm
         self._stop, self._changed = Event(), Event()
         self._result = RunResult(error_code="SERVICE_SCM_FAILED")
@@ -513,7 +578,7 @@ class NativeService:
                     self._result = RunResult(self._result.cycles, "SERVICE_SCM_FAILED")
 
 
-def main(argv=None, *, worker_factory=ObserverWorker):
+def main(argv=None, *, worker_factory=create_worker):
     """Only mode and a public config path may appear in argv; never echo argv."""
     args = list(sys.argv[1:] if argv is None else argv)
     if args == ["--help"]:

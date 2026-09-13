@@ -4,10 +4,10 @@
 поясняют, какие соседние инструменты мы интегрируем и какие незакрытые
 сценарии остаются нашим преимуществом.
 
-## Дополнение к кандидату 13 сентября 2026
+## Дополнение к кандидату 14 сентября 2026
 
-В текущем кандидате собрано 1136 тестов; полный Product CI для принятого SHA
-завершился успешно в [run 34764276493](https://github.com/DmitrL-dev/1cai-public/actions/runs/34764276493).
+В текущем исходном кандидате собрано 1190 тестов; Product CI запускается для
+каждого SHA в [публичном workflow](https://github.com/DmitrL-dev/1cai-public/actions/workflows/core-ci.yml).
 Три Windows symlink-теста могут
 пропускаться из-за отсутствия privilege. Кандидат включает bounded foreground
 service-host, explicit SCM installer planning и явную freshness-policy для
@@ -29,6 +29,11 @@ rows↔metrics и canonical source digest; SARIF adapter
 `ibcmd`-цикл `infobase create → config import → config export` с сохранением
 UUID справочника, реквизита и формы; [сводка и границы](EDT-COMMAND-BOUNDARY.md).
 Это evidence для конкретной среды и fixture, а не продуктовый исполнитель.
+
+В этом срезе добавлены schema 2 composition root для bounded Git → BSL →
+findings/outbox → owner-report аудита и frozen retained-register producer для
+одного offline runtime export. Оба режима по умолчанию fail-closed и не
+включают live 1С, сеть или произвольный процесс.
 
 Приёмка остаётся частичной: продуктовая запись в рабочую
 конфигурацию, типовые `.cf/.cfe`, полноценная семантика расширений, BSL/форм/СКД
@@ -90,8 +95,8 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 | Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; owned `ibcmd` create/import/export round-trip с structural evidence; preflight и workspace writer с проверкой inventory, backup, re-read, undo conflict и явным recovery; native business roundtrip подтверждает данные после переименования | Внешний concurrent CAS, живая запись через EDT/1С, product apply/undo и матрица типовых конфигураций не приняты |
 | Обновления конфигураций | Path-bytes и UUID-aware Designer XML three-way dry-run с bounded хэшами, явными конфликтами и evidence по прямым свойствам (`same_change`/`disjoint_changes`/`overlap_conflict`) | Property/extension/BSL merge semantics, тестовая база, backup/rollback и запись не приняты |
 | Проверка предложения платформой | В dev8: установленный CLI проверил корректное/ошибочное BSL-предложение на сохранённой конфигурации; в исходной ветке после dev8 compile/YAxUnit API используют bounded native admission/retention ([границы](NATIVE-RESOURCES.md)) | Один Designer XML слой; компиляция без бизнес-тестов и применения |
-| Observer | Опрос выгрузки, журнал и восстановление; Git probe, durable lifecycle находок, per-commit snapshot binding для owner report, bounded scheduler и foreground service-host adapter с journal/recovery и atomic notification outbox, explicit HTTPS webhook delivery, bounded Git/snapshot source evidence, read-only BSL-LS Git adapter, bounded SARIF 2.1.0 import subset, native ServiceMain/SCM boundary proof и явный SCM installer с query/start/stop/uninstall plan | Нет live SCM deployment/daemon acceptance, live receiver acceptance и дедупликации, полного Git tree/temporal evidence, producer-specific Sonar/Vanessa/YAxUnit execution и общей приёмки O1 |
-| Бизнес-отчёты | Bounded owner-report schema с quality/runtime provenance, durable immutable receipts и fail-closed incomplete/not_available статусами; quality не публикуется без явной binding; `owner-report-build` собирает отчёт из durable observer findings; runtime loader проверяет период и freshness; onec-register-export-v1 adapter связывает rows↔metrics и canonical source digest | Нужны подтверждённый 1С producer, commit↔snapshot evidence и методика O2; числовые бизнес-метрики не принимаются только по самосогласованному JSON |
+| Observer | Опрос выгрузки, journal/recovery и durable findings; schema 2 composition root связывает GitWatcherScheduler, read-only BSL Git adapter, owner-report store и atomic local outbox с bounded cooperative stop; per-commit snapshot binding, bounded Git/snapshot source evidence, read-only BSL-LS adapter, bounded SARIF subset, native ServiceMain/SCM boundary proof и явный SCM installer plan | Нет live SCM deployment/daemon acceptance, live receiver acceptance и дедупликации, полного Git tree/temporal evidence, producer-specific Sonar/Vanessa/YAxUnit execution и общей приёмки O1 |
+| Бизнес-отчёты | Bounded owner-report schema с quality/runtime provenance, durable immutable receipts и fail-closed incomplete/not_available статусами; quality не публикуется без явной binding; `owner-report-build` собирает отчёт из durable observer findings; runtime loader проверяет период и freshness; onec-register-export-v1 adapter и frozen retained-register producer связывают rows↔metrics, canonical source digest, период и expected metric set | Live 1С producer, независимая методика O2 и commit↔snapshot/runtime evidence не приняты; числовые бизнес-метрики не объявляются достоверными только по offline fixture |
 | Spectorn в адаптере | Не подключён | Защита трафика этого сценария не подтверждена |
 
 Первоначально в публичное дерево перенесён source distribution core dev7;

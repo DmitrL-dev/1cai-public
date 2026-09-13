@@ -69,6 +69,13 @@ immutable UUID receipts через эксклюзивное создание и 
 автоудаления и сетевой доставки нет. Контракт приведён в
 [OWNER-REPORT-STORE.md](OWNER-REPORT-STORE.md).
 
+Для bounded Git-аудита [service composition schema 2](SERVICE-HOST.md) связывает
+готовый builder/store с GitWatcher и локальным outbox. Успешное событие содержит
+`owner_report_id` только после сохранения отчёта с `git_source_verified` и
+совпадающим commit. По умолчанию включён dry-run; явный read-only режим требует
+существующего подтверждённого snapshot. Runtime adapter и доставка уведомлений
+в этот composition root не подключены.
+
 Это контракт агрегации, а не доказательство прав или истинности внешней базы:
 вызывающий слой должен авторизовать чтение и связать report с фактически
 проверенным runtime. Уведомления, SQL/1С adapters и retention policy остаются

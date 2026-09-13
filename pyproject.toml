@@ -111,6 +111,7 @@ only-include = [
   "scripts/verification/verify_edt_metadata_fixture.py",
   "packaging/fixtures/metadata-migration-v1",
   "packaging/fixtures/edt-metadata-v1",
+  "packaging/fixtures/runtime-register-v1",
   "docs/product/NATIVE-RESOURCES.md",
   "docs/product/evidence/native-resources.json",
   "docs/product/EDITOR-TESTS.md",

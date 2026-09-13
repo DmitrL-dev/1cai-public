@@ -63,7 +63,10 @@ idempotency keys and acknowledgement only after an accepted response.
 
 For a cooperative foreground lifetime wrapper, see
 [SERVICE-HOST.md](SERVICE-HOST.md); it does not install or register a Windows
-service.
+service. The same document describes the schema 2 service composition: it
+connects the existing BSL Git adapter, durable findings/journal/outbox and
+verified owner-report storage, defaults to dry-run and requires an explicit
+bounded read-only audit. Its service boundary remains tested with mocked SCM.
 
 This is an orchestration boundary, not an analyzer. The callback remains
 responsible for producing trustworthy findings. The optional BSL-LS adapter is
