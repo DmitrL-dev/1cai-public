@@ -46,6 +46,21 @@ jobs:
           path: output/python-contracts.xml
           if-no-files-found: warn
           retention-days: 14
+      - name: Annotate Python contract failures
+        if: always()
+        shell: pwsh
+        run: |
+          if (-not (Test-Path output/python-contracts.xml)) { exit 0 }
+          [xml]$report = Get-Content output/python-contracts.xml
+          $failed = @($report.SelectNodes('//testcase[failure or error]'))
+          foreach ($case in $failed) {
+            $class = [string]$case.classname
+            $name = [string]$case.name
+            Write-Output "::error title=Python contract failure::$class::$name"
+          }
+          if ($failed.Count -eq 0) {
+            Write-Output '::error title=Python contracts::Pytest exited non-zero without a testcase failure in JUnit'
+          }
       - name: Companion contracts
         run: node --test integrations/vscode-rentgen/test/*.test.cjs
       - name: Scanner tests
