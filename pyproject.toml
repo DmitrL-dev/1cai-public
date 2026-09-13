@@ -47,6 +47,7 @@ only-include = [
   "go/cmd",
   "go/internal",
   "go/pkg",
+  "requirements-rentgen.txt",
   "requirements-product-build.txt",
   "requirements/locks/product-build-py311-windows.txt",
   "requirements/locks/product-py311-windows.txt",

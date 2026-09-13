@@ -74,6 +74,14 @@ def test_selected_mcp_lock_is_pinned_in_public_runtime_lock(modules):
     assert all(key in full and hashes <= full[key] for key, hashes in selected.items())
 
 
+def test_runtime_lock_source_manifest_is_published():
+    source = ROOT / "requirements-rentgen.txt"
+    lock = ROOT / "requirements/locks/product-py311-windows.txt"
+    assert source.is_file()
+    first_line = lock.read_text(encoding="utf-8").splitlines()[1]
+    assert "requirements-rentgen.txt" in first_line
+
+
 @pytest.mark.parametrize(
     "text", ["mcp>=1.0", "https://example.invalid/package.whl", "mcp==1.30.0"]
 )
