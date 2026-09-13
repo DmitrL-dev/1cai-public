@@ -62,8 +62,9 @@
 [HTTPS webhook](docs/product/NOTIFICATION-DELIVERY.md) с ограничением размера,
 allowlist получателей и подтверждением только после HTTP 2xx.
 Формат [owner report](docs/product/OWNER-REPORT.md) связывает quality findings и
-подтверждённые runtime-метрики; без runtime adapter бизнес-значения остаются
-`not_available`.
+подтверждённые runtime-метрики; generic и register adapters читают retained
+evidence с no-follow проверкой, а без подтверждённого runtime adapter
+бизнес-значения остаются `not_available`.
 Observer умеет собрать такой отчёт из durable findings для опубликованного
 snapshot без повторного запуска Git/LLM; для статуса quality вызывающий слой
 должен явно передать `snapshot_id` в ручной `record_findings`; GitWatcher при

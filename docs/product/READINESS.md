@@ -6,7 +6,7 @@
 
 ## Дополнение к кандидату 13 сентября 2026
 
-В текущем кандидате локально проходят 970 тестов; три Windows symlink-теста
+В текущем кандидате локально проходят 971 тест; три Windows symlink-теста
 пропущены из-за отсутствия privilege. Кандидат включает bounded foreground
 service-host, explicit SCM installer planning и явную freshness-policy для
 runtime-метрик поверх публичного owner-report CLI с проверкой опубликованного snapshot и выделенным
@@ -15,8 +15,10 @@ Read-only EDT inventory теперь связывает проверенные U
 и декларацию слоя с `SourceRef`; three-way plan дополнительно показывает
 атомарные UUID-bound области BSL, форм и СКД с явными
 `supported`/`conflict`/`unsupported` причинами. Эти возможности собраны в wheel и
-sdist и не меняют live source или базу 1С. Runtime register export adapter
-проверяет context, rows↔metrics и canonical source digest; SARIF adapter
+sdist и не меняют live source или базу 1С. Оба runtime loader-а читают
+retained-файл по исходному no-follow локатору без предварительного
+`Path.resolve()`. Runtime register export adapter проверяет context,
+rows↔metrics и canonical source digest; SARIF adapter
 импортирует только attested bounded subset внешнего отчёта.
 
 Приёмка остаётся частичной: нативный EDT import/export, запись в рабочую
