@@ -52,7 +52,7 @@ console planning остаются тестируемыми без SCM.
 
 ## Failure and recovery contract
 
-- До создания runtime factory конфигурация и runtime binding проходят все проверки; в service mode dispatcher и `START_PENDING` публикуются до тяжёлого worker startup. При ошибке процесс сообщает generic `SERVICE_CONFIG_INVALID`/`SERVICE_START_FAILED` без echo входного значения.
+- До создания runtime factory конфигурация и runtime binding проходят все проверки; в service mode dispatcher и `START_PENDING` публикуются до тяжёлого worker startup. При ошибке процесс сообщает generic `SERVICE_CONFIG_INVALID`/`SERVICE_WORKER_FAILED` без echo входного значения.
 - STOP/SHUTDOWN не прерывает активный `_tick()` и не убивает дочерние процессы;
   worker завершает текущую операцию, освобождает lock и закрывает только свои
   ресурсы. Повторный stop идемпотентен.
@@ -78,6 +78,7 @@ console planning остаются тестируемыми без SCM.
 Локальные тесты не являются live SCM installation, service-account, reboot,
 recovery-policy, signing или native 1C acceptance. Такие доказательства
 потребуют отдельного разрешённого Windows окружения и не входят в этот commit.
+
 
 
 
