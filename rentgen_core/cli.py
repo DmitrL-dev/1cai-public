@@ -868,6 +868,12 @@ def _execute(args, *, proposal_scope=None):
     if args.command == "native-archive":
         from .native_resources import archive_native_run
 
+        if proposal_scope is not None:
+            # Keep the authenticated, snapshot-free context available so an
+            # error during snapshot re-resolution is redacted by the final
+            # permission check in main._emit_error.
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
         runtime = replace(
             runtime,
             graph_reader_factory=runtime.graph_reader_factory or _graph_factory(),
