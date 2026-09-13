@@ -19,6 +19,29 @@ report = build_owner_report(
 )
 ```
 
+Для локального observer готовая quality-история собирается без повторного Git
+или LLM-запуска:
+
+```python
+report = observer.owner_report(snapshot_id, max_findings=1000)
+```
+
+Метод читает durable `finding_state`, требует опубликованный snapshot и права
+`project:read` + `analysis:run`, повторяет проверку прав перед возвратом и
+оставляет `business_metrics` в `not_available`, пока вызывающий runtime adapter
+не передаст подтверждённый `RuntimeMetricReport`. `record_findings()` должен
+получить `snapshot_id` для явной записи связи анализа с опубликованным
+snapshot; без этой связи quality возвращается как
+`quality_snapshot_binding_unverified`. Такой binding фиксирует утверждение
+вызывающего слоя отдельно для каждого Git commit и не доказывает соответствие
+этого commit содержимому snapshot: в текущем каталоге snapshot отсутствует
+отдельный Git commit. Исторический replay не меняет binding текущего состояния.
+
+`max_findings` ограничивает размер owner report от 1 до 10 000 и по умолчанию
+равен 1 000. История observer может содержать до 10 000 записей; при
+превышении выбранного лимита отчёт останавливается с `OWNER_REPORT_LIMIT`,
+пока вызывающий слой явно не поднимет параметр.
+
 `RuntimeMetric` содержит стабильный идентификатор, числовое значение с жёстким
 лимитом, единицу измерения, период, источник и время наблюдения. Повторяющаяся
 пара `(source_id, metric_id)`, невалидная дата, перевёрнутый период, чужой

@@ -40,6 +40,9 @@ FINDINGS_MAX_DOCUMENT_BYTES = 2 * 1024 * 1024
 FINDINGS_SCHEMA = """
 CREATE TABLE finding_state (id INTEGER PRIMARY KEY CHECK(id=1), state TEXT NOT NULL);
 CREATE TABLE finding_reports (commit_id TEXT PRIMARY KEY, receipt TEXT NOT NULL);
+CREATE TABLE finding_binding (
+ snapshot_id TEXT NOT NULL, commit_id TEXT PRIMARY KEY
+);
 """
 
 
@@ -353,16 +356,26 @@ class Observer:
                 "UPDATE jobs SET phase=CASE WHEN result IS NULL THEN 'capture' ELSE 'report' END,attempts=0,error=NULL WHERE phase='failed'"
             )
 
-    def record_findings(self, report: FindingReport, *, _locked=False):
+    def record_findings(
+        self, report: FindingReport, *, snapshot_id=None, _locked=False
+    ):
         """Persist a caller-supplied complete report; never probe or analyze Git.
 
         One repo/ref/profile/scope context is retained per observer profile.
         Historical commit replays return their original receipt without moving
         current state. Caller ordering is authoritative; ancestry is not checked.
+        ``snapshot_id`` is an explicit caller assertion that the finding commit
+        was analyzed against that published snapshot. Without it, the durable
+        findings remain unbound and are never presented as snapshot quality.
         """
         with nullcontext() if _locked else self.locked():
             ctx = self._context(write=True)
             _validate_finding_provenance(report, ctx)
+            if snapshot_id is not None:
+                SnapshotRef(self.project_id, snapshot_id, snapshot_id)
+                with ctx.state.transaction(ctx.principal) as tx:
+                    tx.require_all({"project:read", "analysis:run"})
+                    tx.get_snapshot(snapshot_id)
             canonical = reconcile_findings(None, report).state.report
             with _sqlite.transaction(self.database, write=True) as db:
                 if _findings_version(db) == 0:
@@ -370,6 +383,13 @@ class Observer:
                         if statement.strip():
                             db.execute(statement)
                     db.execute("PRAGMA user_version=1")
+                else:
+                    # Profiles created before explicit snapshot bindings remain
+                    # readable; their existing state is intentionally unbound.
+                    db.execute(
+                        "CREATE TABLE IF NOT EXISTS finding_binding ("
+                        "snapshot_id TEXT NOT NULL, commit_id TEXT PRIMARY KEY)"
+                    )
                 row = db.execute(
                     "SELECT state FROM finding_state WHERE id=1"
                 ).fetchone()
@@ -393,6 +413,21 @@ class Observer:
                             "FINDINGS_REPLAY_CONFLICT",
                             "Conflicting report for the same commit",
                         )
+                    binding = db.execute(
+                        "SELECT snapshot_id FROM finding_binding WHERE commit_id=?",
+                        (canonical.observation.commit,),
+                    ).fetchone()
+                    if snapshot_id is not None:
+                        if binding is not None and binding != (snapshot_id,):
+                            raise CoreError(
+                                "FINDINGS_REPLAY_CONFLICT",
+                                "Finding commit is already bound to another snapshot",
+                            )
+                        if binding is None:
+                            db.execute(
+                                "INSERT INTO finding_binding(snapshot_id,commit_id) VALUES(?,?)",
+                                (snapshot_id, canonical.observation.commit),
+                            )
                 else:
                     update = reconcile_findings(previous, canonical)
                     receipt = {
@@ -433,6 +468,11 @@ class Observer:
                         "INSERT INTO finding_reports(commit_id,receipt) VALUES(?,?)",
                         (canonical.observation.commit, receipt_json),
                     )
+                    if snapshot_id is not None:
+                        db.execute(
+                            "INSERT INTO finding_binding(snapshot_id,commit_id) VALUES(?,?)",
+                            (snapshot_id, canonical.observation.commit),
+                        )
                     _boundary("findings_journal_saved")
                     receipt = json.loads(receipt_json)
                 _boundary("findings_ready")
@@ -468,6 +508,69 @@ class Observer:
         with ctx.state.transaction(ctx.principal) as tx:
             tx.require_all({"project:read", "analysis:run"})
         return document
+
+    def owner_report(
+        self, snapshot_id, *, runtime=None, authorize=None, max_findings=1000
+    ):
+        """Build a context-bound owner report from durable findings.
+
+        Runtime evidence remains an explicit typed adapter input; this method
+        never starts a process, queries 1C/SQL or invents business metrics.
+        """
+        SnapshotRef(self.project_id, snapshot_id, snapshot_id)
+        ctx = self._context(write=True)
+        try:
+            self._validate(ctx)
+            with ctx.state.transaction(ctx.principal) as tx:
+                tx.require_all({"project:read", "analysis:run"})
+                tx.get_snapshot(snapshot_id)
+            with _sqlite.transaction(self.database) as db:
+                if _findings_version(db) == 0:
+                    findings = None
+                    binding = None
+                else:
+                    row = db.execute(
+                        "SELECT state FROM finding_state WHERE id=1"
+                    ).fetchone()
+                    findings = None if row is None else _finding_state(row[0])
+                    binding_table = db.execute(
+                        "SELECT 1 FROM sqlite_master WHERE type='table' "
+                        "AND name='finding_binding'"
+                    ).fetchone()
+                    binding = (
+                        db.execute(
+                            "SELECT snapshot_id FROM finding_binding WHERE commit_id=?",
+                            (findings.report.observation.commit,),
+                        ).fetchone()
+                        if binding_table is not None and findings is not None
+                        else None
+                    )
+            quality_reason = None
+            if findings is not None and binding != (snapshot_id,):
+                findings = None
+                quality_reason = "quality_snapshot_binding_unverified"
+            from .owner_report import build_owner_report
+
+            report = build_owner_report(
+                self.project_id,
+                snapshot_id,
+                findings=findings,
+                runtime=runtime,
+                authorize=authorize,
+                max_findings=max_findings,
+            )
+            if quality_reason is not None:
+                report["quality"] = {
+                    "status": "not_available",
+                    "reason": quality_reason,
+                }
+            with ctx.state.transaction(ctx.principal) as tx:
+                tx.require_all({"project:read", "analysis:run"})
+            return report
+        except BaseException:
+            with ctx.state.transaction(ctx.principal) as tx:
+                tx.require_all({"project:read", "analysis:run"})
+            raise
 
     def status(self, *, limit=10):
         if type(limit) is not int or not 1 <= limit <= 100:

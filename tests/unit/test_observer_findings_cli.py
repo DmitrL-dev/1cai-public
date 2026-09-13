@@ -246,6 +246,26 @@ def test_record_requires_report_and_status_rejects_report(command, tmp_path):
         assert result["error"]["code"] == "INVALID_ARGUMENT"
 
 
+def test_snapshot_id_is_only_for_record_and_requires_published_snapshot(
+    command, tmp_path
+):
+    observer, invoke = command
+    path = report_file(observer, tmp_path)
+    code, result = invoke(
+        "record-findings",
+        "--report",
+        str(path),
+        "--snapshot-id",
+        "b" * 64,
+    )
+    assert code == 2
+    assert result["error"]["code"] == "SNAPSHOT_NOT_FOUND"
+
+    code, result = invoke("status", "--snapshot-id", "b" * 64)
+    assert code == 2
+    assert result["error"]["code"] == "INVALID_ARGUMENT"
+
+
 def test_status_reauthorizes_analysis_permission_after_encoding(
     command, tmp_path, monkeypatch
 ):

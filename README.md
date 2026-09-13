@@ -58,6 +58,11 @@
 Формат [owner report](docs/product/OWNER-REPORT.md) связывает quality findings и
 подтверждённые runtime-метрики; без runtime adapter бизнес-значения остаются
 `not_available`.
+Observer умеет собрать такой отчёт из durable findings для опубликованного
+snapshot без повторного запуска Git/LLM; для статуса quality вызывающий слой
+должен явно передать `snapshot_id` в `record_findings`, а лимит выдачи
+`max_findings` выбирается явно. Сохранение receipt остаётся отдельной
+операцией owner-report store.
 Для snapshot-анализа добавлены read-only [EDT-инвентарь UUID и владельцев](docs/product/EDT-INVENTORY-IDENTITY.md)
 и [семантические companion-scope для three-way](docs/product/METADATA-THREE-WAY-SEMANTICS.md).
 Сформированный owner report можно сохранить и прочитать через

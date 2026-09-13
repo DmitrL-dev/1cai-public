@@ -78,12 +78,13 @@ rentgen-observer retry --registry C:\RentgenState\registry.sqlite3 --project PRO
 
 ## Сохранение lifecycle Git-находок через Python API
 
-`Observer.record_findings(report: FindingReport)` принимает готовый полный отчёт
+`Observer.record_findings(report: FindingReport, snapshot_id=None)` принимает готовый полный отчёт
 из `rentgen_core.git_observer` и вызывает существующий `reconcile_findings`.
 Операция не запускает Git, scanner, анализатор, LLM, сеть или scheduler. CLI
-принимает явно переданный отчёт; цикл `tick()` не подаёт отчёты автоматически:
-действующего Git watcher
-в этом срезе нет. Ответ `analysis="caller_supplied"` означает доверенный ввод
+принимает явно переданный отчёт; source-capture цикл `tick()` не подаёт отчёты
+качества автоматически. Отдельный `GitWatcher` остаётся адаптером, который
+передаёт результат анализатора через тот же caller-supplied API. Ответ
+`analysis="caller_supplied"` означает доверенный ввод
 вызывающего кода, а не доказательство запуска анализа указанного commit.
 
 В отчёте обязательны `complete=True`, `profile_id`, `scope_id` и provenance
@@ -94,6 +95,13 @@ rentgen-observer retry --registry C:\RentgenState\registry.sqlite3 --project PRO
 к которой относится полнота отчёта. Вызывающий код отвечает за соответствие
 находок указанному commit: API не проверяет содержимое репозитория или ancestry.
 Новые commit обрабатываются в порядке вызовов.
+
+Если вызывающий слой проверил, что анализ выполнен для опубликованного snapshot,
+он передаёт его `snapshot_id`. Эта assertion сохраняется отдельно для каждого
+Git commit в `finding_binding`; без неё `owner_report()` не выдаёт quality как
+качество выбранного snapshot. API не доказывает commit↔snapshot содержимое:
+каталог snapshot пока не хранит Git commit. Исторический replay не изменяет
+binding другого, текущего commit.
 
 Первый отчёт создаёт baseline; находки получают события `new`. Дальнейшие
 полные отчёты порождают `new`, `resolved`, `reopened`. Стабильная идентичность —
@@ -144,6 +152,7 @@ rentgen-observer retry --registry C:\RentgenState\registry.sqlite3 --project PRO
 
 ```powershell
 rentgen-observer record-findings --registry C:\RentgenState\registry.sqlite3 --project PROJECT_UUID --profile C:\RentgenState\observer --report C:\RentgenReports\findings.json
+rentgen-observer record-findings --registry C:\RentgenState\registry.sqlite3 --project PROJECT_UUID --profile C:\RentgenState\observer --report C:\RentgenReports\findings.json --snapshot-id SNAPSHOT_SHA256
 rentgen-observer findings-status --registry C:\RentgenState\registry.sqlite3 --project PROJECT_UUID --profile C:\RentgenState\observer --limit 10
 ```
 
@@ -175,6 +184,9 @@ rentgen-observer findings-status --registry C:\RentgenState\registry.sqlite3 --p
 }
 ```
 
+`--snapshot-id` допустим только для `record-findings`, проверяет опубликованный
+snapshot и записывает явную binding. Без этого параметра запись остаётся
+допустимой, но owner report возвращает `quality_snapshot_binding_unverified`.
 Замените repository на точный канонический `source_root` зарегистрированного
 проекта, commit — на полный SHA анализируемого commit. Для detached HEAD
 передайте `"ref": null`; поле всё равно обязательно. CLI передаёт проверки

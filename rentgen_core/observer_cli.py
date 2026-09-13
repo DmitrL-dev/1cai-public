@@ -33,6 +33,7 @@ def _parser():
     parser.add_argument("--cycles", type=int, action=_Once)
     parser.add_argument("--limit", type=int, default=1, action=_Once)
     parser.add_argument("--report", type=Path, action=_Once)
+    parser.add_argument("--snapshot-id", action=_Once)
     return parser
 
 
@@ -87,6 +88,10 @@ def main(argv=None):
             raise CoreError(
                 "INVALID_ARGUMENT", "--report is required only for record-findings"
             )
+        if args.action != "record-findings" and args.snapshot_id is not None:
+            raise CoreError(
+                "INVALID_ARGUMENT", "--snapshot-id is only valid for record-findings"
+            )
         from rentgen_graph.snapshot_adapter import (
             RentgenCapturedGoBuilder,
             RentgenGraphReaderFactory,
@@ -112,7 +117,9 @@ def main(argv=None):
             observer._validate(observer._context(write=True))
             _emit(
                 observer,
-                observer.record_findings(_finding_report(args.report)),
+                observer.record_findings(
+                    _finding_report(args.report), snapshot_id=args.snapshot_id
+                ),
                 findings=True,
             )
         elif args.action == "findings-status":
