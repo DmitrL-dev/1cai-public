@@ -6,12 +6,21 @@ Windows service deployment. No real service installation was performed for this
 proof; unit tests use injected executors and placeholder executable files.
 
 The executable must already implement the native Windows service contract
-(`ServiceMain`, dispatcher registration and control callbacks). The existing
-`WindowsServiceHost` only provides foreground scheduler lifetime and cooperative
-stop. Registering that Python class, a console entry point or an arbitrary EXE
-with SCM does not turn it into a daemon. Building and testing the native service
-wrapper, service ACLs, package signing, recovery policies and deployment remain
-separate work.
+(`ServiceMain`, dispatcher registration and control callbacks) in the actual
+process started by SCM. `rentgen_core.service_entry` now provides that ctypes
+boundary and a source Observer worker; its config and lifecycle contracts are
+documented in [SERVICE-HOST.md](SERVICE-HOST.md). `WindowsServiceHost` remains
+the separate foreground Git scheduler lifetime.
+
+The installed `rentgen-service` console entry point proves CLI packaging only.
+Its pip-generated EXE can launch a child Python process; this is not evidence
+that SCM will connect to the correct dispatcher process. Do not substitute that
+launcher for the placeholder executable below without validating a same-process
+service image. A verified Python embedding/frozen wrapper or separately managed
+direct interpreter ImagePath remains deployment work. The installer grammar is
+unchanged and does not accept `python -m`/arbitrary interpreter arguments. Native
+wrapper packaging, service ACLs, signing, recovery policies and live deployment
+acceptance remain open; no production acceptance is claimed here.
 
 ## API and plan
 
@@ -107,6 +116,15 @@ that could make compensation safe against external delete-and-recreate races.
 Executable/config replacement races and ACL validation also require deployment
 controls outside this adapter.
 
+For `service_entry`, the config's `service_name` must equal the actual SCM name;
+the entrypoint rejects a mismatch and additional SCM start arguments. Config
+contents are loaded only inside ServiceMain's worker after dispatcher connection
+and `START_PENDING`; installer validation still never reads those contents.
+The default `LocalService` account needs its own project membership and an
+Observer profile bound to that exact Windows process principal. The entrypoint
+does not reuse an interactive user's identity, initialize/rebind profiles or
+grant permissions during startup. Provisioning these resources is separate.
+
 ### Filesystem identity boundary (self-audit)
 
 `_file` deliberately follows symlinks and resolvable Windows reparse points
@@ -142,8 +160,8 @@ included in error details. Timeouts explicitly report an unknown command outcome
 Focused verification (no live SCM mutation):
 
 ```text
-python -m pytest tests/unit/test_service_installer.py tests/unit/test_service_host.py -q
-python -m black --check rentgen_core/service_installer.py tests/unit/test_service_installer.py
-python -m ruff check rentgen_core/service_installer.py tests/unit/test_service_installer.py
+python -m pytest tests/unit/test_service_entry.py tests/unit/test_service_installer.py tests/unit/test_service_host.py -q
+python -m black --check rentgen_core/service_entry.py tests/unit/test_service_entry.py rentgen_core/service_installer.py tests/unit/test_service_installer.py
+python -m ruff check rentgen_core/service_entry.py tests/unit/test_service_entry.py rentgen_core/service_installer.py tests/unit/test_service_installer.py
 git diff --check
 ```

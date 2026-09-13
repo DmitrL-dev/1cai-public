@@ -1,4 +1,141 @@
-# Bounded Windows service host lifetime
+# Native Observer service entrypoint and bounded Git host
+
+## Source Observer entrypoint
+
+`rentgen_core.service_entry` supplies a stdlib/ctypes Windows SCM boundary and
+the `rentgen-service` console command. The source Observer worker uses the
+existing `LocalRuntime`, `RentgenGraphReaderFactory`, `RentgenCapturedGoBuilder`
+and `Observer` composition. This is an adapter contract proof with mocked SCM,
+not live service deployment or production acceptance. The source worker is
+separate from the bounded `GitWatcherScheduler` host described below.
+
+Use an existing protected configuration file with this exact JSON schema:
+
+```json
+{
+  "schema": 1,
+  "service_name": "Rentgen.Observer",
+  "registry": "C:\\Rentgen\\registry.sqlite3",
+  "profile": "C:\\Rentgen\\observer-profile",
+  "project": "6e461c4d-e19c-4e37-85b3-3aa0961580b7",
+  "scanner": "C:\\Rentgen\\scanner.exe",
+  "interval_seconds": 60,
+  "max_cycles": 1
+}
+```
+
+All fields except `max_cycles` are required. `max_cycles` is either an integer
+from 1 to 10000, or `null`/absent to run until STOP, SHUTDOWN or failure. An
+integer budget terminates the lifetime once; there is no automatic restart.
+`interval_seconds` is an integer from 5 to 86400. Booleans and floating point
+numbers do not satisfy either integer contract. For a bounded console smoke
+test, retain `max_cycles: 1` and run:
+
+```powershell
+python -m rentgen_core.service_entry --console --config C:\Rentgen\settings.json
+```
+
+This performs an authorized Observer tick and can capture/publish local state;
+it is not a dry run. The existing Observer profile must already belong to the
+current Windows process principal and project. The adapter never initializes
+or rebinds a profile, changes membership, selects an identity from JSON or
+invokes `Observer.retry()`. `Observer.locked()` validates project permissions
+and profile binding and holds the lease for the entire worker lifetime; `_tick`
+is the explicit internal adapter used while that lease is held, as in the
+existing Observer CLI. `close()` releases that lease. The runtime's other
+resources remain scoped to its existing operations.
+
+The registry is an existing regular local file, not a JSON configuration. The
+profile is an existing directory; the scanner is an existing `.exe` file.
+The configuration itself is an existing `.json` file. Every path is absolute,
+at most 240 characters, and checked again after canonical resolution. UNC and
+device paths, mapped remote/unknown drives on Windows, traversal, alternate
+streams, reserved Windows names, control/surrogate characters, `%` expansion
+and credential-like names are rejected. Canonicalization follows links;
+hardlinks are accepted. These checks do not establish ACLs, executable trust,
+file identity or protection against replacement between validation and use.
+
+Config reads retain at most 16 KiB plus one overflow byte. Invalid UTF-8, BOM,
+duplicate JSON fields, nonfinite numbers, unknown/missing fields and invalid
+canonical project UUIDs fail closed. No configuration field loads a module,
+executes a shell command, supplies an environment or carries credentials.
+Names and paths are public metadata; arbitrary opaque secrets disguised as
+names cannot be detected. Keep credentials out of configuration and argv.
+
+Only `--console --config <path>` or `--service --config <path>` is accepted;
+duplicate/extra arguments and abbreviations are rejected without echoing input.
+Console mode emits one small JSON outcome with a completed cycle count, or a
+fixed generic error code, and returns 0 or 2. It does not print Observer events
+or raw exception text. Ctrl+C in console mode releases owned resources. A
+trusted embedding can pass `worker_factory(config)` and a console `stop_event`
+directly in Python. The returned worker must implement `tick()` and `close()`;
+the factory owns cleanup if construction fails before it returns a worker.
+The entrypoint calls a returned worker's cleanup once, including after failure.
+
+## SCM lifetime and deployment boundary
+
+Service mode checks the Windows platform before loading config or runtime, then
+connects the process's main thread with `StartServiceCtrlDispatcherW`. The
+own-process dispatch table's name is ignored by Windows; the actual service
+name from `ServiceMain`'s first argument is registered and checked against
+`config.service_name`. Extra SCM start arguments are rejected, never interpreted
+as config overrides. See Microsoft's
+[dispatcher contract](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-startservicectrldispatcherw).
+
+`ServiceMain` immediately calls `RegisterServiceCtrlHandlerExW` and reports
+`START_PENDING` with no accepted controls. One worker thread then loads config,
+authenticates and acquires the Observer lease. A ready handshake allows
+`RUNNING` only after startup succeeds. The service accepts STOP and SHUTDOWN;
+`HandlerEx` only signals events and returns, without worker joins or I/O.
+INTERROGATE returns success without publishing another status; unsupported
+controls return `ERROR_CALL_NOT_IMPLEMENTED`. These follow Microsoft's
+[control handler contract](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nc-winsvc-lphandler_function_ex).
+
+The ServiceMain coordinator owns every status write. On a stop request or
+worker completion/failure it reports `STOP_PENDING`, disables accepted controls,
+allows cleanup and joins the worker, then attempts exactly one `STOPPED` report.
+There are no later status writes. Stop observed before the RUNNING decision
+skips RUNNING. An already in-flight RUNNING report can race with a new stop
+request and is followed by STOP_PENDING; Event/WinAPI are not an atomic pair.
+SCM API failures stop the worker cooperatively and make the overall result a
+failure; registration failure has no handle with which to report STOPPED.
+
+All worker exceptions are fatal in service mode. There is no retry/backoff
+policy or automatic recovery in this source worker. Cleanup failure also fails
+the lifetime, and a simultaneous stop cannot erase a failure. SCM receives only
+fixed numeric failure statuses (`ERROR_SERVICE_SPECIFIC_ERROR` / 1066, with
+service-specific 1=config, 2=worker, 3=SCM); service mode emits no console output.
+Raw exceptions, tracebacks, notes and event payloads are not copied into public
+outcomes. The existing Observer persistence retains its own evidence rules.
+
+Interval waits are interruptible. An active factory, tick or cleanup must return
+on its own; this adapter does not forcibly terminate a thread/process or promise
+a wall-clock stop deadline. Pending statuses use a 30-second initial wait hint
+and one checkpoint, with no timer pretending that a hung operation is making
+progress. Shutdown can outlast Windows's deadline. Hard termination cannot
+guarantee cleanup or a final SCM status; interrupted Observer jobs require the
+existing explicit recovery workflow. See Microsoft's
+[status reporting requirements](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-setservicestatus).
+
+**The installed `rentgen-service.exe` console-script launcher is not proven as
+an SCM service image.** A pip launcher can create a child Python process while
+SCM owns the launcher process. The dispatcher must run in the actual service
+process. A deployment needs a verified same-process Python embedding/frozen
+executable, or an independently managed ImagePath invoking the installed Python
+interpreter and this module directly. This change builds neither a native
+launcher nor that deployment integration. The current installer deliberately
+does not accept arbitrary `python -m` arguments. See
+[SERVICE-INSTALLER.md](SERVICE-INSTALLER.md) for its unchanged grammar.
+
+The installer defaults to `NT AUTHORITY\LocalService`. That principal's project
+membership and exact Observer profile binding must be provisioned separately;
+a profile initialized by an interactive user is not automatically usable.
+Account ACLs, signing, packaging, reboot/start/stop/recovery behavior and live
+SCM acceptance remain unverified. Tests exercise config, source adapter lease
+ownership, foreground budgets, mocked native ABI calls, startup/control races,
+failure statuses and cleanup; no live SCM install/start was performed.
+
+## Bounded Git scheduler host
 
 `rentgen_core.service_host.WindowsServiceHost` adds a foreground lifetime to an
 already configured `GitWatcherScheduler`. It is an integration boundary for a
