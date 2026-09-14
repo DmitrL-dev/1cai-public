@@ -570,3 +570,54 @@ def test_ambiguous_or_fabricated_layer_declarations_are_invalid(case):
     with pytest.raises(api.CoreError) as error:
         plan_edt_identity_three_way(value, inventory(), inventory())
     assert error.value.code == "EDT_IDENTITY_PLAN_INVALID"
+
+
+@pytest.mark.parametrize("version", [0, 1, 2])
+@pytest.mark.parametrize(
+    "kind,tag", [("Form", "forms"), ("TabularSection", "tabularSections")]
+)
+@pytest.mark.parametrize("reverse", [False, True])
+def test_different_child_kinds_cannot_share_a_physical_xml_position(
+    version, kind, tag, reverse
+):
+    inputs = [inventory(label) for label in "abc"]
+    objects = inputs[version]["objects"]
+    extra = deepcopy(objects[1])
+    extra.update(
+        canonical_uuid=OTHER,
+        observed_uuid=OTHER,
+        type=kind,
+        name="PRIVATE_PAYLOAD",
+        xml_path=f"/Catalog/{tag}[1]",
+    )
+    objects.append(extra)
+    if reverse:
+        objects.reverse()
+    with pytest.raises(api.CoreError) as error:
+        plan_edt_identity_three_way(*inputs)
+    assert error.value.code == "EDT_IDENTITY_PLAN_INVALID"
+    assert error.value.details == {}
+    assert "PRIVATE_PAYLOAD" not in str(error.value)
+
+
+def test_sibling_indices_are_scoped_to_direct_owner_xml_location():
+    value = inventory()
+    section = deepcopy(value["objects"][1])
+    section.update(
+        canonical_uuid=OTHER,
+        observed_uuid=OTHER,
+        type="TabularSection",
+        name="Lines",
+        xml_path="/Catalog/tabularSections[2]",
+    )
+    nested = deepcopy(value["objects"][1])
+    nested.update(
+        canonical_uuid="eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+        observed_uuid="eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+        xml_path=section["xml_path"] + "/attributes[1]",
+    )
+    nested["owner"].update(canonical_uuid=OTHER, xml_path=section["xml_path"])
+    value["objects"].extend([section, nested])
+    result = plan_edt_identity_three_way(value, value, value)
+    assert result["counts"]["unchanged"] == 4
+    assert all(item["action"] == "unchanged" for item in result["objects"])

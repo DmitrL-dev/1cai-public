@@ -314,6 +314,7 @@ def _normalize(value, limits):
         if len(paths) != layer_counts[lid][0]:
             raise _invalid()
     records, used_refs, locations, sibling_names = {}, set(), set(), set()
+    child_positions = set()
     for entry in value["objects"]:
         _fields(entry, _OBJECT_FIELDS)
         uid = _uuid(entry["canonical_uuid"])
@@ -351,12 +352,18 @@ def _normalize(value, limits):
                 or kind not in _CHILDREN
             ):
                 raise _invalid()
-            if not re.fullmatch(
+            position_match = re.fullmatch(
                 re.escape(owner["xml_path"] + "/" + _CHILDREN[kind])
-                + r"\[(?:0|[1-9][0-9]{0,5})\]",
+                + r"\[(0|[1-9][0-9]{0,5})\]",
                 xml_path,
-            ):
+            )
+            if position_match is None:
                 raise _invalid()
+            # Producer indices enumerate all direct XML children, across kinds.
+            position = (*ref_key, owner["xml_path"], int(position_match[1]))
+            if position in child_positions:
+                raise _invalid()
+            child_positions.add(position)
         else:
             path = ref["relative_path"]
             expected = (
