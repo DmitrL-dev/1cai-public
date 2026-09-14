@@ -25,6 +25,11 @@ from .sources import SourceRef
 
 _MAX_JSON_BYTES = 1024 * 1024
 _OWNER_REPORT_OUTPUT_LIMIT = 2 * 1024**2 + 8192
+_METADATA_TREE_LIMITS = {
+    "max_files": 1024,
+    "max_file_bytes": 256 * 1024,
+    "max_total_bytes": 512 * 1024,
+}
 
 
 class _Parser(argparse.ArgumentParser):
@@ -82,6 +87,7 @@ def _parser():
         "edt-profile-list",
         "edt-profile-disable",
         "metadata-plan",
+        "metadata-materialize",
         "metadata-preview",
         "metadata-result",
         "metadata-evidence",
@@ -109,7 +115,19 @@ def _parser():
         command.add_argument("--registry", required=True, type=Path, action=_Once)
         if name not in ("registry-init", "project-register", "project-list"):
             command.add_argument("--project", required=True, action=_Once)
-        if name.startswith("metadata-"):
+        if name == "metadata-materialize":
+            for label in ("base", "current", "upstream"):
+                command.add_argument(
+                    "--" + label + "-json", type=Path, required=True, action=_Once
+                )
+            for limit, ceiling in _METADATA_TREE_LIMITS.items():
+                command.add_argument(
+                    "--" + limit.replace("_", "-"),
+                    type=int,
+                    default=ceiling,
+                    action=_Once,
+                )
+        elif name.startswith("metadata-"):
             command.add_argument("--snapshot", required=True, action=_Once)
             if name == "metadata-plan":
                 command.add_argument(
@@ -552,6 +570,96 @@ def _proposal_input(
     return raw
 
 
+def _metadata_tree(raw, limits):
+    """Decode only bounded canonical base64 bytes; paths are logical locators."""
+    from .source_paths import validate_file_paths
+
+    try:
+        value = _fields(
+            json.loads(
+                raw.decode("utf-8"),
+                object_pairs_hook=_object,
+                parse_constant=_reject_constant,
+            ),
+            ("schema", "encoding", "files"),
+        )
+        if (
+            type(value["schema"]) is not int
+            or value["schema"] != 1
+            or value["encoding"] != "base64"
+            or not isinstance(value["files"], dict)
+        ):
+            raise ValueError
+        files = value["files"]
+        if len(files) > limits["max_files"]:
+            raise CoreError("THREE_WAY_LIMIT", "Metadata tree file limit exceeded")
+        validate_file_paths(files)
+        encoded_limit = 4 * ((limits["max_file_bytes"] + 2) // 3)
+        tree, total = {}, 0
+        for path, encoded in files.items():
+            if not isinstance(encoded, str):
+                raise ValueError
+            if len(encoded) > encoded_limit:
+                raise CoreError("THREE_WAY_LIMIT", "Metadata tree byte limit exceeded")
+            content = base64.b64decode(encoded, validate=True)
+            if base64.b64encode(content).decode("ascii") != encoded:
+                raise ValueError
+            total += len(content)
+            if (
+                len(content) > limits["max_file_bytes"]
+                or total > limits["max_total_bytes"]
+            ):
+                raise CoreError("THREE_WAY_LIMIT", "Metadata tree byte limit exceeded")
+            tree[path] = content
+        return tree
+    except CoreError as exc:
+        if exc.code == "THREE_WAY_LIMIT":
+            raise
+        raise CoreError("INVALID_ARGUMENT", "Metadata tree JSON is invalid") from exc
+    except (UnicodeError, ValueError, RecursionError) as exc:
+        raise CoreError("INVALID_ARGUMENT", "Metadata tree JSON is invalid") from exc
+
+
+def _metadata_materialize_command(args, ctx, permissions):
+    from . import materialize_metadata_three_way
+
+    limits = {name: getattr(args, name) for name in _METADATA_TREE_LIMITS}
+    if any(
+        type(limits[name]) is not int or not 1 <= limits[name] <= ceiling
+        for name, ceiling in _METADATA_TREE_LIMITS.items()
+    ):
+        raise CoreError("THREE_WAY_LIMIT", "Metadata CLI limits are out of bounds")
+    trees = [
+        _metadata_tree(
+            _proposal_input(ctx, path, _MAX_JSON_BYTES, permissions=permissions), limits
+        )
+        for path in (args.base_json, args.current_json, args.upstream_json)
+    ]
+    try:
+        value = materialize_metadata_three_way(*trees, **limits)
+    except CoreError as exc:
+        # Engine diagnostics are deliberately not a payload-bearing CLI surface.
+        raise CoreError(
+            exc.code, "Metadata materialization could not be completed"
+        ) from exc
+    summary = {
+        key: value[key]
+        for key in (
+            "schema",
+            "scope",
+            "status",
+            "base_digest",
+            "current_digest",
+            "upstream_digest",
+            "candidate_digest",
+            "counts",
+            "merged_objects",
+            "merged_objects_truncated",
+        )
+    }
+    return _ProposalCommandResult(summary, ctx, frozenset(permissions))
+
+
 def _owner_report_store(ctx, path):
     """Resolve an owner-report store below the authenticated project state."""
     from .owner_report_store import OwnerReportStore
@@ -809,6 +917,8 @@ def _execute(args, *, proposal_scope=None):
         return runtime.head(principal, args.project)
     permissions = (
         {"project:read", "analysis:run"}
+        if args.command == "metadata-materialize"
+        else {"project:read", "analysis:run"}
         if args.command in {"owner-report-build", "owner-report-save"}
         else {"project:read"}
         if args.command in {"owner-report-get", "owner-report-list"}
@@ -865,6 +975,11 @@ def _execute(args, *, proposal_scope=None):
         else set()
     )
     ctx = runtime.state_context(principal, args.project, permissions=permissions)
+    if args.command == "metadata-materialize":
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        return _metadata_materialize_command(args, ctx, permissions)
     if args.command == "native-archive":
         from .native_resources import archive_native_run
 

@@ -212,6 +212,51 @@ Installation, CLI equivalents and result interpretation: [PROPOSAL-CHECK.md](PRO
   core receipt protocol applies. No automatic garbage collection or orphan
   promotion is performed.
 
+## Local metadata materialization summary
+
+The local CLI exposes `materialize_metadata_three_way` through a bounded,
+read-only command. This is a CLI-only surface; it does not add an MCP tool.
+
+```powershell
+rentgen metadata-materialize --registry C:\project\registry.sqlite3 --project PROJECT_ID --base-json C:\inputs\base.json --current-json C:\inputs\current.json --upstream-json C:\inputs\upstream.json
+```
+
+Each explicitly selected UTF-8 input file uses exactly this JSON schema:
+
+```json
+{"schema":1,"encoding":"base64","files":{"notes.txt":"aGVsbG8="}}
+```
+
+`files` maps canonical repository-relative paths to canonical padded base64
+strings representing bytes. Empty trees and empty byte strings are valid.
+Duplicate keys, case/Unicode path collisions, unsafe paths, additional fields,
+non-string content, non-finite numbers and invalid base64 fail closed. Paths
+inside `files` are logical names only and are never opened on the filesystem.
+
+Windows identity and `project:read`, `analysis:run` are required
+before payload IO. Permissions are checked again before each input read and
+immediately before successful or failed output. `source:edit` is not required
+for this stateless summary command. The command reads no retained
+snapshot, live source tree or native executable and accepts no snapshot,
+operation, profile, workspace, output, write or apply options.
+
+Every input JSON file is capped at 1 MiB. Defaults and hard ceilings are 1,024
+files in each tree and their union, 256 KiB decoded bytes per file, and 512 KiB
+decoded bytes per tree (including the in-memory candidate). Optional positive
+integer `--max-files`, `--max-file-bytes`, `--max-total-bytes` limits may only
+lower these ceilings and are checked before reading inputs. Encoded content is
+bounded before base64 decoding. The complete success envelope is capped at
+2 MiB. Larger inputs require the Python API with its separate limits.
+
+The usual stdout envelope contains a deterministic `result` with `schema`,
+`scope`, `status`, input/candidate digests, `counts`, bounded `merged_objects`
+evidence and `merged_objects_truncated`; only the envelope's `request_id` varies
+between equivalent calls. The candidate byte tree is never emitted or saved.
+Engine failures retain their error code with a generic message and omit engine
+details, candidate bytes, XML and BSL payloads. A successful `ready` summary
+qualifies only the existing `metadata-properties-v1` merge scope; it is not
+native validation or apply acceptance.
+
 ## Evidence and remaining scope
 
 Tests exercise the official SDK client over a real subprocess, actual Go capture,
