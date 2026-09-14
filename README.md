@@ -160,6 +160,7 @@ flowchart LR
 | [Three-way updates](docs/product/THREE-WAY-UPDATES.md) | Plan и безопасный in-memory candidate для base/current/upstream по хэшу |
 | [UUID-aware updates](docs/product/METADATA-THREE-WAY.md) | Консервативное сопоставление объектов Designer XML по типу и UUID |
 | [EDT identity inventory](docs/product/EDT-INVENTORY-IDENTITY.md) | Проверенные UUID, владельцы вложенных объектов и evidence слоя в EDT snapshot |
+| [ibcmd fixture executor](docs/product/EDT-FIXTURE-EXECUTOR.md) | Принадлежащий bounded create/import/export цикл с квитанциями, удержанием входов и без live apply |
 | [Three-way semantics](docs/product/METADATA-THREE-WAY-SEMANTICS.md) | Atomic BSL/form/СКД scopes с явными supported/conflict/unsupported статусами |
 | [Аудит](docs/product/AUDIT-20260912.md) | Приоритетные слабые места и порядок работ |
 | [Разработка](CONTRIBUTING.md) | Сборка, тесты и правила изменений |

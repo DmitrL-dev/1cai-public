@@ -104,6 +104,7 @@ only-include = [
   "docs/product/EDT-INVENTORY-IDENTITY.md",
   "docs/product/CONFIGURATION-COMPATIBILITY.md",
   "docs/product/EDT-COMMAND-BOUNDARY.md",
+  "docs/product/EDT-FIXTURE-EXECUTOR.md",
   "docs/product/evidence/edt-metadata-v1.json",
   "docs/product/evidence/ibcmd-roundtrip-8.3.27.2342-20260914.json",
   "docs/product/COMPETITOR-MATRIX.md",
