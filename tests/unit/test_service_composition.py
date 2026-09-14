@@ -436,6 +436,51 @@ def test_autonomous_history_rewrite_refuses_before_snapshot_capture(
         worker.close()
 
 
+@pytest.mark.parametrize("corruption", ["missing", "null"])
+def test_autonomous_corrupt_findings_commit_refuses_before_capture(
+    configured,
+    workspace,
+    monkeypatch,
+    scanner,
+    corruption,
+):
+    import sqlite3
+    from rentgen_core.observer import Observer
+
+    observer, source, module, _, adapter = autonomous(
+        configured, workspace, monkeypatch, scanner
+    )
+    worker = service_entry.create_worker(service_entry.load_config(configured.path))
+    try:
+        worker.watcher.tick()
+        head = observer.runtime.head(observer.principal, observer.project_id)
+        module.write_bytes(module.read_bytes().replace(b"1", b"2"))
+        git(source, "add", ".")
+        git(source, "commit", "-m", "next")
+        with sqlite3.connect(observer.database) as db:
+            state = json.loads(
+                db.execute("SELECT state FROM finding_state WHERE id=1").fetchone()[0]
+            )
+            observation = state["report"]["observation"]
+            if corruption == "missing":
+                del observation["commit"]
+            else:
+                observation["commit"] = None
+            db.execute(
+                "UPDATE finding_state SET state=? WHERE id=1", (json.dumps(state),)
+            )
+        monkeypatch.setattr(
+            Observer, "_tick", lambda _: pytest.fail("corrupt history reached capture")
+        )
+        with pytest.raises(CoreError) as error:
+            worker.watcher.tick()
+        assert error.value.code == "GIT_WATCHER_CONTEXT"
+        assert observer.runtime.head(observer.principal, observer.project_id) == head
+        assert len(adapter.calls) == 1
+    finally:
+        worker.close()
+
+
 @pytest.mark.parametrize("when", ["after_capture", "before_analyzer"])
 def test_autonomous_changed_prepared_commit_never_publishes_findings(
     configured,

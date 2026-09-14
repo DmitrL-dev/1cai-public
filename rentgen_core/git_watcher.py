@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import re
 import time
 from uuid import UUID, uuid4
 
@@ -507,7 +508,15 @@ class GitWatcher:
                 "GIT_WATCHER_CONTEXT",
                 "Durable findings state belongs to another analysis context",
             )
-        return observation.get("commit")
+        commit = observation.get("commit")
+        if (
+            type(commit) is not str
+            or re.fullmatch(r"(?:[0-9a-f]{40}|[0-9a-f]{64})", commit) is None
+        ):
+            raise CoreError(
+                "GIT_WATCHER_CONTEXT", "Durable findings commit is malformed"
+            )
+        return commit
 
     def tick(self, *, expected_observation=None):
         """Analyze at most one new clean commit and persist it atomically."""

@@ -141,6 +141,44 @@ def test_prepared_observation_requires_typed_token(workspace, expected):
     assert error.value.code == "GIT_WATCHER_CONTEXT"
 
 
+@pytest.mark.parametrize(
+    "observation",
+    [
+        {},
+        {"commit": None},
+        {"commit": False},
+        {"commit": ""},
+        {"commit": "a" * 39},
+        {"commit": "g" * 40},
+        {"commit": "a" * 65},
+    ],
+)
+def test_durable_state_requires_valid_commit_token(observation):
+    state = {
+        "report": {
+            "profile_id": "profile",
+            "scope_id": "scope",
+            "observation": observation,
+        }
+    }
+    with pytest.raises(CoreError) as error:
+        implementation.GitWatcher._state_commit(state, "profile", "scope")
+    assert error.value.code == "GIT_WATCHER_CONTEXT"
+
+
+@pytest.mark.parametrize("commit", ["a" * 40, "0" * 64])
+def test_durable_state_accepts_git_object_ids_and_only_absent_state_is_none(commit):
+    state = {
+        "report": {
+            "profile_id": "profile",
+            "scope_id": "scope",
+            "observation": {"commit": commit},
+        }
+    }
+    assert implementation.GitWatcher._state_commit(state, "profile", "scope") == commit
+    assert implementation.GitWatcher._state_commit(None, "profile", "scope") is None
+
+
 def test_report_must_bind_exact_observation_and_context(workspace):
     source, observer = workspace
     observation = implementation.observe_git(source)
