@@ -383,9 +383,11 @@ def _validated_outcome(run, intent, command, index):
             )
         for label, row in saved["logs"].items():
             _require(
-                row
-                == _file_row(
-                    run / f"{index:03d}-{label}.log", command.max_output_bytes
+                canonical_bytes(row)
+                == canonical_bytes(
+                    _file_row(
+                        run / f"{index:03d}-{label}.log", command.max_output_bytes
+                    )
                 ),
                 RECOVERY,
                 "Fixture retained log differs",

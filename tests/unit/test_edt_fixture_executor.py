@@ -454,6 +454,33 @@ def test_resealed_step_index_cannot_justify_completion(fixture):
         read_result(fixture)
 
 
+@pytest.mark.parametrize("size", [False, 0.0])
+def test_resealed_log_size_requires_exact_integer_type(fixture, size):
+    result = execute(fixture)
+    path = fixture.run / "001-outcome.json"
+    outcome = json.loads(path.read_bytes())
+    outcome["logs"]["stdout"]["size"] = size
+    payload = {key: value for key, value in outcome.items() if key != "outcome_id"}
+    raw = json.dumps(
+        payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    outcome = {**payload, "outcome_id": sha256(raw)}
+    path.write_bytes(
+        json.dumps(
+            outcome, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+    )
+    result["step_ids"][0] = outcome["outcome_id"]
+    result = executor._seal(
+        {key: value for key, value in result.items() if key != "result_id"},
+        "result_id",
+    )
+    (fixture.run / "report.json").write_bytes(canonical_bytes(result))
+    with pytest.raises(CoreError) as error:
+        read_result(fixture)
+    assert error.value.code == "EDT_FIXTURE_RECOVERY_REQUIRED"
+
+
 @pytest.mark.parametrize("change_step", [False, True])
 def test_unknown_failure_cannot_be_resealed_as_known_failure(fixture, change_step):
     fixture.mode = "timeout"
