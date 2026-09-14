@@ -109,6 +109,51 @@ Exact source and tree hashes retain differences outside this projection,
 including declaration spelling and formatting. No XML, BSL source or property
 value is returned. Names, paths and XML locations are intentional evidence.
 
+## Local CLI
+
+The development checkout exposes the same planner as `rentgen edt-attribute-plan`.
+It requires `project:read`, `source:edit` and `analysis:run` on the selected
+project before reading each input and checks those permissions again before
+emitting either a result or an error. Revocation suppresses stale evidence and
+source-related diagnostics.
+
+Prepare three UTF-8 JSON files using the existing metadata-tree envelope:
+
+```json
+{"schema":1,"encoding":"base64","files":{}}
+```
+
+The empty `files` mapping above is a valid empty selection. For a nonempty
+selection, each key is a `Catalogs/<name>/<name>.mdo` path and its value is the
+canonical base64 encoding of that descriptor's exact bytes. Base, current and
+upstream must each use this envelope; duplicate fields, noncanonical base64,
+unsafe/colliding paths, unknown fields and invalid UTF-8 are rejected.
+
+With `$projectId` set to the registered project ID, run:
+
+```powershell
+rentgen edt-attribute-plan `
+  --registry C:\RentgenState\registry.sqlite3 --project $projectId `
+  --base-json C:\Updates\base.json `
+  --current-json C:\Updates\current.json `
+  --upstream-json C:\Updates\upstream.json `
+  --max-files 256 --max-file-bytes 1048576 `
+  --max-total-bytes 16777216 --max-children 20000
+```
+
+All four integer limits can only decrease the planner ceilings. The transport
+also caps **each JSON file at 1 MiB**, including base64 expansion and envelope
+overhead, and the complete JSON output at 2 MiB. Thus a tree below the planner
+byte ceilings can still exceed the CLI input/output envelope cap. Oversized
+output returns `OUTPUT_LIMIT_EXCEEDED` without partial evidence.
+
+The success envelope contains `result` with the unchanged library evidence,
+including `mode: read_only` and `coverage: partial`, plus `request_id`. Planner
+failures retain their error code, but the CLI replaces their message and details
+with a fixed payload-free error. Input/permission failures use the existing CLI
+error envelope. The command resolves no snapshot, returns no candidate and
+offers no operation, materialization, output-file or live-apply option.
+
 ## Bounds and verification
 
 Defaults and ceilings are 256 files, 1 MiB per file, 16 MiB per tree and 20,000
@@ -132,6 +177,7 @@ configuration, live 1C, native EDT, forms, СКД or extensions.
 
 ```powershell
 py -3.11 -m pytest -q tests/unit/test_edt_attribute_three_way.py tests/unit/test_edt_inventory_fixture.py tests/unit/test_edt_inventory_metadata.py tests/unit/test_metadata_three_way.py tests/unit/test_metadata_three_way_semantics.py tests/unit/test_metadata_three_way_materialize.py tests/unit/test_metadata_three_way_bsl.py
+py -3.11 -m pytest -q tests/unit/test_edt_attribute_cli.py tests/unit/test_metadata_cli.py tests/unit/test_metadata_materialize_cli.py tests/unit/test_project_core_cli.py tests/unit/test_project_core_cli_options.py
 py -3.11 -m black --check rentgen_core/edt_attribute_three_way.py tests/unit/test_edt_attribute_three_way.py
 py -3.11 -m ruff check rentgen_core/edt_attribute_three_way.py tests/unit/test_edt_attribute_three_way.py
 git diff --check

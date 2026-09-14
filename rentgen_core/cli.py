@@ -30,6 +30,12 @@ _METADATA_TREE_LIMITS = {
     "max_file_bytes": 256 * 1024,
     "max_total_bytes": 512 * 1024,
 }
+_EDT_ATTRIBUTE_LIMITS = {
+    "max_files": 256,
+    "max_file_bytes": 1024 * 1024,
+    "max_total_bytes": 16 * 1024 * 1024,
+    "max_children": 20_000,
+}
 
 
 class _Parser(argparse.ArgumentParser):
@@ -88,6 +94,7 @@ def _parser():
         "edt-profile-disable",
         "metadata-plan",
         "metadata-materialize",
+        "edt-attribute-plan",
         "metadata-preview",
         "metadata-result",
         "metadata-evidence",
@@ -121,6 +128,18 @@ def _parser():
                     "--" + label + "-json", type=Path, required=True, action=_Once
                 )
             for limit, ceiling in _METADATA_TREE_LIMITS.items():
+                command.add_argument(
+                    "--" + limit.replace("_", "-"),
+                    type=int,
+                    default=ceiling,
+                    action=_Once,
+                )
+        elif name == "edt-attribute-plan":
+            for label in ("base", "current", "upstream"):
+                command.add_argument(
+                    "--" + label + "-json", type=Path, required=True, action=_Once
+                )
+            for limit, ceiling in _EDT_ATTRIBUTE_LIMITS.items():
                 command.add_argument(
                     "--" + limit.replace("_", "-"),
                     type=int,
@@ -663,6 +682,30 @@ def _metadata_materialize_command(args, ctx, permissions):
     return _ProposalCommandResult(summary, ctx, frozenset(permissions))
 
 
+def _edt_attribute_plan_command(args, ctx, permissions):
+    from . import plan_edt_attribute_three_way
+
+    limits = {name: getattr(args, name) for name in _EDT_ATTRIBUTE_LIMITS}
+    if any(
+        type(limits[name]) is not int or not 1 <= limits[name] <= ceiling
+        for name, ceiling in _EDT_ATTRIBUTE_LIMITS.items()
+    ):
+        raise CoreError("THREE_WAY_LIMIT", "EDT attribute CLI limits are out of bounds")
+    trees = [
+        _metadata_tree(
+            _proposal_input(ctx, path, _MAX_JSON_BYTES, permissions=permissions), limits
+        )
+        for path in (args.base_json, args.current_json, args.upstream_json)
+    ]
+    try:
+        value = plan_edt_attribute_three_way(*trees, **limits)
+    except CoreError as exc:
+        # Preserve the engine code without exposing arbitrary source diagnostics.
+        raise CoreError(exc.code, "EDT attribute plan could not be completed") from exc
+    _proposal_permissions(ctx, permissions)
+    return _ProposalCommandResult(value, ctx, frozenset(permissions))
+
+
 def _owner_report_store(ctx, path):
     """Resolve an owner-report store below the authenticated project state."""
     from .owner_report_store import OwnerReportStore
@@ -952,6 +995,7 @@ def _execute(args, *, proposal_scope=None):
             "test-profile-list",
             "edt-profile-list",
             "metadata-plan",
+            "edt-attribute-plan",
             "metadata-preview",
             "metadata-result",
             "metadata-evidence",
@@ -977,6 +1021,11 @@ def _execute(args, *, proposal_scope=None):
         else set()
     )
     ctx = runtime.state_context(principal, args.project, permissions=permissions)
+    if args.command == "edt-attribute-plan":
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        return _edt_attribute_plan_command(args, ctx, permissions)
     if args.command == "metadata-materialize":
         if proposal_scope is not None:
             proposal_scope.context = ctx
