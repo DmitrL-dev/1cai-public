@@ -548,15 +548,22 @@ def test_autonomous_revocation_after_capture_blocks_analysis_and_owner_report(
 ):
     from project_access_test_support import grant_membership
     from rentgen_core.observer import Observer
+    import rentgen_core.service_composition as composition
 
     observer, _, _, _, adapter = autonomous(configured, workspace, monkeypatch, scanner)
     ctx = observer._context(write=True)
     original = Observer._tick
+    forbidden_probes = []
+
+    def forbidden_probe(_):
+        forbidden_probes.append(True)
+        raise AssertionError("revoked worker attempted a second Git probe")
 
     def capture_then_revoke(self):
         result = original(self)
         with ctx.state.transaction(ctx.principal, write=True) as tx:
             grant_membership(tx, ctx.principal, {"project:read", "project:admin"})
+        monkeypatch.setattr(composition, "observe_git", forbidden_probe)
         return result
 
     monkeypatch.setattr(Observer, "_tick", capture_then_revoke)
@@ -564,6 +571,7 @@ def test_autonomous_revocation_after_capture_blocks_analysis_and_owner_report(
         service_entry.run_console(configured.path).error_code == "SERVICE_WORKER_FAILED"
     )
     assert observer.status()["last_snapshot"] is not None
+    assert forbidden_probes == [], "Git must not be probed after capture revoked access"
     assert adapter.calls == []
     assert not (ctx.state.path.parent / "owner-reports").exists()
 

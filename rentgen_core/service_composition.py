@@ -78,6 +78,7 @@ class _ReportingWatcher:
                 require_ancestor(self.watcher.repository, commit, observation.commit)
             # This worker owns the lifetime lease; public tick would reacquire it.
             observer._tick()
+            self.authorize()
             if observe_git(self.watcher.repository) != observation:
                 raise CoreError(
                     "GIT_HEAD_CHANGED", "Git HEAD changed during snapshot preparation"
