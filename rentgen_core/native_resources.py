@@ -15,7 +15,7 @@ from .native_process import OwnedJob
 from .snapshots import validate_operation_id
 from .manifests import canonical_bytes, sha256
 
-NAMESPACES = ("platform-checks", "test-runs", "metadata-runs")
+NAMESPACES = ("platform-checks", "test-runs", "metadata-runs", "ibcmd-fixtures")
 RETAINED_RUN_LIMIT = 256
 
 
@@ -157,7 +157,9 @@ def _archive_record(root, run, inventory):
             )
         )
         binding = (
-            request if run.parent.name == "metadata-runs" else request.get("input")
+            request
+            if run.parent.name in {"metadata-runs", "ibcmd-fixtures"}
+            else request.get("input")
         )
         if (
             not isinstance(binding, dict)
@@ -208,6 +210,15 @@ def archive_native_run(ctx, operation_id, *, namespace, profile_id=None):
                     from .metadata_runs import get_preview
 
                     result = get_preview(ctx, operation_id)
+                    actual_profile = result["profile_id"]
+                elif namespace == "ibcmd-fixtures":
+                    from .edt_fixture_executor import get_fixture_result
+
+                    result = get_fixture_result(
+                        ctx, operation_id, fixture_root=str(root)
+                    )
+                    if result["status"] not in {"completed", "failed"}:
+                        raise _archive_invalid()
                     actual_profile = result["profile_id"]
                 else:
                     result = _get(ctx, operation_id, namespace=namespace)
@@ -323,6 +334,10 @@ def reserve_run(root, run, *, limits=None):
             _file_slot(root, "native-admission.lock", "NATIVE_ADMISSION_BUSY"),
             _pinned_archive_root(root),
         ):
+            # Namespaces are fixed immediate children of the pinned project root.
+            # Reserve can be called before a namespace has its first operation.
+            with pinned_directory(root):
+                run.parent.mkdir(exist_ok=True)
             with pinned_directory(run.parent):
                 if run.exists():
                     raise FileExistsError(str(run))
