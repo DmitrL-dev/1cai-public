@@ -1,4 +1,4 @@
-# Состояние публичной поставки — 14 сентября 2026
+# Состояние публичной поставки — 15 сентября 2026
 
 Актуальная [карта рынка и выбранное направление](COMPETITOR-MATRIX.md)
 поясняют, какие соседние инструменты мы интегрируем и какие незакрытые
@@ -7,6 +7,28 @@
 [Матрица совместимости и evidence](CONFIGURATION-COMPATIBILITY.md) отделяет
 синтетический EDT read-only contract от исторических native экспериментов;
 добавление corpus не квалифицирует типовые `.cf/.cfe` и live apply.
+
+## Дополнение к кандидату 15 сентября 2026
+
+Для текущей development-ветки schema 3 добавляет bounded
+автономную подготовку snapshot доверенным локальным scanner перед Git-аудитом:
+права и ancestry проверяются до capture, подготовленный Git observation
+перепроверяется перед анализом, unchanged-события не заполняют outbox, а
+matching owner receipt переиспользуется после рестарта. Повреждённый durable
+commit отклоняется до capture; schema 1/2 и прежние scheduler defaults сохранены.
+Проверены race, отзыв прав, restart, recovery, scheduler stop и forwarding
+политики уведомлений. Это по-прежнему bounded/read-only режим: live SCM,
+запись в рабочую конфигурацию 1С и exactly-once доставка не приняты.
+
+Локально на принятом tree прошли 2161 тест; 3 Windows symlink-теста ожидаемо
+пропущены из-за WinError 1314. Product CI для pushed-кандидата прошёл все Python,
+companion, scanner, reproducible kit, установленные snapshot/observer проверки и
+upload артефактов; точный SHA, tree и digest записаны в рабочем checkpoint.
+Независимое Astra-ревью полного diff от принятой версии завершилось APPROVE без
+P0–P3.
+Рыночная карта проверена 15 сентября по первичным источникам и обновлена в
+[COMPETITOR-MATRIX.md](COMPETITOR-MATRIX.md); open/self-hosted/headless и
+model-agnostic по отдельности не считаются уникальным преимуществом.
 
 ## Дополнение к кандидату 14 сентября 2026
 
@@ -45,10 +67,11 @@ rows↔metrics и canonical source digest; SARIF adapter
 UUID справочника, реквизита и формы; [сводка и границы](EDT-COMMAND-BOUNDARY.md).
 Это evidence для конкретной среды и fixture, а не продуктовый исполнитель.
 
-В этом срезе добавлены schema 2 composition root для bounded Git → BSL →
+В этом срезе добавлены schema 2/3 composition root для bounded Git → BSL →
 findings/outbox → owner-report аудита и frozen retained-register producer для
-одного offline runtime export. Оба режима по умолчанию fail-closed и не
-включают live 1С, сеть или произвольный процесс.
+одного offline runtime export. Schema 3 также подготавливает принадлежащий
+snapshot локальным scanner перед аудитом. Оба режима по умолчанию fail-closed и
+не включают live 1С, сеть или произвольный процесс.
 
 Native EDT adapter теперь принят для повторения выбранного preview и apply/undo
 в новой принадлежащей файловой копии: admission выполняется до его журналов,
@@ -123,7 +146,7 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 | Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; owned `ibcmd` create/import/export round-trip с structural evidence; preflight и workspace writer с проверкой inventory, backup, re-read, undo conflict, привязанными receipts, legacy policy и явным recovery; native business roundtrip подтверждает данные после переименования | Внешний concurrent CAS, живая запись через EDT/1С, product apply/undo и матрица типовых конфигураций не приняты |
 | Обновления конфигураций | Path-bytes и UUID-aware Designer XML three-way plan с bounded хэшами, явными конфликтами и evidence по прямым свойствам (`same_change`/`disjoint_changes`/`overlap_conflict`); для квалифицированного `disjoint_changes` прямых `Properties` доступен in-memory candidate с сохранением namespace/QName и digest; для выбранных EDT Catalog `.mdo` есть read-only child-owner evidence и fail-closed transfer/type checks | Расширения, BSL/формы/СКД, полноценная схема Designer, типовые конфигурации, тестовая база, backup/rollback, native validity и запись не приняты |
 | Проверка предложения платформой | В dev8: установленный CLI проверил корректное/ошибочное BSL-предложение на сохранённой конфигурации; в исходной ветке после dev8 compile/YAxUnit API используют bounded native admission/retention ([границы](NATIVE-RESOURCES.md)) | Один Designer XML слой; компиляция без бизнес-тестов и применения |
-| Observer | Опрос выгрузки, journal/recovery и durable findings; schema 2 composition root связывает GitWatcherScheduler, read-only BSL Git adapter, owner-report store и atomic local outbox с bounded cooperative stop; per-commit snapshot binding, bounded Git/snapshot source evidence, read-only BSL-LS adapter, bounded SARIF subset, native ServiceMain/SCM boundary proof и явный SCM installer plan | Нет live SCM deployment/daemon acceptance, live receiver acceptance и дедупликации, полного Git tree/temporal evidence, producer-specific Sonar/Vanessa/YAxUnit execution и общей приёмки O1 |
+| Observer | Опрос выгрузки, journal/recovery и durable findings; schema 2/3 composition root связывает GitWatcherScheduler, read-only BSL Git adapter, owner-report store и atomic local outbox с bounded cooperative stop; schema 3 добавляет trusted snapshot capture, ancestry/race/revocation gates и receipt reuse; per-commit snapshot binding, bounded Git/snapshot source evidence, read-only BSL-LS adapter, bounded SARIF subset, native ServiceMain/SCM boundary proof и явный SCM installer plan | Нет live SCM deployment/daemon acceptance, live receiver acceptance и дедупликации, полного Git tree/temporal evidence, producer-specific Sonar/Vanessa/YAxUnit execution и общей приёмки O1 |
 | Бизнес-отчёты | Bounded owner-report schema с quality/runtime provenance, durable immutable receipts и fail-closed incomplete/not_available статусами; quality не публикуется без явной binding; `owner-report-build` собирает отчёт из durable observer findings; runtime loader проверяет период и freshness; onec-register-export-v1 adapter и frozen retained-register producer связывают rows↔metrics, canonical source digest, период и expected metric set | Live 1С producer, независимая методика O2 и commit↔snapshot/runtime evidence не приняты; числовые бизнес-метрики не объявляются достоверными только по offline fixture |
 | Spectorn в адаптере | Не подключён | Защита трафика этого сценария не подтверждена |
 
