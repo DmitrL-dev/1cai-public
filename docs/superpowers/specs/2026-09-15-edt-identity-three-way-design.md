@@ -82,10 +82,11 @@ version records without XML/property payload. The result explicitly states
 
 Add `rentgen edt-inventory-plan` as a separate read-only command. It requires
 `--registry`, `--project`, `--base-json`, `--current-json` and
-`--upstream-json`; all three files use the existing bounded metadata-tree
-envelope, with one canonical JSON file per inventory result. The command does
-not resolve a snapshot and has no `--apply`, `--output`, `--workspace`,
-`--operation-id`, native profile or caller-supplied source-root option.
+`--upstream-json`; each file is a UTF-8 canonical inventory object copied from
+the `result` field of `edt-inventory` (it is not the metadata-tree/base64
+envelope). The command does not resolve a snapshot and has no `--apply`,
+`--output`, `--workspace`, `--operation-id`, native profile or caller-supplied
+source-root option.
 
 The transport authenticates `project:read` before each file read, before the
 planner result is serialized, and before emitting an error. Planner diagnostics
