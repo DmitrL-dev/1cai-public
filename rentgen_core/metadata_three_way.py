@@ -1,13 +1,21 @@
-"""Conservative UUID-aware three-way planning for Designer XML objects."""
+"""Conservative UUID-aware planning and qualified Designer property merging."""
 
 from dataclasses import asdict, dataclass
 import copy
 import re
 import xml.etree.ElementTree as ET
+from xml.parsers import expat
 
 from .errors import CoreError
 from .manifests import sha256
-from .three_way import _action, plan_three_way
+from .source_paths import collision_key
+from .three_way import (
+    _action,
+    _digest as _tree_digest,
+    _plan_from_trees,
+    _prepare_trees,
+    _tree,
+)
 
 
 _UUID = re.compile(
@@ -26,9 +34,9 @@ _EXTENSION_PROPERTIES = frozenset(
     {"ObjectBelonging", "ExtendedConfigurationObject", "ConfigurationExtensionPurpose"}
 )
 _MODULE_OWNERS = {
-    "Ext/Module.bsl": {"CommonModule"},
-    "Ext/Form/Module.bsl": {"Form", "CommonForm"},
-    "Ext/ObjectModule.bsl": {
+    "ext/module.bsl": {"CommonModule"},
+    "ext/form/module.bsl": {"Form", "CommonForm"},
+    "ext/objectmodule.bsl": {
         "Catalog",
         "Document",
         "Report",
@@ -42,7 +50,7 @@ _MODULE_OWNERS = {
         "Task",
         "ExchangePlan",
     },
-    "Ext/ManagerModule.bsl": {
+    "ext/managermodule.bsl": {
         "Catalog",
         "Document",
         "Report",
@@ -58,13 +66,13 @@ _MODULE_OWNERS = {
         "AccountingRegister",
         "CalculationRegister",
     },
-    "Ext/RecordSetModule.bsl": {
+    "ext/recordsetmodule.bsl": {
         "InformationRegister",
         "AccumulationRegister",
         "AccountingRegister",
         "CalculationRegister",
     },
-    "Ext/CommandModule.bsl": {"Command", "CommonCommand"},
+    "ext/commandmodule.bsl": {"Command", "CommonCommand"},
 }
 
 
@@ -300,11 +308,12 @@ def _direct_property(node, name):
 
 
 def _companion_kind(path):
-    if path.lower().endswith(".bsl"):
+    path = "/" + path.casefold()
+    if path.endswith(".bsl"):
         return "bsl"
-    if path.endswith("/Ext/Form.xml"):
+    if path.endswith("/ext/form.xml"):
         return "form"
-    if path.endswith("/Ext/Template.xml"):
+    if path.endswith("/ext/template.xml"):
         return "data_composition_schema"
     return None
 
@@ -317,9 +326,10 @@ def _companion_reason(kind, scope, raw, owner):
     if node.tag != f"{{{_MD_NS}}}{object_type}":
         return "owner_namespace_unsupported"
     if kind == "bsl":
-        if scope not in _MODULE_OWNERS:
+        scope_key = scope.casefold()
+        if scope_key not in _MODULE_OWNERS:
             return "scope_unsupported"
-        if object_type not in _MODULE_OWNERS[scope]:
+        if object_type not in _MODULE_OWNERS[scope_key]:
             return "owner_type_unsupported"
         try:
             text = raw.decode("utf-8-sig")
@@ -346,21 +356,41 @@ def _companion_reason(kind, scope, raw, owner):
 
 
 def _semantic_records(tree, records):
-    owners = {record["path"]: (key, record) for key, record in records.items()}
+    owners = {
+        collision_key(record["path"]): (key, record) for key, record in records.items()
+    }
     result = {}
     for path, raw in tree.items():
         kind = _companion_kind(path)
         if kind is None:
             continue
-        stem, separator, suffix = path.rpartition("/Ext/")
-        scope = "Ext/" + suffix if separator else path
-        owner = owners.get(stem + ".xml") if separator else None
+        parts = path.split("/")
+        ext_index = next(
+            (
+                index
+                for index in range(len(parts) - 2, 0, -1)
+                if parts[index].casefold() == "ext"
+            ),
+            None,
+        )
+        scope = path if ext_index is None else "/".join(parts[ext_index:])
+        owner = (
+            None
+            if ext_index is None
+            else owners.get(collision_key("/".join(parts[:ext_index]) + ".xml"))
+        )
         identity = ("", "") if owner is None else owner[0]
         reason = _companion_reason(
             kind, scope, raw, None if owner is None else (identity[0], owner[1])
         )
-        key = (*identity, path if owner is None else scope)
-        result[key] = {"path": path, "raw": raw, "kind": kind, "reason": reason}
+        key = (*identity, collision_key(path if owner is None else scope))
+        result[key] = {
+            "path": path,
+            "scope": path if owner is None else scope,
+            "raw": raw,
+            "kind": kind,
+            "reason": reason,
+        }
     for identity, record in records.items():
         declarations = [
             element
@@ -368,8 +398,9 @@ def _semantic_records(tree, records):
             if (element := _direct_property(record["node"], name)) is not None
         ]
         if declarations:
-            result[(*identity, "Properties/Extension")] = {
+            result[(*identity, "properties/extension")] = {
                 "path": record["path"],
+                "scope": "Properties/Extension",
                 "raw": b"".join(
                     ET.tostring(element, encoding="utf-8") for element in declarations
                 ),
@@ -410,7 +441,7 @@ def _semantic_plan(trees, records):
             "object_type": object_type or None,
             "object_uuid": identity or None,
             "kind": existing[0]["kind"],
-            "scope": scope,
+            "scope": existing[0]["scope"],
             "granularity": "atomic_bytes",
             "action": action,
             "status": status,
@@ -434,7 +465,7 @@ def plan_metadata_three_way(
     max_total_bytes=64 * 1024 * 1024,
 ):
     """Return UUID-aware metadata actions while leaving all trees untouched."""
-    path_plan = plan_three_way(
+    snapshots = _prepare_trees(
         base,
         current,
         upstream,
@@ -442,7 +473,12 @@ def plan_metadata_three_way(
         max_file_bytes=max_file_bytes,
         max_total_bytes=max_total_bytes,
     )
-    trees = {"base": base, "current": current, "upstream": upstream}
+    return _metadata_plan(snapshots, max_files=max_files)[0]
+
+
+def _metadata_plan(snapshots, *, max_files):
+    path_plan = _plan_from_trees(snapshots, max_files=max_files)
+    trees = {label: dict(tree.values()) for label, tree in snapshots.items()}
     records = {}
     unsupported = set()
     for label, tree in trees.items():
@@ -514,7 +550,7 @@ def plan_metadata_three_way(
     }
     for row in rows:
         counts[row.action] += 1
-    return {
+    plan = {
         "schema": 1,
         "scope": "metadata-object-v1",
         "coverage": "partial",
@@ -525,4 +561,284 @@ def plan_metadata_three_way(
         "objects": [asdict(row) for row in rows],
         "unsupported_files": sorted(unsupported, key=lambda path: path.encode("utf-8")),
         "semantics": _semantic_plan(trees, records),
+    }
+    return plan, path_plan, trees, records
+
+
+_MAX_MERGE_EVIDENCE = 256
+_SOURCE_BY_ACTION = {
+    "unchanged": "current",
+    "same_change": "current",
+    "keep_current": "current",
+    "take_upstream": "upstream",
+}
+
+
+class _UnsupportedPropertyMerge(Exception):
+    """Carries only a fixed reason code, never input XML."""
+
+
+def _materialization_shape(record):
+    root = ET.fromstring(record["raw"])
+    node = record["node"]
+    properties = list(node.findall(f"{{{_MD_NS}}}Properties"))
+    return (
+        root.tag == f"{{{_MD_NS}}}{_ROOT}"
+        and len(root) == 1
+        and node.tag.startswith(f"{{{_MD_NS}}}")
+        and len(properties) == 1
+        and record["properties"] is not None
+        and all(child.tag.startswith(f"{{{_MD_NS}}}") for child in properties[0])
+    )
+
+
+def _property_layout(raw):
+    """Locate direct property bytes without rewriting namespaces or QName values.
+
+    This qualified splice accepts UTF-8 XML only. Expat provides byte offsets;
+    ElementTree has already validated the declaration-free object and identity.
+    """
+    try:
+        raw.decode("utf-8-sig")
+    except UnicodeError:
+        raise _UnsupportedPropertyMerge("property_encoding_unsupported") from None
+    if b"\x00" in raw:
+        raise _UnsupportedPropertyMerge("property_encoding_unsupported")
+    parser = expat.ParserCreate(namespace_separator="}")
+    stack, spans, bounds = [], {}, []
+
+    def opening_end(begin):
+        quote = None
+        for offset in range(begin, len(raw)):
+            char = raw[offset]
+            if quote is not None:
+                if char == quote:
+                    quote = None
+            elif char in (34, 39):
+                quote = char
+            elif char == 62:
+                return offset + 1
+        raise _UnsupportedPropertyMerge("property_xml_unsupported")
+
+    def declaration(version, encoding, standalone):
+        if encoding and encoding.lower() not in {"utf-8", "utf8", "us-ascii", "ascii"}:
+            raise _UnsupportedPropertyMerge("property_encoding_unsupported")
+
+    def start(name, attributes):
+        begin = parser.CurrentByteIndex
+        stack.append((name, begin, opening_end(begin)))
+
+    def end(name):
+        tag, begin, open_end = stack.pop()
+        index = parser.CurrentByteIndex
+        finish = (
+            open_end
+            if raw[open_end - 2 : open_end] == b"/>"
+            else raw.find(b">", index) + 1
+        )
+        if len(stack) == 3 and stack[-1][0] == f"{_MD_NS}}}Properties":
+            spans[tag.rsplit("}", 1)[-1]] = (begin, finish)
+        elif len(stack) == 2 and tag == f"{_MD_NS}}}Properties":
+            bounds.extend((open_end, index))
+
+    parser.XmlDeclHandler = declaration
+    parser.StartElementHandler = start
+    parser.EndElementHandler = end
+    try:
+        parser.Parse(raw, True)
+    except expat.ExpatError:
+        raise _UnsupportedPropertyMerge("property_xml_unsupported") from None
+    if len(bounds) != 2 or not spans:
+        raise _UnsupportedPropertyMerge("properties_shape_unsupported")
+    first, last = bounds
+    cursor = first
+    fragments = {}
+    items = list(spans.items())
+    for index, (name, (begin, finish)) in enumerate(items):
+        if raw[cursor:begin].strip():
+            raise _UnsupportedPropertyMerge("properties_unscoped_content")
+        following = items[index + 1][1][0] if index + 1 < len(items) else last
+        fragments[name] = raw[begin:following]
+        cursor = finish
+    if raw[cursor:last].strip():
+        raise _UnsupportedPropertyMerge("properties_unscoped_content")
+    return raw[: items[0][1][0]], raw[last:], fragments
+
+
+def _merge_properties(values):
+    layouts = [_property_layout(value["raw"]) for value in values]
+    if any(layout[:2] != layouts[0][:2] for layout in layouts[1:]):
+        raise _UnsupportedPropertyMerge("xml_envelope_changed")
+    fragments = [layout[2] for layout in layouts]
+    names = set().union(*fragments)
+    selected = {}
+    for name in sorted(names):
+        action = _property_action(*(value["properties"].get(name) for value in values))
+        lexical_action = _action(*(fragment.get(name) for fragment in fragments))
+        if action != lexical_action or action not in _SOURCE_BY_ACTION:
+            raise _UnsupportedPropertyMerge("property_lexical_change_unsupported")
+        source = 2 if action == "take_upstream" else 1
+        if name in fragments[source]:
+            selected[name] = fragments[source][name]
+    current_order = [name for name in fragments[1] if name in selected]
+    current_names = set(current_order)
+    before, pending = {}, []
+    for name in fragments[2]:
+        if name not in selected:
+            continue
+        if name in current_names:
+            before[name], pending = pending, []
+        else:
+            pending.append(name)
+    order = []
+    for name in current_order:
+        order.extend(before.get(name, ()))
+        order.append(name)
+    order.extend(pending)
+    for fragment in fragments[1:]:
+        retained = [name for name in fragment if name in selected]
+        if retained != [name for name in order if name in fragment]:
+            raise _UnsupportedPropertyMerge("property_order_conflict")
+    return layouts[1][0] + b"".join(selected[name] for name in order) + layouts[1][1]
+
+
+def _raise_merge_blockers(blockers):
+    if not blockers:
+        return
+    details = {
+        "blocking_scopes": blockers[:_MAX_MERGE_EVIDENCE],
+        "blocking_scope_count": len(blockers),
+    }
+    if len(blockers) > _MAX_MERGE_EVIDENCE:
+        details["scopes_truncated"] = True
+    raise CoreError(
+        "THREE_WAY_CONFLICT",
+        "Metadata merge has unresolved or unsupported scopes",
+        details=details,
+    )
+
+
+def materialize_metadata_three_way(
+    base,
+    current,
+    upstream,
+    *,
+    max_files=10_000,
+    max_file_bytes=16 * 1024 * 1024,
+    max_total_bytes=64 * 1024 * 1024,
+):
+    """Return a qualified in-memory candidate; never expose a partial merge.
+
+    Only disjoint direct Designer Properties may resolve an object conflict.
+    Other objects and recognized companions remain atomic; unsupported scopes
+    fail closed. All planning and selection use the same validated snapshots.
+    """
+    limits = dict(
+        max_files=max_files,
+        max_file_bytes=max_file_bytes,
+        max_total_bytes=max_total_bytes,
+    )
+    snapshots = _prepare_trees(base, current, upstream, **limits)
+    plan, path_plan, trees, records = _metadata_plan(snapshots, max_files=max_files)
+    blockers, merged, covered_paths = [], [], set()
+    owners = {}
+    for label, tree in trees.items():
+        by_path = {value["path"]: key for key, value in records[label].items()}
+        for path in tree:
+            owners.setdefault(path, set()).add(by_path.get(path))
+        for value in records[label].values():
+            if not _materialization_shape(value):
+                blockers.append(
+                    {"path": value["path"], "reason": "object_shape_unsupported"}
+                )
+        for path, raw in tree.items():
+            if path not in by_path and path.lower().endswith(".xml"):
+                if ET.fromstring(raw).tag.rsplit("}", 1)[-1] == _ROOT:
+                    blockers.append(
+                        {"path": path, "reason": "object_shape_unsupported"}
+                    )
+    for path, bindings in owners.items():
+        if len(bindings) > 1:
+            blockers.append({"path": path, "reason": "object_identity_changed"})
+    for row in plan["semantics"]["scopes"]:
+        if row["status"] != "supported":
+            blockers.append(
+                {
+                    "object_uuid": row["object_uuid"],
+                    "scope": row["scope"],
+                    "reason": row["reason"],
+                }
+            )
+    for row in plan["objects"]:
+        if row["action"] != "conflict":
+            continue
+        key = (row["object_type"], row["object_uuid"])
+        values = [records[label].get(key) for label in trees]
+        paths = [row[label + "_path"] for label in trees]
+        path_action = _action(*paths)
+        if (
+            row["property_mergeability"] != "disjoint_changes"
+            or _unscoped_action(values) != "unchanged"
+            or path_action == "conflict"
+            or not all(_materialization_shape(value) for value in values)
+        ):
+            blockers.append({"object_uuid": key[1], "reason": "object_conflict"})
+            continue
+        try:
+            raw = _merge_properties(values)
+        except _UnsupportedPropertyMerge as exc:
+            blockers.append({"object_uuid": key[1], "reason": str(exc)})
+            continue
+        source = _SOURCE_BY_ACTION[path_action]
+        path = row[source + "_path"]
+        merged.append((key, path, raw))
+        covered_paths.update(paths)
+    for row in path_plan["changes"]:
+        if row["action"] == "conflict" and row["path"] not in covered_paths:
+            blockers.append({"path": row["path"], "reason": "path_conflict"})
+    _raise_merge_blockers(blockers)
+
+    candidate = {}
+    for row in path_plan["changes"]:
+        path = row["path"]
+        if path in covered_paths:
+            continue
+        source = trees[_SOURCE_BY_ACTION[row["action"]]]
+        if path in source:
+            candidate[path] = source[path]
+    for key, path, raw in merged:
+        candidate[path] = raw
+    normalized = _tree(candidate, "candidate", **limits)
+    candidate_records, _ = _records(candidate, "candidate")
+    for key, scope in _semantic_records(candidate, candidate_records).items():
+        if scope["reason"]:
+            blockers.append({"path": scope["path"], "reason": scope["reason"]})
+    _raise_merge_blockers(blockers)
+    evidence = [
+        {
+            "object_type": key[0],
+            "object_uuid": key[1],
+            "candidate_path": path,
+            "candidate_sha256": sha256(raw),
+            "candidate_size_bytes": len(raw),
+        }
+        for key, path, raw in merged[:_MAX_MERGE_EVIDENCE]
+    ]
+    return {
+        "schema": 1,
+        "scope": "metadata-properties-v1",
+        "status": "ready",
+        "base_digest": plan["base_digest"],
+        "current_digest": plan["current_digest"],
+        "upstream_digest": plan["upstream_digest"],
+        "candidate_digest": _tree_digest(normalized),
+        "candidate": candidate,
+        "counts": {
+            "objects": len(plan["objects"]),
+            "merged_objects": len(merged),
+            "candidate_files": len(candidate),
+            "path_actions": path_plan["counts"],
+        },
+        "merged_objects": evidence,
+        "merged_objects_truncated": len(merged) > _MAX_MERGE_EVIDENCE,
     }

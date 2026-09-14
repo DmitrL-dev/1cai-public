@@ -6,7 +6,10 @@ import json
 import pytest
 
 from rentgen_core.errors import CoreError
-from rentgen_core.metadata_three_way import plan_metadata_three_way
+from rentgen_core.metadata_three_way import (
+    materialize_metadata_three_way,
+    plan_metadata_three_way,
+)
 
 
 UUID = "11111111-1111-4111-8111-111111111111"
@@ -321,3 +324,60 @@ def test_non_utf8_xml_cannot_bypass_forbidden_declarations(encoding):
     tree = {"CommonForms/Item/Ext/Form.xml": raw.encode(encoding)}
     with pytest.raises(CoreError, match="DTD|ENTITY"):
         plan_metadata_three_way(tree, tree, tree)
+
+
+@pytest.mark.parametrize(
+    "kind,scope,raw",
+    [
+        ("Form", "ext/form.xml", f'<Form xmlns="{FORM_NS}"/>'.encode()),
+        ("Form", "eXt/FoRm.XML", f'<Form xmlns="{FORM_NS}"/>'.encode()),
+        (
+            "Template",
+            "ext/template.xml",
+            f'<DataCompositionSchema xmlns="{DCS_NS}"/>'.encode(),
+        ),
+        (
+            "Template",
+            "EXT/TEMPLATE.XML",
+            f'<DataCompositionSchema xmlns="{DCS_NS}"/>'.encode(),
+        ),
+        ("CommonModule", "ext/module.bsl", b"Return 1;"),
+        ("CommonModule", "eXt/MoDuLe.BSL", b"Return 1;"),
+        ("Form", "EXT/FORM/MODULE.BSL", b"Return 1;"),
+    ],
+)
+def test_companion_case_variants_bind_owner_and_preserve_original_evidence(
+    kind, scope, raw
+):
+    props = (
+        "<TemplateType>DataCompositionSchema</TemplateType>"
+        if kind == "Template"
+        else ""
+    )
+    path = "Metadata/Item/" + scope
+    tree = {"Metadata/iTEM.XML": metadata(kind, properties=props), path: raw}
+    rows = semantic_rows(tree)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["status"] == "supported"
+    assert row["object_uuid"] == UUID
+    assert row["scope"] == scope
+    assert row["base_path"] == path
+    assert materialize_metadata_three_way(tree, tree, tree)["candidate"] == tree
+
+
+def test_moved_owner_retains_one_companion_scope_across_scope_case_variants():
+    base = {
+        "CommonModules/Item.xml": metadata("CommonModule"),
+        "CommonModules/Item/Ext/Module.bsl": b"base",
+    }
+    current = {
+        "CommonModules/Moved.XML": metadata("CommonModule"),
+        "CommonModules/Moved/ext/MODULE.BSL": b"current",
+    }
+    rows = semantic_rows(base, current, base)
+    assert len(rows) == 1
+    assert rows[0]["action"] == "keep_current"
+    assert rows[0]["object_uuid"] == UUID
+    assert rows[0]["scope"] == "Ext/Module.bsl"
+    assert rows[0]["current_path"] == "CommonModules/Moved/ext/MODULE.BSL"

@@ -22,7 +22,8 @@ The planner emits only hashes, sizes and names. It never writes a tree, resolves
 a conflict automatically or invokes 1С/EDT. BSL, forms, СКД and XML files that
 do not expose a supported UUID are listed in `unsupported_files`; callers must
 run the path planner or a type-specific adapter for them. The result has
-`coverage="partial"` until property-level merge, UUID ownership across extensions,
+`coverage="partial"` until property-level merge beyond the qualified boundary
+below, UUID ownership across extensions,
 BSL edits and native test/rollback are all qualified.
 
 ```python
@@ -36,3 +37,66 @@ Input paths and byte limits are the same bounded limits as
 paths, collisions and oversized trees fail closed. This is the first semantic
 layer for configuration updates. DTD and ENTITY declarations are rejected
 before parsing; it is not a live apply authority.
+
+## Qualified in-memory property candidate
+
+`rentgen_core.materialize_metadata_three_way(base, current, upstream)` builds a
+`dict[str, bytes]` candidate in memory. The planner and materializer capture each
+input mapping once and use those validated snapshots for all hashes, UUID
+bindings, planning and byte selection. Neither function writes files or invokes
+1C/EDT.
+
+An object conflict is resolved only when `property_mergeability` is
+`disjoint_changes`, its unscoped content is unchanged, its UUID-bound path action
+is not a conflict, and every direct Designer `Properties` element is
+unambiguous. `keep_current`, `same_change` and `unchanged` properties select the
+current element; `take_upstream` selects the upstream element. A missing selected
+element means deletion. Property additions retain the relative order of both
+branches; incompatible orders fail closed. A supported move selects the same
+object's destination path and removes its superseded paths.
+
+This first semantic materializer qualifies UTF-8 XML (with optional BOM), the
+Designer metadata namespace, and an identical byte envelope outside the direct
+property elements. It copies complete property byte fragments, preserving
+namespace declarations, prefixes, QName values and nested property XML. It does
+not reserialize the enclosing object. Non-whitespace content between properties,
+changes hidden by XML fingerprints (including comments), changed namespace
+contexts or wrapper attributes, ambiguous/missing properties and unsupported
+encodings fail closed for semantic merging. Selected property fragments retain
+their trailing whitespace. This is conservative qualification, not full Designer schema or
+native round-trip validation.
+
+Other non-conflicting objects and ordinary paths retain atomic byte selection,
+including additions and deletions. Recognized BSL/form/schema companions must
+have supported, non-conflicting atomic scopes; the candidate's owner bindings
+are checked again after selection. Companion suffixes and `Ext` segments are
+matched without case sensitivity, and owner lookup uses canonical path identity.
+Evidence retains the original paths and scope spelling. Orphan `Ext/Form.xml`
+and `Ext/Template.xml` scopes are rejected in every casing, including at the tree
+root. An unsupported scope blocks the entire result
+even when its bytes are unchanged. Extension declarations remain unsupported;
+unscoped XML changes are never semantically merged. Replacing an object's UUID
+at a reused path also blocks materialization.
+
+The returned result has `schema: 1`, `scope: "metadata-properties-v1"`,
+`status: "ready"`, the three input digests, `candidate_digest`, and `candidate`.
+`counts` reports input objects, semantically merged objects, candidate files and
+the original path actions (which may include conflicts resolved by the qualified
+property merge). `merged_objects` provides at most 256 UUID/path/hash/size
+evidence rows; `merged_objects_truncated` indicates omitted rows. Candidate
+paths and file/total-byte limits are validated again before returning.
+
+Any unresolved or unsupported scope raises `CoreError` before exposing a partial
+candidate. Conflict details contain at most 256 `blocking_scopes`, the full
+`blocking_scope_count`, and `scopes_truncated: true` when needed. Reasons use
+fixed identifiers; error details contain no XML or BSL payload.
+
+```python
+from rentgen_core import materialize_metadata_three_way
+
+result = materialize_metadata_three_way(base_files, current_files, upstream_files)
+candidate_files = result["candidate"]
+```
+
+The ready status establishes only this in-memory merge boundary; native apply,
+extension ownership and runtime correctness still require their own validation.

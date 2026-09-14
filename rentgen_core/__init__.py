@@ -54,7 +54,7 @@ from .notification_delivery import (
 )
 from .git_snapshot_evidence import GitSnapshotEvidence
 from .edt_inventory import EDTInventoryLimits, edt_metadata_inventory
-from .metadata_three_way import plan_metadata_three_way
+from .metadata_three_way import materialize_metadata_three_way, plan_metadata_three_way
 from .three_way import materialize_three_way
 from .sources import (
     SourceRef,
@@ -90,6 +90,7 @@ __all__ = [
     "EDTInventoryLimits",
     "edt_metadata_inventory",
     "plan_metadata_three_way",
+    "materialize_metadata_three_way",
     "materialize_three_way",
     "SourceRef",
     "SourceEntry",
