@@ -1,0 +1,1 @@
+<md:InformationRegister xmlns:md="http://g5.1c.ru/v8/dt/metadata/mdclass" uuid="10000000-0000-4000-8000-000000000004"><name>Prices</name><dimensions uuid="10000000-0000-4000-8000-000000000025"><name>Product</name></dimensions><md:resources uuid="10000000-0000-4000-8000-000000000026"><name>Price</name></md:resources></md:InformationRegister>

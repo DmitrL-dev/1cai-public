@@ -543,6 +543,15 @@ def restore_native_workspace(ctx, operation_id, workspace_root):
         current = workspace.get_workspace_status(ctx, operation_id, root)
         if (
             current["state"] is not None
+            and current["state"].get("phase") == "applying"
+            and current["result"] is not None
+        ):
+            # Finalize only an already receipted, exact candidate before undo.
+            # This recovery branch changes receipts, never republishes its tree.
+            workspace.recover_workspace(ctx, operation_id, root, target="candidate")
+            return workspace.undo_workspace(ctx, operation_id, root)
+        if (
+            current["state"] is not None
             and current["state"].get("phase") == "complete"
             and current["result"] is not None
             and current["result"].get("result_id") == current["state"].get("result_id")

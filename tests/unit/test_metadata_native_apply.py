@@ -451,6 +451,61 @@ def test_interrupted_publication_can_only_restore_owned_original(
     assert len(calls) == 6
 
 
+@pytest.mark.parametrize("damage", [None, "corrupt", "foreign"])
+def test_native_restore_finalizes_pending_apply_state_without_reexecution(
+    execution, monkeypatch, damage
+):
+    ctx, request, _, calls, _ = execution
+    root = request["workspace_root"]
+    original_replace = fixtures.workspace._publish_replace
+
+    def interrupt(source, target):
+        if target.name == "workspace-state.json":
+            raise OSError("interrupted complete state replacement")
+        return original_replace(source, target)
+
+    with monkeypatch.context() as crash:
+        crash.setattr(fixtures.workspace, "_publish_replace", interrupt)
+        with pytest.raises(OSError, match="complete state"):
+            execute(execution)
+    temporary = root / "workspace-state.json.tmp"
+    assert temporary.exists()
+    result = native.get_native_apply_result(ctx, request["operation_id"])
+    assert result["status"] == "OUTCOME_UNKNOWN"
+    if damage == "corrupt":
+        temporary.write_bytes(b'{"incomplete":')
+    elif damage == "foreign":
+        pending = json.loads(temporary.read_bytes())
+        pending["marker_id"] = "f" * 64
+        del pending["state_id"]
+        temporary.write_bytes(
+            fixtures.workspace.canonical_bytes(
+                fixtures.workspace._seal(pending, "state_id")
+            )
+        )
+    if damage is not None:
+        (root / "workspace-operation.lock").unlink()
+        before = fixtures._bytes(root)
+        with pytest.raises(api.CoreError):
+            native.restore_native_workspace(ctx, request["operation_id"], root)
+        assert fixtures._bytes(root) == before
+        assert native.get_native_apply_result(ctx, request["operation_id"]) == result
+        assert len(calls) == 6
+        return
+    restored = native.restore_native_workspace(ctx, request["operation_id"], root)
+    assert restored["status"] == "undone"
+    assert not temporary.exists()
+    assert not (root / ".rentgen-undo-stage").exists()
+    assert fixtures._bytes(root / "tree") == fixtures._bytes(ctx.source_root)
+    repeated = native.restore_native_workspace(ctx, request["operation_id"], root)
+    assert repeated["status"] == "recovered" and repeated["target"] == "original"
+    assert fixtures._bytes(root / "tree") == fixtures._bytes(ctx.source_root)
+    assert not temporary.exists()
+    assert native.get_native_apply_result(ctx, request["operation_id"]) == result
+    assert execute(execution) == result
+    assert len(calls) == 6, "Restore and replay must not execute EDT again"
+
+
 def test_undo_conflicts_with_later_foreign_bytes(execution):
     ctx, request, *_ = execution
     execute(execution)

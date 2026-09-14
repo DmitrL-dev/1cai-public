@@ -85,8 +85,12 @@ backup подтверждённого apply только при совпаден
 локальной публикации; он не повторяет EDT и не продолжает публикацию candidate.
 Если собственная квитанция native adapter потеряна после завершения файлового
 apply, restore использует сохранившийся complete workspace receipt для CAS undo.
-Частичная финализация workspace receipt требует существующего протокола
-восстановления workspace; adapter не объявляет такую запись завершённой.
+Если `workspace-result.json` уже immutable и дерево точно совпадает с candidate,
+а перед финальным `os.replace` остался полный bound
+`workspace-state.json.tmp` с тем же `result_id`, restore сначала атомарно
+досублирует этот state через workspace recovery и затем выполняет CAS undo.
+Повреждённый, чужой или иного phase `.tmp` остаётся `OUTCOME_UNKNOWN` и
+`METADATA_WORKSPACE_RECOVERY_REQUIRED`; EDT повторно не запускается.
 Если native вызов прервался до файловой публикации, исходная копия сохранена,
 а незавершённый EDT workspace остаётся для разбора. Чужие изменения вызывают
 conflict и не перезаписываются. Успешный undo/restore имеет собственную

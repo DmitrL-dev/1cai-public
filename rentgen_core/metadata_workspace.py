@@ -1404,6 +1404,21 @@ def recover_workspace(ctx, operation_id, workspace_root, *, target):
             "METADATA_WORKSPACE_CONFLICT",
             "Workspace result exists but the candidate tree differs",
         )
+        if pending is not None:
+            receipts = _validated_receipts(ctx, operation_id, root, marker)
+            _require(
+                receipts["state"] == state
+                and receipts["result"] == existing_result
+                and receipts["pending_state"] == pending
+                and pending.get("phase") == "complete"
+                and pending.get("result_id") == existing_result["result_id"]
+                and all(
+                    pending.get(key) == value
+                    for key, value in _workspace_binding(root, marker).items()
+                ),
+                "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+                "Pending apply completion differs from its local applied receipt",
+            )
         if recovery is not None:
             _require(
                 recovery.get("target") == "candidate",
@@ -1426,24 +1441,35 @@ def recover_workspace(ctx, operation_id, workspace_root, *, target):
                 "recovery_id",
             )
             write_record(_recovery_path(root), recovery)
-        _write_or_replace_record(
-            _state_path(root),
-            _seal(
-                {
-                    "schema": SCHEMA,
-                    "project_id": ctx.project_id,
-                    "operation_id": operation_id,
-                    "preview_id": marker["preview_id"],
-                    **_workspace_binding(root, marker),
-                    "phase": "complete",
-                    "before_digest": _digest(marker["original_inventory"]),
-                    "after_digest": _digest(candidate_rows),
-                    "created_at": _now(),
-                    "result_id": existing_result["result_id"],
-                },
-                "state_id",
-            ),
-        )
+        if pending is not None:
+            # The complete temporary record survived fsync but not os.replace.
+            # Retain its exact identity; the workspace lock covers validation
+            # and promotion, and the recovery receipt makes another crash retryable.
+            _require(
+                _read_sealed(temporary, "state_id") == pending,
+                "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+                "Pending apply completion changed before publication",
+            )
+            _publish_replace(temporary, _state_path(root))
+        else:
+            _write_or_replace_record(
+                _state_path(root),
+                _seal(
+                    {
+                        "schema": SCHEMA,
+                        "project_id": ctx.project_id,
+                        "operation_id": operation_id,
+                        "preview_id": marker["preview_id"],
+                        **_workspace_binding(root, marker),
+                        "phase": "complete",
+                        "before_digest": _digest(marker["original_inventory"]),
+                        "after_digest": _digest(candidate_rows),
+                        "created_at": _now(),
+                        "result_id": existing_result["result_id"],
+                    },
+                    "state_id",
+                ),
+            )
         _check(ctx)
         return recovery
     if state is not None:

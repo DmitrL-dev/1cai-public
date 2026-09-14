@@ -47,6 +47,12 @@ receipt либо несовпадение digest останавливают об
 Если candidate уже записан и процесс прервался перед финальным state receipt,
 `recover --target candidate` проверяет результат по digest и завершает journal
 идемпотентно; выбор `original` в этом состоянии отклоняется до явного undo.
+Если immutable `workspace-result.json` уже существует, а полный sealed
+`workspace-state.json.tmp` содержит тот же bound `phase="complete"` и
+`result_id`, recovery может атомарно досублировать этот state и продолжить
+CAS undo. Любой другой phase, binding, digest, дерево или receipt остаётся
+`METADATA_WORKSPACE_RECOVERY_REQUIRED`; при изменённом candidate tree действует
+отдельный `METADATA_WORKSPACE_CONFLICT`. EDT повторно не запускается.
 Все операции требуют `project:read`, `source:edit`, `analysis:run`.
 
 `apply`, `undo` и `recover` удерживают отдельный `workspace-operation.lock`

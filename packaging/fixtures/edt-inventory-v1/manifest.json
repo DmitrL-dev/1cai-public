@@ -1,0 +1,356 @@
+{
+  "schema": 1,
+  "fixture": "edt-inventory-v1",
+  "provenance": "synthetic",
+  "scope": "read_only_contract",
+  "native_execution": false,
+  "live_acceptance": false,
+  "cf_cfe_acceptance": false,
+  "layer": {
+    "layer_id": "base",
+    "ordinal": 0,
+    "kind": "base",
+    "root_relative_path": ".",
+    "source_format": "edt"
+  },
+  "expected": {
+    "parser": "edt_identity_v1",
+    "coverage": "partial",
+    "parsed_mdo_files": 9,
+    "unparsed_files": 5,
+    "identity_count": 17,
+    "objects": [
+      {
+        "path": "Configuration/Configuration.mdo",
+        "canonical_uuid": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "observed_uuid": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "type": "Configuration",
+        "name": "Demo",
+        "xml_path": "/Configuration",
+        "owner": null
+      },
+      {
+        "path": "Catalogs/Products/Products.mdo",
+        "canonical_uuid": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "observed_uuid": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "type": "Catalog",
+        "name": "Products",
+        "xml_path": "/Catalog",
+        "owner": null
+      },
+      {
+        "path": "Documents/Order/Order.mdo",
+        "canonical_uuid": "10000000-0000-4000-8000-000000000003",
+        "observed_uuid": "10000000-0000-4000-8000-000000000003",
+        "type": "Document",
+        "name": "Order",
+        "xml_path": "/Document",
+        "owner": null
+      },
+      {
+        "path": "InformationRegisters/Prices/Prices.mdo",
+        "canonical_uuid": "10000000-0000-4000-8000-000000000004",
+        "observed_uuid": "10000000-0000-4000-8000-000000000004",
+        "type": "InformationRegister",
+        "name": "Prices",
+        "xml_path": "/InformationRegister",
+        "owner": null
+      },
+      {
+        "path": "Enums/State/State.mdo",
+        "canonical_uuid": "10000000-0000-4000-8000-000000000005",
+        "observed_uuid": "10000000-0000-4000-8000-000000000005",
+        "type": "Enum",
+        "name": "State",
+        "xml_path": "/Enum",
+        "owner": null
+      },
+      {
+        "path": "CommonModules/Helpers/Helpers.mdo",
+        "canonical_uuid": "10000000-0000-4000-8000-000000000006",
+        "observed_uuid": "10000000-0000-4000-8000-000000000006",
+        "type": "CommonModule",
+        "name": "Helpers",
+        "xml_path": "/CommonModule",
+        "owner": null
+      },
+      {
+        "path": "CommonForms/Search/Search.mdo",
+        "canonical_uuid": "10000000-0000-4000-8000-000000000007",
+        "observed_uuid": "10000000-0000-4000-8000-000000000007",
+        "type": "CommonForm",
+        "name": "Search",
+        "xml_path": "/CommonForm",
+        "owner": null
+      },
+      {
+        "path": "Reports/Sales/Sales.mdo",
+        "canonical_uuid": "10000000-0000-4000-8000-000000000008",
+        "observed_uuid": "10000000-0000-4000-8000-000000000008",
+        "type": "Report",
+        "name": "Sales",
+        "xml_path": "/Report",
+        "owner": null
+      },
+      {
+        "path": "CommonTemplates/Layout/Layout.mdo",
+        "canonical_uuid": "10000000-0000-4000-8000-000000000009",
+        "observed_uuid": "10000000-0000-4000-8000-000000000009",
+        "type": "CommonTemplate",
+        "name": "Layout",
+        "xml_path": "/CommonTemplate",
+        "owner": null
+      },
+      {
+        "path": "Catalogs/Products/Products.mdo",
+        "canonical_uuid": "10000000-0000-4000-8000-000000000020",
+        "observed_uuid": "10000000-0000-4000-8000-000000000020",
+        "type": "Attribute",
+        "name": "Article",
+        "xml_path": "/Catalog/attributes[1]",
+        "owner": {
+          "canonical_uuid": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          "xml_path": "/Catalog"
+        }
+      },
+      {
+        "path": "Catalogs/Products/Products.mdo",
+        "canonical_uuid": "10000000-0000-4000-8000-000000000021",
+        "observed_uuid": "10000000-0000-4000-8000-000000000021",
+        "type": "Form",
+        "name": "ItemForm",
+        "xml_path": "/Catalog/forms[2]",
+        "owner": {
+          "canonical_uuid": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          "xml_path": "/Catalog"
+        }
+      },
+      {
+        "path": "Catalogs/Products/Products.mdo",
+        "canonical_uuid": "10000000-0000-4000-8000-000000000022",
+        "observed_uuid": "10000000-0000-4000-8000-000000000022",
+        "type": "Command",
+        "name": "OpenItem",
+        "xml_path": "/Catalog/commands[3]",
+        "owner": {
+          "canonical_uuid": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          "xml_path": "/Catalog"
+        }
+      },
+      {
+        "path": "Documents/Order/Order.mdo",
+        "canonical_uuid": "10000000-0000-4000-8000-000000000023",
+        "observed_uuid": "10000000-0000-4000-8000-000000000023",
+        "type": "TabularSection",
+        "name": "Lines",
+        "xml_path": "/Document/tabularSections[1]",
+        "owner": {
+          "canonical_uuid": "10000000-0000-4000-8000-000000000003",
+          "xml_path": "/Document"
+        }
+      },
+      {
+        "path": "Documents/Order/Order.mdo",
+        "canonical_uuid": "10000000-0000-4000-8000-000000000024",
+        "observed_uuid": "10000000-0000-4000-8000-000000000024",
+        "type": "Attribute",
+        "name": "Product",
+        "xml_path": "/Document/tabularSections[1]/attributes[1]",
+        "owner": {
+          "canonical_uuid": "10000000-0000-4000-8000-000000000023",
+          "xml_path": "/Document/tabularSections[1]"
+        }
+      },
+      {
+        "path": "InformationRegisters/Prices/Prices.mdo",
+        "canonical_uuid": "10000000-0000-4000-8000-000000000025",
+        "observed_uuid": "10000000-0000-4000-8000-000000000025",
+        "type": "Dimension",
+        "name": "Product",
+        "xml_path": "/InformationRegister/dimensions[1]",
+        "owner": {
+          "canonical_uuid": "10000000-0000-4000-8000-000000000004",
+          "xml_path": "/InformationRegister"
+        }
+      },
+      {
+        "path": "InformationRegisters/Prices/Prices.mdo",
+        "canonical_uuid": "10000000-0000-4000-8000-000000000026",
+        "observed_uuid": "10000000-0000-4000-8000-000000000026",
+        "type": "Resource",
+        "name": "Price",
+        "xml_path": "/InformationRegister/resources[2]",
+        "owner": {
+          "canonical_uuid": "10000000-0000-4000-8000-000000000004",
+          "xml_path": "/InformationRegister"
+        }
+      },
+      {
+        "path": "Enums/State/State.mdo",
+        "canonical_uuid": "10000000-0000-4000-8000-000000000027",
+        "observed_uuid": "10000000-0000-4000-8000-000000000027",
+        "type": "EnumValue",
+        "name": "New",
+        "xml_path": "/Enum/enumValues[1]",
+        "owner": {
+          "canonical_uuid": "10000000-0000-4000-8000-000000000005",
+          "xml_path": "/Enum"
+        }
+      }
+    ]
+  },
+  "files": [
+    {
+      "path": "base/Catalogs/Products/Forms/ItemForm/Form.form",
+      "role": "opaque",
+      "size_bytes": 36,
+      "sha256": "b91b7529eee4921452da6b1fcf55de879dcc53fadcd066d696efc706873e6ea3"
+    },
+    {
+      "path": "base/Catalogs/Products/Products.mdo",
+      "role": "mdo",
+      "size_bytes": 395,
+      "sha256": "c5f704baa9051b02ca2aa05548f102d77468b477564021f371c57e1d798f658a"
+    },
+    {
+      "path": "base/CommonForms/Search/Search.mdo",
+      "role": "mdo",
+      "size_bytes": 144,
+      "sha256": "2f7c7c29d5af5d42454fa9bfaa26e9004556641232c24c9c36d4429c9eaf8116"
+    },
+    {
+      "path": "base/CommonModules/Helpers/Helpers.mdo",
+      "role": "mdo",
+      "size_bytes": 149,
+      "sha256": "9d63074f3df4891c58161d72ce74759e027781a0fca7d5ee590e457ee7837e62"
+    },
+    {
+      "path": "base/CommonModules/Helpers/Module.bsl",
+      "role": "opaque",
+      "size_bytes": 35,
+      "sha256": "1de8f415604c3bd26dfb0dc285951055e361f1d2fa0d6009fa0937fcd100b96f"
+    },
+    {
+      "path": "base/CommonTemplates/Layout/Layout.mdo",
+      "role": "mdo",
+      "size_bytes": 152,
+      "sha256": "d40a80fae71b5dea61b77045f5647d41e703ccad713811a0f117e45c341226ea"
+    },
+    {
+      "path": "base/Configuration/Configuration.mdo",
+      "role": "mdo",
+      "size_bytes": 148,
+      "sha256": "09803c3c6bef5c824b232043b9f699a4b03488df80e57b04fbc6a480a9726016"
+    },
+    {
+      "path": "base/Documents/Order/Order.mdo",
+      "role": "mdo",
+      "size_bytes": 325,
+      "sha256": "9fe70792a85218d3cc70e16ec30e4aff7cc8dd6d148869d8b5b8556c38bcedb8"
+    },
+    {
+      "path": "base/Enums/State/State.mdo",
+      "role": "mdo",
+      "size_bytes": 216,
+      "sha256": "04a62a55e9a2b766d93df103136aa8ddae3691d1499b77b529a164e63235dd45"
+    },
+    {
+      "path": "base/InformationRegisters/Prices/Prices.mdo",
+      "role": "mdo",
+      "size_bytes": 342,
+      "sha256": "debab9003fa9a918cd45c86fc7d1403495a91e7adb7cffe2a4ead0a8945a1a7e"
+    },
+    {
+      "path": "base/Reports/Sales/Sales.mdo",
+      "role": "mdo",
+      "size_bytes": 135,
+      "sha256": "74f221704531461ba72b4d27a5dc32fc3ef3130686b64a8b003cc31283579086"
+    },
+    {
+      "path": "base/Reports/Sales/Templates/Layout/Ext/Template.xml",
+      "role": "opaque",
+      "size_bytes": 35,
+      "sha256": "31d57e4e323e0be0cd7ef2eb53cb87278326d9f076adc0a83028ce20be0958dc"
+    },
+    {
+      "path": "base/configuration.cf",
+      "role": "opaque",
+      "size_bytes": 51,
+      "sha256": "2fdce921d13abe32c13cb0507fa141997022f42b53c885a61e0a6182196d7974"
+    },
+    {
+      "path": "base/extension.cfe",
+      "role": "opaque",
+      "size_bytes": 52,
+      "sha256": "ee55fc9df0b69a5f94cee3c8d2a4fed386a5efab5e8fddf20cbfce32a2377079"
+    },
+    {
+      "path": "negative/dtd.mdo",
+      "role": "negative",
+      "size_bytes": 439,
+      "sha256": "6e77562742150d337789dc7b188b78ffc3b5335ecf9cb980d9a5ea6f85e9bba2"
+    },
+    {
+      "path": "negative/foreign-namespace.mdo",
+      "role": "negative",
+      "size_bytes": 368,
+      "sha256": "9a9751da39519c8c5475d3be7748853a1afa0fd286e9cf45217449796ee69bab"
+    },
+    {
+      "path": "negative/invalid-uuid.mdo",
+      "role": "negative",
+      "size_bytes": 369,
+      "sha256": "4e1f04860da98d8d3dadb08d3ec8f099990f4441faa3a13deb737cf1ece6b2f9"
+    },
+    {
+      "path": "negative/malformed.mdo",
+      "role": "negative",
+      "size_bytes": 11,
+      "sha256": "0b7b1178fe78482bd7df845df390213ebef76349efb7e2d2c2ebad494363adf2"
+    },
+    {
+      "path": "negative/missing-name.mdo",
+      "role": "negative",
+      "size_bytes": 374,
+      "sha256": "cd9dc1c844a9f689ddd59a0004946b5b2417528df68aeb774340d1f1fd3af5c1"
+    },
+    {
+      "path": "negative/unknown-extension.mdo",
+      "role": "negative",
+      "size_bytes": 491,
+      "sha256": "8f6b5827567cd6ec623e18a97892f22b46f67a92384798a9de265fbf48a26078"
+    }
+  ],
+  "negative_cases": [
+    {
+      "path": "negative/malformed.mdo",
+      "source_path": "Catalogs/Products/Products.mdo",
+      "expected_error": "XML_INVALID"
+    },
+    {
+      "path": "negative/foreign-namespace.mdo",
+      "source_path": "Catalogs/Products/Products.mdo",
+      "expected_error": "EDT_INVENTORY_UNSUPPORTED"
+    },
+    {
+      "path": "negative/invalid-uuid.mdo",
+      "source_path": "Catalogs/Products/Products.mdo",
+      "expected_error": "EDT_IDENTITY_INVALID"
+    },
+    {
+      "path": "negative/missing-name.mdo",
+      "source_path": "Catalogs/Products/Products.mdo",
+      "expected_error": "EDT_IDENTITY_INVALID"
+    },
+    {
+      "path": "negative/unknown-extension.mdo",
+      "source_path": "Catalogs/Products/Products.mdo",
+      "expected_error": "EDT_INVENTORY_UNSUPPORTED"
+    },
+    {
+      "path": "negative/dtd.mdo",
+      "source_path": "Catalogs/Products/Products.mdo",
+      "expected_error": "XML_FORBIDDEN"
+    }
+  ]
+}
