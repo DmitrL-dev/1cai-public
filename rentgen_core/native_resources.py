@@ -212,10 +212,13 @@ def archive_native_run(ctx, operation_id, *, namespace, profile_id=None):
                     result = get_preview(ctx, operation_id)
                     actual_profile = result["profile_id"]
                 elif namespace == "ibcmd-fixtures":
-                    from .edt_fixture_executor import get_fixture_result
+                    from .edt_fixture_executor import _get_fixture_result
 
-                    result = get_fixture_result(
-                        ctx, operation_id, fixture_root=str(root)
+                    result = _get_fixture_result(
+                        ctx,
+                        operation_id,
+                        fixture_root=str(root),
+                        permissions={"project:read", "project:admin"},
                     )
                     if result["status"] not in {"completed", "failed"}:
                         raise _archive_invalid()

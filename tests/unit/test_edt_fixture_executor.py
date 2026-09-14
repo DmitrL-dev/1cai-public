@@ -335,6 +335,44 @@ def test_unknown_fixture_cannot_release_retention_by_archive(fixture):
         )
 
 
+def test_admin_only_can_archive_valid_fixture_without_execution_permissions(fixture):
+    result = execute(fixture)
+    with fixture.ctx.state.transaction(fixture.ctx.principal, write=True) as tx:
+        force_legacy_membership(
+            tx, fixture.ctx.principal, {"project:read", "project:admin"}
+        )
+    with pytest.raises(CoreError) as error:
+        read_result(fixture)
+    assert error.value.code == "PROJECT_FORBIDDEN"
+    receipt = resources.archive_native_run(
+        fixture.ctx,
+        fixture.request.operation_id,
+        namespace="ibcmd-fixtures",
+        profile_id=result["profile_id"],
+    )
+    assert receipt["status"] == "archived"
+    assert len(fixture.calls) == 3
+    assert (fixture.run / "candidate.cf").read_bytes() == b"candidate"
+
+
+def test_missing_terminal_readback_rechecks_revoked_permissions(fixture, monkeypatch):
+    execute(fixture)
+    (fixture.run / "report.json").unlink()
+    original = executor._read
+
+    def revoke_after_intent(path, key):
+        result = original(path, key)
+        if path.name == "request.json":
+            with fixture.ctx.state.transaction(fixture.ctx.principal, write=True) as tx:
+                force_legacy_membership(tx, fixture.ctx.principal, {"project:read"})
+        return result
+
+    monkeypatch.setattr(executor, "_read", revoke_after_intent)
+    with pytest.raises(CoreError) as error:
+        read_result(fixture)
+    assert error.value.code == "PROJECT_FORBIDDEN"
+
+
 def test_fixture_admission_counts_existing_native_namespaces(fixture, monkeypatch):
     existing = fixture.root / "metadata-runs" / str(uuid4())
     existing.mkdir(parents=True)

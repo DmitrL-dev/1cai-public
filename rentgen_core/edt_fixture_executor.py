@@ -41,13 +41,13 @@ def _require(value, code, message):
         raise CoreError(code, message)
 
 
-def _check(ctx):
+def _check(ctx, permissions=PERMISSIONS):
     with ctx.state.transaction(ctx.principal) as tx:
-        tx.require_all(PERMISSIONS)
+        tx.require_all(permissions)
 
 
-def _root(ctx, fixture_root):
-    _check(ctx)
+def _root(ctx, fixture_root, permissions=PERMISSIONS):
+    _check(ctx, permissions)
     _require(
         os.name == "nt", "EDT_FIXTURE_UNSUPPORTED", "Fixture execution requires Windows"
     )
@@ -578,7 +578,14 @@ def execute_fixture_commands(ctx, plan, profile, request, *, fixture_root, input
 
 def get_fixture_result(ctx, operation_id, *, fixture_root):
     """Read validated evidence. Missing terminal evidence is never replay authority."""
-    root = _root(ctx, fixture_root)
+    return _get_fixture_result(
+        ctx, operation_id, fixture_root=fixture_root, permissions=PERMISSIONS
+    )
+
+
+def _get_fixture_result(ctx, operation_id, *, fixture_root, permissions):
+    """Shared read-only validator; the internal caller owns its permission policy."""
+    root = _root(ctx, fixture_root, permissions)
     run = root / "ibcmd-fixtures" / validate_operation_id(operation_id)
     with pinned_directory(run):
         intent = _read(run / "request.json", "request_id")
@@ -626,6 +633,7 @@ def get_fixture_result(ctx, operation_id, *, fixture_root):
         reports = [p for p in (run / "report.json", run / "failure.json") if p.exists()]
         _require(len(reports) <= 1, RECOVERY, "Fixture has competing terminal records")
         if not reports:
+            _check(ctx, permissions)
             return _terminal(intent, "OUTCOME_UNKNOWN", reason="incomplete_operation")
         result = _read(reports[0], "result_id")
         try:
@@ -697,7 +705,8 @@ def get_fixture_result(ctx, operation_id, *, fixture_root):
                     == {
                         "candidate": _file_row(run / "candidate.cf"),
                         "roundtrip_inventory": exported_inventory(
-                            run / "roundtrip", authorize=lambda: _check(ctx)
+                            run / "roundtrip",
+                            authorize=lambda: _check(ctx, permissions),
                         ),
                     },
                     RECOVERY,
@@ -705,5 +714,5 @@ def get_fixture_result(ctx, operation_id, *, fixture_root):
                 )
         except (KeyError, TypeError, ValueError) as exc:
             raise CoreError(RECOVERY, "Fixture result schema differs") from exc
-        _check(ctx)
+        _check(ctx, permissions)
         return result

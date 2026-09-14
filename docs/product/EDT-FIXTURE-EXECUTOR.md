@@ -73,7 +73,10 @@ create/import/export, не объявляет неизвестный исход 
 
 Python API `native_resources.archive_native_run` поддерживает namespace
 `ibcmd-fixtures` и требует точный `profile_id` результата, `project:admin` и
-разрешения строгого reader. Архивировать можно только проверенные `completed`
+`project:read`. Он использует тот же строгий read-only validator с политикой
+архивирования; `source:edit` и `analysis:run` для архивирования не нужны.
+Обычный `get_fixture_result` сохраняет разрешения исполнения.
+Архивировать можно только проверенные `completed`
 или `failed`; `OUTCOME_UNKNOWN` не освобождает слот. Архивирование логическое:
 артефакты остаются на месте и продолжают учитываться в дисковом лимите. Схема
 существующих CLI/MCP archive-вызовов этим срезом не расширена.
