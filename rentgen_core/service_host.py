@@ -53,6 +53,7 @@ class WindowsServiceHost:
             journal=scheduler.journal,
             outbox=scheduler.outbox,
             retry_codes=retry_codes,
+            notify_unchanged=scheduler.notify_unchanged,
         )
 
     def stop(self):

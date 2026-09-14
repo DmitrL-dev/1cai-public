@@ -13,6 +13,7 @@ from rentgen_core.errors import CoreError
 from rentgen_core.git_watcher import NotificationOutbox, SchedulerJournal
 from rentgen_core.owner_report_store import OwnerReportStore
 from test_git_bsl_analyzer import FakeAdapter
+from test_git_watcher import git
 import test_git_snapshot_evidence as evidence_fixtures
 
 
@@ -261,8 +262,9 @@ def test_incomplete_evidence_never_publishes_findings_or_success_notification(
         assert adapter.calls == []
 
 
+@pytest.mark.parametrize("capture", [False, True])
 def test_git_worker_stop_finishes_active_cycle_and_prevents_later_ticks(
-    configured, workspace, monkeypatch
+    configured, workspace, monkeypatch, scanner, capture
 ):
     entered, release, stop = Event(), Event(), Event()
 
@@ -272,8 +274,14 @@ def test_git_worker_stop_finishes_active_cycle_and_prevents_later_ticks(
             assert release.wait(10)
             return super().analyze(*args, **kwargs)
 
+    if capture:
+        configured.document.update(schema=3, scanner=str(scanner))
     observer, _, _, _, adapter = wire(
-        configured, workspace, monkeypatch, adapter=BlockingAdapter()
+        configured,
+        workspace,
+        monkeypatch,
+        adapter=BlockingAdapter(),
+        publish=not capture,
     )
     document = json.loads(configured.path.read_text(encoding="utf-8"))
     document.update(max_cycles=100, interval_seconds=86400)
@@ -303,3 +311,346 @@ def test_git_worker_stop_finishes_active_cycle_and_prevents_later_ticks(
         SchedulerJournal(observer.profile / "git-journal.json").read()["phase"]
         == "idle"
     )
+
+
+def autonomous(configured, workspace, monkeypatch, scanner):
+    configured.document.update(schema=3, scanner=str(scanner))
+    return wire(configured, workspace, monkeypatch, publish=False)
+
+
+def test_autonomous_config_defaults_to_dry_run(configured, scanner):
+    configured.write(schema=3, scanner=str(scanner))
+    config = service_entry.load_config(configured.path)
+    assert config.scanner == scanner.resolve()
+    result = service_entry.run_console(
+        configured.path, worker_factory=lambda _: pytest.fail("dry run started worker")
+    )
+    assert (result.exit_code, result.cycles) == (0, 0)
+    assert list(config.profile.iterdir()) == []
+
+
+@pytest.mark.parametrize("scanner_value", [None, "relative.exe", 1])
+def test_autonomous_config_requires_existing_scanner(configured, scanner_value):
+    configured.write(schema=3, scanner=scanner_value)
+    with pytest.raises(CoreError) as error:
+        service_entry.load_config(configured.path)
+    assert error.value.code == "SERVICE_CONFIG_INVALID"
+
+
+def test_autonomous_service_captures_first_commit_and_reuses_restart_receipt(
+    configured,
+    workspace,
+    monkeypatch,
+    scanner,
+):
+    observer, source, module, _, adapter = autonomous(
+        configured, workspace, monkeypatch, scanner
+    )
+    original = module.read_bytes()
+    first = service_entry.run_console(configured.path)
+    assert (first.exit_code, first.cycles) == (0, 1)
+    snapshot = observer.status()["last_snapshot"]
+    report_id = NotificationOutbox(observer.profile / "git-outbox.json").peek()[0][
+        "event"
+    ]["owner_report_id"]
+    store = OwnerReportStore(
+        observer.runtime.registry.get(observer.project_id).state_root / "owner-reports"
+    )
+    reports = store.list(
+        expected_project_id=observer.project_id,
+        expected_snapshot_id=snapshot,
+        authorize=lambda: observer._context(write=True),
+    )
+    assert [item["report_id"] for item in reports] == [report_id]
+    assert reports[0]["report"]["quality"]["provenance"] == "git_source_verified"
+    assert reports[0]["report"]["quality"]["commit"] == git(source, "rev-parse", "HEAD")
+    assert reports[0]["report"]["business_metrics"]["status"] == "not_available"
+    assert observer.status()["reports"][0]["model_calls"] == 0
+    assert module.read_bytes() == original
+    second = service_entry.run_console(configured.path)
+    assert (second.exit_code, second.cycles) == (0, 1)
+    assert len(adapter.calls) == 1
+    assert len(observer.status()["jobs"]) == 1
+    assert len(NotificationOutbox(observer.profile / "git-outbox.json").peek()) == 1
+    assert (
+        store.list(
+            expected_project_id=observer.project_id,
+            expected_snapshot_id=snapshot,
+            authorize=lambda: observer._context(write=True),
+        )
+        == reports
+    )
+
+
+def test_autonomous_worker_captures_next_commit_in_same_lifetime(
+    configured,
+    workspace,
+    monkeypatch,
+    scanner,
+):
+    observer, source, module, _, adapter = autonomous(
+        configured, workspace, monkeypatch, scanner
+    )
+    worker = service_entry.create_worker(service_entry.load_config(configured.path))
+    try:
+        first = worker.watcher.tick()
+        snapshot = observer.status()["last_snapshot"]
+        module.write_bytes(module.read_bytes().replace(b"1", b"2"))
+        git(source, "add", ".")
+        git(source, "commit", "-m", "second")
+        second = worker.watcher.tick()
+        assert first["commit"] != second["commit"]
+        assert first["owner_report_id"] != second["owner_report_id"]
+        assert observer.status()["last_snapshot"] != snapshot
+        assert len(adapter.calls) == 2
+        assert worker.watcher.tick()["status"] == "unchanged"
+        assert len(adapter.calls) == 2
+    finally:
+        worker.close()
+
+
+def test_autonomous_history_rewrite_refuses_before_snapshot_capture(
+    configured,
+    workspace,
+    monkeypatch,
+    scanner,
+):
+    observer, source, module, _, adapter = autonomous(
+        configured, workspace, monkeypatch, scanner
+    )
+    worker = service_entry.create_worker(service_entry.load_config(configured.path))
+    try:
+        worker.watcher.tick()
+        head = observer.runtime.head(observer.principal, observer.project_id)
+        git(source, "checkout", "--orphan", "rewritten")
+        module.write_bytes(module.read_bytes().replace(b"1", b"9"))
+        git(source, "add", ".")
+        git(source, "commit", "-m", "rewritten")
+        with pytest.raises(CoreError) as error:
+            worker.watcher.tick()
+        assert error.value.code == "GIT_HISTORY_REWRITE"
+        assert observer.runtime.head(observer.principal, observer.project_id) == head
+        assert len(observer.status()["jobs"]) == 1
+        assert len(adapter.calls) == 1
+    finally:
+        worker.close()
+
+
+@pytest.mark.parametrize("when", ["after_capture", "before_analyzer"])
+def test_autonomous_changed_prepared_commit_never_publishes_findings(
+    configured,
+    workspace,
+    monkeypatch,
+    scanner,
+    when,
+):
+    from rentgen_core.observer import Observer
+    from rentgen_core.git_watcher import GitWatcher
+
+    observer, source, _, _, adapter = autonomous(
+        configured, workspace, monkeypatch, scanner
+    )
+    target, method = (
+        (Observer, "_tick") if when == "after_capture" else (GitWatcher, "tick")
+    )
+    original = getattr(target, method)
+
+    def change(self, *args, **kwargs):
+        if when == "before_analyzer":
+            git(source, "commit", "--allow-empty", "-m", "racing")
+        result = original(self, *args, **kwargs)
+        if when == "after_capture":
+            git(source, "commit", "--allow-empty", "-m", "racing")
+        return result
+
+    monkeypatch.setattr(target, method, change)
+    worker = service_entry.create_worker(service_entry.load_config(configured.path))
+    try:
+        with pytest.raises(CoreError) as error:
+            worker.watcher.tick()
+        assert error.value.code == "GIT_HEAD_CHANGED"
+        assert observer.findings_status()["state"] is None
+        assert adapter.calls == []
+    finally:
+        worker.close()
+
+
+def test_autonomous_interrupted_scheduler_requires_explicit_recovery(
+    configured,
+    workspace,
+    monkeypatch,
+    scanner,
+):
+    observer, _, _, _, adapter = autonomous(configured, workspace, monkeypatch, scanner)
+    journal = SchedulerJournal(observer.profile / "git-journal.json")
+    journal.begin()
+    result = service_entry.run_console(configured.path)
+    assert result.error_code == "SERVICE_WORKER_FAILED"
+    assert observer.status()["last_snapshot"] is None
+    assert adapter.calls == []
+    journal.recover("confirmed test interruption")
+    assert service_entry.run_console(configured.path).exit_code == 0
+    assert len(adapter.calls) == 1
+
+
+def test_autonomous_revocation_precedes_git_probe(
+    configured,
+    workspace,
+    monkeypatch,
+    scanner,
+):
+    from project_access_test_support import grant_membership
+    import rentgen_core.service_composition as composition
+
+    observer, _, _, _, adapter = autonomous(configured, workspace, monkeypatch, scanner)
+    ctx = observer._context(write=True)
+    worker = service_entry.create_worker(service_entry.load_config(configured.path))
+    try:
+        with ctx.state.transaction(ctx.principal, write=True) as tx:
+            grant_membership(tx, ctx.principal, {"project:read", "project:admin"})
+        monkeypatch.setattr(
+            composition, "observe_git", lambda _: pytest.fail("revoked worker read Git")
+        )
+        with pytest.raises(CoreError) as error:
+            worker.watcher.tick()
+        assert error.value.code == "PROJECT_FORBIDDEN"
+        assert observer.status()["last_snapshot"] is None
+        assert adapter.calls == []
+    finally:
+        worker.close()
+
+
+def test_autonomous_capture_requires_analysis_permission_without_source_edit(
+    configured,
+    workspace,
+    monkeypatch,
+    scanner,
+):
+    from project_access_test_support import grant_membership
+
+    observer, _, module, _, _ = autonomous(configured, workspace, monkeypatch, scanner)
+    ctx = observer._context(write=True)
+    with ctx.state.transaction(ctx.principal, write=True) as tx:
+        grant_membership(
+            tx, ctx.principal, {"project:read", "project:admin", "analysis:run"}
+        )
+    original = module.read_bytes()
+    assert service_entry.run_console(configured.path).exit_code == 0
+    assert observer.status()["last_snapshot"] is not None
+    assert module.read_bytes() == original
+
+
+def test_autonomous_revocation_after_capture_blocks_analysis_and_owner_report(
+    configured,
+    workspace,
+    monkeypatch,
+    scanner,
+):
+    from project_access_test_support import grant_membership
+    from rentgen_core.observer import Observer
+
+    observer, _, _, _, adapter = autonomous(configured, workspace, monkeypatch, scanner)
+    ctx = observer._context(write=True)
+    original = Observer._tick
+
+    def capture_then_revoke(self):
+        result = original(self)
+        with ctx.state.transaction(ctx.principal, write=True) as tx:
+            grant_membership(tx, ctx.principal, {"project:read", "project:admin"})
+        return result
+
+    monkeypatch.setattr(Observer, "_tick", capture_then_revoke)
+    assert (
+        service_entry.run_console(configured.path).error_code == "SERVICE_WORKER_FAILED"
+    )
+    assert observer.status()["last_snapshot"] is not None
+    assert adapter.calls == []
+    assert not (ctx.state.path.parent / "owner-reports").exists()
+
+
+def test_autonomous_empty_commit_reuses_snapshot_with_new_binding(
+    configured,
+    workspace,
+    monkeypatch,
+    scanner,
+):
+    import rentgen_core as api
+
+    observer, source, _, _, adapter = autonomous(
+        configured, workspace, monkeypatch, scanner
+    )
+    # Reuse follows the registered source digest. Keep Git's changing metadata
+    # outside this fixture layer; the default '.' layer also captures .git.
+    api.configure_source_layers(
+        observer._context(write=True),
+        (api.SourceLayerSpec("base", 0, "base", "CommonModules", "unknown"),),
+        expected_revision=1,
+    )
+    worker = service_entry.create_worker(service_entry.load_config(configured.path))
+    try:
+        first = worker.watcher.tick()
+        snapshot = observer.status()["last_snapshot"]
+        git(source, "commit", "--allow-empty", "-m", "empty")
+        second = worker.watcher.tick()
+        assert first["commit"] != second["commit"]
+        assert first["owner_report_id"] != second["owner_report_id"]
+        assert observer.status()["last_snapshot"] == snapshot
+        assert len(observer.status()["jobs"]) == 1
+        assert len(adapter.calls) == 2
+    finally:
+        worker.close()
+
+
+@pytest.mark.parametrize(
+    "point", ["capture_committed", "before_owner_save", "after_owner_save"]
+)
+def test_autonomous_restart_reuses_confirmed_capture_and_findings(
+    configured,
+    workspace,
+    monkeypatch,
+    scanner,
+    point,
+):
+    import rentgen_core.observer as observer_module
+
+    observer, _, _, _, adapter = autonomous(configured, workspace, monkeypatch, scanner)
+    saved = []
+    with monkeypatch.context() as fault:
+        if point == "capture_committed":
+
+            def interrupt(name):
+                if name == point:
+                    raise RuntimeError("simulated interruption")
+
+            fault.setattr(observer_module, "_boundary", interrupt)
+        else:
+            original = OwnerReportStore.save
+
+            def interrupt(self, *args, **kwargs):
+                if point == "after_owner_save":
+                    saved.append(original(self, *args, **kwargs))
+                raise RuntimeError("simulated interruption")
+
+            fault.setattr(OwnerReportStore, "save", interrupt)
+        assert (
+            service_entry.run_console(configured.path).error_code
+            == "SERVICE_WORKER_FAILED"
+        )
+    snapshot = observer.runtime.head(
+        observer.principal, observer.project_id
+    ).snapshot.snapshot_id
+    assert service_entry.run_console(configured.path).exit_code == 0
+    assert observer.status()["last_snapshot"] == snapshot
+    assert len(observer.status()["jobs"]) == 1
+    assert len(adapter.calls) == 1
+    store = OwnerReportStore(
+        observer.runtime.registry.get(observer.project_id).state_root / "owner-reports"
+    )
+    receipts = store.list(
+        expected_project_id=observer.project_id,
+        expected_snapshot_id=snapshot,
+        authorize=lambda: observer._context(write=True),
+    )
+    assert len(receipts) == 1
+    if saved:
+        assert receipts == saved

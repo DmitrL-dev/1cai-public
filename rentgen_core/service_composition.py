@@ -2,14 +2,15 @@
 
 Sources/refs are read-only. Writes are confined to existing Observer evidence,
 its scheduler journal/local outbox, the owner-report store and BSL scratch data.
-There is no source capture, runtime export, notification sender or SCM installer.
+Schema 3 also captures owned snapshots. There is no runtime export,
+notification sender or SCM installer.
 """
 
 from contextlib import nullcontext
 import stat
 
 from .errors import CoreError
-from .git_observer import observe_git
+from .git_observer import observe_git, require_ancestor
 from .git_watcher import (
     GitWatcher,
     GitWatcherScheduler,
@@ -56,22 +57,42 @@ class _LeasedObserver:
 
 
 class _ReportingWatcher:
-    def __init__(self, watcher, store, authorize):
+    def __init__(self, watcher, store, authorize, *, capture=False):
         self.watcher, self.store, self.authorize = watcher, store, authorize
+        self.capture = capture
         self._last_binding = self._receipt = None
 
     def tick(self):
         observer = self.watcher.observer
         # GitWatcher itself permits unbound findings when no snapshot exists.
         # This composition requires a verified owner report, so refuse earlier.
+        if self.capture:
+            self.authorize()
         observation = observe_git(self.watcher.repository)
+        if self.capture:
+            state = observer.findings_status(limit=1)["state"]
+            commit = self.watcher._state_commit(
+                state, self.watcher.profile_id, self.watcher.scope_id
+            )
+            if commit is not None and commit != observation.commit:
+                require_ancestor(self.watcher.repository, commit, observation.commit)
+            # This worker owns the lifetime lease; public tick would reacquire it.
+            observer._tick()
+            if observe_git(self.watcher.repository) != observation:
+                raise CoreError(
+                    "GIT_HEAD_CHANGED", "Git HEAD changed during snapshot preparation"
+                )
         evidence = observer.verify_git_snapshot(observation)
         if evidence is None:
             raise CoreError(
                 "SERVICE_EVIDENCE_INCOMPLETE",
                 "Published Git snapshot evidence required",
             )
-        event = self.watcher.tick()
+        event = (
+            self.watcher.tick(expected_observation=observation)
+            if self.capture
+            else self.watcher.tick()
+        )
         report = observer.owner_report(evidence.snapshot_id)
         quality = report["quality"]
         if (
@@ -87,9 +108,29 @@ class _ReportingWatcher:
         if self._last_binding != binding:
             self.authorize()
             self.store.initialize()
-            self._receipt = self.store.save(report, authorize=self.authorize)
+            self._receipt = self._retained_receipt(report) if self.capture else None
+            if self._receipt is None:
+                self._receipt = self.store.save(report, authorize=self.authorize)
             self._last_binding = binding
         return event | {"owner_report_id": self._receipt["report_id"]}
+
+    def _retained_receipt(self, report):
+        """Reuse historical evidence after restart, preserving its original date."""
+        receipts = self.store.list(
+            expected_project_id=report["project_id"],
+            expected_snapshot_id=report["snapshot_id"],
+            authorize=self.authorize,
+            limit=self.store.MAX_REPORTS,
+        )
+        for receipt in receipts:
+            if all(
+                receipt["report"][key] == value
+                for key, value in report.items()
+                if key != "generated_at"
+            ):
+                self.authorize()
+                return receipt
+        return None
 
 
 class GitAuditWorker:
@@ -113,8 +154,22 @@ class GitAuditWorker:
         self.config = config
         self._lease = None
         self._started = False
+        runtime = LocalRuntime(config.registry)
+        if config.scanner is not None:
+            from rentgen_graph.snapshot_adapter import (
+                RentgenCapturedGoBuilder,
+                RentgenGraphReaderFactory,
+            )
+
+            runtime = LocalRuntime(
+                config.registry,
+                RentgenGraphReaderFactory(),
+                RentgenCapturedGoBuilder(
+                    _local_path(str(config.scanner), suffix=".exe")
+                ),
+            )
         observer = Observer(
-            LocalRuntime(config.registry),
+            runtime,
             current_windows_principal(),
             config.project,
             config.profile,
@@ -145,7 +200,10 @@ class GitAuditWorker:
             scope_id=SCOPE_ID,
         )
         self.watcher = _ReportingWatcher(
-            watcher, OwnerReportStore(state / "owner-reports"), authorize
+            watcher,
+            OwnerReportStore(state / "owner-reports"),
+            authorize,
+            capture=config.scanner is not None,
         )
         journal_path = config.profile / "git-journal.json"
         outbox_path = config.profile / "git-outbox.json"
@@ -179,6 +237,7 @@ class GitAuditWorker:
             retry_codes=WindowsServiceHost.RETRY_CODES,
             journal=self.journal,
             outbox=self.outbox,
+            notify_unchanged=self.config.scanner is None,
         )
         events = scheduler.run()
         if events and events[-1].get("status") == "error":

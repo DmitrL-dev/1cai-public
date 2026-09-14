@@ -87,6 +87,72 @@ output-path containment and cooperative stop; the same pipeline is exercised
 through a mocked SCM lifecycle. No live SCM install/start/apply, service-account
 acceptance or native BSL acceptance is implied.
 
+## Autonomous snapshot preparation (schema 3)
+
+Schema 3 opts into owned snapshot capture before the same bounded Git audit.
+It accepts the schema 2 fields plus one required `scanner` field:
+
+```json
+{
+  "schema": 3,
+  "service_name": "Rentgen.GitAudit",
+  "registry": "C:\\Rentgen\\registry.sqlite3",
+  "profile": "C:\\Rentgen\\git-observer-profile",
+  "project": "6e461c4d-e19c-4e37-85b3-3aa0961580b7",
+  "diagnostics_root": "C:\\Rentgen\\diagnostics",
+  "scanner": "C:\\Rentgen\\bsl-scan.exe",
+  "interval_seconds": 60,
+  "max_cycles": 100,
+  "mode": "read-only"
+}
+```
+
+The scanner must be an existing absolute local `.exe`; it is the trusted host's
+Go scanner, with the same path checks and deployment integrity obligations as
+schema 1. The worker constructs `RentgenGraphReaderFactory` and
+`RentgenCapturedGoBuilder`. Mode still defaults to `dry-run`, cycles to 1, and
+all schema 2 bounds apply. Dry-run does not construct or start the scanner.
+Schema 1/2 behavior and the generic scheduler's defaults remain unchanged.
+
+Under its existing lifetime lease, each tick authorizes `project:read` and
+`analysis:run` before probing Git. It verifies the durable analysis profile/scope
+and ancestry before snapshot writes, runs the existing Observer capture/report
+step, then checks that the clean Git observation has not changed. Source edits,
+administrative grants, profile initialization, model calls and 1C execution are
+not part of this pipeline. `source:edit` is not required for owned capture.
+
+The resulting snapshot must pass the existing Git/source verification.
+`GitWatcher.tick(expected_observation=...)` checks the prepared observation
+before either analysis or its unchanged fast path; its post-analysis and
+pre-publication evidence checks still apply. A changed commit is rejected,
+and a successfully captured snapshot may remain as local evidence. Missing or
+failed evidence never becomes verified findings. Snapshot creation uses the
+registered source layers unchanged: a `.` layer includes `.git` metadata, so
+even an empty Git commit can change its source digest. This is the existing
+bounded source association, not complete Git tree or temporal atomicity proof.
+
+Schema 3 omits `unchanged` events from its outbox while retaining scheduler
+cycle accounting. Analysis/error/fatal events and existing queue limits remain.
+The generic `notify_unchanged` scheduler option defaults to `True`; schema 3
+sets it to `False`. No notification is acknowledged or deleted automatically.
+
+On restart, completed findings prevent repeated BSL analysis. The worker searches
+the bounded existing owner store for a receipt matching the full newly verified
+report except its generation timestamp, preserving the original receipt/date.
+The existing capture/publication journal reconciles confirmed publication; no
+new execution journal is introduced. A scheduler left `running` still requires
+explicit `SchedulerJournal.recover(reason)`, and failed Observer jobs retain
+their explicit retry requirement. Findings, owner receipts and outbox are
+separate stores: interruption can still leave evidence without a success
+notification, and this block does not add exactly-once delivery or live SCM
+deployment acceptance.
+
+Tests use real Git, the compiled Go scanner, confined capture/publication and
+SQLite stores, with the existing typed fake BSL executor. They cover the first
+and next commit, prepared-observation races, ancestry before capture,
+authorization before/after capture, restart around publication and owner save,
+receipt reuse, cooperative stop and over 1000 unchanged scheduler cycles.
+
 ## Source Observer entrypoint
 
 `rentgen_core.service_entry` supplies a stdlib/ctypes Windows SCM boundary and

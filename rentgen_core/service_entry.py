@@ -112,10 +112,14 @@ class GitServiceConfig:
     interval_seconds: int
     max_cycles: int = 1
     mode: str = "dry-run"
+    scanner: Path | None = None
 
 
 def _git_config(data):
     required = (_FIELDS - {"scanner", "max_cycles"}) | {"diagnostics_root"}
+    capture = data["schema"] == 3
+    if capture:
+        required |= {"scanner"}
     if not required <= set(data) <= required | {"max_cycles", "mode"}:
         raise _invalid()
     name = _text(data["service_name"])
@@ -140,6 +144,7 @@ def _git_config(data):
         interval,
         cycles,
         mode,
+        _local_path(data["scanner"], suffix=".exe") if capture else None,
     )
 
 
@@ -176,7 +181,7 @@ def load_config(path):
         if (
             type(data) is dict
             and type(data.get("schema")) is int
-            and data["schema"] == 2
+            and data["schema"] in {2, 3}
         ):
             return _git_config(data)
         if (

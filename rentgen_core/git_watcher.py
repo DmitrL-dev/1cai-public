@@ -10,7 +10,7 @@ import time
 from uuid import UUID, uuid4
 
 from .errors import CoreError
-from .git_observer import FindingReport, observe_git, require_ancestor
+from .git_observer import FindingReport, GitObservation, observe_git, require_ancestor
 
 
 def _option(value, name):
@@ -509,8 +509,12 @@ class GitWatcher:
             )
         return observation.get("commit")
 
-    def tick(self):
+    def tick(self, *, expected_observation=None):
         """Analyze at most one new clean commit and persist it atomically."""
+        if expected_observation is not None and not isinstance(
+            expected_observation, GitObservation
+        ):
+            raise CoreError("GIT_WATCHER_CONTEXT", "Typed Git observation required")
         with self.observer.locked():
             ctx = self.observer._context(write=True)
             self.observer._validate(ctx)
@@ -522,6 +526,10 @@ class GitWatcher:
                     "Repository must match the registered project source root",
                 )
             observation = observe_git(repository)
+            if expected_observation is not None and observation != expected_observation:
+                raise CoreError(
+                    "GIT_HEAD_CHANGED", "Prepared Git observation is no longer current"
+                )
             if observation.repository != expected:
                 raise CoreError(
                     "GIT_WATCHER_CONTEXT",
@@ -596,6 +604,7 @@ class GitWatcherScheduler:
         journal=None,
         outbox=None,
         retry_codes=None,
+        notify_unchanged=True,
     ):
         if not callable(getattr(watcher, "tick", None)):
             raise CoreError("GIT_WATCHER_INVALID", "Watcher with tick() is required")
@@ -613,6 +622,10 @@ class GitWatcherScheduler:
             raise CoreError("GIT_WATCHER_INVALID", "Typed scheduler journal required")
         if outbox is not None and not isinstance(outbox, NotificationOutbox):
             raise CoreError("GIT_WATCHER_INVALID", "Typed notification outbox required")
+        if type(notify_unchanged) is not bool:
+            raise CoreError(
+                "GIT_WATCHER_INVALID", "Boolean notification policy required"
+            )
         if retry_codes is not None and (
             not isinstance(retry_codes, (set, frozenset))
             or len(retry_codes) > 100
@@ -632,6 +645,7 @@ class GitWatcherScheduler:
         self.should_stop = should_stop
         self.journal = journal
         self.outbox = outbox
+        self.notify_unchanged = notify_unchanged
         self.retry_codes = None if retry_codes is None else frozenset(retry_codes)
 
     def _backoff_delay(self, failures):
@@ -695,7 +709,9 @@ class GitWatcherScheduler:
                     del events[: -self.MAX_RETAINED_EVENTS]
                 if self.journal is not None:
                     self.journal.record(run_id, cycle, failures, event)
-                if self.outbox is not None:
+                if self.outbox is not None and (
+                    self.notify_unchanged or event.get("status") != "unchanged"
+                ):
                     self.outbox.enqueue(event)
                 if self.max_cycles is not None and cycle >= self.max_cycles:
                     break
