@@ -1095,6 +1095,31 @@ def _validated_receipts(
     return receipts
 
 
+def _has_interrupted_undo(ctx, operation_id, workspace_root):
+    """Return whether a bound workspace is waiting for undo recovery.
+
+    This is only an admission hint for the native adapter. The subsequent
+    ``recover_workspace`` call reacquires the writer lock and validates the
+    same receipts before changing anything.
+    """
+    _check(ctx)
+    validate_operation_id(operation_id)
+    root = _workspace_root(workspace_root)
+    _owned_paths(ctx, root)
+    _require(root.is_dir(), "METADATA_WORKSPACE_NOT_FOUND", "Owned workspace is absent")
+    with _workspace_mutex(root):
+        root, marker = _load_root(ctx, operation_id, root)
+        receipts = _validated_receipts(ctx, operation_id, root, marker)
+    return any(
+        record is not None
+        and (
+            record.get("phase") == "undoing"
+            or (record.get("phase") == "complete" and "undo_id" in record)
+        )
+        for record in (receipts["state"], receipts["pending_state"])
+    )
+
+
 @_workspace_operation
 def apply_workspace(ctx, operation_id, workspace_root):
     """Apply a retained candidate to an owned workspace with file-level CAS."""

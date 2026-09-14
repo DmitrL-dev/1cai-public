@@ -95,6 +95,9 @@ apply, restore использует сохранившийся complete workspac
 а незавершённый EDT workspace остаётся для разбора. Чужие изменения вызывают
 conflict и не перезаписываются. Успешный undo/restore имеет собственную
 workspace-квитанцию и не переписывает исторический native result.
+Если прерывание произошло уже после записи фазы `undoing`,
+`restore_native_workspace` сначала передаёт workspace в core recovery к
+`original`; это завершает только начатый CAS undo и также не запускает EDT.
 
 ## Read-only preflight
 

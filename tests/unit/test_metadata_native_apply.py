@@ -451,6 +451,80 @@ def test_interrupted_publication_can_only_restore_owned_original(
     assert len(calls) == 6
 
 
+def test_native_restore_recovers_interrupted_undo_without_reexecution(
+    execution, monkeypatch
+):
+    ctx, request, _, calls, _ = execution
+    execute(execution)
+    root = request["workspace_root"]
+    terminal_path = native.journal_path(ctx, request["operation_id"]) / "result.json"
+    terminal_receipt = terminal_path.read_bytes()
+    original_replace = fixtures.workspace.os.replace
+
+    def interrupt(source, target):
+        if "tree" in target.parts:
+            raise OSError("interrupted undo publication")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(fixtures.workspace.os, "replace", interrupt)
+    with pytest.raises(OSError, match="interrupted undo"):
+        native.undo_native_workspace(ctx, request["operation_id"], root)
+    monkeypatch.setattr(fixtures.workspace.os, "replace", original_replace)
+
+    with pytest.raises(api.CoreError) as error:
+        native.get_native_apply_result(ctx, request["operation_id"])
+    assert error.value.code == "METADATA_WORKSPACE_RECOVERY_REQUIRED"
+    before_corrupt_restore = fixtures._bytes(root / "tree")
+    terminal_path.write_bytes(b'{"incomplete":')
+    with pytest.raises(api.CoreError) as error:
+        native.restore_native_workspace(ctx, request["operation_id"], root)
+    assert error.value.code == "METADATA_APPLY_RECOVERY_REQUIRED"
+    assert fixtures._bytes(root / "tree") == before_corrupt_restore
+    terminal_path.write_bytes(terminal_receipt)
+    recovered = native.restore_native_workspace(ctx, request["operation_id"], root)
+    assert recovered["status"] == "recovered"
+    assert recovered["target"] == "original"
+    assert fixtures._bytes(root / "tree") == fixtures._bytes(ctx.source_root)
+    repeated = native.restore_native_workspace(ctx, request["operation_id"], root)
+    assert repeated == recovered
+    assert len(calls) == 6, "Recovery must not re-execute EDT"
+
+
+@pytest.mark.parametrize("field", ["native_preview_id", "workspace_result_id"])
+def test_native_restore_rejects_foreign_applied_receipt_reference(
+    execution, monkeypatch, field
+):
+    ctx, request, _, _, _ = execution
+    execute(execution)
+    root = request["workspace_root"]
+    original_replace = fixtures.workspace.os.replace
+
+    def interrupt(source, target):
+        if "tree" in target.parts:
+            raise OSError("interrupted undo publication")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(fixtures.workspace.os, "replace", interrupt)
+    with pytest.raises(OSError, match="interrupted undo"):
+        native.undo_native_workspace(ctx, request["operation_id"], root)
+    monkeypatch.setattr(fixtures.workspace.os, "replace", original_replace)
+
+    result_path = native.journal_path(ctx, request["operation_id"]) / "result.json"
+    result = json.loads(result_path.read_bytes())
+    result[field] = "f" * 64
+    del result["result_id"]
+    result_path.write_bytes(
+        fixtures.workspace.canonical_bytes(
+            fixtures.workspace._seal(result, "result_id")
+        )
+    )
+    before = fixtures._bytes(root)
+    with pytest.raises(api.CoreError) as error:
+        native.restore_native_workspace(ctx, request["operation_id"], root)
+    assert error.value.code == "METADATA_NATIVE_RECOVERY_REQUIRED"
+    assert fixtures._bytes(root) == before
+
+
 @pytest.mark.parametrize("damage", [None, "corrupt", "foreign"])
 def test_native_restore_finalizes_pending_apply_state_without_reexecution(
     execution, monkeypatch, damage

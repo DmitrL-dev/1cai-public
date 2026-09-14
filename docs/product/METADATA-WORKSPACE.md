@@ -53,6 +53,8 @@ receipt либо несовпадение digest останавливают об
 CAS undo. Любой другой phase, binding, digest, дерево или receipt остаётся
 `METADATA_WORKSPACE_RECOVERY_REQUIRED`; при изменённом candidate tree действует
 отдельный `METADATA_WORKSPACE_CONFLICT`. EDT повторно не запускается.
+Native restore при state или полном временном state с фазой `undoing`
+делегирует этот же recovery к `original`, не выполняя EDT повторно.
 Все операции требуют `project:read`, `source:edit`, `analysis:run`.
 
 `apply`, `undo` и `recover` удерживают отдельный `workspace-operation.lock`

@@ -118,9 +118,66 @@ def _result(
     )
 
 
+def _read_native_result(ctx, operation_id):
+    """Read and validate the immutable native terminal receipt only."""
+    with pinned_directory(journal_path(ctx, operation_id)):
+        intent = _read_intent(ctx, operation_id)
+        path = journal_path(ctx, operation_id) / "result.json"
+        if not path.exists():
+            return intent, _result(
+                intent, "OUTCOME_UNKNOWN", reason="incomplete_operation"
+            )
+        result = preflight._read(path, "result_id")
+        _require(
+            set(result) == set(_result(intent, "failed"))
+            and type(result["schema"]) is int
+            and result["live_source_written"] is False
+            and result["live_apply_allowed"] is False
+            and type(result["status"]) is str
+            and result["status"] in STATUSES
+            and (
+                result["reason"] is None
+                or (type(result["reason"]) is str and 1 <= len(result["reason"]) <= 128)
+            )
+            and all(
+                result[key] is None
+                or (type(result[key]) is str and preflight.HASH.fullmatch(result[key]))
+                for key in ("native_preview_id", "workspace_result_id")
+            )
+            and result
+            == _result(
+                intent,
+                result["status"],
+                reason=result["reason"],
+                native_preview_id=result["native_preview_id"],
+                workspace_result_id=result["workspace_result_id"],
+            )
+            and (
+                result["status"] != "applied"
+                or (
+                    result["reason"] is None
+                    and type(result["native_preview_id"]) is str
+                    and preflight.HASH.fullmatch(result["native_preview_id"])
+                    and type(result["workspace_result_id"]) is str
+                    and preflight.HASH.fullmatch(result["workspace_result_id"])
+                )
+            ),
+            RECOVERY,
+            "Native receipt has an invalid binding or schema",
+        )
+        return intent, result
+
+
 @workspace._workspace_operation
 def _verify_applied_workspace(
-    ctx, operation_id, workspace_root, *, intent, result, preview
+    ctx,
+    operation_id,
+    workspace_root,
+    *,
+    intent,
+    result,
+    preview,
+    allow_unresolved=False,
 ):
     root, marker = workspace._load_root(ctx, operation_id, workspace_root)
     saved = workspace._read_sealed(root / "workspace-result.json", "result_id")
@@ -164,6 +221,8 @@ def _verify_applied_workspace(
         RECOVERY,
         "Applied workspace receipt is absent or belongs to another result",
     )
+    if allow_unresolved:
+        return
     workspace._ensure_clean_phase(root)
     state = workspace._read_sealed(root / "workspace-state.json", "state_id")
     if (root / "workspace-undo.json").exists():
@@ -195,7 +254,7 @@ def _verify_applied_workspace(
         )
 
 
-def _verify_applied(ctx, operation_id, intent, result):
+def _verify_applied(ctx, operation_id, intent, result, *, allow_unresolved=False):
     preview = runs.get_preview(ctx, operation_id)
     binding = preflight._binding(preview)
     _require(
@@ -214,64 +273,17 @@ def _verify_applied(ctx, operation_id, intent, result):
         intent=intent,
         result=result,
         preview=preview,
+        allow_unresolved=allow_unresolved,
     )
 
 
 def get_native_apply_result(ctx, operation_id):
     """Read historical outcome; an unfinished intent never permits execution."""
     with authorized(ctx):
-        with pinned_directory(journal_path(ctx, operation_id)):
-            intent = _read_intent(ctx, operation_id)
-            path = journal_path(ctx, operation_id) / "result.json"
-            if not path.exists():
-                return _result(intent, "OUTCOME_UNKNOWN", reason="incomplete_operation")
-            result = preflight._read(path, "result_id")
-            _require(
-                set(result) == set(_result(intent, "failed"))
-                and type(result["schema"]) is int
-                and result["live_source_written"] is False
-                and result["live_apply_allowed"] is False
-                and type(result["status"]) is str
-                and result["status"] in STATUSES
-                and (
-                    result["reason"] is None
-                    or (
-                        type(result["reason"]) is str
-                        and 1 <= len(result["reason"]) <= 128
-                    )
-                )
-                and all(
-                    result[key] is None
-                    or (
-                        type(result[key]) is str
-                        and preflight.HASH.fullmatch(result[key])
-                    )
-                    for key in ("native_preview_id", "workspace_result_id")
-                )
-                and result
-                == _result(
-                    intent,
-                    result["status"],
-                    reason=result["reason"],
-                    native_preview_id=result["native_preview_id"],
-                    workspace_result_id=result["workspace_result_id"],
-                )
-                and (
-                    result["status"] != "applied"
-                    or (
-                        result["reason"] is None
-                        and type(result["native_preview_id"]) is str
-                        and preflight.HASH.fullmatch(result["native_preview_id"])
-                        and type(result["workspace_result_id"]) is str
-                        and preflight.HASH.fullmatch(result["workspace_result_id"])
-                    )
-                ),
-                RECOVERY,
-                "Native receipt has an invalid binding or schema",
-            )
-            if result["status"] == "applied":
-                _verify_applied(ctx, operation_id, intent, result)
-            return result
+        intent, result = _read_native_result(ctx, operation_id)
+        if result["status"] == "applied":
+            _verify_applied(ctx, operation_id, intent, result)
+        return result
 
 
 def _fresh(ctx, intent, preview, check):
@@ -528,15 +540,41 @@ def undo_native_workspace(ctx, operation_id, workspace_root):
 def restore_native_workspace(ctx, operation_id, workspace_root):
     """Explicitly recover an interrupted local publication to its backup only."""
     with authorized(ctx):
-        intent = _read_intent(ctx, operation_id)
+        intent, native_result = _read_native_result(ctx, operation_id)
         root = workspace._workspace_root(workspace_root)
         _require(
             str(root) == intent["request"]["workspace_root"],
             "METADATA_NATIVE_CONFLICT",
             "Restore targets a different workspace",
         )
+        try:
+            interrupted_undo = workspace._has_interrupted_undo(ctx, operation_id, root)
+        except CoreError as exc:
+            if exc.code == "METADATA_WORKSPACE_NOT_FOUND":
+                interrupted_undo = False
+            else:
+                raise
+        if interrupted_undo:
+            _require(
+                native_result["status"] in {"OUTCOME_UNKNOWN", "applied"},
+                RECOVERY,
+                "Restore requires an interrupted publication; completed apply uses undo",
+            )
+            if native_result["status"] == "applied":
+                _verify_applied(
+                    ctx,
+                    operation_id,
+                    intent,
+                    native_result,
+                    allow_unresolved=True,
+                )
+            # Core recovery completes the already-started undo from its sealed
+            # backup/stage. It never replays the native EDT operation.
+            return workspace.recover_workspace(
+                ctx, operation_id, root, target="original"
+            )
         _require(
-            get_native_apply_result(ctx, operation_id)["status"] == "OUTCOME_UNKNOWN",
+            native_result["status"] == "OUTCOME_UNKNOWN",
             RECOVERY,
             "Restore requires an interrupted publication; completed apply uses undo",
         )
