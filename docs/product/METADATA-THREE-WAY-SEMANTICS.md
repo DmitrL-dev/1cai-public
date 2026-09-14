@@ -26,6 +26,12 @@ semantic merging inside it:
 | `data_composition_schema` | `Ext/Template.xml`, `Template` or `CommonTemplate` owner, direct `TemplateType=DataCompositionSchema`, schema root in `http://v8.1c.ru/8.1/data-composition-system/schema` | Entire schema XML bytes; query text, fields, settings and expressions are unverified |
 | `extension` | Direct `ObjectBelonging`, `ExtendedConfigurationObject` or `ConfigurationExtensionPurpose` properties in Designer metadata | A sorted, serialized declaration group is fingerprinted; ownership against the base configuration is always `unsupported` with `extension_ownership_unverified` |
 
+Этот план остаётся read-only и не изменяет atomic boundary companion scopes.
+Отдельный [qualified materializer](METADATA-THREE-WAY.md) может собрать
+in-memory candidate только для доказанно раздельных прямых `Properties` самого
+Designer-объекта; BSL, формы, СКД, расширения и неподдержанные оболочки он
+блокирует до появления специализированной семантики и native-проверки.
+
 BSL paths currently include `Ext/Module.bsl` for common modules,
 `Ext/Form/Module.bsl` for forms, `Ext/ObjectModule.bsl` and
 `Ext/ManagerModule.bsl` for the explicitly enumerated metadata owner types,
@@ -60,7 +66,7 @@ ordinary child metadata names cannot make the enclosing identity ambiguous.
 Verification uses ordinary Python tests without starting 1C or EDT:
 
 ```powershell
-python -m pytest -q tests/unit/test_metadata_three_way.py tests/unit/test_metadata_three_way_semantics.py
+python -m pytest -q tests/unit/test_metadata_three_way.py tests/unit/test_metadata_three_way_semantics.py tests/unit/test_metadata_three_way_materialize.py
 python -m black --check rentgen_core/metadata_three_way.py tests/unit/test_metadata_three_way_semantics.py
 python -m ruff check rentgen_core/metadata_three_way.py tests/unit/test_metadata_three_way_semantics.py
 git diff --check

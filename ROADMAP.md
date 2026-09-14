@@ -39,7 +39,10 @@
 В ветке разработки добавлен [path-bytes three-way plan и candidate](docs/product/THREE-WAY-UPDATES.md)
 с bounded хэшами и явными конфликтами. Для безконфликтных решений можно
 получить проверенный candidate в памяти; он не заменяет native object/UUID
-merge и не выполняет запись.
+merge и не выполняет запись. Для Designer XML добавлен отдельный
+[qualified property candidate](docs/product/METADATA-THREE-WAY.md): он сохраняет
+прямые `Properties` при доказанно раздельных изменениях, а расширения, BSL,
+формы, СКД и неподдержанные оболочки блокирует.
 
 ## 4. Непрерывный аудит для команды и владельца
 

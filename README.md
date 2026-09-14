@@ -88,6 +88,9 @@ snapshot без повторного запуска Git/LLM; для статус
 Для обновлений есть [three-way plan и candidate](docs/product/THREE-WAY-UPDATES.md):
 он различает сохранение доработки, принятие upstream и конфликт по хэшу, а для
 однозначных path-level решений собирает bounded in-memory candidate с digest.
+Для Designer XML доступен отдельный [qualified property candidate](docs/product/METADATA-THREE-WAY.md),
+который объединяет только раздельные прямые `Properties` и сохраняет исходные
+namespace/QName-фрагменты.
 Исходное дерево при этом не меняется.
 Ни один из этих срезов не выполняет запись в рабочее дерево; живое применение
 и отмена в разработке.
