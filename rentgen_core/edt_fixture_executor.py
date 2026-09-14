@@ -700,17 +700,20 @@ def _get_fixture_result(ctx, operation_id, *, fixture_root, permissions):
                         RECOVERY,
                         "Fixture command receipt differs",
                     )
+                artifacts = {
+                    "candidate": _file_row(run / "candidate.cf"),
+                    "roundtrip_inventory": exported_inventory(
+                        run / "roundtrip",
+                        authorize=lambda: _check(ctx, permissions),
+                    ),
+                }
                 _require(
-                    result["artifacts"]
-                    == {
-                        "candidate": _file_row(run / "candidate.cf"),
-                        "roundtrip_inventory": exported_inventory(
-                            run / "roundtrip",
-                            authorize=lambda: _check(ctx, permissions),
-                        ),
-                    },
+                    artifacts["candidate"]["size"] > 0
+                    and bool(artifacts["roundtrip_inventory"])
+                    and canonical_bytes(result["artifacts"])
+                    == canonical_bytes(artifacts),
                     RECOVERY,
-                    "Fixture output differs from its receipt",
+                    "Fixture output is empty or differs from its receipt",
                 )
         except (KeyError, TypeError, ValueError) as exc:
             raise CoreError(RECOVERY, "Fixture result schema differs") from exc

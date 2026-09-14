@@ -220,6 +220,35 @@ def test_readback_rejects_foreign_resealed_receipt(fixture):
     assert error.value.code == "EDT_FIXTURE_RECOVERY_REQUIRED"
 
 
+@pytest.mark.parametrize("empty", ["candidate", "roundtrip"])
+def test_completed_readback_and_archive_reject_resealed_empty_artifacts(fixture, empty):
+    result = execute(fixture)
+    if empty == "candidate":
+        path = fixture.run / "candidate.cf"
+        path.write_bytes(b"")
+        result["artifacts"]["candidate"] = executor._file_row(path)
+    else:
+        (fixture.run / "roundtrip" / "Configuration.xml").unlink()
+        result["artifacts"]["roundtrip_inventory"] = []
+    result = executor._seal(
+        {key: value for key, value in result.items() if key != "result_id"},
+        "result_id",
+    )
+    (fixture.run / "report.json").write_bytes(canonical_bytes(result))
+    with pytest.raises(CoreError) as error:
+        read_result(fixture)
+    assert error.value.code == "EDT_FIXTURE_RECOVERY_REQUIRED"
+    with pytest.raises(CoreError) as error:
+        resources.archive_native_run(
+            fixture.ctx,
+            fixture.request.operation_id,
+            namespace="ibcmd-fixtures",
+            profile_id=result["profile_id"],
+        )
+    assert error.value.code == "EDT_FIXTURE_RECOVERY_REQUIRED"
+    assert not (fixture.root / "native-archive").exists()
+
+
 def test_input_and_binary_are_pinned_through_spawn(fixture):
     def attempt_write():
         for path in (
