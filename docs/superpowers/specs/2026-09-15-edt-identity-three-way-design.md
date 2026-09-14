@@ -26,12 +26,16 @@ configuration.
 
 ## Input contract
 
-Each input is a bounded canonical inventory envelope with `schema: 1`,
-`coverage: partial`, `identity_scope: snapshot_layer`, `owner_basis:
-direct_xml_containment_only`, and an `objects` list. Every object must contain
-the existing inventory identity fields: `canonical_uuid`, `observed_uuid`,
-`type`, `name`, `xml_path`, `owner`, `layer`, and `source_ref`; hashes and their
-sizes must be finite, non-negative integers and canonical SHA-256 strings.
+Each input is the current `edt-inventory.result` producer object with
+`parser: edt_identity_v1`, `coverage: partial`, `identity_scope: snapshot_layer`,
+`owner_basis: direct_xml_containment_only`, `layer_basis:
+pinned_snapshot_declaration`, and an `objects` list. There is no input `schema`
+field: the parser profile is the versioned identity contract. Every object must
+contain the existing inventory identity fields `canonical_uuid`,
+`observed_uuid`, `type`, `name`, `xml_path`, `owner`, `layer`, and `source_ref`.
+`source_ref.raw_sha256` is required; the current producer does not expose a
+source byte size, so the planner records `source_size_bytes: null` rather than
+inventing one. UUIDs and hashes are canonicalized and validated.
 
 The planner validates all three envelopes before producing any row. It rejects
 unknown or duplicate identity records, malformed UUIDs, missing owner/layer
@@ -82,9 +86,10 @@ version records without XML/property payload. The result explicitly states
 
 Add `rentgen edt-inventory-plan` as a separate read-only command. It requires
 `--registry`, `--project`, `--base-json`, `--current-json` and
-`--upstream-json`; each file is a UTF-8 canonical inventory object copied from
-the `result` field of `edt-inventory` (it is not the metadata-tree/base64
-envelope). The command does not resolve a snapshot and has no `--apply`,
+`--upstream-json`; each file is a UTF-8 inventory object copied unchanged from
+the `result` field of `edt-inventory` (it has `parser: edt_identity_v1` and is
+not the metadata-tree/base64 envelope). The command does not resolve a
+snapshot and has no `--apply`,
 `--output`, `--workspace`, `--operation-id`, native profile or caller-supplied
 source-root option.
 

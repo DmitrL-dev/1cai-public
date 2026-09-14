@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Inputs are UTF-8 inventory objects copied from `edt-inventory.result`, not metadata-tree/base64 envelopes.
+- Inputs are UTF-8 inventory objects copied unchanged from `edt-inventory.result`; they use `parser: edt_identity_v1` and are not metadata-tree/base64 envelopes.
 - Base, current and upstream snapshot IDs may differ; project IDs, identity bindings and source references must validate per version.
 - Identity key is `(layer.layer_id, canonical_uuid)`; type, owner UUID, owner path and layer changes fail closed as `unsupported`.
 - Actions are exactly `unchanged`, `same_change`, `keep_current`, `take_upstream`, `conflict`, and `unsupported`.
@@ -44,7 +44,7 @@
 
 - [ ] **Step 3: Implement strict limits and normalization.**
 
-  Define a frozen dataclass whose `__post_init__` rejects non-`int`, boolean, zero, negative and above-ceiling values with `CoreError("INVALID_QUERY_OPTIONS", ...)`. Normalize each envelope once: validate `schema == 1`, `coverage == "partial"`, `identity_scope`, `owner_basis`, project ID, snapshot reference shape, layer records and object records; canonicalize UUIDs and SHA-256 strings; reject duplicate `(layer_id, uuid)` keys, missing owner/layer/source evidence, unknown fields that can hide identity data, malformed hashes and non-finite sizes. Record each input’s exact canonical digest and retain no payload beyond identity evidence.
+  Define a frozen dataclass whose `__post_init__` rejects non-`int`, boolean, zero, negative and above-ceiling values with `CoreError("INVALID_QUERY_OPTIONS", ...)`. Normalize each envelope once: validate `parser == "edt_identity_v1"`, `coverage == "partial"`, `identity_scope`, `owner_basis`, `layer_basis`, project ID, snapshot reference shape, layer records and object records; canonicalize UUIDs and SHA-256 strings; reject duplicate `(layer_id, uuid)` keys, missing owner/layer/source evidence, unknown fields that can hide identity data, malformed hashes and non-finite sizes. The producer has no source byte size, so normalize `source_size_bytes` to `None`; never infer a size. Record each input’s exact canonical digest and retain no payload beyond identity evidence.
 
 - [ ] **Step 4: Implement action and unsupported semantics.**
 
