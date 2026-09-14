@@ -20,11 +20,16 @@ properties use `not_available`.
 
 The planner emits only hashes, sizes and names. It never writes a tree, resolves
 a conflict automatically or invokes 1С/EDT. BSL, forms, СКД and XML files that
-do not expose a supported UUID are listed in `unsupported_files`; callers must
-run the path planner or a type-specific adapter for them. The result has
+do not expose a supported UUID remain listed in `unsupported_files`, which
+describes files outside the original object view. Recognized companions also
+have UUID-bound `semantics` rows under the
+[companion scope contract](METADATA-THREE-WAY-SEMANTICS.md). The planner keeps
+these scopes atomic, including BSL modules that the materializer can qualify
+for a composite merge. The result has
 `coverage="partial"` until property-level merge beyond the qualified boundary
 below, UUID ownership across extensions,
-BSL edits and native test/rollback are all qualified.
+BSL semantics beyond the qualified text boundary and native test/rollback are
+all qualified.
 
 ```python
 from rentgen_core.metadata_three_way import plan_metadata_three_way
@@ -38,7 +43,7 @@ paths, collisions and oversized trees fail closed. This is the first semantic
 layer for configuration updates. DTD and ENTITY declarations are rejected
 before parsing; it is not a live apply authority.
 
-## Qualified in-memory property candidate
+## Qualified in-memory property and BSL candidate
 
 `rentgen_core.materialize_metadata_three_way(base, current, upstream)` builds a
 `dict[str, bytes]` candidate in memory. The planner and materializer capture each
@@ -67,9 +72,15 @@ their trailing whitespace. This is conservative qualification, not full Designer
 native round-trip validation.
 
 Other non-conflicting objects and ordinary paths retain atomic byte selection,
-including additions and deletions. Recognized BSL/form/schema companions must
-have supported, non-conflicting atomic scopes; the candidate's owner bindings
-are checked again after selection. Companion suffixes and `Ext` segments are
+including additions and deletions. Recognized BSL companions may additionally
+use the [qualified BSL composite contract](METADATA-THREE-WAY-SEMANTICS.md#qualified-bsl-materialization):
+all three versions must have the same owner UUID/type, owner XML path and
+companion path, with owner XML outside direct `Properties` unchanged. Direct
+properties retain the existing XML merge rules; all other blockers still apply.
+Exact BSL actions select original branch bytes. Forms and СКД companions remain
+atomic, and conflicting or unsupported scopes block the complete candidate.
+The candidate's owner bindings are checked again after selection.
+Companion suffixes and `Ext` segments are
 matched without case sensitivity, and owner lookup uses canonical path identity.
 Evidence retains the original paths and scope spelling. Orphan `Ext/Form.xml`
 and `Ext/Template.xml` scopes are rejected in every casing, including at the tree
@@ -82,9 +93,13 @@ The returned result has `schema: 1`, `scope: "metadata-properties-v1"`,
 `status: "ready"`, the three input digests, `candidate_digest`, and `candidate`.
 `counts` reports input objects, semantically merged objects, candidate files and
 the original path actions (which may include conflicts resolved by the qualified
-property merge). `merged_objects` provides at most 256 UUID/path/hash/size
+property or BSL merge). `merged_objects` describes merged XML objects only and
+provides at most 256 UUID/path/hash/size
 evidence rows; `merged_objects_truncated` indicates omitted rows. Candidate
-paths and file/total-byte limits are validated again before returning.
+paths and file/total-byte limits are validated again before returning. When a
+BSL composite is merged, the result also includes `merged_bsl_scopes`,
+`counts.merged_bsl_scopes` and `merged_bsl_scopes_truncated` as specified by the
+companion scope contract.
 
 Any unresolved or unsupported scope raises `CoreError` before exposing a partial
 candidate. Conflict details contain at most 256 `blocking_scopes`, the full

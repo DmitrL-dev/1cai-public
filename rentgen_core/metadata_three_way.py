@@ -1,4 +1,4 @@
-"""Conservative UUID-aware planning and qualified Designer property merging."""
+"""UUID-aware planning and qualified Designer property/companion BSL merging."""
 
 from dataclasses import asdict, dataclass
 import copy
@@ -6,6 +6,7 @@ import re
 import xml.etree.ElementTree as ET
 from xml.parsers import expat
 
+from .bsl_three_way import _MAX_BYTES as _MAX_BSL_BYTES, materialize_bsl_three_way
 from .errors import CoreError
 from .manifests import sha256
 from .source_paths import collision_key
@@ -718,6 +719,32 @@ def _raise_merge_blockers(blockers):
     )
 
 
+def _bsl_merge_reason(row, trees, records):
+    """Qualify only present, stable companions with unchanged owner envelopes."""
+    paths = [row[label + "_path"] for label in trees]
+    if paths[0] is None or any(path != paths[0] for path in paths[1:]):
+        return "bsl_scope_path_changed"
+    key = (row["object_type"], row["object_uuid"])
+    values = [records[label].get(key) for label in trees]
+    if any(value is None for value in values):
+        return "bsl_owner_binding_incomplete"
+    if any(value["path"] != values[0]["path"] for value in values[1:]):
+        return "bsl_owner_path_changed"
+    if _unscoped_action(values) != "unchanged":
+        return "bsl_owner_unscoped_content"
+    if any(value["raw"] != values[0]["raw"] for value in values[1:]):
+        # The semantic fingerprint omits the outer wrapper and XML comments.
+        # Compare the existing qualified byte envelopes before combining BSL
+        # with owner changes; only direct Properties may differ.
+        try:
+            layouts = [_property_layout(value["raw"]) for value in values]
+        except _UnsupportedPropertyMerge:
+            return "bsl_owner_layout_unsupported"
+        if any(layout[:2] != layouts[0][:2] for layout in layouts[1:]):
+            return "bsl_owner_unscoped_content"
+    return None
+
+
 def materialize_metadata_three_way(
     base,
     current,
@@ -729,9 +756,10 @@ def materialize_metadata_three_way(
 ):
     """Return a qualified in-memory candidate; never expose a partial merge.
 
-    Only disjoint direct Designer Properties may resolve an object conflict.
-    Other objects and recognized companions remain atomic; unsupported scopes
-    fail closed. All planning and selection use the same validated snapshots.
+    Disjoint direct Designer Properties may resolve an object conflict. BSL
+    text may merge only under stable owner/scope paths and unchanged owner XML
+    outside those Properties. Other companions remain atomic; unsupported
+    scopes fail closed. Planning and selection use the same validated snapshots.
     """
     limits = dict(
         max_files=max_files,
@@ -741,6 +769,7 @@ def materialize_metadata_three_way(
     snapshots = _prepare_trees(base, current, upstream, **limits)
     plan, path_plan, trees, records = _metadata_plan(snapshots, max_files=max_files)
     blockers, merged, covered_paths = [], [], set()
+    bsl_scopes, merged_bsl = [], []
     owners = {}
     for label, tree in trees.items():
         by_path = {value["path"]: key for key, value in records[label].items()}
@@ -762,11 +791,22 @@ def materialize_metadata_three_way(
             blockers.append({"path": path, "reason": "object_identity_changed"})
     for row in plan["semantics"]["scopes"]:
         if row["status"] != "supported":
+            reason = row["reason"]
+            if (
+                row["kind"] == "bsl"
+                and row["status"] == "conflict"
+                and reason == "atomic_overlap"
+            ):
+                reason = _bsl_merge_reason(row, trees, records)
+                if reason is None:
+                    bsl_scopes.append(row)
+                    covered_paths.add(row["base_path"])
+                    continue
             blockers.append(
                 {
                     "object_uuid": row["object_uuid"],
                     "scope": row["scope"],
-                    "reason": row["reason"],
+                    "reason": reason,
                 }
             )
     for row in plan["objects"]:
@@ -798,6 +838,25 @@ def materialize_metadata_three_way(
             blockers.append({"path": row["path"], "reason": "path_conflict"})
     _raise_merge_blockers(blockers)
 
+    for row in bsl_scopes:
+        path = row["base_path"]
+        try:
+            result = materialize_bsl_three_way(
+                *(tree[path] for tree in trees.values()),
+                max_bytes=min(max_file_bytes, _MAX_BSL_BYTES),
+            )
+        except CoreError as exc:
+            blockers.append(
+                {
+                    "object_uuid": row["object_uuid"],
+                    "scope": row["scope"],
+                    "reason": "bsl_" + exc.details["reason"],
+                }
+            )
+            continue
+        merged_bsl.append((row, path, result["candidate"]))
+    _raise_merge_blockers(blockers)
+
     candidate = {}
     for row in path_plan["changes"]:
         path = row["path"]
@@ -807,6 +866,8 @@ def materialize_metadata_three_way(
         if path in source:
             candidate[path] = source[path]
     for key, path, raw in merged:
+        candidate[path] = raw
+    for row, path, raw in merged_bsl:
         candidate[path] = raw
     normalized = _tree(candidate, "candidate", **limits)
     candidate_records, _ = _records(candidate, "candidate")
@@ -824,7 +885,7 @@ def materialize_metadata_three_way(
         }
         for key, path, raw in merged[:_MAX_MERGE_EVIDENCE]
     ]
-    return {
+    result = {
         "schema": 1,
         "scope": "metadata-properties-v1",
         "status": "ready",
@@ -842,3 +903,18 @@ def materialize_metadata_three_way(
         "merged_objects": evidence,
         "merged_objects_truncated": len(merged) > _MAX_MERGE_EVIDENCE,
     }
+    if merged_bsl:
+        result["counts"]["merged_bsl_scopes"] = len(merged_bsl)
+        result["merged_bsl_scopes"] = [
+            {
+                "object_type": row["object_type"],
+                "object_uuid": row["object_uuid"],
+                "scope": row["scope"],
+                "candidate_path": path,
+                "candidate_sha256": sha256(raw),
+                "candidate_size_bytes": len(raw),
+            }
+            for row, path, raw in merged_bsl[:_MAX_MERGE_EVIDENCE]
+        ]
+        result["merged_bsl_scopes_truncated"] = len(merged_bsl) > _MAX_MERGE_EVIDENCE
+    return result

@@ -51,7 +51,65 @@ def _identity(path, *, directory=False, code="METADATA_WORKSPACE_CONFLICT"):
 
 
 @contextmanager
-def _workspace_lock(root):
+def _workspace_mutex(root):
+    """Serialize admission reads with writers without creating a workspace file."""
+    if os.name != "nt":
+        yield
+        return
+    import ctypes
+
+    code = "METADATA_WORKSPACE_LOCK_INVALID"
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    create_mutex = kernel32.CreateMutexW
+    create_mutex.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_wchar_p]
+    create_mutex.restype = ctypes.c_void_p
+    wait = kernel32.WaitForSingleObject
+    wait.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+    wait.restype = ctypes.c_uint32
+    release = kernel32.ReleaseMutex
+    release.argtypes = [ctypes.c_void_p]
+    release.restype = ctypes.c_int
+    close = kernel32.CloseHandle
+    close.argtypes = [ctypes.c_void_p]
+    close.restype = ctypes.c_int
+    root = Path(root)
+    identity = _identity(root, directory=True, code="METADATA_WORKSPACE_LOCK_INVALID")
+    name = f"Global\\RentgenWorkspace-{identity[0]:x}-{identity[1]:x}"
+    handle = create_mutex(None, 0, name)
+    if not handle:
+        raise CoreError(code, "Workspace admission mutex could not be created")
+    acquired = False
+    try:
+        result = wait(handle, 0)
+        if result == 0x102:  # WAIT_TIMEOUT
+            raise CoreError(
+                code="METADATA_WORKSPACE_BUSY",
+                message="Another workspace operation is active",
+            )
+        _require(
+            result in {0, 0x80},
+            code,
+            "Workspace admission mutex could not be acquired",
+        )
+        acquired = True
+        yield
+    finally:
+        if acquired:
+            release(handle)
+        close(handle)
+
+
+@contextmanager
+def _workspace_lock(root, *, before_lock=None):
+    with _workspace_mutex(root):
+        if before_lock is not None:
+            before_lock()
+        with _workspace_lock_impl(root) as check:
+            yield check
+
+
+@contextmanager
+def _workspace_lock_impl(root):
     """One cooperative writer per owned workspace; never remove the lock file."""
     code = "METADATA_WORKSPACE_LOCK_INVALID"
     root = Path(root)
@@ -161,8 +219,20 @@ def _workspace_operation(function):
         )
         root_identity = _identity(root, directory=True)
         tree_identity = _identity(_tree(root), directory=True)
-        _prevalidate_marker(ctx, operation_id, root)
-        with _workspace_lock(root) as identity_check:
+
+        def admission():
+            marker = _prevalidate_marker(ctx, operation_id, root)
+            if not os.path.lexists(root / "workspace-operation.lock"):
+                # Reject imported receipts before creating even the lock file.
+                _validated_receipts(
+                    ctx,
+                    operation_id,
+                    root,
+                    marker,
+                    receipt_reader=_read_sealed_admission,
+                )
+
+        with _workspace_lock(root, before_lock=admission) as identity_check:
             _require(
                 _identity(root, directory=True) == root_identity
                 and _identity(_tree(root), directory=True) == tree_identity,
@@ -171,7 +241,8 @@ def _workspace_operation(function):
             )
             # Retained marker reads pin root and must not run in a losing caller:
             # those pins can block an admitted writer's receipt replacement.
-            root, _ = _load_root(ctx, operation_id, root)
+            root, marker = _load_root(ctx, operation_id, root)
+            _validated_receipts(ctx, operation_id, root, marker)
 
             def boundary(*paths):
                 _check(ctx)
@@ -382,7 +453,9 @@ def _prevalidate_marker(ctx, operation_id, root):
                 code,
                 "Workspace marker changed during admission",
             )
-        _validate_marker(ctx, operation_id, root, _parse_sealed(raw, "marker_id"))
+        marker = _parse_sealed(raw, "marker_id")
+        _validate_marker(ctx, operation_id, root, marker)
+        return marker
     except (CoreError, OSError, ValueError, TypeError) as exc:
         raise CoreError(
             code, "Workspace ownership marker is absent or invalid"
@@ -402,6 +475,90 @@ def _read_sealed(path, key):
             "METADATA_WORKSPACE_RECOVERY_REQUIRED",
             "Workspace receipt is incomplete or changed",
         ) from exc
+
+
+def _read_sealed_admission(path, key):
+    """Read one receipt without retaining Windows pins before lock admission.
+
+    The full pinned reader remains the authority after ``_workspace_lock`` is
+    acquired. This short no-follow read only lets admission reject an imported
+    receipt without holding a root/receipt handle while another writer may be
+    acquiring the lock.
+    """
+    code = "METADATA_WORKSPACE_RECOVERY_REQUIRED"
+    try:
+        identity = _identity(path, code=code)
+        descriptor = _open_admission_read(path)
+        try:
+            info = os.fstat(descriptor)
+            _require(
+                stat.S_ISREG(info.st_mode)
+                and info.st_nlink == 1
+                and (info.st_dev, info.st_ino) == identity
+                and info.st_size <= MAX_RECORD,
+                code,
+                "Workspace receipt is unsafe or too large",
+            )
+            raw = os.read(descriptor, MAX_RECORD + 1)
+            _require(
+                len(raw) <= MAX_RECORD and _identity(path, code=code) == identity,
+                code,
+                "Workspace receipt changed during admission",
+            )
+        finally:
+            os.close(descriptor)
+        return _parse_sealed(raw, key)
+    except (CoreError, OSError, ValueError, TypeError) as exc:
+        if isinstance(exc, CoreError) and exc.code == code:
+            raise
+        raise CoreError(code, "Workspace receipt is incomplete or changed") from exc
+
+
+def _open_admission_read(path):
+    """Open a receipt without denying an admitted writer's replacement.
+
+    ``os.open`` on Windows requests the CRT's default share mode, which can
+    deny ``os.replace`` while an admission read is in progress.  Use a native
+    handle with FILE_SHARE_DELETE for this short, pre-lock read; the final
+    pinned read after admission remains authoritative.
+    """
+    if os.name != "nt":
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+        flags |= getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+        return os.open(path, flags)
+    import ctypes
+    import msvcrt
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    create_file = kernel32.CreateFileW
+    create_file.argtypes = [
+        ctypes.c_wchar_p,
+        ctypes.c_uint32,
+        ctypes.c_uint32,
+        ctypes.c_void_p,
+        ctypes.c_uint32,
+        ctypes.c_uint32,
+        ctypes.c_void_p,
+    ]
+    create_file.restype = ctypes.c_void_p
+    handle = create_file(
+        str(path),
+        0x80000000,  # GENERIC_READ
+        0x00000001 | 0x00000002 | 0x00000004,  # share read/write/delete
+        None,
+        3,  # OPEN_EXISTING
+        0x00200000,  # FILE_FLAG_OPEN_REPARSE_POINT
+        None,
+    )
+    invalid = ctypes.c_void_p(-1).value
+    if handle == invalid:
+        error = ctypes.get_last_error()
+        raise OSError(error, "CreateFileW failed", str(path))
+    try:
+        return msvcrt.open_osfhandle(int(handle), os.O_RDONLY | os.O_BINARY)
+    except BaseException:
+        kernel32.CloseHandle(handle)
+        raise
 
 
 def _inventory(root, check, *, allow_empty=False):
@@ -720,6 +877,224 @@ def _ensure_clean_phase(root):
         )
 
 
+def _receipt_matches(saved, expected, key):
+    _require(
+        type(saved.get("schema")) is int
+        and type(saved.get("created_at")) is str
+        and 1 <= len(saved["created_at"]) <= 64
+        and saved == _seal({**expected, "created_at": saved["created_at"]}, key),
+        "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+        "Workspace receipt does not match its operation or inventories",
+    )
+
+
+def _workspace_binding(root, marker):
+    return {"workspace_root": str(root), "marker_id": marker["marker_id"]}
+
+
+def _has_workspace_binding(record):
+    return "workspace_root" in record or "marker_id" in record
+
+
+def _legacy_recovery_receipt(recovery):
+    return _seal(
+        {
+            key: value
+            for key, value in recovery.items()
+            if key not in {"workspace_root", "marker_id", "recovery_id"}
+        },
+        "recovery_id",
+    )
+
+
+def _validate_state_receipt(record, common, original, candidate, receipts):
+    phase = record.get("phase")
+    pointers = {key for key in ("result_id", "undo_id", "recovery_id") if key in record}
+    _require(
+        type(phase) is str
+        and phase in {"applying", "undoing", "complete"}
+        and len(pointers) == (1 if phase == "complete" else 0),
+        "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+        "Workspace state has an unsupported phase or receipt reference",
+    )
+    undoing = phase == "undoing" or pointers == {"undo_id"}
+    if not _has_workspace_binding(record):
+        # Legacy phase records have no independent workspace authority. Only a
+        # complete state's exact reference to a rooted result/undo is provable.
+        _require(
+            phase == "complete" and pointers in ({"result_id"}, {"undo_id"}),
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Legacy interrupted workspace state has no provable workspace binding",
+        )
+        common = {
+            key: value
+            for key, value in common.items()
+            if key not in {"workspace_root", "marker_id"}
+        }
+    if undoing:
+        _require(
+            receipts["result"] is not None,
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Undo state has no applied receipt",
+        )
+    expected = {
+        **common,
+        "phase": phase,
+        "before_digest": candidate if undoing else original,
+        "after_digest": original if undoing else candidate,
+    }
+    for key in pointers:
+        receipt = receipts[key.removesuffix("_id")]
+        _require(
+            receipt is not None,
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Workspace state references an absent receipt",
+        )
+        expected[key] = receipt[key]
+    _receipt_matches(record, expected, "state_id")
+
+
+def _validated_receipts(
+    ctx, operation_id, root, marker, *, receipt_reader=_read_sealed
+):
+    """Validate historical authority without requiring a fresh live project head.
+
+    Interrupted writes may leave both old and pending state, or a durable result
+    before its complete state. Validate each against the same retained intent
+    and inventories; recovery still decides which transition can resume.
+    """
+    from . import metadata_apply as apply
+
+    paths = {
+        "state": (_state_path(root), "state_id"),
+        "result": (_result_path(root), "result_id"),
+        "undo": (_undo_path(root), "undo_id"),
+        "recovery": (_recovery_path(root), "recovery_id"),
+        "pending_state": (_state_path(root).with_suffix(".json.tmp"), "state_id"),
+        "pending_recovery": (
+            _recovery_path(root).with_suffix(".json.tmp"),
+            "recovery_id",
+        ),
+    }
+    receipts = {
+        name: receipt_reader(path, key) if path.exists() else None
+        for name, (path, key) in paths.items()
+    }
+    if not any(value is not None for value in receipts.values()):
+        return receipts
+    intent, preflight = apply._load(ctx, operation_id)
+    preview = get_preview(ctx, marker["preview_operation_id"])
+    original_rows = marker["original_inventory"]
+    candidate_rows = preview["preview"]["inventories"]["candidate"]
+    _require(
+        preflight["status"] == "unavailable"
+        and intent["request"]["preview_operation_id"] == marker["preview_operation_id"]
+        and intent["request"]["expected_preview_id"] == marker["preview_id"]
+        and intent["binding"] == apply._binding(preview)
+        and preview["preview"]["inventories"]["original"] == original_rows,
+        "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+        "Workspace receipts differ from the retained preflight or preview",
+    )
+    common = {
+        "schema": SCHEMA,
+        "project_id": ctx.project_id,
+        "operation_id": operation_id,
+        "preview_id": marker["preview_id"],
+    }
+    bound_common = {**common, **_workspace_binding(root, marker)}
+    original, candidate = marker["original_digest"], _digest(candidate_rows)
+    result = receipts["result"]
+    if result is not None:
+        _require(
+            result.get("workspace_source_written") is True
+            and result.get("live_source_written") is False
+            and ("recovered" not in result or result["recovered"] is True)
+            and (
+                receipts["state"] is not None
+                or receipts["pending_state"] is not None
+                or (
+                    result.get("recovered") is True
+                    and receipts["recovery"] is not None
+                    and receipts["recovery"].get("target") == "candidate"
+                )
+            ),
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Applied receipt has invalid write flags or no owning state",
+        )
+        _receipt_matches(
+            result,
+            {
+                **common,
+                "intent_id": intent["intent_id"],
+                "status": "applied",
+                "workspace_root": str(root),
+                "before_digest": original,
+                "after_digest": candidate,
+                "changed_paths": _changed_paths(original_rows, candidate_rows),
+                "workspace_source_written": True,
+                "live_source_written": False,
+                **({"recovered": True} if "recovered" in result else {}),
+            },
+            "result_id",
+        )
+    if receipts["undo"] is not None:
+        _require(
+            result is not None
+            and type(receipts["undo"].get("schema")) is int
+            and receipts["undo"].get("live_source_written") is False,
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Undo receipt has no applied authority or has invalid flags",
+        )
+        _undo_receipt(
+            ctx,
+            operation_id,
+            root,
+            marker,
+            result,
+            previous=receipts["undo"],
+        )
+    for name in ("recovery", "pending_recovery"):
+        recovery = receipts[name]
+        if recovery is None:
+            continue
+        target = recovery.get("target")
+        _require(
+            type(target) is str and target in {"original", "candidate"},
+            "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+            "Workspace recovery target is unsupported",
+        )
+        recovery_common = bound_common
+        if not _has_workspace_binding(recovery):
+            # Final undo recovery is reproducible from its rooted undo receipt,
+            # including the immutable timestamp. An unattached legacy recovery
+            # cannot prove where it originated, even when its tree digest fits.
+            undo = receipts["undo"]
+            _require(
+                undo is not None
+                and target == "original"
+                and recovery.get("created_at") == undo["created_at"],
+                "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+                "Legacy recovery receipt has no provable workspace binding",
+            )
+            recovery_common = common
+        _receipt_matches(
+            recovery,
+            {
+                **recovery_common,
+                "status": "recovered",
+                "target": target,
+                "restored_digest": original if target == "original" else candidate,
+            },
+            "recovery_id",
+        )
+    for name in ("state", "pending_state"):
+        if receipts[name] is not None:
+            _validate_state_receipt(
+                receipts[name], bound_common, original, candidate, receipts
+            )
+    return receipts
+
+
 @_workspace_operation
 def apply_workspace(ctx, operation_id, workspace_root):
     """Apply a retained candidate to an owned workspace with file-level CAS."""
@@ -818,6 +1193,7 @@ def apply_workspace(ctx, operation_id, workspace_root):
                 "project_id": ctx.project_id,
                 "operation_id": operation_id,
                 "preview_id": marker["preview_id"],
+                **_workspace_binding(root, marker),
                 "phase": "applying",
                 "before_digest": _digest(original_rows),
                 "after_digest": _digest(candidate_rows),
@@ -934,6 +1310,8 @@ def recover_workspace(ctx, operation_id, workspace_root, *, target):
                 "project_id",
                 "operation_id",
                 "preview_id",
+                "workspace_root",
+                "marker_id",
                 "status",
                 "target",
                 "restored_digest",
@@ -1039,6 +1417,7 @@ def recover_workspace(ctx, operation_id, workspace_root, *, target):
                     "project_id": ctx.project_id,
                     "operation_id": operation_id,
                     "preview_id": marker["preview_id"],
+                    **_workspace_binding(root, marker),
                     "status": "recovered",
                     "target": "candidate",
                     "restored_digest": _digest(candidate_rows),
@@ -1055,6 +1434,7 @@ def recover_workspace(ctx, operation_id, workspace_root, *, target):
                     "project_id": ctx.project_id,
                     "operation_id": operation_id,
                     "preview_id": marker["preview_id"],
+                    **_workspace_binding(root, marker),
                     "phase": "complete",
                     "before_digest": _digest(marker["original_inventory"]),
                     "after_digest": _digest(candidate_rows),
@@ -1114,6 +1494,7 @@ def recover_workspace(ctx, operation_id, workspace_root, *, target):
                 "project_id": ctx.project_id,
                 "operation_id": operation_id,
                 "preview_id": marker["preview_id"],
+                **_workspace_binding(root, marker),
                 "status": "recovered",
                 "target": target,
                 "restored_digest": _digest(rows),
@@ -1160,6 +1541,7 @@ def recover_workspace(ctx, operation_id, workspace_root, *, target):
             "project_id": ctx.project_id,
             "operation_id": operation_id,
             "preview_id": marker["preview_id"],
+            **_workspace_binding(root, marker),
             "phase": "complete",
             "before_digest": _digest(original_rows),
             "after_digest": _digest(candidate_rows),
@@ -1181,7 +1563,7 @@ def recover_workspace(ctx, operation_id, workspace_root, *, target):
     return recovery
 
 
-def _undo_receipt(ctx, operation_id, root, marker, result):
+def _undo_receipt(ctx, operation_id, root, marker, result, *, previous=None):
     value = {
         "schema": SCHEMA,
         "project_id": ctx.project_id,
@@ -1194,7 +1576,8 @@ def _undo_receipt(ctx, operation_id, root, marker, result):
         "live_source_written": False,
     }
     if _undo_path(root).exists():
-        previous = _read_sealed(_undo_path(root), "undo_id")
+        if previous is None:
+            previous = _read_sealed(_undo_path(root), "undo_id")
         _require(
             set(previous) == set(value) | {"created_at", "undo_id"}
             and type(previous.get("created_at")) is str
@@ -1254,6 +1637,7 @@ def _recover_undo(ctx, operation_id, root, marker, state, pending, target):
             "project_id": ctx.project_id,
             "operation_id": operation_id,
             "preview_id": marker["preview_id"],
+            **_workspace_binding(root, marker),
             "status": "recovered",
             "target": "original",
             "restored_digest": marker["original_digest"],
@@ -1264,6 +1648,14 @@ def _recover_undo(ctx, operation_id, root, marker, state, pending, target):
     previous_recovery = None
     if _recovery_path(root).exists():
         previous_recovery = _read_sealed(_recovery_path(root), "recovery_id")
+        if not _has_workspace_binding(previous_recovery):
+            legacy = _legacy_recovery_receipt(recovery)
+            _require(
+                previous_recovery == legacy,
+                "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+                "Legacy recovery differs from the rooted undo receipt",
+            )
+            recovery = legacy
         _require(
             set(previous_recovery) == set(recovery)
             and all(
@@ -1288,8 +1680,11 @@ def _recover_undo(ctx, operation_id, root, marker, state, pending, target):
         )
     recovery_temp = _recovery_path(root).with_name(_recovery_path(root).name + ".tmp")
     if recovery_temp.exists():
+        temporary_recovery = _read_sealed(recovery_temp, "recovery_id")
+        if not _has_workspace_binding(temporary_recovery):
+            recovery = _legacy_recovery_receipt(recovery)
         _require(
-            _read_sealed(recovery_temp, "recovery_id") == recovery,
+            temporary_recovery == recovery,
             "METADATA_WORKSPACE_RECOVERY_REQUIRED",
             "Pending recovery receipt differs from the confirmed undo",
         )
@@ -1310,6 +1705,14 @@ def _recover_undo(ctx, operation_id, root, marker, state, pending, target):
         }
         if record.get("phase") == "complete":
             fields.add("result_id" if original_phase else "undo_id")
+        if _has_workspace_binding(record):
+            fields.update(_workspace_binding(root, marker))
+        else:
+            _require(
+                record.get("phase") == "complete",
+                "METADATA_WORKSPACE_RECOVERY_REQUIRED",
+                "Legacy interrupted undo state has no workspace binding",
+            )
         _require(
             set(record) == fields
             and type(record.get("created_at")) is str
@@ -1317,6 +1720,11 @@ def _recover_undo(ctx, operation_id, root, marker, state, pending, target):
             and record.get("project_id") == ctx.project_id
             and record.get("operation_id") == operation_id
             and record.get("preview_id") == marker["preview_id"]
+            and all(
+                record.get(key) == value
+                for key, value in _workspace_binding(root, marker).items()
+                if key in fields
+            )
             and record.get("phase") in {"undoing", "complete"}
             and record.get("before_digest")
             == (marker["original_digest"] if original_phase else result["after_digest"])
@@ -1362,6 +1770,7 @@ def _recover_undo(ctx, operation_id, root, marker, state, pending, target):
             "project_id": ctx.project_id,
             "operation_id": operation_id,
             "preview_id": marker["preview_id"],
+            **_workspace_binding(root, marker),
             "phase": "undoing",
             "before_digest": result["after_digest"],
             "after_digest": marker["original_digest"],
@@ -1387,7 +1796,8 @@ def undo_workspace(ctx, operation_id, workspace_root):
     root, marker = _load_root(ctx, operation_id, workspace_root)
     _ensure_clean_phase(root)
     if _undo_path(root).exists():
-        previous = _read_sealed(_undo_path(root), "undo_id")
+        result = _read_sealed(_result_path(root), "result_id")
+        previous = _undo_receipt(ctx, operation_id, root, marker, result)
         _require(
             previous["status"] == "undone",
             "METADATA_WORKSPACE_RECOVERY_REQUIRED",
@@ -1423,6 +1833,7 @@ def undo_workspace(ctx, operation_id, workspace_root):
             "project_id": ctx.project_id,
             "operation_id": operation_id,
             "preview_id": marker["preview_id"],
+            **_workspace_binding(root, marker),
             "phase": "undoing",
             "before_digest": result["after_digest"],
             "after_digest": marker["original_digest"],
@@ -1451,30 +1862,14 @@ def undo_workspace(ctx, operation_id, workspace_root):
 def get_workspace_status(ctx, operation_id, workspace_root):
     _check(ctx)
     validate_operation_id(operation_id)
-    root, marker = _load_root(ctx, operation_id, workspace_root)
-    state = (
-        _read_sealed(_state_path(root), "state_id")
-        if _state_path(root).exists()
-        else None
-    )
-    result = (
-        _read_sealed(_result_path(root), "result_id")
-        if _result_path(root).exists()
-        else None
-    )
-    undo = (
-        _read_sealed(_undo_path(root), "undo_id") if _undo_path(root).exists() else None
-    )
-    recovery = (
-        _read_sealed(_recovery_path(root), "recovery_id")
-        if _recovery_path(root).exists()
-        else None
-    )
+    root = _workspace_root(workspace_root)
+    _owned_paths(ctx, root)
+    _require(root.is_dir(), "METADATA_WORKSPACE_NOT_FOUND", "Owned workspace is absent")
+    with _workspace_mutex(root):
+        root, marker = _load_root(ctx, operation_id, root)
+        receipts = _validated_receipts(ctx, operation_id, root, marker)
     _check(ctx)
     return {
         "marker": marker,
-        "state": state,
-        "result": result,
-        "undo": undo,
-        "recovery": recovery,
+        **{name: receipts[name] for name in ("state", "result", "undo", "recovery")},
     }

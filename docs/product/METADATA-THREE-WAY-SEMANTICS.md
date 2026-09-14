@@ -16,8 +16,7 @@ the UUID at the same companion path produces `owner_identity_changed`; retaining
 the companion while losing its descriptor produces `owner_binding_incomplete`
 on the bound row and `owner_not_found` on an unbound row.
 
-The supported boundary is atomic comparison of the entire companion, not
-semantic merging inside it:
+The planner's supported boundary is atomic comparison of the entire companion:
 
 | Kind | Required shape | Boundary |
 | --- | --- | --- |
@@ -28,9 +27,10 @@ semantic merging inside it:
 
 Этот план остаётся read-only и не изменяет atomic boundary companion scopes.
 Отдельный [qualified materializer](METADATA-THREE-WAY.md) может собрать
-in-memory candidate только для доказанно раздельных прямых `Properties` самого
-Designer-объекта; BSL, формы, СКД, расширения и неподдержанные оболочки он
-блокирует до появления специализированной семантики и native-проверки.
+in-memory candidate для доказанно раздельных прямых `Properties` самого
+Designer-объекта и привязанных к владельцу BSL-модулей по узкому контракту ниже.
+Формы и СКД остаются атомарными; конфликты в них, расширения и неподдержанные
+оболочки блокируют весь candidate.
 
 BSL paths currently include `Ext/Module.bsl` for common modules,
 `Ext/Form/Module.bsl` for forms, `Ext/ObjectModule.bsl` and
@@ -63,11 +63,68 @@ DTD/ENTITY declarations fail closed; declaration scanning also covers UTF-16/32
 byte layouts. Names come only from the object's direct `Properties/Name`, so
 ordinary child metadata names cannot make the enclosing identity ambiguous.
 
+## Qualified BSL materialization
+
+`materialize_metadata_three_way` delegates a conflicting BSL companion to the
+pure [BSL text primitive](BSL-THREE-WAY.md) only after the existing semantic gate
+recognizes its module scope, owner type/namespace and UTF-8 bytes without NUL.
+The read-only plan still reports that companion as `atomic_overlap`; the
+materializer does not rewrite plan actions or claim native BSL validation.
+
+A composite merge requires all three versions of the companion and owner,
+the same owner UUID/type, exactly the same owner XML path, and exactly the same
+companion path in all snapshots. Moves, missing versions and changed bindings
+cannot use text merging to resolve their conflict. Unchanged scope casing may
+use any already recognized spelling; casing drift still meets the existing
+path validation rules.
+
+Owner XML outside direct `Properties` must be unchanged. This includes the
+existing unscoped fingerprint and, when owner bytes differ, the qualified byte
+envelope around `Properties`; wrapper attributes, comments outside properties,
+and properties-container attributes cannot slip past semantic fingerprints.
+Direct property changes, including `Name`, retain their existing exact-selection
+or qualified disjoint-property merge rules. An XML property overlap, unsupported
+form/template/extension, unknown companion, or unrelated path conflict still
+blocks the complete tree before any BSL primitive is invoked.
+
+Exact `unchanged`, `same_change`, `keep_current` and `take_upstream` companion
+actions retain their existing selection of original branch bytes. This includes
+supported additions, deletions and one-sided moves. They do not invoke the text
+primitive or normalize BOM/newlines. Owner, encoding and metadata tree limits
+are still checked, including versions not selected for the candidate.
+
+For composite BSL only, the primitive receives
+`max_bytes=min(max_file_bytes, 16 * 1024 * 1024)`. A caller can lower this bound
+but cannot raise the primitive's default byte, line, line-size or diff-work
+limits. Its overlapping/touching edits, same-anchor insertions, BOM/newline
+changes and resource-limit rejections become payload-free metadata blockers
+with a `bsl_` reason prefix, for example `bsl_overlapping_edits` or
+`bsl_candidate_byte_limit`. They raise `THREE_WAY_CONFLICT` with the existing
+bounded `blocking_scopes` evidence. Metadata input/final-tree limit failures
+continue to use `THREE_WAY_LIMIT`.
+
+The result keeps `schema: 1` and `scope: "metadata-properties-v1"`, and returns
+one complete `candidate` tree only after file/total limits, paths, UUID uniqueness
+and resulting companion bindings are rechecked. It adds `merged_bsl_scopes`
+hash/size/path/owner evidence, `counts.merged_bsl_scopes`, and
+`merged_bsl_scopes_truncated` only when at least one BSL composite was merged;
+results without a BSL composite retain their existing field set. The evidence
+is limited to 256 rows without truncating the candidate. Existing
+`merged_objects` counts and evidence continue to describe merged XML objects
+only. A rejected module never exposes a partial
+tree, BSL source text or another successfully merged scope's candidate.
+
+This operation reads only the captured in-memory snapshots. It performs no
+filesystem, 1C or EDT writes and does not run a BSL parser, compiler or native
+validation command. Applying or executing its candidate remains outside this
+contract.
+
 Verification uses ordinary Python tests without starting 1C or EDT:
 
 ```powershell
-python -m pytest -q tests/unit/test_metadata_three_way.py tests/unit/test_metadata_three_way_semantics.py tests/unit/test_metadata_three_way_materialize.py
-python -m black --check rentgen_core/metadata_three_way.py tests/unit/test_metadata_three_way_semantics.py
-python -m ruff check rentgen_core/metadata_three_way.py tests/unit/test_metadata_three_way_semantics.py
+python -m pytest -q tests/unit/test_metadata_three_way.py tests/unit/test_metadata_three_way_semantics.py tests/unit/test_metadata_three_way_materialize.py tests/unit/test_metadata_three_way_bsl.py tests/unit/test_bsl_three_way.py tests/unit/test_three_way.py tests/unit/test_metadata_materialize_cli.py
+python -m black --check rentgen_core/metadata_three_way.py tests/unit/test_metadata_three_way_bsl.py
+python -m ruff check rentgen_core/metadata_three_way.py tests/unit/test_metadata_three_way_bsl.py
+python -m compileall -q rentgen_core/metadata_three_way.py tests/unit/test_metadata_three_way_bsl.py
 git diff --check
 ```

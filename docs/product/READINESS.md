@@ -6,7 +6,9 @@
 
 ## Дополнение к кандидату 14 сентября 2026
 
-В текущем исходном кандидате собрано 1356 тестов; Product CI запускается для
+В текущем исходном кандидате собрано 1608 тестов; полный локальный прогон дал
+1605 успешных тестов и 3 ожидаемых пропуска на Windows без права создавать
+симлинки. Product CI запускается для
 каждого SHA в [публичном workflow](https://github.com/DmitrL-dev/1cai-public/actions/workflows/core-ci.yml).
 Три Windows symlink-теста могут
 пропускаться из-за отсутствия privilege. Кандидат включает bounded foreground
@@ -41,6 +43,14 @@ Native EDT adapter теперь принят для повторения выб�
 в новой принадлежащей файловой копии: admission выполняется до его журналов,
 readback связывает native preview и workspace receipt, а после undo проверяется
 исходный inventory. Это не запись в рабочую конфигурацию и не live apply.
+
+В этом срезе three-way materializer принимает только доказанно раздельные
+прямые BSL `Properties`: результат ограничен исходными XML-фрагментами и
+bounded digest, а формы, СКД, расширения и неизвестные области остаются
+блокирующими. Workspace receipts получили привязку к root/marker, строгую
+проверку соседних и подменённых журналов, явную legacy-политику и Windows
+admission mutex с одинаковой identity для обычного и `\\?\\` пути. CLI может
+показать bounded список объединённых BSL-областей без выдачи их payload.
 
 Приёмка остаётся частичной: продуктовая запись в рабочую
 конфигурацию, типовые `.cf/.cfe`, полноценная семантика расширений, BSL/форм/СКД
@@ -99,7 +109,7 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 | Локальная модель | Один искусственный сценарий Qwen3.5:9b с независимой проверкой BSL | Не доказывает качество на произвольных задачах |
 | Ежедневная разработка dev8 | AI-правка, ручное исправление новой ревизией, конфликт версий, нативная проверка и восстановление проверены в редакторе | [AI-ошибка сохраняется](DAILY-DEVELOPMENT-ACCEPTANCE.md); [исправление человеком проверено](MANUAL-DRAFT-EDIT.md). Синтетический YAxUnit принят отдельно; бизнес-покрытие и применение не приняты |
 | Реальная платформа 1С | 8.3.27.2342: нативный общий модуль, проверка ошибочного BSL, исполнение 42 → отказ/42 → исправление/43, сохранение UUID; отдельная запись/чтение/переименование/удаление данных в синтетическом каталоге ([evidence](NATIVE-BUSINESS-ROUNDTRIP-20260913.md)) | Собственные синтетические сценарии; [полная приёмка не завершена](PLATFORM-ACCEPTANCE.md) |
-| Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; owned `ibcmd` create/import/export round-trip с structural evidence; preflight и workspace writer с проверкой inventory, backup, re-read, undo conflict и явным recovery; native business roundtrip подтверждает данные после переименования | Внешний concurrent CAS, живая запись через EDT/1С, product apply/undo и матрица типовых конфигураций не приняты |
+| Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; owned `ibcmd` create/import/export round-trip с structural evidence; preflight и workspace writer с проверкой inventory, backup, re-read, undo conflict, привязанными receipts, legacy policy и явным recovery; native business roundtrip подтверждает данные после переименования | Внешний concurrent CAS, живая запись через EDT/1С, product apply/undo и матрица типовых конфигураций не приняты |
 | Обновления конфигураций | Path-bytes и UUID-aware Designer XML three-way plan с bounded хэшами, явными конфликтами и evidence по прямым свойствам (`same_change`/`disjoint_changes`/`overlap_conflict`); для квалифицированного `disjoint_changes` прямых `Properties` доступен in-memory candidate с сохранением namespace/QName и digest | Расширения, BSL/формы/СКД, полноценная схема Designer, тестовая база, backup/rollback, native validity и запись не приняты |
 | Проверка предложения платформой | В dev8: установленный CLI проверил корректное/ошибочное BSL-предложение на сохранённой конфигурации; в исходной ветке после dev8 compile/YAxUnit API используют bounded native admission/retention ([границы](NATIVE-RESOURCES.md)) | Один Designer XML слой; компиляция без бизнес-тестов и применения |
 | Observer | Опрос выгрузки, journal/recovery и durable findings; schema 2 composition root связывает GitWatcherScheduler, read-only BSL Git adapter, owner-report store и atomic local outbox с bounded cooperative stop; per-commit snapshot binding, bounded Git/snapshot source evidence, read-only BSL-LS adapter, bounded SARIF subset, native ServiceMain/SCM boundary proof и явный SCM installer plan | Нет live SCM deployment/daemon acceptance, live receiver acceptance и дедупликации, полного Git tree/temporal evidence, producer-specific Sonar/Vanessa/YAxUnit execution и общей приёмки O1 |

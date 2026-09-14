@@ -1,6 +1,7 @@
 """Caller-selected byte trees expose only an authenticated, bounded summary."""
 
 import base64
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -10,6 +11,7 @@ import pytest
 import rentgen_core as api
 from rentgen_core import cli
 from rentgen_core.local import LocalRuntime
+from rentgen_core.three_way import plan_three_way
 from project_access_test_support import force_legacy_membership
 from test_metadata_three_way_materialize import PATH, xml
 
@@ -142,6 +144,53 @@ def test_summary_requires_no_source_edit_permission(local):
     code, output = call()
     assert code == 0, output
     assert output["result"]["status"] == "ready"
+
+
+@pytest.mark.parametrize("scope_count", [1, 257])
+def test_disjoint_bsl_summary_includes_bounded_digest_evidence(local, scope_count):
+    _, _, write, call = local
+    base = (
+        b"Procedure First()\n    private_local = 1;\nEndProcedure\n\n"
+        b"Procedure Last()\n    private_upstream = 1;\nEndProcedure\n"
+    )
+    current = base.replace(b"private_local = 1", b"private_local = 2")
+    upstream = base.replace(b"private_upstream = 1", b"private_upstream = 3")
+    merged = current.replace(b"private_upstream = 1", b"private_upstream = 3")
+    trees = [{}, {}, {}]
+    expected_tree, expected_evidence = {}, []
+    for index in range(scope_count):
+        name = f"Products{index:04d}"
+        identity = f"{index + 1:08x}-1111-4111-8111-111111111111"
+        owner_path = f"Catalogs/{name}.xml"
+        module_path = f"Catalogs/{name}/Ext/ObjectModule.bsl"
+        owner = xml(name=name, identity=identity)
+        for tree, raw in zip(trees, (base, current, upstream)):
+            tree.update({owner_path: owner, module_path: raw})
+        expected_tree.update({owner_path: owner, module_path: merged})
+        expected_evidence.append(
+            {
+                "object_type": "Catalog",
+                "object_uuid": identity,
+                "scope": "Ext/ObjectModule.bsl",
+                "candidate_path": module_path,
+                "candidate_sha256": hashlib.sha256(merged).hexdigest(),
+                "candidate_size_bytes": len(merged),
+            }
+        )
+    write(*trees)
+    code, output = call()
+    assert code == 0, output
+    result = output["result"]
+    assert result["counts"]["merged_bsl_scopes"] == scope_count
+    assert result["merged_bsl_scopes"] == expected_evidence[:256]
+    assert result["merged_bsl_scopes_truncated"] is (scope_count > 256)
+    assert (
+        result["candidate_digest"]
+        == plan_three_way(expected_tree, expected_tree, expected_tree)["base_digest"]
+    )
+    assert "candidate" not in result
+    assert "private_local" not in json.dumps(output)
+    assert "private_upstream" not in json.dumps(output)
 
 
 @pytest.mark.parametrize("permission", ["project:read", "analysis:run"])

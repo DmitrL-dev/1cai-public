@@ -657,6 +657,9 @@ def _metadata_materialize_command(args, ctx, permissions):
             "merged_objects_truncated",
         )
     }
+    for key in ("merged_bsl_scopes", "merged_bsl_scopes_truncated"):
+        if key in value:
+            summary[key] = value[key]
     return _ProposalCommandResult(summary, ctx, frozenset(permissions))
 
 
@@ -917,9 +920,8 @@ def _execute(args, *, proposal_scope=None):
         return runtime.head(principal, args.project)
     permissions = (
         {"project:read", "analysis:run"}
-        if args.command == "metadata-materialize"
-        else {"project:read", "analysis:run"}
-        if args.command in {"owner-report-build", "owner-report-save"}
+        if args.command
+        in {"metadata-materialize", "owner-report-build", "owner-report-save"}
         else {"project:read"}
         if args.command in {"owner-report-get", "owner-report-list"}
         else {"project:admin"}

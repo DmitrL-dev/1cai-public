@@ -251,7 +251,14 @@ bounded before base64 decoding. The complete success envelope is capped at
 The usual stdout envelope contains a deterministic `result` with `schema`,
 `scope`, `status`, input/candidate digests, `counts`, bounded `merged_objects`
 evidence and `merged_objects_truncated`; only the envelope's `request_id` varies
-between equivalent calls. The candidate byte tree is never emitted or saved.
+between equivalent calls. Qualified BSL composite merges additionally include
+`counts.merged_bsl_scopes`, `merged_bsl_scopes` (at most 256 evidence rows), and
+`merged_bsl_scopes_truncated`. Each row identifies the owner type/UUID, recognized
+scope, candidate path, SHA-256 digest and byte size. These optional fields are
+absent when no BSL composite was merged, preserving the previous result shape.
+See [qualified BSL materialization semantics](METADATA-THREE-WAY-SEMANTICS.md#qualified-bsl-materialization)
+for the supported owner bindings, byte contract and merge limitations.
+The candidate byte tree is never emitted or saved.
 Engine failures retain their error code with a generic message and omit engine
 details, candidate bytes, XML and BSL payloads. A successful `ready` summary
 qualifies only the existing `metadata-properties-v1` merge scope; it is not
