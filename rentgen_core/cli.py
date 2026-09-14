@@ -742,7 +742,12 @@ def _edt_inventory_command(
             runtime,
             graph_reader_factory=runtime.graph_reader_factory or _graph_factory(),
         )
-        selected = runtime.resolve(principal, args.project, args.snapshot)
+        selected = runtime.resolve(
+            principal,
+            args.project,
+            args.snapshot,
+            authorize_read=lambda: _proposal_permissions(ctx, permissions),
+        )
         if proposal_scope is not None:
             proposal_scope.context = selected
         if selected.sources is None:

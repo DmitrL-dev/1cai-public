@@ -1,6 +1,7 @@
 """Snapshot-bound EDT inventory transport; synthetic data, no native acceptance."""
 
 from dataclasses import asdict
+from contextlib import contextmanager
 import json
 from pathlib import Path
 import shutil
@@ -346,6 +347,71 @@ def test_revocation_during_shared_read_session_precedes_next_source_read(
     monkeypatch.setattr(SnapshotReadSession, "read_source", read)
     assert_error(local.call(), "PROJECT_FORBIDDEN")
     assert len(reads) == 1
+
+
+@pytest.mark.parametrize("revoke_after", ["manifest", "source", "derived"])
+def test_eager_verification_stops_before_next_artifact_after_revocation(
+    local, monkeypatch, revoke_after
+):
+    from rentgen_core import sources
+
+    read, graph_metadata = sources._read, sources._graph_metadata
+    reads, revoked_at = [], []
+
+    def guarded_read(path, maximum):
+        raw = read(path, maximum)
+        kind = (
+            "manifest"
+            if path.name == "manifest.json"
+            else "source"
+            if "sources" in path.parts
+            else "derived"
+        )
+        reads.append(kind)
+        if kind == revoke_after and not revoked_at:
+            local.permissions(set())
+            revoked_at.append(len(reads))
+        return raw
+
+    @contextmanager
+    def graph(*args, **kwargs):
+        reads.append("graph")
+        with graph_metadata(*args, **kwargs) as value:
+            yield value
+
+    monkeypatch.setattr(sources, "_read", guarded_read)
+    monkeypatch.setattr(sources, "_graph_metadata", graph)
+    assert_error(local.call(), "PROJECT_FORBIDDEN")
+    assert revoked_at, "The selected eager artifact boundary was not exercised"
+    assert len(reads) == revoked_at[0]
+    assert reads.count(revoke_after) == 1
+
+
+def test_revocation_after_eager_graph_bytes_precedes_sqlite_open(local, monkeypatch):
+    from rentgen_core import _windows_source_tree as tree
+    from rentgen_core import sources
+
+    pinned, connect = tree.pinned_retained, sources.sqlite3.connect
+    graph_reads, graph_opens = [], []
+
+    @contextmanager
+    def pin(path, *args, **kwargs):
+        with pinned(path, *args, **kwargs) as raw:
+            if path.name == "graph.sqlite3":
+                graph_reads.append(path)
+                local.permissions(set())
+            yield raw
+
+    def open_sqlite(path, *args, **kwargs):
+        if "graph.sqlite3" in str(path):
+            graph_opens.append(path)
+        return connect(path, *args, **kwargs)
+
+    monkeypatch.setattr(tree, "pinned_retained", pin)
+    monkeypatch.setattr(sources.sqlite3, "connect", open_sqlite)
+    assert_error(local.call(), "PROJECT_FORBIDDEN")
+    assert len(graph_reads) == 1
+    assert graph_opens == []
 
 
 def test_unpublished_context_is_not_inventory_input(local, monkeypatch):

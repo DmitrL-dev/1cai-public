@@ -21,7 +21,9 @@ selected inputs. Omit `--layer-id` to inspect all declared layers; each selected
 layer must use the `edt` format.
 
 Only `project:read` is required. Authorization is checked before snapshot
-resolution, by the shared read session before source access, after JSON
+resolution, before each retained manifest/source/derived/graph read during eager
+generation verification (including the graph SQLite reopen), by the shared read
+session before source access, after JSON
 serialization, and before emitting errors. Revocation suppresses the result.
 Resolution and inventory failures retain their stable error code with a fixed
 CLI message and empty details, without source diagnostics or partial inventory.
