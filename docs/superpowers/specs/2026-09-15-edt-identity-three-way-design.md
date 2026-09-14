@@ -35,7 +35,11 @@ contain the existing inventory identity fields `canonical_uuid`,
 `observed_uuid`, `type`, `name`, `xml_path`, `owner`, `layer`, and `source_ref`.
 `source_ref.raw_sha256` is required; the current producer does not expose a
 source byte size, so the planner records `source_size_bytes: null` rather than
-inventing one. UUIDs and hashes are canonicalized and validated.
+inventing one. A layer is the producer's `SnapshotLayer` projection
+(`layer_id`, `ordinal`, `kind`, `configuration_uuid`, `identity_status`,
+`source_format`) plus `parsed_mdo_files`, `unparsed_files` and
+`count_basis`; there is no root-relative-path field in this producer profile.
+UUIDs and hashes are canonicalized and validated.
 
 The planner validates all three envelopes before producing any row. It rejects
 unknown or duplicate identity records, malformed UUIDs, missing owner/layer
