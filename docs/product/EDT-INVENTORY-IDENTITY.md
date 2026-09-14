@@ -6,6 +6,52 @@ authorized snapshot. Existing runtime `inventory()` and `exported_inventory()`
 APIs retain their contracts. The adapter does not run EDT or 1C, read a live
 project, write files, or change the existing metadata endpoints.
 
+## Local CLI
+
+The development checkout exposes the same inventory through `rentgen edt-inventory`:
+
+```powershell
+rentgen edt-inventory --registry C:\work\registry.sqlite3 --project PROJECT_UUID --snapshot SNAPSHOT_ID --layer-id base
+```
+
+`--registry`, `--project` and `--snapshot` are required. The snapshot must be
+published in the selected project; the command never defaults to the latest
+snapshot. Later checkout edits and a newer project head do not change the
+selected inputs. Omit `--layer-id` to inspect all declared layers; each selected
+layer must use the `edt` format.
+
+Only `project:read` is required. Authorization is checked before snapshot
+resolution, by the shared read session before source access, after JSON
+serialization, and before emitting errors. Revocation suppresses the result.
+Resolution and inventory failures retain their stable error code with a fixed
+CLI message and empty details, without source diagnostics or partial inventory.
+
+All limits are positive integers and may only be lowered. Repeated options,
+booleans, zero, negative values and values above these ceilings are rejected;
+typed limits are validated before snapshot resolution.
+
+| Option | Default and ceiling |
+| --- | ---: |
+| `--max-xml-bytes` | 4,194,304 |
+| `--max-nodes` | 50,000 |
+| `--max-depth` | 64 |
+| `--max-inventory` | 20,000 |
+| `--max-collection` | 200 |
+| `--max-total-bytes` | 67,108,864 |
+| `--max-asset-bytes` | 16,777,216 |
+| `--max-mdo-files` | 2,048 |
+| `--max-identities` | 20,000 |
+
+Successful stdout is one UTF-8 JSON envelope with the unchanged inventory in
+`result` and a `request_id`. The serialized envelope is capped at 8 MiB;
+`OUTPUT_LIMIT_EXCEEDED` returns an error instead of truncated output. Errors
+exit with code 2. Human-readable help is available through `--help`.
+
+There are no output-file, caller-file, workspace, apply, operation or native
+profile options. The command does not create a snapshot, write source/state
+artifacts, materialize changes, or invoke EDT/1C. This transport preserves the
+synthetic, partial evidence scope described below.
+
 ## Evidence and scope
 
 The result uses parser profile `edt_identity_v1` and always reports

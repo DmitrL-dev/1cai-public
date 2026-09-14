@@ -20,7 +20,10 @@ service-host, explicit SCM installer planning и явную freshness-policy д�
 runtime-метрик поверх публичного owner-report CLI с проверкой опубликованного snapshot и выделенным
 `<state-root>\owner-reports`, immutable receipts и bounded summary для списка.
 Read-only EDT inventory теперь связывает проверенные UUID, прямых XML-владельцев
-и декларацию слоя с `SourceRef`; three-way plan дополнительно показывает
+и декларацию слоя с `SourceRef`. Эти partial evidence доступны через
+[`edt-inventory`](EDT-INVENTORY-IDENTITY.md#local-cli): явный опубликованный
+snapshot, только `project:read`, ограниченные входы и JSON до 8 MiB, без записи
+или native-вызовов. Three-way plan дополнительно показывает
 атомарные UUID-bound области BSL, форм и СКД с явными
 `supported`/`conflict`/`unsupported` причинами, а для доказанно раздельных
 изменений прямых Designer `Properties` — bounded in-memory candidate с

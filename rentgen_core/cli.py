@@ -36,6 +36,17 @@ _EDT_ATTRIBUTE_LIMITS = {
     "max_total_bytes": 16 * 1024 * 1024,
     "max_children": 20_000,
 }
+_EDT_INVENTORY_LIMITS = {
+    "max_xml_bytes": 4 * 1024**2,
+    "max_nodes": 50_000,
+    "max_depth": 64,
+    "max_inventory": 20_000,
+    "max_collection": 200,
+    "max_total_bytes": 64 * 1024**2,
+    "max_asset_bytes": 16 * 1024**2,
+    "max_mdo_files": 2048,
+    "max_identities": 20_000,
+}
 
 
 class _Parser(argparse.ArgumentParser):
@@ -95,6 +106,7 @@ def _parser():
         "metadata-plan",
         "metadata-materialize",
         "edt-attribute-plan",
+        "edt-inventory",
         "metadata-preview",
         "metadata-result",
         "metadata-evidence",
@@ -140,6 +152,16 @@ def _parser():
                     "--" + label + "-json", type=Path, required=True, action=_Once
                 )
             for limit, ceiling in _EDT_ATTRIBUTE_LIMITS.items():
+                command.add_argument(
+                    "--" + limit.replace("_", "-"),
+                    type=int,
+                    default=ceiling,
+                    action=_Once,
+                )
+        elif name == "edt-inventory":
+            command.add_argument("--snapshot", required=True, action=_Once)
+            command.add_argument("--layer-id", action=_Once)
+            for limit, ceiling in _EDT_INVENTORY_LIMITS.items():
                 command.add_argument(
                     "--" + limit.replace("_", "-"),
                     type=int,
@@ -706,6 +728,35 @@ def _edt_attribute_plan_command(args, ctx, permissions):
     return _ProposalCommandResult(value, ctx, frozenset(permissions))
 
 
+def _edt_inventory_command(
+    args, runtime, principal, ctx, permissions, *, proposal_scope=None
+):
+    from .edt_inventory import EDTInventoryLimits, edt_metadata_inventory
+
+    limits = EDTInventoryLimits(
+        **{name: getattr(args, name) for name in _EDT_INVENTORY_LIMITS}
+    )
+    _proposal_permissions(ctx, permissions)
+    try:
+        runtime = replace(
+            runtime,
+            graph_reader_factory=runtime.graph_reader_factory or _graph_factory(),
+        )
+        selected = runtime.resolve(principal, args.project, args.snapshot)
+        if proposal_scope is not None:
+            proposal_scope.context = selected
+        if selected.sources is None:
+            raise CoreError(
+                "SNAPSHOT_REQUIRED", "A published project snapshot is required"
+            )
+        value = edt_metadata_inventory(selected, layer_id=args.layer_id, limits=limits)
+    except CoreError as exc:
+        raise CoreError(exc.code, "EDT inventory could not be completed") from exc
+    return _ProposalCommandResult(
+        value, selected, frozenset(permissions), output_limit=8 * 1024**2
+    )
+
+
 def _owner_report_store(ctx, path):
     """Resolve an owner-report store below the authenticated project state."""
     from .owner_report_store import OwnerReportStore
@@ -966,7 +1017,7 @@ def _execute(args, *, proposal_scope=None):
         if args.command
         in {"metadata-materialize", "owner-report-build", "owner-report-save"}
         else {"project:read"}
-        if args.command in {"owner-report-get", "owner-report-list"}
+        if args.command in {"owner-report-get", "owner-report-list", "edt-inventory"}
         else {"project:admin"}
         if args.command
         in {
@@ -1021,6 +1072,13 @@ def _execute(args, *, proposal_scope=None):
         else set()
     )
     ctx = runtime.state_context(principal, args.project, permissions=permissions)
+    if args.command == "edt-inventory":
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        return _edt_inventory_command(
+            args, runtime, principal, ctx, permissions, proposal_scope=proposal_scope
+        )
     if args.command == "edt-attribute-plan":
         if proposal_scope is not None:
             proposal_scope.context = ctx

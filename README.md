@@ -161,7 +161,7 @@ flowchart LR
 | [Service host](docs/product/SERVICE-HOST.md) | Native ServiceMain boundary для Observer и bounded foreground Git host с cooperative stop и fail-closed lifecycle; live SCM deployment ещё не принят |
 | [Three-way updates](docs/product/THREE-WAY-UPDATES.md) | Plan и безопасный in-memory candidate для base/current/upstream по хэшу |
 | [UUID-aware updates](docs/product/METADATA-THREE-WAY.md) | Консервативное сопоставление объектов Designer XML по типу и UUID |
-| [EDT identity inventory](docs/product/EDT-INVENTORY-IDENTITY.md) | Проверенные UUID, владельцы вложенных объектов и evidence слоя в EDT snapshot |
+| [EDT identity inventory](docs/product/EDT-INVENTORY-IDENTITY.md#local-cli) | CLI `edt-inventory`: проверенные UUID, прямые XML-владельцы и evidence слоя в явно выбранном опубликованном EDT snapshot; partial coverage |
 | [EDT attribute three-way](docs/product/EDT-ATTRIBUTE-THREE-WAY.md) | Read-only evidence реквизитов Catalog с UUID владельца и хэшами; CLI `edt-attribute-plan` для трёх ограниченных JSON-деревьев |
 | [ibcmd fixture executor](docs/product/EDT-FIXTURE-EXECUTOR.md) | Принадлежащий bounded create/import/export цикл с квитанциями, удержанием входов и без live apply |
 | [Three-way semantics](docs/product/METADATA-THREE-WAY-SEMANTICS.md) | Atomic BSL/form/СКД scopes с явными supported/conflict/unsupported статусами |
