@@ -85,9 +85,10 @@ snapshot без повторного запуска Git/LLM; для статус
 и [семантические companion-scope для three-way](docs/product/METADATA-THREE-WAY-SEMANTICS.md).
 Сформированный owner report можно сохранить и прочитать через
 [durable store и CLI](docs/product/OWNER-REPORT-STORE.md); каталог привязан к state-root проекта.
-Для обновлений есть [three-way dry-run](docs/product/THREE-WAY-UPDATES.md): он
-различает сохранение доработки, принятие upstream и конфликт по хэшу, не меняя
-исходное дерево.
+Для обновлений есть [three-way plan и candidate](docs/product/THREE-WAY-UPDATES.md):
+он различает сохранение доработки, принятие upstream и конфликт по хэшу, а для
+однозначных path-level решений собирает bounded in-memory candidate с digest.
+Исходное дерево при этом не меняется.
 Ни один из этих срезов не выполняет запись в рабочее дерево; живое применение
 и отмена в разработке.
 
@@ -153,7 +154,7 @@ flowchart LR
 | [Owner report store](docs/product/OWNER-REPORT-STORE.md) | Иммутабельные receipts и локальный CLI сохранения/чтения по snapshot |
 | [Runtime metrics](docs/product/RUNTIME-METRICS.md) | Bounded JSON-export adapter с двойной авторизацией и точной привязкой к snapshot |
 | [Service host](docs/product/SERVICE-HOST.md) | Native ServiceMain boundary для Observer и bounded foreground Git host с cooperative stop и fail-closed lifecycle; live SCM deployment ещё не принят |
-| [Three-way updates](docs/product/THREE-WAY-UPDATES.md) | Dry-run переноса base/current/upstream по хэшу |
+| [Three-way updates](docs/product/THREE-WAY-UPDATES.md) | Plan и безопасный in-memory candidate для base/current/upstream по хэшу |
 | [UUID-aware updates](docs/product/METADATA-THREE-WAY.md) | Консервативное сопоставление объектов Designer XML по типу и UUID |
 | [EDT identity inventory](docs/product/EDT-INVENTORY-IDENTITY.md) | Проверенные UUID, владельцы вложенных объектов и evidence слоя в EDT snapshot |
 | [Three-way semantics](docs/product/METADATA-THREE-WAY-SEMANTICS.md) | Atomic BSL/form/СКД scopes с явными supported/conflict/unsupported статусами |
