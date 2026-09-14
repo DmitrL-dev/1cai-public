@@ -47,6 +47,13 @@ _EDT_INVENTORY_LIMITS = {
     "max_mdo_files": 2048,
     "max_identities": 20_000,
 }
+_EDT_IDENTITY_THREE_WAY_LIMITS = {
+    "max_input_bytes": 8 * 1024**2,
+    "max_objects": 20_000,
+    "max_owners": 20_000,
+    "max_layers": 64,
+    "max_rows": 20_000,
+}
 
 
 class _Parser(argparse.ArgumentParser):
@@ -107,6 +114,7 @@ def _parser():
         "metadata-materialize",
         "edt-attribute-plan",
         "edt-inventory",
+        "edt-inventory-plan",
         "metadata-preview",
         "metadata-result",
         "metadata-evidence",
@@ -152,6 +160,18 @@ def _parser():
                     "--" + label + "-json", type=Path, required=True, action=_Once
                 )
             for limit, ceiling in _EDT_ATTRIBUTE_LIMITS.items():
+                command.add_argument(
+                    "--" + limit.replace("_", "-"),
+                    type=int,
+                    default=ceiling,
+                    action=_Once,
+                )
+        elif name == "edt-inventory-plan":
+            for label in ("base", "current", "upstream"):
+                command.add_argument(
+                    "--" + label + "-json", type=Path, required=True, action=_Once
+                )
+            for limit, ceiling in _EDT_IDENTITY_THREE_WAY_LIMITS.items():
                 command.add_argument(
                     "--" + limit.replace("_", "-"),
                     type=int,
@@ -728,6 +748,58 @@ def _edt_attribute_plan_command(args, ctx, permissions):
     return _ProposalCommandResult(value, ctx, frozenset(permissions))
 
 
+def _edt_identity_inventory_json(raw):
+    """Decode one producer inventory object; never unwrap or interpret source trees."""
+    try:
+        value = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_object,
+            parse_constant=_reject_constant,
+        )
+        if type(value) is not dict:
+            raise ValueError
+        return value
+    except (CoreError, UnicodeError, ValueError, RecursionError) as exc:
+        raise CoreError("INVALID_ARGUMENT", "EDT inventory JSON is invalid") from exc
+
+
+def _edt_identity_three_way_command(args, ctx, permissions):
+    from .edt_identity_three_way import (
+        EDTIdentityThreeWayLimits,
+        plan_edt_identity_three_way,
+    )
+
+    limits = EDTIdentityThreeWayLimits(
+        **{name: getattr(args, name) for name in _EDT_IDENTITY_THREE_WAY_LIMITS}
+    )
+    values = []
+    for path in (args.base_json, args.current_json, args.upstream_json):
+        raw = _proposal_input(
+            ctx, path, limits.max_input_bytes, permissions=permissions
+        )
+        _proposal_permissions(ctx, permissions)
+        value = _edt_identity_inventory_json(raw)
+        _proposal_permissions(ctx, permissions)
+        snapshot = value.get("snapshot")
+        if (
+            type(snapshot) is not dict
+            or type(snapshot.get("project_id")) is not str
+            or snapshot["project_id"].lower() != ctx.project_id
+        ):
+            raise CoreError(
+                "EDT_IDENTITY_PLAN_INVALID", "EDT inventory project is invalid"
+            )
+        values.append(value)
+    try:
+        value = plan_edt_identity_three_way(*values, limits=limits)
+    except CoreError as exc:
+        raise CoreError(exc.code, "EDT identity plan could not be completed") from exc
+    _proposal_permissions(ctx, permissions)
+    return _ProposalCommandResult(
+        value, ctx, frozenset(permissions), output_limit=8 * 1024**2
+    )
+
+
 def _edt_inventory_command(
     args, runtime, principal, ctx, permissions, *, proposal_scope=None
 ):
@@ -1022,7 +1094,13 @@ def _execute(args, *, proposal_scope=None):
         if args.command
         in {"metadata-materialize", "owner-report-build", "owner-report-save"}
         else {"project:read"}
-        if args.command in {"owner-report-get", "owner-report-list", "edt-inventory"}
+        if args.command
+        in {
+            "owner-report-get",
+            "owner-report-list",
+            "edt-inventory",
+            "edt-inventory-plan",
+        }
         else {"project:admin"}
         if args.command
         in {
@@ -1077,6 +1155,11 @@ def _execute(args, *, proposal_scope=None):
         else set()
     )
     ctx = runtime.state_context(principal, args.project, permissions=permissions)
+    if args.command == "edt-inventory-plan":
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        return _edt_identity_three_way_command(args, ctx, permissions)
     if args.command == "edt-inventory":
         if proposal_scope is not None:
             proposal_scope.context = ctx

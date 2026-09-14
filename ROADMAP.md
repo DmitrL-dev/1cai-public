@@ -51,6 +51,11 @@ read-only child-owner evidence: прямой реквизит связывает
 опубликованным snapshot и правом `project:read`. Покрытие остаётся частичным;
 транспорт не квалифицирует типовые конфигурации или live apply.
 
+Для трёх сохранённых inventory добавлен [EDT identity three-way plan](docs/product/EDT-IDENTITY-THREE-WAY.md)
+и read-only CLI `edt-inventory-plan`: проверенные bindings UUID/owner/layer,
+явные конфликты и unsupported-причины, ограничение JSON 8 MiB. Это сравнение
+предоставленного partial evidence без материализации или native validation.
+
 ## 4. Непрерывный аудит для команды и владельца
 
 Сначала отслеживать новые снимки и считать проверяемые показатели: изменения,

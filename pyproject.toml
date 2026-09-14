@@ -103,6 +103,7 @@ only-include = [
   "docs/product/METADATA-THREE-WAY-SEMANTICS.md",
   "docs/product/EDT-INVENTORY-IDENTITY.md",
   "docs/product/EDT-ATTRIBUTE-THREE-WAY.md",
+  "docs/product/EDT-IDENTITY-THREE-WAY.md",
   "docs/product/CONFIGURATION-COMPATIBILITY.md",
   "docs/product/EDT-COMMAND-BOUNDARY.md",
   "docs/product/EDT-FIXTURE-EXECUTOR.md",

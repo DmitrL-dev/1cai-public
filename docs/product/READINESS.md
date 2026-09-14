@@ -136,3 +136,10 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 Указанные там локальные отчёты — свидетельства разработки, а не включённые
 в репозиторий пользовательские данные. Автоматические проверки публичного дерева
 доступны в GitHub Actions; выпуск компонента проходит отдельную проверку хэша.
+
+## EDT identity plan — 15 сентября 2026
+
+Для трёх сохранённых inventory добавлен [EDT identity three-way plan](EDT-IDENTITY-THREE-WAY.md)
+и read-only CLI `edt-inventory-plan`: проверенные bindings UUID/owner/layer,
+явные конфликты и unsupported-причины, ограничение JSON 8 MiB. Это сравнение
+предоставленного partial evidence без материализации или native validation.
