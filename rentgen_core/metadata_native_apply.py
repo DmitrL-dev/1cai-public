@@ -255,26 +255,27 @@ def _verify_applied_workspace(
 
 
 def _verify_applied(ctx, operation_id, intent, result, *, allow_unresolved=False):
-    preview = runs.get_preview(ctx, operation_id)
-    binding = preflight._binding(preview)
-    _require(
-        preview["preview_id"] == result["native_preview_id"]
-        and all(
-            binding[key] == intent["binding"][key]
-            for key in ("plan_id", "profile_id", "inventory_digests")
-        ),
-        RECOVERY,
-        "Native preview is absent or differs from the applied result",
-    )
-    _verify_applied_workspace(
-        ctx,
-        operation_id,
-        intent["request"]["workspace_root"],
-        intent=intent,
-        result=result,
-        preview=preview,
-        allow_unresolved=allow_unresolved,
-    )
+    with pinned_directory(journal_path(ctx, operation_id)):
+        preview = runs.get_preview(ctx, operation_id)
+        binding = preflight._binding(preview)
+        _require(
+            preview["preview_id"] == result["native_preview_id"]
+            and all(
+                binding[key] == intent["binding"][key]
+                for key in ("plan_id", "profile_id", "inventory_digests")
+            ),
+            RECOVERY,
+            "Native preview is absent or differs from the applied result",
+        )
+        _verify_applied_workspace(
+            ctx,
+            operation_id,
+            intent["request"]["workspace_root"],
+            intent=intent,
+            result=result,
+            preview=preview,
+            allow_unresolved=allow_unresolved,
+        )
 
 
 def get_native_apply_result(ctx, operation_id):
