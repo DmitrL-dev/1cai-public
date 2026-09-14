@@ -65,6 +65,10 @@
 [Git watcher](docs/product/GIT-WATCHER.md) с BSL-LS analyzer adapter
 ([описание](docs/product/GIT-BSL-ANALYZER.md)): preconditions и lifecycle Git-находок
 доступны через observer CLI и watcher adapter, а metadata gate остаётся read-only.
+В ветке разработки schema 3 добавляет bounded автономный режим: trusted scanner
+сначала создаёт принадлежащий snapshot, затем Git-находки связываются с точным
+commit и owner receipt; отзыв прав, ancestry, race и restart проверяются
+fail-closed. Live SCM/1С deployment в этот режим не входит.
 События watcher можно явно отправить из durable outbox через
 [HTTPS webhook](docs/product/NOTIFICATION-DELIVERY.md) с ограничением размера,
 allowlist получателей и подтверждением только после HTTP 2xx.
