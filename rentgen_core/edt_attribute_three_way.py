@@ -13,7 +13,12 @@ from .three_way import _action, _plan_from_trees, _prepare_trees
 _NS = "http://g5.1c.ru/v8/dt/metadata/mdclass"
 _UUID = re.compile(r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}\Z")
 _UNSAFE = re.compile(rb"<!\s*(?:DOCTYPE|ENTITY)\b", re.IGNORECASE)
-_IDENTITIES = {"attributes", "forms", "commands", "tabularSections"}
+_IDENTITIES = {
+    "attributes": "Attribute",
+    "forms": "Form",
+    "commands": "Command",
+    "tabularSections": "TabularSection",
+}
 _LABELS = ("base", "current", "upstream")
 
 
@@ -106,21 +111,23 @@ def _parse(raw):
     return root, sha256(canonical_bytes(namespaces))
 
 
-def _validate_identities(root, seen):
+def _validate_identities(root, bindings):
     """Validate containment, including excluded form/command/tabular identities."""
     pending = [(root, None)]
     sibling_names = set()
     while pending:
         node, parent = pending.pop()
         identity, name = _identity(node)
+        owner_uuid = None if parent is None else parent.get("uuid").lower()
+        kind = "Catalog" if parent is None else _IDENTITIES[_local(node.tag)]
         key = (
-            None if parent is None else parent.get("uuid").lower(),
-            _local(node.tag),
+            owner_uuid,
+            kind,
             name.casefold(),
         )
-        if identity in seen or key in sibling_names:
+        if identity in bindings or key in sibling_names:
             _reject("identity_duplicate")
-        seen.add(identity)
+        bindings[identity] = (kind, owner_uuid)
         sibling_names.add(key)
         for child in node:
             tag = _local(child.tag)
@@ -166,7 +173,7 @@ def _properties(node, namespaces):
 
 
 def _records(tree, max_children):
-    children, owners, seen = {}, {}, set()
+    children, owners, bindings = {}, {}, {}
     for path, raw in sorted(tree.values()):
         parts = path.split("/")
         if len(parts) != 3 or parts[0] != "Catalogs" or parts[2] != parts[1] + ".mdo":
@@ -175,7 +182,7 @@ def _records(tree, max_children):
         owner_uuid, owner_name = _identity(root)
         if owner_name != parts[1]:
             _reject("path_name_mismatch")
-        _validate_identities(root, seen)
+        _validate_identities(root, bindings)
         owner = {"type": "Catalog", "uuid": owner_uuid, "path": path}
         owners[owner_uuid] = owner
         source = {"source_sha256": sha256(raw), "source_size_bytes": len(raw)}
@@ -193,7 +200,7 @@ def _records(tree, max_children):
                 **source,
                 "properties": _properties(node, namespaces),
             }
-    return children, owners
+    return children, owners, bindings
 
 
 def _property_changes(values):
@@ -256,24 +263,29 @@ def plan_edt_attribute_three_way(
     path_plan = _plan_from_trees(snapshots, max_files=max_files)
     records = [_records(tree, max_children) for tree in snapshots.values()]
     path_owners = {}
-    for _, owners in records:
+    for _, owners, _ in records:
         for identity, owner in owners.items():
             path_owners.setdefault(collision_key(owner["path"]), set()).add(identity)
     if any(len(identities) > 1 for identities in path_owners.values()):
         _reject("owner_identity_changed")
-    identities = set().union(*(children for children, _ in records))
+    identities = set().union(*(children for children, _, _ in records))
     if len(identities) > max_children:
         _reject("child_limit", limit=True)
     rows = []
     for identity in sorted(identities):
-        values = [children.get(identity) for children, _ in records]
+        values = [children.get(identity) for children, _, _ in records]
         owner_ids = {value["owner"]["uuid"] for value in values if value is not None}
         if len(owner_ids) != 1:
             _reject("owner_changed")
+        observed_bindings = {
+            bindings[identity] for _, _, bindings in records if identity in bindings
+        }
+        if len(observed_bindings) != 1:
+            _reject("child_binding_changed")
         owner_uuid = next(iter(owner_ids))
-        if any(owner_uuid not in owners for _, owners in records):
+        if any(owner_uuid not in owners for _, owners, _ in records):
             _reject("owner_missing")
-        owner_paths = [owners[owner_uuid]["path"] for _, owners in records]
+        owner_paths = [owners[owner_uuid]["path"] for _, owners, _ in records]
         if _action(*owner_paths) == "conflict":
             _reject("owner_path_conflict")
         mergeability, properties = _property_changes(values)

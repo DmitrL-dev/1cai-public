@@ -65,7 +65,14 @@ deletions are represented by missing version records; delete/modify yields
 `conflict`. Rename keeps the same UUID row. A one-sided Catalog rename keeps
 owner UUID identity while recording its changed descriptor path.
 
-One child UUID may never switch owner UUID between versions. Every observed
+One child UUID may never switch owner UUID between versions. For each UUID
+that appears as a direct Catalog attribute in any input, the planner also
+compares its kind and immediate owner in the complete validated identity map.
+Moving that UUID into or out of a tabular section, or reusing it as a Form or
+Command, fails the operation with `child_binding_changed`. Such retained
+identities are not treated as attribute additions or deletions. Identities
+that never appear as direct Catalog attributes remain outside this comparison.
+Every observed
 child's owner must exist in all three selections: omission of a Catalog is not
 authority to interpret its attributes as deleted. Replacing a Catalog UUID at
 the same canonical path and divergent owner path changes are rejected. To

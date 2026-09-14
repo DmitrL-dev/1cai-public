@@ -385,3 +385,39 @@ def test_namespace_binding_changes_cannot_hide_behind_identical_qname_text(tree)
 def test_unknown_xml_encoding_returns_a_structured_error(tree):
     bad = {PATH: b'<?xml version="1.0" encoding="SECRET-UNKNOWN"?>' + tree[PATH]}
     rejected((tree, bad, tree), "xml_invalid")
+
+
+@pytest.mark.parametrize("kind", ["tabular_attribute", "form", "command"])
+@pytest.mark.parametrize("direction", ["to_excluded", "from_excluded"])
+@pytest.mark.parametrize("branch", [1, 2], ids=["current", "upstream"])
+def test_direct_attribute_uuid_cannot_change_kind_or_immediate_owner(
+    tree, kind, direction, branch
+):
+    raw = attribute(tree[PATH])
+    if kind == "tabular_attribute":
+        replacement = (
+            f'<tabularSections uuid="{OTHER}"><name>Lines</name>'.encode()
+            + raw
+            + b"</tabularSections>"
+        )
+    else:
+        tag = b"forms" if kind == "form" else b"commands"
+        replacement = raw.replace(b"attributes", tag)
+    relocated = edited(tree, raw, replacement)
+    initial, changed = (
+        (tree, relocated) if direction == "to_excluded" else (relocated, tree)
+    )
+    inputs = [initial, initial, initial]
+    inputs[branch] = changed
+    rejected(tuple(inputs), "child_binding_changed")
+
+
+def test_excluded_identity_changes_do_not_expand_the_direct_attribute_scope(tree):
+    form = (
+        b'<forms uuid="10000000-0000-4000-8000-000000000021">'
+        b"<name>ItemForm</name></forms>"
+    )
+    current = edited(tree, form, form.replace(b"forms", b"commands"))
+    row = plan(tree, current, tree)["child_objects"][0]
+    assert row["child_uuid"] == CHILD
+    assert row["action"] == "unchanged"
