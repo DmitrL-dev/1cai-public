@@ -67,8 +67,10 @@ read-only child-owner evidence: прямой реквизит связывает
 [durable lifecycle Git-находок](docs/product/GIT-FINDINGS.md) с
 replay/resolve/reopen, транзакционной миграцией SQLite и bounded
 [watcher adapter](docs/product/GIT-WATCHER.md), который повторно проверяет HEAD
-до публикации результата. Поставляемый анализатор, автоматический scheduler и
-уведомления остаются следующими этапами. Bounded scheduler уже умеет сохранять
+до публикации результата. Schema 3 связывает trusted scanner, owned snapshot,
+Git/BSL analysis, owner receipt и bounded scheduler в автономный read-only цикл;
+живой SCM host, receiver и расширенный multi-analyzer контур остаются следующими
+этапами. Bounded scheduler уже умеет сохранять
 состояние цикла, складывать события в atomic outbox и требовать явного recovery
 после оборванного процесса. Для владельца добавлен bounded
 [owner report](docs/product/OWNER-REPORT.md): quality findings и runtime
