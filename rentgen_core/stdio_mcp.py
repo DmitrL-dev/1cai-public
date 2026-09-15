@@ -114,6 +114,14 @@ _NATIVE_ARCHIVE_TOOL = "rentgen_native_archive"
 _OWNER_REPORT_TOOLS = frozenset(
     {"rentgen_owner_report_get", "rentgen_owner_report_list"}
 )
+_METADATA_LIVE_TOOLS = frozenset(
+    {
+        "rentgen_metadata_live_apply",
+        "rentgen_metadata_live_undo",
+        "rentgen_metadata_live_status",
+        "rentgen_metadata_live_recover",
+    }
+)
 TOOL_SCHEMAS = {
     "rentgen_proposal_check": _object(
         {
@@ -188,6 +196,33 @@ TOOL_SCHEMAS = {
         ["project_id", "snapshot_id"],
     ),
 }
+
+_LIVE_METADATA_ARGUMENTS = {
+    "project_id": _UUID,
+    "snapshot_id": _HASH,
+    "operation_id": _UUID,
+}
+TOOL_SCHEMAS.update(
+    {
+        name: _object(
+            {
+                **_LIVE_METADATA_ARGUMENTS,
+                **(
+                    {
+                        "target": {
+                            "type": "string",
+                            "pattern": "^original$",
+                            "maxLength": 8,
+                        }
+                    }
+                    if name == "rentgen_metadata_live_recover"
+                    else {}
+                ),
+            }
+        )
+        for name in _METADATA_LIVE_TOOLS
+    }
+)
 _DESCRIPTIONS = {
     "rentgen_proposal_check": "Run the installed pinned BSL analyzer on an exact ephemeral proposal. Requires editing and analysis rights. Reports single-module diagnostics; tests are not run and apply is unavailable.",
     "rentgen_proposal_create": "Build an ephemeral single-module proposal and bounded diff from an exact SourceRef. Requires editing rights; no tests or source writes. Candidate limit 8 KiB.",
@@ -202,6 +237,10 @@ _DESCRIPTIONS = {
     _NATIVE_ARCHIVE_TOOL: "Create an admin-only logical archive for one completed native run after re-resolving its exact project snapshot. Evidence remains readable and counted; no files are deleted or moved.",
     "rentgen_owner_report_get": "Read one immutable owner report receipt for an exact project snapshot. The server derives the report store from authenticated project state and rechecks project:read before output.",
     "rentgen_owner_report_list": "List bounded immutable owner report receipts for an exact project snapshot. The server derives the report store from authenticated project state and rechecks project:read before output.",
+    "rentgen_metadata_live_apply": "Apply one retained rename_catalog_attribute candidate to a supported Designer XML source tree with a sealed receipt and CAS undo boundary.",
+    "rentgen_metadata_live_undo": "Undo a confirmed live metadata apply only when the source tree still matches its after inventory.",
+    "rentgen_metadata_live_status": "Read the sealed status of one live metadata operation without replaying it.",
+    "rentgen_metadata_live_recover": "Recover an interrupted live metadata operation to its sealed original source using explicit recovery.",
 }
 TOOL_SCHEMAS.update(mcp_drafts.schemas(_object, _UUID, _HASH, _PROPOSAL_DOCUMENT))
 _DESCRIPTIONS.update(mcp_drafts.DESCRIPTIONS)
@@ -872,6 +911,36 @@ def _execute(
             result = _ProposalToolResult(
                 {"archive": value}, proposal_context, permissions, family
             )
+        elif name in _METADATA_LIVE_TOOLS:
+            from . import metadata_live_apply
+
+            permissions = frozenset({"project:read", "source:edit", "analysis:run"})
+            proposal_context = runtime.state_context(
+                principal, arguments["project_id"], permissions=permissions
+            )
+            ctx = runtime.resolve(
+                principal,
+                arguments["project_id"],
+                arguments["snapshot_id"],
+            )
+            proposal_context = ctx
+            if name == "rentgen_metadata_live_apply":
+                value = metadata_live_apply.apply_live(ctx, arguments["operation_id"])
+            elif name == "rentgen_metadata_live_undo":
+                value = metadata_live_apply.undo_live(ctx, arguments["operation_id"])
+            elif name == "rentgen_metadata_live_status":
+                value = metadata_live_apply.get_live_status(
+                    ctx, arguments["operation_id"]
+                )
+            else:
+                value = metadata_live_apply.recover_live(
+                    ctx,
+                    arguments["operation_id"],
+                    target=arguments["target"],
+                )
+            result = _ProposalToolResult(
+                {"metadata_live": value}, proposal_context, permissions, family
+            )
         elif name in _OWNER_REPORT_TOOLS:
             from .owner_report_store import OwnerReportStore
 
@@ -1054,7 +1123,8 @@ def create_server(runtime, principal, *, cancellations=None, scope=None):
                 annotations=ToolAnnotations(
                     readOnlyHint=name
                     not in mcp_drafts.WRITES
-                    | {"rentgen_capture", _NATIVE_ARCHIVE_TOOL},
+                    | {"rentgen_capture", _NATIVE_ARCHIVE_TOOL}
+                    | (_METADATA_LIVE_TOOLS - {"rentgen_metadata_live_status"}),
                     destructiveHint=False,
                     openWorldHint=False,
                 ),

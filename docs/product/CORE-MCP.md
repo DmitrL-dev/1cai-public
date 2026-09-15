@@ -54,7 +54,7 @@ output permission checks. State schema 4 is unchanged.
 
 ## Tool contract
 
-Unrestricted startup exposes twenty-four tools; the previous dev2 artifacts expose ten. All tools return MCP text content containing JSON and equivalent
+Unrestricted startup exposes twenty-eight tools; the previous dev2 artifacts expose ten. All tools return MCP text content containing JSON and equivalent
 `structuredContent`. Success uses `{result, request_id}`; operational errors use
 the core `{error: {code, message, request_id, details}}` envelope and `isError=true`.
 Unknown tools return `UNKNOWN_TOOL`. Schemas reject unknown fields, null or blank
@@ -86,6 +86,10 @@ Semantic failures after schema validation keep their existing core error codes.
 | `rentgen_native_archive` | `project_id`, `snapshot_id`, `operation_id`, `namespace` | `profile_id` for `test-runs` and `metadata-runs` |
 | `rentgen_owner_report_get` | `project_id`, `snapshot_id`, `report_id` | none |
 | `rentgen_owner_report_list` | `project_id`, `snapshot_id` | `limit` (1–1000, default 100) |
+| `rentgen_metadata_live_apply` | `project_id`, `snapshot_id`, `operation_id` | none |
+| `rentgen_metadata_live_undo` | `project_id`, `snapshot_id`, `operation_id` | none |
+| `rentgen_metadata_live_status` | `project_id`, `snapshot_id`, `operation_id` | none |
+| `rentgen_metadata_live_recover` | `project_id`, `snapshot_id`, `operation_id`, `target=original` | none |
 
 Project and operation IDs are canonical lowercase UUIDs. Snapshot IDs are
 lowercase SHA-256 digests. Every source/graph request requires an explicit
@@ -156,6 +160,14 @@ authenticated project's derived `owner-reports` store. They require
 `project:read`, bind every receipt to the selected snapshot, return bounded
 sealed receipts and recheck access at the final output boundary. The MCP
 adapter never accepts a report-store path from the caller.
+
+The four `rentgen_metadata_live_*` tools expose the bounded direct writer from
+[`METADATA-LIVE-APPLY.md`](METADATA-LIVE-APPLY.md). They require the full
+`project:read`, `source:edit` and `analysis:run` set, re-resolve the explicit
+snapshot, and return the same sealed apply/undo/recovery receipts as the CLI.
+They support only the retained `rename_catalog_attribute` candidate in one
+base Designer XML layer; a foreign source edit, unsupported normalization or
+unknown operation state fails closed and is never replayed.
 
 Only the documented profile ID is selectable. A tool cannot choose Java, JAR,
 working directory, environment or analyzer options. Permissions are checked before

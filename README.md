@@ -42,7 +42,8 @@
 | Разобраться в проекте | Захват выгрузки, неизменяемые снимки, поиск модулей, чтение кода, граф и анализ влияния |
 | Дать агенту контекст | Локальный stdio MCP; профиль редактора ограничивает проект и доступные инструменты |
 | Подготовить правку | Отдельные черновики, версии, сравнение, проверка конфликтов при записи и квитанции операций |
-| Применить правку в копии | В исходной ветке после dev8: CLI workspace create/apply/undo/status/recover с проверкой inventory, backup, re-read и явным восстановлением; native EDT adapter повторяет выбранный preview и публикует только в новую принадлежащую копию с CAS undo; в core-v0.1.0.dev8 не входит |
+| Применить правку в копии | В исходной ветке после dev8: CLI workspace create/apply/undo/status/recover с проверкой inventory, backup, re-read и явным восстановлением; native EDT adapter повторяет выбранный preview и публикует только в новую принадлежащую копию с CAS undo |
+| Применить поддержанную правку в исходнике | В ветке разработки: direct writer для одного base Designer XML слоя и `rename_catalog_attribute`, с атомарным journal, CAS undo и явным recovery; [границы](docs/product/METADATA-LIVE-APPLY.md) |
 | Работать в редакторе | Деревья модулей и черновиков в VSCodium, поиск, история и сравнение версий |
 | Проверить предложение модели | Один запрос к локальной Ollama, диагностика BSL до и после, сохранённая ревизия и восстановление результата |
 | Проверить сохранённую версию | BSL, компилятор 1С и доверенный профиль YAxUnit на отдельных базах; отчёты по конкретной ревизии |
@@ -100,9 +101,10 @@ snapshot без повторного запуска Git/LLM; для статус
 Для Designer XML доступен отдельный [qualified property candidate](docs/product/METADATA-THREE-WAY.md),
 который объединяет только раздельные прямые `Properties` и сохраняет исходные
 namespace/QName-фрагменты.
-Исходное дерево при этом не меняется.
-Ни один из этих срезов не выполняет запись в рабочее дерево; живое применение
-и отмена в разработке.
+Исходное дерево при создании candidate не меняется. Для ограниченного сценария
+`rename_catalog_attribute` в ветке разработки доступен отдельный
+[live writer](docs/product/METADATA-LIVE-APPLY.md); остальные типы изменений
+по-прежнему требуют собственных producer, платформенной проверки и rollback.
 
 Исходная конфигурация не меняется при создании черновика. Отсутствие ошибок BSL
 не подтверждает правильность бизнес-логики и не разрешает применение.
@@ -162,6 +164,7 @@ flowchart LR
 | [Архитектура](ARCHITECTURE.md) | Границы модулей и источник истины |
 | [Готовность](docs/product/READINESS.md) | Что проверено и что ещё предстоит |
 | [Workspace apply](docs/product/METADATA-WORKSPACE.md) | Запись, проверка inventory и undo в принадлежащей копии |
+| [Live Designer XML apply](docs/product/METADATA-LIVE-APPLY.md) | Прямое применение поддержанного rename в исходнике с CAS undo/recovery |
 | [Owner report](docs/product/OWNER-REPORT.md) | Источники quality и runtime-метрик с fail-closed статусами и durable receipts |
 | [Owner report store](docs/product/OWNER-REPORT-STORE.md) | Иммутабельные receipts и локальный CLI сохранения/чтения по snapshot |
 | [Runtime metrics](docs/product/RUNTIME-METRICS.md) | Bounded JSON-export adapter с двойной авторизацией и точной привязкой к snapshot |

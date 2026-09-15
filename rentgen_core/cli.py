@@ -123,6 +123,10 @@ def _parser():
         "metadata-workspace-undo",
         "metadata-workspace-status",
         "metadata-workspace-recover",
+        "metadata-live-apply",
+        "metadata-live-undo",
+        "metadata-live-status",
+        "metadata-live-recover",
         "native-archive",
         "proposal-test",
         "proposal-test-result",
@@ -208,6 +212,10 @@ def _parser():
                 "metadata-workspace-undo",
                 "metadata-workspace-status",
                 "metadata-workspace-recover",
+                "metadata-live-apply",
+                "metadata-live-undo",
+                "metadata-live-status",
+                "metadata-live-recover",
             }:
                 command.add_argument("--operation-id", required=True, action=_Once)
             if name == "metadata-evidence":
@@ -222,6 +230,13 @@ def _parser():
                 command.add_argument(
                     "--target",
                     choices=("original", "candidate"),
+                    required=True,
+                    action=_Once,
+                )
+            if name == "metadata-live-recover":
+                command.add_argument(
+                    "--target",
+                    choices=("original",),
                     required=True,
                     action=_Once,
                 )
@@ -1138,6 +1153,10 @@ def _execute(args, *, proposal_scope=None):
             "metadata-workspace-undo",
             "metadata-workspace-status",
             "metadata-workspace-recover",
+            "metadata-live-apply",
+            "metadata-live-undo",
+            "metadata-live-status",
+            "metadata-live-recover",
         }
         else {"project:read", "source:edit"}
         if args.command
@@ -1211,7 +1230,7 @@ def _execute(args, *, proposal_scope=None):
         from .edt_profiles import parse_json
         from .metadata_plans import create_plan
         from .metadata_runs import attach_business_evidence, create_preview, get_preview
-        from . import metadata_workspace
+        from . import metadata_live_apply, metadata_workspace
 
         if proposal_scope is not None:
             proposal_scope.context = ctx
@@ -1257,6 +1276,16 @@ def _execute(args, *, proposal_scope=None):
         elif args.command == "metadata-workspace-recover":
             value = metadata_workspace.recover_workspace(
                 selected, args.operation_id, args.workspace, target=args.target
+            )
+        elif args.command == "metadata-live-apply":
+            value = metadata_live_apply.apply_live(selected, args.operation_id)
+        elif args.command == "metadata-live-undo":
+            value = metadata_live_apply.undo_live(selected, args.operation_id)
+        elif args.command == "metadata-live-status":
+            value = metadata_live_apply.get_live_status(selected, args.operation_id)
+        elif args.command == "metadata-live-recover":
+            value = metadata_live_apply.recover_live(
+                selected, args.operation_id, target=args.target
             )
         else:
             value = get_preview(selected, args.operation_id)
