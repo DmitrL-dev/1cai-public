@@ -40,8 +40,8 @@ a different project returns `MCP_PROJECT_FORBIDDEN`. Checks precede dispatch and
 registry/source access. Unknown names still return `UNKNOWN_TOOL`. Requests cannot
 set or widen startup scope. Current membership/permission checks remain in force.
 
-Without either option the current 24-tool contract is retained. Project-only
-startup exposes the 23 tools with explicit project selectors, excluding
+Without either option the current 28-tool contract is retained. Project-only
+startup exposes the 27 tools with explicit project selectors, excluding
 `rentgen_project_list`. Explicitly combining project scope with that registry-wide
 tool is a startup error. Tool-only scope may access the SID's authorized projects.
 Unknown/duplicate tool names, invalid/repeated project selectors and incompatible
@@ -54,7 +54,7 @@ output permission checks. State schema 4 is unchanged.
 
 ## Tool contract
 
-Unrestricted startup exposes twenty-eight tools; the previous dev2 artifacts expose ten. All tools return MCP text content containing JSON and equivalent
+Unrestricted startup exposes thirty-two tools; the previous dev2 artifacts expose ten. All tools return MCP text content containing JSON and equivalent
 `structuredContent`. Success uses `{result, request_id}`; operational errors use
 the core `{error: {code, message, request_id, details}}` envelope and `isError=true`.
 Unknown tools return `UNKNOWN_TOOL`. Schemas reject unknown fields, null or blank
@@ -90,6 +90,10 @@ Semantic failures after schema validation keep their existing core error codes.
 | `rentgen_metadata_live_undo` | `project_id`, `snapshot_id`, `operation_id` | none |
 | `rentgen_metadata_live_status` | `project_id`, `snapshot_id`, `operation_id` | none |
 | `rentgen_metadata_live_recover` | `project_id`, `snapshot_id`, `operation_id`, `target=original` | none |
+| `rentgen_proposal_live_apply` | `project_id`, `snapshot_id`, `operation_id`, `expected_head`, `proposal` | none |
+| `rentgen_proposal_live_undo` | `project_id`, `operation_id` | none |
+| `rentgen_proposal_live_status` | `project_id`, `operation_id` | none |
+| `rentgen_proposal_live_recover` | `project_id`, `operation_id`, `target=original` | none |
 
 Project and operation IDs are canonical lowercase UUIDs. Snapshot IDs are
 lowercase SHA-256 digests. Every source/graph request requires an explicit
