@@ -1,5 +1,6 @@
 """Snapshot-bound metadata preview and validated readback; live apply is separate."""
 import re
+from uuid import UUID
 
 from ._windows_source_tree import pinned_directory, read_retained
 from .edt_execution import write_record
@@ -82,6 +83,71 @@ def _result(request, preview):
     return {**value, "preview_id": sha256(canonical_bytes(value))}
 
 
+def _validate_product_apply_undo(evidence, result):
+    receipt = evidence.get("product_apply_undo_receipt")
+    require(
+        type(receipt) is dict
+        and set(receipt)
+        == {
+            "schema",
+            "operation_id",
+            "preview_id",
+            "native_preview_id",
+            "workspace_result_id",
+            "undo_id",
+            "apply_status",
+            "undo_status",
+            "live_source_written",
+            "original_digest",
+            "candidate_digest",
+        },
+        "Product apply/undo receipt is incomplete",
+    )
+    try:
+        require(
+            type(receipt["operation_id"]) is str
+            and str(UUID(receipt["operation_id"])) == receipt["operation_id"],
+            "Product apply/undo operation ID is invalid",
+        )
+    except (TypeError, ValueError) as exc:
+        raise CoreError(
+            "METADATA_PLAN_INVALID", "Product apply/undo operation ID is invalid"
+        ) from exc
+    require(
+        type(receipt["schema"]) is int and receipt["schema"] == 1,
+        "Product apply/undo receipt schema is invalid",
+    )
+    require(
+        receipt["preview_id"] == result["preview_id"],
+        "Product apply/undo receipt belongs to another preview",
+    )
+    for key in (
+        "native_preview_id",
+        "workspace_result_id",
+        "undo_id",
+        "original_digest",
+        "candidate_digest",
+    ):
+        require(
+            type(receipt[key]) is str and re.fullmatch(r"[0-9a-f]{64}", receipt[key]),
+            "Product apply/undo receipt hash is invalid",
+        )
+    require(
+        receipt["apply_status"] == "applied"
+        and receipt["undo_status"] == "undone"
+        and receipt["live_source_written"] is False,
+        "Product apply/undo receipt is not a completed owned-copy operation",
+    )
+    inventories = result["preview"]["inventories"]
+    require(
+        receipt["original_digest"] == sha256(canonical_bytes(inventories["original"]))
+        and receipt["candidate_digest"]
+        == sha256(canonical_bytes(inventories["candidate"])),
+        "Product apply/undo receipt inventory binding differs",
+    )
+    return dict(receipt)
+
+
 def _validate_business_evidence(evidence, result, raw):
     preview = result["preview"]
     require(type(evidence) is dict, "Business evidence must be an object")
@@ -161,8 +227,16 @@ def _validate_business_evidence(evidence, result, raw):
         "unmodified_preview_execution",
     ):
         require(evidence[key] is True, "Business evidence flag is false: " + key)
-    require(evidence["product_apply_undo"] is False)
-    return {
+    require(type(evidence["product_apply_undo"]) is bool)
+    product_receipt = None
+    if evidence["product_apply_undo"]:
+        product_receipt = _validate_product_apply_undo(evidence, result)
+    else:
+        require(
+            "product_apply_undo_receipt" not in evidence,
+            "Product apply/undo receipt requires a true product_apply_undo flag",
+        )
+    summary = {
         "status": "passed",
         "scope": "owned_fixture",
         "source": evidence["source"],
@@ -174,7 +248,11 @@ def _validate_business_evidence(evidence, result, raw):
         "ibcmd_sha256": evidence["ibcmd_sha256"],
         "engine_cfe_sha256": evidence["engine_cfe_sha256"],
         "evidence_sha256": sha256(raw),
+        "product_apply_undo": evidence["product_apply_undo"],
     }
+    if product_receipt is not None:
+        summary["product_apply_undo_receipt"] = product_receipt
+    return summary
 
 
 def _read_business_evidence(run, result):

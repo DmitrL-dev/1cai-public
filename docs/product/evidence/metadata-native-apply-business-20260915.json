@@ -1,0 +1,306 @@
+{
+  "arbitrary_configuration_qualification": false,
+  "engine_cfe_sha256": "805a2277c997a3c24be0b0d080696479e91e4a15ed7e27aaf3991a7346522d70",
+  "full_record_reference_preserved": true,
+  "ibcmd_sha256": "38f37715535cea530e58d5ba2e7e072c184b61b12f3e903ac290b299cf39fd38",
+  "platform_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+  "product_apply_undo": true,
+  "records": 3,
+  "reports": {
+    "normalized": {
+      "cases": [
+        {
+          "classname": "ЮТРентгенМиграцияСтарое.Данные",
+          "context": "Сервер",
+          "name": "Данные",
+          "outcome": "passed"
+        }
+      ],
+      "client_exit_code": 0,
+      "counts": {
+        "errors": 0,
+        "failures": 0,
+        "passed": 1,
+        "skipped": 0,
+        "tests": 1
+      },
+      "evidence": "parsed_unattested",
+      "exit_file_sha256": "9585fbece5c402088f2d6a2def7e60d1c7ffecc24b16d32d5823a064b008935b",
+      "framework_exit_code": 0,
+      "junit_sha256": "70a6d2d6a13ff67c6b9817275fc801aa13ff2051d247ab3343ffc547aaaf254a",
+      "settings_sha256": "f62abeeb88962909c8ac1cbf05b56cbb4fde42bea8801dcd825ff14ebe6ce61e",
+      "status": "passed"
+    },
+    "renamed": {
+      "cases": [
+        {
+          "classname": "ЮТРентгенМиграцияНовое.Данные",
+          "context": "Сервер",
+          "name": "Данные",
+          "outcome": "passed"
+        }
+      ],
+      "client_exit_code": 0,
+      "counts": {
+        "errors": 0,
+        "failures": 0,
+        "passed": 1,
+        "skipped": 0,
+        "tests": 1
+      },
+      "evidence": "parsed_unattested",
+      "exit_file_sha256": "9585fbece5c402088f2d6a2def7e60d1c7ffecc24b16d32d5823a064b008935b",
+      "framework_exit_code": 0,
+      "junit_sha256": "ef1c0d522b5427fc2d29b1c21e31bb6602f200808211092c2eec052fcd46fd71",
+      "settings_sha256": "5f6678bcbc927e7553bdd307d768fe61d4bf729ba07a34ff789aa08633ed2122",
+      "status": "passed"
+    },
+    "reopen-original": {
+      "cases": [
+        {
+          "classname": "ЮТРентгенМиграцияСтарое.Данные",
+          "context": "Сервер",
+          "name": "Данные",
+          "outcome": "passed"
+        }
+      ],
+      "client_exit_code": 0,
+      "counts": {
+        "errors": 0,
+        "failures": 0,
+        "passed": 1,
+        "skipped": 0,
+        "tests": 1
+      },
+      "evidence": "parsed_unattested",
+      "exit_file_sha256": "9585fbece5c402088f2d6a2def7e60d1c7ffecc24b16d32d5823a064b008935b",
+      "framework_exit_code": 0,
+      "junit_sha256": "08faa02a9a6c6b4bac6846e3785aac6b6d12112160507752532d00d2cd66910c",
+      "settings_sha256": "af7368ce7db21015c824d77563810548e833b00abf947b04ba601334e8f36730",
+      "status": "passed"
+    },
+    "restored": {
+      "cases": [
+        {
+          "classname": "ЮТРентгенМиграцияСтарое.Данные",
+          "context": "Сервер",
+          "name": "Данные",
+          "outcome": "passed"
+        }
+      ],
+      "client_exit_code": 0,
+      "counts": {
+        "errors": 0,
+        "failures": 0,
+        "passed": 1,
+        "skipped": 0,
+        "tests": 1
+      },
+      "evidence": "parsed_unattested",
+      "exit_file_sha256": "9585fbece5c402088f2d6a2def7e60d1c7ffecc24b16d32d5823a064b008935b",
+      "framework_exit_code": 0,
+      "junit_sha256": "873af22f754522691d32e362f31372be75284f42c57d253ff77d0940637025e4",
+      "settings_sha256": "1834d3cbb4cd3d9b9bb75ef4200e5e7593cb580c9b4520cf4d4fa74d45e1b735",
+      "status": "passed"
+    },
+    "seed": {
+      "cases": [
+        {
+          "classname": "ЮТРентгенМиграцияСоздание.Данные",
+          "context": "Сервер",
+          "name": "Данные",
+          "outcome": "passed"
+        }
+      ],
+      "client_exit_code": 0,
+      "counts": {
+        "errors": 0,
+        "failures": 0,
+        "passed": 1,
+        "skipped": 0,
+        "tests": 1
+      },
+      "evidence": "parsed_unattested",
+      "exit_file_sha256": "9585fbece5c402088f2d6a2def7e60d1c7ffecc24b16d32d5823a064b008935b",
+      "framework_exit_code": 0,
+      "junit_sha256": "456f327d720ef6af926c9e1f6d43c91b808d3f3ebcd4968a8be3e81797f91e53",
+      "settings_sha256": "fbec46413f6f1fd2b15453dc9dffb4f10f2ae4918a9b151039ef5b37182ed431",
+      "status": "passed"
+    },
+    "wrong-uuid": {
+      "cases": [
+        {
+          "classname": "ЮТРентгенМиграцияНовое.Данные",
+          "context": "Сервер",
+          "name": "Данные",
+          "outcome": "failure"
+        }
+      ],
+      "client_exit_code": 0,
+      "counts": {
+        "errors": 0,
+        "failures": 1,
+        "passed": 0,
+        "skipped": 0,
+        "tests": 1
+      },
+      "evidence": "parsed_unattested",
+      "exit_file_sha256": "07846b783c23904a75834c1932bc2fad41e388e18bc32ffd73ed87bfa3844d87",
+      "framework_exit_code": 1,
+      "junit_sha256": "a5f95f63ce784e71246730e7eab1cb64d96a1191c117a1b16bb6422fd113f69e",
+      "settings_sha256": "75abcfec98e56a6d07c26b1b6cea3f8024aa86697563604de3afa883c1bf6b36",
+      "status": "failed"
+    }
+  },
+  "schema": 1,
+  "schema_restore_preserves_data": true,
+  "source": "real 1C/YAxUnit on a new owned file infobase",
+  "source_inventories": {
+    "normalized": [
+      {
+        "path": "Catalogs/Products.xml",
+        "sha256": "d349a5576f12850a655af857b9d91b17d3f0a6dc50933416f31f59de279fb475",
+        "size": 5822
+      },
+      {
+        "path": "Catalogs/Products/Forms/ItemForm.xml",
+        "sha256": "29c4effcc9ddabafc8d319cc89865cffffe3d8758b7428e6414c358b996228e3",
+        "size": 1191
+      },
+      {
+        "path": "Catalogs/Products/Forms/ItemForm/Ext/Form.xml",
+        "sha256": "d3c5ec17116a47af556f07e3c6482577ad914ddc7acb42479989e0ea08604055",
+        "size": 2255
+      },
+      {
+        "path": "Configuration.xml",
+        "sha256": "0e2f3a7f0b1f527997364ae63b3246cceff2f3913268872879d7afae9ceddf02",
+        "size": 10423
+      },
+      {
+        "path": "Languages/Russian.xml",
+        "sha256": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1",
+        "size": 1237
+      }
+    ],
+    "original": [
+      {
+        "path": "Catalogs/Products.xml",
+        "sha256": "05ac6812aabbe3be13979ae7f8bc3a3787439a9c9303de5bc3605ec0fd9742be",
+        "size": 5716
+      },
+      {
+        "path": "Catalogs/Products/Forms/ItemForm.xml",
+        "sha256": "29c4effcc9ddabafc8d319cc89865cffffe3d8758b7428e6414c358b996228e3",
+        "size": 1191
+      },
+      {
+        "path": "Catalogs/Products/Forms/ItemForm/Ext/Form.xml",
+        "sha256": "cfbce5d6ff9e52c224be01649595063784c263c86e87c9f549b7c0dc73316951",
+        "size": 2200
+      },
+      {
+        "path": "Configuration.xml",
+        "sha256": "0e2f3a7f0b1f527997364ae63b3246cceff2f3913268872879d7afae9ceddf02",
+        "size": 10423
+      },
+      {
+        "path": "Languages/Russian.xml",
+        "sha256": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1",
+        "size": 1237
+      }
+    ],
+    "renamed": [
+      {
+        "path": "Catalogs/Products.xml",
+        "sha256": "8f1cf1e8d77ffe142a56c6bd4e4252d49e33059d0600aa55f9097a85f0fbfc48",
+        "size": 5818
+      },
+      {
+        "path": "Catalogs/Products/Forms/ItemForm.xml",
+        "sha256": "29c4effcc9ddabafc8d319cc89865cffffe3d8758b7428e6414c358b996228e3",
+        "size": 1191
+      },
+      {
+        "path": "Catalogs/Products/Forms/ItemForm/Ext/Form.xml",
+        "sha256": "fd702f5c947c20ee22785bd2ade7710987543610a1e0f35af6078722dfac6507",
+        "size": 2251
+      },
+      {
+        "path": "Configuration.xml",
+        "sha256": "0e2f3a7f0b1f527997364ae63b3246cceff2f3913268872879d7afae9ceddf02",
+        "size": 10423
+      },
+      {
+        "path": "Languages/Russian.xml",
+        "sha256": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1",
+        "size": 1237
+      }
+    ]
+  },
+  "test_framework_adjustment": "Borrowed Language.Русский in YAxUnit renamed to Russian, retaining its UUID and ru language code; base sources unchanged",
+  "test_modules": {
+    "RentgenMigrationData": {
+      "native_sha256": "844f54c31fc9e6517a1af710d2cecb4ff8e79e62f67dddf7abd2c45207424427",
+      "source_sha256": "acbea427e6dcb1aa90d3646a1a43384524775dcafa85f949be74ce25040fee62",
+      "uuid": "03bc5192-5398-403c-a1a6-49cdeb79effd"
+    },
+    "ЮТРентгенМиграцияНовое": {
+      "native_sha256": "e0a93e3c47ecf85f794e2514d5e316242fc25daa14ec2eb10d5a583c97393903",
+      "source_sha256": "ecec7c482ef4495a42822ef17728e5fb96780992f3874b170bf65d820bf36738",
+      "uuid": "c72b801f-508a-46d6-ada6-42f8bf09237c"
+    },
+    "ЮТРентгенМиграцияСоздание": {
+      "native_sha256": "90462dd10274ccdadb40bdd3e8b9df1798926d577f50a0f1b7060f0c837d11e2",
+      "source_sha256": "3090beab7f134292799258b8a49d28df8c74373078110934904aede8dfb221c8",
+      "uuid": "cf50d256-e896-4a55-837c-6845904c1bed"
+    },
+    "ЮТРентгенМиграцияСтарое": {
+      "native_sha256": "862e0038b7dead13ea3bb9a67fa416087c7403fcfa3661380141aec8ae0207c5",
+      "source_sha256": "f3eddee5f97b8d8cdfcb9313aeece460962d56fbfe02fdd413a186053a220036",
+      "uuid": "f7a4d847-e113-4cb1-b677-e540d380a348"
+    }
+  },
+  "unmodified_preview_execution": true,
+  "value_cases": [
+    "unicode",
+    "empty",
+    "length_32"
+  ],
+  "wrong_uuid_compiles_but_loses_data": true,
+  "date": "2026-09-15",
+  "implementation": "real native EDT apply/undo in a new owned workspace plus real 1C/YAxUnit business-data roundtrip; source checkout; local evidence",
+  "preview_id": "31ab5c6d1c57dc3a269f48481732b4717a8140ba20b4c6fefe2643f98a09c8fe",
+  "source_preview_id": "31ab5c6d1c57dc3a269f48481732b4717a8140ba20b4c6fefe2643f98a09c8fe",
+  "native_preview_id": "8d14eec335e3335358704534e6891c12800f00281b6521ba70f39e7d38dde189",
+  "apply_status": "applied",
+  "undo_status": "undone",
+  "source_mutated": false,
+  "live_apply_allowed": false,
+  "product_apply_undo_receipt": {
+    "schema": 1,
+    "operation_id": "4a7b85bf-8e4b-4fab-90a9-a85cf8d888b9",
+    "preview_id": "31ab5c6d1c57dc3a269f48481732b4717a8140ba20b4c6fefe2643f98a09c8fe",
+    "native_preview_id": "8d14eec335e3335358704534e6891c12800f00281b6521ba70f39e7d38dde189",
+    "workspace_result_id": "d808a6cbda98aff13c69d548301a24a7d6005049b78a205738de7be2545e0144",
+    "undo_id": "465072bf006988c4f1ddfdb24f495d5645b28c9d3cf3e39f2f5cf2e290a04689",
+    "apply_status": "applied",
+    "undo_status": "undone",
+    "live_source_written": false,
+    "original_digest": "e4099571515b28588939bd20df1b29deb39d76dbb16b21b4a8012eaf12de254b",
+    "candidate_digest": "8dc3cbb4b4fe91c32543d29125f600565a2ac1052da4173e6b294da7d083cd5c"
+  },
+  "limitations": [
+    "The owned workspace was changed and restored; the registered working source was not written",
+    "No arbitrary .cf/.cfe, extension, form or СКД apply is accepted by this operation",
+    "No claim of general EDT normalization semantics or multi-file power-loss durability",
+    "The 1C/YAxUnit run covers the retained synthetic fixture and three representative values",
+    "Local hashes identify inputs and receipts but do not attest the host or third-party runtime"
+  ],
+  "scope": [
+    "native EDT import/rename/export over exact retained SnapshotRef and preview",
+    "owned file workspace apply, full readback, explicit CAS undo and recovery",
+    "real 1C 8.3.27.2342/YAxUnit 25.12 data roundtrip on the same original/baseline/candidate inventories"
+  ],
+  "evidence_id": "c42738e92858000ee702fbea1b9b07ded147511074ff508abe4b1afabdf6048c"
+}

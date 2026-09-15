@@ -163,7 +163,7 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 | Локальная модель | Один искусственный сценарий Qwen3.5:9b с независимой проверкой BSL | Не доказывает качество на произвольных задачах |
 | Ежедневная разработка dev8 | AI-правка, ручное исправление новой ревизией, конфликт версий, нативная проверка и восстановление проверены в редакторе | [AI-ошибка сохраняется](DAILY-DEVELOPMENT-ACCEPTANCE.md); [исправление человеком проверено](MANUAL-DRAFT-EDIT.md). Синтетический YAxUnit принят отдельно; бизнес-покрытие и применение не приняты |
 | Реальная платформа 1С | 8.3.27.2342: нативный общий модуль, проверка ошибочного BSL, исполнение 42 → отказ/42 → исправление/43, сохранение UUID; отдельная запись/чтение/переименование/удаление данных в синтетическом каталоге ([evidence](NATIVE-BUSINESS-ROUNDTRIP-20260913.md)) | Собственные синтетические сценарии; [полная приёмка не завершена](PLATFORM-ACCEPTANCE.md) |
-| Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; owned `ibcmd` create/import/export round-trip с structural evidence; preflight и workspace writer с проверкой inventory, backup, re-read, undo conflict, привязанными receipts, legacy policy и явным recovery; native business roundtrip подтверждает данные после переименования | Внешний concurrent CAS, живая запись через EDT/1С, product apply/undo и матрица типовых конфигураций не приняты |
+| Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; owned `ibcmd` create/import/export round-trip с structural evidence; preflight и workspace writer с проверкой inventory, backup, re-read, undo conflict, привязанными receipts, legacy policy и явным recovery; native business roundtrip и product apply/undo receipt подтверждены для отдельной принадлежащей копии | Внешний concurrent CAS, живая запись через EDT/1С, произвольные `.cf/.cfe`, расширения, формы/СКД и матрица типовых конфигураций не приняты |
 | Обновления конфигураций | Path-bytes и UUID-aware Designer XML three-way plan с bounded хэшами, явными конфликтами и evidence по прямым свойствам (`same_change`/`disjoint_changes`/`overlap_conflict`); для квалифицированного `disjoint_changes` прямых `Properties` доступен in-memory candidate с сохранением namespace/QName и digest; для выбранных EDT Catalog `.mdo` есть read-only child-owner evidence и fail-closed transfer/type checks | Расширения, BSL/формы/СКД, полноценная схема Designer, типовые конфигурации, тестовая база, backup/rollback, native validity и запись не приняты |
 | Проверка предложения платформой | В dev8: установленный CLI проверил корректное/ошибочное BSL-предложение на сохранённой конфигурации; в исходной ветке после dev8 compile/YAxUnit API используют bounded native admission/retention ([границы](NATIVE-RESOURCES.md)) | Один Designer XML слой; компиляция без бизнес-тестов и применения |
 | Observer | Опрос выгрузки, journal/recovery и durable findings; schema 2/3 composition root связывает GitWatcherScheduler, read-only BSL Git adapter, owner-report store и atomic local outbox с bounded cooperative stop; schema 3 добавляет trusted snapshot capture, ancestry/race/revocation gates и receipt reuse; per-commit snapshot binding, bounded Git/snapshot source evidence, read-only BSL-LS adapter, bounded SARIF subset, native ServiceMain/SCM boundary proof и явный SCM installer plan | Нет live SCM deployment/daemon acceptance, live receiver acceptance и дедупликации, полного Git tree/temporal evidence, producer-specific Sonar/Vanessa/YAxUnit execution и общей приёмки O1 |
@@ -186,3 +186,18 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 и read-only CLI `edt-inventory-plan`: проверенные bindings UUID/owner/layer,
 явные конфликты и unsupported-причины, ограничение JSON 8 MiB. Это сравнение
 предоставленного partial evidence без материализации или native validation.
+
+## Native apply/undo и бизнес-данные — 15 сентября 2026
+
+Связанный запуск `metadata_native_apply` и 1С/YAxUnit теперь сохранён в
+[METADATA-NATIVE-BUSINESS.md](METADATA-NATIVE-BUSINESS.md) и его
+[машинной квитанции](evidence/metadata-native-apply-business-20260915.json).
+Apply выполнен в новой принадлежащей рабочей копии, после чего CAS undo и
+recovery вернули исходный inventory; рабочее дерево не изменялось. На тех же
+байтах 1С 8.3.27.2342/YAxUnit 25.12 подтвердили три записи и положительные
+переходы схемы, а намеренно изменённый UUID дал ожидаемую ошибку данных.
+
+Это закрывает только доказательство owned-copy apply/undo и привязку receipt к
+бизнес-проверке. Живая запись рабочей конфигурации, произвольные `.cf/.cfe`,
+расширения, формы/СКД и полная матрица типовых конфигураций остаются отдельными
+блокирующими направлениями.
