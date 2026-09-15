@@ -52,6 +52,7 @@ from .notification_delivery import (
     WebhookAdapter,
     deliver_outbox,
 )
+from .notification_receiver import NotificationReceiver, ReceiverResult, ReceiverStatus
 from .git_snapshot_evidence import GitSnapshotEvidence
 from .edt_inventory import EDTInventoryLimits, edt_metadata_inventory
 from .metadata_three_way import materialize_metadata_three_way, plan_metadata_three_way
@@ -103,6 +104,9 @@ __all__ = [
     "DeliveryStatus",
     "WebhookAdapter",
     "deliver_outbox",
+    "NotificationReceiver",
+    "ReceiverResult",
+    "ReceiverStatus",
     "GitSnapshotEvidence",
     "OwnerReportStore",
     "EDTInventoryLimits",

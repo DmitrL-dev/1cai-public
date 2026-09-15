@@ -95,6 +95,7 @@ only-include = [
   "docs/product/GIT-WATCHER.md",
   "docs/product/GIT-SNAPSHOT-EVIDENCE.md",
   "docs/product/NOTIFICATION-DELIVERY.md",
+  "docs/product/NOTIFICATION-RECEIVER.md",
   "docs/product/OWNER-REPORT.md",
   "docs/product/OWNER-REPORT-STORE.md",
   "docs/product/RUNTIME-METRICS.md",

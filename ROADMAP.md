@@ -77,7 +77,11 @@ replay/resolve/reopen, транзакционной миграцией SQLite и
 до публикации результата. Schema 3 связывает trusted scanner, owned snapshot,
 Git/BSL analysis, owner receipt и bounded scheduler в автономный read-only цикл;
 живой SCM host, receiver и расширенный multi-analyzer контур остаются следующими
-этапами. Bounded scheduler уже умеет сохранять
+этапами. Receiver-side core теперь проверяет bearer/idempotency и durable
+deduplication/conflict в SQLite, включая retry после потерянного ответа и
+повторного открытия store. Он подтверждает digest receipt; downstream обработка,
+live HTTPS host и hostile filesystem mutation ещё не квалифицированы.
+Bounded scheduler уже умеет сохранять
 состояние цикла, складывать события в atomic outbox и требовать явного recovery
 после оборванного процесса. Для владельца добавлен bounded
 [owner report](docs/product/OWNER-REPORT.md): quality findings и runtime
