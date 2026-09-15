@@ -131,6 +131,7 @@ only-include = [
   "docs/product/evidence/tests-editor-0.1.8.json",
   "docs/product/evidence/test-profile-installed.json",
   "docs/product/evidence/yaxunit-25.12-platform.json",
+  "docs/product/evidence/yaxunit-25.12-platform-20260915.json",
   "docs/product/PROPOSAL-CHECK.md",
   "docs/product/PROPOSAL-PLATFORM-CHECK.md",
   "docs/product/STATE-MIGRATION.md",
@@ -144,6 +145,7 @@ only-include = [
   "scripts/verification/verify_proposal_platform_delivery.py",
   "docs/product/PLATFORM-ACCEPTANCE.md",
   "docs/product/evidence/native-platform-8.3.27.2342.json",
+  "docs/product/evidence/native-platform-8.3.27.2342-20260915.json",
 ]
 exclude = ["__pycache__", "*.pyc", "*.pyo"]
 

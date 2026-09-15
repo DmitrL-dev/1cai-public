@@ -190,6 +190,14 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 
 ## Native apply/undo и бизнес-данные — 15 сентября 2026
 
+В этот же день повторно подтверждена установленная платформа: native
+Designer XML/BSL сценарий и YAxUnit 25.12 fail/pass завершились на новых
+файловых базах; хэши и коды шагов сохранены в
+[native evidence](evidence/native-platform-8.3.27.2342-20260915.json) и
+[YAxUnit evidence](evidence/yaxunit-25.12-platform-20260915.json). Это усиливает
+матрицу версии 8.3.27.2342, но не расширяет её до типовых конфигураций, форм,
+поставщика или rollback.
+
 Связанный запуск `metadata_native_apply` и 1С/YAxUnit теперь сохранён в
 [METADATA-NATIVE-BUSINESS.md](METADATA-NATIVE-BUSINESS.md) и его
 [машинной квитанции](evidence/metadata-native-apply-business-20260915.json).

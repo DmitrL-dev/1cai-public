@@ -106,6 +106,8 @@ identity-bearing элементы отклоняются. Таблица не з
 | [`metadata-migration-v1.json`](evidence/metadata-migration-v1.json) и [описание](METADATA-MIGRATION.md) | Три записи одного строкового реквизита, rename/возврат и отрицательный UUID case; YAxUnit 25.12 как внешний закреплённый движок | Общая совместимость `.cfe`, сохранность всех данных и business logic |
 | [`ibcmd-roundtrip-8.3.27.2342-20260914.json`](evidence/ibcmd-roundtrip-8.3.27.2342-20260914.json) | Локальный unattested create/import/export собственной фикстуры через `candidate.cf` | Импорт произвольного `.cf`, межзапусковая побайтная воспроизводимость и live apply |
 | [`metadata-native-apply-20260914.json`](evidence/metadata-native-apply-20260914.json) | EDT import/rename/export и owned workspace apply/undo на собственной фикстуре | В этом smoke не запускался новый platform/business check; `live_apply_allowed=false` |
+| [`native-platform-8.3.27.2342-20260915.json`](evidence/native-platform-8.3.27.2342-20260915.json) | Повторный native Designer XML/BSL create → reject → repair → runtime round-trip на новой файловой ИБ | Только синтетический общий модуль и одна версия платформы; формы, поставщик, rollback и произвольные конфигурации не квалифицированы |
+| [`yaxunit-25.12-platform-20260915.json`](evidence/yaxunit-25.12-platform-20260915.json) | Повторный YAxUnit 25.12 fail/pass на новой файловой ИБ через установленный 1C/ibcmd | Один синтетический тест; это не приёмка типовой конфигурации или продукта apply/undo |
 
 Синтетические тесты этого документа не обновляют и не расширяют перечисленные
 native evidence. Данных пользовательских конфигураций в новом корпусе нет.
