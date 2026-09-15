@@ -73,6 +73,10 @@ fail-closed. Live SCM/1С deployment в этот режим не входит.
 События watcher можно явно отправить из durable outbox через
 [HTTPS webhook](docs/product/NOTIFICATION-DELIVERY.md) с ограничением размера,
 allowlist получателей и подтверждением только после HTTP 2xx.
+В ветке разработки [receiver core](docs/product/NOTIFICATION-RECEIVER.md)
+проверяет bearer/idempotency и сохраняет durable digest receipt в SQLite:
+повтор даёт duplicate, изменённый envelope под тем же ключом — conflict.
+Live HTTPS/TLS/DNS host и downstream обработка ещё не приняты.
 Формат [owner report](docs/product/OWNER-REPORT.md) связывает quality findings и
 подтверждённые runtime-метрики; generic и register adapters читают retained
 evidence с no-follow проверкой, а без подтверждённого runtime adapter
@@ -103,7 +107,7 @@ snapshot без повторного запуска Git/LLM; для статус
 namespace/QName-фрагменты.
 Исходное дерево при создании candidate не меняется. Для ограниченного сценария
 `rename_catalog_attribute` в ветке разработки доступен отдельный
-[live writer](docs/product/METADATA-LIVE-APPLY.md); остальные типы изменений
+[live writer](docs/product/METADATA-LIVE-APPLY.md); остальные операции метаданных
 по-прежнему требуют собственных producer, платформенной проверки и rollback.
 
 Исходная конфигурация не меняется при создании черновика. Отсутствие ошибок BSL

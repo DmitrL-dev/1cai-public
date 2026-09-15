@@ -26,6 +26,11 @@
 На платформе 8.3.27.2342 проверены загрузка собственного общего модуля через XML,
 отказ компилятора на ошибочном BSL, исправление и выполнение функции;
 [границы проверки](docs/product/PLATFORM-ACCEPTANCE.md).
+В ветке разработки уже есть прямые файловые writers для
+[rename реквизита](docs/product/METADATA-LIVE-APPLY.md) и
+[одного BSL-предложения](docs/product/PROPOSAL-LIVE-APPLY.md) в базовом
+Designer XML слое, с CAS undo и явным recovery. Это узкие изменения исходников;
+native live 1С/EDT, типовые конфигурации и пилот ещё не приняты.
 
 ## 3. Обновления с сохранением доработок
 
@@ -76,7 +81,7 @@ replay/resolve/reopen, транзакционной миграцией SQLite и
 [watcher adapter](docs/product/GIT-WATCHER.md), который повторно проверяет HEAD
 до публикации результата. Schema 3 связывает trusted scanner, owned snapshot,
 Git/BSL analysis, owner receipt и bounded scheduler в автономный read-only цикл;
-живой SCM host, receiver и расширенный multi-analyzer контур остаются следующими
+живой SCM host, HTTPS receiver host и расширенный multi-analyzer контур остаются следующими
 этапами. Receiver-side core теперь проверяет bearer/idempotency и durable
 deduplication/conflict в SQLite, включая retry после потерянного ответа и
 повторного открытия store. Он подтверждает digest receipt; downstream обработка,
