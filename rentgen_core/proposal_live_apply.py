@@ -153,6 +153,34 @@ def _safe_target(path):
     )
 
 
+def _validate_source_ref_document(value):
+    try:
+        project_id = validate_project_id(value["snapshot"]["project_id"])
+        relative_path = validate_source_path(value["relative_path"])
+    except (CoreError, KeyError, TypeError) as exc:
+        raise CoreError(
+            RECOVERY, "Proposal live source reference is malformed"
+        ) from exc
+    _require(
+        type(value) is dict
+        and set(value) == {"snapshot", "layer_id", "relative_path", "raw_sha256"}
+        and type(value["snapshot"]) is dict
+        and set(value["snapshot"]) == {"project_id", "snapshot_id", "manifest_hash"}
+        and project_id == value["snapshot"]["project_id"]
+        and type(value["snapshot"]["snapshot_id"]) is str
+        and _live.preflight.HASH.fullmatch(value["snapshot"]["snapshot_id"])
+        and value["snapshot"]["manifest_hash"] == value["snapshot"]["snapshot_id"]
+        and value["layer_id"] == "base"
+        and type(value["relative_path"]) is str
+        and value["relative_path"].lower().endswith(".bsl")
+        and relative_path == value["relative_path"]
+        and type(value["raw_sha256"]) is str
+        and _live.preflight.HASH.fullmatch(value["raw_sha256"]),
+        RECOVERY,
+        "Proposal live source reference is malformed",
+    )
+
+
 def _read_intent(journal):
     value = _read(journal / "intent.json", "intent_id")
     try:
@@ -184,33 +212,21 @@ def _read_intent(journal):
         and Path(value["source_root"]).is_absolute()
         and type(value["layer_id"]) is str
         and value["layer_id"] == "base"
-        and type(value["source_ref"]) is dict
-        and set(value["source_ref"])
-        == {
-            "snapshot",
-            "layer_id",
-            "relative_path",
-            "raw_sha256",
-        }
-        and type(value["source_ref"]["snapshot"]) is dict
-        and set(value["source_ref"]["snapshot"])
-        == {
-            "project_id",
-            "snapshot_id",
-            "manifest_hash",
-        }
-        and value["source_ref"]["snapshot"]["project_id"] == value["project_id"]
-        and value["source_ref"]["layer_id"] == value["layer_id"]
-        and type(value["source_ref"]["relative_path"]) is str
-        and value["source_ref"]["relative_path"].lower().endswith(".bsl")
-        and type(value["source_ref"]["raw_sha256"]) is str
-        and _live.preflight.HASH.fullmatch(value["source_ref"]["raw_sha256"])
         and type(value["proposal_content_id"]) is str
         and _live.preflight.HASH.fullmatch(value["proposal_content_id"])
         and type(value["changed_paths"]) is list
         and all(type(path) is str for path in value["changed_paths"]),
         RECOVERY,
         "Proposal live intent has an invalid schema",
+    )
+    _validate_source_ref_document(value["source_ref"])
+    _require(
+        value["source_ref"]["snapshot"]["project_id"] == value["project_id"]
+        and value["source_ref"]["layer_id"] == value["layer_id"]
+        and len(value["changed_paths"]) == 1
+        and value["changed_paths"][0].lower().endswith(".bsl"),
+        RECOVERY,
+        "Proposal live intent source binding is invalid",
     )
     before, after = _rows_map(value["before_inventory"]), _rows_map(
         value["after_inventory"]
@@ -279,6 +295,13 @@ def _read_result(journal):
         RECOVERY,
         "Proposal live result has an invalid schema",
     )
+    _validate_source_ref_document(value["source_ref"])
+    _require(
+        len(value["changed_paths"]) == 1
+        and value["changed_paths"][0].lower().endswith(".bsl"),
+        RECOVERY,
+        "Proposal live result source binding is invalid",
+    )
     return value
 
 
@@ -307,6 +330,7 @@ def _load_for_mutation(ctx, operation_id):
             result["project_id"] == intent["project_id"]
             and result["operation_id"] == operation_id
             and result["proposal_content_id"] == intent["proposal_content_id"]
+            and result["source_ref"] == intent["source_ref"]
             and result["changed_paths"] == intent["changed_paths"]
             and result["before_digest"] == intent["before_digest"]
             and result["after_digest"] == intent["after_digest"],
