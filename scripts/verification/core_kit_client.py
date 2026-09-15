@@ -101,7 +101,7 @@ async def main():
         async with ClientSession(read, write) as session:
             await session.initialize()
             tools = [t.name for t in (await session.list_tools()).tools]
-            assert len(tools) == 24
+            assert len(tools) == 28
             invalid = await session.call_tool(
                 "rentgen_project_head",
                 {
