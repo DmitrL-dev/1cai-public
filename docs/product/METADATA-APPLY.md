@@ -194,11 +194,12 @@ snapshot, retained preview и живой источник. Устаревшее 
 не меняет историческую квитанцию preflight.
 
 `undo_metadata(ctx, operation_id)` требует доступ к существующей квитанции, затем
-возвращает `METADATA_UNDO_UNAVAILABLE`: у preflight нет квитанции применения и
-принадлежащего операции результата для восстановления. Чужая последующая правка
-никогда не заменяется baseline. Проверка undo conflict между текущим
-состоянием и подтверждённым результатом apply реализована только для новой
-принадлежащей Рентгену копии в `metadata_workspace` и `metadata_native_apply`.
+возвращает `METADATA_UNDO_UNAVAILABLE`: у read-only preflight нет квитанции
+применения и принадлежащего операции результата для восстановления. Чужая
+последующая правка никогда не заменяется baseline. Проверка undo conflict между
+текущим состоянием и подтверждённым результатом apply реализована в
+`metadata_workspace`, `metadata_native_apply` и отдельном live Designer XML
+writer; каждый контур имеет собственный journal и recovery.
 
 ## Граница приёмки
 
