@@ -56,7 +56,8 @@ synthetic, partial evidence scope described below.
 
 ## Evidence and scope
 
-The result uses parser profile `edt_identity_v1` and always reports
+The result uses `edt_identity_v1` for the legacy compact `.mdo` contract and
+`edt_identity_v2` for actual EDT `MetaDataObject` XML. Both profiles report
 `coverage: partial`. Each identity includes its normalized `canonical_uuid`,
 original `observed_uuid`, type, name, XML location, verified `SourceRef`, and
 the layer declaration pinned to the snapshot. UUID uniqueness is scoped to
@@ -82,17 +83,33 @@ metadata namespace. Every identity requires one direct, nonempty identifier
 name, at most 256 characters. The profile does not validate whether a metadata
 type and every property combination are accepted by a particular 1C version.
 
-Non-MDO assets, including BSL, forms and templates, contribute only to the
-`unparsed_files` manifest count. The adapter does not infer their owner, parse
-their contents, or report their unverified bytes as evidence. `source_refs`
-contains exactly the MDO references used by the returned identities. The
-generation validation summary comes from the shared snapshot read session.
+### Actual EDT XML
+
+The v2 profile reads the real EDT descriptor shape: a namespaced
+`MetaDataObject` wrapper, one metadata root with `Properties/Name`, and direct
+identity-bearing children under `ChildObjects`. It recognizes the same known
+metadata folders in their `.xml` form, plus separate object forms and commands
+at `<owner>/Forms/<name>.xml` and `<owner>/Commands/<name>.xml`. A separate
+child descriptor is accepted only when its parent `.xml` descriptor is present
+and has passed identity validation; the returned owner contains that verified
+UUID and source reference. Parent form/command references without a UUID are
+not reported as identities. Unknown UUID-bearing containers, foreign structural
+namespaces, mixed `.mdo`/`MetaDataObject` files in one layer and missing owners
+fail closed. The descriptor's `Properties/Name` must match its filename.
+
+Non-metadata assets, including BSL, form implementation XML and templates,
+contribute only to the `unparsed_files` manifest count. The adapter does not
+infer their owner, parse their contents, or report their unverified bytes as
+evidence. `source_refs` contains exactly the descriptor references used by the
+returned identities. The generation validation summary comes from the shared
+snapshot read session.
 
 ## Fail-closed behavior
 
 - A layer without an explicit `edt` declaration, mixed Designer root candidates,
-  unknown MDO paths, root/type/namespace mismatches, unknown identity-bearing
-  elements and unsupported nested owners fail with `EDT_INVENTORY_UNSUPPORTED`.
+  unknown metadata paths, root/type/namespace mismatches, unknown
+  identity-bearing elements and unsupported nested owners fail with
+  `EDT_INVENTORY_UNSUPPORTED`.
 - Invalid UUID/name or path/name bindings fail with `EDT_IDENTITY_INVALID`.
 - Duplicate normalized UUIDs in one layer, or duplicate case-insensitive names
   of the same type under one XML owner, fail with `EDT_IDENTITY_DUPLICATE`.
@@ -107,6 +124,8 @@ selected layers. Callers may lower limits using `EDTInventoryLimits`; booleans,
 zero, negative values and raised ceilings are rejected. Limits never silently
 truncate successful output.
 
-This profile has synthetic unit evidence. It does not establish complete EDT
-inventory coverage, reference resolution, extension semantics, native round-trip
-compatibility or support for typical configurations and all object types.
+The v2 parser has contract tests against the saved real EDT descriptor shape;
+the files are still a synthetic product fixture. Neither profile establishes
+complete EDT inventory coverage, reference resolution, extension semantics,
+native round-trip compatibility or support for typical configurations and all
+object types.

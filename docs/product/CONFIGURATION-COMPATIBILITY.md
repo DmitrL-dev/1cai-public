@@ -9,10 +9,10 @@ Python-тестами. Она не квалифицирует конфигура
 
 | Статус в матрице | Что подтверждено |
 | --- | --- |
-| Чтение identity | `edt_metadata_inventory` возвращает UUID, имя, тип, XML location, прямого owner и SourceRef прочитанного MDO; всегда `coverage: partial` |
+| Чтение identity | `edt_metadata_inventory` возвращает UUID, имя, тип, XML location, прямого owner и SourceRef прочитанного `.mdo` или EDT `MetaDataObject/*.xml`; всегда `coverage: partial` |
 | Bounded projection | Другой API общего metadata reader извлекает ограниченные поля; это не полнота inventory и не семантическая валидность |
 | Atomic comparison | Designer three-way распознаёт UUID-bound companion и сравнивает целые байты; `supported` относится к этому сравнению |
-| Opaque count | EDT identity inventory учитывает только путь в `unparsed_files`, не читает содержимое и не возвращает его SourceRef |
+| Opaque count | EDT identity inventory учитывает только путь в `unparsed_files` для BSL, form implementation XML, шаблонов и прочих непризнанных assets; descriptor `.xml` читается профилем v2 |
 | Неподдержано | Заданный контракт отказывает или выдаёт явную unsupported-причину; частичный candidate не разрешается |
 | Не квалифицировано | Для данной комбинации нет native acceptance; наличие parser vocabulary не меняет этот статус |
 
@@ -27,6 +27,8 @@ Python-тестами. Она не квалифицирует конфигура
 MDO, 17 identities, пять opaque assets и шесть отрицательных XML-примеров.
 Manifest задаёт `provenance: synthetic`, `scope: read_only_contract`, хэши/размеры,
 ожидаемые UUID/owner/layer и отсутствие live/native/container acceptance.
+Отдельный v2-контракт проверяет сохранённую EDT-форму `MetaDataObject/*.xml`,
+UUID реквизита и владельца формы по фактической descriptor shape.
 [`test_edt_inventory_fixture.py`](../../tests/unit/test_edt_inventory_fixture.py)
 сравнивает результаты с manifest и отдельно проверяет параметризованные границы.
 Пары путь/тип заданы явно и не выводятся из словаря реализации. Минимальный XML
@@ -78,7 +80,8 @@ identity-bearing элементы отклоняются. Таблица не з
 | Вход / операция | Текущий статус | Evidence и ограничение |
 | --- | --- | --- |
 | Корневой `.mdo`, явно объявленный EDT слой | Чтение identity | Новый synthetic corpus и существующие UUID/namespace/path/limit tests; полный EDT inventory не заявляется |
-| EDT `.form` | Opaque count в identity inventory; bounded projection в общем reader | `test_non_mdo_assets_are_counted_without_reading_or_claiming_content`; отдельно [`test_metadata_edt.py`](../../tests/unit/test_metadata_edt.py) проверяет синтетическую форму и поля |
+| EDT `MetaDataObject/*.xml` | Профиль `edt_identity_v2`: корневые UUID, прямые `ChildObjects`, отдельная форма/команда с проверенным owner | [`test_edt_inventory_xml.py`](../../tests/unit/test_edt_inventory_xml.py) на сохранённой реальной descriptor shape; native/live apply не заявлен |
+| EDT form implementation `Ext/Form.xml` | Opaque count в identity inventory; bounded projection в общем reader | `test_non_mdo_assets_are_counted_without_reading_or_claiming_content`; отдельно [`test_metadata_edt.py`](../../tests/unit/test_metadata_edt.py) проверяет синтетическую форму и поля |
 | BSL в EDT дереве | Opaque count | Содержимое не анализируется этим inventory, независимо от предполагаемого owner |
 | Designer BSL companion | Atomic comparison; узкая qualified сборка раздельных text edits | [`METADATA-THREE-WAY-SEMANTICS.md`](METADATA-THREE-WAY-SEMANTICS.md); это отдельный API, без компиляции и исполнения |
 | Designer форма | Atomic comparison | UUID-bound descriptor и shape; ID/события/ссылки не проверяются этим planner |
@@ -126,7 +129,7 @@ manifest 20 000 entries, чтение 64 MiB суммарно, 2 048 MDO и 20 0
 Команды выполняются из корня репозитория без запуска EDT/1С:
 
 ```powershell
-py -3.11 -m pytest -q tests/unit/test_edt_inventory_fixture.py tests/unit/test_edt_inventory_metadata.py tests/unit/test_metadata_edt.py tests/unit/test_edt_metadata_fixture.py tests/unit/test_metadata_three_way_semantics.py
+py -3.11 -m pytest -q tests/unit/test_edt_inventory_xml.py tests/unit/test_edt_inventory_fixture.py tests/unit/test_edt_inventory_metadata.py tests/unit/test_metadata_edt.py tests/unit/test_edt_metadata_fixture.py tests/unit/test_metadata_three_way_semantics.py
 py -3.11 -m black --check tests/unit/test_edt_inventory_fixture.py
 py -3.11 -m ruff check tests/unit/test_edt_inventory_fixture.py
 py -3.11 -m compileall -q tests/unit/test_edt_inventory_fixture.py

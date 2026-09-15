@@ -9,8 +9,10 @@ Materialization and native validation are unavailable.
 
 Save the `result` object from each successful `rentgen edt-inventory` response
 as a separate UTF-8 JSON file. Pass that object unchanged, without the outer
-CLI envelope. The producer profile is `parser: edt_identity_v1`; there is no
-input `schema` field. For example, extract an existing response in Python:
+CLI envelope. The producer profile is `parser: edt_identity_v1` for compact
+`.mdo` or `parser: edt_identity_v2` for actual EDT `MetaDataObject/*.xml`;
+there is no input `schema` field. For example, extract an existing response in
+Python:
 
 ```python
 import json
@@ -42,12 +44,20 @@ fields, `layers`, `objects`, `source_refs` and `validation_summary`. Unknown
 fields, duplicate keys/identities/layers, invalid UUIDs/hashes, ambiguous paths,
 missing owners and fabricated coverage are rejected before any plan is returned.
 
-Layers use the producer's `SnapshotLayer` fields: `layer_id`, `ordinal`, `kind`,
-`configuration_uuid: null`, `identity_status: unresolved`, `source_format: edt`.
-Top-level layer rows also contain file counts and `count_basis`. There is no
-root-relative-path field. Each identity preserves its UUID, observed UUID, type,
-name, XML location, direct owner, layer and `source_ref.raw_sha256`. The producer
-has no per-source byte size: output `source_size_bytes` is always `null`.
+Layers use either the producer's `SnapshotLayer` fields (`layer_id`, `ordinal`,
+`kind`, `configuration_uuid: null`, `identity_status: unresolved`,
+`source_format: edt`) or the source-layer fields (`layer_id`, `ordinal`, `kind`,
+`root_relative_path`, `source_format: edt`). Top-level layer rows also contain
+file counts and `count_basis`. Each identity preserves its UUID, observed UUID,
+type, name, XML location, direct owner, layer and `source_ref.raw_sha256`. The
+producer has no per-source byte size: output `source_size_bytes` is always
+`null`.
+
+For v2, a direct child identity uses an XML location such as
+`/Catalog/ChildObjects/Attribute[0]` and retains its parent descriptor reference.
+A separate form or command descriptor uses `/{type}` as its own location and
+points to the verified parent XML in `owner.source_ref`; the planner validates
+that path relationship and descriptor filename before comparing it.
 
 The planner checks the supplied evidence's consistency. It does not reopen
 snapshots or authenticate saved JSON against the original source files.
@@ -118,9 +128,9 @@ generation evidence; they do not identify an executable candidate.
 ## Qualification boundary
 
 Regression coverage includes a direct round trip from the existing published
-synthetic EDT fixture through `edt_metadata_inventory` and this CLI, all six
-actions, owner/layer/type changes, malformed/mutable input, lower budgets,
-authorization revocation and output limits. This evidence does not qualify a
-typical configuration, arbitrary extensions/forms/СКД, `.cf/.cfe` compatibility
-or live apply. See [inventory](EDT-INVENTORY-IDENTITY.md) and the narrower
+synthetic EDT fixture through `edt_metadata_inventory` and this CLI, the actual
+EDT descriptor shape, all six actions, owner/layer/type changes,
+malformed/mutable input, lower budgets, authorization revocation and output
+limits. This evidence does not qualify a typical configuration, arbitrary
+extensions/forms/СКД, `.cf/.cfe` compatibility or live apply. See [inventory](EDT-INVENTORY-IDENTITY.md) and the narrower
 [Catalog attribute evidence](EDT-ATTRIBUTE-THREE-WAY.md).

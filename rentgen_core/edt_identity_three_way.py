@@ -39,12 +39,28 @@ _CHILDREN = {
     "Command": "commands",
     "EnumValue": "enumValues",
 }
+_XML_CHILDREN = {
+    "Attribute": "Attribute",
+    "TabularSection": "TabularSection",
+    "Dimension": "Dimension",
+    "Resource": "Resource",
+    "Form": "Form",
+    "Command": "Command",
+    "EnumValue": "EnumValue",
+}
 _LAYER_FIELDS = {
     "layer_id",
     "ordinal",
     "kind",
     "configuration_uuid",
     "identity_status",
+    "source_format",
+}
+_SOURCE_LAYER_FIELDS = {
+    "layer_id",
+    "ordinal",
+    "kind",
+    "root_relative_path",
     "source_format",
 }
 _SNAPSHOT_FIELDS = {"project_id", "snapshot_id", "manifest_hash"}
@@ -190,8 +206,23 @@ def _snapshot(value):
 
 
 def _layer(value):
-    _fields(value, _LAYER_FIELDS)
-    result = asdict(SnapshotLayer(**value))
+    if set(value) == _LAYER_FIELDS:
+        result = asdict(SnapshotLayer(**value))
+    elif set(value) == _SOURCE_LAYER_FIELDS:
+        from .source_configuration import SourceLayerSpec
+
+        source = SourceLayerSpec(**value)
+        result = {
+            "layer_id": source.layer_id,
+            "ordinal": source.ordinal,
+            "kind": source.kind,
+            "configuration_uuid": None,
+            "identity_status": "unresolved",
+            "source_format": source.source_format,
+            "root_relative_path": source.root_relative_path,
+        }
+    else:
+        raise _invalid()
     if result["source_format"] != "edt" or result["kind"] != (
         "base" if result["ordinal"] == 0 else "extension"
     ):
@@ -199,7 +230,27 @@ def _layer(value):
     return result
 
 
-def _ref(value, snapshot, layers):
+def _xml_path_kind(path):
+    if path == "Configuration.xml":
+        return "Configuration", None
+    parts = path.split("/")
+    folder_kind = FOLDER_TO_TYPE.get(parts[0]) if parts else None
+    if folder_kind is None or not path.endswith(".xml"):
+        return None, None
+    if (
+        len(parts) in (2, 3)
+        and parts[-1][:-4]
+        and (len(parts) == 2 or parts[-1][:-4] == parts[1])
+    ):
+        return folder_kind, None
+    if len(parts) == 4 and parts[2] in {"Forms", "Commands"} and parts[3][:-4]:
+        return ("Form" if parts[2] == "Forms" else "Command"), "/".join(
+            parts[:2]
+        ) + ".xml"
+    return None, None
+
+
+def _ref(value, snapshot, layers, *, xml=False):
     _fields(value, {"snapshot", "layer_id", "relative_path", "raw_sha256"})
     if (
         _snapshot(value["snapshot"]) != snapshot
@@ -210,7 +261,10 @@ def _ref(value, snapshot, layers):
     path = value["relative_path"]
     validate_file_paths((path,))
     parts = path.split("/")
-    if path != "Configuration/Configuration.mdo" and (
+    if xml:
+        if _xml_path_kind(path)[0] is None:
+            raise _invalid()
+    elif path != "Configuration/Configuration.mdo" and (
         len(parts) != 3
         or parts[0] not in FOLDER_TO_TYPE
         or parts[2] != parts[1] + ".mdo"
@@ -261,16 +315,25 @@ def _normalize(value, limits):
             "validation_summary",
         },
     )
+    parser = value["parser"]
+    xml_profile = parser == "edt_identity_v2"
+    if parser not in {"edt_identity_v1", "edt_identity_v2"}:
+        raise _invalid()
     if any(
         value[key] != expected
         for key, expected in {
-            "parser": "edt_identity_v1",
             "identity_scope": "snapshot_layer",
             "coverage": "partial",
-            "owner_basis": "direct_xml_containment_only",
             "layer_basis": "pinned_snapshot_declaration",
         }.items()
     ):
+        raise _invalid()
+    expected_owner_basis = (
+        "direct_xml_containment_and_verified_path_owner"
+        if xml_profile
+        else "direct_xml_containment_only"
+    )
+    if value["owner_basis"] != expected_owner_basis:
         raise _invalid()
     snapshot = _snapshot(value["snapshot"])
     for key, maximum in (
@@ -284,10 +347,17 @@ def _normalize(value, limits):
             _limit()
     layers, layer_counts, ordinals = {}, {}, set()
     for entry in value["layers"]:
-        _fields(
-            entry, _LAYER_FIELDS | {"parsed_mdo_files", "unparsed_files", "count_basis"}
-        )
-        layer = _layer({key: entry[key] for key in _LAYER_FIELDS})
+        counts = {"parsed_mdo_files", "unparsed_files", "count_basis"}
+        fields = set(entry) - counts if type(entry) is dict else set()
+        if fields == _LAYER_FIELDS:
+            layer_input = {key: entry[key] for key in _LAYER_FIELDS}
+        elif fields == _SOURCE_LAYER_FIELDS:
+            layer_input = {key: entry[key] for key in _SOURCE_LAYER_FIELDS}
+        else:
+            raise _invalid()
+        if type(entry) is not dict or type(entry.get("count_basis")) is not str:
+            raise _invalid()
+        layer = _layer(layer_input)
         lid, ordinal = layer["layer_id"], layer["ordinal"]
         if (
             lid in layers
@@ -303,7 +373,7 @@ def _normalize(value, limits):
         )
     refs = {}
     for entry in value["source_refs"]:
-        ref = _ref(entry, snapshot, layers)
+        ref = _ref(entry, snapshot, layers, xml=xml_profile)
         key = (ref["layer_id"], ref["relative_path"])
         if key in refs:
             raise _invalid()
@@ -324,7 +394,7 @@ def _normalize(value, limits):
         lid = layer["layer_id"]
         if layers.get(lid) != layer:
             raise _invalid()
-        ref = _ref(entry["source_ref"], snapshot, layers)
+        ref = _ref(entry["source_ref"], snapshot, layers, xml=xml_profile)
         ref_key = (lid, ref["relative_path"])
         if ref["layer_id"] != lid or refs.get(ref_key) != ref:
             raise _invalid()
@@ -343,38 +413,75 @@ def _normalize(value, limits):
             _fields(owner, {"canonical_uuid", "source_ref", "xml_path"})
             owner = {
                 "canonical_uuid": _uuid(owner["canonical_uuid"]),
-                "source_ref": _ref(owner["source_ref"], snapshot, layers),
+                "source_ref": _ref(
+                    owner["source_ref"], snapshot, layers, xml=xml_profile
+                ),
                 "xml_path": owner["xml_path"],
             }
-            if (
-                owner["source_ref"] != ref
-                or type(owner["xml_path"]) is not str
-                or kind not in _CHILDREN
-            ):
+            if type(owner["xml_path"]) is not str:
                 raise _invalid()
-            position_match = re.fullmatch(
-                re.escape(owner["xml_path"] + "/" + _CHILDREN[kind])
-                + r"\[(0|[1-9][0-9]{0,5})\]",
-                xml_path,
-            )
-            if position_match is None:
-                raise _invalid()
-            # Producer indices enumerate all direct XML children, across kinds.
-            position = (*ref_key, owner["xml_path"], int(position_match[1]))
-            if position in child_positions:
-                raise _invalid()
-            child_positions.add(position)
+            if not xml_profile:
+                if owner["source_ref"] != ref or kind not in _CHILDREN:
+                    raise _invalid()
+                position_match = re.fullmatch(
+                    re.escape(owner["xml_path"] + "/" + _CHILDREN[kind])
+                    + r"\[(0|[1-9][0-9]{0,5})\]",
+                    xml_path,
+                )
+                if position_match is None:
+                    raise _invalid()
+                # Producer indices enumerate all direct XML children, across kinds.
+                position = (*ref_key, owner["xml_path"], int(position_match[1]))
+                if position in child_positions:
+                    raise _invalid()
+                child_positions.add(position)
+            else:
+                child_kind, parent_path = _xml_path_kind(ref["relative_path"])
+                if parent_path is None:
+                    if owner["source_ref"] != ref:
+                        raise _invalid()
+                    if kind not in _XML_CHILDREN or not re.fullmatch(
+                        re.escape(owner["xml_path"] + "/ChildObjects/" + kind)
+                        + r"\[(0|[1-9][0-9]{0,5})\]",
+                        xml_path,
+                    ):
+                        raise _invalid()
+                    position_match = re.fullmatch(
+                        re.escape(owner["xml_path"] + "/ChildObjects/" + kind)
+                        + r"\[(0|[1-9][0-9]{0,5})\]",
+                        xml_path,
+                    )
+                    position = (*ref_key, owner["xml_path"], int(position_match[1]))
+                    if position in child_positions:
+                        raise _invalid()
+                    child_positions.add(position)
+                else:
+                    if (
+                        child_kind != kind
+                        or owner["source_ref"]["relative_path"] != parent_path
+                        or xml_path != "/" + kind
+                        or name
+                        != ref["relative_path"].removesuffix(".xml").split("/")[-1]
+                    ):
+                        raise _invalid()
         else:
             path = ref["relative_path"]
             expected = (
-                "Configuration"
-                if path == "Configuration/Configuration.mdo"
-                else FOLDER_TO_TYPE[path.split("/")[0]]
+                _xml_path_kind(path)[0]
+                if xml_profile
+                else (
+                    "Configuration"
+                    if path == "Configuration/Configuration.mdo"
+                    else FOLDER_TO_TYPE[path.split("/")[0]]
+                )
             )
+            expected_name = path.removesuffix(".xml" if xml_profile else ".mdo").split(
+                "/"
+            )[-1]
             if (
                 kind != expected
                 or xml_path != "/" + kind
-                or (kind != "Configuration" and name != path.split("/")[1])
+                or (kind != "Configuration" and name != expected_name)
             ):
                 raise _invalid()
         key = (lid, uid)

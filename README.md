@@ -86,6 +86,7 @@ snapshot без повторного запуска Git/LLM; для статус
 и сохранение без промежуточного JSON.
 Подробности [Git/snapshot evidence](docs/product/GIT-SNAPSHOT-EVIDENCE.md).
 Для snapshot-анализа добавлены read-only [EDT-инвентарь UUID и владельцев](docs/product/EDT-INVENTORY-IDENTITY.md)
+для компактных `.mdo` и реальных `MetaDataObject/*.xml` с отдельными формами и командами
 и [семантические companion-scope для three-way](docs/product/METADATA-THREE-WAY-SEMANTICS.md).
 Для трёх сохранённых inventory доступен [EDT identity three-way plan](docs/product/EDT-IDENTITY-THREE-WAY.md)
 с UUID/owner/layer evidence и CLI `edt-inventory-plan`.
@@ -167,7 +168,7 @@ flowchart LR
 | [Service host](docs/product/SERVICE-HOST.md) | Native ServiceMain boundary для Observer и bounded foreground Git host с cooperative stop и fail-closed lifecycle; live SCM deployment ещё не принят |
 | [Three-way updates](docs/product/THREE-WAY-UPDATES.md) | Plan и безопасный in-memory candidate для base/current/upstream по хэшу |
 | [UUID-aware updates](docs/product/METADATA-THREE-WAY.md) | Консервативное сопоставление объектов Designer XML по типу и UUID |
-| [EDT identity inventory](docs/product/EDT-INVENTORY-IDENTITY.md#local-cli) | CLI `edt-inventory`: проверенные UUID, прямые XML-владельцы и evidence слоя в явно выбранном опубликованном EDT snapshot; partial coverage |
+| [EDT identity inventory](docs/product/EDT-INVENTORY-IDENTITY.md#local-cli) | CLI `edt-inventory`: профили для `.mdo` и реальных `MetaDataObject/*.xml`, проверенные UUID, владельцы форм/команд и evidence слоя в явно выбранном опубликованном EDT snapshot; partial coverage |
 | [EDT identity three-way](docs/product/EDT-IDENTITY-THREE-WAY.md) | CLI `edt-inventory-plan`: сравнение трёх сохранённых inventory по UUID/owner/layer; partial read-only evidence |
 | [EDT attribute three-way](docs/product/EDT-ATTRIBUTE-THREE-WAY.md) | Read-only evidence реквизитов Catalog с UUID владельца и хэшами; CLI `edt-attribute-plan` для трёх ограниченных JSON-деревьев |
 | [ibcmd fixture executor](docs/product/EDT-FIXTURE-EXECUTOR.md) | Принадлежащий bounded create/import/export цикл с квитанциями, удержанием входов и без live apply |
