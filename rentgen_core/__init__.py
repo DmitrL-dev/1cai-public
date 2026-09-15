@@ -61,6 +61,12 @@ from .metadata_live_apply import (
     recover_live,
     undo_live,
 )
+from .proposal_live_apply import (
+    apply_live as apply_proposal_live,
+    get_live_status as get_proposal_live_status,
+    recover_live as recover_proposal_live,
+    undo_live as undo_proposal_live,
+)
 from .edt_attribute_three_way import plan_edt_attribute_three_way
 from .edt_identity_three_way import (
     EDTIdentityThreeWayLimits,
@@ -110,6 +116,10 @@ __all__ = [
     "undo_live",
     "get_live_status",
     "recover_live",
+    "apply_proposal_live",
+    "undo_proposal_live",
+    "get_proposal_live_status",
+    "recover_proposal_live",
     "materialize_three_way",
     "materialize_bsl_three_way",
     "SourceRef",

@@ -110,6 +110,14 @@ _PROPOSAL_DOCUMENT = _object(
     }
 )
 _PROPOSAL_TOOLS = frozenset({"rentgen_proposal_create", "rentgen_proposal_check"})
+_PROPOSAL_LIVE_TOOLS = frozenset(
+    {
+        "rentgen_proposal_live_apply",
+        "rentgen_proposal_live_undo",
+        "rentgen_proposal_live_status",
+        "rentgen_proposal_live_recover",
+    }
+)
 _NATIVE_ARCHIVE_TOOL = "rentgen_native_archive"
 _OWNER_REPORT_TOOLS = frozenset(
     {"rentgen_owner_report_get", "rentgen_owner_report_list"}
@@ -196,6 +204,32 @@ TOOL_SCHEMAS = {
         ["project_id", "snapshot_id"],
     ),
 }
+TOOL_SCHEMAS.update(
+    {
+        "rentgen_proposal_live_apply": _object(
+            {
+                "project_id": _UUID,
+                "snapshot_id": _HASH,
+                "operation_id": _UUID,
+                "expected_head": _HEAD,
+                "proposal": _PROPOSAL_DOCUMENT,
+            }
+        ),
+        "rentgen_proposal_live_undo": _object(
+            {"project_id": _UUID, "operation_id": _UUID}
+        ),
+        "rentgen_proposal_live_status": _object(
+            {"project_id": _UUID, "operation_id": _UUID}
+        ),
+        "rentgen_proposal_live_recover": _object(
+            {
+                "project_id": _UUID,
+                "operation_id": _UUID,
+                "target": {"type": "string", "pattern": "^original$", "maxLength": 8},
+            }
+        ),
+    }
+)
 
 _LIVE_METADATA_ARGUMENTS = {
     "project_id": _UUID,
@@ -226,6 +260,10 @@ TOOL_SCHEMAS.update(
 _DESCRIPTIONS = {
     "rentgen_proposal_check": "Run the installed pinned BSL analyzer on an exact ephemeral proposal. Requires editing and analysis rights. Reports single-module diagnostics; tests are not run and apply is unavailable.",
     "rentgen_proposal_create": "Build an ephemeral single-module proposal and bounded diff from an exact SourceRef. Requires editing rights; no tests or source writes. Candidate limit 8 KiB.",
+    "rentgen_proposal_live_apply": "Apply one validated BSL proposal to one existing base Designer XML source file with a sealed journal, compare-and-swap precondition and explicit recovery. This writes the registered source tree, never a 1C information base.",
+    "rentgen_proposal_live_undo": "Undo a confirmed direct BSL proposal only while the source tree still matches its after inventory.",
+    "rentgen_proposal_live_status": "Read the sealed status of one direct BSL proposal operation without replaying it.",
+    "rentgen_proposal_live_recover": "Recover an interrupted direct BSL proposal operation to its sealed original source using explicit recovery.",
     "rentgen_project_list": "List authorized project IDs and labels; no source reads.",
     "rentgen_project_head": "Read the current project head without opening a generation.",
     "rentgen_publication_receipt": "Reconcile one capture operation using its durable receipt.",
@@ -464,7 +502,7 @@ def validate_arguments(name, arguments, *, scope=None):
             kind=arguments.get("kind", "all"),
             layer=arguments.get("layer"),
         )
-    if name in _PROPOSAL_TOOLS:
+    if name in (_PROPOSAL_TOOLS | {"rentgen_proposal_live_apply"}):
         if (
             len(
                 json.dumps(
@@ -880,6 +918,65 @@ def _execute(
             )
             result = _proposal_dispatch(
                 runtime, principal, name, arguments, state_ctx=proposal_context
+            )
+        elif name in _PROPOSAL_LIVE_TOOLS:
+            from . import proposal_live_apply
+
+            permissions = frozenset({"project:read", "source:edit", "analysis:run"})
+            proposal_context = runtime.state_context(
+                principal, arguments["project_id"], permissions=permissions
+            )
+            if name == "rentgen_proposal_live_apply":
+                if runtime.graph_reader_factory is None:
+                    from rentgen_graph.snapshot_adapter import RentgenGraphReaderFactory
+
+                    runtime = replace(
+                        runtime, graph_reader_factory=RentgenGraphReaderFactory()
+                    )
+                ctx = runtime.resolve(
+                    principal,
+                    arguments["project_id"],
+                    arguments["snapshot_id"],
+                )
+                proposal_context = ctx
+                from .proposals import ProposalLimits, parse_proposal
+
+                raw = json.dumps(
+                    arguments["proposal"],
+                    ensure_ascii=False,
+                    allow_nan=False,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+                proposal = parse_proposal(
+                    ctx,
+                    raw,
+                    limits=ProposalLimits(1048576, 8192, 16384, 24576),
+                )
+                head = dict(arguments["expected_head"])
+                if head["snapshot"] is not None:
+                    head["snapshot"] = SnapshotRef(**head["snapshot"])
+                value = proposal_live_apply.apply_live(
+                    ctx,
+                    arguments["operation_id"],
+                    proposal,
+                    expected_head=ProjectHead(**head),
+                )
+            elif name == "rentgen_proposal_live_undo":
+                value = proposal_live_apply.undo_live(
+                    proposal_context, arguments["operation_id"]
+                )
+            elif name == "rentgen_proposal_live_status":
+                value = proposal_live_apply.get_live_status(
+                    proposal_context, arguments["operation_id"]
+                )
+            else:
+                value = proposal_live_apply.recover_live(
+                    proposal_context,
+                    arguments["operation_id"],
+                    target=arguments["target"],
+                )
+            result = _ProposalToolResult(
+                {"proposal_live": value}, proposal_context, permissions
             )
         elif name == _NATIVE_ARCHIVE_TOOL:
             from .native_resources import archive_native_run

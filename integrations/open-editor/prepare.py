@@ -28,6 +28,10 @@ MCP_EDITOR_TOOLS = (
     "rentgen_draft_receipt",
     "rentgen_draft_list",
     "rentgen_draft_history",
+    "rentgen_proposal_live_apply",
+    "rentgen_proposal_live_undo",
+    "rentgen_proposal_live_status",
+    "rentgen_proposal_live_recover",
 )
 
 

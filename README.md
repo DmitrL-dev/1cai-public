@@ -43,7 +43,7 @@
 | Дать агенту контекст | Локальный stdio MCP; профиль редактора ограничивает проект и доступные инструменты |
 | Подготовить правку | Отдельные черновики, версии, сравнение, проверка конфликтов при записи и квитанции операций |
 | Применить правку в копии | В исходной ветке после dev8: CLI workspace create/apply/undo/status/recover с проверкой inventory, backup, re-read и явным восстановлением; native EDT adapter повторяет выбранный preview и публикует только в новую принадлежащую копию с CAS undo |
-| Применить поддержанную правку в исходнике | В ветке разработки: direct writer для одного base Designer XML слоя и `rename_catalog_attribute`, с атомарным journal, CAS undo и явным recovery; [границы](docs/product/METADATA-LIVE-APPLY.md) |
+| Применить поддержанную правку в исходнике | В ветке разработки: direct writer для одного base Designer XML слоя и `rename_catalog_attribute`, а также отдельный BSL proposal writer для одного существующего файла; оба с атомарным journal, CAS undo и явным recovery; [метаданные](docs/product/METADATA-LIVE-APPLY.md), [BSL](docs/product/PROPOSAL-LIVE-APPLY.md) |
 | Работать в редакторе | Деревья модулей и черновиков в VSCodium, поиск, история и сравнение версий |
 | Проверить предложение модели | Один запрос к локальной Ollama, диагностика BSL до и после, сохранённая ревизия и восстановление результата |
 | Проверить сохранённую версию | BSL, компилятор 1С и доверенный профиль YAxUnit на отдельных базах; отчёты по конкретной ревизии |
@@ -165,6 +165,7 @@ flowchart LR
 | [Готовность](docs/product/READINESS.md) | Что проверено и что ещё предстоит |
 | [Workspace apply](docs/product/METADATA-WORKSPACE.md) | Запись, проверка inventory и undo в принадлежащей копии |
 | [Live Designer XML apply](docs/product/METADATA-LIVE-APPLY.md) | Прямое применение поддержанного rename в исходнике с CAS undo/recovery |
+| [Direct BSL proposal apply](docs/product/PROPOSAL-LIVE-APPLY.md) | Узкий live writer для одного существующего BSL-файла с запечатанным journal, CAS undo и явным recovery |
 | [Owner report](docs/product/OWNER-REPORT.md) | Источники quality и runtime-метрик с fail-closed статусами и durable receipts |
 | [Owner report store](docs/product/OWNER-REPORT-STORE.md) | Иммутабельные receipts и локальный CLI сохранения/чтения по snapshot |
 | [Runtime metrics](docs/product/RUNTIME-METRICS.md) | Bounded JSON-export adapter с двойной авторизацией и точной привязкой к snapshot |

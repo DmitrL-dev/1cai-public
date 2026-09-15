@@ -104,6 +104,10 @@ def _parser():
         "proposal-check",
         "proposal-platform-check",
         "proposal-platform-result",
+        "proposal-live-apply",
+        "proposal-live-undo",
+        "proposal-live-status",
+        "proposal-live-recover",
         "test-profile-register",
         "test-profile-list",
         "test-profile-disable",
@@ -267,6 +271,20 @@ def _parser():
             command.add_argument("--operation-id", required=True, action=_Once)
         elif name in {"proposal-platform-result", "proposal-test-result"}:
             command.add_argument("--operation-id", required=True, action=_Once)
+        elif name.startswith("proposal-live-"):
+            command.add_argument("--operation-id", required=True, action=_Once)
+            if name == "proposal-live-apply":
+                command.add_argument("--snapshot", required=True, action=_Once)
+                command.add_argument(
+                    "--proposal-json", type=Path, required=True, action=_Once
+                )
+                command.add_argument(
+                    "--expected-head-json", type=Path, required=True, action=_Once
+                )
+            if name == "proposal-live-recover":
+                command.add_argument(
+                    "--target", choices=("original",), required=True, action=_Once
+                )
         elif name in {"test-profile-register", "edt-profile-register"}:
             command.add_argument(
                 "--profile-json", type=Path, required=True, action=_Once
@@ -1086,6 +1104,49 @@ def _proposal_command(args, runtime, state_ctx):
         raise
 
 
+def _proposal_live_command(args, runtime, state_ctx):
+    """Apply or reconcile one direct BSL proposal on the registered source tree."""
+    from . import proposal_live_apply
+
+    permissions = frozenset({"project:read", "source:edit", "analysis:run"})
+    try:
+        _proposal_permissions(state_ctx, permissions)
+        if args.command == "proposal-live-apply":
+            runtime = replace(
+                runtime,
+                graph_reader_factory=runtime.graph_reader_factory or _graph_factory(),
+            )
+            selected = runtime.resolve(state_ctx.principal, args.project, args.snapshot)
+            raw = _proposal_input(
+                state_ctx,
+                args.proposal_json,
+                proposal_live_apply.LIMITS.max_canonical_bytes,
+                permissions=permissions,
+            )
+            from .proposals import parse_proposal
+
+            proposal = parse_proposal(selected, raw, limits=proposal_live_apply.LIMITS)
+            value = proposal_live_apply.apply_live(
+                selected,
+                args.operation_id,
+                proposal,
+                expected_head=_expected_head(args.expected_head_json),
+            )
+            return _ProposalCommandResult(value, state_ctx, permissions)
+        if args.command == "proposal-live-undo":
+            value = proposal_live_apply.undo_live(state_ctx, args.operation_id)
+        elif args.command == "proposal-live-status":
+            value = proposal_live_apply.get_live_status(state_ctx, args.operation_id)
+        else:
+            value = proposal_live_apply.recover_live(
+                state_ctx, args.operation_id, target=args.target
+            )
+        return _ProposalCommandResult(value, state_ctx, permissions)
+    except BaseException:
+        _proposal_permissions(state_ctx, permissions)
+        raise
+
+
 def _execute(args, *, proposal_scope=None):
     principal = current_windows_principal()
     if args.command == "registry-init":
@@ -1157,6 +1218,10 @@ def _execute(args, *, proposal_scope=None):
             "metadata-live-undo",
             "metadata-live-status",
             "metadata-live-recover",
+            "proposal-live-apply",
+            "proposal-live-undo",
+            "proposal-live-status",
+            "proposal-live-recover",
         }
         else {"project:read", "source:edit"}
         if args.command
@@ -1225,6 +1290,11 @@ def _execute(args, *, proposal_scope=None):
             proposal_scope.context = ctx
             proposal_scope.permissions = frozenset(permissions)
         return _owner_report_command(args, ctx, frozenset(permissions), runtime=runtime)
+    if args.command.startswith("proposal-live-"):
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        return _proposal_live_command(args, runtime, ctx)
     if args.command.startswith("metadata-"):
         import asyncio
         from .edt_profiles import parse_json

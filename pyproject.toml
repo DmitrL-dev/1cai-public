@@ -134,6 +134,7 @@ only-include = [
   "docs/product/evidence/yaxunit-25.12-platform-20260915.json",
   "docs/product/PROPOSAL-CHECK.md",
   "docs/product/PROPOSAL-PLATFORM-CHECK.md",
+  "docs/product/PROPOSAL-LIVE-APPLY.md",
   "docs/product/STATE-MIGRATION.md",
   "docs/product/PROJECT-ACCESS.md",
   "docs/product/SNAPSHOT-METADATA.md",
