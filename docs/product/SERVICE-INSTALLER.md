@@ -6,12 +6,28 @@ Windows service deployment. No real service installation was performed for this
 proof; unit tests use injected executors and placeholder executable files.
 
 The executable must already implement the native Windows service contract
-(`ServiceMain`, dispatcher registration and control callbacks). The existing
-`WindowsServiceHost` only provides foreground scheduler lifetime and cooperative
-stop. Registering that Python class, a console entry point or an arbitrary EXE
-with SCM does not turn it into a daemon. Building and testing the native service
-wrapper, service ACLs, package signing, recovery policies and deployment remain
-separate work.
+(`ServiceMain`, dispatcher registration and control callbacks) in the actual
+process started by SCM. `rentgen_core.service_entry` now provides that ctypes
+boundary and a source Observer worker; its config and lifecycle contracts are
+documented in [SERVICE-HOST.md](SERVICE-HOST.md). `WindowsServiceHost` remains
+the separate foreground Git scheduler lifetime.
+
+The installed `rentgen-service` console entry point proves CLI packaging only.
+Its pip-generated EXE can launch a child Python process; this is not evidence
+that SCM will connect to the correct dispatcher process. The installer rejects
+the known `rentgen-service.exe` basename (case-insensitively) in both the supplied
+path and its canonical target with `SERVICE_IMAGE_UNSUPPORTED`. This fixed
+diagnostic directs the caller to the direct interpreter and never includes the
+path, argv or configuration contents. It applies during spec construction and
+install/update revalidation, before the first SCM command, including dry-run
+spec construction. Renaming a console launcher does not make it a supported
+native service image: this guard is not a binary trust or launcher detection
+mechanism. Native images still require independent evidence that SCM's actual
+process owns the dispatcher. The installer supports a strictly fixed
+direct-interpreter ImagePath as described below, alongside its existing native
+EXE grammar. It does not build or verify a native wrapper. Interpreter integrity, service ACLs,
+signing, recovery policies and live deployment acceptance remain open; no
+production acceptance is claimed here.
 
 ## API and plan
 
@@ -35,6 +51,48 @@ plan = installer.install(spec, start=True, dry_run=True)
 # installer.install(spec, start=True)
 ```
 
+For the Python implementation, use the actual installed interpreter executable
+and this exact argument tuple:
+
+```python
+spec = ServiceInstallSpec(
+    service_name="Rentgen.Observer",
+    display_name="Rentgen Observer",
+    executable=r"C:\Python311\python.exe",
+    arguments=(
+        "-I", "-m", "rentgen_core.service_entry", "--service", "--config",
+        r"C:\Rentgen\settings.json",
+    ),
+)
+plan = installer.install(spec, start=True, dry_run=True)
+# ImagePath: "C:\Python311\python.exe" -I -m rentgen_core.service_entry --service --config C:\Rentgen\settings.json
+```
+
+The supplied executable basename and its canonical target basename must each be
+`python.exe` or `pythonw.exe` (case-insensitive). Exactly six arguments are
+required, including the config path. Other modules, interpreter flags, `-c`,
+`--console`, missing/extra/reordered arguments and the short native grammar are
+rejected for these interpreter names. Other executable names cannot use this
+Python grammar. The config path undergoes the same existence, canonicalization
+and public-path validation as the native grammar; its contents are never read.
+
+This ImagePath asks SCM to start the interpreter directly, where `-m` executes
+the service module in that interpreter process. It bypasses the pip console
+launcher. `-I` excludes the working directory and user site from the import path
+and ignores Python environment settings, so the package must be installed in
+the selected interpreter's ordinary site-packages. These Python behaviors are
+documented in the [command-line reference](https://docs.python.org/3/using/cmdline.html#cmdoption-I).
+Isolated mode does not establish trust in installed packages or their startup
+hooks. The basename check does not establish that a supplied executable is a
+genuine interpreter instead of a renamed program or redirecting launcher.
+Verify the deployed executable and its process behavior independently.
+
+Install and update use the entire quoted ImagePath in one existing `sc create`
+or `sc config` call. Update preserves account/type and performs no restart.
+Direct-interpreter tests use placeholder files and fake executors; live SCM
+RUNNING/STOPPED, LocalService access, stop during a tick and recovery behavior
+remain acceptance work in an explicitly authorized deployment environment.
+
 Names, executable and argument tuples are immutable. Plans contain immutable
 argv tuples and are deterministic for a spec and installer. Dry-run runs no
 subprocess and contacts no SCM. Spec construction checks file metadata; dry-run
@@ -56,9 +114,13 @@ if the service binary has subsequently disappeared.
 - Display name: 1–120 characters; word characters, spaces, `.`, `(`, `)`, `-`.
 - Existing local absolute `.exe` path; optional existing local absolute `.json`
   config path; each path is at most 240 characters and resolved canonically.
-- Arguments are an immutable tuple of at most three strings. Allowed grammar:
-  optional `--service`, followed by optional `--config <path>`. There is no
-  arbitrary argument, password, token, account, environment or shell channel.
+- Arguments are an immutable tuple. Native EXEs retain the existing grammar of
+  at most three strings: optional `--service`, followed by optional
+  `--config <path>`. `python.exe`/`pythonw.exe` require exactly six strings:
+  `-I -m rentgen_core.service_entry --service --config <path>`. There is no
+  arbitrary module, argument, password, token, account, environment or shell
+  channel. The executable is always quoted; argument quoting uses Windows CRT
+  escaping and the existing deterministic `binary_path` representation.
 - Control characters, CR/LF, credential markers, UNC/device paths, alternate
   streams, traversal, shell expansion and invalid path characters are rejected.
 - Config contents are never opened by this adapter. Callers must treat names and
@@ -107,6 +169,15 @@ that could make compensation safe against external delete-and-recreate races.
 Executable/config replacement races and ACL validation also require deployment
 controls outside this adapter.
 
+For `service_entry`, the config's `service_name` must equal the actual SCM name;
+the entrypoint rejects a mismatch and additional SCM start arguments. Config
+contents are loaded only inside ServiceMain's worker after dispatcher connection
+and `START_PENDING`; installer validation still never reads those contents.
+The default `LocalService` account needs its own project membership and an
+Observer profile bound to that exact Windows process principal. The entrypoint
+does not reuse an interactive user's identity, initialize/rebind profiles or
+grant permissions during startup. Provisioning these resources is separate.
+
 ### Filesystem identity boundary (self-audit)
 
 `_file` deliberately follows symlinks and resolvable Windows reparse points
@@ -134,7 +205,8 @@ not native symlink/junction acceptance evidence.
 ## Typed errors and evidence
 
 All validation/SCM errors use `CoreError`. Codes include `SERVICE_SPEC_INVALID`,
-`SERVICE_PLATFORM_UNSUPPORTED`, `SERVICE_SCM_UNAVAILABLE`, `SERVICE_SCM_TIMEOUT`,
+`SERVICE_IMAGE_UNSUPPORTED`, `SERVICE_PLATFORM_UNSUPPORTED`,
+`SERVICE_SCM_UNAVAILABLE`, `SERVICE_SCM_TIMEOUT`,
 `SERVICE_SCM_PROTOCOL`, `SERVICE_SCM_FAILED`, and `SERVICE_ALREADY_EXISTS`.
 Only numeric return codes, fixed command verbs and rollback outcome labels are
 included in error details. Timeouts explicitly report an unknown command outcome.
@@ -142,8 +214,8 @@ included in error details. Timeouts explicitly report an unknown command outcome
 Focused verification (no live SCM mutation):
 
 ```text
-python -m pytest tests/unit/test_service_installer.py tests/unit/test_service_host.py -q
-python -m black --check rentgen_core/service_installer.py tests/unit/test_service_installer.py
-python -m ruff check rentgen_core/service_installer.py tests/unit/test_service_installer.py
+python -m pytest tests/unit/test_service_entry.py tests/unit/test_service_installer.py tests/unit/test_service_host.py tests/unit/test_service_image_boundary.py -q
+python -m black --check rentgen_core/service_entry.py tests/unit/test_service_entry.py rentgen_core/service_installer.py tests/unit/test_service_installer.py tests/unit/test_service_image_boundary.py
+python -m ruff check rentgen_core/service_entry.py tests/unit/test_service_entry.py rentgen_core/service_installer.py tests/unit/test_service_installer.py tests/unit/test_service_image_boundary.py
 git diff --check
 ```

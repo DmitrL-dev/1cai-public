@@ -77,6 +77,11 @@ Extra `mcp` добавляет официальный SDK `mcp==1.30.0`; обя�
 базового wheel по-прежнему нет. Для воспроизводимой установки SDK используйте
 существующий проверенный Windows runtime profile, который входит в sdist:
 
+Полный профиль закреплён в `requirements/locks/product-py311-windows.txt`, а его
+исходный список требований опубликован рядом в `requirements-rentgen.txt`. При
+обновлении версий сначала изменяется этот список, затем lock пересобирается и
+проверяется с теми же параметрами Windows x64 / CPython 3.11.
+
 ```powershell
 py -3.11 -m venv .venv-mcp
 .\.venv-mcp\Scripts\python.exe -m pip install --require-hashes --only-binary=:all: -r requirements/locks/product-py311-windows.txt

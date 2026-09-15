@@ -14,6 +14,7 @@ from .source_paths import collision_key, validate_file_paths, validate_source_pa
 
 
 _ACTIONS = ("unchanged", "same_change", "keep_current", "take_upstream", "conflict")
+_MAX_CONFLICT_PATHS = 256
 
 
 @dataclass(frozen=True)
@@ -97,18 +98,17 @@ def _action(base, current, upstream):
     return "conflict"
 
 
-def plan_three_way(
+def _prepare_trees(
     base,
     current,
     upstream,
     *,
-    max_files=10_000,
-    max_file_bytes=16 * 1024 * 1024,
-    max_total_bytes=64 * 1024 * 1024,
+    max_files,
+    max_file_bytes,
+    max_total_bytes,
 ):
-    """Return a deterministic dry-run plan for base/current/upstream bytes."""
     _limits(max_files, max_file_bytes, max_total_bytes)
-    trees = {
+    return {
         label: _tree(
             value,
             label,
@@ -122,6 +122,9 @@ def plan_three_way(
             ("upstream", upstream),
         )
     }
+
+
+def _plan_from_trees(trees, *, max_files):
     identities = set().union(*(tree.keys() for tree in trees.values()))
     if len(identities) > max_files:
         raise CoreError("THREE_WAY_LIMIT", "Union file limit exceeded")
@@ -161,4 +164,97 @@ def plan_three_way(
         "upstream_digest": _digest(trees["upstream"]),
         "counts": counts,
         "changes": [asdict(row) for row in rows],
+    }
+
+
+def plan_three_way(
+    base,
+    current,
+    upstream,
+    *,
+    max_files=10_000,
+    max_file_bytes=16 * 1024 * 1024,
+    max_total_bytes=64 * 1024 * 1024,
+):
+    """Return a deterministic dry-run plan for base/current/upstream bytes."""
+    trees = _prepare_trees(
+        base,
+        current,
+        upstream,
+        max_files=max_files,
+        max_file_bytes=max_file_bytes,
+        max_total_bytes=max_total_bytes,
+    )
+    return _plan_from_trees(trees, max_files=max_files)
+
+
+def materialize_three_way(
+    base,
+    current,
+    upstream,
+    *,
+    max_files=10_000,
+    max_file_bytes=16 * 1024 * 1024,
+    max_total_bytes=64 * 1024 * 1024,
+):
+    """Build an in-memory candidate from unambiguous path-level decisions.
+
+    The function is deliberately separate from :func:`plan_three_way`: it never
+    returns a partial candidate. Any conflict fails closed before a candidate is
+    exposed, while non-conflicting additions, deletions and edits are selected
+    from the already validated input trees. No filesystem or live 1C source is
+    touched.
+    """
+    trees = _prepare_trees(
+        base,
+        current,
+        upstream,
+        max_files=max_files,
+        max_file_bytes=max_file_bytes,
+        max_total_bytes=max_total_bytes,
+    )
+    plan = _plan_from_trees(trees, max_files=max_files)
+    conflicts = [row["path"] for row in plan["changes"] if row["action"] == "conflict"]
+    if conflicts:
+        details = {
+            "conflicting_paths": conflicts[:_MAX_CONFLICT_PATHS],
+            "conflict_count": len(conflicts),
+        }
+        if len(conflicts) > _MAX_CONFLICT_PATHS:
+            details["paths_truncated"] = True
+        raise CoreError(
+            "THREE_WAY_CONFLICT",
+            "Three-way merge has unresolved path conflicts",
+            details=details,
+        )
+
+    source_by_action = {
+        "unchanged": "current",
+        "same_change": "current",
+        "keep_current": "current",
+        "take_upstream": "upstream",
+    }
+    candidate = {}
+    for row in plan["changes"]:
+        source = source_by_action[row["action"]]
+        item = trees[source].get(collision_key(row["path"]))
+        if item is not None:
+            candidate[row["path"]] = item[1]
+
+    normalized = _tree(
+        candidate,
+        "candidate",
+        max_files=max_files,
+        max_file_bytes=max_file_bytes,
+        max_total_bytes=max_total_bytes,
+    )
+    return {
+        "schema": 1,
+        "scope": "path-bytes-v1",
+        "status": "ready",
+        "base_digest": plan["base_digest"],
+        "current_digest": plan["current_digest"],
+        "upstream_digest": plan["upstream_digest"],
+        "candidate_digest": _digest(normalized),
+        "candidate": candidate,
     }

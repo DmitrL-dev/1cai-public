@@ -26,6 +26,11 @@
 На платформе 8.3.27.2342 проверены загрузка собственного общего модуля через XML,
 отказ компилятора на ошибочном BSL, исправление и выполнение функции;
 [границы проверки](docs/product/PLATFORM-ACCEPTANCE.md).
+В ветке разработки уже есть прямые файловые writers для
+[rename реквизита](docs/product/METADATA-LIVE-APPLY.md) и
+[одного BSL-предложения](docs/product/PROPOSAL-LIVE-APPLY.md) в базовом
+Designer XML слое, с CAS undo и явным recovery. Это узкие изменения исходников;
+native live 1С/EDT, типовые конфигурации и пилот ещё не приняты.
 
 ## 3. Обновления с сохранением доработок
 
@@ -36,9 +41,32 @@
 Приёмка: набор обновлений с сохранением пользовательских изменений, явный
 отказ при неоднозначности, проверенные резервное копирование и откат.
 
-В ветке разработки добавлен [path-bytes three-way dry-run](docs/product/THREE-WAY-UPDATES.md)
-с bounded хэшами и явными конфликтами. Он не заменяет native object/UUID merge
-и пока не выполняет запись.
+В ветке разработки добавлен [path-bytes three-way plan и candidate](docs/product/THREE-WAY-UPDATES.md)
+с bounded хэшами и явными конфликтами. Для безконфликтных решений можно
+получить проверенный candidate в памяти; он не заменяет native object/UUID
+merge и не выполняет запись. Для Designer XML добавлен отдельный
+[qualified property candidate](docs/product/METADATA-THREE-WAY.md): он сохраняет
+прямые `Properties` при доказанно раздельных изменениях. Для BSL уже есть
+bounded composite merge с привязкой owner/path и явными конфликтами; расширения,
+формы, СКД и неподдержанные оболочки блокируются. Для EDT Catalog добавлен
+read-only child-owner evidence: прямой реквизит связывается с UUID владельца,
+а перенос между типами или владельцами отклоняется до любой материализации.
+Инвентарь UUID, прямых XML-владельцев и слоёв доступен через read-only
+[`edt-inventory`](docs/product/EDT-INVENTORY-IDENTITY.md#local-cli) с явным
+опубликованным snapshot и правом `project:read`. Покрытие остаётся частичным;
+транспорт не квалифицирует типовые конфигурации или live apply.
+
+Для трёх сохранённых inventory добавлен [EDT identity three-way plan](docs/product/EDT-IDENTITY-THREE-WAY.md)
+и read-only CLI `edt-inventory-plan`: проверенные bindings UUID/owner/layer,
+явные конфликты и unsupported-причины, ограничение JSON 8 MiB. Это сравнение
+предоставленного partial evidence без материализации или native validation.
+
+Инвентарь также принимает фактические EDT `MetaDataObject/*.xml`: корневые
+объекты и прямые UUID-владельцы из `ChildObjects`, а формы и команды из
+отдельных descriptor-файлов связываются только с проверенным родительским
+объектом. Это закрывает разрыв между сохранённым `.mdo` контрактом и реальной
+выгрузкой EDT, но не разрешает запись, расширения или произвольные
+неподтверждённые типы.
 
 ## 4. Непрерывный аудит для команды и владельца
 
@@ -51,8 +79,14 @@
 [durable lifecycle Git-находок](docs/product/GIT-FINDINGS.md) с
 replay/resolve/reopen, транзакционной миграцией SQLite и bounded
 [watcher adapter](docs/product/GIT-WATCHER.md), который повторно проверяет HEAD
-до публикации результата. Поставляемый анализатор, автоматический scheduler и
-уведомления остаются следующими этапами. Bounded scheduler уже умеет сохранять
+до публикации результата. Schema 3 связывает trusted scanner, owned snapshot,
+Git/BSL analysis, owner receipt и bounded scheduler в автономный read-only цикл;
+живой SCM host, HTTPS receiver host и расширенный multi-analyzer контур остаются следующими
+этапами. Receiver-side core теперь проверяет bearer/idempotency и durable
+deduplication/conflict в SQLite, включая retry после потерянного ответа и
+повторного открытия store. Он подтверждает digest receipt; downstream обработка,
+live HTTPS host и hostile filesystem mutation ещё не квалифицированы.
+Bounded scheduler уже умеет сохранять
 состояние цикла, складывать события в atomic outbox и требовать явного recovery
 после оборванного процесса. Для владельца добавлен bounded
 [owner report](docs/product/OWNER-REPORT.md): quality findings и runtime

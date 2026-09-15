@@ -1,0 +1,1 @@
+<md:Catalog xmlns:md="http://g5.1c.ru/v8/dt/metadata/mdclass" uuid="not-a-uuid"><name>Products</name><attributes uuid="10000000-0000-4000-8000-000000000020"><name>Article</name></attributes><forms uuid="10000000-0000-4000-8000-000000000021"><name>ItemForm</name></forms><commands uuid="10000000-0000-4000-8000-000000000022"><name>OpenItem</name></commands></md:Catalog>

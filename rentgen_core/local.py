@@ -1,6 +1,7 @@
 """Explicit local composition; administrative state reads never open sources."""
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 from uuid import uuid4
 
 from .context import Explicit, ProjectContext
@@ -35,7 +36,15 @@ class LocalRuntime:
         with ctx.state.transaction(principal) as tx:
             return tx.get_project_head()
 
-    def resolve(self, principal, project_id, snapshot_id=None):
+    def resolve(
+        self,
+        principal,
+        project_id,
+        snapshot_id=None,
+        *,
+        authorize_read: Callable[[], None] | None = None,
+    ):
+        options = {} if authorize_read is None else {"authorize_read": authorize_read}
         return ContextResolver(
             self.registry, graph_reader_factory=self.graph_reader_factory
-        ).resolve_context(principal, Explicit(project_id), snapshot_id)
+        ).resolve_context(principal, Explicit(project_id), snapshot_id, **options)

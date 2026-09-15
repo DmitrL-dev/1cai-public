@@ -112,6 +112,21 @@ def test_metadata_workspace_recover_requires_explicit_target():
 
 
 def test_owner_report_commands_have_explicit_context_and_bounded_paging():
+    built = _parser().parse_args(
+        arguments(
+            "owner-report-build",
+            "--store",
+            "state/owner-reports",
+            "--snapshot",
+            "snapshot",
+            "--profile",
+            "observer-profile",
+            "--report-id",
+            "report-id",
+        )
+    )
+    assert str(built.profile) == "observer-profile"
+    assert built.report_id == "report-id"
     saved = _parser().parse_args(
         arguments(
             "owner-report-save",

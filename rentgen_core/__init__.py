@@ -52,9 +52,29 @@ from .notification_delivery import (
     WebhookAdapter,
     deliver_outbox,
 )
+from .notification_receiver import NotificationReceiver, ReceiverResult, ReceiverStatus
 from .git_snapshot_evidence import GitSnapshotEvidence
 from .edt_inventory import EDTInventoryLimits, edt_metadata_inventory
-from .metadata_three_way import plan_metadata_three_way
+from .metadata_three_way import materialize_metadata_three_way, plan_metadata_three_way
+from .metadata_live_apply import (
+    apply_live,
+    get_live_status,
+    recover_live,
+    undo_live,
+)
+from .proposal_live_apply import (
+    apply_live as apply_proposal_live,
+    get_live_status as get_proposal_live_status,
+    recover_live as recover_proposal_live,
+    undo_live as undo_proposal_live,
+)
+from .edt_attribute_three_way import plan_edt_attribute_three_way
+from .edt_identity_three_way import (
+    EDTIdentityThreeWayLimits,
+    plan_edt_identity_three_way,
+)
+from .three_way import materialize_three_way
+from .bsl_three_way import materialize_bsl_three_way
 from .sources import (
     SourceRef,
     SourceEntry,
@@ -84,11 +104,28 @@ __all__ = [
     "DeliveryStatus",
     "WebhookAdapter",
     "deliver_outbox",
+    "NotificationReceiver",
+    "ReceiverResult",
+    "ReceiverStatus",
     "GitSnapshotEvidence",
     "OwnerReportStore",
     "EDTInventoryLimits",
     "edt_metadata_inventory",
     "plan_metadata_three_way",
+    "plan_edt_attribute_three_way",
+    "EDTIdentityThreeWayLimits",
+    "plan_edt_identity_three_way",
+    "materialize_metadata_three_way",
+    "apply_live",
+    "undo_live",
+    "get_live_status",
+    "recover_live",
+    "apply_proposal_live",
+    "undo_proposal_live",
+    "get_proposal_live_status",
+    "recover_proposal_live",
+    "materialize_three_way",
+    "materialize_bsl_three_way",
     "SourceRef",
     "SourceEntry",
     "SourcePage",

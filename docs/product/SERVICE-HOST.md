@@ -1,4 +1,302 @@
-# Bounded Windows service host lifetime
+# Native Observer service entrypoint and bounded Git audit composition
+
+## Git audit composition (schema 2)
+
+`rentgen_core.service_composition.GitAuditWorker` connects the existing
+`GitWatcherScheduler`, read-only `BslGitAnalyzer`, durable Observer findings,
+`SchedulerJournal`, `NotificationOutbox` and owner-report builder/store through
+the same `rentgen-service` console and native SCM entrypoint. It uses only built-in
+components. Schema 1 source Observer configurations keep their existing behavior.
+
+```json
+{
+  "schema": 2,
+  "service_name": "Rentgen.GitAudit",
+  "registry": "C:\\Rentgen\\registry.sqlite3",
+  "profile": "C:\\Rentgen\\git-observer-profile",
+  "project": "6e461c4d-e19c-4e37-85b3-3aa0961580b7",
+  "diagnostics_root": "C:\\Rentgen\\diagnostics",
+  "interval_seconds": 60,
+  "max_cycles": 1,
+  "mode": "dry-run"
+}
+```
+
+Use the same `--console --config <absolute-local.json>` grammar. `mode` defaults
+to `dry-run`: only strict configuration and existing local paths are validated;
+no worker, Git/BSL process, journal, outbox or report is created. This is not a
+runtime-readiness or authorization check. Explicit `mode: "read-only"` enables
+the audit. These are the only accepted modes. `max_cycles` defaults to 1 and must
+be an integer from 1 to 10000; null/unbounded runs are rejected for schema 2.
+`interval_seconds` is required and bounded to 5–86400. All other shown fields
+are required; unknown fields, duplicate JSON keys, identity overrides, arbitrary
+commands, scanner selection and notification URLs are rejected. Schema 2 uses
+the same 16 KiB JSON, public metadata and canonical local path rules as schema 1.
+
+`diagnostics_root` is an explicitly selected existing installation base. The
+fixed installed BSL profile resolves under `<diagnostics_root>\Rentgen\runtimes`
+and writes bounded scratch attempts under `Rentgen\diagnostic-runs`; the existing
+adapter verifies its pinned runtime before execution. No download, source
+capture/publish, source edit, Git fetch/checkout, model, runtime exporter or
+notification sender is attached. Read-only refers to repository sources/refs:
+the enabled audit writes local evidence and BSL scratch data.
+
+The current Windows principal must already have project access and an existing
+matching Observer profile. The worker acquires that profile's lease before
+RUNNING and retains it until cleanup; an internal leased view lets GitWatcher
+reuse that ownership without acquiring a nested lease. Scheduler journal and
+outbox paths are fixed as `git-journal.json` and `git-outbox.json` in the profile.
+Their initial canonical paths must stay at those exact locations. Existing
+journal/outbox leaves, their `.lock`/`.tmp` siblings and the profile `worker.lock`
+must be regular single-link files without symlink/reparse redirection. This
+schema 2 startup check rejects static hardlink aliases before auxiliary lock
+initialization; schema 1's path contract is unchanged. Profile,
+state and scratch directories cannot overlap sources. This does not add an
+OS sandbox or protection against later path replacement; existing deployment
+ACL and filesystem-identity obligations still apply.
+
+Each tick requires a previously published snapshot whose supported source
+digest matches clean Git, then runs the existing watcher. Complete BSL evidence
+and an owner report with matching commit and `git_source_verified` provenance
+are mandatory before a success event is enqueued. Missing snapshot, incomplete
+analysis or unavailable quality fails closed. This worker does not update a
+stale snapshot; a separately authorized publisher must do that first. Runtime
+business metrics remain `not_available`. Reports are saved in the existing
+project state `owner-reports` store; each success outbox event includes its
+`owner_report_id`. Unchanged commit/snapshot pairs reuse a receipt within one
+lifetime; a new lifetime may create a new receipt.
+
+One scheduler owns the finite cycle budget and existing restricted transient
+backoff. Its wait uses the service stop Event, so STOP/SHUTDOWN or a console
+stop wakes interval/backoff waiting. An active tick finishes before cleanup;
+there is no forced termination or wall-clock stop deadline. Journal, findings,
+reports and outbox remain separate durable stores, not one transaction: later
+failure may leave findings or a report without a success notification. Existing
+bounded stores, full-queue failures and explicit interrupted-journal recovery
+apply; no auto-ack, retention, restart or recovery is introduced.
+
+If the scheduler returns with an unresolved final `error` event because the
+cycle budget or stop prevented another retry, the worker raises that event's
+CoreError code. The entrypoint reports `SERVICE_WORKER_FAILED` rather than a
+successful stopped lifetime. A later successful cycle clears a prior transient
+failure; stopping before the first tick or after success remains graceful.
+
+`tests/unit/test_service_composition.py` checks strict/default config, actual
+Git/Observer/store wiring with a typed fake BSL executor, fail-closed evidence,
+output-path containment and cooperative stop; the same pipeline is exercised
+through a mocked SCM lifecycle. No live SCM install/start/apply, service-account
+acceptance or native BSL acceptance is implied.
+
+## Autonomous snapshot preparation (schema 3)
+
+Schema 3 opts into owned snapshot capture before the same bounded Git audit.
+It accepts the schema 2 fields plus one required `scanner` field:
+
+```json
+{
+  "schema": 3,
+  "service_name": "Rentgen.GitAudit",
+  "registry": "C:\\Rentgen\\registry.sqlite3",
+  "profile": "C:\\Rentgen\\git-observer-profile",
+  "project": "6e461c4d-e19c-4e37-85b3-3aa0961580b7",
+  "diagnostics_root": "C:\\Rentgen\\diagnostics",
+  "scanner": "C:\\Rentgen\\bsl-scan.exe",
+  "interval_seconds": 60,
+  "max_cycles": 100,
+  "mode": "read-only"
+}
+```
+
+The scanner must be an existing absolute local `.exe`; it is the trusted host's
+Go scanner, with the same path checks and deployment integrity obligations as
+schema 1. The worker constructs `RentgenGraphReaderFactory` and
+`RentgenCapturedGoBuilder`. Mode still defaults to `dry-run`, cycles to 1, and
+all schema 2 bounds apply. Dry-run does not construct or start the scanner.
+Schema 1/2 behavior and the generic scheduler's defaults remain unchanged.
+
+Under its existing lifetime lease, each tick authorizes `project:read` and
+`analysis:run` before probing Git. It verifies the durable analysis profile/scope
+and ancestry before snapshot writes, runs the existing Observer capture/report
+step, then checks that the clean Git observation has not changed. Source edits,
+administrative grants, profile initialization, model calls and 1C execution are
+not part of this pipeline. `source:edit` is not required for owned capture.
+
+The resulting snapshot must pass the existing Git/source verification.
+`GitWatcher.tick(expected_observation=...)` checks the prepared observation
+before either analysis or its unchanged fast path; its post-analysis and
+pre-publication evidence checks still apply. A changed commit is rejected,
+and a successfully captured snapshot may remain as local evidence. Missing or
+failed evidence never becomes verified findings. Snapshot creation uses the
+registered source layers unchanged: a `.` layer includes `.git` metadata, so
+even an empty Git commit can change its source digest. This is the existing
+bounded source association, not complete Git tree or temporal atomicity proof.
+
+Schema 3 omits `unchanged` events from its outbox while retaining scheduler
+cycle accounting. Analysis/error/fatal events and existing queue limits remain.
+The generic `notify_unchanged` scheduler option defaults to `True`; schema 3
+sets it to `False`. No notification is acknowledged or deleted automatically.
+
+On restart, completed findings prevent repeated BSL analysis. The worker searches
+the bounded existing owner store for a receipt matching the full newly verified
+report except its generation timestamp, preserving the original receipt/date.
+The existing capture/publication journal reconciles confirmed publication; no
+new execution journal is introduced. A scheduler left `running` still requires
+explicit `SchedulerJournal.recover(reason)`, and failed Observer jobs retain
+their explicit retry requirement. Findings, owner receipts and outbox are
+separate stores: interruption can still leave evidence without a success
+notification, and this block does not add exactly-once delivery or live SCM
+deployment acceptance.
+
+Tests use real Git, the compiled Go scanner, confined capture/publication and
+SQLite stores, with the existing typed fake BSL executor. They cover the first
+and next commit, prepared-observation races, ancestry before capture,
+authorization before/after capture, restart around publication and owner save,
+receipt reuse, cooperative stop and over 1000 unchanged scheduler cycles.
+
+## Source Observer entrypoint
+
+`rentgen_core.service_entry` supplies a stdlib/ctypes Windows SCM boundary and
+the `rentgen-service` console command. The source Observer worker uses the
+existing `LocalRuntime`, `RentgenGraphReaderFactory`, `RentgenCapturedGoBuilder`
+and `Observer` composition. This is an adapter contract proof with mocked SCM,
+not live service deployment or production acceptance. The source worker is
+separate from the bounded `GitWatcherScheduler` host described below.
+
+Use an existing protected configuration file with this exact JSON schema:
+
+```json
+{
+  "schema": 1,
+  "service_name": "Rentgen.Observer",
+  "registry": "C:\\Rentgen\\registry.sqlite3",
+  "profile": "C:\\Rentgen\\observer-profile",
+  "project": "6e461c4d-e19c-4e37-85b3-3aa0961580b7",
+  "scanner": "C:\\Rentgen\\scanner.exe",
+  "interval_seconds": 60,
+  "max_cycles": 1
+}
+```
+
+All fields except `max_cycles` are required. `max_cycles` is either an integer
+from 1 to 10000, or `null`/absent to run until STOP, SHUTDOWN or failure. An
+integer budget terminates the lifetime once; there is no automatic restart.
+`interval_seconds` is an integer from 5 to 86400. Booleans and floating point
+numbers do not satisfy either integer contract. For a bounded console smoke
+test, retain `max_cycles: 1` and run:
+
+```powershell
+python -m rentgen_core.service_entry --console --config C:\Rentgen\settings.json
+```
+
+This performs an authorized Observer tick and can capture/publish local state;
+it is not a dry run. The existing Observer profile must already belong to the
+current Windows process principal and project. The adapter never initializes
+or rebinds a profile, changes membership, selects an identity from JSON or
+invokes `Observer.retry()`. `Observer.locked()` validates project permissions
+and profile binding and holds the lease for the entire worker lifetime; `_tick`
+is the explicit internal adapter used while that lease is held, as in the
+existing Observer CLI. `close()` releases that lease. The runtime's other
+resources remain scoped to its existing operations.
+
+The registry is an existing regular local file, not a JSON configuration. The
+profile is an existing directory; the scanner is an existing `.exe` file.
+The configuration itself is an existing `.json` file. Every path is absolute,
+at most 240 characters, and checked again after canonical resolution. UNC and
+device paths, mapped remote/unknown drives on Windows, traversal, alternate
+streams, reserved Windows names, control/surrogate characters, `%` expansion
+and credential-like names are rejected. Canonicalization follows links;
+hardlinks are accepted. These checks do not establish ACLs, executable trust,
+file identity or protection against replacement between validation and use.
+
+Config reads retain at most 16 KiB plus one overflow byte. Invalid UTF-8, BOM,
+duplicate JSON fields, nonfinite numbers, unknown/missing fields and invalid
+canonical project UUIDs fail closed. No configuration field loads a module,
+executes a shell command, supplies an environment or carries credentials.
+Names and paths are public metadata; arbitrary opaque secrets disguised as
+names cannot be detected. Keep credentials out of configuration and argv.
+
+Only `--console --config <path>` or `--service --config <path>` is accepted;
+duplicate/extra arguments and abbreviations are rejected without echoing input.
+Console mode emits one small JSON outcome with a completed cycle count, or a
+fixed generic error code, and returns 0 or 2. It does not print Observer events
+or raw exception text. Ctrl+C in console mode releases owned resources. A
+trusted embedding can pass `worker_factory(config)` and a console `stop_event`
+directly in Python. The returned worker must implement `tick()` and `close()`;
+the factory owns cleanup if construction fails before it returns a worker.
+The entrypoint calls a returned worker's cleanup once, including after failure.
+
+## SCM lifetime and deployment boundary
+
+Service mode checks the Windows platform before loading config or runtime, then
+connects the process's main thread with `StartServiceCtrlDispatcherW`. The
+own-process dispatch table's name is ignored by Windows; the actual service
+name from `ServiceMain`'s first argument is registered and checked against
+`config.service_name`. Extra SCM start arguments are rejected, never interpreted
+as config overrides. See Microsoft's
+[dispatcher contract](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-startservicectrldispatcherw).
+
+`ServiceMain` immediately calls `RegisterServiceCtrlHandlerExW` and reports
+`START_PENDING` with no accepted controls. One worker thread then loads config,
+authenticates and acquires the Observer lease. A ready handshake allows
+`RUNNING` only after startup succeeds. The service accepts STOP and SHUTDOWN;
+`HandlerEx` only signals events and returns, without worker joins or I/O.
+INTERROGATE returns success without publishing another status; unsupported
+controls return `ERROR_CALL_NOT_IMPLEMENTED`. These follow Microsoft's
+[control handler contract](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nc-winsvc-lphandler_function_ex).
+
+The ServiceMain coordinator owns every status write. On a stop request or
+worker completion/failure it reports `STOP_PENDING`, disables accepted controls,
+allows cleanup and joins the worker, then attempts exactly one `STOPPED` report.
+There are no later status writes. Stop observed before the RUNNING decision
+skips RUNNING. An already in-flight RUNNING report can race with a new stop
+request and is followed by STOP_PENDING; Event/WinAPI are not an atomic pair.
+SCM API failures stop the worker cooperatively and make the overall result a
+failure; registration failure has no handle with which to report STOPPED.
+
+All worker exceptions are fatal in service mode. There is no retry/backoff
+policy or automatic recovery in this source worker. Cleanup failure also fails
+the lifetime, and a simultaneous stop cannot erase a failure. SCM receives only
+fixed numeric failure statuses (`ERROR_SERVICE_SPECIFIC_ERROR` / 1066, with
+service-specific 1=config, 2=worker, 3=SCM); service mode emits no console output.
+Raw exceptions, tracebacks, notes and event payloads are not copied into public
+outcomes. The existing Observer persistence retains its own evidence rules.
+
+Interval waits are interruptible. An active factory, tick or cleanup must return
+on its own; this adapter does not forcibly terminate a thread/process or promise
+a wall-clock stop deadline. Pending statuses use a 30-second initial wait hint
+and one checkpoint, with no timer pretending that a hung operation is making
+progress. Shutdown can outlast Windows's deadline. Hard termination cannot
+guarantee cleanup or a final SCM status; interrupted Observer jobs require the
+existing explicit recovery workflow. See Microsoft's
+[status reporting requirements](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-setservicestatus).
+
+**The installed `rentgen-service.exe` console-script launcher is not proven as
+an SCM service image.** A pip launcher can create a child Python process while
+SCM owns the launcher process. The dispatcher must run in the actual service
+process. `ServiceInstallSpec` rejects the known `rentgen-service.exe` basename
+case-insensitively in either the supplied path or its canonical target with
+`SERVICE_IMAGE_UNSUPPORTED`, before any SCM command. Install/update repeat this
+validation before their first SCM query. The error contains no path or argv.
+This guard does not identify every launcher or certify a renamed binary; the
+native EXE contract still requires independent same-process deployment evidence.
+The installer supports a fixed direct-interpreter ImagePath using
+`python.exe`/`pythonw.exe` with exactly
+`-I -m rentgen_core.service_entry --service --config <path>`, alongside its native
+EXE grammar. The package must be installed in that interpreter's site-packages;
+`-I` excludes working-directory and user-site imports. The executable basename
+does not prove interpreter integrity or same-process behavior, and this change
+does not build a native launcher or perform live SCM acceptance. See
+[SERVICE-INSTALLER.md](SERVICE-INSTALLER.md) for validation and deployment bounds.
+
+The installer defaults to `NT AUTHORITY\LocalService`. That principal's project
+membership and exact Observer profile binding must be provisioned separately;
+a profile initialized by an interactive user is not automatically usable.
+Account ACLs, signing, packaging, reboot/start/stop/recovery behavior and live
+SCM acceptance remain unverified. Tests exercise config, source adapter lease
+ownership, foreground budgets, mocked native ABI calls, startup/control races,
+failure statuses and cleanup; no live SCM install/start was performed.
+
+## Bounded Git scheduler host
 
 `rentgen_core.service_host.WindowsServiceHost` adds a foreground lifetime to an
 already configured `GitWatcherScheduler`. It is an integration boundary for a

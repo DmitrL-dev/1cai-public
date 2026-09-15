@@ -167,3 +167,79 @@ Stale даёт ошибку без report. Нельзя превратить с�
 Адаптер не подключает источник к service/workflow автоматически. Host-интегратор
 отвечает за получение экспорта, независимое доверие context/digest, retention,
 права и своевременное повторное потребление evidence.
+
+## Trusted retained producer для одного регистра
+
+`rentgen_core.runtime_producer.RetainedRegisterProducer` связывает один заранее
+разрешённый retained export с immutable owner receipt. Это bounded offline P1:
+producer читает готовые показатели и создаёт квитанцию через существующие
+`load_onec_register_export()`, `build_owner_report()` и `OwnerReportStore.save()`.
+Он не запускает процессы, SQL или 1С, не открывает сеть и не вычисляет показатели
+по операционным данным. В `service_entry` и CLI автоматического подключения нет.
+
+Trusted host создаёт frozen `RetainedRegisterSource` независимо от JSON-файла:
+
+```python
+from rentgen_core.owner_report_store import OwnerReportStore
+from rentgen_core.runtime_producer import RetainedRegisterProducer, RetainedRegisterSource
+
+store = OwnerReportStore(owned_receipts_directory)
+store.initialize()
+source = RetainedRegisterSource(
+    source_id="owner-indicators",
+    export_path=retained_absolute_path,
+    project_id=project_id,
+    snapshot_id=snapshot_id,
+    commit=commit,
+    source_digest=trusted_rows_digest,
+    register_id="InformationRegister.OwnerIndicators",
+    source_ref="exports/owner-indicators.json",
+    period_start=period_start,
+    period_end=period_end,
+    metric_ids=("orders_count", "revenue_amount"),
+    max_age_seconds=3600,
+)
+producer = RetainedRegisterProducer(source, store)
+receipt = producer.produce("owner-indicators", authorize=authorize_runtime_export)
+```
+
+Один экземпляр разрешает только свой `source_id`; запрос не передаёт путь,
+команду, context pins, источник expected digest или policy. Путь открывает
+только retained reader с указанными выше no-follow проверками. Значения
+`source_ref` и `register_id` из файла не становятся локаторами. Абсолютный путь
+источника не включается в receipt. `as_of` в методе `produce` доступен trusted
+host для воспроизводимой проверки fixture; его нельзя брать из запроса.
+
+Обе границы периода обязательны и входят в trusted freshness policy. Ожидаемые
+`metric_ids` — непустой уникальный tuple из 1–1000 идентификаторов. Нужен точный
+набор: пропущенный или лишний показатель отклоняется, даже если trusted digest
+обновлён под такой экспорт. `complete=false`, пустые rows и частичный период
+не создают receipt. Остальные проверки схемы и canonical digest выполняет
+source adapter; исходные rows в retained export не изменяются.
+
+Авторизация выполняется при трёх проверках loader, перед построением owner
+report и в двух точках сохранения store. После каждого consumer/store callback
+producer повторно оценивает свежесть по закреплённой policy. Исключение trusted
+callback и его cause передаются без изменений. Пропущенные права, неверные
+pins, неполные или устаревшие данные не дают возвращаемой квитанции.
+
+Сохраняется существующий формат [owner receipt](OWNER-REPORT-STORE.md):
+canonical SHA-256 `receipt_id` связывает весь owner report, его context и
+source digest; запись через эксклюзивное создание и `fsync` не перезаписывает
+старую квитанцию. Каждый успешный запуск создаёт новый UUID receipt. Лимит store
+сохраняется — 1000 квитанций, до 2 MiB каждая. Отзыв прав или устаревание на
+последней, **после записи**, проверке блокирует возврат, но уже записанный файл
+может остаться в host-owned store. Его последующее чтение заново требует прав;
+это историческое evidence, а не подтверждение текущей свежести. Producer не
+удаляет такие файлы и не доставляет результаты во внешние каналы.
+
+| Дополнительная ошибка | Причина |
+| --- | --- |
+| `OWNER_RUNTIME_PRODUCER_INVALID` | Неполный или неверный trusted contract |
+| `OWNER_RUNTIME_PRODUCER_SOURCE` | Запрошен источник вне заданного allowlist |
+| `OWNER_RUNTIME_PRODUCER_INCOMPLETE` | Нет полного ожидаемого набора показателей |
+
+Owned fixture находится в `packaging/fixtures/runtime-register-v1/` и проверяется
+`tests/unit/test_runtime_producer.py`. Все значения и context в нём синтетические:
+это воспроизводимое evidence offline-контракта, не доказательство live-выгрузки
+из регистра 1С, прав реального пользователя или истинности бизнес-показателей.

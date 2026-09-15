@@ -9,6 +9,7 @@ import test_metadata_plans as fixtures
 from rentgen_core import metadata_plans as plans, metadata_runs as runs
 from rentgen_core.edt_execution import write_record
 from rentgen_core.errors import CoreError
+from rentgen_core.manifests import canonical_bytes, sha256
 from rentgen_core.metadata_preview import build_preview
 
 project, scanner, captured, pytestmark = (
@@ -155,3 +156,51 @@ def test_business_evidence_rejects_rebinding_and_tampering(captured):
     (run / "business-evidence.json").write_text("{}", "utf-8")
     with pytest.raises(CoreError):
         runs.get_preview(ctx, operation)
+
+
+def test_business_evidence_can_bind_completed_owned_native_apply_undo(captured):
+    ctx, operation, run, preview = _finished_run(captured)
+    inventories = preview["preview"]["inventories"]
+    evidence = _evidence(preview)
+    evidence["product_apply_undo"] = True
+    evidence["product_apply_undo_receipt"] = {
+        "schema": 1,
+        "operation_id": str(uuid4()),
+        "preview_id": preview["preview_id"],
+        "native_preview_id": "1" * 64,
+        "workspace_result_id": "2" * 64,
+        "undo_id": "3" * 64,
+        "apply_status": "applied",
+        "undo_status": "undone",
+        "live_source_written": False,
+        "original_digest": sha256(canonical_bytes(inventories["original"])),
+        "candidate_digest": sha256(canonical_bytes(inventories["candidate"])),
+    }
+    result = runs.attach_business_evidence(ctx, operation, evidence)
+    assert result["business_evidence"]["product_apply_undo"] is True
+    assert result["business_evidence"]["product_apply_undo_receipt"]["undo_status"] == (
+        "undone"
+    )
+
+
+def test_business_evidence_rejects_product_apply_undo_inventory_tampering(captured):
+    ctx, operation, _, preview = _finished_run(captured)
+    evidence = _evidence(preview)
+    evidence["product_apply_undo"] = True
+    evidence["product_apply_undo_receipt"] = {
+        "schema": 1,
+        "operation_id": str(uuid4()),
+        "preview_id": preview["preview_id"],
+        "native_preview_id": "1" * 64,
+        "workspace_result_id": "2" * 64,
+        "undo_id": "3" * 64,
+        "apply_status": "applied",
+        "undo_status": "undone",
+        "live_source_written": False,
+        "original_digest": sha256(
+            canonical_bytes(preview["preview"]["inventories"]["original"])
+        ),
+        "candidate_digest": "f" * 64,
+    }
+    with pytest.raises(CoreError, match="inventory binding"):
+        runs.attach_business_evidence(ctx, operation, evidence)

@@ -107,6 +107,78 @@ def test_analyzer_failure_does_not_mark_commit_processed(workspace):
     assert observer.findings_status()["state"] is None
 
 
+def test_prepared_observation_is_checked_before_analysis_or_unchanged(workspace):
+    source, observer = workspace
+    expected = implementation.observe_git(source)
+    calls = []
+
+    def analyzer(observation):
+        calls.append(observation)
+        return report(observer, observation)
+
+    watcher = implementation.GitWatcher(observer, analyzer)
+    assert watcher.tick(expected_observation=expected)["status"] == "analyzed"
+    git(source, "commit", "--allow-empty", "-m", "next")
+    current = watcher.tick()
+    with pytest.raises(CoreError) as error:
+        watcher.tick(expected_observation=expected)
+    assert error.value.code == "GIT_HEAD_CHANGED"
+    assert len(calls) == 2
+    assert (
+        observer.findings_status()["state"]["report"]["observation"]["commit"]
+        == current["commit"]
+    )
+
+
+@pytest.mark.parametrize("expected", [False, {}, "HEAD"])
+def test_prepared_observation_requires_typed_token(workspace, expected):
+    _, observer = workspace
+    watcher = implementation.GitWatcher(
+        observer, lambda _: pytest.fail("invalid observation reached analyzer")
+    )
+    with pytest.raises(CoreError) as error:
+        watcher.tick(expected_observation=expected)
+    assert error.value.code == "GIT_WATCHER_CONTEXT"
+
+
+@pytest.mark.parametrize(
+    "observation",
+    [
+        {},
+        {"commit": None},
+        {"commit": False},
+        {"commit": ""},
+        {"commit": "a" * 39},
+        {"commit": "g" * 40},
+        {"commit": "a" * 65},
+    ],
+)
+def test_durable_state_requires_valid_commit_token(observation):
+    state = {
+        "report": {
+            "profile_id": "profile",
+            "scope_id": "scope",
+            "observation": observation,
+        }
+    }
+    with pytest.raises(CoreError) as error:
+        implementation.GitWatcher._state_commit(state, "profile", "scope")
+    assert error.value.code == "GIT_WATCHER_CONTEXT"
+
+
+@pytest.mark.parametrize("commit", ["a" * 40, "0" * 64])
+def test_durable_state_accepts_git_object_ids_and_only_absent_state_is_none(commit):
+    state = {
+        "report": {
+            "profile_id": "profile",
+            "scope_id": "scope",
+            "observation": {"commit": commit},
+        }
+    }
+    assert implementation.GitWatcher._state_commit(state, "profile", "scope") == commit
+    assert implementation.GitWatcher._state_commit(None, "profile", "scope") is None
+
+
 def test_report_must_bind_exact_observation_and_context(workspace):
     source, observer = workspace
     observation = implementation.observe_git(source)
@@ -407,3 +479,34 @@ def test_scheduler_emits_cycle_event_to_notification_outbox(tmp_path):
     ).run()
 
     assert [item["event"] for item in outbox.peek()] == [{"status": "unchanged"}]
+
+
+def test_scheduler_can_retain_cycles_without_queuing_unchanged_events(tmp_path):
+    outbox = implementation.NotificationOutbox(tmp_path / "outbox.json")
+    journal = implementation.SchedulerJournal(tmp_path / "scheduler.json")
+    watcher = _ScheduledWatcher(
+        [{"status": "analyzed", "commit": "a" * 40}]
+        + [{"status": "unchanged"}] * 1001
+        + [CoreError("GIT_HEAD_CHANGED", "retry")]
+    )
+    events = implementation.GitWatcherScheduler(
+        watcher,
+        interval=5,
+        max_cycles=1003,
+        sleep=lambda _: None,
+        outbox=outbox,
+        journal=journal,
+        notify_unchanged=False,
+    ).run()
+    assert journal.read()["cycle"] == 1003
+    assert len(events) == 1000
+    assert [item["event"]["status"] for item in outbox.peek()] == ["analyzed", "error"]
+
+
+@pytest.mark.parametrize("value", [0, 1, None, "false"])
+def test_scheduler_notification_policy_requires_boolean(value):
+    with pytest.raises(CoreError) as error:
+        implementation.GitWatcherScheduler(
+            _ScheduledWatcher([]), notify_unchanged=value
+        )
+    assert error.value.code == "GIT_WATCHER_INVALID"

@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "date": "2026-09-15",
+  "source": "real bounded live Designer XML writer on an owned registered fixture tree",
+  "project_id": "0c48f2e6-3ee8-4bcf-b125-bb0f7bace00d",
+  "snapshot_id": "a68d2bafba7f708242c24eca77fad90ed3d10e941b945e54380eb035635c0982",
+  "preview_operation_id": "976f3251-43fe-4b7a-bdf8-0a5415fc866c",
+  "preview_id": "31ab5c6d1c57dc3a269f48481732b4717a8140ba20b4c6fefe2643f98a09c8fe",
+  "operation_id": "0da267cc-bb83-46bf-882a-3c27d3afa76c",
+  "preflight": {
+    "status": "unavailable",
+    "reasons": [
+      "live_apply_not_implemented",
+      "normalization_not_qualified"
+    ],
+    "live_source_written": false
+  },
+  "apply": {
+    "status": "applied",
+    "result_id": "ac5f870162293ce018ebca210a52281a60c9d57834c579611adb30ed47c31cef",
+    "before_digest": "e4099571515b28588939bd20df1b29deb39d76dbb16b21b4a8012eaf12de254b",
+    "after_digest": "8dc3cbb4b4fe91c32543d29125f600565a2ac1052da4173e6b294da7d083cd5c",
+    "live_source_written": true
+  },
+  "undo": {
+    "status": "undone",
+    "result_id": "1562967befa1cb27d61f430f41f72e6929248e376f53d2d2e6b270fca5a06eab",
+    "before_digest": "e4099571515b28588939bd20df1b29deb39d76dbb16b21b4a8012eaf12de254b",
+    "after_digest": "8dc3cbb4b4fe91c32543d29125f600565a2ac1052da4173e6b294da7d083cd5c",
+    "live_source_written": true
+  },
+  "changed_paths": [
+    "Catalogs/Products.xml",
+    "Catalogs/Products/Forms/ItemForm/Ext/Form.xml"
+  ],
+  "source_restored": true,
+  "platform_invoked": false,
+  "limitations": [
+    "Owned synthetic Designer XML source only; no arbitrary customer configuration",
+    "The writer does not update a 1C infobase or invoke EDT/Configurator",
+    "External concurrent filesystem writers and power-loss durability need separate qualification",
+    "Extensions, .cf/.cfe, forms/СКД and broader normalization remain unsupported"
+  ],
+  "evidence_id": "e5aa865d235f86b867be23e110424706c91de6c6afe40390e2c79f26c76b6a12"
+}

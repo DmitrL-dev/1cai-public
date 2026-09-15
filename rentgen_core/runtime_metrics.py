@@ -14,6 +14,7 @@ from .owner_report import (
     _MAX_METRICS,
     _timestamp,
 )
+from .source_paths import validate_source_path
 
 
 MAX_BYTES = 2 * 1024**2
@@ -43,6 +44,28 @@ _METRIC_FIELDS = {
     "source_id",
     "observed_at",
 }
+
+
+def _retained_locator(path):
+    """Validate a caller-supplied retained export locator without resolving it."""
+    try:
+        path = path if isinstance(path, Path) else Path(path)
+        valid = (
+            path.is_absolute()
+            and ".." not in path.parts
+            and not path.drive.startswith("\\\\")
+            and not any(ord(char) < 32 for char in str(path))
+        )
+        if valid:
+            # Reject alternate data streams and other path syntax that the
+            # Windows retained reader must never interpret as a file locator.
+            for part in path.parts[1:]:
+                validate_source_path(part)
+    except (CoreError, OSError, TypeError, ValueError):
+        valid = False
+    if not valid:
+        _invalid("Absolute runtime export path is required")
+    return path
 
 
 def _invalid(message, *, cause=None):
@@ -147,10 +170,7 @@ def load_runtime_report(
         raise CoreError(
             "OWNER_RUNTIME_AUTHORIZATION", "Runtime report authorization is required"
         )
-    if not isinstance(path, Path):
-        path = Path(path)
-    if not path.is_absolute() or ".." in path.parts:
-        _invalid("Absolute runtime export path is required")
+    path = _retained_locator(path)
     if (
         not isinstance(expected_project_id, str)
         or not isinstance(expected_snapshot_id, str)
@@ -163,7 +183,9 @@ def load_runtime_report(
         _invalid("Expected runtime context is invalid")
     authorize()
     try:
-        value = parse_json(read_retained(path.resolve(), MAX_BYTES))
+        # Keep the original no-follow locator. Resolving first would admit a
+        # symlink/reparse path and defeat retained-file identity checks.
+        value = parse_json(read_retained(path, MAX_BYTES))
     except CoreError as exc:
         raise CoreError(
             "OWNER_RUNTIME_INVALID", "Runtime export is unreadable"

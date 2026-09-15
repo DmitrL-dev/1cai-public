@@ -6,7 +6,7 @@
 | `rentgen_graph` | Чтение графа и адаптер scanner |
 | `go` | Scanner BSL, построение данных графа |
 | `rentgen_diagnostics` | Проверка и запуск закреплённого профиля BSL Language Server |
-| `rentgen_core.metadata_runs` / `metadata_apply` | Snapshot-bound EDT preview, бизнес-доказательства и read-only preflight-журнал apply; live writer/undo пока заблокированы |
+| `rentgen_core.metadata_runs` / `metadata_apply` / `metadata_live_apply` | Snapshot-bound EDT preview, бизнес-доказательства, read-only preflight и отдельный bounded Designer XML live writer с CAS undo/recovery |
 | `rentgen_core.git_observer` / `git_watcher` | Probe committed Git HEAD, reconciliation lifecycle находок и bounded watcher; observer хранит state/events/receipts в SQLite, автоматический scheduler и analyzer остаются внешними |
 | `integrations/open-editor` | Подготовка профиля и управление одной локальной правкой |
 | `integrations/vscode-rentgen` | Просмотр снимков/версий и команды редактора |
@@ -28,9 +28,10 @@
 Метаданные проходят отдельным контуром: план и preview привязаны к snapshot,
 UUID и двум полным diff (исходник → EDT baseline и baseline → candidate).
 `metadata_apply` повторно проверяет права, head, слои и живые байты и сохраняет
-неизменяемые intent/result. Пока нет квалифицированного writer и квитанции
-записи, результат имеет только `unavailable`/`stale`/`revoked`/`failed`; эта
-граница не превращает preflight в право менять рабочее дерево.
+неизменяемые intent/result. `metadata_live_apply` отдельно принимает только
+квалифицированный bounded `rename_catalog_attribute` в одном базовом
+Designer XML слое, пишет sealed intent/result и выполняет CAS undo/recovery;
+preflight сам по себе не превращается в право менять рабочее дерево.
 
 Git-контур принимает только чистый committed HEAD и полный отчёт доверенного
 анализатора. `git_observer` не выполняет fetch, анализ или LLM-вызовы; его

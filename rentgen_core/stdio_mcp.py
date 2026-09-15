@@ -110,6 +110,26 @@ _PROPOSAL_DOCUMENT = _object(
     }
 )
 _PROPOSAL_TOOLS = frozenset({"rentgen_proposal_create", "rentgen_proposal_check"})
+_PROPOSAL_LIVE_TOOLS = frozenset(
+    {
+        "rentgen_proposal_live_apply",
+        "rentgen_proposal_live_undo",
+        "rentgen_proposal_live_status",
+        "rentgen_proposal_live_recover",
+    }
+)
+_NATIVE_ARCHIVE_TOOL = "rentgen_native_archive"
+_OWNER_REPORT_TOOLS = frozenset(
+    {"rentgen_owner_report_get", "rentgen_owner_report_list"}
+)
+_METADATA_LIVE_TOOLS = frozenset(
+    {
+        "rentgen_metadata_live_apply",
+        "rentgen_metadata_live_undo",
+        "rentgen_metadata_live_status",
+        "rentgen_metadata_live_recover",
+    }
+)
 TOOL_SCHEMAS = {
     "rentgen_proposal_check": _object(
         {
@@ -158,10 +178,92 @@ TOOL_SCHEMAS = {
     "rentgen_impact": _object(
         {**_SOURCE, "depth": {"type": "integer", "minimum": 1, "maximum": 5}}, _SOURCE
     ),
+    _NATIVE_ARCHIVE_TOOL: _object(
+        {
+            "project_id": _UUID,
+            "snapshot_id": _HASH,
+            "operation_id": _UUID,
+            "namespace": {
+                "type": "string",
+                "pattern": r"^(platform-checks|test-runs|metadata-runs)$",
+                "maxLength": 15,
+            },
+            "profile_id": _HASH,
+        },
+        ["project_id", "snapshot_id", "operation_id", "namespace"],
+    ),
+    "rentgen_owner_report_get": _object(
+        {"project_id": _UUID, "snapshot_id": _HASH, "report_id": _UUID}
+    ),
+    "rentgen_owner_report_list": _object(
+        {
+            "project_id": _UUID,
+            "snapshot_id": _HASH,
+            "limit": {"type": "integer", "minimum": 1, "maximum": 1000},
+        },
+        ["project_id", "snapshot_id"],
+    ),
 }
+TOOL_SCHEMAS.update(
+    {
+        "rentgen_proposal_live_apply": _object(
+            {
+                "project_id": _UUID,
+                "snapshot_id": _HASH,
+                "operation_id": _UUID,
+                "expected_head": _HEAD,
+                "proposal": _PROPOSAL_DOCUMENT,
+            }
+        ),
+        "rentgen_proposal_live_undo": _object(
+            {"project_id": _UUID, "operation_id": _UUID}
+        ),
+        "rentgen_proposal_live_status": _object(
+            {"project_id": _UUID, "operation_id": _UUID}
+        ),
+        "rentgen_proposal_live_recover": _object(
+            {
+                "project_id": _UUID,
+                "operation_id": _UUID,
+                "target": {"type": "string", "pattern": "^original$", "maxLength": 8},
+            }
+        ),
+    }
+)
+
+_LIVE_METADATA_ARGUMENTS = {
+    "project_id": _UUID,
+    "snapshot_id": _HASH,
+    "operation_id": _UUID,
+}
+TOOL_SCHEMAS.update(
+    {
+        name: _object(
+            {
+                **_LIVE_METADATA_ARGUMENTS,
+                **(
+                    {
+                        "target": {
+                            "type": "string",
+                            "pattern": "^original$",
+                            "maxLength": 8,
+                        }
+                    }
+                    if name == "rentgen_metadata_live_recover"
+                    else {}
+                ),
+            }
+        )
+        for name in _METADATA_LIVE_TOOLS
+    }
+)
 _DESCRIPTIONS = {
     "rentgen_proposal_check": "Run the installed pinned BSL analyzer on an exact ephemeral proposal. Requires editing and analysis rights. Reports single-module diagnostics; tests are not run and apply is unavailable.",
     "rentgen_proposal_create": "Build an ephemeral single-module proposal and bounded diff from an exact SourceRef. Requires editing rights; no tests or source writes. Candidate limit 8 KiB.",
+    "rentgen_proposal_live_apply": "Apply one validated BSL proposal to one existing base Designer XML source file with a sealed journal, compare-and-swap precondition and explicit recovery. This writes the registered source tree, never a 1C information base.",
+    "rentgen_proposal_live_undo": "Undo a confirmed direct BSL proposal only while the source tree still matches its after inventory.",
+    "rentgen_proposal_live_status": "Read the sealed status of one direct BSL proposal operation without replaying it.",
+    "rentgen_proposal_live_recover": "Recover an interrupted direct BSL proposal operation to its sealed original source using explicit recovery.",
     "rentgen_project_list": "List authorized project IDs and labels; no source reads.",
     "rentgen_project_head": "Read the current project head without opening a generation.",
     "rentgen_publication_receipt": "Reconcile one capture operation using its durable receipt.",
@@ -170,6 +272,13 @@ _DESCRIPTIONS = {
     "rentgen_source_read": "Read up to 1 MiB of exact retained bytes as base64 with SourceRef and raw hash.",
     "rentgen_graph_resolve": "Resolve a retained source module in an explicit snapshot's graph.",
     "rentgen_impact": "Return bounded static impact from an explicit snapshot's graph.",
+    _NATIVE_ARCHIVE_TOOL: "Create an admin-only logical archive for one completed native run after re-resolving its exact project snapshot. Evidence remains readable and counted; no files are deleted or moved.",
+    "rentgen_owner_report_get": "Read one immutable owner report receipt for an exact project snapshot. The server derives the report store from authenticated project state and rechecks project:read before output.",
+    "rentgen_owner_report_list": "List bounded immutable owner report receipts for an exact project snapshot. The server derives the report store from authenticated project state and rechecks project:read before output.",
+    "rentgen_metadata_live_apply": "Apply one retained rename_catalog_attribute candidate to a supported Designer XML source tree with a sealed receipt and CAS undo boundary.",
+    "rentgen_metadata_live_undo": "Undo a confirmed live metadata apply only when the source tree still matches its after inventory.",
+    "rentgen_metadata_live_status": "Read the sealed status of one live metadata operation without replaying it.",
+    "rentgen_metadata_live_recover": "Recover an interrupted live metadata operation to its sealed original source using explicit recovery.",
 }
 TOOL_SCHEMAS.update(mcp_drafts.schemas(_object, _UUID, _HASH, _PROPOSAL_DOCUMENT))
 _DESCRIPTIONS.update(mcp_drafts.DESCRIPTIONS)
@@ -393,7 +502,7 @@ def validate_arguments(name, arguments, *, scope=None):
             kind=arguments.get("kind", "all"),
             layer=arguments.get("layer"),
         )
-    if name in _PROPOSAL_TOOLS:
+    if name in (_PROPOSAL_TOOLS | {"rentgen_proposal_live_apply"}):
         if (
             len(
                 json.dumps(
@@ -643,8 +752,10 @@ def _proposal_dispatch(runtime, principal, name, args, *, state_ctx=None):
 def _family_limit(family):
     if family == "draft":
         return MAX_RESULT_BYTES
-    if family == "proposal":
+    if family in {"proposal", "admin"}:
         return MAX_PROPOSAL_RESULT_BYTES
+    if family == "report":
+        return MAX_RESULT_BYTES
     raise ValueError("Unknown protected output family")
 
 
@@ -808,6 +919,179 @@ def _execute(
             result = _proposal_dispatch(
                 runtime, principal, name, arguments, state_ctx=proposal_context
             )
+        elif name in _PROPOSAL_LIVE_TOOLS:
+            from . import proposal_live_apply
+
+            permissions = frozenset({"project:read", "source:edit", "analysis:run"})
+            proposal_context = runtime.state_context(
+                principal, arguments["project_id"], permissions=permissions
+            )
+            if name == "rentgen_proposal_live_apply":
+                if runtime.graph_reader_factory is None:
+                    from rentgen_graph.snapshot_adapter import RentgenGraphReaderFactory
+
+                    runtime = replace(
+                        runtime, graph_reader_factory=RentgenGraphReaderFactory()
+                    )
+                ctx = runtime.resolve(
+                    principal,
+                    arguments["project_id"],
+                    arguments["snapshot_id"],
+                )
+                proposal_context = ctx
+                from .proposals import ProposalLimits, parse_proposal
+
+                raw = json.dumps(
+                    arguments["proposal"],
+                    ensure_ascii=False,
+                    allow_nan=False,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+                proposal = parse_proposal(
+                    ctx,
+                    raw,
+                    limits=ProposalLimits(1048576, 8192, 16384, 24576),
+                )
+                head = dict(arguments["expected_head"])
+                if head["snapshot"] is not None:
+                    head["snapshot"] = SnapshotRef(**head["snapshot"])
+                value = proposal_live_apply.apply_live(
+                    ctx,
+                    arguments["operation_id"],
+                    proposal,
+                    expected_head=ProjectHead(**head),
+                )
+            elif name == "rentgen_proposal_live_undo":
+                value = proposal_live_apply.undo_live(
+                    proposal_context, arguments["operation_id"]
+                )
+            elif name == "rentgen_proposal_live_status":
+                value = proposal_live_apply.get_live_status(
+                    proposal_context, arguments["operation_id"]
+                )
+            else:
+                value = proposal_live_apply.recover_live(
+                    proposal_context,
+                    arguments["operation_id"],
+                    target=arguments["target"],
+                )
+            result = _ProposalToolResult(
+                {"proposal_live": value}, proposal_context, permissions
+            )
+        elif name == _NATIVE_ARCHIVE_TOOL:
+            from .native_resources import archive_native_run
+
+            permissions = frozenset({"project:read", "project:admin"})
+            family = "admin"
+            # Keep the authenticated, snapshot-free context available so a
+            # resolution failure after revocation can be redacted by the final
+            # permission check, just like the local CLI command.
+            proposal_context = runtime.state_context(
+                principal, arguments["project_id"], permissions=permissions
+            )
+            if runtime.graph_reader_factory is None:
+                from rentgen_graph.snapshot_adapter import RentgenGraphReaderFactory
+
+                runtime = replace(
+                    runtime, graph_reader_factory=RentgenGraphReaderFactory()
+                )
+            ctx = runtime.resolve(
+                principal, arguments["project_id"], arguments["snapshot_id"]
+            )
+            proposal_context = ctx
+            value = archive_native_run(
+                ctx,
+                arguments["operation_id"],
+                namespace=arguments["namespace"],
+                profile_id=arguments.get("profile_id"),
+            )
+            result = _ProposalToolResult(
+                {"archive": value}, proposal_context, permissions, family
+            )
+        elif name in _METADATA_LIVE_TOOLS:
+            from . import metadata_live_apply
+
+            permissions = frozenset({"project:read", "source:edit", "analysis:run"})
+            proposal_context = runtime.state_context(
+                principal, arguments["project_id"], permissions=permissions
+            )
+            ctx = runtime.resolve(
+                principal,
+                arguments["project_id"],
+                arguments["snapshot_id"],
+            )
+            proposal_context = ctx
+            if name == "rentgen_metadata_live_apply":
+                value = metadata_live_apply.apply_live(ctx, arguments["operation_id"])
+            elif name == "rentgen_metadata_live_undo":
+                value = metadata_live_apply.undo_live(ctx, arguments["operation_id"])
+            elif name == "rentgen_metadata_live_status":
+                value = metadata_live_apply.get_live_status(
+                    ctx, arguments["operation_id"]
+                )
+            else:
+                value = metadata_live_apply.recover_live(
+                    ctx,
+                    arguments["operation_id"],
+                    target=arguments["target"],
+                )
+            result = _ProposalToolResult(
+                {"metadata_live": value}, proposal_context, permissions, family
+            )
+        elif name in _OWNER_REPORT_TOOLS:
+            from .owner_report_store import OwnerReportStore
+
+            permissions = frozenset({"project:read"})
+            family = "report"
+            proposal_context = runtime.state_context(
+                principal, arguments["project_id"], permissions=permissions
+            )
+            ctx = proposal_context
+            SnapshotRef(
+                ctx.project_id, arguments["snapshot_id"], arguments["snapshot_id"]
+            )
+            with ctx.state.transaction(ctx.principal) as tx:
+                tx.get_snapshot(arguments["snapshot_id"])
+            store = OwnerReportStore(Path(ctx.state.path).parent / "owner-reports")
+
+            def authorize():
+                _proposal_permissions(ctx, permissions)
+
+            if name == "rentgen_owner_report_get":
+                value = store.get(
+                    arguments["report_id"],
+                    expected_project_id=ctx.project_id,
+                    expected_snapshot_id=arguments["snapshot_id"],
+                    authorize=authorize,
+                )
+                result = _ProposalToolResult(
+                    {"owner_report": value}, proposal_context, permissions, family
+                )
+            else:
+                receipts = store.list(
+                    expected_project_id=ctx.project_id,
+                    expected_snapshot_id=arguments["snapshot_id"],
+                    authorize=authorize,
+                    limit=arguments.get("limit", 100),
+                )
+                value = [
+                    {
+                        key: receipt[key]
+                        for key in (
+                            "schema",
+                            "report_id",
+                            "project_id",
+                            "snapshot_id",
+                            "status",
+                            "created_at",
+                            "receipt_id",
+                        )
+                    }
+                    for receipt in receipts
+                ]
+                result = _ProposalToolResult(
+                    {"owner_reports": value}, proposal_context, permissions, family
+                )
         else:
             result = _dispatch(runtime, principal, name, arguments)
         if isinstance(result, _ProposalToolResult):
@@ -934,7 +1218,10 @@ def create_server(runtime, principal, *, cancellations=None, scope=None):
                 description=_DESCRIPTIONS[name],
                 inputSchema=schema,
                 annotations=ToolAnnotations(
-                    readOnlyHint=name not in mcp_drafts.WRITES | {"rentgen_capture"},
+                    readOnlyHint=name
+                    not in mcp_drafts.WRITES
+                    | {"rentgen_capture", _NATIVE_ARCHIVE_TOOL}
+                    | (_METADATA_LIVE_TOOLS - {"rentgen_metadata_live_status"}),
                     destructiveHint=False,
                     openWorldHint=False,
                 ),
@@ -1039,7 +1326,14 @@ class _GuardedOutput:
         for payload in payloads:
             body = payload.get("result") if type(payload) is dict else None
             if type(body) is dict:
-                protected_keys |= {"proposal", "diagnostic", "draft"} & body.keys()
+                protected_keys |= {
+                    "proposal",
+                    "diagnostic",
+                    "draft",
+                    "archive",
+                    "owner_report",
+                    "owner_reports",
+                } & body.keys()
                 if type(body.get("draft")) is dict and "diagnostic" in body["draft"]:
                     draft_diagnostic = True
         protected = bool(protected_keys)
@@ -1062,16 +1356,24 @@ class _GuardedOutput:
                     "project_id",
                     "permissions",
                     "request_id",
-                } | ({"family"} if family == "draft" else set())
+                } | ({"family"} if family in {"draft", "admin", "report"} else set())
                 if (
                     type(scope) is not dict
-                    or family not in {"draft", "proposal"}
+                    or family not in {"draft", "proposal", "admin", "report"}
                     or set(scope) != expected_keys
                 ):
                     raise ValueError("Invalid internal output scope")
-                if ("draft" in protected_keys and family != "draft") or (
-                    bool({"proposal", "diagnostic"} & protected_keys)
-                    and family != "proposal"
+                if (
+                    ("draft" in protected_keys and family != "draft")
+                    or (
+                        bool({"proposal", "diagnostic"} & protected_keys)
+                        and family != "proposal"
+                    )
+                    or ("archive" in protected_keys and family != "admin")
+                    or (
+                        bool({"owner_report", "owner_reports"} & protected_keys)
+                        and family != "report"
+                    )
                 ):
                     raise ValueError("Invalid internal output family")
                 validate_project_id(scope["project_id"])
@@ -1080,18 +1382,21 @@ class _GuardedOutput:
                 validate_operation_id(scope["request_id"])
                 request_id = scope["request_id"]
                 permissions = scope["permissions"]
-                allowed = (
-                    (
+                if family == "draft":
+                    allowed = (
                         ["project:read"],
                         ["project:read", "source:edit"],
                         ["analysis:run", "project:read", "source:edit"],
                     )
-                    if family == "draft"
-                    else (
+                elif family == "admin":
+                    allowed = (["project:admin", "project:read"],)
+                elif family == "report":
+                    allowed = (["project:read"],)
+                else:
+                    allowed = (
                         ["project:read", "source:edit"],
                         ["analysis:run", "project:read", "source:edit"],
                     )
-                )
                 if type(permissions) is not list or permissions not in allowed:
                     raise ValueError("Invalid internal output permissions")
                 if (

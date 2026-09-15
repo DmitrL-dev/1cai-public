@@ -64,6 +64,11 @@ Project, snapshot, commit и source digest должны точно совпад�
 Loader возвращает их с `complete=false`, поэтому owner-report скрывает
 значения и возвращает `business_metrics.status="incomplete"`.
 
+Для `Path` loader сохраняет исходный абсолютный локатор и передаёт его в
+`read_retained` без предварительного `Path.resolve()`. На Windows retained
+reader проверяет no-follow цепочку предков, reparse points и hardlinks; обычное
+чтение по разрешённому пути не используется как запасной вариант.
+
 Просроченная генерация или хотя бы одно просроченное наблюдение дают `stale`.
 Этот статус имеет приоритет над `incomplete`. Повторная выгрузка старых
 наблюдений с новым `generated_at` не восстанавливает доступность. Loader
