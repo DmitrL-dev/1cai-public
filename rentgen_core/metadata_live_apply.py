@@ -202,6 +202,7 @@ def _candidate_delta(ctx, operation_id):
         )
     preview_body = preview["preview"]
     original = _rows_map(preview_body["inventories"]["original"])
+    baseline = _rows_map(preview_body["inventories"]["baseline"])
     candidate = _rows_map(preview_body["inventories"]["candidate"])
     _require(
         set(candidate) <= set(original),
@@ -220,16 +221,42 @@ def _candidate_delta(ctx, operation_id):
     )
     edit_changes = preview_body["edit"]["changes"]
     normalization_changes = preview_body["normalization"]["changes"]
+    edit_paths = [item.get("path") for item in edit_changes]
     _require(
-        sorted(item["path"] for item in edit_changes) == changed
-        and all(
-            item["path"] not in candidate and item["kind"] == "deleted"
-            for item in normalization_changes
-        )
-        and all(
-            item["kind"] == "modified"
-            and item["before"] == original[item["path"]]
-            and item["after"] == candidate[item["path"]]
+        len(edit_paths) == len(set(edit_paths)) and sorted(edit_paths) == changed,
+        "METADATA_LIVE_APPLY_UNSUPPORTED",
+        "Candidate edit paths are ambiguous or incomplete",
+    )
+    for item in normalization_changes:
+        path = item.get("path")
+        if item.get("kind") == "deleted":
+            _require(
+                path not in candidate
+                and path in original
+                and item.get("before") == original[path]
+                and item.get("after") is None,
+                "METADATA_LIVE_APPLY_UNSUPPORTED",
+                "Normalization deletion is not fully accounted for",
+            )
+        else:
+            _require(
+                item.get("kind") == "modified"
+                and path in original
+                and path in baseline
+                and path in candidate
+                and path in edit_paths
+                and item.get("before") == original[path]
+                and item.get("after") == baseline[path],
+                "METADATA_LIVE_APPLY_UNSUPPORTED",
+                "Normalization change is not fully accounted for",
+            )
+    _require(
+        all(
+            item.get("kind") == "modified"
+            and item.get("path") in baseline
+            and item.get("path") in candidate
+            and item.get("before") == baseline[item.get("path")]
+            and item.get("after") == candidate[item.get("path")]
             for item in edit_changes
         ),
         "METADATA_LIVE_APPLY_UNSUPPORTED",

@@ -16,7 +16,8 @@
 сохраняет sealed intent/result journal вне исходника, сериализует операции OS
 lock, проверяет CAS по байтам, публикует изменения атомарно и поддерживает
 явные `undo`/`recover` к исходному состоянию. CLI и MCP вызывают один и тот же
-контракт; неизвестные пути, нормализация, расширения, формы/СКД и типовые
+контракт; неизвестные пути, независимая или неподтверждённая нормализация,
+расширения, формы/СКД и типовые
 конфигурации остаются fail-closed. Это первая принятая файловая live-граница,
 но не native writer для EDT/Конфигуратора или базы 1С.
 
@@ -163,7 +164,7 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 | Локальная модель | Один искусственный сценарий Qwen3.5:9b с независимой проверкой BSL | Не доказывает качество на произвольных задачах |
 | Ежедневная разработка dev8 | AI-правка, ручное исправление новой ревизией, конфликт версий, нативная проверка и восстановление проверены в редакторе | [AI-ошибка сохраняется](DAILY-DEVELOPMENT-ACCEPTANCE.md); [исправление человеком проверено](MANUAL-DRAFT-EDIT.md). Синтетический YAxUnit принят отдельно; бизнес-покрытие и применение не приняты |
 | Реальная платформа 1С | 8.3.27.2342: нативный общий модуль, проверка ошибочного BSL, исполнение 42 → отказ/42 → исправление/43, сохранение UUID; отдельная запись/чтение/переименование/удаление данных в синтетическом каталоге ([evidence](NATIVE-BUSINESS-ROUNDTRIP-20260913.md)) | Собственные синтетические сценарии; [полная приёмка не завершена](PLATFORM-ACCEPTANCE.md) |
-| Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; owned `ibcmd` create/import/export round-trip с structural evidence; preflight и workspace writer с проверкой inventory, backup, re-read, undo conflict, привязанными receipts, legacy policy и явным recovery; native business roundtrip и product apply/undo receipt подтверждены для отдельной принадлежащей копии | Внешний concurrent CAS, живая запись через EDT/1С, произвольные `.cf/.cfe`, расширения, формы/СКД и матрица типовых конфигураций не приняты |
+| Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; owned `ibcmd` create/import/export round-trip с structural evidence; preflight и workspace writer с проверкой inventory, backup, re-read, undo conflict, привязанными receipts, legacy policy и явным recovery; native business roundtrip и product apply/undo receipt подтверждены для отдельной принадлежащей копии; bounded live Designer XML apply/undo на зарегистрированном дереве подтверждён отдельным smoke | Обновление живой ИБ через EDT/1С, внешний concurrent CAS, произвольные `.cf/.cfe`, расширения, формы/СКД и матрица типовых конфигураций не приняты |
 | Обновления конфигураций | Path-bytes и UUID-aware Designer XML three-way plan с bounded хэшами, явными конфликтами и evidence по прямым свойствам (`same_change`/`disjoint_changes`/`overlap_conflict`); для квалифицированного `disjoint_changes` прямых `Properties` доступен in-memory candidate с сохранением namespace/QName и digest; для выбранных EDT Catalog `.mdo` есть read-only child-owner evidence и fail-closed transfer/type checks | Расширения, BSL/формы/СКД, полноценная схема Designer, типовые конфигурации, тестовая база, backup/rollback, native validity и запись не приняты |
 | Проверка предложения платформой | В dev8: установленный CLI проверил корректное/ошибочное BSL-предложение на сохранённой конфигурации; в исходной ветке после dev8 compile/YAxUnit API используют bounded native admission/retention ([границы](NATIVE-RESOURCES.md)) | Один Designer XML слой; компиляция без бизнес-тестов и применения |
 | Observer | Опрос выгрузки, journal/recovery и durable findings; schema 2/3 composition root связывает GitWatcherScheduler, read-only BSL Git adapter, owner-report store и atomic local outbox с bounded cooperative stop; schema 3 добавляет trusted snapshot capture, ancestry/race/revocation gates и receipt reuse; per-commit snapshot binding, bounded Git/snapshot source evidence, read-only BSL-LS adapter, bounded SARIF subset, native ServiceMain/SCM boundary proof и явный SCM installer plan | Нет live SCM deployment/daemon acceptance, live receiver acceptance и дедупликации, полного Git tree/temporal evidence, producer-specific Sonar/Vanessa/YAxUnit execution и общей приёмки O1 |
@@ -198,6 +199,8 @@ recovery вернули исходный inventory; рабочее дерево 
 переходы схемы, а намеренно изменённый UUID дал ожидаемую ошибку данных.
 
 Это закрывает только доказательство owned-copy apply/undo и привязку receipt к
-бизнес-проверке. Живая запись рабочей конфигурации, произвольные `.cf/.cfe`,
+бизнес-проверке. Отдельно bounded live Designer XML apply/undo проверен на
+зарегистрированном дереве принадлежащего профиля; обновление живой ИБ,
+произвольные `.cf/.cfe`,
 расширения, формы/СКД и полная матрица типовых конфигураций остаются отдельными
 блокирующими направлениями.

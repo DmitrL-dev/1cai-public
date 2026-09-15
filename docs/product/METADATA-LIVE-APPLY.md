@@ -46,10 +46,39 @@ backup и после полного re-read выдаёт `recovered`.
 Повреждённый или перепривязанный journal блокирует чтение кодом
 `METADATA_LIVE_RECOVERY_REQUIRED`.
 
+## Проверка на зарегистрированном дереве — 15 сентября 2026
+
+На принадлежащем EDT-профиле выполнен новый apply→undo по тому же retained
+preview. Writer изменил два candidate-файла в зарегистрированном Designer XML
+дереве, после чего CAS undo вернул полный исходный inventory:
+
+```text
+operation: 0da267cc-bb83-46bf-882a-3c27d3afa76c
+before:    e4099571515b28588939bd20df1b29deb39d76dbb16b21b4a8012eaf12de254b
+after:     8dc3cbb4b4fe91c32543d29125f600565a2ac1052da4173e6b294da7d083cd5c
+restored:  e4099571515b28588939bd20df1b29deb39d76dbb16b21b4a8012eaf12de254b
+```
+
+Перед этим исправлена проверка границы EDT: нормализация `original → baseline`
+допускается только для тех же путей, которые явно изменены в edit
+`baseline → candidate`; неподдержанные и неподтверждённые изменения по-прежнему
+останавливаются до записи. Машинная квитанция с result IDs и ограничениями —
+[`metadata-live-source-20260915.json`](evidence/metadata-live-source-20260915.json).
+
+В том же профиле отдельный запуск с отказом на второй замене получил
+`OUTCOME_UNKNOWN`; явный `recover_live(target="original")` восстановил исходный
+inventory (`before` и `after_recovery` совпали). Эта проверка зафиксирована в
+[`metadata-live-source-interruption-20260915.json`](evidence/metadata-live-source-interruption-20260915.json).
+
+Это доказательство записи исходного Designer XML дерева, а не обновления живой
+информационной базы 1С. Платформенный импорт/проверка, расширения, `.cf/.cfe`,
+формы/СКД и внешние конкурентные writers остаются отдельной матрицей.
+
 ## Что пока не входит
 
 Writer не принимает binary `.cf/.cfe`, EDT `.mdo` или `MetaDataObject/*.xml`,
-extensions, новые/удалённые объекты, candidate с нормализацией-модификацией,
+extensions, новые/удалённые объекты, candidate с независимой нормализацией-
+модификацией,
 формы и СКД как самостоятельные операции. Для них нужны отдельные producer,
 полная матрица платформенных проверок и такой же доказанный rollback.
 Ручной preflight API в [`METADATA-APPLY.md`](METADATA-APPLY.md) остаётся

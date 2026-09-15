@@ -1,6 +1,7 @@
 """Live Designer XML writer contract and recovery tests."""
 
 import json
+from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
@@ -71,6 +72,58 @@ def test_live_apply_changes_only_candidate_paths_and_undo_restores_source(
     assert undo["live_source_written"] is True
     assert _bytes(ctx.source_root) == before
     assert metadata_live_apply.undo_live(ctx, request["operation_id"]) == undo
+
+
+def test_candidate_delta_accepts_edt_normalization_before_the_same_edit(
+    captured, monkeypatch
+):
+    ctx, request, _, preview = _request(captured)
+    body = deepcopy(preview["preview"])
+    original = body["inventories"]["original"]
+    baseline = deepcopy(original)
+    candidate = deepcopy(body["inventories"]["candidate"])
+    changed_paths = [
+        "Catalogs/Products.xml",
+        "Catalogs/Products/Forms/ItemForm/Ext/Form.xml",
+    ]
+    for row in baseline:
+        if row["path"] in changed_paths:
+            row["sha256"] = "a" * 64
+            row["size"] += 1
+    body["inventories"]["baseline"] = baseline
+    body["normalization"]["changes"] = [
+        {
+            "path": path,
+            "before": next(row for row in original if row["path"] == path),
+            "after": next(row for row in baseline if row["path"] == path),
+            "kind": "modified",
+        }
+        for path in changed_paths
+    ]
+    body["edit"]["changes"] = [
+        {
+            "path": path,
+            "before": next(row for row in baseline if row["path"] == path),
+            "after": next(row for row in candidate if row["path"] == path),
+            "kind": "modified",
+        }
+        for path in changed_paths
+    ]
+    altered = {**preview, "preview": body}
+    monkeypatch.setattr(
+        metadata_live_apply.metadata_runs, "get_preview", lambda *_: altered
+    )
+    monkeypatch.setattr(
+        metadata_live_apply.preflight,
+        "_evaluate",
+        lambda *_: ("unavailable", []),
+    )
+
+    _, _, _, _, changed = metadata_live_apply._candidate_delta(
+        ctx, request["operation_id"]
+    )
+
+    assert changed == changed_paths
 
 
 def test_live_apply_refuses_stale_source_before_writing(captured):

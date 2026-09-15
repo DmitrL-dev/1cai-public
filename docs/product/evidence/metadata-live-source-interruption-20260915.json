@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "date": "2026-09-15",
+  "source": "real bounded live Designer XML writer on an owned registered fixture tree",
+  "snapshot_id": "a68d2bafba7f708242c24eca77fad90ed3d10e941b945e54380eb035635c0982",
+  "preview_operation_id": "976f3251-43fe-4b7a-bdf8-0a5415fc866c",
+  "preview_id": "31ab5c6d1c57dc3a269f48481732b4717a8140ba20b4c6fefe2643f98a09c8fe",
+  "operation_id": "3fb2619a-972a-4e6b-8581-466f1e49d62e",
+  "fault": {
+    "kind": "simulated_source_publication_interruption",
+    "source_replacements_before_interrupt": 2,
+    "observed_status": "OUTCOME_UNKNOWN"
+  },
+  "recovery": {
+    "status": "recovered",
+    "result_id": "0135807a40a39d1fb23bac0ab9ec563346a21e661de8817cbe3b4e7820099ff9",
+    "live_source_written": true
+  },
+  "before_digest": "e4099571515b28588939bd20df1b29deb39d76dbb16b21b4a8012eaf12de254b",
+  "after_recovery_digest": "e4099571515b28588939bd20df1b29deb39d76dbb16b21b4a8012eaf12de254b",
+  "source_restored": true,
+  "limitations": [
+    "Fault injection is process-local and does not claim power-loss durability",
+    "Owned synthetic Designer XML source only; no 1C infobase update",
+    "External concurrent writers and broader configuration formats remain unsupported"
+  ],
+  "evidence_id": "8970ab6ce6da7a6f74559b6a0258da1332d5951089d5aa3a5327cedc99cdf870"
+}
