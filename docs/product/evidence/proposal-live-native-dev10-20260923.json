@@ -1,0 +1,102 @@
+{
+  "schema": 1,
+  "date": "2026-09-23",
+  "accepted": true,
+  "scope": "Developer-owned synthetic Designer XML common module in a new local file infobase",
+  "release_tag": "core-v0.1.0-dev10",
+  "release_source_commit": "ef0501bea47a3e955a466b9f8908922d59ba0855",
+  "verifier_commit": "950b8975dc23a02339d2713061e5984faf8b0fbc",
+  "core_version": "0.1.0.dev10",
+  "core_archive_sha256": "11d5f8e850eec13d9a67c9cd1985db212a076e882b8794cb790fb7ac2dbee4e3",
+  "core_wheel_sha256": "9267aed28b97644ab3d3a7c1aca3910a0945d68ddde0fcd8b84d162778ce4bc2",
+  "offline_kit_accepted": true,
+  "offline_require_hashes": true,
+  "platform_version": "8.3.27.2342",
+  "platform_executable_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+  "native_fixture_accepted": true,
+  "native_fixture_report_sha256": "85a5c906c3b1d5b5a36e765009706e5feadb09c173edeae42df26c467a6c32c0",
+  "raw_acceptance_sha256": "48c0deed591d38c38e3790c2e8df6ef382b12ae69079d9246d302dc118df946d",
+  "module_uuid": "3cad2a5d-b745-4cdf-a109-7df694660efd",
+  "configuration_uuid": "5d6a4e80-ea98-4999-841d-c644f9e1ff96",
+  "original_bsl_sha256": "93d1b97e4bc287d800c099c2b4de05c68c74acc68090d16e09d203a5b085a880",
+  "applied_bsl_sha256": "a3ca3b38935969afd50fedc6b3ac77f66c886968ce4f976c05ce9761af764428",
+  "operation_id": "4971db4d-bcc2-41e0-9560-b8345c0c9406",
+  "applied_result_id": "26a0413e4251450ed91c452b54ce4e82364742a0fe5e41352646cbb8d826242b",
+  "undone_result_id": "43b5eb55f9e0380fcc839303cd8efab98d9c43d42b47ec9d1cc04810463d2655",
+  "native_candidate_checks": [
+    "passed",
+    "diagnostics_present"
+  ],
+  "runtime_values": {
+    "applied": 43,
+    "undone": 42
+  },
+  "native_steps": [
+    {
+      "name": "create",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "load-applied",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "check-applied",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "update-applied",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "execute-applied",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "applied-roundtrip",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "load-undone",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "check-undone",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "update-undone",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "execute-undone",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "undone-roundtrip",
+      "exit_code": 0,
+      "timed_out": false
+    }
+  ],
+  "source_restored": true,
+  "project_head_preserved": true,
+  "model_calls": 0,
+  "not_verified": [
+    "typical configurations",
+    "extensions",
+    "forms and СКД",
+    "live production infobases",
+    "external concurrent writers",
+    "production deployment"
+  ]
+}
