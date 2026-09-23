@@ -1,0 +1,17 @@
+{
+  "version": "0.1.0.dev9",
+  "tag": "core-v0.1.0-dev9",
+  "prerelease": true,
+  "asset": "rentgen-core-0.1.0.dev9-windows-py311.zip",
+  "size_bytes": 20448853,
+  "sha256": "5615383c3985c4c3144eb636424157619dab959f0a30af7003cc8c88a21c58d9",
+  "wheel_sha256": "a710a72b8f9d48eef42b05099bbbbc2152b448d303ff9fc578b924134066adc2",
+  "sdist_sha256": "02d28d02efd84bbf3b2fe7e8f08e613a8c56fe14655b478f18412f57764c38a9",
+  "source_commit": "d0a86f6e9ddce4372eaf4a4db37b034ca26a686e",
+  "ci_run": 35812232162,
+  "platform": "Windows x64 / CPython 3.11",
+  "tested_1c_version": "8.3.27.2342",
+  "platform_1c_acceptance": false,
+  "synthetic_platform_checks_passed": true,
+  "full_product_ready": false
+}
