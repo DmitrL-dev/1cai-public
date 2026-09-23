@@ -92,7 +92,7 @@ def prepare(python, scanner, fixture, diagnostics_root, platform, output):
     cli("capture", "--scanner", scanner)
     profile = {
         "schema": 1,
-        "core_version": "0.1.0.dev9",
+        "core_version": "0.1.0.dev10",
         "python": str(python),
         "registry": str(registry),
         "project_id": project,

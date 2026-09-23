@@ -23,7 +23,7 @@ async function write(file,value,max){
 function createBslService({root,config,client,trusted=()=>true,cancel=()=>{}}){
  config=profileConfig(config);const folder=path.join(root,'bsl-runs');
  let busy=false,disposed=false,cancelled=false;
- function check(){if(disposed||!trusted())throw new Error('TRUST_REQUIRED');if(!['0.1.0.dev8','0.1.0.dev9'].includes(config.core_version))throw new Error('BSL_REQUIRES_DEV8');}
+ function check(){if(disposed||!trusted())throw new Error('TRUST_REQUIRED');if(!['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10'].includes(config.core_version))throw new Error('BSL_REQUIRES_DEV8');}
  async function request(id){
   if(!uuid.test(id))throw new Error('INVALID_OPERATION_ID');
   await directory(folder);await directory(path.join(folder,id));

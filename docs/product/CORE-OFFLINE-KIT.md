@@ -19,7 +19,7 @@ py -3.11 -m venv output/kit-tools
 $kitPython = (Resolve-Path output/kit-tools/Scripts/python.exe).Path
 & $kitPython -m pip download --only-binary=:all: --require-hashes -r requirements/locks/mcp-py311-windows.txt --dest output/mcp-wheels
 & $kitPython -m pip download --only-binary=:all: --require-hashes -r requirements/locks/product-build-py311-windows.txt --dest output/build-wheels
-& $kitPython scripts/release/build_core_kit.py --output output/core-kit-dev8 --runtime-wheelhouse output/mcp-wheels --build-wheelhouse output/build-wheels --go 'C:\Program Files\Go\bin\go.exe'
+& $kitPython scripts/release/build_core_kit.py --output output/core-kit-dev10 --runtime-wheelhouse output/mcp-wheels --build-wheelhouse output/build-wheels --go 'C:\Program Files\Go\bin\go.exe'
 ```
 
 С `--build-wheelhouse` установка инструментов сборки также использует
@@ -63,7 +63,8 @@ py -3.11 scripts/verification/verify_core_kit.py --kit PATH_TO_KIT.zip --output 
 проверок. Офлайн-параметры pip не являются сетевой изоляцией процесса ОС.
 
 Этот сценарий не заменяет отдельные проверки observer, платформы, редактора,
-обновлений типовых конфигураций и бизнес-тестов. Текущая пара раннего доступа:
-`core-v0.1.0-dev9` и `companion-v0.1.9`. Принятый комплект и коммит сборки
+обновлений типовых конфигураций и бизнес-тестов. Опубликованная пара раннего
+доступа — `core-v0.1.0-dev9` и `companion-v0.1.9`; её комплект и коммит сборки
 зафиксированы в [манифесте](../../releases/core/0.1.0.dev9/manifest.json).
+Новый кандидат dev10 / 0.1.10 получит собственные теги и манифесты после CI.
 Предыдущие теги и файлы остаются неизменными.

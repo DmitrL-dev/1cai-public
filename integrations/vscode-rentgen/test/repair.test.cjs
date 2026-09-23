@@ -11,7 +11,7 @@ const project = '00000000-0000-4000-8000-000000000001';
 const ref = {snapshot: {project_id: project, snapshot_id: 'a'.repeat(64), manifest_hash: 'a'.repeat(64)}, layer_id:'base', relative_path:'Module.bsl', raw_sha256:'b'.repeat(64)};
 const config = {schema:1, core_version:'0.1.0.dev7', project_id:project, python:'C:\\installed\\python.exe', registry:'C:\\registry.sqlite3'};
 
-for (const core_version of ['0.1.0.dev7','0.1.0.dev8','0.1.0.dev9']) {
+for (const core_version of ['0.1.0.dev7','0.1.0.dev8','0.1.0.dev9','0.1.0.dev10']) {
 test(`${core_version}: lost process reply is reconciled from receipts with no second execution`, async () => {
   const selectedConfig = {...config,core_version};
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rentgen-repair-'));
