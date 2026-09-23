@@ -18,7 +18,9 @@ def adapter(monkeypatch):
     return module
 
 
-@pytest.mark.parametrize("core", ["0.1.0.dev7", "0.1.0.dev8", "0.1.0.dev9"])
+@pytest.mark.parametrize(
+    "core", ["0.1.0.dev7", "0.1.0.dev8", "0.1.0.dev9", "0.1.0.dev10"]
+)
 def test_matching_supported_runtime_is_accepted(adapter, core):
     config = {"schema": 1, "core_version": core, "python": sys.executable}
     adapter.validate_profile(config, core, "1.30.0", sys.executable)
@@ -41,8 +43,8 @@ def test_different_runtime_is_not_silently_used(adapter, field, value):
 def test_unsupported_profile_is_refused(adapter):
     with pytest.raises(ValueError):
         adapter.validate_profile(
-            {"schema": 1, "core_version": "0.1.0.dev10", "python": sys.executable},
-            "0.1.0.dev10",
+            {"schema": 1, "core_version": "0.1.0.dev11", "python": sys.executable},
+            "0.1.0.dev11",
             "1.30.0",
             sys.executable,
         )

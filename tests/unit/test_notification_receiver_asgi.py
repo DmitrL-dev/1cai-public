@@ -318,7 +318,10 @@ def test_only_notification_post_route_is_served(tmp_path):
     asyncio.run(scenario())
 
 
-def test_startup_failure_and_pre_startup_request_never_accept(tmp_path, monkeypatch):
+@pytest.mark.parametrize("failure", ["core", "unexpected"])
+def test_startup_failure_and_pre_startup_request_never_accept(
+    tmp_path, monkeypatch, failure
+):
     from rentgen_core.errors import CoreError
     from rentgen_core.notification_receiver_asgi import NotificationReceiverASGI
 
@@ -326,7 +329,9 @@ def test_startup_failure_and_pre_startup_request_never_accept(tmp_path, monkeypa
     app = NotificationReceiverASGI(receiver)
 
     def fail_initialize():
-        raise CoreError("TEST_FAILURE", "private database path and token")
+        if failure == "core":
+            raise CoreError("TEST_FAILURE", "private database path and token")
+        raise RuntimeError("private database path and token")
 
     monkeypatch.setattr(receiver, "initialize", fail_initialize)
 
