@@ -13,6 +13,9 @@ documented in [SERVICE-HOST.md](SERVICE-HOST.md). `WindowsServiceHost` remains
 the separate foreground Git scheduler lifetime.
 
 The installed `rentgen-service` console entry point proves CLI packaging only.
+The separate [installed Core dev10 console proof](SERVICE-CONSOLE-NATIVE-DEV10.md)
+executes `rentgen_core.service_entry --console` in real child processes on an
+owned synthetic BSL project; it does not exercise SCM registration or dispatch.
 Its pip-generated EXE can launch a child Python process; this is not evidence
 that SCM will connect to the correct dispatcher process. The installer rejects
 the known `rentgen-service.exe` basename (case-insensitively) in both the supplied
