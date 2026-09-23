@@ -56,3 +56,36 @@ rentgen proposal-live-recover --registry ... --project ... --operation-id ... \
 This is an early-access capability. Extensions, forms, СКД, arbitrary metadata
 operations, live information bases, and external concurrent writers remain
 outside the accepted scope.
+
+## Installed dev9 and native 1C check
+
+On 23 September 2026, the published core `0.1.0.dev9` offline kit was installed
+with locked wheel hashes on a fixed local Windows volume. Its archive SHA256 is
+`5615383c3985c4c3144eb636424157619dab959f0a30af7003cc8c88a21c58d9`.
+The [repeatable verifier](../../scripts/verification/verify_proposal_platform_delivery.py)
+used that installation, the kit's scanner, and 1C 8.3.27.2342 with executable
+SHA256 `2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956`.
+Its new `--exercise-live` mode requires matching `--expected-core-version` and
+`--expected-platform-sha256` pins. Inputs are an independently created
+`first-roundtrip` Designer XML fixture and a new output directory on a fixed
+local volume; the script refuses to reuse an existing output directory.
+
+The installed CLI created and retained one proposal for an existing common
+module. The native proposal precheck passed for valid BSL and found diagnostics
+for an intentionally broken version. The CLI then applied the valid proposal to
+its **owned copy** of the source tree. A new file infobase loaded those exact
+applied bytes, passed `/CheckConfig`, updated the database, and returned **43**
+when the application executed. The exported module text and both configuration
+and module UUIDs matched. After `proposal-live-undo`, the complete owned source
+inventory returned to its original hashes. Reloading it into the same test
+infobase passed compilation and execution returned **42**. The project head was
+unchanged. No model call or production deployment occurred.
+
+The [bounded receipt](evidence/proposal-live-native-dev9-20260923.json) binds the
+release archive and wheel, verifier commit, platform binary, source hashes,
+operation/result IDs, runtime values, and 11 native steps. The
+[raw verifier result](evidence/proposal-live-native-dev9-20260923.raw.json)
+is also retained with its SHA256 in that receipt; local paths and platform logs
+are not published. This check covers one synthetic common module on one
+installed 1C version. It does not qualify typical configurations, extensions,
+forms/СКД, a live production infobase, or concurrent external writers.
