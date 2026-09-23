@@ -112,7 +112,7 @@ def runtime_evidence(run):
         and initialize["serverInfo"]["name"] == "edt-mcp-server",
         "EDT runtime did not close cleanly",
     )
-    entries, calls = [], []
+    entries, calls, renames = [], [], []
     for path in sorted(run.glob("[0-9][0-9][0-9]-request.json")):
         stem = path.name[:3]
         outcome_path = run / (stem + "-outcome.json")
@@ -124,6 +124,23 @@ def runtime_evidence(run):
         request = json.loads(path.read_text("utf-8"))
         outcome = json.loads(outcome_path.read_text("utf-8"))
         calls.append({"tool": request["tool"], "status": outcome["status"]})
+        if request["tool"] == "rename_metadata_object":
+            response = json.loads(response_path.read_text("utf-8"))
+            require(
+                outcome["status"] == "response_received"
+                and response["isError"] is False,
+                "EDT rename did not return a successful response",
+            )
+            content = response["content"]
+            require(
+                len(content) == 1 and content[0]["type"] == "resource",
+                "Unexpected EDT rename response shape",
+            )
+            lines = content[0]["resource"]["text"].splitlines()
+            require(lines and lines[0] == "---", "EDT rename frontmatter is missing")
+            end = lines.index("---", 1)
+            fields = dict(line.split(": ", 1) for line in lines[1:end])
+            renames.append((request["arguments"], fields))
         for item in (path, outcome_path, response_path):
             entries.append(
                 {"path": item.name, "size": item.stat().st_size, "sha256": digest(item)}
@@ -140,6 +157,30 @@ def runtime_evidence(run):
         ),
         "EDT transcript lacks required successful operations",
     )
+    require(len(renames) == 2, "Expected one EDT rename preview and one execution")
+    preview_args, preview_fields = renames[0]
+    execute_args, execute_fields = renames[1]
+    require(
+        preview_args.get("confirm") is False
+        and execute_args.get("confirm") is True
+        and preview_args["objectFqn"]
+        == execute_args["objectFqn"]
+        == "Catalog.Products.Attribute.Article"
+        and preview_args["newName"] == execute_args["newName"] == "SKU"
+        and preview_fields["action"] == "preview"
+        and preview_fields["objectFqn"]
+        == execute_fields["objectFqn"]
+        == preview_args["objectFqn"]
+        and preview_fields["newName"] == execute_fields["newName"] == "SKU"
+        and execute_args["expectedHash"] == preview_fields["contentHash"]
+        and execute_fields["action"] == "executed"
+        and preview_fields["totalChanges"] == "1"
+        and preview_fields["enabledChanges"] == "1"
+        and preview_fields["problems"] == "0"
+        and execute_fields["performedCount"] == "1"
+        and execute_fields["errors"] == "0",
+        "EDT rename preview/execution pair differs from accepted operation",
+    )
     for name in ("initialize.json", "runtime-request.json", "runtime-closed.json"):
         path = run / name
         entries.append(
@@ -149,6 +190,13 @@ def runtime_evidence(run):
         "server": initialize["serverInfo"]["name"],
         "server_version": initialize["serverInfo"]["version"],
         "calls": calls,
+        "rename": {
+            "preview_action": preview_fields["action"],
+            "preview_changes": int(preview_fields["totalChanges"]),
+            "execution_action": execute_fields["action"],
+            "performed_count": int(execute_fields["performedCount"]),
+            "errors": int(execute_fields["errors"]),
+        },
         "files": sorted(entries, key=lambda row: row["path"]),
     }
 
