@@ -8,12 +8,14 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import time
 from uuid import uuid4
 
 import rentgen_core as api
 from rentgen_core.local import LocalRuntime
 from rentgen_core.local_identity import current_windows_principal
 from rentgen_core.manifests import canonical_bytes, sha256
+from rentgen_core.native_process import OwnedProcess
 from rentgen_core.observer import Observer
 from rentgen_core.source_probe import probe_sources
 from rentgen_graph.snapshot_adapter import (
@@ -29,6 +31,14 @@ MODULE_PATH = "CommonModules/ServiceProbe/Ext/Module.bsl"
 MODULE_BYTES = (
     "Функция Значение() Экспорт\r\n\tВозврат 1;\r\nКонецФункции\r\n"
 ).encode("utf-8")
+EXPECTED_SOURCE_PATHS = {
+    "CommonModules": "directory",
+    "CommonModules/ServiceProbe": "directory",
+    "CommonModules/ServiceProbe/Ext": "directory",
+    MODULE_PATH: "file",
+}
+MAX_OUTPUT_BYTES = 16_384
+MAX_PROCESS_SECONDS = 300
 if not __debug__:
     raise RuntimeError("Verification requires assertions; do not use Python -O")
 
@@ -46,31 +56,52 @@ def fixed_local_output(path):
 
 
 def run_console(interpreter, config, output, name):
-    result = subprocess.run(
-        [
-            str(interpreter),
-            "-I",
-            "-m",
-            "rentgen_core.service_entry",
-            "--console",
-            "--config",
-            str(config),
-        ],
-        cwd=output,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        timeout=300,
-        check=False,
+    command = [
+        str(interpreter),
+        "-I",
+        "-m",
+        "rentgen_core.service_entry",
+        "--console",
+        "--config",
+        str(config),
+    ]
+    stdout_path, stderr_path = output / f"{name}.stdout", output / f"{name}.stderr"
+    with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
+        with OwnedProcess(
+            subprocess.list2cmdline(command),
+            interpreter,
+            stdout,
+            stderr,
+            cwd=output,
+        ) as process:
+            deadline = time.monotonic() + MAX_PROCESS_SECONDS
+            while True:
+                require(
+                    stdout_path.stat().st_size + stderr_path.stat().st_size
+                    <= MAX_OUTPUT_BYTES,
+                    "Installed console output exceeded bound",
+                )
+                exit_code = process.poll()
+                if exit_code is not None:
+                    break
+                require(
+                    time.monotonic() < deadline,
+                    "Installed console exceeded process deadline",
+                )
+                time.sleep(0.05)
+        stdout.flush()
+        stderr.flush()
+    require(
+        stdout_path.stat().st_size + stderr_path.stat().st_size <= MAX_OUTPUT_BYTES,
+        "Installed console output exceeded bound",
     )
-    (output / f"{name}.stdout").write_text(result.stdout, encoding="utf-8")
-    (output / f"{name}.stderr").write_text(result.stderr, encoding="utf-8")
+    stdout_bytes, stderr_bytes = stdout_path.read_bytes(), stderr_path.read_bytes()
     return {
-        "exit_code": result.returncode,
-        "stdout_sha256": sha256(result.stdout.encode("utf-8")),
-        "stderr_sha256": sha256(result.stderr.encode("utf-8")),
-        "stdout": result.stdout,
-        "stderr": result.stderr,
+        "exit_code": exit_code,
+        "stdout_sha256": sha256(stdout_bytes),
+        "stderr_sha256": sha256(stderr_bytes),
+        "stdout": stdout_bytes.decode("utf-8"),
+        "stderr": stderr_bytes.decode("utf-8"),
     }
 
 
@@ -117,6 +148,29 @@ def generation_names(state_root):
         if folder.is_dir()
         else []
     )
+
+
+def source_inventory(source):
+    entries = {}
+    for path in source.rglob("*"):
+        name = path.relative_to(source).as_posix()
+        require(name in EXPECTED_SOURCE_PATHS, "Owned source contains an extra entry")
+        require(not path.is_symlink(), "Owned source contains a link")
+        if EXPECTED_SOURCE_PATHS[name] == "directory":
+            require(path.is_dir(), "Owned source directory was replaced")
+            entries[name] = {"kind": "directory"}
+        else:
+            require(
+                path.is_file() and path.stat().st_size == len(MODULE_BYTES),
+                "Owned source module was replaced or resized",
+            )
+            entries[name] = {
+                "kind": "file",
+                "size": len(MODULE_BYTES),
+                "sha256": digest(path),
+            }
+    require(set(entries) == set(EXPECTED_SOURCE_PATHS), "Owned source entry is missing")
+    return entries
 
 
 def verify(args):
@@ -180,6 +234,7 @@ def verify(args):
         )
     )
     source_before = digest(module)
+    inventory_before = source_inventory(source)
     require(source_before == sha256(MODULE_BYTES), "Owned module differs")
     require(
         not observer.status()["reports"] and not generation_names(output / "state"),
@@ -188,6 +243,9 @@ def verify(args):
 
     first = run_console(interpreter, config_path, output, "first")
     first_public = public_process(first, expected_status="stopped")
+    require(
+        source_inventory(source) == inventory_before, "First process changed source"
+    )
     with observer.locked():
         pass
     first_status = observer.status()
@@ -215,7 +273,8 @@ def verify(args):
         catalog = tx.get_snapshot(snapshot_id)
     source_digest = probe_sources(ctx)[1]
     require(
-        catalog.source_digest == source_digest and digest(module) == source_before,
+        catalog.source_digest == source_digest
+        and source_inventory(source) == inventory_before,
         "Published source digest or live module differs",
     )
 
@@ -229,7 +288,7 @@ def verify(args):
         and second_status["jobs"] == first_status["jobs"]
         and second_status["last_snapshot"] == snapshot_id
         and generation_names(output / "state") == first_generations
-        and digest(module) == source_before,
+        and source_inventory(source) == inventory_before,
         "Restart created new evidence or changed source",
     )
 
@@ -242,10 +301,9 @@ def verify(args):
         pass
     final_status = observer.status()
     require(
-        final_status["reports"] == first_status["reports"]
-        and final_status["jobs"] == first_status["jobs"]
+        final_status == second_status
         and generation_names(output / "state") == first_generations
-        and digest(module) == source_before,
+        and source_inventory(source) == inventory_before,
         "Wrong-project process changed owned evidence",
     )
 
@@ -262,6 +320,7 @@ def verify(args):
             "sha256": source_before,
         },
         "source_digest": source_digest,
+        "source_inventory_sha256": sha256(canonical_bytes(inventory_before)),
         "report": {
             "operation_id": report["operation_id"],
             "changes": report["changes"],
@@ -282,8 +341,8 @@ def verify(args):
         "generations_after_restart": len(generation_names(output / "state")),
         "source_preserved": True,
         "lease_released_after_each_process": True,
-        "scm_installed": False,
-        "production_deployment": False,
+        "scm_install_performed": False,
+        "production_deployment_performed": False,
     }
     (output / "acceptance.json").write_bytes(canonical_bytes(receipt))
     return {

@@ -31,8 +31,11 @@
 | Повторный, тот же config | Код 0, один завершённый цикл | Те же snapshot, generation, job и report; новых записей нет |
 | Чужой project ID | Код 2, только `SERVICE_WORKER_FAILED` | Snapshot, generation, job, report и исходный файл не изменились |
 
-После каждого процесса verifier смог взять и освободить Observer lease. Хэш
-исходного BSL-файла остался
+После каждого процесса verifier смог взять и освободить Observer lease. Точный
+inventory всего дерева источника (относительные пути, типы, размеры и SHA256
+файлов) совпал с исходным; его SHA256 —
+`e4920e34810c505149472d9068078953177750d5a226bc2ec7702c0c4339ae97`.
+Хэш исходного BSL-файла остался
 `037f543ff1770813d047ecc23dd2f7a8240dd74af88747084b5e39bc0a4b58df`.
 Snapshot связан с актуальным source digest
 `89ccd006c36d7c45e1ed105765ecafe811214a782e20cf479fbe2d78977b915f`.
@@ -40,10 +43,12 @@ Report честно содержит `model_calls: 0`, `quality: not_run`,
 `business_metrics: not_available` и `source_temporal_atomicity: not_proven`.
 
 [Машинная квитанция](evidence/service-console-native-dev10-20260924.json)
-(SHA256 `3dbbb5f10cb062da10456b1b4da9113510f3840416b809edae0b3f12ba8b9c9c`)
+(SHA256 `fe82f0100170f00d3748b881bb93876425e47e8d6780af5625178809ef4b6e61`)
 хранит идентификаторы проекта/snapshot, контрольные суммы и счётчики без
-абсолютных локальных путей. Полные stdout/stderr и входные config остались вне
-Git. Сценарий воспроизводит
+абсолютных локальных путей. Хэши stdout/stderr сверены с сырыми байтами локальных
+файлов; при превышении 16 КиБ суммарного вывода verifier завершает дерево
+дочернего процесса. Полные
+stdout/stderr и входные config остались вне Git. Сценарий воспроизводит
 [`verify_service_console_native_dev10.py`](../../scripts/verification/verify_service_console_native_dev10.py):
 ему нужны опубликованный ZIP dev10, извлечённый из него scanner, установленная
 среда Core dev10 и **новый** `--output` на фиксированном локальном томе.
