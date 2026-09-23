@@ -1,5 +1,8 @@
 # Core dev10: native proof прямой записи Designer XML
 
+Следующий опыт со [свежим preview от работающего EDT/MCP](EDT-LIVE-NATIVE-DEV10.md)
+проверил эту же цепочку на установленном Core dev10.
+
 23 сентября 2026 года установленный публичный Core `0.1.0.dev10` прошёл
 сквозной опыт на собственном синтетическом Designer XML примере
 `Catalog.Products.Attribute.Article → SKU`. Проверены 92 установленных файла
