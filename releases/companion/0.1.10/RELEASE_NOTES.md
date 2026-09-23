@@ -34,6 +34,14 @@ SHA256 **`b136bc63c63130d61709724f7e52904eb549120016372caee7df330f93193f25`**.
 скачанный артефакт перед созданием GitHub Release. Локально также выполнены
 Python-тесты профиля редактора для dev10.
 
+Product CI точного исходного коммита
+[`ef0501b`](https://github.com/DmitrL-dev/1cai-public/commit/ef0501bea47a3e955a466b9f8908922d59ba0855)
+завершился успешно в [push-прогоне](https://github.com/DmitrL-dev/1cai-public/actions/runs/35827291776)
+и [PR-прогоне](https://github.com/DmitrL-dev/1cai-public/actions/runs/35827295021):
+58/58 Node-контрактов, 2327 Python-тестов без ошибок и пропусков, Go scanner,
+воспроизводимая сборка core и офлайн-проверки установленного CLI/MCP.
+VSIX из push-артефакта побайтно совпал с зафиксированным выше SHA256.
+
 ## Совместимость и установка
 
 Рекомендуемая пара после публикации обоих выпусков: core `0.1.0.dev10` и
