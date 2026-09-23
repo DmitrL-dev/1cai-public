@@ -1,4 +1,4 @@
-"""Loopback TLS proof for the installed sender and durable ASGI receiver."""
+"""Loopback TLS proof for the existing sender and checkout ASGI receiver."""
 
 import asyncio
 from datetime import datetime, timedelta, timezone
@@ -15,6 +15,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
+import pytest
 import uvicorn
 
 from rentgen_core.notification_delivery import DeliveryStatus, WebhookAdapter
@@ -76,6 +77,7 @@ async def _start_server(receiver, cert_path, key_path):
         log_level="critical",
         log_config=None,
         timeout_keep_alive=2,
+        http="httptools",
     )
     server = uvicorn.Server(config)
     task = asyncio.create_task(server.serve(sockets=[sock]))
@@ -160,6 +162,49 @@ def _plain_http(port, notification):
         connection.close()
 
 
+def _wire_header_variant(port, cert_path, notification, variant):
+    body = json.dumps(notification, sort_keys=True, separators=(",", ":")).encode()
+    key = hashlib.sha256(b"rentgen-notification-v1:test:1").hexdigest()
+    length = str(len(body)).encode()
+    if variant == "duplicate":
+        length_headers = (
+            b"Content-Length: "
+            + length
+            + b"\r\n"
+            + b"Content-Length: "
+            + length
+            + b"\r\n"
+        )
+    elif variant == "comma":
+        length_headers = b"Content-Length: " + length + b", " + length + b"\r\n"
+    elif variant == "leading_zero":
+        length_headers = b"Content-Length: 0" + length + b"\r\n"
+    elif variant == "duplicate_authorization":
+        length_headers = b"Content-Length: " + length + b"\r\n"
+    else:
+        raise AssertionError("unknown test variant")
+    authorization = b"Authorization: Bearer " + TOKEN.encode() + b"\r\n"
+    if variant == "duplicate_authorization":
+        authorization = b"Authorization: Bearer attacker\r\n" + authorization
+    request = (
+        b"POST /notifications HTTP/1.1\r\n"
+        b"Host: 127.0.0.1\r\n"
+        + length_headers
+        + authorization
+        + b"Idempotency-Key: "
+        + key.encode()
+        + b"\r\n"
+        + b"Content-Type: application/json\r\n"
+        + b"Connection: close\r\n\r\n"
+        + body
+    )
+    context = ssl.create_default_context(cafile=str(cert_path))
+    with socket.create_connection(("127.0.0.1", port), timeout=3) as plain:
+        with context.wrap_socket(plain, server_hostname="127.0.0.1") as tls:
+            tls.sendall(request)
+            return tls.recv(4096).split(b"\r\n", 1)[0]
+
+
 def test_webhook_adapter_reaches_receiver_over_verified_loopback_tls(tmp_path):
     cert_path, key_path = _certificate(tmp_path)
     db_path = tmp_path / "receiver.sqlite3"
@@ -198,6 +243,32 @@ def test_webhook_adapter_reaches_receiver_over_verified_loopback_tls(tmp_path):
             assert duplicate.status is DeliveryStatus.ACCEPTED
             assert duplicate.http_status == 204
             assert reopened.count() == 1
+        finally:
+            await _stop_server(server, task, sock)
+
+    asyncio.run(scenario())
+
+
+@pytest.mark.parametrize(
+    "variant", ["duplicate", "comma", "leading_zero", "duplicate_authorization"]
+)
+def test_ambiguous_wire_headers_are_rejected_before_receipt(tmp_path, variant):
+    cert_path, key_path = _certificate(tmp_path)
+    receiver = NotificationReceiver(tmp_path / "receiver.sqlite3", bearer_token=TOKEN)
+    notification = {
+        "id": 1,
+        "event": {"status": "analyzed"},
+        "created_at": "2026-09-23T00:00:00+00:00",
+    }
+
+    async def scenario():
+        server, task, sock, port = await _start_server(receiver, cert_path, key_path)
+        try:
+            status = await asyncio.to_thread(
+                _wire_header_variant, port, cert_path, notification, variant
+            )
+            assert b" 400 " in status
+            assert receiver.count() == 0
         finally:
             await _stop_server(server, task, sock)
 

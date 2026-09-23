@@ -9,9 +9,9 @@ TLS connection. It does not install a service or expose a production endpoint.
 
 Three approaches were considered:
 
-1. **ASGI boundary with a separate TLS server (chosen).** ASGI preserves raw
-   duplicate headers and streams body chunks, so the adapter can enforce wire
-   limits before calling the existing core. A real Uvicorn TLS round trip proves
+1. **ASGI boundary with a separate TLS server (chosen).** ASGI forwards a list
+   of headers and streams body chunks, so the adapter can enforce limits on
+   what the parser passes before calling the existing core. A real Uvicorn TLS round trip proves
    transport compatibility without coupling the core wheel to a web server.
 2. A direct `http.server` host would combine HTTP parsing, socket lifecycle,
    TLS and storage in one new module. This gives less control over the reviewed
@@ -22,9 +22,11 @@ Three approaches were considered:
    stable.
 
 The wire rules below follow the [ASGI HTTP specification](https://asgi.readthedocs.io/en/latest/specs/www.html):
-raw headers retain duplicates, `raw_path` is optional, body events are streamed,
-and the protocol server decodes chunked transfer. The test host uses
-[Uvicorn's documented TLS and proxy settings](https://www.uvicorn.org/settings/).
+the ASGI header list can retain duplicates, `raw_path` is optional, body events
+are streamed, and the protocol server decodes chunked transfer. A parser may
+normalize headers before ASGI. The qualified test host therefore pins
+Uvicorn/httptools and uses [Uvicorn's documented TLS, HTTP parser and proxy
+settings](https://www.uvicorn.org/settings/).
 
 ## Public interface
 
@@ -43,12 +45,12 @@ non-HTTP scope other than lifespan is rejected; WebSocket is never accepted.
 The sender's normal request has one `Content-Length` with canonical decimal
 syntax, no `Transfer-Encoding`, a body of 1..`max_body_bytes` bytes and at most
 128 `http.request` chunks. Body length must equal `Content-Length`. Duplicate
-wire headers, non-ASCII header values, malformed ASGI events, oversized bodies
+ASGI headers, non-ASCII header values, malformed ASGI events, oversized bodies
 and incomplete bodies are refused before `receiver.accept()`. A disconnect
 before the complete body creates no receipt. The adapter retains neither body
 nor credentials after the request.
 
-The adapter passes validated raw headers and body to `receiver.accept()` in a
+The adapter passes validated ASGI headers and body to `receiver.accept()` in a
 worker thread, preserving the core's authentication, canonical JSON and SQLite
 transaction rules. Accepted and duplicate receipts return 204; conflicting
 reuse returns 409; core request errors keep their 400/401/413 status. Storage
@@ -62,10 +64,11 @@ can be retried with the same idempotency key and yields duplicate 204.
 Contract tests drive a real `NotificationReceiver` through ASGI events. They
 cover accepted/duplicate/conflict, duplicate headers, route and method,
 content-length and body bounds, disconnect, storage failure and startup failure.
-A separate loopback test uses Uvicorn with a generated self-signed certificate,
-proxy headers and access log disabled, then sends with the existing
-`WebhookAdapter`; it checks TLS verification, durable retry after reconnect and
-no receipt from plain HTTP. No external address is contacted.
+A separate loopback test uses Uvicorn/httptools with a generated self-signed
+certificate, proxy headers and access log disabled, then sends with the existing
+`WebhookAdapter`; it checks TLS verification, durable retry after reconnect,
+no receipt from plain HTTP and raw TLS ambiguous-header rejection. No external
+address is contacted.
 
 The receiver still stores only a payload digest. This slice does not retain a
 recoverable event or provide downstream processing, public TLS certificate

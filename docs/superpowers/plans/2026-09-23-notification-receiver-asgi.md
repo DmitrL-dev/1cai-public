@@ -21,7 +21,8 @@ pytest/anyio, Uvicorn and cryptography from the locked test environment.
 - Accept only exact raw `b"/notifications"`, empty query/root path, POST and
   `scope["scheme"] == "https"`.
 - Require one canonical `Content-Length`, reject `Transfer-Encoding`, duplicate
-  and malformed headers; cap at 64 headers, 128 body chunks and 1,048,576 bytes.
+  and malformed ASGI headers; pin a parser that rejects ambiguous wire framing.
+  Cap at 64 headers, 128 body chunks and 1,048,576 bytes.
 - Do not log or return bearer credentials, body, DB path or exception text.
 - Do not install a service or expose a non-loopback socket in tests.
 - No production deployment; the receiver still stores only a digest receipt.
@@ -55,7 +56,7 @@ responses with `http.response.start` and `http.response.body`.
 
 **Files:** modify the same module and test file.
 
-**Interface:** The app refuses a request before `receiver.accept` unless raw
+**Interface:** The app refuses a request before `receiver.accept` unless ASGI
 headers and body match the strict design. It returns 400, 404, 405, 413 or 503
 with an empty body and fixed headers. A pre-body disconnect sends no response
 and commits no receipt.
@@ -78,7 +79,7 @@ and commits no receipt.
 **Files:** create `tests/integration/test_notification_receiver_https.py`.
 
 **Interface:** The test starts Uvicorn with a generated self-signed certificate,
-`proxy_headers=False`, `access_log=False`, one worker and loopback binding. The
+`proxy_headers=False`, `access_log=False`, `http="httptools"`, one worker and loopback binding. The
 existing `WebhookAdapter` sends a real HTTPS notification using a test trust
 context; the receiver persists one digest. Reopen the receiver and repeat the
 same key to prove duplicate 204. An HTTP request to the TLS port must not create
