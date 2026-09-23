@@ -89,3 +89,33 @@ is also retained with its SHA256 in that receipt; local paths and platform logs
 are not published. This check covers one synthetic common module on one
 installed 1C version. It does not qualify typical configurations, extensions,
 forms/СКД, a live production infobase, or concurrent external writers.
+
+## Installed dev10 follow-up on native 1C
+
+On 23 September 2026, the same repeatable verifier was run against the
+published core `0.1.0.dev10` offline kit, SHA256
+`11d5f8e850eec13d9a67c9cd1985db212a076e882b8794cb790fb7ac2dbee4e3`.
+The wheel was installed from that kit with locked hashes on a fixed local
+Windows volume. An independently accepted synthetic `first-roundtrip` Designer
+XML fixture and a **new** local file infobase were used. The 1C executable was
+version `8.3.27.2342`, SHA256
+`2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956`.
+
+The installed CLI accepted valid BSL and reported diagnostics for the broken
+candidate. It applied the valid proposal to its owned source copy. The native
+platform loaded those exact bytes, passed `/CheckConfig`, updated the database,
+and application execution returned **43**. An export matched the applied module
+text and both UUIDs. After CLI Undo, the full owned source inventory returned
+to its original hashes. Reload, `/CheckConfig`, database update, and application
+execution returned **42**; the project head was unchanged. All 11 native steps
+exited successfully without timeout, and no model was called.
+
+The [bounded receipt](evidence/proposal-live-native-dev10-20260923.json) binds
+the published archive and wheel, source and verifier commits, fixture report,
+platform binary, source hashes, operation IDs, runtime values, and native steps.
+The [raw verifier result](evidence/proposal-live-native-dev10-20260923.raw.json)
+is retained with SHA256 `48c0deed591d38c38e3790c2e8df6ef382b12ae69079d9246d302dc118df946d`;
+local paths and platform logs are not published. This is one synthetic common
+module on one installed 1C version. Typical configurations, extensions,
+forms/СКД, a live production infobase, external concurrent writers, and
+production deployment remain outside this check.
