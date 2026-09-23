@@ -13,6 +13,7 @@ from uuid import uuid4
 import zipfile
 
 import rentgen_core as api
+import rentgen_graph
 from rentgen_core import (
     metadata_apply,
     metadata_live_apply,
@@ -24,6 +25,7 @@ from rentgen_core.edt_inventory import exported_inventory
 from rentgen_core.manifests import canonical_bytes, sha256
 from rentgen_core.metadata_preview import build_preview
 from rentgen_core.native_platform import CONTEXTS, NativePlatform
+from rentgen_core.platform_check import _pin_inputs
 from rentgen_core.source_configuration import SourceLayerSpec
 from rentgen_graph.snapshot_adapter import (
     RentgenCapturedGoBuilder,
@@ -36,6 +38,7 @@ import verify_metadata_migration as migration
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / "packaging/fixtures/edt-metadata-v1"
+RELEASE_SHA256 = "11d5f8e850eec13d9a67c9cd1985db212a076e882b8794cb790fb7ac2dbee4e3"
 if not __debug__:
     raise RuntimeError("Verification requires assertions; do not use Python -O")
 
@@ -51,9 +54,16 @@ def require(condition, message):
 
 
 def check_release(archive, expected_hash, scanner):
+    require(expected_hash == RELEASE_SHA256, "Unexpected public dev10 release hash")
     require(digest(archive) == expected_hash, "Public release ZIP SHA256 mismatch")
+    distribution = importlib.metadata.distribution("rentgen-core")
+    require(distribution.version == "0.1.0.dev10", "Not Core dev10")
     require(
-        importlib.metadata.version("rentgen-core") == "0.1.0.dev10", "Not Core dev10"
+        Path(api.__file__).resolve()
+        == Path(distribution.locate_file("rentgen_core/__init__.py")).resolve()
+        and Path(rentgen_graph.__file__).resolve()
+        == Path(distribution.locate_file("rentgen_graph/__init__.py")).resolve(),
+        "Imported Core does not belong to installed distribution",
     )
     package_root = Path(api.__file__).resolve().parent.parent
     require(not package_root.is_relative_to(ROOT), "Core imported from source checkout")
@@ -92,10 +102,20 @@ def check_release(archive, expected_hash, scanner):
 
 
 def prepare_preview(root, scanner):
+    manifest = json.loads((FIXTURE / "manifest.json").read_text("utf-8"))["files"]
+    fixture_files = {
+        path.relative_to(FIXTURE).as_posix(): digest(path)
+        for phase in ("baseline", "created", "renamed")
+        for path in (FIXTURE / phase).rglob("*")
+        if path.is_file()
+    }
+    require(
+        fixture_files == manifest,
+        "Owned preview fixture differs from accepted manifest",
+    )
     source = root / "source"
     shutil.copytree(FIXTURE / "created", source)
     original = exported_inventory(source, authorize=lambda: None)
-    manifest = json.loads((FIXTURE / "manifest.json").read_text("utf-8"))["files"]
     expected = {
         name.removeprefix("created/"): value
         for name, value in manifest.items()
@@ -228,6 +248,19 @@ def verify(args):
     require(digest(ibcmd) == args.ibcmd_sha256, "ibcmd SHA256 mismatch")
     root = args.output.resolve()
     root.mkdir(parents=True, exist_ok=False)
+    (root / "local-inputs.json").write_bytes(
+        canonical_bytes(
+            {
+                "core_module": str(Path(api.__file__).resolve()),
+                "graph_module": str(Path(rentgen_graph.__file__).resolve()),
+                "release_zip": str(args.release_zip.resolve()),
+                "scanner": str(args.scanner.resolve()),
+                "platform": str(platform),
+                "ibcmd": str(ibcmd),
+                "cfe": str(cfe),
+            }
+        )
+    )
     ctx, run, preview, operation, before, preflight = prepare_preview(
         root, args.scanner
     )
@@ -238,9 +271,14 @@ def verify(args):
         require(
             after == candidate, "Live source differs from retained candidate inventory"
         )
-        native = check_native_source(
-            ctx.source_root, root / "native", platform, args.platform_sha256
-        )
+        with _pin_inputs(ctx.source_root, after):
+            native = check_native_source(
+                ctx.source_root, root / "native", platform, args.platform_sha256
+            )
+            require(
+                exported_inventory(ctx.source_root, authorize=lambda: None) == after,
+                "Live source changed during native import",
+            )
     finally:
         undone = metadata_live_apply.undo_live(ctx, operation)
     restored = exported_inventory(ctx.source_root, authorize=lambda: None)
@@ -254,6 +292,11 @@ def verify(args):
                 "apply_status": applied["status"],
                 "undo_status": undone["status"],
                 "native": native,
+                "inventories": {
+                    "original": before,
+                    "applied": after,
+                    "restored": restored,
+                },
                 "inventory_digests": {
                     "original": sha256(canonical_bytes(before)),
                     "applied": sha256(canonical_bytes(after)),
@@ -300,6 +343,11 @@ def verify(args):
         "changed_paths": applied["changed_paths"],
         "native": native,
         "undo_status": undone["status"],
+        "inventories": {
+            "original": before,
+            "applied": after,
+            "restored": restored,
+        },
         "inventory_digests": {
             "original": sha256(canonical_bytes(before)),
             "applied": sha256(canonical_bytes(after)),

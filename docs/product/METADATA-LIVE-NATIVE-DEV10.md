@@ -20,7 +20,8 @@ Core против wheel внутри [публичного ZIP](https://github.c
    writer dev10 проверил тот же intent, применил операцию и изменил два файла
    зарегистрированного дерева: метаданные каталога и привязку поля формы.
 4. Полный inventory **живого источника после записи** совпал с retained
-   candidate. Именно этот каталог был загружен через `/LoadConfigFromFiles`
+   candidate. Файлы источника были закреплены на весь native цикл и повторно
+   проверены перед CAS undo. Именно этот каталог был загружен через `/LoadConfigFromFiles`
    в новую файловую базу 1С 8.3.27.2342. `/UpdateDBCfg`, `/CheckConfig` в
    четырёх контекстах и `/DumpConfigToFiles` завершились с кодом 0.
    Обратная выгрузка сохранила UUID каталога, реквизита и формы, длину 32
@@ -37,11 +38,13 @@ SHA256 полного inventory: исходный и восстановленн�
 `e4099571515b28588939bd20df1b29deb39d76dbb16b21b4a8012eaf12de254b`;
 после live apply —
 `a1d8bb9148b3a1081d59541e43bddd8cb5651de18018c98129b4c823e6ac5c39`.
-Preview ID `d71a9c373fcc55317b1133381dfe5e41e0a057247a6d2f16866f8b0571bae935`,
-operation ID `3b11a2bd-89af-4324-a2e4-9bc59184ef5b`.
+Preview ID `f6a9f641840293b83b234fbd729eb12a565c25bf9bbf9bd28df015e20bedc9f2`,
+operation ID `6ded48c6-6e5e-44ef-8e61-bcd4a1ff18ec`.
 
 Краткая [машинная квитанция](evidence/metadata-live-native-dev10-20260923.json)
-содержит хэши входов, коды native шагов и результаты тестов. Повторяемый
+содержит хэши входов, полные inventory, коды native шагов и результаты тестов.
+Её SHA256 — `95477b0ceefa1fcf6cbf29177a4d13e1d73a37077d6b845e25866ef4b2279469`.
+Повторяемый
 [verifier](../../scripts/verification/verify_metadata_live_native.py) принимает
 пути к публичному ZIP и его `bsl-scan.exe`, установленным `1cv8.exe`/`ibcmd.exe`,
 YAxUnit CFE, ожидаемые SHA256 и новый `--output` на фиксированном локальном
