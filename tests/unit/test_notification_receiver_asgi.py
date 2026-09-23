@@ -87,7 +87,7 @@ async def _with_startup(app, exercise):
 
 
 def test_asgi_startup_accepts_one_durable_notification(tmp_path):
-    from rentgen_core.notification_receiver_asgi import NotificationReceiverASGI
+    from rentgen_core import NotificationReceiverASGI
 
     receiver = NotificationReceiver(tmp_path / "receiver.sqlite3", bearer_token=TOKEN)
     app = NotificationReceiverASGI(receiver)

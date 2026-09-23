@@ -7,7 +7,8 @@ lowercase SHA-256 `Idempotency-Key`, the JSON content type and a UTF-8 body limi
 The receiver stores the idempotency key, canonical payload digest and receipt
 timestamp in an owned SQLite database; it never persists the request body or
 credentials. `NotificationReceiver`, `ReceiverResult` and `ReceiverStatus` are
-also exported from `rentgen_core`.
+also exported from `rentgen_core`. `NotificationReceiverASGI` adds a bounded
+ASGI 3 HTTP boundary around the same receiver and is exported there as well.
 
 ```python
 from rentgen_core import NotificationReceiver
@@ -21,14 +22,43 @@ receiver.initialize()
 result = receiver.accept(headers, body)
 ```
 
-The host owns the HTTP boundary and maps `ReceiverResult.http_status` to its
-response. The core does not open a socket, start a thread, register a service or
-infer a network policy. The host must enforce its method/routing/framing rules,
-reject duplicate wire headers before converting them to a mapping, bound and
-read the request body before passing it to `accept`, avoid logging request
-headers/body, and provide TLS and endpoint access control. Startup initialization
-must finish before serving requests; initialization and filesystem recovery are
-serialized by the host.
+For HTTP delivery, construct the ASGI app with a configured receiver. The ASGI
+server must enable lifespan and terminate TLS itself. Uvicorn, certificates,
+secrets, socket binding and process management are host dependencies; they are
+not bundled in the core wheel.
+
+```python
+from rentgen_core import NotificationReceiver, NotificationReceiverASGI
+
+receiver = NotificationReceiver(database_path, bearer_token=token)
+app = NotificationReceiverASGI(receiver, max_body_bytes=65536)
+# Give app to an ASGI server configured for direct TLS, lifespan=on,
+# proxy_headers=False and access_log=False.
+```
+
+Startup calls `receiver.initialize()` before serving HTTP; failure leaves the
+app unavailable and emits a fixed `lifespan.startup.failed` message. The app
+accepts only `POST` to the exact raw path `/notifications` with an empty query
+and root path and ASGI `scheme=https`. A missing raw path or a forwarded HTTP
+scheme is rejected. The host must present genuine TLS and disable trust in
+uncontrolled forwarded headers. The app never opens a socket or registers a
+service.
+
+The ASGI boundary checks the uncombined wire header list before it makes a
+mapping: at most 64 ASCII fields, no case-insensitive duplicates, one positive
+canonical decimal `Content-Length`, and no `Transfer-Encoding`. It reads up to
+128 `http.request` chunks, requires the byte count to match `Content-Length`
+and caps it at `max_body_bytes` (default 65536; maximum 1048576). A disconnect
+before the full body writes no receipt. Malformed framing, duplicate headers,
+invalid route or method, and size errors return fixed empty responses without
+echoing body, credentials or paths. Receiver request outcomes retain the core's
+204/409/400/401/413 statuses; storage and readiness failures return 503.
+
+The host still owns certificate verification and renewal, DNS, endpoint access
+control, secret provisioning, process supervision and safe filesystem ownership.
+It must avoid logging request headers and body and serialize explicit storage
+recovery against traffic. A separate host can call `NotificationReceiver`
+directly, but then that host is responsible for equivalent wire validation.
 
 The accepted header subset is a mapping of at most 64 ASCII fields, with HTTP
 token names of at most 128 characters and nonempty values of at most 8192
@@ -101,13 +131,18 @@ Local tests cover malformed requests/state, linked paths, concurrent retries
 and conflicts, commit failures before/after commit, and an injected
 outbox → sender → receiver round trip with a lost response followed by reopening
 the database. The outbox remains pending after that lost response and is
-acknowledged only after the repeated request receives 204. No external requests
-are made.
+acknowledged only after the repeated request receives 204. ASGI contract tests
+cover wire headers, framing, disconnects and fail-closed startup. A separate
+loopback test starts Uvicorn with a generated, trusted TLS certificate and uses
+the existing `WebhookAdapter` to send, restart the receiver and retry. It also
+checks that plain HTTP and an untrusted certificate create no receipt. No
+external requests are made.
 
 This core acknowledges durable **digest receipt**, and does not store a
 recoverable event, run a handler or couple downstream effects to the transaction.
-Exactly-once business processing is therefore not provided. Live HTTPS
-socket/TLS/DNS acceptance, production secret provisioning, SCM deployment,
-hard process termination and power-loss testing remain unaccepted. SQLite's
+Exactly-once business processing is therefore not provided. The local TLS
+round trip does not qualify a public HTTPS endpoint, production DNS, certificate
+or secret provisioning, SCM deployment, hard process termination or power-loss
+behavior. SQLite's
 [EXTRA durability mode](https://www.sqlite.org/pragma.html#pragma_synchronous)
 still depends on the host filesystem and storage honoring synchronization.
