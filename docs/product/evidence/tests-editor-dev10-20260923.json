@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "date": "2026-09-23",
+  "accepted": true,
+  "scope": "Published Companion 0.1.10 in an isolated VS Code extension host, installed core dev10, one synthetic BSL module and owned file infobases",
+  "release_tags": {
+    "core": "core-v0.1.0-dev10",
+    "companion": "companion-v0.1.10"
+  },
+  "release_source_commits": {
+    "core": "ef0501bea47a3e955a466b9f8908922d59ba0855",
+    "companion": "25f6f217379fc9a4efaf33819a26f89a7ee7fb2d"
+  },
+  "verifier_source_commit": "ab88ee1ed1c06e1d9dd505979dd5b31fb18282fd",
+  "core_version": "0.1.0.dev10",
+  "core_archive_sha256": "11d5f8e850eec13d9a67c9cd1985db212a076e882b8794cb790fb7ac2dbee4e3",
+  "core_wheel_sha256": "9267aed28b97644ab3d3a7c1aca3910a0945d68ddde0fcd8b84d162778ce4bc2",
+  "companion_version": "0.1.10",
+  "companion_vsix_asset_id": 583246564,
+  "companion_vsix_bytes": 208263,
+  "companion_vsix_sha256": "b136bc63c63130d61709724f7e52904eb549120016372caee7df330f93193f25",
+  "platform_version": "8.3.27.2342",
+  "platform_executable_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+  "ibcmd_sha256": "38f37715535cea530e58d5ba2e7e072c184b61b12f3e903ac290b299cf39fd38",
+  "yaxunit_cfe_sha256": "805a2277c997a3c24be0b0d080696479e91e4a15ed7e27aaf3991a7346522d70",
+  "harness": {
+    "original_sha256": "384b02897cb1271a66677030d85a6bb06c37a6c677b99dacafd57d8dc08b4cbc",
+    "run_sha256": "421f0e98d871436c310ca75ee8e13581844ecba7427797cee2cc33707dc76057",
+    "only_delta": "expected Companion version 0.1.8 -> 0.1.10",
+    "node_syntax_check": "passed"
+  },
+  "native_preflight": {
+    "accepted": true,
+    "bad": "failed",
+    "fixed": "passed",
+    "steps": 15,
+    "all_steps_exit_zero_no_timeout": true
+  },
+  "installed_profile": {
+    "accepted": true,
+    "baseline": "failed",
+    "candidate": "passed",
+    "disabled_new_run_refused": true
+  },
+  "editor_run": {
+    "run_id": "52d02af1-2f69-4e2e-92dc-4e9ffb484841",
+    "status": "completed",
+    "selected_revision": 1,
+    "latest_revision": 2,
+    "profile_id": "4a096da5b315d2d1dc2f796955ccf5d304e77169acacb85e762ad4a04005c4e9",
+    "proposal_content_id": "1f5caab9913cbefe0c0c97ac63463d676063a8d23d7cc643fa12eb09dd01e6cc",
+    "source_module_sha256": "f0540440b7a20f136a6c0b97ed5509f55fe7346db735970eb232c3d4f532ddd7",
+    "candidate_sha256": "dc573e18f1a3a7f78a2f12541158df138a425c178922ea92bd2f4a0f7ad791e4",
+    "baseline": {
+      "status": "failed",
+      "failures": 1,
+      "tests": 1
+    },
+    "candidate": {
+      "status": "passed",
+      "passed": 1,
+      "tests": 1
+    },
+    "isolated_infobases": true,
+    "native_report_sha256": "92b3f14874d7566a61bcfd6938e2923c0417163ea71e4ba28b0589716d28b774",
+    "request_file_sha256": "bec167d561fc89575ac2688bf2da248e788020073d2f684646ecbc76ca2434a2",
+    "report_file_sha256": "28f15b3b7a5dc169cbf7cb5b0f2c1a45525dbcf420d6ad7d964ae22ec14ae1e9",
+    "source_and_project_head_preserved": true,
+    "model_calls": 0
+  },
+  "recovery": {
+    "accepted": true,
+    "new_editor_process": true,
+    "profile_disabled": true,
+    "same_run_id": true,
+    "new_test_runs": 0,
+    "model_calls": 0
+  },
+  "local_raw_acceptance_sha256": {
+    "native_preflight": "36309510d7671d4517f2e4325234bd50a6e26d56c90fd001f045ee08d3e2f722",
+    "installed_profile": "f0ec1711304b17f58bb4f607d961bc08c60c3622637cf8a986a74da65755ee91",
+    "editor_run": "b2e682841903933ac906ef9e15c9689682ed7b05ebbdadfcfc25c73c423b4412",
+    "recovery": "4fcb2da9a4071ab5ecf2be47c1139a93aa68016e7de8ed986a01bfb591d023c4"
+  },
+  "product_report_evidence": "local_unattested",
+  "runtime_dependencies": "not_fully_pinned",
+  "live_apply_status": "unavailable",
+  "not_verified": [
+    "typical configurations",
+    "live working infobase",
+    "live source apply/undo by the editor workflow",
+    "fully pinned VS Code host runtime",
+    "external host attestation",
+    "production deployment"
+  ]
+}
