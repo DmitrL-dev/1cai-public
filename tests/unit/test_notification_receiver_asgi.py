@@ -382,3 +382,35 @@ def test_storage_failure_after_startup_returns_fixed_503(tmp_path):
         await _with_startup(app, exercise)
 
     asyncio.run(scenario())
+
+
+def test_unexpected_receiver_error_does_not_escape_http_boundary(tmp_path, monkeypatch):
+    from rentgen_core.notification_receiver_asgi import NotificationReceiverASGI
+
+    receiver = NotificationReceiver(tmp_path / "receiver.sqlite3", bearer_token=TOKEN)
+    app = NotificationReceiverASGI(receiver)
+
+    def fail_accept(*_):
+        raise RuntimeError("private token and database path")
+
+    async def scenario():
+        async def exercise():
+            monkeypatch.setattr(receiver, "accept", fail_accept)
+            body = _body()
+            response = await _call(app, _scope(body), body)
+            assert response == [
+                {
+                    "type": "http.response.start",
+                    "status": 503,
+                    "headers": [
+                        (b"content-length", b"0"),
+                        (b"cache-control", b"no-store"),
+                    ],
+                },
+                {"type": "http.response.body", "body": b""},
+            ]
+            assert receiver.count() == 0
+
+        await _with_startup(app, exercise)
+
+    asyncio.run(scenario())

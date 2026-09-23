@@ -81,7 +81,7 @@ class NotificationReceiverASGI:
             if message["type"] == "lifespan.startup":
                 try:
                     await asyncio.to_thread(self._receiver.initialize)
-                except (CoreError, OSError):
+                except Exception:
                     self._ready = False
                     await send(
                         {
@@ -168,7 +168,7 @@ class NotificationReceiverASGI:
         body = b"".join(chunks)
         try:
             result = await asyncio.to_thread(self._receiver.accept, headers, body)
-        except CoreError:
+        except Exception:
             await self._reply(send, 503)
             return
         await self._reply(send, result.http_status)
