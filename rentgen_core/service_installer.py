@@ -17,6 +17,14 @@ _CREDENTIAL = re.compile(
 _OPERATIONS = frozenset(
     {"install", "update", "start", "stop", "uninstall", "query", "status"}
 )
+_PYTHON_EXECUTABLES = frozenset({"python.exe", "pythonw.exe"})
+_PYTHON_SERVICE_ARGUMENTS = (
+    "-I",
+    "-m",
+    "rentgen_core.service_entry",
+    "--service",
+    "--config",
+)
 
 
 def _invalid():
@@ -74,6 +82,7 @@ class ServiceInstallSpec:
 
     No arbitrary argument or service-account credential channel is supported.
     Configuration contents are never read, copied or placed on a command line.
+    The known pip console launcher is not a supported SCM process image.
     """
 
     service_name: str
@@ -88,13 +97,33 @@ class ServiceInstallSpec:
         display = _text(self.display_name, 120)
         if not re.fullmatch(r"[\w .()-]+", display) or display != display.strip():
             raise _invalid()
-        object.__setattr__(self, "executable", _file(self.executable, ".exe"))
+        executable = _file(self.executable, ".exe")
+        source_name = Path(self.executable).name.lower()
+        target_name = Path(executable).name.lower()
+        if "rentgen-service.exe" in {source_name, target_name}:
+            raise CoreError(
+                "SERVICE_IMAGE_UNSUPPORTED",
+                "Console launcher cannot be an SCM image; use the direct interpreter",
+            )
+        python_source = source_name in _PYTHON_EXECUTABLES
+        python_target = target_name in _PYTHON_EXECUTABLES
+        object.__setattr__(self, "executable", executable)
         args = self.arguments
-        if type(args) is not tuple or len(args) > 3:
+        if type(args) is not tuple or len(args) > 6:
             raise _invalid()
         for arg in args:
             _text(arg, 240)
-        if args[:1] == ("--service",):
+        if python_source or python_target:
+            if (
+                not (python_source and python_target)
+                or len(args) != 6
+                or args[:5] != _PYTHON_SERVICE_ARGUMENTS
+            ):
+                raise _invalid()
+            tail = args[-2:]
+        elif len(args) > 3:
+            raise _invalid()
+        elif args[:1] == ("--service",):
             tail = args[1:]
         else:
             tail = args

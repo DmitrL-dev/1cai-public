@@ -70,6 +70,44 @@ def test_load_runtime_report_binds_context_and_reauthorizes(tmp_path):
     assert calls == ["authorized", "authorized"]
 
 
+def test_loader_keeps_retained_locator_unresolved(tmp_path, monkeypatch):
+    path = write_payload(tmp_path, payload())
+
+    def forbidden_resolve(self, *args, **kwargs):
+        raise AssertionError("runtime loader must not resolve retained paths")
+
+    monkeypatch.setattr(type(path), "resolve", forbidden_resolve)
+    report = load_runtime_report(
+        path,
+        expected_project_id=PROJECT,
+        expected_snapshot_id=SNAPSHOT,
+        expected_commit=COMMIT,
+        expected_source_digest=SOURCE_DIGEST,
+        as_of=AS_OF,
+        authorize=lambda: None,
+    )
+    assert report.metrics[0].value == 42
+
+
+def test_loader_rejects_alternate_stream_locator_before_authorization(
+    tmp_path,
+):
+    path = write_payload(tmp_path, payload())
+    calls = []
+    with pytest.raises(CoreError) as exc:
+        load_runtime_report(
+            type(path)(str(path) + ":metadata"),
+            expected_project_id=PROJECT,
+            expected_snapshot_id=SNAPSHOT,
+            expected_commit=COMMIT,
+            expected_source_digest=SOURCE_DIGEST,
+            as_of=AS_OF,
+            authorize=lambda: calls.append("authorized"),
+        )
+    assert exc.value.code == "OWNER_RUNTIME_INVALID"
+    assert calls == []
+
+
 @pytest.mark.parametrize(
     "field, value",
     [

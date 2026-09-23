@@ -26,6 +26,12 @@ report = build_owner_report(
 report = observer.owner_report(snapshot_id, max_findings=1000)
 ```
 
+Тот же bounded путь доступен через `rentgen owner-report-build`: команда
+принимает абсолютный локальный `--profile`, вызывает durable observer с текущей
+авторизацией и сразу сохраняет результат в `<state-root>\owner-reports` через
+immutable store. Она не запускает анализатор и не читает runtime export; для
+бизнес-метрик нужен отдельный typed runtime adapter.
+
 Метод читает durable `finding_state`, требует опубликованный snapshot и права
 `project:read` + `analysis:run`, повторяет проверку прав перед возвратом и
 оставляет `business_metrics` в `not_available`, пока вызывающий runtime adapter
@@ -62,6 +68,13 @@ immutable UUID receipts через эксклюзивное создание и 
 повреждённая квитанция или превышение лимита останавливают чтение;
 автоудаления и сетевой доставки нет. Контракт приведён в
 [OWNER-REPORT-STORE.md](OWNER-REPORT-STORE.md).
+
+Для bounded Git-аудита [service composition schema 2](SERVICE-HOST.md) связывает
+готовый builder/store с GitWatcher и локальным outbox. Успешное событие содержит
+`owner_report_id` только после сохранения отчёта с `git_source_verified` и
+совпадающим commit. По умолчанию включён dry-run; явный read-only режим требует
+существующего подтверждённого snapshot. Runtime adapter и доставка уведомлений
+в этот composition root не подключены.
 
 Это контракт агрегации, а не доказательство прав или истинности внешней базы:
 вызывающий слой должен авторизовать чтение и связать report с фактически

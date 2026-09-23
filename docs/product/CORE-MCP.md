@@ -40,8 +40,8 @@ a different project returns `MCP_PROJECT_FORBIDDEN`. Checks precede dispatch and
 registry/source access. Unknown names still return `UNKNOWN_TOOL`. Requests cannot
 set or widen startup scope. Current membership/permission checks remain in force.
 
-Without either option the original 21-tool contract is retained. Project-only
-startup exposes the 20 tools with explicit project selectors, excluding
+Without either option the current 28-tool contract is retained. Project-only
+startup exposes the 27 tools with explicit project selectors, excluding
 `rentgen_project_list`. Explicitly combining project scope with that registry-wide
 tool is a startup error. Tool-only scope may access the SID's authorized projects.
 Unknown/duplicate tool names, invalid/repeated project selectors and incompatible
@@ -54,7 +54,7 @@ output permission checks. State schema 4 is unchanged.
 
 ## Tool contract
 
-Unrestricted startup exposes twenty-one tools; the previous dev2 artifacts expose ten. All tools return MCP text content containing JSON and equivalent
+Unrestricted startup exposes thirty-two tools; the previous dev2 artifacts expose ten. All tools return MCP text content containing JSON and equivalent
 `structuredContent`. Success uses `{result, request_id}`; operational errors use
 the core `{error: {code, message, request_id, details}}` envelope and `isError=true`.
 Unknown tools return `UNKNOWN_TOOL`. Schemas reject unknown fields, null or blank
@@ -83,6 +83,17 @@ Semantic failures after schema validation keep their existing core error codes.
 | `rentgen_impact` | `project_id`, `snapshot_id`, `layer_id`, `relative_path` | `depth` (1–5, default 1) |
 | `rentgen_proposal_create` | `project_id`, `snapshot_id`, `source_ref`, `replacement_base64` | none |
 | `rentgen_proposal_check` | `project_id`, `snapshot_id`, `proposal`, `diagnostics_profile` | none |
+| `rentgen_native_archive` | `project_id`, `snapshot_id`, `operation_id`, `namespace` | `profile_id` for `test-runs` and `metadata-runs` |
+| `rentgen_owner_report_get` | `project_id`, `snapshot_id`, `report_id` | none |
+| `rentgen_owner_report_list` | `project_id`, `snapshot_id` | `limit` (1–1000, default 100) |
+| `rentgen_metadata_live_apply` | `project_id`, `snapshot_id`, `operation_id` | none |
+| `rentgen_metadata_live_undo` | `project_id`, `snapshot_id`, `operation_id` | none |
+| `rentgen_metadata_live_status` | `project_id`, `snapshot_id`, `operation_id` | none |
+| `rentgen_metadata_live_recover` | `project_id`, `snapshot_id`, `operation_id`, `target=original` | none |
+| `rentgen_proposal_live_apply` | `project_id`, `snapshot_id`, `operation_id`, `expected_head`, `proposal` | none |
+| `rentgen_proposal_live_undo` | `project_id`, `operation_id` | none |
+| `rentgen_proposal_live_status` | `project_id`, `operation_id` | none |
+| `rentgen_proposal_live_recover` | `project_id`, `operation_id`, `target=original` | none |
 
 Project and operation IDs are canonical lowercase UUIDs. Snapshot IDs are
 lowercase SHA-256 digests. Every source/graph request requires an explicit
@@ -141,6 +152,27 @@ returns a bounded diff; `proposal_check` verifies the original from the same
 snapshot and runs the separately installed fixed BSL profile. Results explicitly
 say `ephemeral_unattested`, `tests: not_run` and `apply: unavailable`.
 
+`rentgen_native_archive` requires `project:read` and `project:admin`. It
+re-resolves the explicit snapshot before creating the validated logical archive
+and returns the durable archive receipt. `namespace` is one of
+`platform-checks`, `test-runs` or `metadata-runs`; the latter two also require
+the exact 64-character `profile_id`. Evidence remains readable and counted
+against the disk budget, and the tool never deletes or moves retained files.
+
+`rentgen_owner_report_get` and `rentgen_owner_report_list` read only the
+authenticated project's derived `owner-reports` store. They require
+`project:read`, bind every receipt to the selected snapshot, return bounded
+sealed receipts and recheck access at the final output boundary. The MCP
+adapter never accepts a report-store path from the caller.
+
+The four `rentgen_metadata_live_*` tools expose the bounded direct writer from
+[`METADATA-LIVE-APPLY.md`](METADATA-LIVE-APPLY.md). They require the full
+`project:read`, `source:edit` and `analysis:run` set, re-resolve the explicit
+snapshot, and return the same sealed apply/undo/recovery receipts as the CLI.
+They support only the retained `rename_catalog_attribute` candidate in one
+base Designer XML layer; a foreign source edit, unsupported normalization or
+unknown operation state fails closed and is never replayed.
+
 Only the documented profile ID is selectable. A tool cannot choose Java, JAR,
 working directory, environment or analyzer options. Permissions are checked before
 source/runtime IO, throughout the run and at the actual SDK output boundary.
@@ -170,6 +202,11 @@ Installation, CLI equivalents and result interpretation: [PROPOSAL-CHECK.md](PRO
   proposal, 24 KiB arguments and diff, 128 KiB complete output frame including
   duplicate text/structured content, request ID and newline. Original module
   limit is 1 MiB. Oversize results fail; no partial successful diagnostic is sent.
+- Owner-report tools use the general 2 MiB complete output-frame limit because
+  the sealed report is duplicated in text and structured content. A valid
+  receipt that exceeds this MCP frame bound returns `OUTPUT_LIMIT_EXCEEDED`;
+  use the local CLI for a larger full receipt while the bounded list remains
+  available through MCP.
 - One tool worker runs at a time, with at most eight running/queued tool calls.
   Excess calls return `SERVER_BUSY`. SDK initialize/list/ping/cancellation handling
   remains on the event loop and is responsive while capture runs in the worker.
@@ -190,6 +227,58 @@ Installation, CLI equivalents and result interpretation: [PROPOSAL-CHECK.md](PRO
   can interrupt it before commit or lose a committed reply; the same durable
   core receipt protocol applies. No automatic garbage collection or orphan
   promotion is performed.
+
+## Local metadata materialization summary
+
+The local CLI exposes `materialize_metadata_three_way` through a bounded,
+read-only command. This is a CLI-only surface; it does not add an MCP tool.
+
+```powershell
+rentgen metadata-materialize --registry C:\project\registry.sqlite3 --project PROJECT_ID --base-json C:\inputs\base.json --current-json C:\inputs\current.json --upstream-json C:\inputs\upstream.json
+```
+
+Each explicitly selected UTF-8 input file uses exactly this JSON schema:
+
+```json
+{"schema":1,"encoding":"base64","files":{"notes.txt":"aGVsbG8="}}
+```
+
+`files` maps canonical repository-relative paths to canonical padded base64
+strings representing bytes. Empty trees and empty byte strings are valid.
+Duplicate keys, case/Unicode path collisions, unsafe paths, additional fields,
+non-string content, non-finite numbers and invalid base64 fail closed. Paths
+inside `files` are logical names only and are never opened on the filesystem.
+
+Windows identity and `project:read`, `analysis:run` are required
+before payload IO. Permissions are checked again before each input read and
+immediately before successful or failed output. `source:edit` is not required
+for this stateless summary command. The command reads no retained
+snapshot, live source tree or native executable and accepts no snapshot,
+operation, profile, workspace, output, write or apply options.
+
+Every input JSON file is capped at 1 MiB. Defaults and hard ceilings are 1,024
+files in each tree and their union, 256 KiB decoded bytes per file, and 512 KiB
+decoded bytes per tree (including the in-memory candidate). Optional positive
+integer `--max-files`, `--max-file-bytes`, `--max-total-bytes` limits may only
+lower these ceilings and are checked before reading inputs. Encoded content is
+bounded before base64 decoding. The complete success envelope is capped at
+2 MiB. Larger inputs require the Python API with its separate limits.
+
+The usual stdout envelope contains a deterministic `result` with `schema`,
+`scope`, `status`, input/candidate digests, `counts`, bounded `merged_objects`
+evidence and `merged_objects_truncated`; only the envelope's `request_id` varies
+between equivalent calls. Qualified BSL composite merges additionally include
+`counts.merged_bsl_scopes`, `merged_bsl_scopes` (at most 256 evidence rows), and
+`merged_bsl_scopes_truncated`. Each row identifies the owner type/UUID, recognized
+scope, candidate path, SHA-256 digest and byte size. These optional fields are
+absent when no BSL composite was merged, preserving the previous result shape.
+See [qualified BSL materialization semantics](METADATA-THREE-WAY-SEMANTICS.md#qualified-bsl-materialization)
+for the supported owner bindings, byte contract and merge limitations.
+The candidate byte tree is never emitted or saved.
+Engine failures retain their error code with a generic message and omit engine
+details, candidate bytes, XML and BSL payloads. A successful `ready` summary
+qualifies only the existing `metadata-properties-v1` merge scope; it is not
+native validation or apply acceptance.
 
 ## Evidence and remaining scope
 

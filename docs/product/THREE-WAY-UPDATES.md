@@ -11,6 +11,24 @@ from rentgen_core.three_way import plan_three_way
 plan = plan_three_way(base_files, current_files, upstream_files)
 ```
 
+Для однозначных path-bytes решений можно отдельно получить полный кандидат в
+памяти:
+
+```python
+from rentgen_core.three_way import materialize_three_way
+
+candidate = materialize_three_way(base_files, current_files, upstream_files)
+files = candidate["candidate"]  # dict[str, bytes], внешняя запись не выполняется
+```
+
+`materialize_three_way()` сначала повторно строит тот же bounded-план. При
+наличии хотя бы одного `conflict` она завершается `THREE_WAY_CONFLICT` до
+выдачи кандидата; в `details` находятся до 256 конфликтующих путей и их общее
+количество. При успехе `candidate["status"] == "ready"`, присутствуют digest
+трёх входов и digest кандидата. Удаления представлены отсутствием пути,
+добавления и изменения берутся только из стороны, для которой план доказал
+однозначность.
+
 Для каждого canonical repository-relative path результат выбирает одно из
 действий:
 
@@ -29,5 +47,7 @@ plan = plan_three_way(base_files, current_files, upstream_files)
 Это безопасная основа для обновлений, а не готовый перенос конфигурации:
 семантика объектов и UUID, владельцы слоёв, формы, СКД, расширения, тестовая
 база, backup и rollback потребуют отдельного native EDT/1С адаптера и
-evidence-пакета. До этого `conflict` должен быть разобран человеком или
-следующим квалифицированным этапом; автоматическая запись отсутствует.
+evidence-пакета. Полученный в памяти кандидат нельзя считать валидной
+конфигурацией, пока его не проверит соответствующий адаптер. До этого
+`conflict` должен быть разобран человеком или следующим квалифицированным
+этапом; автоматическая запись в исходное дерево отсутствует.

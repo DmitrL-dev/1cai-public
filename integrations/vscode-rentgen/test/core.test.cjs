@@ -91,6 +91,18 @@ test('native result lookup is a read without snapshot or executable and rejects 
   await assert.rejects(client.platformResult(id),/PLATFORM_RESULT_MISMATCH/);
 });
 
+test('dev9 profile can use native result lookup and test profile listing',async()=>{
+  const id='00000000-0000-4000-8000-000000000003';
+  const commands=[];
+  const client=createClient({...config,core_version:'0.1.0.dev9'},{execute:async(_,args)=>{
+    commands.push(args[3]);
+    return output(args[3]==='proposal-platform-result'?{run_id:id,request:null,status:'incomplete'}:[]);
+  }});
+  assert.equal((await client.platformResult(id)).status,'incomplete');
+  assert.deepEqual(await client.testProfiles(),[]);
+  assert.deepEqual(commands,['proposal-platform-result','test-profile-list']);
+});
+
 test('native check binds selected snapshot, proposal and executable; old profiles cannot launch it',async()=>{
   const options={id:draft,ref,contentId:'b'.repeat(64),proposal:'C:\\путь $()\\proposal.json',platform:'C:\\1cv8.exe',platformHash:'c'.repeat(64)};
   let seen,reply={run_id:draft,source_ref:ref,proposal_content_id:options.contentId,platform_executable_sha256:options.platformHash};

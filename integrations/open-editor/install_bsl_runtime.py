@@ -23,13 +23,20 @@ def contract():
         sys.platform != "win32"
         or sys.version_info[:2] != (3, 11)
         or importlib.metadata.version("rentgen-core")
-        not in {"0.1.0.dev4", "0.1.0.dev5", "0.1.0.dev6", "0.1.0.dev7", "0.1.0.dev8"}
+        not in {
+            "0.1.0.dev4",
+            "0.1.0.dev5",
+            "0.1.0.dev6",
+            "0.1.0.dev7",
+            "0.1.0.dev8",
+            "0.1.0.dev9",
+        }
         or not Path(rentgen_core.__file__)
         .resolve()
         .is_relative_to(Path(sys.prefix).resolve())
     ):
         raise ValueError(
-            "Use installed Windows Python 3.11/core dev4/dev5/dev6/dev7/dev8 with -I"
+            "Use installed Windows Python 3.11/core dev4/dev5/dev6/dev7/dev8/dev9 with -I"
         )
     descriptor, expected = _runtime_descriptor()
     return descriptor, expected, RuntimePins

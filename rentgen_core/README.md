@@ -16,7 +16,7 @@ existing audited Windows runtime lock for its dependency versions. Base wheel
 installation does not install the SDK. The sdist includes CORE-INSTALLATION,
 CORE-MCP, STATE-MIGRATION, PROJECT-ACCESS, SNAPSHOT-METADATA,
 SNAPSHOT-READ-SESSIONS, SNAPSHOT-PUBLICATION-ADR and that runtime lock.
-The eight stdio tools derive identity from the Windows process SID; source/graph
+The development stdio tools derive identity from the Windows process SID; source/graph
 reads require explicit project and snapshot IDs. Setup and migration remain CLI
 operations. Cancellation does not imply rollback; reconcile the original capture
 operation receipt. See `docs/product/CORE-MCP.md` for bounds and exact tool schemas.
@@ -37,7 +37,7 @@ Version 0.1.0.dev1 creates schema3 projects and provides audited membership
 commands and explicit state-upgrade-access (2→3), with verified backup and
 operation receipts. Existing schema2 snapshots remain readable. The packaged
 metadata API uses bounded retained read sessions and metadata_scan_v2 evidence;
-metadata tools are not added to the eight-tool stdio interface. See the delivered
+metadata tools are not added to the base stdio interface. See the delivered
 PROJECT-ACCESS, SNAPSHOT-METADATA and SNAPSHOT-READ-SESSIONS runbooks.
 
 The current development checkout additionally creates schema4 projects and

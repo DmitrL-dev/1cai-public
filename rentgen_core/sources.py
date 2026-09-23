@@ -8,7 +8,7 @@ import sqlite3
 import sys
 from threading import get_ident
 from time import monotonic
-from typing import Literal
+from typing import Callable, Literal
 
 from .context import SnapshotRef
 from .errors import CoreError
@@ -154,13 +154,17 @@ def _bindings(document):
 
 
 @contextmanager
-def _graph_metadata(path, document=None):
+def _graph_metadata(path, document=None, *, authorize_read=None):
     """Keep no-follow read-only leaf/ancestor pins through every SQLite handle."""
     from ._windows_source_tree import pinned_retained
 
     try:
+        if authorize_read is not None:
+            authorize_read()
         with pinned_retained(path, _MAX_GRAPH) as raw:
             _reject_sidecars(path)
+            if authorize_read is not None:
+                authorize_read()
             with closing(
                 sqlite3.connect(path.as_uri() + "?mode=ro&immutable=1", uri=True)
             ) as db:
@@ -239,8 +243,16 @@ def _verify_graph_digest(digest, meta, document):
         raise _corrupt("Graph input binding does not match source entries")
 
 
-def verify_generation(path, catalog):
-    """Verify every retained artifact before publishing or issuing capabilities."""
+def verify_generation(
+    path, catalog, *, authorize_read: Callable[[], None] | None = None
+):
+    """Verify every retained artifact before publishing or issuing capabilities.
+
+    An optional request-scoped hook reauthorizes each eager artifact read.
+    Omitting it preserves existing publication and capability verification.
+    """
+    if authorize_read is not None:
+        authorize_read()
     document = _manifest(path, catalog.snapshot)
     if (
         document["source_digest"] != catalog.source_digest
@@ -248,6 +260,8 @@ def verify_generation(path, catalog):
     ):
         raise _corrupt("Catalog content binding does not match manifest")
     for entry in document["source"]["entries"]:
+        if authorize_read is not None:
+            authorize_read()
         raw = _read(
             path / "sources" / entry["layer_id"] / entry["relative_path"],
             entry["size_bytes"],
@@ -257,10 +271,18 @@ def verify_generation(path, catalog):
     for entry in document["derived_inputs"]:
         if entry["size_bytes"] > _MAX_DERIVED:
             raise _corrupt("Derived input exceeds resource limit")
+        if authorize_read is not None:
+            authorize_read()
         raw = _read(path / entry["relative_path"], entry["size_bytes"])
         if len(raw) != entry["size_bytes"] or sha256(raw) != entry["raw_sha256"]:
             raise _corrupt("Derived input digest mismatch")
-    with _graph_metadata(path / "graph.sqlite3", document) as (raw, meta):
+    if authorize_read is not None:
+        authorize_read()
+    graph_options = {} if authorize_read is None else {"authorize_read": authorize_read}
+    with _graph_metadata(path / "graph.sqlite3", document, **graph_options) as (
+        raw,
+        meta,
+    ):
         _verify_graph(raw, meta, document)
     _verify_inventory(path, document)
     return document

@@ -207,6 +207,89 @@ def test_recovery_finalizes_result_written_before_state(
     )
 
 
+@pytest.mark.parametrize(
+    "damage", [None, "retry", "corrupt", "foreign", "tree", "wrong_phase"]
+)
+def test_apply_recovery_validates_pending_complete_state(
+    captured, tmp_path, monkeypatch, damage
+):
+    ctx, request, _, root, _ = _prepared(captured, tmp_path)
+    original_replace = workspace._publish_replace
+
+    def interrupt(source, target):
+        if target.name == "workspace-state.json":
+            raise OSError("interrupted complete state replacement")
+        return original_replace(source, target)
+
+    with monkeypatch.context() as crash:
+        crash.setattr(workspace, "_publish_replace", interrupt)
+        with pytest.raises(OSError, match="complete state"):
+            workspace.apply_workspace(ctx, request["operation_id"], root)
+    temporary = root / "workspace-state.json.tmp"
+    pending = json.loads(temporary.read_bytes())
+    assert pending["phase"] == "complete"
+    candidate = _bytes(root / "tree")
+    if damage == "corrupt":
+        temporary.write_bytes(b'{"incomplete":')
+    elif damage == "foreign":
+        pending["workspace_root"] = str(tmp_path / "another-workspace")
+        del pending["state_id"]
+        temporary.write_bytes(
+            workspace.canonical_bytes(workspace._seal(pending, "state_id"))
+        )
+    elif damage == "tree":
+        (root / "tree" / "foreign.bin").write_bytes(b"later foreign edit")
+    elif damage == "wrong_phase":
+        pending["phase"] = "applying"
+        del pending["result_id"], pending["state_id"]
+        temporary.write_bytes(
+            workspace.canonical_bytes(workspace._seal(pending, "state_id"))
+        )
+    if damage in {"corrupt", "foreign"}:
+        (root / "workspace-operation.lock").unlink()
+    before = _bytes(root)
+    if damage not in {None, "retry"}:
+        with pytest.raises(api.CoreError):
+            workspace.recover_workspace(
+                ctx, request["operation_id"], root, target="candidate"
+            )
+        assert _bytes(root) == before, "Invalid pending state must not permit writes"
+        if damage in {"corrupt", "foreign"}:
+            assert not (root / "workspace-operation.lock").exists()
+        return
+
+    if damage == "retry":
+        with monkeypatch.context() as crash:
+            crash.setattr(workspace, "_publish_replace", interrupt)
+            with pytest.raises(OSError, match="complete state"):
+                workspace.recover_workspace(
+                    ctx, request["operation_id"], root, target="candidate"
+                )
+        assert json.loads(temporary.read_bytes()) == pending
+        assert _bytes(root / "tree") == candidate
+
+    recovered = workspace.recover_workspace(
+        ctx, request["operation_id"], root, target="candidate"
+    )
+    assert recovered["target"] == "candidate"
+    assert not temporary.exists(), "The confirmed pending state must be consumed"
+    assert _bytes(root / "tree") == candidate
+    status = workspace.get_workspace_status(ctx, request["operation_id"], root)
+    assert status["state"] == pending
+    assert status["state"]["result_id"] == status["result"]["result_id"]
+    assert (
+        workspace.recover_workspace(
+            ctx, request["operation_id"], root, target="candidate"
+        )
+        == recovered
+    )
+    assert (
+        workspace.undo_workspace(ctx, request["operation_id"], root)["status"]
+        == "undone"
+    )
+    assert _bytes(root / "tree") == _bytes(ctx.source_root)
+
+
 def test_tampered_workspace_marker_is_not_replayed(captured, tmp_path):
     ctx, request, _, root, _ = _prepared(captured, tmp_path)
     marker_path = root / ".rentgen-workspace.json"

@@ -50,6 +50,8 @@ project/snapshot, исходный отчёт, время записи и hash `
 ```powershell
 rentgen owner-report-save --registry .\registry.sqlite3 --project <project-id> `
   --store .\state\owner-reports --snapshot <64-hex-snapshot> --report-json .\report.json
+rentgen owner-report-build --registry .\registry.sqlite3 --project <project-id> `
+  --store .\state\owner-reports --snapshot <64-hex-snapshot> --profile C:\Rentgen\observer-profile
 rentgen owner-report-get --registry .\registry.sqlite3 --project <project-id> `
   --store .\state\owner-reports --snapshot <64-hex-snapshot> --report-id <uuid>
 rentgen owner-report-list --registry .\registry.sqlite3 --project <project-id> `
@@ -60,4 +62,8 @@ rentgen owner-report-list --registry .\registry.sqlite3 --project <project-id> `
 затем создаёт store при необходимости. Полученный результат — обычная receipt;
 `owner-report-list` возвращает bounded summary без поля `report`; полную запись
 можно получить отдельной командой по `report-id`. Порядок списка — от новых к
-старым. CLI не запускает анализатор и не отправляет отчёты во внешний канал.
+старым. `owner-report-build` читает durable findings из указанного локального
+observer profile, повторно проверяет права через `Observer.owner_report()` и
+сохраняет новый immutable отчёт; модель, анализатор, 1С, SQL и сеть при этом не
+запускаются. Профиль должен быть абсолютным локальным путём. CLI не отправляет
+отчёты во внешний канал.

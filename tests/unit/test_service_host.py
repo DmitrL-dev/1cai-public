@@ -68,6 +68,22 @@ def test_stop_before_start_cleans_up_without_tick(tmp_path):
     assert cleanup == ["closed"]
 
 
+@pytest.mark.parametrize("notify_unchanged", [True, False])
+def test_host_preserves_scheduler_notification_policy(tmp_path, notify_unchanged):
+    outbox = NotificationOutbox(tmp_path / "outbox.json")
+    scheduler = GitWatcherScheduler(
+        Watcher([{"status": "unchanged"}]),
+        max_cycles=1,
+        outbox=outbox,
+        notify_unchanged=notify_unchanged,
+    )
+    assert host_class()(scheduler).run() == [{"status": "unchanged"}]
+    assert [item["event"] for item in outbox.peek()] == (
+        [{"status": "unchanged"}] if notify_unchanged else []
+    )
+    assert scheduler.notify_unchanged is notify_unchanged
+
+
 def test_stop_interrupts_backoff_and_keeps_scheduler_configuration(tmp_path):
     watcher = Watcher([CoreError("GIT_PROBE_FAILED", "temporary")])
     journal = SchedulerJournal(tmp_path / "scheduler.json")

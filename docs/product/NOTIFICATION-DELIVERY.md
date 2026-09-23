@@ -41,7 +41,12 @@ and non-JSON values, nonfinite numbers and timezone-free timestamps fail closed.
 `rentgen-notification-v1:{namespace}:{notification_id}`. Keep the namespace stable
 across retries and unique across independent queues. When an outbox is deleted
 and recreated with IDs restarting at one, assign a new namespace. The receiver
-must deduplicate the key; the client cannot promise exactly-once delivery.
+must deduplicate the key; the client cannot promise exactly-once delivery. The
+bounded receiver-side contract is documented in
+[`NOTIFICATION-RECEIVER.md`](NOTIFICATION-RECEIVER.md); it stores only a
+canonical payload digest and rejects conflicting key reuse. Its 204 confirms a
+durable digest receipt; the core neither retains a recoverable event nor executes
+downstream business effects.
 
 `DeliveryResult` is immutable and contains only status, validated notification
 ID, idempotency key, fixed diagnostic code and optional HTTP status. It contains
@@ -100,6 +105,9 @@ provide a trusted transport with that guarantee or isolate the worker process.
 Tests inject `sender(request, timeout=...)`, returning a closable response with
 integer `status` and `read(n)`. This transport is a trusted extension point and
 must preserve HTTPS, no redirects, bounded reads and credential handling itself.
-The unit tests make no external requests. Live endpoint acceptance, receiver
-deduplication, DNS policy and production secret provisioning are not asserted
-by these tests.
+The unit tests make no external requests. Receiver core tests cover durable
+deduplication, concurrent retries/conflicts, fail-closed storage and an injected
+outbox round trip that loses the first response after commit, reopens the receiver
+and acknowledges the duplicate on retry. Live endpoint/TLS/DNS acceptance,
+production secret provisioning, hard process termination, power loss and
+exactly-once downstream processing are not asserted by these tests.

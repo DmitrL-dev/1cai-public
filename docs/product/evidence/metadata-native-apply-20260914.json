@@ -1,0 +1,200 @@
+{
+  "schema": 1,
+  "date": "2026-09-14",
+  "timezone": "Asia/Vladivostok",
+  "implementation": "source checkout; local unattested evidence; not an installed wheel",
+  "operation_id": "9ab45f2f-c1be-4b57-b5ea-9e9d398f1c0e",
+  "source_fixture": "packaging/fixtures/edt-metadata-v1/created",
+  "runtime": {
+    "edt": "2026.1.3",
+    "edt_core": "27.0.2.v202609041212",
+    "edt_mcp": "2.16.1",
+    "platform": "Windows",
+    "one_c_platform_check": "not_run",
+    "profile_id": "3793eb256630db189da191959de56157bc90df220f0fd4dc5afe843b1fb6446b",
+    "java_executable_sha256": "e0243f3d4fa7deda17c58eb6ba26f6301b2bd79502fa00e43baa1820480bdd22",
+    "edt_mcp_jar_sha256": "fe3560354580a215b443ced9f79b29422f40bf2a02b8400e7ec9ee84fdcd738a",
+    "owned_runtime_closed": true
+  },
+  "preview_operation_id": "976f3251-43fe-4b7a-bdf8-0a5415fc866c",
+  "preview_id": "31ab5c6d1c57dc3a269f48481732b4717a8140ba20b4c6fefe2643f98a09c8fe",
+  "plan_id": "fb0d7465817d9b4ecd90b56183607dd1251b9ad96ad8a84e9d013a33338debef",
+  "native_preview_id": "ca7b57c5e5ff33f4000ee2a4e883c6c2b28a433886363e152be80a600ba6a836",
+  "apply_status": "applied",
+  "undo_status": "undone",
+  "source_mutated": false,
+  "live_apply_allowed": false,
+  "inventories": {
+    "original": [
+      {
+        "path": "Catalogs/Products.xml",
+        "size": 5716,
+        "sha256": "05ac6812aabbe3be13979ae7f8bc3a3787439a9c9303de5bc3605ec0fd9742be"
+      },
+      {
+        "path": "Catalogs/Products/Forms/ItemForm.xml",
+        "size": 1191,
+        "sha256": "29c4effcc9ddabafc8d319cc89865cffffe3d8758b7428e6414c358b996228e3"
+      },
+      {
+        "path": "Catalogs/Products/Forms/ItemForm/Ext/Form.xml",
+        "size": 2200,
+        "sha256": "cfbce5d6ff9e52c224be01649595063784c263c86e87c9f549b7c0dc73316951"
+      },
+      {
+        "path": "Configuration.xml",
+        "size": 10423,
+        "sha256": "0e2f3a7f0b1f527997364ae63b3246cceff2f3913268872879d7afae9ceddf02"
+      },
+      {
+        "path": "Languages/Russian.xml",
+        "size": 1237,
+        "sha256": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1"
+      }
+    ],
+    "baseline": [
+      {
+        "path": "Catalogs/Products.xml",
+        "size": 5822,
+        "sha256": "d349a5576f12850a655af857b9d91b17d3f0a6dc50933416f31f59de279fb475"
+      },
+      {
+        "path": "Catalogs/Products/Forms/ItemForm.xml",
+        "size": 1191,
+        "sha256": "29c4effcc9ddabafc8d319cc89865cffffe3d8758b7428e6414c358b996228e3"
+      },
+      {
+        "path": "Catalogs/Products/Forms/ItemForm/Ext/Form.xml",
+        "size": 2255,
+        "sha256": "d3c5ec17116a47af556f07e3c6482577ad914ddc7acb42479989e0ea08604055"
+      },
+      {
+        "path": "Configuration.xml",
+        "size": 10423,
+        "sha256": "0e2f3a7f0b1f527997364ae63b3246cceff2f3913268872879d7afae9ceddf02"
+      },
+      {
+        "path": "Languages/Russian.xml",
+        "size": 1237,
+        "sha256": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1"
+      }
+    ],
+    "candidate": [
+      {
+        "path": "Catalogs/Products.xml",
+        "size": 5818,
+        "sha256": "8f1cf1e8d77ffe142a56c6bd4e4252d49e33059d0600aa55f9097a85f0fbfc48"
+      },
+      {
+        "path": "Catalogs/Products/Forms/ItemForm.xml",
+        "size": 1191,
+        "sha256": "29c4effcc9ddabafc8d319cc89865cffffe3d8758b7428e6414c358b996228e3"
+      },
+      {
+        "path": "Catalogs/Products/Forms/ItemForm/Ext/Form.xml",
+        "size": 2251,
+        "sha256": "fd702f5c947c20ee22785bd2ade7710987543610a1e0f35af6078722dfac6507"
+      },
+      {
+        "path": "Configuration.xml",
+        "size": 10423,
+        "sha256": "0e2f3a7f0b1f527997364ae63b3246cceff2f3913268872879d7afae9ceddf02"
+      },
+      {
+        "path": "Languages/Russian.xml",
+        "size": 1237,
+        "sha256": "d1590e911f826ff1a8f4623b087013d43fb54a387ccb12017714235a613ec7c1"
+      }
+    ]
+  },
+  "inventory_sha256": {
+    "original": "e4099571515b28588939bd20df1b29deb39d76dbb16b21b4a8012eaf12de254b",
+    "baseline": "ae2dc0932eef39e0240f02995d9f563f1fd0daef40cbb9d1e7d5849a37cfebe3",
+    "candidate": "8dc3cbb4b4fe91c32543d29125f600565a2ac1052da4173e6b294da7d083cd5c"
+  },
+  "after_undo": {
+    "source_inventory_sha256": "e4099571515b28588939bd20df1b29deb39d76dbb16b21b4a8012eaf12de254b",
+    "owned_tree_inventory_sha256": "e4099571515b28588939bd20df1b29deb39d76dbb16b21b4a8012eaf12de254b",
+    "fixture_inventory_sha256": "e4099571515b28588939bd20df1b29deb39d76dbb16b21b4a8012eaf12de254b",
+    "exact_original_restored": true
+  },
+  "diff_proof": {
+    "normalization": {
+      "sha256": "1a3573825d4902c5ab34c547f30be45d077b4bf7a87351f0e75bbc311fd6b38f",
+      "matches_selected_preview": true,
+      "changed_paths": [
+        "Catalogs/Products.xml",
+        "Catalogs/Products/Forms/ItemForm/Ext/Form.xml"
+      ]
+    },
+    "edit": {
+      "sha256": "ffeb9fba26c9dbdb44fe3697b954101e016f5ed45f34d5d1ecf0e31d03ec4cb9",
+      "matches_selected_preview": true,
+      "changed_paths": [
+        "Catalogs/Products.xml",
+        "Catalogs/Products/Forms/ItemForm/Ext/Form.xml"
+      ]
+    }
+  },
+  "structure": {
+    "baseline": {
+      "catalog_uuid": "fb28b18e-d2a3-4f48-8390-c0d609c9e7c0",
+      "attribute_uuid": "eb298009-8fc5-4a2f-8812-902daeed99df",
+      "attribute": "Article",
+      "string_length": 32,
+      "form_binding": "Объект.Article",
+      "form_uuid": "44821c5c-7eaf-4b40-ba04-dc79e0c71268",
+      "field_id": "7",
+      "main_attribute_id": "1"
+    },
+    "candidate": {
+      "catalog_uuid": "fb28b18e-d2a3-4f48-8390-c0d609c9e7c0",
+      "attribute_uuid": "eb298009-8fc5-4a2f-8812-902daeed99df",
+      "attribute": "SKU",
+      "string_length": 32,
+      "form_binding": "Объект.SKU",
+      "form_uuid": "44821c5c-7eaf-4b40-ba04-dc79e0c71268",
+      "field_id": "7",
+      "main_attribute_id": "1"
+    },
+    "restored": {
+      "catalog_uuid": "fb28b18e-d2a3-4f48-8390-c0d609c9e7c0",
+      "attribute_uuid": "eb298009-8fc5-4a2f-8812-902daeed99df",
+      "attribute": "Article",
+      "string_length": 32,
+      "form_binding": "Объект.Article",
+      "form_uuid": "44821c5c-7eaf-4b40-ba04-dc79e0c71268",
+      "field_id": "7",
+      "main_attribute_id": "1"
+    }
+  },
+  "receipt_sha256": {
+    "native_intent": "bf3ef8f9b7cca878f660866357344aa565fb1b90034c50c2338617b5d4f99430",
+    "native_result": "0092f979151834a6addc6e82bd9f0d670ac144cec9a393c9463485843fe1b1e9",
+    "native_preview": "bd431a92d5aa5c7bd19464cecddfbad0f014217eb77f9069d3b113d9c6efcfbd",
+    "runtime_closed": "b053548c9d2c0c90f04297c6f9ee320f05f1680a5a442933097a901ee6881ba8",
+    "workspace_result": "07ea47d6899fb35995a731e19fd2c1ea14616c430f46396bbc2c6828828639b9",
+    "workspace_undo": "21d532564262e7368735ce3f3d23d93c75baf46167f6e6bb0ff6fdcd90ac354a"
+  },
+  "scope": [
+    "native EDT import/rename/export over exact retained SnapshotRef and preview",
+    "full original/baseline/candidate inventory and both diff equality",
+    "owned file workspace apply and explicit CAS undo"
+  ],
+  "limitations": [
+    "No live source or 1C infobase apply capability",
+    "No 1C platform check or new business-data test in this smoke",
+    "General EDT normalization semantics remain unqualified",
+    "Local hashes are not runtime attestation",
+    "No claim of multi-file atomicity or power-loss durability",
+    "No user configurations were used"
+  ],
+  "post_smoke_hardening": {
+    "pre_workflow_retention_admission": "contract_tests_only",
+    "one_use_admission_handle": "contract_tests_only",
+    "applied_result_receipt_linkage": "contract_tests_and_saved_smoke_readback",
+    "saved_smoke_readback_after_undo": "passed",
+    "exclusive_smoke_rerun": false
+  },
+  "evidence_id": "ce5b1182d8c20b6d05680a62a5e042e32012ab1e9d0ad39e07d92bc0ef89cc37"
+}

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rentgen-core"
-version = "0.1.0.dev8"
+version = "0.1.0.dev9"
 description = "Local 1C snapshots, shared draft history and pinned BSL diagnostics"
 readme = "packaging/core/README.md"
 requires-python = ">=3.11"
@@ -22,6 +22,7 @@ classifiers = [
 rentgen = "rentgen_core.cli:main"
 rentgen-mcp = "rentgen_core.stdio_mcp:main"
 rentgen-observer = "rentgen_core.observer_cli:main"
+rentgen-service = "rentgen_core.service_entry:main"
 
 [project.optional-dependencies]
 mcp = ["mcp==1.30.0"]
@@ -47,6 +48,7 @@ only-include = [
   "go/cmd",
   "go/internal",
   "go/pkg",
+  "requirements-rentgen.txt",
   "requirements-product-build.txt",
   "requirements/locks/product-build-py311-windows.txt",
   "requirements/locks/product-py311-windows.txt",
@@ -78,8 +80,13 @@ only-include = [
   "docs/product/EDT-PROFILES.md",
   "docs/product/EDT-ADAPTER-PLAN.md",
   "docs/product/EDT-EXECUTION.md",
+  "docs/product/evidence/metadata-native-apply-20260914.json",
+  "docs/product/evidence/metadata-native-apply-business-20260915.json",
+  "docs/product/evidence/metadata-live-source-20260915.json",
+  "docs/product/evidence/metadata-live-source-interruption-20260915.json",
   "docs/product/METADATA-PREVIEW.md",
   "docs/product/METADATA-APPLY.md",
+  "docs/product/METADATA-LIVE-APPLY.md",
   "docs/product/METADATA-WORKSPACE.md",
   "docs/product/METADATA-APPLY-GATE.md",
   "docs/product/GIT-FINDINGS.md",
@@ -88,6 +95,7 @@ only-include = [
   "docs/product/GIT-WATCHER.md",
   "docs/product/GIT-SNAPSHOT-EVIDENCE.md",
   "docs/product/NOTIFICATION-DELIVERY.md",
+  "docs/product/NOTIFICATION-RECEIVER.md",
   "docs/product/OWNER-REPORT.md",
   "docs/product/OWNER-REPORT-STORE.md",
   "docs/product/RUNTIME-METRICS.md",
@@ -96,25 +104,38 @@ only-include = [
   "docs/product/SERVICE-INSTALLER.md",
   "docs/product/THREE-WAY-UPDATES.md",
   "docs/product/METADATA-THREE-WAY.md",
+  "docs/product/BSL-THREE-WAY.md",
   "docs/product/METADATA-THREE-WAY-SEMANTICS.md",
   "docs/product/EDT-INVENTORY-IDENTITY.md",
+  "docs/product/EDT-ATTRIBUTE-THREE-WAY.md",
+  "docs/product/EDT-IDENTITY-THREE-WAY.md",
+  "docs/product/CONFIGURATION-COMPATIBILITY.md",
+  "docs/product/EDT-COMMAND-BOUNDARY.md",
+  "docs/product/EDT-FIXTURE-EXECUTOR.md",
+  "docs/product/evidence/edt-metadata-v1.json",
+  "docs/product/evidence/ibcmd-roundtrip-8.3.27.2342-20260914.json",
   "docs/product/COMPETITOR-MATRIX.md",
   "docs/product/AUDIT-20260912.md",
   "docs/product/METADATA-MIGRATION.md",
+  "docs/product/evidence/metadata-migration-v1.json",
   "docs/product/NATIVE-BUSINESS-ROUNDTRIP-20260913.md",
   "docs/product/evidence/native-business-roundtrip-8.3.27.2342-20260913.json",
   "scripts/verification/verify_metadata_migration.py",
   "scripts/verification/verify_edt_metadata_fixture.py",
   "packaging/fixtures/metadata-migration-v1",
   "packaging/fixtures/edt-metadata-v1",
+  "packaging/fixtures/edt-inventory-v1",
+  "packaging/fixtures/runtime-register-v1",
   "docs/product/NATIVE-RESOURCES.md",
   "docs/product/evidence/native-resources.json",
   "docs/product/EDITOR-TESTS.md",
   "docs/product/evidence/tests-editor-0.1.8.json",
   "docs/product/evidence/test-profile-installed.json",
   "docs/product/evidence/yaxunit-25.12-platform.json",
+  "docs/product/evidence/yaxunit-25.12-platform-20260915.json",
   "docs/product/PROPOSAL-CHECK.md",
   "docs/product/PROPOSAL-PLATFORM-CHECK.md",
+  "docs/product/PROPOSAL-LIVE-APPLY.md",
   "docs/product/STATE-MIGRATION.md",
   "docs/product/PROJECT-ACCESS.md",
   "docs/product/SNAPSHOT-METADATA.md",
@@ -126,6 +147,7 @@ only-include = [
   "scripts/verification/verify_proposal_platform_delivery.py",
   "docs/product/PLATFORM-ACCEPTANCE.md",
   "docs/product/evidence/native-platform-8.3.27.2342.json",
+  "docs/product/evidence/native-platform-8.3.27.2342-20260915.json",
 ]
 exclude = ["__pycache__", "*.pyc", "*.pyo"]
 

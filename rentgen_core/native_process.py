@@ -205,9 +205,11 @@ class OwnedJob:
 
 
 class OwnedProcess:
-    """Small poll/wait API; files are supplied by the owner, no shell or pipes."""
+    """Small poll/wait API; stdio handles are supplied by the owner, no shell."""
 
-    def __init__(self, command, executable, stdout, stderr, *, parent_job=None):
+    def __init__(
+        self, command, executable, stdout, stderr, *, parent_job=None, cwd=None
+    ):
         import msvcrt
 
         self.job, self.handle, self.returncode = OwnedJob(), None, None
@@ -266,7 +268,7 @@ class OwnedProcess:
                     True,
                     0x80000 | 0x08000000,
                     None,
-                    None,
+                    str(cwd) if cwd is not None else None,
                     c.byref(startup),
                     c.byref(info),
                 )

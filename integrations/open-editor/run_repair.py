@@ -127,8 +127,9 @@ def validate_profile(config, installed_core, installed_mcp, executable):
     if config.get("schema") != 1 or config.get("core_version") not in {
         "0.1.0.dev7",
         "0.1.0.dev8",
+        "0.1.0.dev9",
     }:
-        raise ValueError("Use a prepared dev7/dev8 profile")
+        raise ValueError("Use a prepared dev7/dev8/dev9 profile")
     if installed_core != config["core_version"] or installed_mcp != "1.30.0":
         raise ValueError(
             "Installed core must match the profile exactly; MCP 1.30.0 required"

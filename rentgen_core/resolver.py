@@ -1,6 +1,7 @@
 """Resolve explicit project scope before any project source IO."""
 
 from dataclasses import dataclass
+from typing import Callable
 from uuid import uuid4
 
 from .context import (
@@ -34,7 +35,8 @@ class ContextResolver:
         selection: Explicit | UseConfiguredDefault,
         snapshot_id: str | None = None,
         *,
-        request_id: str | None = None
+        request_id: str | None = None,
+        authorize_read: Callable[[], None] | None = None,
     ) -> ProjectContext:
         """Use only adapter-authenticated principal and explicit selection DTOs.
 
@@ -68,7 +70,10 @@ class ContextResolver:
         snapshot, sources, graph = None, None, None
         if catalog is not None:
             path = project.state_root / catalog.generation_relpath
-            verify_generation(path, catalog)
+            verification_options = (
+                {} if authorize_read is None else {"authorize_read": authorize_read}
+            )
+            verify_generation(path, catalog, **verification_options)
             if self.graph_reader_factory is None:
                 raise CoreError(
                     "GRAPH_ADAPTER_UNAVAILABLE",

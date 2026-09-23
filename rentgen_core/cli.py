@@ -25,6 +25,35 @@ from .sources import SourceRef
 
 _MAX_JSON_BYTES = 1024 * 1024
 _OWNER_REPORT_OUTPUT_LIMIT = 2 * 1024**2 + 8192
+_METADATA_TREE_LIMITS = {
+    "max_files": 1024,
+    "max_file_bytes": 256 * 1024,
+    "max_total_bytes": 512 * 1024,
+}
+_EDT_ATTRIBUTE_LIMITS = {
+    "max_files": 256,
+    "max_file_bytes": 1024 * 1024,
+    "max_total_bytes": 16 * 1024 * 1024,
+    "max_children": 20_000,
+}
+_EDT_INVENTORY_LIMITS = {
+    "max_xml_bytes": 4 * 1024**2,
+    "max_nodes": 50_000,
+    "max_depth": 64,
+    "max_inventory": 20_000,
+    "max_collection": 200,
+    "max_total_bytes": 64 * 1024**2,
+    "max_asset_bytes": 16 * 1024**2,
+    "max_mdo_files": 2048,
+    "max_identities": 20_000,
+}
+_EDT_IDENTITY_THREE_WAY_LIMITS = {
+    "max_input_bytes": 8 * 1024**2,
+    "max_objects": 20_000,
+    "max_owners": 20_000,
+    "max_layers": 64,
+    "max_rows": 20_000,
+}
 
 
 class _Parser(argparse.ArgumentParser):
@@ -75,6 +104,10 @@ def _parser():
         "proposal-check",
         "proposal-platform-check",
         "proposal-platform-result",
+        "proposal-live-apply",
+        "proposal-live-undo",
+        "proposal-live-status",
+        "proposal-live-recover",
         "test-profile-register",
         "test-profile-list",
         "test-profile-disable",
@@ -82,6 +115,10 @@ def _parser():
         "edt-profile-list",
         "edt-profile-disable",
         "metadata-plan",
+        "metadata-materialize",
+        "edt-attribute-plan",
+        "edt-inventory",
+        "edt-inventory-plan",
         "metadata-preview",
         "metadata-result",
         "metadata-evidence",
@@ -90,6 +127,11 @@ def _parser():
         "metadata-workspace-undo",
         "metadata-workspace-status",
         "metadata-workspace-recover",
+        "metadata-live-apply",
+        "metadata-live-undo",
+        "metadata-live-status",
+        "metadata-live-recover",
+        "native-archive",
         "proposal-test",
         "proposal-test-result",
         "draft-save",
@@ -99,6 +141,7 @@ def _parser():
         "draft-archive",
         "draft-restore",
         "draft-receipt",
+        "owner-report-build",
         "owner-report-save",
         "owner-report-get",
         "owner-report-list",
@@ -107,7 +150,53 @@ def _parser():
         command.add_argument("--registry", required=True, type=Path, action=_Once)
         if name not in ("registry-init", "project-register", "project-list"):
             command.add_argument("--project", required=True, action=_Once)
-        if name.startswith("metadata-"):
+        if name == "metadata-materialize":
+            for label in ("base", "current", "upstream"):
+                command.add_argument(
+                    "--" + label + "-json", type=Path, required=True, action=_Once
+                )
+            for limit, ceiling in _METADATA_TREE_LIMITS.items():
+                command.add_argument(
+                    "--" + limit.replace("_", "-"),
+                    type=int,
+                    default=ceiling,
+                    action=_Once,
+                )
+        elif name == "edt-attribute-plan":
+            for label in ("base", "current", "upstream"):
+                command.add_argument(
+                    "--" + label + "-json", type=Path, required=True, action=_Once
+                )
+            for limit, ceiling in _EDT_ATTRIBUTE_LIMITS.items():
+                command.add_argument(
+                    "--" + limit.replace("_", "-"),
+                    type=int,
+                    default=ceiling,
+                    action=_Once,
+                )
+        elif name == "edt-inventory-plan":
+            for label in ("base", "current", "upstream"):
+                command.add_argument(
+                    "--" + label + "-json", type=Path, required=True, action=_Once
+                )
+            for limit, ceiling in _EDT_IDENTITY_THREE_WAY_LIMITS.items():
+                command.add_argument(
+                    "--" + limit.replace("_", "-"),
+                    type=int,
+                    default=ceiling,
+                    action=_Once,
+                )
+        elif name == "edt-inventory":
+            command.add_argument("--snapshot", required=True, action=_Once)
+            command.add_argument("--layer-id", action=_Once)
+            for limit, ceiling in _EDT_INVENTORY_LIMITS.items():
+                command.add_argument(
+                    "--" + limit.replace("_", "-"),
+                    type=int,
+                    default=ceiling,
+                    action=_Once,
+                )
+        elif name.startswith("metadata-"):
             command.add_argument("--snapshot", required=True, action=_Once)
             if name == "metadata-plan":
                 command.add_argument(
@@ -127,6 +216,10 @@ def _parser():
                 "metadata-workspace-undo",
                 "metadata-workspace-status",
                 "metadata-workspace-recover",
+                "metadata-live-apply",
+                "metadata-live-undo",
+                "metadata-live-status",
+                "metadata-live-recover",
             }:
                 command.add_argument("--operation-id", required=True, action=_Once)
             if name == "metadata-evidence":
@@ -144,6 +237,23 @@ def _parser():
                     required=True,
                     action=_Once,
                 )
+            if name == "metadata-live-recover":
+                command.add_argument(
+                    "--target",
+                    choices=("original",),
+                    required=True,
+                    action=_Once,
+                )
+        elif name == "native-archive":
+            command.add_argument("--snapshot", required=True, action=_Once)
+            command.add_argument("--operation-id", required=True, action=_Once)
+            command.add_argument(
+                "--namespace",
+                choices=("platform-checks", "test-runs", "metadata-runs"),
+                required=True,
+                action=_Once,
+            )
+            command.add_argument("--profile-id", action=_Once)
         elif name == "project-register":
             for option in ("source-root", "state-root"):
                 command.add_argument(
@@ -161,6 +271,20 @@ def _parser():
             command.add_argument("--operation-id", required=True, action=_Once)
         elif name in {"proposal-platform-result", "proposal-test-result"}:
             command.add_argument("--operation-id", required=True, action=_Once)
+        elif name.startswith("proposal-live-"):
+            command.add_argument("--operation-id", required=True, action=_Once)
+            if name == "proposal-live-apply":
+                command.add_argument("--snapshot", required=True, action=_Once)
+                command.add_argument(
+                    "--proposal-json", type=Path, required=True, action=_Once
+                )
+                command.add_argument(
+                    "--expected-head-json", type=Path, required=True, action=_Once
+                )
+            if name == "proposal-live-recover":
+                command.add_argument(
+                    "--target", choices=("original",), required=True, action=_Once
+                )
         elif name in {"test-profile-register", "edt-profile-register"}:
             command.add_argument(
                 "--profile-json", type=Path, required=True, action=_Once
@@ -202,7 +326,12 @@ def _parser():
         elif name.startswith("owner-report-"):
             command.add_argument("--store", type=Path, required=True, action=_Once)
             command.add_argument("--snapshot", required=True, action=_Once)
-            if name == "owner-report-save":
+            if name == "owner-report-build":
+                command.add_argument(
+                    "--profile", type=Path, required=True, action=_Once
+                )
+                command.add_argument("--report-id", action=_Once)
+            elif name == "owner-report-save":
                 command.add_argument(
                     "--report-json", type=Path, required=True, action=_Once
                 )
@@ -535,6 +664,209 @@ def _proposal_input(
     return raw
 
 
+def _metadata_tree(raw, limits):
+    """Decode only bounded canonical base64 bytes; paths are logical locators."""
+    from .source_paths import validate_file_paths
+
+    try:
+        value = _fields(
+            json.loads(
+                raw.decode("utf-8"),
+                object_pairs_hook=_object,
+                parse_constant=_reject_constant,
+            ),
+            ("schema", "encoding", "files"),
+        )
+        if (
+            type(value["schema"]) is not int
+            or value["schema"] != 1
+            or value["encoding"] != "base64"
+            or not isinstance(value["files"], dict)
+        ):
+            raise ValueError
+        files = value["files"]
+        if len(files) > limits["max_files"]:
+            raise CoreError("THREE_WAY_LIMIT", "Metadata tree file limit exceeded")
+        validate_file_paths(files)
+        encoded_limit = 4 * ((limits["max_file_bytes"] + 2) // 3)
+        tree, total = {}, 0
+        for path, encoded in files.items():
+            if not isinstance(encoded, str):
+                raise ValueError
+            if len(encoded) > encoded_limit:
+                raise CoreError("THREE_WAY_LIMIT", "Metadata tree byte limit exceeded")
+            content = base64.b64decode(encoded, validate=True)
+            if base64.b64encode(content).decode("ascii") != encoded:
+                raise ValueError
+            total += len(content)
+            if (
+                len(content) > limits["max_file_bytes"]
+                or total > limits["max_total_bytes"]
+            ):
+                raise CoreError("THREE_WAY_LIMIT", "Metadata tree byte limit exceeded")
+            tree[path] = content
+        return tree
+    except CoreError as exc:
+        if exc.code == "THREE_WAY_LIMIT":
+            raise
+        raise CoreError("INVALID_ARGUMENT", "Metadata tree JSON is invalid") from exc
+    except (UnicodeError, ValueError, RecursionError) as exc:
+        raise CoreError("INVALID_ARGUMENT", "Metadata tree JSON is invalid") from exc
+
+
+def _metadata_materialize_command(args, ctx, permissions):
+    from . import materialize_metadata_three_way
+
+    limits = {name: getattr(args, name) for name in _METADATA_TREE_LIMITS}
+    if any(
+        type(limits[name]) is not int or not 1 <= limits[name] <= ceiling
+        for name, ceiling in _METADATA_TREE_LIMITS.items()
+    ):
+        raise CoreError("THREE_WAY_LIMIT", "Metadata CLI limits are out of bounds")
+    trees = [
+        _metadata_tree(
+            _proposal_input(ctx, path, _MAX_JSON_BYTES, permissions=permissions), limits
+        )
+        for path in (args.base_json, args.current_json, args.upstream_json)
+    ]
+    try:
+        value = materialize_metadata_three_way(*trees, **limits)
+    except CoreError as exc:
+        # Engine diagnostics are deliberately not a payload-bearing CLI surface.
+        raise CoreError(
+            exc.code, "Metadata materialization could not be completed"
+        ) from exc
+    summary = {
+        key: value[key]
+        for key in (
+            "schema",
+            "scope",
+            "status",
+            "base_digest",
+            "current_digest",
+            "upstream_digest",
+            "candidate_digest",
+            "counts",
+            "merged_objects",
+            "merged_objects_truncated",
+        )
+    }
+    for key in ("merged_bsl_scopes", "merged_bsl_scopes_truncated"):
+        if key in value:
+            summary[key] = value[key]
+    return _ProposalCommandResult(summary, ctx, frozenset(permissions))
+
+
+def _edt_attribute_plan_command(args, ctx, permissions):
+    from . import plan_edt_attribute_three_way
+
+    limits = {name: getattr(args, name) for name in _EDT_ATTRIBUTE_LIMITS}
+    if any(
+        type(limits[name]) is not int or not 1 <= limits[name] <= ceiling
+        for name, ceiling in _EDT_ATTRIBUTE_LIMITS.items()
+    ):
+        raise CoreError("THREE_WAY_LIMIT", "EDT attribute CLI limits are out of bounds")
+    trees = [
+        _metadata_tree(
+            _proposal_input(ctx, path, _MAX_JSON_BYTES, permissions=permissions), limits
+        )
+        for path in (args.base_json, args.current_json, args.upstream_json)
+    ]
+    try:
+        value = plan_edt_attribute_three_way(*trees, **limits)
+    except CoreError as exc:
+        # Preserve the engine code without exposing arbitrary source diagnostics.
+        raise CoreError(exc.code, "EDT attribute plan could not be completed") from exc
+    _proposal_permissions(ctx, permissions)
+    return _ProposalCommandResult(value, ctx, frozenset(permissions))
+
+
+def _edt_identity_inventory_json(raw):
+    """Decode one producer inventory object; never unwrap or interpret source trees."""
+    try:
+        value = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=_object,
+            parse_constant=_reject_constant,
+        )
+        if type(value) is not dict:
+            raise ValueError
+        return value
+    except (CoreError, UnicodeError, ValueError, RecursionError) as exc:
+        raise CoreError("INVALID_ARGUMENT", "EDT inventory JSON is invalid") from exc
+
+
+def _edt_identity_three_way_command(args, ctx, permissions):
+    from .edt_identity_three_way import (
+        EDTIdentityThreeWayLimits,
+        plan_edt_identity_three_way,
+    )
+
+    limits = EDTIdentityThreeWayLimits(
+        **{name: getattr(args, name) for name in _EDT_IDENTITY_THREE_WAY_LIMITS}
+    )
+    values = []
+    for path in (args.base_json, args.current_json, args.upstream_json):
+        raw = _proposal_input(
+            ctx, path, limits.max_input_bytes, permissions=permissions
+        )
+        _proposal_permissions(ctx, permissions)
+        value = _edt_identity_inventory_json(raw)
+        _proposal_permissions(ctx, permissions)
+        snapshot = value.get("snapshot")
+        if (
+            type(snapshot) is not dict
+            or type(snapshot.get("project_id")) is not str
+            or snapshot["project_id"].lower() != ctx.project_id
+        ):
+            raise CoreError(
+                "EDT_IDENTITY_PLAN_INVALID", "EDT inventory project is invalid"
+            )
+        values.append(value)
+    try:
+        value = plan_edt_identity_three_way(*values, limits=limits)
+    except CoreError as exc:
+        raise CoreError(exc.code, "EDT identity plan could not be completed") from exc
+    _proposal_permissions(ctx, permissions)
+    return _ProposalCommandResult(
+        value, ctx, frozenset(permissions), output_limit=8 * 1024**2
+    )
+
+
+def _edt_inventory_command(
+    args, runtime, principal, ctx, permissions, *, proposal_scope=None
+):
+    from .edt_inventory import EDTInventoryLimits, edt_metadata_inventory
+
+    limits = EDTInventoryLimits(
+        **{name: getattr(args, name) for name in _EDT_INVENTORY_LIMITS}
+    )
+    _proposal_permissions(ctx, permissions)
+    try:
+        runtime = replace(
+            runtime,
+            graph_reader_factory=runtime.graph_reader_factory or _graph_factory(),
+        )
+        selected = runtime.resolve(
+            principal,
+            args.project,
+            args.snapshot,
+            authorize_read=lambda: _proposal_permissions(ctx, permissions),
+        )
+        if proposal_scope is not None:
+            proposal_scope.context = selected
+        if selected.sources is None:
+            raise CoreError(
+                "SNAPSHOT_REQUIRED", "A published project snapshot is required"
+            )
+        value = edt_metadata_inventory(selected, layer_id=args.layer_id, limits=limits)
+    except CoreError as exc:
+        raise CoreError(exc.code, "EDT inventory could not be completed") from exc
+    return _ProposalCommandResult(
+        value, selected, frozenset(permissions), output_limit=8 * 1024**2
+    )
+
+
 def _owner_report_store(ctx, path):
     """Resolve an owner-report store below the authenticated project state."""
     from .owner_report_store import OwnerReportStore
@@ -557,7 +889,28 @@ def _require_owner_report_snapshot(ctx, snapshot_id, permissions):
         tx.get_snapshot(snapshot_id)
 
 
-def _owner_report_command(args, ctx, permissions):
+def _owner_report_profile(path):
+    try:
+        path = path if isinstance(path, Path) else Path(path)
+        if (
+            not path.is_absolute()
+            or ".." in path.parts
+            or path.drive.startswith("\\\\")
+            or any(ord(char) < 32 for char in str(path))
+        ):
+            raise ValueError
+    except (OSError, TypeError, ValueError):
+        raise CoreError(
+            "OBSERVER_PROFILE_INVALID", "Absolute local observer profile is required"
+        ) from None
+    if not path.is_dir() or path.is_symlink():
+        raise CoreError(
+            "OBSERVER_PROFILE_NOT_FOUND", "Observer profile directory is unavailable"
+        )
+    return path
+
+
+def _owner_report_command(args, ctx, permissions, *, runtime=None):
     from .edt_profiles import parse_json
 
     _require_owner_report_snapshot(ctx, args.snapshot, permissions)
@@ -566,7 +919,21 @@ def _owner_report_command(args, ctx, permissions):
     def authorize():
         _proposal_permissions(ctx, permissions)
 
-    if args.command == "owner-report-save":
+    if args.command == "owner-report-build":
+        if runtime is None:
+            raise CoreError("OBSERVER_PROFILE_INVALID", "Observer runtime is required")
+        from .observer import Observer
+
+        observer = Observer(
+            runtime,
+            ctx.principal,
+            ctx.project_id,
+            _owner_report_profile(args.profile),
+        )
+        report = observer.owner_report(args.snapshot)
+        store.initialize()
+        value = store.save(report, report_id=args.report_id, authorize=authorize)
+    elif args.command == "owner-report-save":
         raw = _proposal_input(
             ctx, args.report_json, 2 * 1024**2, permissions=permissions
         )
@@ -613,7 +980,8 @@ def _owner_report_command(args, ctx, permissions):
         ]
     output_limit = (
         _OWNER_REPORT_OUTPUT_LIMIT
-        if args.command in {"owner-report-save", "owner-report-get"}
+        if args.command
+        in {"owner-report-build", "owner-report-save", "owner-report-get"}
         else 2 * 1024**2
     )
     return _ProposalCommandResult(value, ctx, frozenset(permissions), output_limit)
@@ -736,6 +1104,49 @@ def _proposal_command(args, runtime, state_ctx):
         raise
 
 
+def _proposal_live_command(args, runtime, state_ctx):
+    """Apply or reconcile one direct BSL proposal on the registered source tree."""
+    from . import proposal_live_apply
+
+    permissions = frozenset({"project:read", "source:edit", "analysis:run"})
+    try:
+        _proposal_permissions(state_ctx, permissions)
+        if args.command == "proposal-live-apply":
+            runtime = replace(
+                runtime,
+                graph_reader_factory=runtime.graph_reader_factory or _graph_factory(),
+            )
+            selected = runtime.resolve(state_ctx.principal, args.project, args.snapshot)
+            raw = _proposal_input(
+                state_ctx,
+                args.proposal_json,
+                proposal_live_apply.LIMITS.max_canonical_bytes,
+                permissions=permissions,
+            )
+            from .proposals import parse_proposal
+
+            proposal = parse_proposal(selected, raw, limits=proposal_live_apply.LIMITS)
+            value = proposal_live_apply.apply_live(
+                selected,
+                args.operation_id,
+                proposal,
+                expected_head=_expected_head(args.expected_head_json),
+            )
+            return _ProposalCommandResult(value, state_ctx, permissions)
+        if args.command == "proposal-live-undo":
+            value = proposal_live_apply.undo_live(state_ctx, args.operation_id)
+        elif args.command == "proposal-live-status":
+            value = proposal_live_apply.get_live_status(state_ctx, args.operation_id)
+        else:
+            value = proposal_live_apply.recover_live(
+                state_ctx, args.operation_id, target=args.target
+            )
+        return _ProposalCommandResult(value, state_ctx, permissions)
+    except BaseException:
+        _proposal_permissions(state_ctx, permissions)
+        raise
+
+
 def _execute(args, *, proposal_scope=None):
     principal = current_windows_principal()
     if args.command == "registry-init":
@@ -756,9 +1167,16 @@ def _execute(args, *, proposal_scope=None):
         return runtime.head(principal, args.project)
     permissions = (
         {"project:read", "analysis:run"}
-        if args.command == "owner-report-save"
+        if args.command
+        in {"metadata-materialize", "owner-report-build", "owner-report-save"}
         else {"project:read"}
-        if args.command in {"owner-report-get", "owner-report-list"}
+        if args.command
+        in {
+            "owner-report-get",
+            "owner-report-list",
+            "edt-inventory",
+            "edt-inventory-plan",
+        }
         else {"project:admin"}
         if args.command
         in {
@@ -774,6 +1192,7 @@ def _execute(args, *, proposal_scope=None):
             "test-profile-disable",
             "edt-profile-register",
             "edt-profile-disable",
+            "native-archive",
         }
         else {"project:read", "source:edit", "analysis:run"}
         if args.command
@@ -786,6 +1205,7 @@ def _execute(args, *, proposal_scope=None):
             "test-profile-list",
             "edt-profile-list",
             "metadata-plan",
+            "edt-attribute-plan",
             "metadata-preview",
             "metadata-result",
             "metadata-evidence",
@@ -794,6 +1214,14 @@ def _execute(args, *, proposal_scope=None):
             "metadata-workspace-undo",
             "metadata-workspace-status",
             "metadata-workspace-recover",
+            "metadata-live-apply",
+            "metadata-live-undo",
+            "metadata-live-status",
+            "metadata-live-recover",
+            "proposal-live-apply",
+            "proposal-live-undo",
+            "proposal-live-status",
+            "proposal-live-recover",
         }
         else {"project:read", "source:edit"}
         if args.command
@@ -811,17 +1239,68 @@ def _execute(args, *, proposal_scope=None):
         else set()
     )
     ctx = runtime.state_context(principal, args.project, permissions=permissions)
+    if args.command == "edt-inventory-plan":
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        return _edt_identity_three_way_command(args, ctx, permissions)
+    if args.command == "edt-inventory":
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        return _edt_inventory_command(
+            args, runtime, principal, ctx, permissions, proposal_scope=proposal_scope
+        )
+    if args.command == "edt-attribute-plan":
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        return _edt_attribute_plan_command(args, ctx, permissions)
+    if args.command == "metadata-materialize":
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        return _metadata_materialize_command(args, ctx, permissions)
+    if args.command == "native-archive":
+        from .native_resources import archive_native_run
+
+        if proposal_scope is not None:
+            # Keep the authenticated, snapshot-free context available so an
+            # error during snapshot re-resolution is redacted by the final
+            # permission check in main._emit_error.
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        runtime = replace(
+            runtime,
+            graph_reader_factory=runtime.graph_reader_factory or _graph_factory(),
+        )
+        ctx = runtime.resolve(principal, args.project, args.snapshot)
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        value = archive_native_run(
+            ctx,
+            args.operation_id,
+            namespace=args.namespace,
+            profile_id=args.profile_id,
+        )
+        return _ProposalCommandResult(value, ctx, frozenset(permissions))
     if args.command.startswith("owner-report-"):
         if proposal_scope is not None:
             proposal_scope.context = ctx
             proposal_scope.permissions = frozenset(permissions)
-        return _owner_report_command(args, ctx, frozenset(permissions))
+        return _owner_report_command(args, ctx, frozenset(permissions), runtime=runtime)
+    if args.command.startswith("proposal-live-"):
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        return _proposal_live_command(args, runtime, ctx)
     if args.command.startswith("metadata-"):
         import asyncio
         from .edt_profiles import parse_json
         from .metadata_plans import create_plan
         from .metadata_runs import attach_business_evidence, create_preview, get_preview
-        from . import metadata_workspace
+        from . import metadata_live_apply, metadata_workspace
 
         if proposal_scope is not None:
             proposal_scope.context = ctx
@@ -867,6 +1346,16 @@ def _execute(args, *, proposal_scope=None):
         elif args.command == "metadata-workspace-recover":
             value = metadata_workspace.recover_workspace(
                 selected, args.operation_id, args.workspace, target=args.target
+            )
+        elif args.command == "metadata-live-apply":
+            value = metadata_live_apply.apply_live(selected, args.operation_id)
+        elif args.command == "metadata-live-undo":
+            value = metadata_live_apply.undo_live(selected, args.operation_id)
+        elif args.command == "metadata-live-status":
+            value = metadata_live_apply.get_live_status(selected, args.operation_id)
+        elif args.command == "metadata-live-recover":
+            value = metadata_live_apply.recover_live(
+                selected, args.operation_id, target=args.target
             )
         else:
             value = get_preview(selected, args.operation_id)

@@ -1,0 +1,11 @@
+{
+  "version": "0.1.9",
+  "sha256": "e9292b7f6dd80be6513c38dad7bef9185323790861b81ba7875b65aeee351241",
+  "size_bytes": 207938,
+  "required_core": "0.1.0.dev9",
+  "stage": "prerelease",
+  "platform_1c_tested": false,
+  "tested_1c_version": null,
+  "test_scope": "Node contract tests and deterministic VSIX build; no new editor-to-platform acceptance",
+  "spectorn_integrated": false
+}
