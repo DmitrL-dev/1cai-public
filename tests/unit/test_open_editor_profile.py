@@ -45,15 +45,16 @@ def test_ambiguous_editor_cli_is_not_guessed(inputs):
     assert not inputs["output"].exists()
 
 
-def test_dev8_profile_records_actual_core_version(inputs, monkeypatch):
+@pytest.mark.parametrize("version", ["0.1.0.dev8", "0.1.0.dev9"])
+def test_profile_records_actual_core_version(inputs, monkeypatch, version):
     monkeypatch.setattr(
         profile,
         "probe",
-        lambda *_: ({"project_id": inputs["project_id"]}, "0.1.0.dev8"),
+        lambda *_: ({"project_id": inputs["project_id"]}, version),
     )
     profile.prepare(**inputs)
     value = json.loads((inputs["output"] / "profile.json").read_text("utf-8"))
-    assert value["core_version"] == "0.1.0.dev8"
+    assert value["core_version"] == version
     manifest = (
         Path(__file__).resolve().parents[2] / "integrations/vscode-rentgen/package.json"
     )

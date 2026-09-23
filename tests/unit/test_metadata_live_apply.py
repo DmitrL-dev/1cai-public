@@ -74,6 +74,21 @@ def test_live_apply_changes_only_candidate_paths_and_undo_restores_source(
     assert metadata_live_apply.undo_live(ctx, request["operation_id"]) == undo
 
 
+def test_cross_volume_source_refuses_before_live_journal(captured, monkeypatch):
+    ctx, request, _, _ = _request(captured)
+    before = _bytes(ctx.source_root)
+    monkeypatch.setattr(
+        metadata_live_apply, "_same_volume", lambda _: False, raising=False
+    )
+
+    with pytest.raises(api.CoreError) as error:
+        metadata_live_apply.apply_live(ctx, request["operation_id"])
+
+    assert error.value.code == "METADATA_LIVE_APPLY_UNSUPPORTED"
+    assert not metadata_live_apply.journal_path(ctx, request["operation_id"]).exists()
+    assert _bytes(ctx.source_root) == before
+
+
 def test_candidate_delta_accepts_edt_normalization_before_the_same_edit(
     captured, monkeypatch
 ):
@@ -178,6 +193,306 @@ def test_interrupted_live_apply_is_unknown_until_explicit_recovery(
     assert recovered["status"] == "recovered"
     assert (
         metadata_live_apply.get_live_status(ctx, request["operation_id"])["status"]
+        == "recovered"
+    )
+    assert _bytes(ctx.source_root) == before
+
+
+def test_interrupted_undo_is_unknown_until_explicit_recovery(captured, monkeypatch):
+    ctx, request, _, _ = _request(captured)
+    before = _bytes(ctx.source_root)
+    metadata_live_apply.apply_live(ctx, request["operation_id"])
+    original_replace = metadata_live_apply.os.replace
+
+    def interrupt(source, target):
+        if Path(target).is_relative_to(ctx.source_root):
+            original_replace(source, target)
+            raise OSError("simulated interruption after undo replace")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(metadata_live_apply.os, "replace", interrupt)
+    with pytest.raises(OSError):
+        metadata_live_apply.undo_live(ctx, request["operation_id"])
+    monkeypatch.setattr(metadata_live_apply.os, "replace", original_replace)
+
+    status = metadata_live_apply.get_live_status(ctx, request["operation_id"])
+    assert status["status"] == "OUTCOME_UNKNOWN"
+    assert status["phase"] == "undoing"
+    assert (
+        metadata_live_apply.recover_live(
+            ctx, request["operation_id"], target="original"
+        )["status"]
+        == "recovered"
+    )
+    assert _bytes(ctx.source_root) == before
+
+
+def test_recover_can_resume_after_its_own_interruption(captured, monkeypatch):
+    ctx, request, _, _ = _request(captured)
+    before = _bytes(ctx.source_root)
+    metadata_live_apply.apply_live(ctx, request["operation_id"])
+    original_replace = metadata_live_apply.os.replace
+
+    def interrupt(source, target):
+        if Path(target).is_relative_to(ctx.source_root):
+            original_replace(source, target)
+            raise OSError("simulated recovery interruption")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(metadata_live_apply.os, "replace", interrupt)
+    with pytest.raises(OSError):
+        metadata_live_apply.recover_live(
+            ctx, request["operation_id"], target="original"
+        )
+    monkeypatch.setattr(metadata_live_apply.os, "replace", original_replace)
+
+    assert (
+        metadata_live_apply.get_live_status(ctx, request["operation_id"])["status"]
+        == "OUTCOME_UNKNOWN"
+    )
+    assert (
+        metadata_live_apply.recover_live(
+            ctx, request["operation_id"], target="original"
+        )["status"]
+        == "recovered"
+    )
+    assert _bytes(ctx.source_root) == before
+
+
+@pytest.mark.parametrize("origin", ["missing", "prepared", "undoing"])
+def test_recover_reconciles_pending_undoing_from_each_reachable_origin(
+    captured, monkeypatch, origin
+):
+    ctx, request, _, _ = _request(captured)
+    before = _bytes(ctx.source_root)
+    operation = request["operation_id"]
+    journal = metadata_live_apply.journal_path(ctx, operation)
+    original_replace = metadata_live_apply.os.replace
+
+    if origin == "missing":
+        original_write = metadata_live_apply.write_record
+
+        def interrupt_write(path, value):
+            if Path(path) == journal / "state.json":
+                raise OSError("before initial state")
+            return original_write(path, value)
+
+        monkeypatch.setattr(metadata_live_apply, "write_record", interrupt_write)
+    elif origin == "prepared":
+        original_record_replace = metadata_live_apply._replace_record
+
+        def interrupt_record_replace(path, value):
+            if Path(path) == journal / "state.json" and value["phase"] == "applying":
+                raise OSError("before applying state")
+            return original_record_replace(path, value)
+
+        monkeypatch.setattr(
+            metadata_live_apply, "_replace_record", interrupt_record_replace
+        )
+
+    if origin != "undoing":
+        with pytest.raises(OSError):
+            metadata_live_apply.apply_live(ctx, operation)
+        monkeypatch.undo()
+    else:
+        metadata_live_apply.apply_live(ctx, operation)
+
+        def interrupt_source(source, target):
+            if Path(target).is_relative_to(ctx.source_root):
+                original_replace(source, target)
+                raise OSError("after source restore")
+            return original_replace(source, target)
+
+        monkeypatch.setattr(metadata_live_apply.os, "replace", interrupt_source)
+        with pytest.raises(OSError):
+            metadata_live_apply.recover_live(ctx, operation, target="original")
+        monkeypatch.setattr(metadata_live_apply.os, "replace", original_replace)
+
+    def interrupt_state(source, target):
+        if (
+            Path(target) == journal / "state.json"
+            and json.loads(Path(source).read_text("utf-8"))["phase"] == "undoing"
+        ):
+            raise OSError("before undoing state")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(metadata_live_apply.os, "replace", interrupt_state)
+    with pytest.raises(OSError):
+        metadata_live_apply.recover_live(ctx, operation, target="original")
+    monkeypatch.setattr(metadata_live_apply.os, "replace", original_replace)
+    assert (journal / "state.json.tmp").exists()
+    assert (
+        metadata_live_apply.recover_live(ctx, operation, target="original")["status"]
+        == "recovered"
+    )
+    assert _bytes(ctx.source_root) == before
+
+
+def test_recover_rebuilds_short_interrupted_stage_from_backup(captured, monkeypatch):
+    ctx, request, _, _ = _request(captured)
+    before = _bytes(ctx.source_root)
+    metadata_live_apply.apply_live(ctx, request["operation_id"])
+    original_write = metadata_live_apply._write_bytes
+    interrupted = False
+
+    def partial_write(path, raw):
+        nonlocal interrupted
+        if "recovery-stage" in Path(path).parts and not interrupted:
+            interrupted = True
+            Path(path).parent.mkdir(parents=True, exist_ok=True)
+            Path(path).write_bytes(raw[: len(raw) // 2])
+            raise OSError("simulated interrupted stage write")
+        return original_write(path, raw)
+
+    monkeypatch.setattr(metadata_live_apply, "_write_bytes", partial_write)
+    with pytest.raises(OSError):
+        metadata_live_apply.recover_live(
+            ctx, request["operation_id"], target="original"
+        )
+    monkeypatch.setattr(metadata_live_apply, "_write_bytes", original_write)
+
+    assert (
+        metadata_live_apply.recover_live(
+            ctx, request["operation_id"], target="original"
+        )["status"]
+        == "recovered"
+    )
+    assert _bytes(ctx.source_root) == before
+
+
+def test_recover_rejects_changed_same_size_stage(captured):
+    ctx, request, _, _ = _request(captured)
+    metadata_live_apply.apply_live(ctx, request["operation_id"])
+    after = _bytes(ctx.source_root)
+    stage = (
+        metadata_live_apply.journal_path(ctx, request["operation_id"])
+        / "recovery-stage"
+    )
+    path = stage / "Catalogs/Products.xml"
+    path.parent.mkdir(parents=True)
+    original = (stage.parent / "backup/Catalogs/Products.xml").read_bytes()
+    path.write_bytes(b"x" * len(original))
+
+    with pytest.raises(api.CoreError) as error:
+        metadata_live_apply.recover_live(
+            ctx, request["operation_id"], target="original"
+        )
+
+    assert error.value.code == "METADATA_LIVE_RECOVERY_REQUIRED"
+    assert path.read_bytes() == b"x" * len(original)
+    assert _bytes(ctx.source_root) == after
+
+
+def test_recover_finalizes_written_result_after_terminal_state_interruption(
+    captured, monkeypatch
+):
+    ctx, request, _, _ = _request(captured)
+    before = _bytes(ctx.source_root)
+    metadata_live_apply.apply_live(ctx, request["operation_id"])
+    journal = metadata_live_apply.journal_path(ctx, request["operation_id"])
+    original_replace = metadata_live_apply.os.replace
+
+    def interrupt(source, target):
+        if (
+            Path(target) == journal / "state.json"
+            and json.loads((journal / "result.json").read_text("utf-8"))["status"]
+            == "recovered"
+        ):
+            raise OSError("simulated terminal state interruption")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(metadata_live_apply.os, "replace", interrupt)
+    with pytest.raises(OSError):
+        metadata_live_apply.recover_live(
+            ctx, request["operation_id"], target="original"
+        )
+    monkeypatch.setattr(metadata_live_apply.os, "replace", original_replace)
+
+    assert _bytes(ctx.source_root) == before
+    assert (
+        metadata_live_apply.get_live_status(ctx, request["operation_id"])["status"]
+        == "OUTCOME_UNKNOWN"
+    )
+    assert (
+        metadata_live_apply.recover_live(
+            ctx, request["operation_id"], target="original"
+        )["status"]
+        == "recovered"
+    )
+    assert (
+        metadata_live_apply.get_live_status(ctx, request["operation_id"])["status"]
+        == "recovered"
+    )
+
+
+def test_recover_promotes_sealed_undo_result_left_in_temporary_file(
+    captured, monkeypatch
+):
+    ctx, request, _, _ = _request(captured)
+    before = _bytes(ctx.source_root)
+    metadata_live_apply.apply_live(ctx, request["operation_id"])
+    journal = metadata_live_apply.journal_path(ctx, request["operation_id"])
+    original_replace = metadata_live_apply.os.replace
+
+    def interrupt(source, target):
+        if Path(target) == journal / "result.json":
+            raise OSError("simulated receipt publication interruption")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(metadata_live_apply.os, "replace", interrupt)
+    with pytest.raises(OSError):
+        metadata_live_apply.undo_live(ctx, request["operation_id"])
+    monkeypatch.setattr(metadata_live_apply.os, "replace", original_replace)
+
+    assert _bytes(ctx.source_root) == before
+    assert (journal / "result.json.tmp").exists()
+    assert (
+        metadata_live_apply.get_live_status(ctx, request["operation_id"])["status"]
+        == "OUTCOME_UNKNOWN"
+    )
+    assert (
+        metadata_live_apply.recover_live(
+            ctx, request["operation_id"], target="original"
+        )["status"]
+        == "undone"
+    )
+    assert (
+        metadata_live_apply.get_live_status(ctx, request["operation_id"])["status"]
+        == "undone"
+    )
+
+
+@pytest.mark.parametrize("phase", ["applying", "complete"])
+def test_recover_promotes_sealed_apply_state_left_in_temporary_file(
+    captured, monkeypatch, phase
+):
+    ctx, request, _, _ = _request(captured)
+    before = _bytes(ctx.source_root)
+    journal = metadata_live_apply.journal_path(ctx, request["operation_id"])
+    original_replace = metadata_live_apply.os.replace
+
+    def interrupt(source, target):
+        if (
+            Path(target) == journal / "state.json"
+            and json.loads(Path(source).read_text("utf-8"))["phase"] == phase
+        ):
+            raise OSError("simulated state publication interruption")
+        return original_replace(source, target)
+
+    monkeypatch.setattr(metadata_live_apply.os, "replace", interrupt)
+    with pytest.raises(OSError):
+        metadata_live_apply.apply_live(ctx, request["operation_id"])
+    monkeypatch.setattr(metadata_live_apply.os, "replace", original_replace)
+
+    assert (journal / "state.json.tmp").exists()
+    assert (
+        metadata_live_apply.get_live_status(ctx, request["operation_id"])["status"]
+        == "OUTCOME_UNKNOWN"
+    )
+    assert (
+        metadata_live_apply.recover_live(
+            ctx, request["operation_id"], target="original"
+        )["status"]
         == "recovered"
     )
     assert _bytes(ctx.source_root) == before

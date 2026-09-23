@@ -70,7 +70,11 @@ def probe(python, registry, project_id):
         "'python':list(sys.version_info[:2]),"
         "'installed':Path(rentgen_core.__file__).resolve().is_relative_to(Path(sys.prefix).resolve())}))",
     )
-    if runtime.get("core") not in {"0.1.0.dev7", "0.1.0.dev8"} or runtime != {
+    if runtime.get("core") not in {
+        "0.1.0.dev7",
+        "0.1.0.dev8",
+        "0.1.0.dev9",
+    } or runtime != {
         "core": runtime["core"],
         "mcp": "1.30.0",
         "platform": "win32",
@@ -78,7 +82,7 @@ def probe(python, registry, project_id):
         "installed": True,
     }:
         raise ValueError(
-            "Use installed core dev7/dev8 with MCP 1.30.0 in Windows Python 3.11"
+            "Use installed core dev7/dev8/dev9 with MCP 1.30.0 in Windows Python 3.11"
         )
     head = run(
         "-m",

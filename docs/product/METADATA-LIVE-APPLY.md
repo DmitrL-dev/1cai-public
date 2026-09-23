@@ -28,6 +28,10 @@ rentgen metadata-live-recover --registry ... --project ... --snapshot ... --oper
 не может добавлять пути, а каждая изменённая строка должна быть `modified` в
 preview edit. Нормализация, выраженная удалением файлов из EDT candidate,
 сохраняется как исходный файл, поэтому сторонние модули не пропадают.
+Source-root и state-root должны находиться на одном файловом томе: иначе
+`os.replace` между journal stage и исходником не даёт атомарной замены.
+Такое размещение отклоняется до создания live journal кодом
+`METADATA_LIVE_APPLY_UNSUPPORTED`.
 
 Внешний state-root содержит
 `metadata-live-apply/<operation-id>/intent.json`, `backup/`, `stage/`,
@@ -41,6 +45,16 @@ Backup и candidate fsync-ятся до публикации, файлы зам�
 между заменами оставляет статус `OUTCOME_UNKNOWN`; повторный apply запрещён.
 `recover_live(..., target="original")` восстанавливает только запечатанный
 backup и после полного re-read выдаёт `recovered`.
+Прерванные Undo и Recover тоже дают `OUTCOME_UNKNOWN`: прежний `applied`
+result больше не считается завершением при фазе `undoing`. Повторный Recover
+проверяет содержимое своего staging-каталога, восстанавливает уже перенесённые
+файлы из backup и продолжает. Короткий файл после прерванной записи
+пересоздаётся только из проверенного backup; неожиданный файл или изменённый
+staged-файл той же длины блокирует операцию для разбора владельцем.
+Корректные временные записи `state.json.tmp` и `result.json.tmp` после
+прерывания сверяются с операцией, result ID и ожидаемым inventory перед
+завершением Recover. Повреждённые или конфликтующие записи не применяются
+автоматически.
 
 Статусы `applied`, `undone` и `recovered` имеют `live_source_written=true`.
 Повреждённый или перепривязанный journal блокирует чтение кодом

@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="940" viewBox="0 0 1700 940" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">Как работает Рентген — шесть шагов</title>
+  <desc id="diagram-desc">Открываем копию конфигурации 1С, сохраняем снимок, изучаем проект, готовим черновик, проверяем правку и решаем, применять ли её. Основные данные и история остаются локально.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-25%" width="140%" height="155%">
+      <feDropShadow dx="0" dy="10" stdDeviation="13" flood-color="#183153" flood-opacity="0.10"/>
+    </filter>
+    <marker id="arrow" markerUnits="userSpaceOnUse" markerWidth="20" markerHeight="20" refX="16" refY="10" orient="auto">
+      <path d="M3 3 L17 10 L3 17" fill="none" stroke="#8b9eb6" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1700" height="940" fill="#f3f7fc"/>
+  <path d="M0 0 H1700 V11 H0Z" fill="#3c6cf0"/>
+  <g font-family="Segoe UI,Arial,sans-serif">
+    <text x="79" y="90" fill="#142742" font-size="64" font-weight="800">Как работает Рентген</text>
+    <text x="82" y="142" fill="#50647e" font-size="29">От выгрузки 1С до вашего решения о правке — шаг за шагом</text>
+    <rect x="1270" y="54" width="352" height="58" rx="29" fill="#e4edff"/>
+    <circle cx="1304" cy="83" r="12" fill="#3c6cf0"/>
+    <text x="1330" y="92" fill="#2852b0" font-size="22" font-weight="700">Под вашим контролем</text>
+  </g>
+
+  <!-- The wide gutters and visible arrows preserve reading order at GitHub's README width. -->
+  <g fill="none" stroke="#8b9eb6" stroke-width="7" stroke-linecap="round" marker-end="url(#arrow)">
+    <path d="M560 348 H588"/>
+    <path d="M1090 348 H1118"/>
+    <path d="M1643 481 V535"/>
+    <path d="M1120 688 H1092"/>
+    <path d="M590 688 H562"/>
+  </g>
+
+  <!-- Step 1: source export -->
+  <g filter="url(#shadow)"><rect x="80" y="215" width="480" height="266" rx="31" fill="#fff5e9" stroke="#ffd7ae" stroke-width="2"/></g>
+  <rect x="80" y="215" width="480" height="13" rx="6" fill="#f27b39"/>
+  <circle cx="137" cy="277" r="34" fill="#f27b39"/>
+  <text x="137" y="288" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="800">1</text>
+  <g transform="translate(450 227)" fill="none" stroke="#db6b2d" stroke-width="5" stroke-linejoin="round">
+    <path d="M3 20 H24 L34 31 H82 V83 H3 Z"/>
+    <path d="M3 31 H82"/>
+    <path d="M24 47 H60 M24 61 H68" stroke-linecap="round"/>
+  </g>
+  <g font-family="Segoe UI,Arial,sans-serif">
+    <text x="115" y="352" fill="#5b2f18" font-size="36" font-weight="800">Открываем выгрузку 1С</text>
+    <text x="116" y="409" fill="#6f594a" font-size="25">Работаем с копией файлов.</text>
+    <text x="116" y="443" fill="#6f594a" font-size="25">Рабочая база не меняется.</text>
+  </g>
+
+  <!-- Step 2: retained snapshot -->
+  <g filter="url(#shadow)"><rect x="610" y="215" width="480" height="266" rx="31" fill="#eaf8f7" stroke="#b9e8df" stroke-width="2"/></g>
+  <rect x="610" y="215" width="480" height="13" rx="6" fill="#0aa895"/>
+  <circle cx="667" cy="277" r="34" fill="#0aa895"/>
+  <text x="667" y="288" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="800">2</text>
+  <g transform="translate(989 227)" fill="none" stroke="#078d7f" stroke-width="5" stroke-linejoin="round">
+    <rect x="4" y="18" width="74" height="56" rx="7"/>
+    <path d="M15 8 H68 M15 84 H68 M20 34 H62 M20 48 H50 M20 61 H57" stroke-linecap="round"/>
+  </g>
+  <g font-family="Segoe UI,Arial,sans-serif">
+    <text x="645" y="352" fill="#0b504b" font-size="36" font-weight="800">Сохраняем снимок</text>
+    <text x="646" y="409" fill="#4d706d" font-size="25">Рентген запоминает файлы,</text>
+    <text x="646" y="443" fill="#4d706d" font-size="25">объекты и их связи.</text>
+  </g>
+
+  <!-- Step 3: exploration through local interfaces -->
+  <g filter="url(#shadow)"><rect x="1140" y="215" width="480" height="266" rx="31" fill="#ecf0ff" stroke="#c9d5ff" stroke-width="2"/></g>
+  <rect x="1140" y="215" width="480" height="13" rx="6" fill="#5a6de6"/>
+  <circle cx="1197" cy="277" r="34" fill="#5a6de6"/>
+  <text x="1197" y="288" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="800">3</text>
+  <g transform="translate(1510 227)" fill="none" stroke="#5064ce" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="2" y="10" width="82" height="57" rx="6"/>
+    <path d="M26 82 H59 M43 68 V82 M22 34 L32 44 L22 54 M48 54 H64"/>
+  </g>
+  <g font-family="Segoe UI,Arial,sans-serif">
+    <text x="1175" y="352" fill="#27377f" font-size="36" font-weight="800">Изучаем проект</text>
+    <text x="1176" y="409" fill="#5b648c" font-size="25">Видим файлы и связи</text>
+    <text x="1176" y="443" fill="#5b648c" font-size="25">в привычном редакторе.</text>
+  </g>
+
+  <!-- Step 4: versioned proposal -->
+  <g filter="url(#shadow)"><rect x="1140" y="555" width="480" height="266" rx="31" fill="#f4edff" stroke="#decafb" stroke-width="2"/></g>
+  <rect x="1140" y="555" width="480" height="13" rx="6" fill="#9363d8"/>
+  <circle cx="1197" cy="617" r="34" fill="#9363d8"/>
+  <text x="1197" y="628" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="800">4</text>
+  <g transform="translate(1515 585)" fill="none" stroke="#8552c3" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 75 L23 71 L77 17 L65 5 L11 59 Z M53 17 L65 29 M7 82 H82"/>
+    <path d="M22 17 L22 3 M15 10 H29"/>
+  </g>
+  <g font-family="Segoe UI,Arial,sans-serif">
+    <text x="1175" y="692" fill="#56317f" font-size="36" font-weight="800">Готовим черновик</text>
+    <text x="1176" y="747" fill="#705e88" font-size="25">Пишем сами или с моделью.</text>
+    <text x="1176" y="781" fill="#705e88" font-size="25">История версий сохраняется.</text>
+  </g>
+
+  <!-- Step 5: checks -->
+  <g filter="url(#shadow)"><rect x="610" y="555" width="480" height="266" rx="31" fill="#eaf5ff" stroke="#bfddf7" stroke-width="2"/></g>
+  <rect x="610" y="555" width="480" height="13" rx="6" fill="#2c91d5"/>
+  <circle cx="667" cy="617" r="34" fill="#2c91d5"/>
+  <text x="667" y="628" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="800">5</text>
+  <g transform="translate(994 588)" fill="none" stroke="#287eaf" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="7" y="5" width="72" height="77" rx="7"/>
+    <path d="M22 27 L29 34 L40 20 M49 27 H64 M22 53 L29 60 L40 46 M49 53 H64"/>
+  </g>
+  <g font-family="Segoe UI,Arial,sans-serif">
+    <text x="645" y="692" fill="#174e75" font-size="36" font-weight="800">Проверяем правку</text>
+    <text x="646" y="747" fill="#53738a" font-size="25">Смотрим отличия, проверяем код;</text>
+    <text x="646" y="781" fill="#53738a" font-size="25">при настройке — 1С и тесты.</text>
+  </g>
+
+  <!-- Step 6: explicit human decision -->
+  <g filter="url(#shadow)"><rect x="80" y="555" width="480" height="266" rx="31" fill="#eaf8ed" stroke="#bfe6c9" stroke-width="2"/></g>
+  <rect x="80" y="555" width="480" height="13" rx="6" fill="#32a568"/>
+  <circle cx="137" cy="617" r="34" fill="#32a568"/>
+  <text x="137" y="628" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="800">6</text>
+  <g transform="translate(447 588)" fill="none" stroke="#278c56" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M42 4 L73 17 V45 C73 63 60 76 42 84 C24 76 11 63 11 45 V17 Z"/>
+    <path d="M26 44 L37 55 L59 32"/>
+  </g>
+  <g font-family="Segoe UI,Arial,sans-serif">
+    <text x="115" y="692" fill="#225a3b" font-size="36" font-weight="800">Решаете вы</text>
+    <text x="116" y="747" fill="#55745f" font-size="25">Принимаете правку</text>
+    <text x="116" y="781" fill="#55745f" font-size="25">или оставляете всё как было.</text>
+  </g>
+
+  <rect x="80" y="856" width="1540" height="57" rx="28" fill="#dfe9f6"/>
+  <g fill="#344c69" font-family="Segoe UI,Arial,sans-serif" font-size="23" font-weight="700">
+    <circle cx="125" cy="884" r="7" fill="#3c6cf0"/><text x="146" y="893">Локальные снимки</text>
+    <circle cx="575" cy="884" r="7" fill="#9363d8"/><text x="596" y="893">История каждого черновика</text>
+    <circle cx="1160" cy="884" r="7" fill="#32a568"/><text x="1181" y="893">Применение по явной команде</text>
+  </g>
+</svg>

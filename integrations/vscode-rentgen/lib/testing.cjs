@@ -11,7 +11,7 @@ async function read(file){
 async function write(file,value,max){const bytes=Buffer.from(JSON.stringify(value));if(bytes.length>max)throw new Error('TEST_INPUT_LIMIT');const handle=await fs.open(file+'.pending','wx');try{await handle.writeFile(bytes);await handle.sync();}finally{await handle.close();}await fs.rename(file+'.pending',file);}
 function createTestService({root,config,client,trusted=()=>true,cancel=()=>{}}){
  config=profileConfig(config);const folder=path.join(root,'test-runs');let busy=false,disposed=false,cancelled=false;
- function check(){if(disposed||!trusted())throw new Error('TRUST_REQUIRED');if(config.core_version!=='0.1.0.dev8')throw new Error('TEST_REQUIRES_DEV8');}
+ function check(){if(disposed||!trusted())throw new Error('TRUST_REQUIRED');if(!['0.1.0.dev8','0.1.0.dev9'].includes(config.core_version))throw new Error('TEST_REQUIRES_DEV8');}
  async function request(id){
   if(!uuid.test(id))throw new Error('INVALID_OPERATION_ID');await directory(folder);await directory(path.join(folder,id));const r=await read(path.join(folder,id,'request.json'));
   if(r.id!==id||r.receipt?.project_id!==config.project_id||!uuid.test(r.receipt.draft_id)||!Number.isSafeInteger(r.receipt.revision)||r.receipt.revision<1||typeof r.created_at!=='string'||!Number.isFinite(Date.parse(r.created_at)))throw new Error('TEST_REQUEST_INVALID');

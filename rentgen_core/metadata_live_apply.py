@@ -15,6 +15,7 @@ from pathlib import Path
 from . import metadata_apply as preflight
 from . import metadata_runs
 from ._windows_source_tree import pinned_directory, read_retained
+from ._live_recovery_stage import prepare_recovery_stage
 from .edt_inventory import exported_inventory
 from .edt_profiles import parse_json
 from .edt_execution import write_record
@@ -283,6 +284,19 @@ def _source_rows(ctx):
     return exported_inventory(ctx.source_root, authorize=lambda: _check(ctx))
 
 
+def _same_volume(ctx):
+    try:
+        source = ctx.source_root.stat().st_dev
+        state = ctx.state.path.parent.stat().st_dev
+        return source == state and (
+            os.name != "nt"
+            or os.path.normcase(ctx.source_root.drive)
+            == os.path.normcase(ctx.state.path.parent.drive)
+        )
+    except OSError as exc:
+        raise CoreError(RECOVERY, "Live source volume cannot be verified") from exc
+
+
 def _write_bytes(path, raw):
     _require(len(raw) <= MAX_FILE_BYTES, RECOVERY, "Live source file exceeds limits")
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -294,12 +308,15 @@ def _write_bytes(path, raw):
 
 def _replace_record(path, value):
     temporary = Path(path).with_name(Path(path).name + ".tmp")
-    _require(
-        not temporary.exists(),
-        RECOVERY,
-        "Live receipt replacement has unresolved staging",
-    )
-    write_record(temporary, value)
+    if temporary.exists() or temporary.is_symlink():
+        key = "state_id" if Path(path).name == "state.json" else "result_id"
+        _require(
+            _read(temporary, key) == value,
+            RECOVERY,
+            "Live receipt replacement has conflicting staging",
+        )
+    else:
+        write_record(temporary, value)
     os.replace(temporary, path)
 
 
@@ -385,10 +402,11 @@ def _read_intent(journal):
     return value, before, after
 
 
-def _read_state(journal):
-    if not (journal / "state.json").exists():
+def _read_state(journal, name="state.json"):
+    path = journal / name
+    if not path.exists() and not path.is_symlink():
         return None
-    value = _read(journal / "state.json", "state_id")
+    value = _read(path, "state_id")
     _require(
         set(value) >= {"schema", "phase", "state_id"}
         and value["schema"] == SCHEMA
@@ -400,10 +418,11 @@ def _read_state(journal):
     return value
 
 
-def _result(journal):
-    if not (journal / "result.json").exists():
+def _result(journal, name="result.json"):
+    path = journal / name
+    if not path.exists() and not path.is_symlink():
         return None
-    value = _read(journal / "result.json", "result_id")
+    value = _read(path, "result_id")
     _require(
         set(value)
         == {
@@ -473,7 +492,24 @@ def _status_locked(ctx, operation_id):
             RECOVERY,
             "Live operation belongs to another project",
         )
-        return result
+        if state is not None:
+            terminal_phase = {
+                "applied": "complete",
+                "undone": "undone",
+                "recovered": "recovered",
+            }[result["status"]]
+            if state["phase"] == terminal_phase:
+                _require(
+                    state.get("result_id") == result["result_id"],
+                    RECOVERY,
+                    "Live terminal state differs from result",
+                )
+                return result
+            _require(
+                state["phase"] not in {"complete", "undone", "recovered"},
+                RECOVERY,
+                "Live terminal state differs from result",
+            )
     return _seal(
         {
             "schema": SCHEMA,
@@ -489,6 +525,118 @@ def _status_locked(ctx, operation_id):
         },
         "result_id",
     )
+
+
+def _finish_terminal(ctx, journal, operation_id, before, result):
+    _require(
+        _source_rows(ctx) == list(before.values()),
+        "METADATA_LIVE_UNDO_CONFLICT",
+        "Live source differs from the terminal receipt",
+    )
+    state = _read_state(journal)
+    _require(
+        state is not None and state["phase"] in {"undoing", result["status"]},
+        RECOVERY,
+        "Live terminal state differs from result",
+    )
+    if state["phase"] == result["status"]:
+        _require(
+            state.get("result_id") == result["result_id"],
+            RECOVERY,
+            "Live terminal state differs from result",
+        )
+        return result
+    _replace_record(
+        journal / "state.json",
+        _state(
+            journal,
+            result["status"],
+            operation_id=operation_id,
+            result_id=result["result_id"],
+        ),
+    )
+    return result
+
+
+def _promote_pending_terminal(
+    ctx, journal, operation_id, intent, before, after, result
+):
+    pending = _result(journal, "result.json.tmp")
+    if pending is None:
+        return None
+    _validate_result_binding(pending, intent, before, after)
+    state = _read_state(journal)
+    _require(
+        pending["status"] in {"undone", "recovered"}
+        and (result is None or result["status"] == "applied")
+        and state is not None
+        and state["phase"] == "undoing",
+        RECOVERY,
+        "Live pending result conflicts with journal state",
+    )
+    _require(
+        _source_rows(ctx) == list(before.values()),
+        "METADATA_LIVE_UNDO_CONFLICT",
+        "Live source differs from the pending terminal receipt",
+    )
+    os.replace(journal / "result.json.tmp", journal / "result.json")
+    return _finish_terminal(ctx, journal, operation_id, before, pending)
+
+
+def _promote_pending_state(ctx, journal, operation_id, before, after, result):
+    pending = _read_state(journal, "state.json.tmp")
+    if pending is None:
+        return
+    state = _read_state(journal)
+    _require(
+        pending.get("operation_id") == operation_id
+        and (state is None or state.get("operation_id") == operation_id),
+        RECOVERY,
+        "Live pending state is bound to another operation",
+    )
+    phase = pending["phase"]
+    expected_keys = {"schema", "phase", "operation_id", "state_id"}
+    if phase in {"complete", "undone", "recovered"}:
+        expected_keys.add("result_id")
+    _require(set(pending) == expected_keys, RECOVERY, "Live pending state is malformed")
+    if phase == "applying":
+        valid = state is not None and state["phase"] == "prepared" and result is None
+    elif phase == "complete":
+        valid = (
+            state is not None
+            and state["phase"] == "applying"
+            and result is not None
+            and result["status"] == "applied"
+            and pending["result_id"] == result["result_id"]
+            and _source_rows(ctx) == list(after.values())
+        )
+    elif phase == "undoing":
+        origin = state["phase"] if state is not None else "missing"
+        valid = (
+            origin in {"missing", "prepared", "applying", "complete", "undoing"}
+            and (result is None or result["status"] == "applied")
+            and (origin not in {"missing", "prepared"} or result is None)
+            and (
+                origin != "complete"
+                or (
+                    result is not None and state.get("result_id") == result["result_id"]
+                )
+            )
+            and (origin != "undoing" or pending == state)
+        )
+    elif phase in {"undone", "recovered"}:
+        valid = (
+            state is not None
+            and state["phase"] == "undoing"
+            and result is not None
+            and result["status"] == phase
+            and pending["result_id"] == result["result_id"]
+            and _source_rows(ctx) == list(before.values())
+        )
+    else:
+        valid = False
+    _require(valid, RECOVERY, "Live pending state conflicts with journal")
+    os.replace(journal / "state.json.tmp", journal / "state.json")
 
 
 def get_live_status(ctx, operation_id):
@@ -539,6 +687,11 @@ def apply_live(ctx, operation_id):
             raise CoreError(
                 RECOVERY, "Existing live operation must be reconciled explicitly"
             )
+        _require(
+            _same_volume(ctx),
+            "METADATA_LIVE_APPLY_UNSUPPORTED",
+            "Live source and journal must be on one volume",
+        )
         intent, preview, original, candidate, changed = _candidate_delta(
             ctx, operation_id
         )
@@ -656,13 +809,14 @@ def undo_live(ctx, operation_id):
     with _project_lock(ctx):
         _check(ctx)
         journal, intent, before, after, result = _load_for_mutation(ctx, operation_id)
+        _promote_pending_state(ctx, journal, operation_id, before, after, result)
+        pending = _promote_pending_terminal(
+            ctx, journal, operation_id, intent, before, after, result
+        )
+        if pending is not None:
+            return pending
         if result is not None and result["status"] in {"undone", "recovered"}:
-            _require(
-                _source_rows(ctx) == list(before.values()),
-                "METADATA_LIVE_UNDO_CONFLICT",
-                "Live source differs from the terminal undo receipt",
-            )
-            return result
+            return _finish_terminal(ctx, journal, operation_id, before, result)
         _require(
             result is not None and result["status"] == "applied",
             RECOVERY,
@@ -673,6 +827,11 @@ def undo_live(ctx, operation_id):
             actual == list(after.values()),
             "METADATA_LIVE_UNDO_CONFLICT",
             "Live source changed after apply",
+        )
+        _require(
+            _same_volume(ctx),
+            "METADATA_LIVE_APPLY_UNSUPPORTED",
+            "Live source and journal must be on one volume",
         )
         stage = journal / "undo-stage"
         _require(not stage.exists(), RECOVERY, "Undo staging already exists")
@@ -744,13 +903,14 @@ def recover_live(ctx, operation_id, *, target):
     with _project_lock(ctx):
         _check(ctx)
         journal, intent, before, after, result = _load_for_mutation(ctx, operation_id)
+        _promote_pending_state(ctx, journal, operation_id, before, after, result)
+        pending = _promote_pending_terminal(
+            ctx, journal, operation_id, intent, before, after, result
+        )
+        if pending is not None:
+            return pending
         if result is not None and result["status"] in {"undone", "recovered"}:
-            _require(
-                _source_rows(ctx) == list(before.values()),
-                "METADATA_LIVE_UNDO_CONFLICT",
-                "Live source differs from the terminal recovery receipt",
-            )
-            return result
+            return _finish_terminal(ctx, journal, operation_id, before, result)
         _require(
             result is None or result["status"] == "applied",
             RECOVERY,
@@ -771,11 +931,19 @@ def recover_live(ctx, operation_id, *, target):
                 "METADATA_LIVE_UNDO_CONFLICT",
                 "Live source contains foreign bytes",
             )
-        stage = journal / "recovery-stage"
-        _require(not stage.exists(), RECOVERY, "Recovery staging already exists")
-        stage.mkdir()
-        for path in intent["changed_paths"]:
-            _copy_row(journal / "backup", stage, before[path])
+        _require(
+            _same_volume(ctx),
+            "METADATA_LIVE_APPLY_UNSUPPORTED",
+            "Live source and journal must be on one volume",
+        )
+        stage = prepare_recovery_stage(
+            journal,
+            intent["changed_paths"],
+            before,
+            copy_row=_copy_row,
+            max_bytes=MAX_FILE_BYTES,
+            code=RECOVERY,
+        )
         _replace_record(
             journal / "state.json",
             _state(journal, "undoing", operation_id=operation_id),
