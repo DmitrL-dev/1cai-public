@@ -8,9 +8,31 @@
 синтетический EDT read-only contract от исторических native экспериментов;
 добавление corpus не квалифицирует типовые `.cf/.cfe` и live apply.
 
-## Выпуск 23 сентября 2026 — core dev9 и Companion 0.1.9
+## Выпуск 23 сентября 2026 — core dev10 и Companion 0.1.10
 
-Текущая пара раннего доступа: core `0.1.0.dev9` и Companion `0.1.9`.
+Текущая пара раннего доступа: [core `0.1.0.dev10`](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev10)
+и [Companion `0.1.10`](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.10).
+[Манифест core](../../releases/core/0.1.0.dev10/manifest.json) привязывает
+ZIP с SHA256 `11d5f8e850eec13d9a67c9cd1985db212a076e882b8794cb790fb7ac2dbee4e3`
+к исходному коммиту `ef0501b` и успешным [push](https://github.com/DmitrL-dev/1cai-public/actions/runs/35827291776)
+и [PR](https://github.com/DmitrL-dev/1cai-public/actions/runs/35827295021)
+прогонам Product CI. В обоих JUnit — 2327 Python-тестов без ошибок и пропусков;
+Node и Go, воспроизводимая сборка, офлайн-установка, snapshot comparison и
+observer прошли. Независимая проверка ZIP на фиксированном томе сверила 40
+файлов и открыла 32 MCP-инструмента. Wheel из ZIP установлен отдельно и прошёл
+пять локальных TLS-тестов. VSIX размером 208263 байта совпал с зафиксированным
+SHA256 `b136bc63c63130d61709724f7e52904eb549120016372caee7df330f93193f25`.
+
+Dev10 добавляет ASGI-границу `POST /notifications` к durable digest-приёмнику.
+Локальная отправка через TLS проверена с Uvicorn `0.52.4` и
+`httptools==0.8.0`; другой HTTP-парсер требует собственной wire-проверки.
+Публичный адрес, DNS, сертификаты, секреты, Windows-служба, восстановимое
+событие и бизнес-обработка ровно один раз не приняты. Выпуск не разрешает
+production deployment и не квалифицирует типовые конфигурации или живую ИБ.
+
+## Предыдущий выпуск 23 сентября 2026 — core dev9 и Companion 0.1.9
+
+Предыдущая пара раннего доступа: core `0.1.0.dev9` и Companion `0.1.9`.
 [Манифест core](../../releases/core/0.1.0.dev9/manifest.json) привязывает
 архив, wheel и sdist к точному коммиту `d0a86f6e` и успешному
 [Product CI](https://github.com/DmitrL-dev/1cai-public/actions/runs/35812232162).
@@ -37,9 +59,9 @@ Companion 0.1.9 добавляет профиль dev9; новая
 артефакт релиза, установленную версию, платформу и 11 нативных шагов. Это
 один синтетический модуль; матрица типовых конфигураций и живая ИБ не приняты.
 
-## Кандидат core dev10 / Companion 0.1.10 — локальный HTTPS-приём уведомлений
+## Контракт core dev10 — локальный HTTPS-приём уведомлений
 
-В development-ветке `NotificationReceiverASGI` предоставляет точный маршрут
+В опубликованном core dev10 `NotificationReceiverASGI` предоставляет точный маршрут
 `POST /notifications` поверх существующего SQLite-приёмника. До записи
 проверяются переданные ASGI заголовки, `Content-Length`, лимит и завершение тела,
 HTTPS-схема и успешный lifespan startup. Проверенный host закрепляет
@@ -48,9 +70,9 @@ Uvicorn/httptools и отклоняет неоднозначные заголо�
 уведомление действующим `WebhookAdapter`, проверяет сертификат, отказ обычного
 HTTP и повтор после открытия базы заново. Принятие 204 означает сохранённую
 квитанцию с хэшем, а не обработанное бизнес-событие. Публичный адрес,
-сертификаты, секреты и Windows-служба требуют отдельной приёмки. Этот код пока
-не входит в опубликованный dev9; публикация dev10 требует собственного CI,
-проверенного офлайн-комплекта и отдельного GitHub Release.
+сертификаты, секреты и Windows-служба требуют отдельной приёмки. Dev10 имеет
+собственный CI, проверенный офлайн-комплект и отдельный GitHub Release;
+предыдущий dev9 не содержит ASGI-границу.
 
 ## Дополнение к кандидату 15 сентября 2026 — receiver core
 
@@ -222,6 +244,8 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 
 | Компонент | Подтверждено | Ограничение |
 | --- | --- | --- |
+| Core 0.1.0.dev10 | Всё принятое в dev9; ASGI-приём `POST /notifications`, durable digest-квитанция, повтор и конфликт, локальная TLS-проверка установленного wheel | Требует отдельно настроенного Uvicorn/httptools host; публичный HTTPS/DNS/SCM deployment и бизнес-обработка не приняты |
+| Companion 0.1.10 | Побайтно воспроизводимый VSIX, профиль для dev10, сохранение ранее поддержанных сценариев редактора | Требует нового доверенного профиля; новый editor-to-platform прогон dev10 не выполнен |
 | Core 0.1.0.dev9 | Отдельная установка, снимки, исходники, граф, права, черновики, MCP, BSL; ограниченные live writers и нативная проверка BSL apply/undo на собственном синтетическом проекте | Windows x64 / Python 3.11; типовые конфигурации и живая ИБ не приняты |
 | Companion 0.1.9 | Сборка VSIX с фиксированным SHA256, просмотр и сравнение, локальная правка, чтение квитанций | Требует доверенного отдельного профиля |
 | Локальная модель | Один искусственный сценарий Qwen3.5:9b с независимой проверкой BSL | Не доказывает качество на произвольных задачах |
@@ -230,7 +254,7 @@ YAxUnit 25.12 подтвердил fail/pass одного синтетическ
 | Прямое изменение метаданных | EDT preview Article → SKU, два diff, проверка UUID/формы, сохранность трёх записей при миграции/возврате; owned `ibcmd` create/import/export round-trip с structural evidence; preflight и workspace writer с проверкой inventory, backup, re-read, undo conflict, привязанными receipts, legacy policy и явным recovery; native business roundtrip и product apply/undo receipt подтверждены для отдельной принадлежащей копии; bounded live Designer XML apply/undo на зарегистрированном дереве подтверждён отдельным smoke; direct BSL proposal writer добавлен для одного существующего файла с journal/CAS/recovery и тестами | Обновление живой ИБ через EDT/1С, внешний concurrent CAS, произвольные `.cf/.cfe`, расширения, формы/СКД и матрица типовых конфигураций не приняты |
 | Обновления конфигураций | Path-bytes и UUID-aware Designer XML three-way plan с bounded хэшами, явными конфликтами и evidence по прямым свойствам (`same_change`/`disjoint_changes`/`overlap_conflict`); для квалифицированного `disjoint_changes` прямых `Properties` доступен in-memory candidate с сохранением namespace/QName и digest; для BSL есть bounded composite merge с owner/path binding; для выбранных EDT Catalog `.mdo` есть read-only child-owner evidence и fail-closed transfer/type checks, а EDT identity plan сравнивает partial UUID/owner/layer evidence | Расширения, полный BSL/формы/СКД round-trip, полноценная схема Designer, типовые конфигурации, тестовая база, backup/rollback, native validity и запись three-way candidate не приняты |
 | Проверка предложения платформой | В dev8: установленный CLI проверил корректное/ошибочное BSL-предложение на сохранённой конфигурации; в исходной ветке после dev8 compile/YAxUnit API используют bounded native admission/retention ([границы](NATIVE-RESOURCES.md)) | Один Designer XML слой; компиляция без бизнес-тестов и применения |
-| Observer | Опрос выгрузки, journal/recovery и durable findings; schema 2/3 composition root связывает GitWatcherScheduler, read-only BSL Git adapter, owner-report store и atomic local outbox с bounded cooperative stop; schema 3 добавляет trusted snapshot capture, ancestry/race/revocation gates и receipt reuse; per-commit snapshot binding, bounded Git/snapshot source evidence, read-only BSL-LS adapter, bounded SARIF subset, native ServiceMain/SCM boundary proof, явный SCM installer plan и receiver-side SQLite idempotency/conflict contract | Нет live SCM deployment/daemon acceptance, live HTTPS receiver/TLS/DNS acceptance, полного Git tree/temporal evidence, producer-specific Sonar/Vanessa/YAxUnit execution и общей приёмки O1 |
+| Observer | Опрос выгрузки, journal/recovery и durable findings; schema 2/3 composition root связывает GitWatcherScheduler, read-only BSL Git adapter, owner-report store и atomic local outbox с bounded cooperative stop; schema 3 добавляет trusted snapshot capture, ancestry/race/revocation gates и receipt reuse; per-commit snapshot binding, bounded Git/snapshot source evidence, read-only BSL-LS adapter, bounded SARIF subset, native ServiceMain/SCM boundary proof, явный SCM installer plan и receiver-side SQLite idempotency/conflict contract | Нет live SCM deployment/daemon acceptance, public HTTPS/DNS host acceptance (local TLS receiver dev10 checked separately), полного Git tree/temporal evidence, producer-specific Sonar/Vanessa/YAxUnit execution и общей приёмки O1 |
 | Бизнес-отчёты | Bounded owner-report schema с quality/runtime provenance, durable immutable receipts и fail-closed incomplete/not_available статусами; quality не публикуется без явной binding; `owner-report-build` собирает отчёт из durable observer findings; runtime loader проверяет период и freshness; onec-register-export-v1 adapter и frozen retained-register producer связывают rows↔metrics, canonical source digest, период и expected metric set | Live 1С producer, независимая методика O2 и commit↔snapshot/runtime evidence не приняты; числовые бизнес-метрики не объявляются достоверными только по offline fixture |
 | Spectorn в адаптере | Не подключён | Защита трафика этого сценария не подтверждена |
 

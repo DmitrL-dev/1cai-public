@@ -18,13 +18,13 @@
 модели и сторонние инструменты распространяются на своих условиях.
 
 > **Ранний доступ — проверенные компоненты, продукт ещё развивается.**
-> Текущий профиль: Windows x64, Python 3.11; core `0.1.0.dev9`, companion `0.1.9`.
+> Текущий профиль: Windows x64, Python 3.11; [core `0.1.0.dev10`](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev10), [Companion `0.1.10`](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.10).
 > На 1С 8.3.27.2342 проверены синтетические сценарии компиляции и тестирования.
 > Отдельно подтверждены запись, чтение, переименование Article → SKU и удаление
 > данных в принадлежащей синтетической базе ([evidence](docs/product/NATIVE-BUSINESS-ROUNDTRIP-20260913.md)).
 > Приёмка на типовых конфигурациях и применение изменений ещё впереди.
 
-В dev8 и dev9 доступны
+Начиная с dev8 доступны
 [сравнение сохранённых снимков](docs/product/SNAPSHOT-DIFF.md) и
 [локальный observer выгрузки](docs/product/OBSERVER.md): захват при изменении,
 сохранённые отчёты и восстановление после сбоя без запросов к LLM.
@@ -32,7 +32,7 @@
 на отдельной базе из сохранённой выгрузки.
 Из редактора можно запустить [BSL-проверку](docs/product/EDITOR-BSL-CHECK.md),
 проверку компилятором и [тесты сохранённой версии](docs/product/EDITOR-TESTS.md),
-а затем восстановить отчёт без повторного запуска. Устанавливайте dev9
+а затем восстановить отчёт без повторного запуска. Устанавливайте dev10
 в отдельное окружение по инструкции ниже.
 
 ### Что можно сделать сейчас
@@ -51,11 +51,13 @@
 | Архивировать native-run | Явный admin-only CLI/MCP logical archive с проверенным audit, сохранением evidence и UUID; слот retained освобождается логически, дисковое место не удаляется |
 | Получать отчёты владельца | MCP/CLI чтение запечатанных owner reports по точному проекту и snapshot; список ограничен, путь к хранилищу не задаётся клиентом |
 | Следить за выгрузкой | Сравнение снимков и observer с сохранёнными отчётами без обращений к модели |
+| Принять уведомление локально | [HTTPS/ASGI-приёмник](docs/product/NOTIFICATION-RECEIVER.md) dev10 принимает `POST /notifications`, сохраняет digest-квитанцию и безопасно отвечает на повтор; проверен на loopback TLS с закреплённым Uvicorn/httptools. Публичная служба не развёрнута. |
 
-Таблица описывает кандидат core-v0.1.0-dev9. Архивный core-v0.1.0-dev8
-не содержит workspace writer, EDT planner и новых native adapters.
+Таблица описывает опубликованный core-v0.1.0-dev10. Предыдущий dev9 сохраняет
+перечисленные сценарии, но не содержит новую ASGI-границу. Архивный dev8 не
+содержит workspace writer, EDT planner и новых native adapters.
 
-В dev9 доступен [план и preview правки метаданных через EDT](docs/product/METADATA-PREVIEW.md):
+Начиная с dev9 доступен [план и preview правки метаданных через EDT](docs/product/METADATA-PREVIEW.md):
 переименование реквизита по сохранённому снимку, проверка UUID и два отдельных diff.
 Также доступны отдельные библиотеки [подготовки apply](docs/product/METADATA-APPLY.md),
 [принадлежащей workspace-копии](docs/product/METADATA-WORKSPACE.md),
@@ -71,10 +73,11 @@ fail-closed. Live SCM/1С deployment в этот режим не входит.
 События watcher можно явно отправить из durable outbox через
 [HTTPS webhook](docs/product/NOTIFICATION-DELIVERY.md) с ограничением размера,
 allowlist получателей и подтверждением только после HTTP 2xx.
-В ветке разработки [receiver core](docs/product/NOTIFICATION-RECEIVER.md)
-проверяет bearer/idempotency и сохраняет durable digest receipt в SQLite:
-повтор даёт duplicate, изменённый envelope под тем же ключом — conflict.
-Live HTTPS/TLS/DNS host и downstream обработка ещё не приняты.
+В dev10 [receiver core](docs/product/NOTIFICATION-RECEIVER.md) проверяет
+bearer/idempotency и сохраняет durable digest receipt в SQLite: повтор того
+же уведомления не создаёт вторую запись, а изменённый envelope под тем же
+ключом даёт conflict. ASGI-граница проверена с локальным TLS-хостом
+Uvicorn/httptools; публичный HTTPS/DNS-хост и downstream обработка ещё не приняты.
 Формат [owner report](docs/product/OWNER-REPORT.md) связывает quality findings и
 подтверждённые runtime-метрики; generic и register adapters читают retained
 evidence с no-follow проверкой, а без подтверждённого runtime adapter
@@ -164,7 +167,7 @@ namespace/QName-фрагменты.
 | [Owner report](docs/product/OWNER-REPORT.md) | Источники quality и runtime-метрик с fail-closed статусами и durable receipts |
 | [Owner report store](docs/product/OWNER-REPORT-STORE.md) | Иммутабельные receipts и локальный CLI сохранения/чтения по snapshot |
 | [Runtime metrics](docs/product/RUNTIME-METRICS.md) | Bounded JSON-export adapter с двойной авторизацией и точной привязкой к snapshot |
-| [Notification receiver](docs/product/NOTIFICATION-RECEIVER.md) | Durable digest receipts, bearer check и conflict-safe deduplication для outbox; live HTTPS и downstream обработка ещё не приняты |
+| [Notification receiver](docs/product/NOTIFICATION-RECEIVER.md) | Durable digest receipts, bearer check и conflict-safe deduplication для outbox; в dev10 локальный HTTPS/ASGI-путь проверен с Uvicorn/httptools, публичный host и downstream обработка не приняты |
 | [Service host](docs/product/SERVICE-HOST.md) | Native ServiceMain boundary для Observer и bounded foreground Git host с cooperative stop и fail-closed lifecycle; live SCM deployment ещё не принят |
 | [Three-way updates](docs/product/THREE-WAY-UPDATES.md) | Plan и безопасный in-memory candidate для base/current/upstream по хэшу |
 | [UUID-aware updates](docs/product/METADATA-THREE-WAY.md) | Консервативное сопоставление объектов Designer XML по типу и UUID |
