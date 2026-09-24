@@ -309,7 +309,8 @@
     },
     "trial_42": {
       "relative_parent": "profile/.bsl-language-server/cache",
-      "child_previously_delete_verified": true,
+      "matching_relative_path_previously_delete_verified": true,
+    "postdelete_inventory_identity_compared_to_original": false,
       "first_inventory_count": 1,
       "second_retained_inventory_count": 0,
       "fresh_handle_inventory_count": 0,
