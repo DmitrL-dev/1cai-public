@@ -67,10 +67,30 @@ Windows SCM при этом не использовался.
 Следующий [локальный нативный прогон GitAuditWorker](SERVICE-GIT-NATIVE-DEV11.md)
 с настоящим BSL-LS подтвердил `analyzed`/`unchanged` и два finding на новом
 коммите с пустым обработчиком. Одновременно первый цикл на новых каталогах
-runtime отказал с `BSL_INPUT_CHANGED` без успешного owner report; пауза 5 секунд
-не устранила отказ. [Ограниченная квитанция](evidence/service-git-native-dev11-20260924.json)
+runtime отказал с `BSL_INPUT_CHANGED` без успешного owner report; паузы 5 и
+30 секунд на отдельных свежих runtime не устранили отказ. Позднейшие
+контрольные вызовы самого native-адаптера после новых установок, включая серию
+3/3 первых успешных анализов, не воспроизвели его. Они не заменяют первый цикл
+GitAuditWorker и не устанавливают причину расхождения. [Ограниченная квитанция](evidence/service-git-native-dev11-20260924.json)
 и [issue #23](https://github.com/DmitrL-dev/1cai-public/issues/23) фиксируют
-положительный путь и незакрытую приёмку свежей установки.
+обе стороны наблюдения и незакрытую приёмку свежей установки.
+
+Отдельный [нативный прогон schema 3](SERVICE-GIT-SCHEMA3-NATIVE-DEV11.md)
+на уже использованном runtime подтвердил автономный захват нового snapshot
+после Git-коммита, `git_source_verified` owner report и второй цикл без новой
+записи outbox. Это один синтетический модуль в console mode; холодный runtime
+и Windows SCM он не квалифицирует. [Квитанция schema 3](evidence/service-git-schema3-native-dev11-20260924.json)
+связывает установленный dev11 с commit, snapshot и исходным модулем.
+
+Базовый публичный `main` перед этой синхронизацией checkpoint —
+[`325e9892350ac5ae0b1ccf9dee4f16b80edfd715`](https://github.com/DmitrL-dev/1cai-public/commit/325e9892350ac5ae0b1ccf9dee4f16b80edfd715).
+[Postmerge Windows CI](https://github.com/DmitrL-dev/1cai-public/actions/runs/36005364585)
+завершился `success`: JUnit artifact `10811459491`, ZIP SHA256
+`8531d38f0dd7d09cdcb902a9462c738c3c279cccf475f775b3d482f3a96e1bcc`
+сверен с digest GitHub, 2331 тест, 0 failures/errors/skipped. Редкий timeout
+одного теста на более раннем commit остаётся открытым в
+[issue #25](https://github.com/DmitrL-dev/1cai-public/issues/25); последующие
+зелёные прогоны не доказывают отсутствия этой нестабильности.
 
 Типовые `.cf/.cfe`, расширения, формы/СКД, живая рабочая ИБ, внешний
 конкурентный writer, публичный HTTPS/DNS и служба Windows остаются вне
