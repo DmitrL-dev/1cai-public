@@ -31,7 +31,12 @@ Java/BSL-LS, модели и платформа 1С в комплект не в�
 окружение сборки, строит wheel и sdist. Затем распаковывает sdist в другую папку
 и повторяет сборку Python и Go. Разные каталоги Go cache исключают повторное
 использование первой сборки scanner. Wheel, sdist и scanner должны совпасть
-побайтно. Сборщик дважды упаковывает комплект и сравнивает SHA256 ZIP.
+побайтно. Сборщик дважды упаковывает комплект и сравнивает SHA256 ZIP в одном
+окружении. При независимой сборке dev11 на другой Windows-машине wheel, sdist,
+scanner и остальные содержательные файлы совпали, но хэш входного `git archive`
+в `build-input-hashes.json` и производный `SHA256SUMS.json` отличались. Поэтому
+побайтовая воспроизводимость ZIP между машинами пока не заявляется; для установки
+используйте SHA256 принятого CI-архива из манифеста выпуска.
 
 Wheels MCP проверяются по точным идентификаторам и SHA256 выбранного профиля;
 он обязан быть подмножеством полного `product-py311-windows.txt`. Недостающие,
@@ -63,8 +68,15 @@ py -3.11 scripts/verification/verify_core_kit.py --kit PATH_TO_KIT.zip --output 
 проверок. Офлайн-параметры pip не являются сетевой изоляцией процесса ОС.
 
 Этот сценарий не заменяет отдельные проверки observer, платформы, редактора,
-обновлений типовых конфигураций и бизнес-тестов. Ранее опубликованная пара раннего
-доступа — [core dev10](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev10)
+обновлений типовых конфигураций и бизнес-тестов. Текущая пара раннего доступа —
+[core dev11](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev11)
+и [Companion 0.1.11](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.11).
+[Манифест dev11](../../releases/core/0.1.0.dev11/manifest.json) привязывает
+принятый CI ZIP к исходному коммиту `441e838`, успешному push CI и SHA256
+`9351d2b8790a358f66931a3067e8ba1823b61b7ca6b97989bb430f8fd124441a`.
+Отдельная офлайн-проверка этого ZIP подтвердила 40 файлов и 32 MCP-инструмента.
+
+Предыдущая пара — [core dev10](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev10)
 и [Companion 0.1.10](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.10).
 [Манифест dev10](../../releases/core/0.1.0.dev10/manifest.json) привязывает
 ZIP к исходному коммиту `ef0501b`, успешному push CI и SHA256

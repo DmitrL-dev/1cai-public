@@ -18,13 +18,14 @@
 модели и сторонние инструменты распространяются на своих условиях.
 
 > **Ранний доступ — проверенные компоненты, продукт ещё развивается.**
-> Текущий профиль: Windows x64, Python 3.11; [core `0.1.0.dev10`](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev10), [Companion `0.1.10`](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.10).
+> Текущий профиль: Windows x64, Python 3.11; [core `0.1.0.dev11`](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev11), [Companion `0.1.11`](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.11).
 > На 1С 8.3.27.2342 проверены синтетические сценарии компиляции и тестирования.
 > Отдельно подтверждены запись, чтение, переименование Article → SKU и удаление
 > данных в принадлежащей синтетической базе ([evidence](docs/product/NATIVE-BUSINESS-ROUNDTRIP-20260913.md)).
 > Для установленного dev10 отдельно проверены ограниченное BSL apply/Undo и
 > выполнение на новой синтетической базе ([evidence](docs/product/PROPOSAL-LIVE-APPLY.md#installed-dev10-follow-up-on-native-1c)).
-> Типовые конфигурации и живая ИБ ещё не приняты.
+> Новые байты dev11 прошли CI и офлайн-установку; отдельной нативной приёмки в 1С
+> для них пока нет. Типовые конфигурации и живая ИБ ещё не приняты.
 
 Начиная с dev8 доступны
 [сравнение сохранённых снимков](docs/product/SNAPSHOT-DIFF.md) и
@@ -34,9 +35,9 @@
 на отдельной базе из сохранённой выгрузки.
 Из редактора можно запустить [BSL-проверку](docs/product/EDITOR-BSL-CHECK.md),
 проверку компилятором и [тесты сохранённой версии](docs/product/EDITOR-TESTS.md),
-а затем восстановить отчёт без повторного запуска. Устанавливайте dev10
+а затем восстановить отчёт без повторного запуска. Устанавливайте dev11
 в отдельное окружение по инструкции ниже.
-Опубликованный Companion 0.1.10 отдельно прошёл
+Предыдущий Companion 0.1.10 отдельно прошёл
 [нативный editor-to-platform сценарий с установленным core dev10](docs/product/EDITOR-TESTS.md).
 
 ### Что можно сделать сейчас
@@ -57,8 +58,10 @@
 | Следить за выгрузкой | Сравнение снимков и observer с сохранёнными отчётами без обращений к модели |
 | Принять уведомление локально | [HTTPS/ASGI-приёмник](docs/product/NOTIFICATION-RECEIVER.md) dev10 принимает `POST /notifications`, сохраняет digest-квитанцию и безопасно отвечает на повтор; проверен на loopback TLS с закреплённым Uvicorn/httptools. Публичная служба не развёрнута. |
 
-Таблица описывает опубликованный core-v0.1.0-dev10. Предыдущий dev9 сохраняет
-перечисленные сценарии, но не содержит новую ASGI-границу. Архивный dev8 не
+Таблица описывает core-v0.1.0-dev11. В dev11 исправлена запись полных Windows
+file ID в [архив нативных запусков](releases/core/0.1.0.dev11/RELEASE_NOTES.md).
+Dev10 содержит остальные перечисленные сценарии, но сохраняет прежнюю ошибку
+архивирования больших Windows ID. Предыдущий dev9 не содержит ASGI-границу. Dev8 не
 содержит workspace writer, EDT planner и новых native adapters.
 
 Начиная с dev9 доступен [план и preview правки метаданных через EDT](docs/product/METADATA-PREVIEW.md):
