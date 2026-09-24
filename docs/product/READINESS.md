@@ -75,6 +75,14 @@ GitAuditWorker и не устанавливают причину расхожд�
 и [issue #23](https://github.com/DmitrL-dev/1cai-public/issues/23) фиксируют
 обе стороны наблюдения и незакрытую приёмку свежей установки.
 
+Позднейшая [повторная проверка полного worker на двух новых runtime](SERVICE-GIT-COLD-RECHECK-DEV11.md)
+25 сентября дала первые `analyzed` для schema 3 и schema 2, а затем циклы без
+повторного `analyzed`. Оба runtime и профиля были новыми, но проект и snapshot —
+уже существовавшими на том же Windows-хосте. [Ограниченная квитанция](evidence/service-git-cold-recheck-dev11-20260925.json)
+связывает входные хэши, outbox и журнал. Эти два успеха показывают
+непостоянство прежнего отказа полного цикла; причина `BSL_INPUT_CHANGED`
+по-прежнему неизвестна, issue #23 и холодная приёмка остаются открытыми.
+
 Отдельный [нативный прогон schema 3](SERVICE-GIT-SCHEMA3-NATIVE-DEV11.md)
 на уже использованном runtime подтвердил автономный захват нового snapshot
 после Git-коммита, `git_source_verified` owner report и второй цикл без новой

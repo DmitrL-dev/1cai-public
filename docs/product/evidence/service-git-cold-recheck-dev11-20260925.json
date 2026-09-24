@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "observed_local_date": "2026-09-25",
+  "scope": "one_local_windows_host_console_mode_existing_synthetic_project",
+  "core": {
+    "tag": "core-v0.1.0-dev11",
+    "release_zip_sha256": "9351d2b8790a358f66931a3067e8ba1823b61b7ca6b97989bb430f8fd124441a",
+    "wheel_sha256": "74cfe4a4f00369e13ef87c084ab1b62a016ac0661217fba015d5bccc831877b6",
+    "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+    "runtime_installer_sha256": "398759a7aa0d6d533b7b3711523f0abe4e8dc5d06c5de43e6ad3f745cdab377d"
+  },
+  "external_runtime": {
+    "jdk_zip_sha256": "f9d6e191ab098c0d416e7d588a24420a8621cd2f4720dab2459b8b7b2d2d8b4e",
+    "bsl_jar_sha256": "de97f571e6474c5c151cf859294f589ee01152de3b4826b43e1a80b69ee2602a",
+    "jdk_files_per_installation": 490,
+    "new_installations": 2
+  },
+  "project": {
+    "previously_registered": true,
+    "synthetic_module_count": 1,
+    "git_commit": "3b6a1eeee6ef246ab5e97a405a25f9b009837ea3",
+    "module_sha256": "b057c96c16816b8fe835b62b6a6cde9ab8556653b3021676880bde3ccc59f5b9",
+    "snapshot_id": "b338d2b477aacfe3c3b980676595c59329ec6ccc5e3344166b16e85de13a9d6e",
+    "source_clean_after_both_runs": true,
+    "module_unchanged_after_both_runs": true
+  },
+  "runs": [
+    {
+      "worker_schema": 3,
+      "new_runtime": true,
+      "new_observer_profile": true,
+      "outbox_absent_before_first_cycle": true,
+      "config_sha256": "0da86491d594eaa7ef03efa2de694688278874f1af33e2045ba71d119bc939b7",
+      "first_cycle": {
+        "exit_code": 0,
+        "cycles": 1,
+        "event": "analyzed",
+        "snapshot_binding": "git_source_verified",
+        "runtime_verified": true,
+        "diagnostics_complete": true,
+        "findings": 0,
+        "owner_report_reused_from_existing_store": true
+      },
+      "second_cycle": {
+        "exit_code": 0,
+        "cycles": 1,
+        "outbox_events_after_second": ["analyzed"]
+      },
+      "outbox_after_second_sha256": "e47a9fc8f2c3e95f7fe38ef30cae6f2e2623a1faccc1d3243cdcee3ba78dbed8",
+      "journal_after_second_sha256": "e2fdd809df565c8062ce78fe91b5a41ea0cd48a5cbacb83bec05227b2ef78c73"
+    },
+    {
+      "worker_schema": 2,
+      "new_runtime": true,
+      "new_observer_profile": true,
+      "snapshot_published_before_runtime_installation": true,
+      "outbox_absent_before_first_cycle": true,
+      "config_sha256": "a09780cf8f969887d24c8b508b34ad543cfce4468c53d79d9f375c892f2fd727",
+      "first_cycle": {
+        "exit_code": 0,
+        "cycles": 1,
+        "event": "analyzed",
+        "snapshot_binding": "git_source_verified",
+        "runtime_verified": true,
+        "diagnostics_complete": true,
+        "findings": 0,
+        "new_owner_report_id": "867bb09e-6d59-435b-b8bc-9174c809112f",
+        "stdout_sha256": "e6aeca07bf5d2a5813e487d88d036a2c77ffd7c48176ca117aa2e40dfefb4da0",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "second_cycle": {
+        "exit_code": 0,
+        "cycles": 1,
+        "outbox_events_after_second": ["analyzed", "unchanged"],
+        "stdout_sha256": "e6aeca07bf5d2a5813e487d88d036a2c77ffd7c48176ca117aa2e40dfefb4da0",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "outbox_after_second_sha256": "5a3f930818b347b535ca18a79ae1a010c920071d5775ce354569e74444d910de",
+      "journal_after_second_sha256": "80728b4c3ec1295b24faa41b7de3850ffabf732d45a6964f00a640413cf9b594"
+    }
+  ],
+  "limits": [
+    "same Windows host and same previously registered synthetic project",
+    "no new project registration or independent service account",
+    "no Windows SCM/service deployment",
+    "intermittent earlier first-cycle BSL_INPUT_CHANGED remains unexplained and open",
+    "no representative cf/cfe, live information base, external writer, HTTPS/DNS, or production deployment"
+  ]
+}
