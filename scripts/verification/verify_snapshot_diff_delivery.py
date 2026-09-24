@@ -37,7 +37,7 @@ def verify(python, scanner, output):
         timeout=15,
     )
     identity = json.loads(probe.stdout)
-    assert identity == {"version": "0.1.0.dev10", "installed": True}, identity
+    assert identity == {"version": "0.1.0.dev11", "installed": True}, identity
 
     def command(name, *args, project=None, error=None):
         argv = [

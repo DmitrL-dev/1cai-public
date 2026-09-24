@@ -69,7 +69,7 @@ function draftText(value, project, id, revision) {
   return decode(replacement?.base64, replacement?.size_bytes, replacement?.raw_sha256);
 }
 function profileConfig(value) {
-  requireValue(value?.schema === 1 && ['0.1.0.dev4', '0.1.0.dev5', '0.1.0.dev6', '0.1.0.dev7', '0.1.0.dev8', '0.1.0.dev9', '0.1.0.dev10'].includes(value.core_version) && uuid.test(value.project_id), 'INVALID_EDITOR_PROFILE');
+  requireValue(value?.schema === 1 && ['0.1.0.dev4', '0.1.0.dev5', '0.1.0.dev6', '0.1.0.dev7', '0.1.0.dev8', '0.1.0.dev9', '0.1.0.dev10','0.1.0.dev11'].includes(value.core_version) && uuid.test(value.project_id), 'INVALID_EDITOR_PROFILE');
   for (const name of ['python', 'registry']) {
     requireValue(typeof value[name] === 'string' && win32.isAbsolute(value[name]) &&
       /^[A-Za-z]:\\/.test(value[name]) && !controls.test(value[name]), 'INVALID_EDITOR_PROFILE');
@@ -183,31 +183,31 @@ function createClient(config, { execute, trusted = () => true }) {
     },
     async bslCheck({receipt: saved, proposal, file}) {
       receipt(saved,config.project_id);
-      requireValue(['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10'].includes(config.core_version),'BSL_REQUIRES_DEV8');
+      requireValue(['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11'].includes(config.core_version),'BSL_REQUIRES_DEV8');
       requireValue(typeof file==='string'&&/^[A-Za-z]:\\/.test(file)&&!controls.test(file),'INVALID_BSL_PATH');
       const value=await call('proposal-check',['--snapshot',saved.source_ref.snapshot.snapshot_id,
         '--proposal-json',file,'--diagnostics-profile',PROFILE]);
       validateBsl(value,saved,proposal);return value;
     },
     async testProfiles() {
-      requireValue(['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10'].includes(config.core_version),'TEST_REQUIRES_DEV8');
+      requireValue(['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11'].includes(config.core_version),'TEST_REQUIRES_DEV8');
       return validateProfiles(await call('test-profile-list'));
     },
     async testCheck({id, receipt:saved, proposal, file, profile}) {
-      requireValue(['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10'].includes(config.core_version),'TEST_REQUIRES_DEV8');
+      requireValue(['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11'].includes(config.core_version),'TEST_REQUIRES_DEV8');
       receipt(saved,config.project_id);requireValue(uuid.test(id),'INVALID_OPERATION_ID');validateProfiles([profile]);
       requireValue(profile.enabled,'TEST_PROFILE_UNAVAILABLE');
       requireValue(typeof file==='string'&&/^[A-Za-z]:\\/.test(file)&&!controls.test(file),'INVALID_TEST_PATH');
       return validateTests(await call('proposal-test',['--snapshot',saved.source_ref.snapshot.snapshot_id,'--proposal-json',file,'--test-profile',profile.profile_id,'--operation-id',id]),id,saved,proposal,profile);
     },
     async testResult(id) {
-      requireValue(['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10'].includes(config.core_version),'TEST_REQUIRES_DEV8');requireValue(uuid.test(id),'INVALID_OPERATION_ID');
+      requireValue(['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11'].includes(config.core_version),'TEST_REQUIRES_DEV8');requireValue(uuid.test(id),'INVALID_OPERATION_ID');
       const value=await call('proposal-test-result',['--operation-id',id]);
       requireValue(value?.run_id===id&&['completed','failed','incomplete'].includes(value.status),'TEST_RESULT_MISMATCH');
       return value;
     },
     async platformCheck({id, ref, contentId, proposal, platform, platformHash}) {
-      requireValue(['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10'].includes(config.core_version), 'PLATFORM_REQUIRES_DEV8');
+      requireValue(['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11'].includes(config.core_version), 'PLATFORM_REQUIRES_DEV8');
       requireValue(uuid.test(id) && hash.test(platformHash) && hash.test(contentId));
       ref = sourceRef(ref, config.project_id);
       for (const value of [proposal, platform]) requireValue(typeof value === 'string' &&
@@ -220,7 +220,7 @@ function createClient(config, { execute, trusted = () => true }) {
       return value;
     },
     async platformResult(id) {
-      requireValue(['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10'].includes(config.core_version), 'PLATFORM_REQUIRES_DEV8');
+      requireValue(['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11'].includes(config.core_version), 'PLATFORM_REQUIRES_DEV8');
       requireValue(uuid.test(id), 'INVALID_OPERATION_ID');
       const value = await call('proposal-platform-result', ['--operation-id', id]);
       requireValue(value?.run_id === id && ['completed', 'failed', 'incomplete'].includes(value.status), 'PLATFORM_RESULT_MISMATCH');

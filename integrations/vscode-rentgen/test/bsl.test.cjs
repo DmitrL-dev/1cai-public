@@ -11,7 +11,7 @@ async function fixture(t){
  t.after(()=>fs.rm(root,{recursive:true,force:true}));
  let calls=0;
  const client={head:async()=>({}),proposal:async()=>({receipt,proposal}),bslCheck:async()=>{calls++;return report();}};
- const config={schema:1,core_version:'0.1.0.dev8',python:'C:\\python.exe',registry:'C:\\state.sqlite3',project_id:project};
+ const config={schema:1,core_version:'0.1.0.dev11',python:'C:\\python.exe',registry:'C:\\state.sqlite3',project_id:project};
  return {root,config,client,calls:()=>calls,service:createBslService({root,config,client})};
 }
 test('BSL response binds bytes and rejects incomplete or false clean',()=>{
@@ -60,7 +60,7 @@ test('interrupted preparation does not block history; tampered result is refused
 });
 test('BSL CLI uses literal selected proposal and fixed profile',async()=>{
  const {createClient}=require('../lib/core.cjs');let args;
- const client=createClient({schema:1,core_version:'0.1.0.dev8',python:'C:\\python.exe',registry:'C:\\state.sqlite3',project_id:project},{execute:async(_,argv)=>{args=argv;return {code:0,stdout:Buffer.from(JSON.stringify({result:report()}))};}});
+ const client=createClient({schema:1,core_version:'0.1.0.dev11',python:'C:\\python.exe',registry:'C:\\state.sqlite3',project_id:project},{execute:async(_,argv)=>{args=argv;return {code:0,stdout:Buffer.from(JSON.stringify({result:report()}))};}});
  const file='C:\\owned $()\\proposal.json';
  assert.deepEqual(await client.bslCheck({receipt,proposal,file}),report());
  assert.deepEqual(args.slice(3),['proposal-check','--registry','C:\\state.sqlite3','--project',project,'--snapshot',receipt.source_ref.snapshot.snapshot_id,'--proposal-json',file,'--diagnostics-profile',PROFILE]);

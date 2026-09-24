@@ -8,7 +8,7 @@ const {createPlatformService} = require('../lib/platform.cjs');
 const project = '00000000-0000-4000-8000-000000000001';
 const receipt = {project_id:project,draft_id:'00000000-0000-4000-8000-000000000002',revision:2,
   proposal_content_id:'b'.repeat(64),source_ref:{snapshot:{project_id:project,snapshot_id:'a'.repeat(64),manifest_hash:'a'.repeat(64)},layer_id:'base',relative_path:'CommonModules/Probe/Ext/Module.bsl',raw_sha256:'c'.repeat(64)}};
-const config = {schema:1,core_version:'0.1.0.dev8',python:'C:\\python.exe',registry:'C:\\registry.sqlite3',project_id:project};
+const config = {schema:1,core_version:'0.1.0.dev11',python:'C:\\python.exe',registry:'C:\\registry.sqlite3',project_id:project};
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(),'rentgen-platform-'));
   t.after(()=>fs.rm(root,{recursive:true,force:true}));

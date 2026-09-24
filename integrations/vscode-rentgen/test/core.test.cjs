@@ -11,6 +11,10 @@ const ref = {snapshot: {project_id: project, snapshot_id: 'a'.repeat(64), manife
 const config = {schema: 1, python: "C:\\путь ' $()\\python.exe", registry: 'C:\\registry.sqlite3', project_id: project, core_version: '0.1.0.dev4'};
 const output = value => ({code: 0, stdout: Buffer.from(JSON.stringify({result: value}))});
 
+test('an unqualified future core profile is refused', () => {
+  assert.throws(() => createClient({...config, core_version: '0.1.0.dev12'}, {execute: async () => output({})}), /INVALID_EDITOR_PROFILE/);
+});
+
 test('source text preserves BOM/CRLF and rejects altered bytes or reference', () => {
   const value = {ref, raw_sha256: hash, size_bytes: bytes.length, encoding: 'base64', data: bytes.toString('base64')};
   assert.equal(sourceText(value, ref), bytes.toString('utf8'));
@@ -91,7 +95,7 @@ test('native result lookup is a read without snapshot or executable and rejects 
   await assert.rejects(client.platformResult(id),/PLATFORM_RESULT_MISMATCH/);
 });
 
-for (const core_version of ['0.1.0.dev9','0.1.0.dev10']) test(`${core_version} profile can use native result lookup and test profile listing`,async()=>{
+for (const core_version of ['0.1.0.dev9','0.1.0.dev10','0.1.0.dev11']) test(`${core_version} profile can use native result lookup and test profile listing`,async()=>{
   const id='00000000-0000-4000-8000-000000000003';
   const commands=[];
   const client=createClient({...config,core_version},{execute:async(_,args)=>{

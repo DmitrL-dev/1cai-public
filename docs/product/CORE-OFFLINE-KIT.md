@@ -19,7 +19,7 @@ py -3.11 -m venv output/kit-tools
 $kitPython = (Resolve-Path output/kit-tools/Scripts/python.exe).Path
 & $kitPython -m pip download --only-binary=:all: --require-hashes -r requirements/locks/mcp-py311-windows.txt --dest output/mcp-wheels
 & $kitPython -m pip download --only-binary=:all: --require-hashes -r requirements/locks/product-build-py311-windows.txt --dest output/build-wheels
-& $kitPython scripts/release/build_core_kit.py --output output/core-kit-dev10 --runtime-wheelhouse output/mcp-wheels --build-wheelhouse output/build-wheels --go 'C:\Program Files\Go\bin\go.exe'
+& $kitPython scripts/release/build_core_kit.py --output output/core-kit-dev11 --runtime-wheelhouse output/mcp-wheels --build-wheelhouse output/build-wheels --go 'C:\Program Files\Go\bin\go.exe'
 ```
 
 С `--build-wheelhouse` установка инструментов сборки также использует
@@ -63,7 +63,7 @@ py -3.11 scripts/verification/verify_core_kit.py --kit PATH_TO_KIT.zip --output 
 проверок. Офлайн-параметры pip не являются сетевой изоляцией процесса ОС.
 
 Этот сценарий не заменяет отдельные проверки observer, платформы, редактора,
-обновлений типовых конфигураций и бизнес-тестов. Опубликованная пара раннего
+обновлений типовых конфигураций и бизнес-тестов. Ранее опубликованная пара раннего
 доступа — [core dev10](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev10)
 и [Companion 0.1.10](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.10).
 [Манифест dev10](../../releases/core/0.1.0.dev10/manifest.json) привязывает

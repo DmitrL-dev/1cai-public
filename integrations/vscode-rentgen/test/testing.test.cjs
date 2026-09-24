@@ -12,7 +12,7 @@ function result(id){
 }
 async function fixture(t){
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'rentgen-tests-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));
- const config={schema:1,core_version:'0.1.0.dev8',python:'C:\\python.exe',registry:'C:\\state.sqlite3',project_id:project};let calls=0;const reports=new Map();
+ const config={schema:1,core_version:'0.1.0.dev11',python:'C:\\python.exe',registry:'C:\\state.sqlite3',project_id:project};let calls=0;const reports=new Map();
  const client={head:async()=>({}),proposal:async()=>({receipt,proposal}),testProfiles:async()=>[profile],testCheck:async({id})=>{calls++;const report=result(id);reports.set(id,report);return report;},testResult:async(id)=>reports.has(id)?{run_id:id,status:'completed',request:{run_id:id,project_id:project,input:{source_ref:receipt.source_ref,proposal_content_id:proposal.content_id,profile_id:profile.profile_id}},report:reports.get(id)}:{run_id:id,status:'incomplete',request:null}};
  return {root,config,client,reports,calls:()=>calls,service:createTestService({root,config,client})};
 }
@@ -47,7 +47,7 @@ test('recovery refuses a different stored run binding',async t=>{
 });
 test('CLI uses a registered profile and literal proposal path, without executable options',async()=>{
  const {createClient}=require('../lib/core.cjs');let args;const id='00000000-0000-4000-8000-000000000003';
- const client=createClient({schema:1,core_version:'0.1.0.dev8',python:'C:\\python.exe',registry:'C:\\state.sqlite3',project_id:project},{execute:async(_,argv)=>{args=argv;return {code:0,stdout:Buffer.from(JSON.stringify({result:argv[3]==='test-profile-list'?[profile]:result(id)}))};}});
+ const client=createClient({schema:1,core_version:'0.1.0.dev11',python:'C:\\python.exe',registry:'C:\\state.sqlite3',project_id:project},{execute:async(_,argv)=>{args=argv;return {code:0,stdout:Buffer.from(JSON.stringify({result:argv[3]==='test-profile-list'?[profile]:result(id)}))};}});
  assert.deepEqual(await client.testProfiles(),[profile]);const file='C:\\owned $()\\proposal.json';
  assert.deepEqual(await client.testCheck({id,receipt,proposal,file,profile}),result(id));
  assert.deepEqual(args.slice(3),['proposal-test','--registry','C:\\state.sqlite3','--project',project,'--snapshot',receipt.source_ref.snapshot.snapshot_id,'--proposal-json',file,'--test-profile',profile.profile_id,'--operation-id',id]);

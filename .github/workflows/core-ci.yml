@@ -80,7 +80,7 @@ jobs:
         working-directory: output/accepted-companion
         run: python scripts/release/prepare_companion.py build --tag companion-v0.1.4 --output release-assets
       - name: Build development companion
-        run: python integrations/vscode-rentgen/build.py --output output/rentgen-companion-0.1.10-development.vsix
+        run: python integrations/vscode-rentgen/build.py --output output/rentgen-companion-0.1.11-development.vsix
       - name: Build reproducible kit and verify offline CLI and MCP
         run: |
           python -m pip download --require-hashes --only-binary=:all: -r requirements/locks/mcp-py311-windows.txt --dest output/mcp-wheels
@@ -89,18 +89,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python scripts/release/build_core_kit.py --output output/core-kit --runtime-wheelhouse output/mcp-wheels --build-wheelhouse output/build-wheels
       - name: Verify installed snapshot comparison
-        run: python scripts/verification/verify_snapshot_diff_delivery.py --python output/core-kit/offline-install/environment/Scripts/python.exe --scanner output/core-kit/rentgen-core-0.1.0.dev10-windows-py311/bsl-scan.exe --output output/verification
+        run: python scripts/verification/verify_snapshot_diff_delivery.py --python output/core-kit/offline-install/environment/Scripts/python.exe --scanner output/core-kit/rentgen-core-0.1.0.dev11-windows-py311/bsl-scan.exe --output output/verification
       - name: Verify installed observer across processes
-        run: python scripts/verification/verify_observer_delivery.py --python output/core-kit/offline-install/environment/Scripts/python.exe --scanner output/core-kit/rentgen-core-0.1.0.dev10-windows-py311/bsl-scan.exe --output output/observer-verification
+        run: python scripts/verification/verify_observer_delivery.py --python output/core-kit/offline-install/environment/Scripts/python.exe --scanner output/core-kit/rentgen-core-0.1.0.dev11-windows-py311/bsl-scan.exe --output output/observer-verification
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: verified-core-development
           path: |
-            output/core-kit/rentgen-core-0.1.0.dev10-windows-py311.zip
+            output/core-kit/rentgen-core-0.1.0.dev11-windows-py311.zip
             output/core-kit/acceptance.json
             output/core-kit/offline-install/acceptance.json
             output/verification/acceptance.json
             output/observer-verification/acceptance.json
-            output/rentgen-companion-0.1.10-development.vsix
+            output/rentgen-companion-0.1.11-development.vsix
           if-no-files-found: error
           retention-days: 14

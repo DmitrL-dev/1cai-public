@@ -31,14 +31,13 @@ def contract():
             "0.1.0.dev8",
             "0.1.0.dev9",
             "0.1.0.dev10",
+            "0.1.0.dev11",
         }
         or not Path(rentgen_core.__file__)
         .resolve()
         .is_relative_to(Path(sys.prefix).resolve())
     ):
-        raise ValueError(
-            "Use installed Windows Python 3.11/core dev4/dev5/dev6/dev7/dev8/dev9 with -I"
-        )
+        raise ValueError("Use supported installed core in Windows Python 3.11 with -I")
     descriptor, expected = _runtime_descriptor()
     return descriptor, expected, RuntimePins
 
