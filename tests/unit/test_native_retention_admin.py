@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import pytest
 import rentgen_core as api
+from rentgen_core import _windows_source_tree as source_tree
 from rentgen_core import native_resources as resources
 from rentgen_core.manifests import canonical_bytes, sha256
 from rentgen_core.platform_runs import get_platform_run
@@ -66,6 +67,73 @@ def archive(ctx, run, profile_id=None):
     return resources.archive_native_run(
         ctx, run.name, namespace=run.parent.name, profile_id=profile_id
     )
+
+
+@pytest.mark.parametrize("full_width", [False, True])
+def test_archive_serializes_windows_file_identity_without_losing_legacy_receipts(
+    retained, monkeypatch, full_width
+):
+    run = make_run(retained)
+    original_file_id = source_tree._file_id_value
+    original_stamp = source_tree.WindowsHandleOps.stamp
+    observed_by_path = {}
+
+    def file_id(raw):
+        value = original_file_id(raw)
+        if full_width:
+            value |= 1 << 80
+        else:
+            value = (value & ((1 << 62) - 1)) or 1
+        return value
+
+    def volume(value):
+        if full_width:
+            value |= 1 << 63
+        else:
+            value = (value & ((1 << 62) - 1)) or 1
+        return value
+
+    def adjusted_stamp(ops, handle):
+        stamp = original_stamp(ops, handle)
+        identity = (volume(stamp.identity[0]), stamp.identity[1])
+        observed_by_path[ops.final_path(handle).resolve()] = identity
+        return replace(stamp, identity=identity)
+
+    monkeypatch.setattr(source_tree, "_file_id_value", file_id)
+    monkeypatch.setattr(source_tree.WindowsHandleOps, "stamp", adjusted_stamp)
+    receipt = archive(retained, run)
+    audit = retained.state.path.parent / "native-archive"
+    manifest_path = audit / (run.parent.name + "-" + run.name) / "manifest.json"
+    manifest = json.loads(manifest_path.read_bytes())
+    identities = [item["identity"] for item in manifest["inventory"]]
+    assert all(
+        all(isinstance(value, str if full_width else int) for value in identity)
+        for identity in identities
+    )
+    for item in manifest["inventory"]:
+        decoded = tuple(
+            int(value, 16) if isinstance(value, str) else value
+            for value in item["identity"]
+        )
+        assert decoded == observed_by_path[(run / item["path"]).resolve()]
+    if full_width:
+        assert all(
+            len(identity[0]) == 16 and len(identity[1]) == 32 for identity in identities
+        )
+    assert archive(retained, run) == receipt
+    if full_width:
+        # Recomputing the receipt cannot bless a changed high identity bit.
+        manifest["inventory"][0]["identity"][
+            1
+        ] = f"{int(identities[0][1], 16) ^ (1 << 120):032x}"
+        manifest_path.write_bytes(canonical_bytes(manifest))
+        receipt_path = manifest_path.with_name("receipt.json")
+        changed_receipt = json.loads(receipt_path.read_bytes())
+        changed_receipt["manifest_sha256"] = sha256(canonical_bytes(manifest))
+        receipt_path.write_bytes(canonical_bytes(changed_receipt))
+        with pytest.raises(api.CoreError) as error:
+            archive(retained, run)
+        assert error.value.code == "NATIVE_ARCHIVE_INVALID"
 
 
 @pytest.mark.parametrize("namespace", ["platform-checks", "test-runs"])

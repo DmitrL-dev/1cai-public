@@ -49,6 +49,23 @@ def _pinned_archive_root(root):
             yield
 
 
+def _archive_identity(identity):
+    volume, file_id = identity
+    if (
+        type(volume) is not int
+        or not 0 <= volume < 2**64
+        or type(file_id) is not int
+        or not 0 <= file_id < 2**128
+    ):
+        raise _archive_invalid()
+    # Preserve already-published integer receipts. Full-width Windows IDs
+    # exceed the canonical JSON integer domain and need a fixed-width string.
+    return [
+        volume if volume < 2**63 else f"{volume:016x}",
+        file_id if file_id < 2**63 else f"{file_id:032x}",
+    ]
+
+
 @contextmanager
 def _archive_inventory(run):
     """Pin the entire bounded tree before publishing its logical archive."""
@@ -68,7 +85,7 @@ def _archive_inventory(run):
                 raise _archive_invalid()
             item = {
                 "path": path.relative_to(run).as_posix(),
-                "identity": list(before.identity),
+                "identity": _archive_identity(before.identity),
                 "directory": before.directory,
                 "size": before.size,
             }
