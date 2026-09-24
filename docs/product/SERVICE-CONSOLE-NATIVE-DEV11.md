@@ -14,7 +14,8 @@ rentgen_core.service_entry --console`: первый цикл, повторный
 - Wheel внутри ZIP: SHA256
   `74cfe4a4f00369e13ef87c084ab1b62a016ac0661217fba015d5bccc831877b6`.
   Verifier побайтно сверил все **92 файла** `rentgen_core` и `rentgen_graph`
-  с установленным wheel и проверил, что импорты идут из его `site-packages`.
+  установленного пакета с wheel из ZIP и проверил, что импорты идут из
+  `site-packages` установленной среды.
 - Scanner из того же ZIP: SHA256
   `8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4`;
   собственная копия прогона совпала побайтно. Хэш Python-интерпретатора —
