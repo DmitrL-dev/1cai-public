@@ -1,0 +1,102 @@
+{
+  "schema": 1,
+  "date": "2026-09-24",
+  "accepted": true,
+  "scope": "Published Companion 0.1.11 in an isolated VS Code extension host, installed core dev11, one synthetic BSL module and owned file infobases",
+  "release_tags": {
+    "core": "core-v0.1.0-dev11",
+    "companion": "companion-v0.1.11"
+  },
+  "release_source_commits": {
+    "core": "441e838ca6c02d10a4763ede6152f6517a771304",
+    "companion": "07f81ae3b9a29af3c4f7b92909e075db038774e5"
+  },
+  "verifier_source_commit": "5b6547dd9e420261b7bb6da5f63d4d8c667c443b",
+  "core_version": "0.1.0.dev11",
+  "core_archive_sha256": "9351d2b8790a358f66931a3067e8ba1823b61b7ca6b97989bb430f8fd124441a",
+  "core_wheel_sha256": "74cfe4a4f00369e13ef87c084ab1b62a016ac0661217fba015d5bccc831877b6",
+  "companion_version": "0.1.11",
+  "companion_vsix_asset_id": 585197495,
+  "companion_vsix_bytes": 208753,
+  "companion_vsix_sha256": "916e1311a5bd8ea43c05e7220c547239bb056a963b85ab7746a13ff8e67f83d5",
+  "platform_version": "8.3.27.2342",
+  "platform_executable_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+  "ibcmd_sha256": "38f37715535cea530e58d5ba2e7e072c184b61b12f3e903ac290b299cf39fd38",
+  "yaxunit_cfe_sha256": "805a2277c997a3c24be0b0d080696479e91e4a15ed7e27aaf3991a7346522d70",
+  "editor_executable_sha256": "081417b5e8032c703cf9e25e4886ab10c417ad1b8b87cfd1244c67d15331a8a6",
+  "harness": {
+    "original_sha256": "384b02897cb1271a66677030d85a6bb06c37a6c677b99dacafd57d8dc08b4cbc",
+    "run_sha256": "99fc3a1a655e8e9e2a0203666f1e03a6fd237835042227ef7f71eaaf14be8947",
+    "only_delta": "expected Companion version 0.1.8 -> 0.1.11",
+    "node_syntax_check": "passed"
+  },
+  "native_fixture_reference": {
+    "accepted": true,
+    "raw_acceptance_sha256": "36309510d7671d4517f2e4325234bd50a6e26d56c90fd001f045ee08d3e2f722",
+    "bad": "failed",
+    "fixed": "passed",
+    "steps": 15
+  },
+  "installed_profile": {
+    "accepted": true,
+    "core_version": "0.1.0.dev11",
+    "baseline": "failed",
+    "candidate": "passed",
+    "disabled_new_run_refused": true,
+    "completed_replay_without_changes": true,
+    "live_source_and_head_preserved": true,
+    "verifier_script_sha256": "0cf219c058203a502412d0d16fb16834d1620b41fc7724eb31005c0ff7021c4e",
+    "verifier_module_sha256": "be4deade6934b29dd227230ff1f90e71674f4876bafc76e053457a9d53fc2e3f"
+  },
+  "editor_run": {
+    "run_id": "c02e9294-0440-4f44-b58d-e6ab6a575a91",
+    "status": "completed",
+    "selected_revision": 1,
+    "latest_revision": 2,
+    "profile_id": "4a096da5b315d2d1dc2f796955ccf5d304e77169acacb85e762ad4a04005c4e9",
+    "proposal_content_id": "348885cf69d8b6fc7461dc1069257056c7a1c434623f7ab5d35d5764127fd009",
+    "source_module_sha256": "f0540440b7a20f136a6c0b97ed5509f55fe7346db735970eb232c3d4f532ddd7",
+    "candidate_sha256": "dc573e18f1a3a7f78a2f12541158df138a425c178922ea92bd2f4a0f7ad791e4",
+    "baseline": {
+      "status": "failed",
+      "failures": 1,
+      "tests": 1
+    },
+    "candidate": {
+      "status": "passed",
+      "passed": 1,
+      "tests": 1
+    },
+    "isolated_infobases": true,
+    "native_report_sha256": "f6ae752b6c3df802acc2a99f4945457284b6eef9399d34a0e694f6bed295fdd8",
+    "request_file_sha256": "b50b6f02d0f41dd7e60a43d31d5e03cb1f5554b16fccf61a2baf0a1b7b377426",
+    "report_file_sha256": "11227f59ce4384a77fbfa6a93724db00e4289fe099c43200b8b29fe203ab07a7",
+    "source_and_project_head_preserved": true,
+    "model_calls": 0
+  },
+  "recovery": {
+    "accepted": true,
+    "new_editor_process": true,
+    "profile_disabled": true,
+    "same_run_id": true,
+    "new_test_runs": 0,
+    "model_calls": 0
+  },
+  "local_raw_acceptance_sha256": {
+    "native_fixture": "36309510d7671d4517f2e4325234bd50a6e26d56c90fd001f045ee08d3e2f722",
+    "installed_profile": "e8db2202446e34de9f151d2a930171c28bbeb89af324c33ce856f7a876dd5b43",
+    "editor_run": "b7fe58b3ae8039b32602a3b99e272efc4f32fca5540fde243bc171d35d4ddc84",
+    "recovery": "bc1ebc17088223ee6ee353b91a6828aa3d59804ed6e439948339d935f4c02ab5"
+  },
+  "product_report_evidence": "local_unattested",
+  "runtime_dependencies": "not_fully_pinned",
+  "live_apply_status": "unavailable",
+  "not_verified": [
+    "typical configurations",
+    "live working infobase",
+    "live source apply/undo by the editor workflow",
+    "fully pinned VS Code host runtime",
+    "external host attestation",
+    "production deployment"
+  ]
+}
