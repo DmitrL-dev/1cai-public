@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "date": "2026-09-24",
+  "scope": "Installed public Core dev11 GitAuditWorker schema 2 console mode with real pinned BSL-LS on owned synthetic Git projects",
+  "positive_warmed_path_verified": true,
+  "cold_install_first_cycle_qualified": false,
+  "core": {
+    "tag": "core-v0.1.0-dev11",
+    "release_zip_sha256": "9351d2b8790a358f66931a3067e8ba1823b61b7ca6b97989bb430f8fd124441a",
+    "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+    "wheel_sha256": "74cfe4a4f00369e13ef87c084ab1b62a016ac0661217fba015d5bccc831877b6",
+    "installed_diagnostics_files_checked": 10,
+    "installed_environment": "same environment as service-console-native-dev11-20260924"
+  },
+  "runtime": {
+    "profile": "bsl-ls-1.0.5-temurin21.0.12.1-win64-bmp-default-v1",
+    "bsl_jar_sha256": "de97f571e6474c5c151cf859294f589ee01152de3b4826b43e1a80b69ee2602a",
+    "jdk_zip_sha256": "f9d6e191ab098c0d416e7d588a24420a8621cd2f4720dab2459b8b7b2d2d8b4e"
+  },
+  "warmed_clean": {
+    "first_event": "analyzed",
+    "next_event": "unchanged",
+    "findings": 0,
+    "quality_provenance": "git_source_verified",
+    "source_sha256": "b057c96c16816b8fe835b62b6a6cde9ab8556653b3021676880bde3ccc59f5b9",
+    "source_unchanged": true,
+    "git_clean": true,
+    "second_new_project_analyzed": true
+  },
+  "warmed_findings": {
+    "commit": "c3cd9202f609b111f1ff76dfb1407c72a23f3897",
+    "snapshot": "a947b022a8b90e6376765544e5032d3aea20ce147518c4f3c23062a7872d1f8e",
+    "source_sha256": "02e73e08f94f30f0d5b20f05ea2bcb3d53fc9a206af753efd76753ebda3d7164",
+    "exit_code": 0,
+    "cycles": 1,
+    "event": "analyzed",
+    "findings": 2,
+    "rules": ["bsl/MissingCodeTryCatchEx", "bsl/MissingParameterDescription"],
+    "source_unchanged": true,
+    "git_clean": true
+  },
+  "fresh_runtime": {
+    "immediate_first_cycle_failures": 2,
+    "delayed_5_seconds_first_cycle_failures": 1,
+    "external_error": "SERVICE_WORKER_FAILED",
+    "journal_code": "GIT_ANALYZER_INCOMPLETE",
+    "adapter_reason": "BSL_INPUT_CHANGED",
+    "runtime_verified": false,
+    "diagnostics_complete": false,
+    "event": "fatal",
+    "owner_report_created": false,
+    "observed_directory_timestamp_changes": ["jdk/conf", "jdk/lib", "jdk/jmods"],
+    "observed_directory_identities_same": true,
+    "cause_confirmed": false,
+    "subsequent_same_runtime_analyzed": true
+  },
+  "local_script_sha256": {
+    "clean_case": "9750f35c58cbaf68396411470d0603841354a370a0ad7899716950d5def08cbe",
+    "fresh_runtime_instrumentation": "898cedf173b8e87000144404687f27c73971720a199075dfd6d1e7d61e177dae",
+    "findings_case": "5a1b630d4863d6039d9454ce506516a60ed1c0725cc4e304c91394772984ead6"
+  },
+  "local_findings_receipt_sha256": "93cadcb38fac22a835ffbb4de67daf97da0befa2e5f88bfe1526a288793958d9",
+  "issue": "https://github.com/DmitrL-dev/1cai-public/issues/23",
+  "scm_install_performed": false,
+  "production_deployment_performed": false,
+  "external_attestation": false
+}
