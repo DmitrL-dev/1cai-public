@@ -64,6 +64,14 @@ VS Code в снимках до первого и после второго пр�
 [квитанцию](evidence/service-console-native-dev11-20260924.json).
 Windows SCM при этом не использовался.
 
+Следующий [локальный нативный прогон GitAuditWorker](SERVICE-GIT-NATIVE-DEV11.md)
+с настоящим BSL-LS подтвердил `analyzed`/`unchanged` и два finding на новом
+коммите с пустым обработчиком. Одновременно первый цикл на новых каталогах
+runtime отказал с `BSL_INPUT_CHANGED` без успешного owner report; пауза 5 секунд
+не устранила отказ. [Ограниченная квитанция](evidence/service-git-native-dev11-20260924.json)
+и [issue #23](https://github.com/DmitrL-dev/1cai-public/issues/23) фиксируют
+положительный путь и незакрытую приёмку свежей установки.
+
 Типовые `.cf/.cfe`, расширения, формы/СКД, живая рабочая ИБ, внешний
 конкурентный writer, публичный HTTPS/DNS и служба Windows остаются вне
 принятого охвата. Production deployment требует отдельной приёмки и разрешения
