@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import pytest
 import rentgen_core as api
+from rentgen_core import _windows_source_tree as source_tree
 from rentgen_core import native_resources as resources
 from rentgen_core.manifests import canonical_bytes, sha256
 from rentgen_core.platform_runs import get_platform_run
@@ -66,6 +67,47 @@ def archive(ctx, run, profile_id=None):
     return resources.archive_native_run(
         ctx, run.name, namespace=run.parent.name, profile_id=profile_id
     )
+
+
+@pytest.mark.parametrize("full_width", [False, True])
+def test_archive_serializes_windows_file_identity_without_losing_legacy_receipts(
+    retained, monkeypatch, full_width
+):
+    run = make_run(retained)
+    original_file_id = source_tree._file_id_value
+    original_stamp = source_tree.WindowsHandleOps.stamp
+
+    def file_id(raw):
+        value = original_file_id(raw)
+        if full_width:
+            return value | (1 << 80)
+        return (value & ((1 << 62) - 1)) or 1
+
+    def volume(value):
+        if full_width:
+            return value | (1 << 63)
+        return (value & ((1 << 62) - 1)) or 1
+
+    def adjusted_stamp(ops, handle):
+        stamp = original_stamp(ops, handle)
+        return replace(stamp, identity=(volume(stamp.identity[0]), stamp.identity[1]))
+
+    monkeypatch.setattr(source_tree, "_file_id_value", file_id)
+    monkeypatch.setattr(source_tree.WindowsHandleOps, "stamp", adjusted_stamp)
+    receipt = archive(retained, run)
+    audit = retained.state.path.parent / "native-archive"
+    manifest_path = audit / (run.parent.name + "-" + run.name) / "manifest.json"
+    manifest = json.loads(manifest_path.read_bytes())
+    identities = [item["identity"] for item in manifest["inventory"]]
+    assert all(
+        all(isinstance(value, str if full_width else int) for value in identity)
+        for identity in identities
+    )
+    if full_width:
+        assert all(
+            len(identity[0]) == 16 and len(identity[1]) == 32 for identity in identities
+        )
+    assert archive(retained, run) == receipt
 
 
 @pytest.mark.parametrize("namespace", ["platform-checks", "test-runs"])
