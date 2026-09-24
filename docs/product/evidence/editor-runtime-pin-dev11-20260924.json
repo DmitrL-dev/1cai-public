@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "date": "2026-09-24",
+  "accepted": true,
+  "scope": "Published Companion 0.1.11 and installed Core dev11 in a local VS Code extension host on one synthetic BSL module and owned 1C infobases",
+  "core_tag": "core-v0.1.0-dev11",
+  "core_zip_sha256": "9351d2b8790a358f66931a3067e8ba1823b61b7ca6b97989bb430f8fd124441a",
+  "companion_tag": "companion-v0.1.11",
+  "companion_vsix_sha256": "916e1311a5bd8ea43c05e7220c547239bb056a963b85ab7746a13ff8e67f83d5",
+  "harness": {
+    "original_sha256": "384b02897cb1271a66677030d85a6bb06c37a6c677b99dacafd57d8dc08b4cbc",
+    "run_sha256": "99fc3a1a655e8e9e2a0203666f1e03a6fd237835042227ef7f71eaaf14be8947",
+    "only_delta": "expected Companion version 0.1.8 -> 0.1.11",
+    "runner_sha256": "75b95401856085b91461803cb34e72ce66a6a9638ad9af334bdace3bf191b52a",
+    "profile_spec_sha256": "0c1171caf2d388e57784ce1eda8ea833fd366f71fa9f8ef2feeadbd8f96e2239"
+  },
+  "editor": {
+    "version": "1.138.0",
+    "executable_sha256": "081417b5e8032c703cf9e25e4886ab10c417ad1b8b87cfd1244c67d15331a8a6",
+    "installation_tree": {
+      "files": 2473,
+      "directories": 636,
+      "total_file_bytes": 1110103413,
+      "before_manifest_sha256": "b712c1b7ad0dff1596f525d07e8713a8c1856c37825c139c5864d101abf35013",
+      "after_manifest_sha256": "b712c1b7ad0dff1596f525d07e8713a8c1856c37825c139c5864d101abf35013",
+      "byte_identical_before_after": true,
+      "reparse_entries": 0,
+      "local_hash_script_sha256": "59132f4159a1fb4252519654a009350f4e3df64c892b1bc15d60cf10e2b6db86"
+    }
+  },
+  "run": {
+    "run_id": "21faed3c-f9bb-4aee-9fae-451c7f4467f9",
+    "selected_revision": 1,
+    "current_revision": 2,
+    "profile_id": "4a096da5b315d2d1dc2f796955ccf5d304e77169acacb85e762ad4a04005c4e9",
+    "proposal_content_id": "4bdff85836aa647f7163a9dc293d6426c0cf88cce417b6e42d17d47e3d3658c0",
+    "source_module_sha256": "f0540440b7a20f136a6c0b97ed5509f55fe7346db735970eb232c3d4f532ddd7",
+    "candidate_sha256": "dc573e18f1a3a7f78a2f12541158df138a425c178922ea92bd2f4a0f7ad791e4",
+    "native_report_sha256": "81385ac1cb4972856d633744a664ae8614656a650544810cd52ca5b55ef9cfbc",
+    "baseline": {
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 0
+    },
+    "candidate": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 1
+    },
+    "isolated_infobases": true,
+    "source_and_head_preserved": true,
+    "model_calls": 0
+  },
+  "recovery": {
+    "new_editor_process": true,
+    "same_run_id": true,
+    "profile_disabled": true,
+    "report_readable": true,
+    "new_test_runs": 0,
+    "source_and_head_preserved": true,
+    "model_calls": 0
+  },
+  "local_raw_acceptance_sha256": {
+    "first": "45cde7a003dc2ef34d553322d1842d888cd9b3898a247ec08e1760c224c45c4d",
+    "recovery": "1a15da2ddcacfb5fa492d80369c068d7124496cef3da46941e2bdbb13244c9a0"
+  },
+  "local_full_runtime_manifest_retained": true,
+  "product_report_evidence": "local_unattested",
+  "not_verified": [
+    "Windows system libraries and OS state",
+    "external runtime attestation",
+    "typical configurations",
+    "live working infobase",
+    "live editor apply/undo",
+    "production deployment"
+  ]
+}
