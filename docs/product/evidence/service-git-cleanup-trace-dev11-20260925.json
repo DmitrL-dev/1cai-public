@@ -1,0 +1,329 @@
+{
+  "schema": 1,
+  "title": "Core dev11 cold Git audit cleanup trace",
+  "observed_date_local": "2026-09-25",
+  "host_scope": "one Windows host, current interactive account",
+  "git_base_commit": "c46826dda461afe4ac6cceac191f728583e17167",
+  "inputs": {
+    "core_version": "0.1.0.dev11",
+    "jdk_zip_sha256": "f9d6e191ab098c0d416e7d588a24420a8621cd2f4720dab2459b8b7b2d2d8b4e",
+    "bsl_jar_sha256": "de97f571e6474c5c151cf859294f589ee01152de3b4826b43e1a80b69ee2602a",
+    "installer_sha256": "398759a7aa0d6d533b7b3711523f0abe4e8dc5d06c5de43e6ad3f745cdab377d",
+    "jdk_files_per_successful_install": 490,
+    "runtime_stamp_objects": 579,
+    "installed_package_files_match_repository": [
+      "_owned_attempt.py",
+      "bsl_language_server.py",
+      "git_bsl_analyzer.py"
+    ]
+  },
+  "trials": [
+    {
+      "trial": 14,
+      "mode": "public_installed_cli",
+      "git_commit": "51d5d523ceac58d27f23e0de33fb4dca7c6b8d1f",
+      "observer_snapshot": "b24852440f9170d402f4a57917efed6ba793fd175bbceba65b8172bc88e20b66",
+      "module_worktree_sha256": "66c39ab7afa31bbc47405ebb5c8d7a1280fa18437fd5e4386c84079aa0bce26f",
+      "harness_sha256": "dccee3af0420a6967684a65c38ec4c0af0c62ca481c437e748c21f969369e35e",
+      "installer_status": "installed",
+      "worker_exit_code": 2,
+      "journal_event": {
+        "code": "GIT_ANALYZER_INCOMPLETE",
+        "status": "fatal"
+      },
+      "outbox_statuses": [
+        "fatal"
+      ],
+      "source_clean": true,
+      "runtime_stamp_before_after_equal": true,
+      "runtime_stamp_sha256": "cab476bad9bc9c2ecb31a6ca23f47a89ca7c5f0d651741e31e5263dd3e7ee68f",
+      "diagnostic_trace_sha256": null,
+      "diagnostic_reason": null,
+      "java_exit_code": null,
+      "runtime_verified": null,
+      "report_sha256": null
+    },
+    {
+      "trial": 20,
+      "mode": "local_diagnostic_overlay",
+      "git_commit": "84e18335aec2430a826f97d001b0a1ba91c058bf",
+      "observer_snapshot": "55f4fb052e118a7c08302fea60177b39803d4d1f4bcf4fa83df6ed58e9d5d594",
+      "module_worktree_sha256": "598e9b88d8e098ed0805c36e70d18070d85f4c47e143ec2b761a1d48e3a066a0",
+      "harness_sha256": "b18558834b42ff4cd4ef0f2a1645710b36bfdb1407731f1c2dbefcdd2c5ecd6b",
+      "installer_status": "installed",
+      "worker_exit_code": 2,
+      "journal_event": {
+        "code": "GIT_ANALYZER_INCOMPLETE",
+        "status": "fatal"
+      },
+      "outbox_statuses": [
+        "fatal"
+      ],
+      "source_clean": true,
+      "runtime_stamp_before_after_equal": true,
+      "runtime_stamp_sha256": "21f2a7abe56a25103b5d8537140b8aead4316e3e736c423f2bb39cdb7fcfd3ee",
+      "diagnostic_trace_sha256": "f4a9c1943773bfb8f5a2ba724b999f79a56de0afd8b581dacca4e062b7a49782",
+      "diagnostic_reason": "BSL_CLEANUP_FAILED",
+      "java_exit_code": 0,
+      "runtime_verified": true,
+      "report_sha256": "cfea18c1106b633c1c0d36625dd5ae7f558a46c699cc4bf2f33fdab35cbbf321"
+    },
+    {
+      "trial": 25,
+      "mode": "local_diagnostic_overlay",
+      "git_commit": "4110e2fc67d20ca43f780b954284212edf861baa",
+      "observer_snapshot": "39fc519ea11d5a642b1a1ef6f7535d6436d07c0f4f1030ed1ee0496bfe810357",
+      "module_worktree_sha256": "a502d40d2ef672881d82c7fe841024d65ee271b8cfbaa0b56137be19b369b619",
+      "harness_sha256": "b18558834b42ff4cd4ef0f2a1645710b36bfdb1407731f1c2dbefcdd2c5ecd6b",
+      "installer_status": "installed",
+      "worker_exit_code": 2,
+      "journal_event": {
+        "code": "GIT_ANALYZER_INCOMPLETE",
+        "status": "fatal"
+      },
+      "outbox_statuses": [
+        "fatal"
+      ],
+      "source_clean": true,
+      "runtime_stamp_before_after_equal": true,
+      "runtime_stamp_sha256": "e2e4de45bb6c1d9780f06774e4027f413fc8ec9ee81e8f9fab53d16b00a64366",
+      "diagnostic_trace_sha256": "f93ff26d3ba05a29d7a755504979a6ba43d2cb1947a5486fb5d7e0f8168ebba5",
+      "diagnostic_reason": "BSL_CLEANUP_FAILED",
+      "java_exit_code": 0,
+      "runtime_verified": true,
+      "report_sha256": "17981d01724ab981174b6106d556f94d3c07ab900ed5dfc5c714308a58a46594"
+    },
+    {
+      "trial": 26,
+      "mode": "local_diagnostic_overlay",
+      "git_commit": "7036b10c489ecda22cafb29fc9f81c49be0a55d1",
+      "observer_snapshot": "60a119bc08ae33ec9c9d2faa5e632fd8100ba579a062b6f3caee1f2d523ec1eb",
+      "module_worktree_sha256": "14c7bfc70121a0fcaddc1aa77eef5846d96d3994b1d237e9ccb59f1a77744fee",
+      "harness_sha256": "5c8fb88beb87867c52775ed85714e4fdea136d57c0b93a1a68a3c436637c3529",
+      "installer_status": "installed",
+      "worker_exit_code": 2,
+      "journal_event": {
+        "code": "GIT_ANALYZER_INCOMPLETE",
+        "status": "fatal"
+      },
+      "outbox_statuses": [
+        "fatal"
+      ],
+      "source_clean": true,
+      "runtime_stamp_before_after_equal": true,
+      "runtime_stamp_sha256": "9bbef6e3a72941c5836fb540c0598e017138972dd16ee0bb64ec8aefaff589b1",
+      "diagnostic_trace_sha256": "cde72ecf4dbaabdfe839360596e51ca8c1d6959fadd7898022b55ce017370b9b",
+      "diagnostic_reason": "BSL_CLEANUP_FAILED",
+      "java_exit_code": 0,
+      "runtime_verified": true,
+      "report_sha256": "ac777e962b6bb982d78c84e7f69a1f038662975530cbcd63cbd7449ff925b693"
+    },
+    {
+      "trial": 29,
+      "mode": "local_diagnostic_overlay",
+      "git_commit": "a0be0357bb561ae4b418dc60ef545677b5493298",
+      "observer_snapshot": "c29b03ebc542695c757c6937aa0d09eb25059529ec76b0e92263e4fe382e9eda",
+      "module_worktree_sha256": "cfa075643c9156f6f0958da6cabd3ea51080065c6699cb51ac4d3f7234ebd2ec",
+      "harness_sha256": "5c8fb88beb87867c52775ed85714e4fdea136d57c0b93a1a68a3c436637c3529",
+      "installer_status": "installed",
+      "worker_exit_code": 2,
+      "journal_event": {
+        "code": "GIT_ANALYZER_INCOMPLETE",
+        "status": "fatal"
+      },
+      "outbox_statuses": [
+        "fatal"
+      ],
+      "source_clean": true,
+      "runtime_stamp_before_after_equal": true,
+      "runtime_stamp_sha256": "ed458681e81531cd5a91dde9f65cd4b223300b08bed0494deac20438235dc929",
+      "diagnostic_trace_sha256": "3e5bb7e91bb03cb27fc874f0e338fbd41e73bcbe9a3930f9e2a7dac053545a92",
+      "diagnostic_reason": "BSL_CLEANUP_FAILED",
+      "java_exit_code": 0,
+      "runtime_verified": true,
+      "report_sha256": "0e18da4e5e348779935e2495d0263758374c5163c17a4fb3669bff1c9578b6df"
+    },
+    {
+      "trial": 36,
+      "mode": "local_diagnostic_overlay",
+      "git_commit": "d44b693d6491ad8d3c77eacfe56c69c1c014dbc4",
+      "observer_snapshot": "8c5d67ee897e44f3ed437a24d0c85b6b9a3a387e4f060e61ef1c6c7738f0e711",
+      "module_worktree_sha256": "535040181e6c12f438ed32e207e0a5435fd6b2a6223dcc2b61df9baef0df6bdd",
+      "harness_sha256": "a6a57486ae08d8dab7169130a8f66009919b8ab386db26062608e2abcdabeba1",
+      "installer_status": "installed",
+      "worker_exit_code": 0,
+      "journal_event": {
+        "status": "stopped"
+      },
+      "outbox_statuses": [
+        "analyzed"
+      ],
+      "source_clean": true,
+      "runtime_stamp_before_after_equal": true,
+      "runtime_stamp_sha256": "2c197266a249f74c979f97c088c16d4721f77e9992d07b34932587e8a87829a7",
+      "diagnostic_trace_sha256": null,
+      "diagnostic_reason": null,
+      "java_exit_code": null,
+      "runtime_verified": null,
+      "report_sha256": null
+    },
+    {
+      "trial": 38,
+      "mode": "local_diagnostic_overlay",
+      "git_commit": "f2bfd88414f93bbc529223764cba1c38b5030cc5",
+      "observer_snapshot": "fa4778e97f72f0ca45d0dedaf4864ccee668820d50c4ebb105d79e901b4abee8",
+      "module_worktree_sha256": "298ac56d0bb94ca5c0b9ae53ecb74ec0e35b1b9ab84187adfe245b040c26736b",
+      "harness_sha256": "a6a57486ae08d8dab7169130a8f66009919b8ab386db26062608e2abcdabeba1",
+      "installer_status": "installed",
+      "worker_exit_code": 0,
+      "journal_event": {
+        "status": "stopped"
+      },
+      "outbox_statuses": [
+        "analyzed"
+      ],
+      "source_clean": true,
+      "runtime_stamp_before_after_equal": true,
+      "runtime_stamp_sha256": "ab4a4204e1821cd07ca9f2073487a14f5c93ce56d4e6cc83e01424f3808dcc8e",
+      "diagnostic_trace_sha256": null,
+      "diagnostic_reason": null,
+      "java_exit_code": null,
+      "runtime_verified": null,
+      "report_sha256": null
+    },
+    {
+      "trial": 39,
+      "mode": "local_diagnostic_overlay",
+      "git_commit": "fd3f36e4caeaef6a3568a57d03d03d41eb495cf4",
+      "observer_snapshot": "8b037a0bfe2dea7f192a74f66d2ca9fcc95d6cd76c245482ab5bc40cbae167e3",
+      "module_worktree_sha256": "71b7761bc7f4352902b094e63bfe0f81275892f361e784a65de1dc9ee177c30f",
+      "harness_sha256": "a6a57486ae08d8dab7169130a8f66009919b8ab386db26062608e2abcdabeba1",
+      "installer_status": "installed",
+      "worker_exit_code": 0,
+      "journal_event": {
+        "status": "stopped"
+      },
+      "outbox_statuses": [
+        "analyzed"
+      ],
+      "source_clean": true,
+      "runtime_stamp_before_after_equal": true,
+      "runtime_stamp_sha256": "a91c154c9fe67ebda9e3937f17e75dfb672fb4e9e9217ca29a1df0543d458c7d",
+      "diagnostic_trace_sha256": null,
+      "diagnostic_reason": null,
+      "java_exit_code": null,
+      "runtime_verified": null,
+      "report_sha256": null
+    },
+    {
+      "trial": 40,
+      "mode": "local_diagnostic_overlay",
+      "git_commit": "1ec9d67bcb45ba09ff3cc0d76299a1672cb6eaa8",
+      "observer_snapshot": "30208ad280ed53b74cd3830203fc56c6ea657a545466a245ae996ca50a06ea8f",
+      "module_worktree_sha256": "1abfacbb362b947874391867ef63fd0810598ae60e9ae5e66a009ef85f082a57",
+      "harness_sha256": "a6a57486ae08d8dab7169130a8f66009919b8ab386db26062608e2abcdabeba1",
+      "installer_status": "installed",
+      "worker_exit_code": 0,
+      "journal_event": {
+        "status": "stopped"
+      },
+      "outbox_statuses": [
+        "analyzed"
+      ],
+      "source_clean": true,
+      "runtime_stamp_before_after_equal": true,
+      "runtime_stamp_sha256": "55f48aac41bd8eb748e6e2ca7bcecff99cf5f159c44e71695fd210016c6f3ded",
+      "diagnostic_trace_sha256": null,
+      "diagnostic_reason": null,
+      "java_exit_code": null,
+      "runtime_verified": null,
+      "report_sha256": null
+    },
+    {
+      "trial": 41,
+      "mode": "local_diagnostic_overlay",
+      "git_commit": "dafba2ed428d9dcbcf27b203c24c53d986a4a9dc",
+      "observer_snapshot": "414173fd353064ce89828f225398810bd96c28579b4096c63b799f555595f7f7",
+      "module_worktree_sha256": "f55e36d16b4b1053231bb14248be8970d41f24464c408a0431c05d3d67c7a38e",
+      "harness_sha256": "a6a57486ae08d8dab7169130a8f66009919b8ab386db26062608e2abcdabeba1",
+      "installer_status": "installed",
+      "worker_exit_code": 0,
+      "journal_event": {
+        "status": "stopped"
+      },
+      "outbox_statuses": [
+        "analyzed"
+      ],
+      "source_clean": true,
+      "runtime_stamp_before_after_equal": true,
+      "runtime_stamp_sha256": "09cad5ebfb778734e3ef5499c05cd9d658d3430e39d9166ea0c4f0edf1ade4c4",
+      "diagnostic_trace_sha256": null,
+      "diagnostic_reason": null,
+      "java_exit_code": null,
+      "runtime_verified": null,
+      "report_sha256": null
+    },
+    {
+      "trial": 42,
+      "mode": "local_diagnostic_overlay",
+      "git_commit": "378121fcf9ccf4f015a818de370956acd266ad70",
+      "observer_snapshot": "36967705ae05ec9d818301ad71e175383982791503a5b5eafb6efa9a8ea9d171",
+      "module_worktree_sha256": "76881c12098b46794c0a7f172ea7fb2fb9825cc25a9870a9f8591574ac6cde86",
+      "harness_sha256": "a6a57486ae08d8dab7169130a8f66009919b8ab386db26062608e2abcdabeba1",
+      "installer_status": "installed",
+      "worker_exit_code": 2,
+      "journal_event": {
+        "code": "GIT_ANALYZER_INCOMPLETE",
+        "status": "fatal"
+      },
+      "outbox_statuses": [
+        "fatal"
+      ],
+      "source_clean": true,
+      "runtime_stamp_before_after_equal": true,
+      "runtime_stamp_sha256": "8f78d0dc0b7bf317359313e0b643d3ea8df572c646c2ce6754f7dc27b2919164",
+      "diagnostic_trace_sha256": "5cd989368306787c2ca38cc10142c2c896654fbbf623516b26558c259107d751",
+      "diagnostic_reason": "BSL_CLEANUP_FAILED",
+      "java_exit_code": 0,
+      "runtime_verified": true,
+      "report_sha256": "1c4dc9809b810f5dbd5e80d98f06c36e5c4d2e60f65d1bb24326201233d42808"
+    }
+  ],
+  "installer_retry": {
+    "trial": 37,
+    "first_attempt_stage": "stage.rename(target)",
+    "first_attempt_error": "PermissionError WinError 5",
+    "first_stderr_sha256": "ba0194c2f315841965e48017f32e94be80d6d744757fceabbd43fd483f829e9c",
+    "retry_status": "installed",
+    "retry_jdk_files": 490,
+    "retry_stdout_sha256": "ce46d7489db038d521f90f27abe266d200944c66684d0eb58f07a833d8ea90dc",
+    "worker_run": false,
+    "cause_not_attributed": true
+  },
+  "trace_observations": {
+    "trial_29": {
+      "relative_parent": "profile/.bsl-language-server/cache/<id>/file/typoCache_<id>",
+      "first_again_fresh_same_child_identity": true,
+      "child_name": "offheap-disk-store",
+      "child_absent_after_worker": true
+    },
+    "trial_42": {
+      "relative_parent": "profile/.bsl-language-server/cache",
+      "matching_relative_path_previously_delete_verified": true,
+      "postdelete_inventory_identity_compared_to_original": false,
+      "first_inventory_count": 1,
+      "second_retained_inventory_count": 0,
+      "fresh_handle_inventory_count": 0,
+      "child_open_winerror": 2,
+      "child_absent_after_worker": true,
+      "parent_empty_after_worker": true
+    }
+  },
+  "limitations": [
+    "Trial 14 uses the public installed CLI without a diagnostic overlay; its internal reason was not captured.",
+    "All other listed worker trials used a local PYTHONPATH diagnostic copy; it may change timing and is not the released package.",
+    "Equal before/after runtime stamps do not rule out transient changes during execution.",
+    "No second Windows host, SCM/service account, external writer attribution, typical .cf/.cfe, live IB, HTTPS/DNS, or production deployment.",
+    "No product fix is included; issue 23 and cold acceptance remain open."
+  ]
+}
