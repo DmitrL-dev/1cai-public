@@ -119,7 +119,8 @@ SHA256 `4736d6f4c5eca0ebc588418d4f6ed58fc133c110b0de41497f161f7f13b947a9`.
 20 457 961 байт и SHA256
 `9351d2b8790a358f66931a3067e8ba1823b61b7ca6b97989bb430f8fd124441a`,
 точно как в манифесте релиза. Эти проверки подтверждают текущий опубликованный
-артефакт и CI этого merge-коммита, но не устраняют причины
+артефакт, два CI на head PR #30 и postmerge CI на merge-коммите, но не
+устраняют причины
 [холодного отказа](https://github.com/DmitrL-dev/1cai-public/issues/23) и
 [редкого timeout CI](https://github.com/DmitrL-dev/1cai-public/issues/25).
 
