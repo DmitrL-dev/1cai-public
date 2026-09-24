@@ -7,7 +7,7 @@ const hash=b=>createHash('sha256').update(b).digest('hex');
 const bytes=Buffer.from('\uFEFFReturn 42;\r\n');
 const ref={snapshot:{project_id:project,snapshot_id:'a'.repeat(64),manifest_hash:'a'.repeat(64)},layer_id:'base',relative_path:'Module.bsl',raw_sha256:hash(bytes)};
 const receipt={project_id:project,draft_id:draft,revision:2,title:'Fix',proposal_content_id:'b'.repeat(64),source_ref:ref};
-const config={schema:1,core_version:'0.1.0.dev8',python:'C:\\python.exe',registry:'C:\\registry',project_id:project};
+const config={schema:1,core_version:'0.1.0.dev11',python:'C:\\python.exe',registry:'C:\\registry',project_id:project};
 async function fixture(t){
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'rentgen-edit-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));
  const replies=new Map();let mutations=0, fail=null;

@@ -122,7 +122,7 @@ def prepare(args):
         "profile.json",
         {
             "schema": 1,
-            "core_version": "0.1.0.dev10",
+            "core_version": "0.1.0.dev11",
             "python": str(python),
             "registry": str(registry),
             "project_id": project,

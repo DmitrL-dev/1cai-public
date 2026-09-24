@@ -47,8 +47,8 @@ exports.activate = async context => {
     const views = createViews(vscode, client, context);
     // Authorize the project before making its panels available.
     await views.refreshSources();
-    const repairAvailable = ['0.1.0.dev7','0.1.0.dev8','0.1.0.dev9','0.1.0.dev10'].includes(config.core_version);
-    const nativeAvailable = ['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10'].includes(config.core_version);
+    const repairAvailable = ['0.1.0.dev7','0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11'].includes(config.core_version);
+    const nativeAvailable = ['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11'].includes(config.core_version);
     const repair = createRepairUI(vscode, createRepairService({root,extensionRoot:context.extensionPath,config,client,trusted:()=>vscode.workspace.isTrusted}),views,context,repairAvailable);
     const edit=createEditUI(vscode,createEditService({root,config,client,trusted:()=>vscode.workspace.isTrusted}),views,context,repairAvailable);
     let bslRunner;
