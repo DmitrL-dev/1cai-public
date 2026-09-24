@@ -107,6 +107,22 @@ CLI вернул `SERVICE_WORKER_FAILED`, журнал `GIT_ANALYZER_INCOMPLETE`
 `BSL_INPUT_CHANGED` и точный механизм задержки удаления не доказаны.
 Продуктовый код не менялся; issue #23 и холодная приёмка остаются открытыми.
 
+[PR #30](https://github.com/DmitrL-dev/1cai-public/pull/30) с этой трассой
+объединён в `main` коммитом `04a5f93cb9a8b36767d9bbc31b152c92f92e28d0`.
+[Push CI](https://github.com/DmitrL-dev/1cai-public/actions/runs/36055682067),
+[PR CI](https://github.com/DmitrL-dev/1cai-public/actions/runs/36055687455)
+и [postmerge main CI](https://github.com/DmitrL-dev/1cai-public/actions/runs/36060068341)
+завершились `success`; каждый JUnit содержит 2331 тест, 0 failures, errors и
+skipped. ZIP JUnit postmerge run (artifact `10835378472`) совпал с digest GitHub:
+SHA256 `4736d6f4c5eca0ebc588418d4f6ed58fc133c110b0de41497f161f7f13b947a9`.
+Повторно скачанный 25 сентября публичный ZIP Core dev11 сохранил размер
+20 457 961 байт и SHA256
+`9351d2b8790a358f66931a3067e8ba1823b61b7ca6b97989bb430f8fd124441a`,
+точно как в манифесте релиза. Эти проверки подтверждают текущий опубликованный
+артефакт и CI этого merge-коммита, но не устраняют причины
+[холодного отказа](https://github.com/DmitrL-dev/1cai-public/issues/23) и
+[редкого timeout CI](https://github.com/DmitrL-dev/1cai-public/issues/25).
+
 Отдельный [нативный прогон schema 3](SERVICE-GIT-SCHEMA3-NATIVE-DEV11.md)
 на уже использованном runtime подтвердил автономный захват нового snapshot
 после Git-коммита, `git_source_verified` owner report и второй цикл без новой
