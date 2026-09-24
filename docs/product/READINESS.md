@@ -83,6 +83,16 @@ GitAuditWorker и не устанавливают причину расхожд�
 непостоянство прежнего отказа полного цикла; причина `BSL_INPUT_CHANGED`
 по-прежнему неизвестна, issue #23 и холодная приёмка остаются открытыми.
 
+[Проверка девяти новых регистраций проекта](SERVICE-GIT-NEW-PROJECT-DEV11.md)
+25 сентября обнаружила ещё один первый отказ полного schema 2 worker: публичный
+CLI вернул `SERVICE_WORKER_FAILED`, журнал `GIT_ANALYZER_INCOMPLETE`, outbox
+`fatal` без owner report. Повтор того же runtime дал `analyzed`; шесть других
+проектов с диагностическим hook и два проекта через обычный CLI прошли первые
+циклы с настоящим `bsl/MagicNumber` finding. [Новая ограниченная квитанция](evidence/service-git-new-project-dev11-20260925.json)
+разделяет эти входы и результаты. Внутренняя причина именно нового отказа не
+записана, поэтому его нельзя автоматически назвать `BSL_INPUT_CHANGED`.
+Холодная приёмка и issue #23 остаются открытыми.
+
 Отдельный [нативный прогон schema 3](SERVICE-GIT-SCHEMA3-NATIVE-DEV11.md)
 на уже использованном runtime подтвердил автономный захват нового snapshot
 после Git-коммита, `git_source_verified` owner report и второй цикл без новой
