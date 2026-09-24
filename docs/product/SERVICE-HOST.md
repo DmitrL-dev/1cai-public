@@ -153,6 +153,13 @@ and next commit, prepared-observation races, ancestry before capture,
 authorization before/after capture, restart around publication and owner save,
 receipt reuse, cooperative stop and over 1000 unchanged scheduler cycles.
 
+После публикации Core dev11 [отдельный локальный сценарий](SERVICE-GIT-SCHEMA3-NATIVE-DEV11.md)
+запустил **установленный** GitAuditWorker schema 3 с настоящим закреплённым
+BSL-LS: новый чистый Git-коммит привёл к автономному snapshot и `analyzed`,
+повторный цикл не добавил `unchanged` в outbox. Это console mode на одном
+синтетическом модуле и уже использованном runtime. Первый цикл после свежей
+установки runtime остаётся [неквалифицированным](https://github.com/DmitrL-dev/1cai-public/issues/23).
+
 ## Source Observer entrypoint
 
 `rentgen_core.service_entry` supplies a stdlib/ctypes Windows SCM boundary and
