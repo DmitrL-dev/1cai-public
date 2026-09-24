@@ -119,3 +119,38 @@ local paths and platform logs are not published. This is one synthetic common
 module on one installed 1C version. Typical configurations, extensions,
 forms/СКД, a live production infobase, external concurrent writers, and
 production deployment remain outside this check.
+
+## Installed dev11 follow-up on native 1C
+
+On 24 September 2026, the same verifier was run against the **accepted push-CI**
+core `0.1.0.dev11` ZIP, SHA256
+`9351d2b8790a358f66931a3067e8ba1823b61b7ca6b97989bb430f8fd124441a`.
+The wheel was installed offline from that exact kit with 30 locked wheels and
+hash checking. An independently accepted synthetic `first-roundtrip` Designer
+XML fixture and a new, developer-owned local file infobase were used. The 1C
+executable was `8.3.27.2342`, SHA256
+`2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956`.
+
+The installed CLI accepted valid BSL and reported diagnostics for the broken
+candidate. It applied the valid proposal to its owned source copy. 1C loaded
+those exact bytes, passed `/CheckConfig`, updated the database, and application
+execution returned **43**. Export preserved the applied module text and both
+UUIDs. After CLI Undo, all six owned source files returned to their original
+inventory hashes. Reload, `/CheckConfig`, database update, and application
+execution returned **42**; the project head was unchanged. All 11 native steps
+exited with code 0 without timeout, and no model was called.
+
+The [bounded receipt](evidence/proposal-live-native-dev11-20260924.json) binds
+the release tag and archive, wheel, scanner, source and verifier commits,
+fixture report, platform binary, source hashes, operation IDs, runtime values,
+and native steps. The [path-free raw verifier result](evidence/proposal-live-native-dev11-20260924.raw.json)
+has SHA256 `e8bdd73f6e45032a3d1069eefe9684b7f007be69f43667acab153136b93a91d5`.
+Local platform logs and the step journal with absolute paths are not published.
+The full platform dump is not byte-identical because `ConfigDumpInfo.xml`
+changes; the proof covers the six owned source files and stable module and
+configuration UUIDs. The apply state journal was written during the run.
+
+This is one synthetic common module on one installed 1C version. Typical
+configurations, extensions, forms/СКД, a live production infobase, external
+concurrent writers, and production deployment remain outside this check. The
+published ZIP and release manifest are unchanged by this follow-up.

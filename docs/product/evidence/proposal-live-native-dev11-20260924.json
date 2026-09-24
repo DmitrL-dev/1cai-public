@@ -1,0 +1,111 @@
+{
+  "schema": 1,
+  "date": "2026-09-24",
+  "accepted": true,
+  "scope": "Developer-owned synthetic Designer XML common module in a new local 1C file infobase",
+  "release_tag": "core-v0.1.0-dev11",
+  "release_source_commit": "441e838ca6c02d10a4763ede6152f6517a771304",
+  "verifier_commit": "040262ffd0714b99f958cee748100a4ba3c51918",
+  "verifier_script_sha256": "8c671d5cbc359540297754a83447c27da60da948edec90a2f072c6f3bd4466ac",
+  "verifier_helper_sha256": "5cafef21860fffef94952b9659fe30a37ce1828f809e7a6b7704f0b463a41f11",
+  "core_version": "0.1.0.dev11",
+  "core_archive_sha256": "9351d2b8790a358f66931a3067e8ba1823b61b7ca6b97989bb430f8fd124441a",
+  "core_wheel_sha256": "74cfe4a4f00369e13ef87c084ab1b62a016ac0661217fba015d5bccc831877b6",
+  "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+  "offline_kit_accepted": true,
+  "offline_require_hashes": true,
+  "platform_version": "8.3.27.2342",
+  "platform_executable_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+  "native_fixture_accepted": true,
+  "native_fixture_report_sha256": "85a5c906c3b1d5b5a36e765009706e5feadb09c173edeae42df26c467a6c32c0",
+  "raw_acceptance_sha256": "e8bdd73f6e45032a3d1069eefe9684b7f007be69f43667acab153136b93a91d5",
+  "local_native_steps_sha256": "68b18387941281c25b512da0bce07efb52be74e34a923447dba75ee10afd044e",
+  "source_file_count": 6,
+  "original_source_inventory_sha256": "df0f6c83ad0b745d9bc8faf0e0dd4d834fe90ab98fbf4c94ad8f069e2c34f33c",
+  "applied_source_inventory_sha256": "02ae5a26050cedb1b4270698135a91d404a0622263fdbafd3be417c4f7404cb7",
+  "source_inventory_restored_after_undo": true,
+  "module_uuid": "3cad2a5d-b745-4cdf-a109-7df694660efd",
+  "configuration_uuid": "5d6a4e80-ea98-4999-841d-c644f9e1ff96",
+  "original_bsl_sha256": "93d1b97e4bc287d800c099c2b4de05c68c74acc68090d16e09d203a5b085a880",
+  "applied_bsl_sha256": "a3ca3b38935969afd50fedc6b3ac77f66c886968ce4f976c05ce9761af764428",
+  "operation_id": "067c73d4-f338-4f92-82c5-b2744500b8dc",
+  "applied_result_id": "6c491e91c6f7cb5a14aa466ee0ccbd10684778ed66bd770d0fac69ccfee7dfbc",
+  "undone_result_id": "f30b60f921d180db3f3cc3374f77fd87ec588b40657f8395ecfbd403f1c66119",
+  "native_candidate_checks": [
+    "passed",
+    "diagnostics_present"
+  ],
+  "runtime_values": {
+    "applied": 43,
+    "undone": 42
+  },
+  "native_steps": [
+    {
+      "name": "create",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "load-applied",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "check-applied",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "update-applied",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "execute-applied",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "applied-roundtrip",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "load-undone",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "check-undone",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "update-undone",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "execute-undone",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "undone-roundtrip",
+      "exit_code": 0,
+      "timed_out": false
+    }
+  ],
+  "source_restored": true,
+  "project_head_preserved": true,
+  "model_calls": 0,
+  "not_verified": [
+    "typical configurations",
+    "extensions",
+    "forms and СКД",
+    "live production infobases",
+    "external concurrent writers",
+    "byte-identical full native roundtrip dump",
+    "public service or production deployment"
+  ]
+}

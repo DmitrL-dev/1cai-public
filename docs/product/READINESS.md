@@ -8,9 +8,51 @@
 синтетический EDT read-only contract от исторических native экспериментов;
 добавление corpus не квалифицирует типовые `.cf/.cfe` и live apply.
 
-## Выпуск 23 сентября 2026 — core dev10 и Companion 0.1.10
+## Выпуск 24 сентября 2026 — core dev11 и Companion 0.1.11
 
-Текущая пара раннего доступа: [core `0.1.0.dev10`](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev10)
+Текущая пара раннего доступа: [core `0.1.0.dev11`](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev11)
+и [Companion `0.1.11`](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.11).
+Core исправляет запись полных Windows file ID в запечатанном архиве нативных
+запусков: большие значения сохраняются без потери старших битов, а повторная
+проверка отклоняет подмену файла. [Манифест](../../releases/core/0.1.0.dev11/manifest.json)
+привязывает принятый push-CI ZIP к исходному коммиту `441e838` и SHA256
+`9351d2b8790a358f66931a3067e8ba1823b61b7ca6b97989bb430f8fd124441a`.
+Офлайн-проверка принятого ZIP подтвердила 40 файлов, 30 зафиксированных wheels
+и 32 MCP-инструмента. [Push](https://github.com/DmitrL-dev/1cai-public/actions/runs/35949352582),
+[PR](https://github.com/DmitrL-dev/1cai-public/actions/runs/35949391693)
+и [CI объединённого main](https://github.com/DmitrL-dev/1cai-public/actions/runs/35955558552)
+завершились успешно; JUnit каждого из этих прогонов содержит 2331 Python-тест
+без ошибок и пропусков. Node, Go, сборка комплекта и установленные проверки
+тоже прошли.
+
+VSIX Companion размером 208753 байта имеет SHA256
+`916e1311a5bd8ea43c05e7220c547239bb056a963b85ab7746a13ff8e67f83d5`.
+[Релизный workflow](https://github.com/DmitrL-dev/1cai-public/actions/runs/35958567239)
+повторно собрал расширение, сверил хэш и размер с манифестом, проверил
+скачанный артефакт и создал черновик. После отдельной сверки трёх файлов
+черновик опубликован как prerelease. Профиль выбирает
+установленный core dev11 явно; старые профили не переписываются.
+
+После подготовки релиза установленный **принятый CI ZIP** прошёл
+[ограниченный нативный сценарий BSL apply/Undo](PROPOSAL-LIVE-APPLY.md#installed-dev11-follow-up-on-native-1c)
+в отдельной собственной файловой базе 1С 8.3.27.2342. Все 11 нативных шагов
+завершились с кодом 0; приложение вернуло 43 после применения и 42 после Undo.
+Полный inventory шести исходных файлов восстановлен по хэшам, UUID сохранены,
+модель не вызывалась. [Машинная квитанция](evidence/proposal-live-native-dev11-20260924.json)
+связывает публичный ZIP, установленный wheel, платформу и результаты. Полный
+dump платформы побайтно не совпадает из-за `ConfigDumpInfo.xml`; это не
+заявляется как полная нативная приёмка.
+
+Типовые `.cf/.cfe`, расширения, формы/СКД, живая рабочая ИБ, внешний
+конкурентный writer, публичный HTTPS/DNS и служба Windows остаются вне
+принятого охвата. Production deployment требует отдельной приёмки и разрешения
+владельца. Байтная воспроизводимость ZIP между Windows-машинами также не
+заявляется: совпали 39/41 внутренних файлов, включая wheel/sdist/scanner, а
+два provenance-файла различались.
+
+## Предыдущий выпуск 23 сентября 2026 — core dev10 и Companion 0.1.10
+
+Предыдущая пара раннего доступа: [core `0.1.0.dev10`](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev10)
 и [Companion `0.1.10`](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.10).
 [Манифест core](../../releases/core/0.1.0.dev10/manifest.json) привязывает
 ZIP с SHA256 `11d5f8e850eec13d9a67c9cd1985db212a076e882b8794cb790fb7ac2dbee4e3`

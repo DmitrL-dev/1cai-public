@@ -1,0 +1,94 @@
+{
+  "accepted": true,
+  "installed": true,
+  "core_version": "0.1.0.dev11",
+  "native_checks": 2,
+  "candidate_statuses": [
+    "passed",
+    "diagnostics_present"
+  ],
+  "report_ids": [
+    "a3934353-ad03-46bc-8f05-e0812f205c42",
+    "6bb445c8-2acb-4f74-b49d-d411571892a8"
+  ],
+  "head_and_state_preserved": true,
+  "live_sources_preserved": true,
+  "wrong_executable_hash_refused": true,
+  "completed_replay_preserves_all_native_files": true,
+  "result_lookup_without_sources_or_generations": true,
+  "model_calls": 0,
+  "application_execution": true,
+  "live_apply_native": {
+    "operation_id": "067c73d4-f338-4f92-82c5-b2744500b8dc",
+    "applied_result_id": "6c491e91c6f7cb5a14aa466ee0ccbd10684778ed66bd770d0fac69ccfee7dfbc",
+    "undone_result_id": "f30b60f921d180db3f3cc3374f77fd87ec588b40657f8395ecfbd403f1c66119",
+    "candidate_sha256": "a3ca3b38935969afd50fedc6b3ac77f66c886968ce4f976c05ce9761af764428",
+    "original_sha256": "93d1b97e4bc287d800c099c2b4de05c68c74acc68090d16e09d203a5b085a880",
+    "module_uuid": "3cad2a5d-b745-4cdf-a109-7df694660efd",
+    "configuration_uuid": "5d6a4e80-ea98-4999-841d-c644f9e1ff96",
+    "platform_executable_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+    "runtime_values": {
+      "applied": 43,
+      "undone": 42
+    },
+    "native_steps": [
+      {
+        "name": "create",
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "name": "load-applied",
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "name": "check-applied",
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "name": "update-applied",
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "name": "execute-applied",
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "name": "applied-roundtrip",
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "name": "load-undone",
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "name": "check-undone",
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "name": "update-undone",
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "name": "execute-undone",
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "name": "undone-roundtrip",
+        "exit_code": 0,
+        "timed_out": false
+      }
+    ],
+    "source_restored": true,
+    "head_preserved": true
+  }
+}
