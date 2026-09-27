@@ -1,6 +1,6 @@
 # Локальное ядро: сборка, установка и первый проект
 
-Срез исходников `rentgen-core 0.1.0.dev11`, Windows x64 / CPython 3.11. Это CLI снимков,
+Срез исходников `rentgen-core 0.1.0.dev13`, Windows x64 / CPython 3.11. Это CLI снимков,
 графа и предложенных правок с BSL-диагностикой и локальным stdio MCP. Полная
 приёмка продукта ведётся в полном репозитории (`docs/product/READINESS.md`). Инструкции не
 устанавливают платформу 1С, EDT или модели и не запускают HTTP-сервер или старый
@@ -51,7 +51,7 @@ SNAPSHOT-METADATA, SNAPSHOT-READ-SESSIONS и SNAPSHOT-PUBLICATION-ADR.
 
 ```powershell
 py -3.11 -m venv .venv-core
-.\.venv-core\Scripts\python.exe -m pip install --no-index --no-deps .\dist\rentgen_core-0.1.0.dev11-py3-none-any.whl
+.\.venv-core\Scripts\python.exe -m pip install --no-index --no-deps .\dist\rentgen_core-0.1.0.dev13-py3-none-any.whl
 .\.venv-core\Scripts\python.exe -m pip check
 .\.venv-core\Scripts\rentgen.exe --help
 ```
@@ -85,7 +85,7 @@ Extra `mcp` добавляет официальный SDK `mcp==1.30.0`; обя�
 ```powershell
 py -3.11 -m venv .venv-mcp
 .\.venv-mcp\Scripts\python.exe -m pip install --require-hashes --only-binary=:all: -r requirements/locks/product-py311-windows.txt
-.\.venv-mcp\Scripts\python.exe -m pip install --no-index --no-deps ".\dist\rentgen_core-0.1.0.dev11-py3-none-any.whl[mcp]"
+.\.venv-mcp\Scripts\python.exe -m pip install --no-index --no-deps ".\dist\rentgen_core-0.1.0.dev13-py3-none-any.whl[mcp]"
 .\.venv-mcp\Scripts\python.exe -m pip check
 .\.venv-mcp\Scripts\rentgen-mcp.exe --registry C:\RentgenState\registry.sqlite3 --scanner C:\RentgenTools\bsl-scan.exe
 ```
@@ -299,8 +299,8 @@ RENTGEN_PREVIOUS_CORE_WHEEL указывает на сохранённый на�
 Сервер принимает доверенные параметры `--project` и повторяемый `--allow-tool`.
 Они ограничивают обнаружение и исполнение инструментов, включая вложенные ссылки
 на другой проект, до доступа к состоянию. Проверки membership сохраняются.
-В dev6 без параметров сохранялся тогдашний набор из 21 инструмента. В текущем
-dev11 без ограничений доступно 32 инструмента; см. [контракт MCP](CORE-MCP.md).
+В dev6 без параметров сохранялся тогдашний набор из 21 инструмента. В текущей
+сборке без ограничений доступно 32 инструмента; см. [контракт MCP](CORE-MCP.md).
 Схема 4 не меняется; миграция с dev5 не нужна. Профили редактора нового
 генератора требуют dev6, чтобы ограничения исполнялись сервером.
 

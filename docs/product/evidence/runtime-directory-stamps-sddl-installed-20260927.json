@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "source_commit": "1519d8bbf0c5aabb4e804e88640a98bacff44a93",
+  "kit": {
+    "directory": "C:\\Users\\chg\\AppData\\Local\\Temp\\rentgen-readiness-evidence-20260927\\core-dev13-sddl-local-kit\\rentgen-core-0.1.0.dev13-windows-py311",
+    "archive": "C:\\Users\\chg\\AppData\\Local\\Temp\\rentgen-readiness-evidence-20260927\\core-dev13-sddl-local-kit\\rentgen-core-0.1.0.dev13-windows-py311.zip",
+    "archive_sha256": "d16c4800dcc51b6774d01e25019dae6561b28da9adee4601efb6d0dd332989da",
+    "wheel_sha256": "b7b26fcd446e1841bcbc7ef1cb3f4797dd4fc992dfbe212c4555d07bb948b6cd",
+    "sdist_sha256": "5ac05675b1a0a5a4deeb96add0bd11ff3e560a764a3c25bb85ebbb468e09438a",
+    "dependency_wheels": 30
+  },
+  "kit_size": 20463187,
+  "package_audit": {
+    "package_files": 103,
+    "installed_equals_wheel_equals_git_archive": true,
+    "changed_wheel_entries_from_64197b7": [
+      "rentgen_diagnostics/_owned_attempt.py",
+      "rentgen_core-0.1.0.dev13.dist-info/RECORD"
+    ],
+    "sha256": "fa3b9695663603e873c060dea850f71215b1551d3bcb5d9179fa9aa07bfaa57c"
+  },
+  "healthy_service": {
+    "checks": 27,
+    "failures": [],
+    "quality": {
+      "status": "available",
+      "provenance": "git_source_verified",
+      "total": 1,
+      "open": 1,
+      "resolved": 0
+    },
+    "report_id": "d8c52de7-8533-4f4f-818a-8b20e65af068",
+    "source_preserved": true,
+    "attempt_cleanup_verified": true,
+    "audit_sha256": "558d600c30052b197c0e8c7adb60b2d35771f28868ec6089cfb481bd3e6d18d7"
+  },
+  "negative_jar_control": {
+    "checks": 15,
+    "failures": [],
+    "only_first_owned_jar_byte_changed": true,
+    "service_exit": 2,
+    "reason": "BSL_RUNTIME_MISMATCH",
+    "external_code": "SERVICE_WORKER_FAILED",
+    "source_preserved": true,
+    "no_owner_reports": true,
+    "audit_sha256": "6a66a459c6329ea0416c58a7cd8979cabece58ac2bd45dc03d8bfe8c430f8643"
+  },
+  "offline": {
+    "verified_files": 40,
+    "mcp_tools": 32,
+    "hash_required": true
+  },
+  "source_ci": {
+    "push": 36295543652,
+    "pull_request": 36295545877,
+    "qualified": false
+  },
+  "windows_scm_qualified": false,
+  "published": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "root_only_review": true,
+  "recorded_utc": "2026-09-27T04:57:40.804126+00:00"
+}

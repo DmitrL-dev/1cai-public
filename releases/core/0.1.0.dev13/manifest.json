@@ -1,0 +1,21 @@
+{
+  "version": "0.1.0.dev13",
+  "tag": "core-v0.1.0-dev13",
+  "prerelease": true,
+  "asset": "rentgen-core-0.1.0.dev13-windows-py311.zip",
+  "size_bytes": 20463187,
+  "sha256": "1fb3ee3a41dd30a1efc754f41297a0ae930a1a31f994df5f9a695c7b12ac0de6",
+  "wheel_sha256": "b7b26fcd446e1841bcbc7ef1cb3f4797dd4fc992dfbe212c4555d07bb948b6cd",
+  "sdist_sha256": "5ac05675b1a0a5a4deeb96add0bd11ff3e560a764a3c25bb85ebbb468e09438a",
+  "source_commit": "1519d8bbf0c5aabb4e804e88640a98bacff44a93",
+  "ci_run": 36295543652,
+  "pr_ci_run": 36295545877,
+  "python_tests": 2439,
+  "platform": "Windows x64 / CPython 3.11",
+  "qualified_http_host": "Uvicorn 0.52.4 / httptools 0.8.0",
+  "tested_1c_version": "8.3.27.2342",
+  "native_1c_smoke_accepted": true,
+  "native_1c_scope": "Owned synthetic BSL module: native precheck, apply43/undo42, six restored source files; separate editor/YAxUnit selected-revision and completed-result recovery check",
+  "platform_1c_acceptance": false,
+  "full_product_ready": false
+}

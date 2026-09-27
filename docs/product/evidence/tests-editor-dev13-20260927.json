@@ -1,0 +1,110 @@
+{
+  "schema": "rentgen-native-editor-acceptance/1",
+  "accepted": true,
+  "source_commit": "1519d8bbf0c5aabb4e804e88640a98bacff44a93",
+  "core_wheel_sha256": "b7b26fcd446e1841bcbc7ef1cb3f4797dd4fc992dfbe212c4555d07bb948b6cd",
+  "companion_vsix_sha256": "cefb0b365951ad3dd072794c414211bce0425177d75b101bb62e99f164f98d03",
+  "editor": {
+    "editor_commit": "04c0d99f4fb0d8afe6ce4f0c58e31e183ac3e4b1",
+    "editor_executable_sha256": "8717f573f61a46d932b6d00f5b903f26b486f0c0ea0899346b37858be1511a80",
+    "editor_runtime_before_sha256": "c50fbeaead629a91ad321c6e54662742ee011a1ce0bd17a8213726d96235d6ae",
+    "editor_version": "1.139.1"
+  },
+  "editor_run": {
+    "selected_revision": 1,
+    "latest_revision": 2,
+    "new_test_runs": 1,
+    "run_id": "e9f73878-e62a-4246-b703-afb488f9af91",
+    "baseline_counts": {
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 0
+    },
+    "candidate_counts": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 1
+    },
+    "native_steps": 23,
+    "native_step_logs_sha256_verified": true,
+    "first_acceptance_sha256": "cb365c96a2bfbc8d33d952614e48835ff7854faeafab90665990eb97b5d7d077"
+  },
+  "recovery": {
+    "new_test_runs": 0,
+    "separate_editor_process": true,
+    "profile_disabled": true,
+    "same_result": true,
+    "completed_cli_replay_unchanged": true,
+    "disabled_new_run_refused": "TEST_PROFILE_DISABLED",
+    "test_run_files_unchanged": 909,
+    "run_inventory_sha256": "6e1fd0f3725046b34ee829628c077570320aabfa2b1c0091f1f0a96f614c9829",
+    "recovery_acceptance_sha256": "da3856ab754b9e2a5980f2d3cfda1eea0f5b919209584de0fdf531354847ad3e",
+    "commands": [
+      {
+        "command": "proposal-test",
+        "exit_code": 0,
+        "stdout_sha256": "6dec08ebb82ffa2a3677f7341acd6839fa41657ed3bb4713d2456a11c65ff32d",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "command": "proposal-test-result",
+        "exit_code": 0,
+        "stdout_sha256": "89c4e35c345a1c4304360281445d2bcbb4bb2a6f1bcef307ade51caefbe84aab",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "command": "proposal-test",
+        "exit_code": 2,
+        "stdout_sha256": "d81dde7d56bebe314f7bd81df31f4e354f0cfa61133b2139baf76fd119a3b066",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "command": "project-head",
+        "exit_code": 0,
+        "stdout_sha256": "b568dd5564b80469907a6a04e5db6b6e95b8b41bd1fbc01cddff92d81d445dce",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  },
+  "source_files_preserved": 6,
+  "head_preserved": true,
+  "model_calls": 0,
+  "runtime_installation_snapshots_equal": true,
+  "runtime_snapshot_sha256": "c50fbeaead629a91ad321c6e54662742ee011a1ce0bd17a8213726d96235d6ae",
+  "runtime_snapshot_files": 2651,
+  "native_platform_executable_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+  "native_report_sha256": "de01f8ed1f283e30cf7280b6f50c3f0fc84c04eb0380d1dd02a225750168f858",
+  "request_file_sha256": "cfd8d6e5e1bb396f2bde84d169908a044446575a13adc0b57c9fe25232eb3185",
+  "report_file_sha256": "e63b617eef29898608892b838cb46aab6e0fdc749651ebc23a38004e6fa10c66",
+  "harness": {
+    "initial_inputs_sha256": "8b66bd327814d4836a1ae47c580b3ed7a1fe9a5d49011ba61e225d1f66211b21",
+    "frozen_inputs_sha256": "7dd4c9a6b93ad262b549af0a4830e6480469085636f394f5f3f53ae53ab78ea7",
+    "temporary_changes": [
+      "Expected Companion version 0.1.13",
+      "Disable editor/extension auto-update in isolated user settings"
+    ],
+    "product_vsix_changed": false
+  },
+  "prior_probe": {
+    "current_version": "1.139.1",
+    "prior_after_sha256": "4dc87c4746fa7e74dc7fdb6955478757d2860cdbb0a0a944e0e376fbca57983a",
+    "prior_before_sha256": "7d92569a8182d09309ae7933a176720247d1cd23732c7d7149c7c87f42a103d0",
+    "prior_runtime_snapshots_equal": false,
+    "prior_version": "1.138.0",
+    "functional_checks_passed": true,
+    "strict_runtime_identity_accepted": false,
+    "reason_for_repeat": "Installed VS Code runtime changed between first and final snapshots"
+  },
+  "limitations": [
+    "Synthetic owned project only",
+    "Editor test execution and recovery; no editor live apply",
+    "Runtime snapshots do not attest system libraries or changes between snapshots",
+    "Local unattested native reports; no typical-configuration acceptance"
+  ],
+  "production_deployment": false,
+  "independent_peer_review": false
+}

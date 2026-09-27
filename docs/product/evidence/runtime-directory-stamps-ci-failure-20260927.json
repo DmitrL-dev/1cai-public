@@ -1,0 +1,61 @@
+{
+  "source_commit": "64197b7caf27d0e67712057d09a81fcac3951306",
+  "ci_qualified": false,
+  "runs": [
+    {
+      "run_id": 36292705066,
+      "event": "pull_request",
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36292705066",
+      "attempt": 1,
+      "artifact_sha256": "29580ef6ec5344cb848ef9543a7c8fc4998537ae5c9e88cf600ac6931a9c448a",
+      "junit_sha256": "712a3562f74b9181c3861b4c7b074625e0fc6b1d8f6976dc6692acc162715377",
+      "junit": {
+        "tests": 2424,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0
+      },
+      "failures": [
+        {
+          "class": "tests.unit.test_runtime_pins",
+          "name": "test_owned_attempt_inventory_and_cleanup_use_retained_directories",
+          "detail": "tests\\unit\\test_runtime_pins.py:271: in test_owned_attempt_inventory_and_cleanup_use_retained_directories\n    attempt.create()\nrentgen_diagnostics\\_owned_attempt.py:180: in create\n    self.native.mkdir(parent)\nrentgen_diagnostics\\_owned_attempt.py:125: in mkdir\n    raise PinFailure(\"BSL_PROCESS_FAILED\")\nE   rentgen_diagnostics._runtime_pins.PinFailure: BSL_PROCESS_FAILED"
+        }
+      ]
+    },
+    {
+      "run_id": 36292625827,
+      "event": "push",
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36292625827",
+      "attempt": 1,
+      "artifact_sha256": "c76c9675bb76c21bc51956c94895c866d3b344f32ac9a242e03071e1af2677b8",
+      "junit_sha256": "5192cfeada04b3743f35ee61f7ee01facc85b63beb1391a4d52322d71ed54875",
+      "junit": {
+        "tests": 2424,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0
+      },
+      "failures": [
+        {
+          "class": "tests.unit.test_runtime_pins",
+          "name": "test_owned_attempt_inventory_and_cleanup_use_retained_directories",
+          "detail": "tests\\unit\\test_runtime_pins.py:271: in test_owned_attempt_inventory_and_cleanup_use_retained_directories\n    attempt.create()\nrentgen_diagnostics\\_owned_attempt.py:180: in create\n    self.native.mkdir(parent)\nrentgen_diagnostics\\_owned_attempt.py:125: in mkdir\n    raise PinFailure(\"BSL_PROCESS_FAILED\")\nE   rentgen_diagnostics._runtime_pins.PinFailure: BSL_PROCESS_FAILED"
+        }
+      ]
+    }
+  ],
+  "observation": "Both original source CI runs failed at the protected-DACL string comparison after directory creation. Follow-up diagnostics establish SID alias rendering as the cause; the initial CreateDirectoryW-failure interpretation was incorrect.",
+  "local_diagnostic_tests": {
+    "tests": 33,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit_sha256": "6eae77e3a67ac32828021cdf9617182c2dd9de767e8e94e12109b04b9c03d2ef"
+  },
+  "next_check": "Record CreateDirectoryW path/result/immediate GetLastError in the test and run 33 native filesystem contracts before the full unchanged 2424-case suite.",
+  "product_runtime_bytes_changed": false,
+  "root_only_review": true,
+  "production_deployment": false,
+  "followup_evidence": "owned-attempt-sddl-20260927.json"
+}

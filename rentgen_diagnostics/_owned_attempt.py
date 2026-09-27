@@ -45,6 +45,14 @@ class _PrivateFS:
         self.security.ConvertStringSecurityDescriptorToSecurityDescriptorW.restype = (
             w.BOOL
         )
+        self.security.ConvertSecurityDescriptorToStringSecurityDescriptorW.argtypes = [
+            c.c_void_p,
+            w.DWORD,
+            w.DWORD,
+            c.POINTER(w.LPWSTR),
+            c.c_void_p,
+        ]
+        self.security.ConvertSecurityDescriptorToStringSecurityDescriptorW.restype = w.BOOL
         principal = current_windows_principal().id
         if not re.fullmatch(r"windows-sid:S-1-[0-9-]+", principal):
             raise PinFailure("BSL_PROCESS_FAILED")
@@ -52,6 +60,19 @@ class _PrivateFS:
         self.uncertain = []
         self.cleanup_uncertain = False
         self.created_paths = set()
+
+    def _render_dacl(self, descriptor):
+        rendered = w.LPWSTR()
+        try:
+            if not self.security.ConvertSecurityDescriptorToStringSecurityDescriptorW(
+                descriptor, 1, 4, c.byref(rendered), None
+            ) or not rendered.value:
+                raise PinFailure("BSL_PROCESS_FAILED")
+            return rendered.value
+        finally:
+            if rendered and self.kernel.LocalFree(c.cast(rendered, c.c_void_p)):
+                self.cleanup_uncertain = True
+                raise PinFailure("BSL_CLEANUP_FAILED")
 
     def _dacl(self, path):
         api = self.security
@@ -66,20 +87,12 @@ class _PrivateFS:
             c.POINTER(c.c_void_p),
         ]
         api.GetSecurityInfo.restype = w.DWORD
-        api.ConvertSecurityDescriptorToStringSecurityDescriptorW.argtypes = [
-            c.c_void_p,
-            w.DWORD,
-            w.DWORD,
-            c.POINTER(w.LPWSTR),
-            c.c_void_p,
-        ]
-        api.ConvertSecurityDescriptorToStringSecurityDescriptorW.restype = w.BOOL
         handle = self.kernel.CreateFileW(
             "\\\\?\\" + str(path), 0x20080, 1, None, 3, 0x02200000, None
         )
         if handle == c.c_void_p(-1).value:
             raise PinFailure("BSL_PROCESS_FAILED")
-        descriptor, rendered = c.c_void_p(), w.LPWSTR()
+        descriptor = c.c_void_p()
         try:
             stamp = _call(self.pins.ops.stamp, handle)
             if not stamp.directory or _call(self.pins.ops.final_path, handle) != path:
@@ -88,16 +101,11 @@ class _PrivateFS:
                 handle, 1, 4, None, None, None, None, c.byref(descriptor)
             ):
                 raise PinFailure("BSL_PROCESS_FAILED")
-            if not api.ConvertSecurityDescriptorToStringSecurityDescriptorW(
-                descriptor, 1, 4, c.byref(rendered), None
-            ):
-                raise PinFailure("BSL_PROCESS_FAILED")
-            return rendered.value
+            return self._render_dacl(descriptor)
         finally:
             failed = False
-            for value in (c.cast(rendered, c.c_void_p), descriptor):
-                if value and self.kernel.LocalFree(value):
-                    failed = True
+            if descriptor and self.kernel.LocalFree(descriptor):
+                failed = True
             try:
                 self.pins.ops.close(handle)
             except BaseException:
@@ -115,13 +123,16 @@ class _PrivateFS:
         ):
             raise PinFailure("BSL_PROCESS_FAILED")
         try:
+            # Windows renders well-known trustees as aliases, such as LA or SY.
+            # Compare both DACLs through the same native representation.
+            expected = self._render_dacl(descriptor)
             security = _Security(c.sizeof(_Security), descriptor, False)
             if not self.kernel.CreateDirectoryW(
                 "\\\\?\\" + str(path), c.byref(security)
             ):
                 raise PinFailure("BSL_PROCESS_FAILED")
             self.created_paths.add(path)
-            if self._dacl(path) != sddl:
+            if self._dacl(path) != expected:
                 raise PinFailure("BSL_PROCESS_FAILED")
         finally:
             if self.kernel.LocalFree(descriptor):
