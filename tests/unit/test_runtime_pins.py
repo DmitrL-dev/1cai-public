@@ -270,6 +270,8 @@ def test_owned_attempt_inventory_and_cleanup_use_retained_directories(tmp_path, 
     attempt = OwnedAttempt(tmp_path / "attempts", pins)
     create_directory = attempt.native.kernel.CreateDirectoryW
     directory_calls = []
+    read_dacl = attempt.native._dacl
+    dacl_reads = []
 
     def observed_create_directory(path, security):
         result = create_directory(path, security)
@@ -277,12 +279,21 @@ def test_owned_attempt_inventory_and_cleanup_use_retained_directories(tmp_path, 
         directory_calls.append((path, bool(result), error))
         return result
 
+    def observed_dacl(path):
+        result = read_dacl(path)
+        dacl_reads.append((str(path), result))
+        return result
+
     monkeypatch.setattr(attempt.native.kernel, "CreateDirectoryW", observed_create_directory)
+    monkeypatch.setattr(attempt.native, "_dacl", observed_dacl)
     try:
         try:
             attempt.create()
         except PinFailure as error:
-            pytest.fail(f"OwnedAttempt.create: {error.code}; CreateDirectoryW={directory_calls!r}")
+            pytest.fail(
+                f"OwnedAttempt.create: {error.code}; SID={attempt.native.sid}; "
+                f"CreateDirectoryW={directory_calls!r}; DACL={dacl_reads!r}"
+            )
         (attempt.path / "src/Module.bsl").write_bytes(
             b"Procedure Demo()\r\nEndProcedure\r\n"
         )
