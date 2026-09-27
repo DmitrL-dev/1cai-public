@@ -38,6 +38,8 @@ jobs:
           PYTHONUTF8: '1'
         run: |
           New-Item -ItemType Directory -Force output | Out-Null
+          python -m pytest -q --tb=short tests/unit/test_runtime_pins.py --junitxml=output/python-contracts.xml
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -m pytest -q --tb=short --junitxml=output/python-contracts.xml
       - name: Upload Python contract report
         if: always()

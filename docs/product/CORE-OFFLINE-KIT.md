@@ -19,7 +19,7 @@ py -3.11 -m venv output/kit-tools
 $kitPython = (Resolve-Path output/kit-tools/Scripts/python.exe).Path
 & $kitPython -m pip download --only-binary=:all: --require-hashes -r requirements/locks/mcp-py311-windows.txt --dest output/mcp-wheels
 & $kitPython -m pip download --only-binary=:all: --require-hashes -r requirements/locks/product-build-py311-windows.txt --dest output/build-wheels
-& $kitPython scripts/release/build_core_kit.py --output output/core-kit-dev11 --runtime-wheelhouse output/mcp-wheels --build-wheelhouse output/build-wheels --go 'C:\Program Files\Go\bin\go.exe'
+& $kitPython scripts/release/build_core_kit.py --output output/core-kit-dev13 --runtime-wheelhouse output/mcp-wheels --build-wheelhouse output/build-wheels --go 'C:\Program Files\Go\bin\go.exe'
 ```
 
 С `--build-wheelhouse` установка инструментов сборки также использует
@@ -68,7 +68,24 @@ py -3.11 scripts/verification/verify_core_kit.py --kit PATH_TO_KIT.zip --output 
 проверок. Офлайн-параметры pip не являются сетевой изоляцией процесса ОС.
 
 Этот сценарий не заменяет отдельные проверки observer, платформы, редактора,
-обновлений типовых конфигураций и бизнес-тестов. Текущая пара раннего доступа —
+обновлений типовых конфигураций и бизнес-тестов.
+
+## Опубликованные комплекты и исходники dev13
+
+В этом checkout команды сборки и установки относятся к исходникам dev13.
+Готовые принятые комплекты и их состояние проверяйте на
+[странице выпусков](https://github.com/DmitrL-dev/1cai-public/releases).
+
+27 сентября 2026 опубликована пара раннего доступа
+[core dev12](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev12)
+и [Companion 0.1.12](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.12).
+Принятый CI ZIP dev12 собран из исходного коммита `a35711c`; его SHA256 —
+`b61513c78c180fdb690e16627289780624093b33f80c77cdfac7c4b0a495b978`.
+Отдельная офлайн-проверка подтвердила 40 файлов и 32 MCP-инструмента;
+все четыре опубликованных файла повторно скачаны и побайтно сверены.
+Манифест, контрольные суммы и подробные изменения доступны в самом выпуске.
+
+Предыдущая пара —
 [core dev11](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev11)
 и [Companion 0.1.11](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.11).
 [Манифест dev11](../../releases/core/0.1.0.dev11/manifest.json) привязывает

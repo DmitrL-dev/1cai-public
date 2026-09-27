@@ -1,5 +1,6 @@
 """Runtime ownership contracts across cached enumeration and retained handles."""
 from dataclasses import replace
+import ctypes
 import hashlib
 import os
 import sys
@@ -263,12 +264,25 @@ def test_file_hardlink_alias_remains_rejected(tmp_path):
         pins.close()
 
 
-def test_owned_attempt_inventory_and_cleanup_use_retained_directories(tmp_path):
+def test_owned_attempt_inventory_and_cleanup_use_retained_directories(tmp_path, monkeypatch):
     ops = DirectoryCacheOps()
     pins = RuntimePins(operations=ops)
     attempt = OwnedAttempt(tmp_path / "attempts", pins)
+    create_directory = attempt.native.kernel.CreateDirectoryW
+    directory_calls = []
+
+    def observed_create_directory(path, security):
+        result = create_directory(path, security)
+        error = ctypes.get_last_error() if not result else None
+        directory_calls.append((path, bool(result), error))
+        return result
+
+    monkeypatch.setattr(attempt.native.kernel, "CreateDirectoryW", observed_create_directory)
     try:
-        attempt.create()
+        try:
+            attempt.create()
+        except PinFailure as error:
+            pytest.fail(f"OwnedAttempt.create: {error.code}; CreateDirectoryW={directory_calls!r}")
         (attempt.path / "src/Module.bsl").write_bytes(
             b"Procedure Demo()\r\nEndProcedure\r\n"
         )

@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "source_commit": "64197b7caf27d0e67712057d09a81fcac3951306",
+  "scope": "installed local dev13 candidate; source CI and final release gates pending",
+  "local_kit": {
+    "archive_sha256": "fe2830e510c6a009cb18dd407135207039dadb69ecafecb6aaa79ffd167135c5",
+    "wheel_sha256": "34e0d7f66df373c0ea5b9b28c091f4d799e54bb5f33ce090d6f096abb3c94f6d",
+    "sdist_sha256": "d37a1eee0016d56d121fe717752f001e322e93568895910384936e6368d22f72",
+    "dependency_wheels": 30
+  },
+  "local_kit_size_bytes": 20462695,
+  "offline_install": {
+    "accepted": true,
+    "verified_files": 40,
+    "dependency_wheels": 30,
+    "tools": 32,
+    "receipt_sha256": "0aca73aa53c9b446b545b92327a2b5ff0513fd3b70058db88e3f7bcbf6fdc472"
+  },
+  "package_audit": {
+    "files": 103,
+    "installed_equals_wheel_equals_committed_archive": true,
+    "fresh_git_archive_verified": true,
+    "receipt_sha256": "3bbb286efa44c6c6139504901aedc1a54be44fc4b26afef90a430e6180c1415a"
+  },
+  "cache_refresh": {
+    "accepted": true,
+    "verified_reopens": 5,
+    "actual_cache_changes": 5,
+    "module_sha256": "5ab0e566086aa2571bf2b2daeafd31c3942401cbe92fb23ee7d34034b94f4d72",
+    "retained_stamps_unchanged": true,
+    "file_inventory_unchanged": true,
+    "all_handles_closed": true,
+    "class_wrapped": false,
+    "operations_replaced": false,
+    "receipt_sha256": "bee15208fb0245a781ef2fe0ecebd5baec01408d086ee98772ad71262c806fa1"
+  },
+  "healthy_service": {
+    "audit_checks": 27,
+    "failures": [],
+    "service_exit": 0,
+    "quality_status": "available",
+    "provenance": "git_source_verified",
+    "finding": "bsl/MagicNumber",
+    "source_bytes_preserved": true,
+    "diagnostic_attempts_empty": true,
+    "install_staging_absent": true,
+    "audit_sha256": "558237f836819e2fc0f585491dbc8bd6efa9845528ad7ab4e73b12255e8815e9"
+  },
+  "negative_jar_control": {
+    "audit_checks": 15,
+    "failures": [],
+    "service_exit": 2,
+    "journal_reason": "BSL_RUNTIME_MISMATCH",
+    "external_code": "SERVICE_WORKER_FAILED",
+    "outbox_code": "GIT_ANALYZER_INCOMPLETE",
+    "only_first_byte_changed": true,
+    "no_owner_reports": true,
+    "no_attempts_left": true,
+    "source_bytes_preserved": true,
+    "audit_sha256": "6be2bc8bc80c4e6a02ca8faf0b609a5d6629d886b41725bf0adb4f66a2caf29e"
+  },
+  "snapshot": {
+    "accepted": true,
+    "receipt_sha256": "94076525fb07807793a46d6d73dae42c37369d83bb4d47c27b7b8479e5842e46"
+  },
+  "observer": {
+    "accepted": true,
+    "receipt_sha256": "c0a6c3c0137f2b84c0531850ae55a858d9ba6a2b74cc7d8b2d048956fa97fb5f"
+  },
+  "source_push_run": 36292625827,
+  "source_pr_run": 36292705066,
+  "ci_qualified": false,
+  "published": false,
+  "historical_failures_explained": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "root_only_review": true,
+  "recorded_utc": "2026-09-27T04:03:04.089495+00:00"
+}
