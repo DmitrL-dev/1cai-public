@@ -251,13 +251,81 @@ def acl_entries(path, root):
     return result
 
 
+def dacl_parts(sddl):
+    """Keep exact ACE text; AI is descriptor control, not an ACE permission.
+
+    https://learn.microsoft.com/en-us/windows/win32/secauthz/security-descriptor-string-format
+    Only the ordinary DACL format produced for this fixture is supported.
+    """
+    match = re.fullmatch(r'D:((?:P|AR|AI)*)((?:\([^()]*\))*)', sddl)
+    require(match is not None, 'Invalid DACL descriptor')
+    flags = re.findall(r'P|AR|AI', match[1])
+    require(len(flags) == len(set(flags)), 'Invalid DACL control flags')
+    require(all(len(ace.split(';')) == 6 for ace in re.findall(r'\(([^()]*)\)', match[2])),
+            'Invalid DACL ACE format')
+    return frozenset(flags), match[2]
+
+
+def has_localservice_ace(dacl):
+    return bool(re.search(r';(?:LS|S-1-5-19)\)', dacl))
+
+
 def verify_acl_restoration(before, after):
-    require(all(after.get(path) == dacl for path, dacl in before.items()), 'Original DACL was not restored exactly')
+    original = {path: dacl_parts(dacl) for path, dacl in before.items()}
+    restored = {path: dacl_parts(dacl) for path, dacl in after.items()}
+    require(set(before) <= set(after), 'Original DACL was not restored exactly')
+    require(all((flags - {'AI'}, aces) == (restored[path][0] - {'AI'}, restored[path][1])
+                for path, (flags, aces) in original.items()), 'Original DACL was not restored exactly')
     added = set(after) - set(before)
-    require(not any(re.search(r';(?:LS|S-1-5-19)\)', after[path]) for path in added),
+    require(not any(has_localservice_ace(after[path]) for path in added),
             'LocalService ACE remains on a new test entry')
     return {'original_entries': len(before), 'new_entries': len(added), 'original_dacls_equal': True,
+            'original_descriptor_strings_equal': all(after[path] == dacl for path, dacl in before.items()),
+            'auto_inherited_control_changes': sum(('AI' in flags) != ('AI' in restored[path][0])
+                                                 for path, (flags, _) in original.items()),
             'new_entries_have_no_localservice_ace': True}
+
+
+def new_acl_cleanup_frontiers(root, before, after):
+    """Select new subtrees only; never change ownership of a baseline entry."""
+    require(root in before and set(before) <= set(after), 'Missing original entry in ACL inventory')
+    require(all(path.is_absolute() and path.is_relative_to(root) for path in after),
+            'ACL cleanup path escapes owned root')
+    added = set(after) - set(before)
+    roots = set()
+    for path in added:
+        if not has_localservice_ace(after[path]):
+            continue
+        while path.parent in added:
+            path = path.parent
+        require(path.parent in before, 'Incomplete original entry boundary')
+        require(not any(old.is_relative_to(path) for old in before),
+                'New subtree contains an original entry')
+        roots.add(path)
+    return sorted(roots)
+
+
+def verify_temporary_acls(root, entries, data):
+    """No inherited BU/CREATOR OWNER grants may broaden service RX or M."""
+    require(root in entries and all(path.is_relative_to(root) for path in entries),
+            'Temporary ACL inventory escapes root')
+    aliases = {'S-1-5-32-544': 'BA', 'S-1-5-18': 'SY', SID: 'LS'}
+    for path, sddl in entries.items():
+        flags, aces = dacl_parts(sddl)
+        require('P' in flags, 'Temporary ACL must block inherited grants')
+        expected = {'BA': 'FA', 'SY': 'FA',
+                    'LS': '0x1301bf' if data is not None and path.is_relative_to(data) else '0x1200a9'}
+        observed = {}
+        for ace in re.findall(r'\(([^()]*)\)', aces):
+            kind, inheritance, rights, object_id, inherited_object, sid = ace.split(';')
+            sid = aliases.get(sid, sid)
+            require(kind == 'A' and inheritance in ('', 'OI', 'CI', 'OICI')
+                    and not object_id and not inherited_object and sid not in observed,
+                    'Temporary ACL has unexpected ACE flags or duplicate principal')
+            observed[sid] = rights
+        require(observed == expected, 'Temporary ACL grants differ from isolated service policy')
+    return {'entries': len(entries), 'protected': True, 'only_administrators_system_localservice': True,
+            'service_read_execute_except_modify_data': True}
 
 
 def wait_until(check, seconds, description):
@@ -278,6 +346,7 @@ class Acceptance:
         self.installer = WindowsServiceInstaller(timeout=15)
         self.created = False
         self.acl_backups = []
+        self.owner_backups = {}
         self.events = []
         self.original_config = Path(self.f['config']).read_bytes()
 
@@ -339,7 +408,11 @@ class Acceptance:
         inventory(root)
         saved = self.output/(label+'.acl')
         self.icacls([root, '/save', saved, '/T', '/Q'], label+'-save')
-        acl_entries(saved, root)
+        rows = acl_entries(saved, root)
+        owners = {str(path.relative_to(root)): self.native.owner(path) for path in rows}
+        owner_path = self.output/(label+'-owners.json')
+        save(owner_path, owners)
+        self.owner_backups[root] = (owner_path, sha(owner_path))
         self.acl_backups.append((root, saved, sha(saved)))
         return saved
 
@@ -349,9 +422,22 @@ class Acceptance:
         fixture = self.backup_acl(ROOT, 'fixture')
         self.icacls([ROOT.parent, '/restore', fixture, '/Q'], 'fixture-preflight-restore')
         self.backup_acl(RUNTIME, 'runtime')
-        self.icacls([RUNTIME, '/grant', '*S-1-5-19:(OI)(CI)RX', '/T', '/Q'], 'runtime-read')
-        self.icacls([ROOT, '/grant', '*S-1-5-19:(OI)(CI)RX', '/T', '/Q'], 'fixture-read')
-        self.icacls([self.f['service_data'], '/grant', '*S-1-5-19:(OI)(CI)M', '/T', '/Q'], 'data-modify')
+        # Keep administrator/system access before removing inherited permissions.
+        # Adding RX alone cannot limit BU creation rights or CREATOR OWNER grants.
+        for root in (RUNTIME, ROOT):
+            self.icacls([root, '/grant:r', '*S-1-5-32-544:(OI)(CI)F', '*S-1-5-18:(OI)(CI)F',
+                         '/T', '/Q'], root.name+'-administrators')
+            self.icacls([root, '/inheritancelevel:r', '/T', '/Q'], root.name+'-isolate')
+            self.icacls([root, '/grant:r', '*S-1-5-19:(OI)(CI)RX', '/T', '/Q'], root.name+'-read')
+        self.icacls([self.f['service_data'], '/grant:r', '*S-1-5-19:(OI)(CI)M', '/T', '/Q'], 'data-modify')
+        for root in (RUNTIME, ROOT):
+            policy = self.output/(root.name+'-temporary.acl')
+            self.icacls([root, '/save', policy, '/T', '/Q'], root.name+'-policy')
+            rows = acl_entries(policy, root)
+            baseline = next(saved for candidate, saved, _ in self.acl_backups if candidate == root)
+            require(set(rows) == set(acl_entries(baseline, root)), 'Temporary ACL inventory changed')
+            proof = verify_temporary_acls(root, rows, Path(self.f['service_data']) if root == ROOT else None)
+            self.event('temporary_acl_verified', root=str(root), observed_sha256=sha(policy), **proof)
 
     def status(self):
         return self.observer.status()
@@ -530,12 +616,42 @@ class Acceptance:
                 require(sha(saved)==digest,'ACL backup changed')
                 inventory(root)
                 self.icacls([root.parent,'/restore',saved,'/Q'],root.name+'-restore')
+                intermediate=self.output/(root.name+'-after-restore.acl')
+                self.icacls([root,'/save',intermediate,'/T','/Q'],root.name+'-after-restore')
+                before=acl_entries(saved,root)
+                after=acl_entries(intermediate,root)
+                frontiers=new_acl_cleanup_frontiers(root,before,after)
+                # A restored CREATOR OWNER ACE can give LS full access to files
+                # it created. Change only validated new subtrees, then inherit
+                # the restored parent ACL again with an administrator owner.
+                inventory(root)
+                affected={path for path in after if any(path.is_relative_to(p) for p in frontiers)}
+                for index, path in enumerate(frontiers):
+                    label=root.name+'-new-'+str(index)
+                    self.icacls([path,'/setowner','*S-1-5-32-544','/T','/Q'],label+'-owner')
+                    self.icacls([path,'/reset','/T','/Q'],label+'-reset')
                 observed=self.output/(root.name+'-restored.acl')
                 self.icacls([root,'/save',observed,'/T','/Q'],root.name+'-verify')
-                verification=verify_acl_restoration(acl_entries(saved,root),acl_entries(observed,root))
-                self.event('acl_restoration_verified',root=str(root),observed_sha256=sha(observed),**verification)
+                restored=acl_entries(observed,root)
+                require(set(restored)==set(after), 'ACL cleanup changed entry inventory')
+                inventory(root)
+                verification=verify_acl_restoration(before,restored)
+                owner_path,owner_digest=self.owner_backups[root]
+                require(sha(owner_path)==owner_digest, 'Original owner backup changed')
+                original_owners=json.loads(owner_path.read_text('utf-8'))
+                final_owners={str(path.relative_to(root)):self.native.owner(path) for path in restored}
+                require(all(final_owners.get(name)==sid for name,sid in original_owners.items()),
+                        'Original file owner changed')
+                require(all(final_owners[str(path.relative_to(root))]=='S-1-5-32-544' for path in affected),
+                        'New file owner was not reassigned')
+                owners_observed=self.output/(root.name+'-restored-owners.json')
+                save(owners_observed,final_owners)
+                self.event('acl_restoration_verified',root=str(root),observed_sha256=sha(observed),
+                           owners_sha256=sha(owners_observed),original_owners_equal=True,
+                           reassigned_new_entries=len(affected),new_owner_sid='S-1-5-32-544',
+                           cleanup_frontiers=[str(path.relative_to(root)) for path in frontiers],**verification)
             except Exception as error:
-                errors.append({'stage':'acl','root':str(root),'type':type(error).__name__})
+                errors.append({'stage':'acl','root':str(root),'type':type(error).__name__,'message':str(error)[:400]})
         return errors
 
 

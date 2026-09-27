@@ -123,6 +123,28 @@ class NativeEvidence:
         finally:
             self.require(self.kernel.CloseHandle(process), 'CloseProcessHandle')
 
+    def owner(self, path):
+        # Read-only; the API returns a Windows error code directly, not BOOL.
+        # https://learn.microsoft.com/en-us/windows/win32/api/aclapi/nf-aclapi-getnamedsecurityinfow
+        api = _WindowsTokenAPI()
+        query = self.security.GetNamedSecurityInfoW
+        query.argtypes = [W.LPCWSTR, ctypes.c_int, W.DWORD] + [ctypes.POINTER(ctypes.c_void_p)] * 5
+        query.restype = W.DWORD
+        owner, descriptor = ctypes.c_void_p(), ctypes.c_void_p()
+        code = query(str(path), 1, 1, ctypes.byref(owner), None, None, None, ctypes.byref(descriptor))
+        if code:
+            raise NativeEvidenceError('GetFileOwner', code)
+        try:
+            if not owner.value:
+                raise RuntimeError('File owner is missing')
+            value = api.sid_string(owner)
+            try:
+                return value.value
+            finally:
+                api.free_string(value)
+        finally:
+            api.kernel.LocalFree(descriptor)
+
     def privileges(self):
         api = _WindowsTokenAPI()
         lookup = api.security.LookupPrivilegeNameW

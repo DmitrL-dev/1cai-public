@@ -1,17 +1,17 @@
 {
   "schema": 1,
   "base_commit": "6b775db29f8eb75191981d443a281e28ad181e7c",
-  "scope": "Local preflight and verifier safeguards; native CI lifecycle remains pending",
+  "scope": "Local safeguards and actual unelevated refusal after ACL fix; first-head native CI failed cleanup; corrected native lifecycle remains pending",
   "root_review_only": true,
   "independent_review": false,
   "python_regression": {
-    "tests": 258,
+    "tests": 271,
     "errors": 0,
     "failures": 0,
     "skipped": 0
   },
-  "regression_junit_sha256": "6261ecc5d170415103f874a24e6a4caa2a9d5b150d8cc13914e1544f7c893c09",
-  "new_safeguard_cases": 12,
+  "regression_junit_sha256": "efb6e6875e9d741bd334a61a4bd4e543712e2a201ad05b7479f964d0c1043fba",
+  "new_safeguard_cases": 25,
   "installed_core_files_equal_wheel": 103,
   "wheel_sha256": "b692c9efcb03541154e9e3ada228d4a03069fde82ef7f3d0635e45978833beb5",
   "local_kit_source_commit": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
@@ -24,9 +24,31 @@
   "native_scm_lifecycle_accepted": false,
   "production_deployment": false,
   "verification_scripts": {
-    "scripts/verification/scm_acceptance_worker.py": "5a2ef4bbce3724ad6f56f4bc60cc416083cec14ce737d3e4192011e6cd63e4cc",
-    "scripts/verification/scm_native_evidence.py": "6f857a6e8b1edf271f5551f88cd0d23ea43b7a4a6b557100ba75b3255bc0eb0d",
+    "scripts/verification/scm_acceptance_worker.py": "5644306409371ea12dfe8a17693d18953a3b3619179be25cef3ffbdbaf5e1dee",
+    "scripts/verification/scm_native_evidence.py": "59e6fdc5a38ad0e50b66143aee42459e35f3f3f3abae872a1e24f35bdb29cbc6",
     "scripts/verification/verify_service_scm_delivery.py": "dccc4516bee5e622cb934723ecd3ad2f4a3e03d74b34adf39eafc75608ec6ac4"
   },
-  "recorded_utc": "2026-09-27T13:32:22.266413+00:00"
+  "recorded_utc": "2026-09-27T14:33:26.339303+00:00",
+  "previous_native_ci": {
+    "head": "8f49390f63c8bb64080caa82ce3d30852791e96e",
+    "run_ids": [
+      36322819712,
+      36322904352
+    ],
+    "windows_job": "success",
+    "native_scm_job": "failure",
+    "service_deleted": true,
+    "failure_stage": "ACL cleanup",
+    "accepted": false
+  },
+  "acl_fix": {
+    "temporary_inheritance_removed": true,
+    "temporary_principals_and_masks_verified": true,
+    "baseline_ace_order_flags_sids_masks_preserved": true,
+    "baseline_protection_and_request_flags_preserved": true,
+    "auto_inherited_control_changes_reported_separately": true,
+    "original_owners_checked": true,
+    "new_service_grants_removed_using_validated_new_subtrees_only": true,
+    "implemented_not_yet_native_accepted": true
+  }
 }

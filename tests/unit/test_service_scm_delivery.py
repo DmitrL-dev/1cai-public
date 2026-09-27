@@ -141,3 +141,87 @@ def test_optimized_interpreter_refuses_before_loading_product(name, flag, tmp_pa
     assert result.returncode != 0
     assert b"do not use Python -O" in result.stderr
     assert not list(tmp_path.iterdir())
+
+
+
+def test_acl_restore_records_only_auto_inherited_control_conversion(tmp_path):
+    api = load("scm_acceptance_worker")
+    acl = "(A;;FA;;;BA)(A;OICIID;FR;;;BU)"
+    result = api.verify_acl_restoration({tmp_path: "D:" + acl}, {tmp_path: "D:AI" + acl})
+    assert result["original_dacls_equal"]
+    assert not result["original_descriptor_strings_equal"]
+    assert result["auto_inherited_control_changes"] == 1
+
+
+@pytest.mark.parametrize("changed", [
+    "D:P(A;;FA;;;BA)(A;OICIID;FR;;;BU)",
+    "D:AR(A;;FA;;;BA)(A;OICIID;FR;;;BU)",
+    "D:(A;;FR;;;BA)(A;OICIID;FR;;;BU)",
+    "D:(A;;FA;;;SY)(A;OICIID;FR;;;BU)",
+    "D:(A;;FA;;;BA)(A;OICI;FR;;;BU)",
+    "D:(A;OICIID;FR;;;BU)(A;;FA;;;BA)",
+])
+def test_acl_restore_preserves_protection_request_and_exact_aces(tmp_path, changed):
+    api = load("scm_acceptance_worker")
+    before = {tmp_path: "D:(A;;FA;;;BA)(A;OICIID;FR;;;BU)"}
+    with pytest.raises(RuntimeError, match="restored exactly"):
+        api.verify_acl_restoration(before, {tmp_path: changed})
+
+
+@pytest.mark.parametrize("sddl", ["D:AIAI", "D:ZZ", "D:AI(A;;FA;;;BA)junk"])
+def test_acl_restore_rejects_malformed_descriptor_even_if_equal(tmp_path, sddl):
+    api = load("scm_acceptance_worker")
+    with pytest.raises(RuntimeError, match="Invalid DACL"):
+        api.verify_acl_restoration({tmp_path: sddl}, {tmp_path: sddl})
+
+
+def test_new_acl_cleanup_frontiers_cover_only_new_owned_subtrees(tmp_path):
+    api = load("scm_acceptance_worker")
+    original = {tmp_path: "D:", tmp_path / "old": "D:"}
+    after = {**original, tmp_path / "new": "D:",
+             tmp_path / "new/child": "D:(A;;FA;;;LS)",
+             tmp_path / "old/cache": "D:(A;;FA;;;S-1-5-19)"}
+    assert set(api.new_acl_cleanup_frontiers(tmp_path, original, after)) == {
+        tmp_path / "new", tmp_path / "old/cache"}
+    assert api.new_acl_cleanup_frontiers(tmp_path, original, original) == []
+    with pytest.raises(RuntimeError, match="original entry"):
+        api.new_acl_cleanup_frontiers(tmp_path,
+            {tmp_path: "D:", tmp_path / "new/child": "D:"},
+            {**after, tmp_path / "new": "D:(A;;FA;;;LS)"})
+    with pytest.raises(RuntimeError, match="owned root"):
+        api.new_acl_cleanup_frontiers(tmp_path, original,
+            {**after, tmp_path.parent / "foreign": "D:(A;;FA;;;LS)"})
+
+
+def test_temporary_acl_policy_rejects_inherited_writes_and_unexpected_principals(tmp_path):
+    api = load("scm_acceptance_worker")
+    data = tmp_path / "data"
+    prefix = "D:P(A;OICI;FA;;;BA)(A;OICI;FA;;;SY)"
+    read = prefix + "(A;OICI;0x1200a9;;;LS)"
+    modify = prefix + "(A;OICI;0x1301bf;;;LS)"
+    assert api.verify_temporary_acls(tmp_path, {tmp_path: read, data: modify}, data)["entries"] == 2
+    for altered in (read.replace("D:P", "D:"), read + "(A;CI;DC;;;BU)",
+                    read.replace("0x1200a9", "FA"), read + "(A;OICIIO;GA;;;CO)",
+                    read.replace("OICI;0x1200a9", "OICIIO;0x1200a9")):
+        with pytest.raises(RuntimeError, match="Temporary ACL"):
+            api.verify_temporary_acls(tmp_path, {tmp_path: altered}, None)
+    with pytest.raises(RuntimeError, match="Temporary ACL"):
+        api.verify_temporary_acls(tmp_path, {tmp_path: read, data: read}, data)
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Actual Windows file owner query")
+def test_native_file_owner_matches_windows_acl_and_missing_file_fails(tmp_path):
+    api = load("scm_native_evidence")
+    native = api.NativeEvidence()
+    target = tmp_path / "owned.txt"
+    target.write_bytes(b"owner evidence")
+    # The path is passed as an environment value, never inserted into shell code.
+    env = {key: os.environ[key] for key in ("SystemRoot", "TEMP", "TMP", "PATH") if key in os.environ}
+    env["RENTGEN_TEST_OWNER_PATH"] = str(target)
+    result = subprocess.run(["pwsh.exe", "-NoProfile", "-NonInteractive", "-Command",
+        "(Get-Acl -LiteralPath $env:RENTGEN_TEST_OWNER_PATH).GetOwner([System.Security.Principal.SecurityIdentifier]).Value"],
+        env=env, capture_output=True, timeout=20)
+    assert result.returncode == 0, result.stderr.decode(errors="replace")
+    assert native.owner(target) == result.stdout.decode().strip()
+    with pytest.raises(api.NativeEvidenceError):
+        native.owner(tmp_path / "missing")
