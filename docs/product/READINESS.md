@@ -8,16 +8,20 @@
 синтетический EDT read-only contract от исторических native экспериментов;
 добавление corpus не квалифицирует типовые `.cf/.cfe` и live apply.
 
-## Кандидат Core dev15 / Companion 0.1.15 — исходный CI принят
+## Выпуск 28 сентября 2026 — Core dev15 и Companion 0.1.15
 
-В [PR #39](https://github.com/DmitrL-dev/1cai-public/pull/39) исходный commit
-`a792e638bd736a6ac075140e02d0dd972802cb34` прошёл
-[push CI 36346205723](https://github.com/DmitrL-dev/1cai-public/actions/runs/36346205723) и
-[PR CI 36346211891](https://github.com/DmitrL-dev/1cai-public/actions/runs/36346211891).
+Опубликованы [Core dev15](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev15) и
+[Companion 0.1.15](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.15) как prerelease.
+[PR #39](https://github.com/DmitrL-dev/1cai-public/pull/39) объединён в main
+`d489f50ebf9b5874790e40a8b36a005af17ce9d3`. Исходные CI 36346205723 / 36346211891,
+финальные CI 36349309624 / 36349311952 и
+[CI main 36351601703](https://github.com/DmitrL-dev/1cai-public/actions/runs/36351601703) приняты.
 В каждом — **2488 Python / 69 Node**, Go, **24 этапа Windows**, отдельное
-задание native-scm и отсутствие ошибок/пропусков. Все 521 локальных случая
-найдены в полном JUnit. [Квитанция](evidence/release-dev15-ci-20260928.json)
-связывает source, checkout обоих заданий, дерево, артефакты и установку.
+задание native-scm и отсутствие ошибок/пропусков. Все 521 локальных случая,
+включая 38 live apply/recovery, найдены в каждом полном JUnit.
+[Квитанция исходных CI](evidence/release-dev15-ci-20260928.json) сохраняет свой
+этап; [квитанция публикации](evidence/release-dev15-publication-20260928.json)
+добавляет final/main CI, теги, release workflow и семь публичных файлов.
 
 Исправленные Core/MCP-команды читают project.version выбранных исходников,
 разрешают точный wheel через LiteralPath и отказывают до установки при его
@@ -48,9 +52,14 @@ schema 1; Git/BSL schema 3 и непрерывная Git-служба требу
 
 Подробные notes: [Core](../../releases/core/0.1.0.dev15/RELEASE_NOTES.md) и
 [Companion](../../releases/companion/0.1.15/RELEASE_NOTES.md).
-**Финальные CI, слияние в main и публикация dev15 ещё ожидаются.**
-Опубликованной парой остаётся dev14/0.1.14. Полная self-hosted готовность
-не заявляется. Работу и ревью выполнил основной агент без субагентов;
+Core сохраняет принятый ZIP source `a792e63`, push CI 36346205723.
+Companion собран из main `d489f50`; [release workflow 36354341023](https://github.com/DmitrL-dev/1cai-public/actions/runs/36354341023)
+прошёл 69 Node-тестов и все 20 шагов. Четыре файла артефакта совпали
+с подготовленной main-сборкой. VSIX: **209862 байта**, SHA-256
+`57a3f8f9b3193e2d6284df542010384ac13000695becbe1dfff887f6c5a872fa`.
+**Все семь публичных файлов скачаны без авторизации и сверены побайтно.**
+[Подробный итоговый анонс](https://github.com/DmitrL-dev/1cai-public/pull/39#issuecomment-5860339115). Прежние теги/assets сохранены.
+Полная self-hosted готовность не заявляется. Работу и ревью выполнил основной агент без субагентов;
 независимого peer review нет. Production deployment не выполнялся.
 
 ## Выпуск 27 сентября 2026 — Core dev14 и Companion 0.1.14
