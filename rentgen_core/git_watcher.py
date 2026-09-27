@@ -31,6 +31,7 @@ class SchedulerJournal:
     """Atomic local scheduler state with explicit interrupted-run recovery."""
 
     MAX_BYTES = 1024 * 1024
+    MAX_COUNTER = 2**53 - 1
 
     def __init__(self, path):
         self.path = Path(path).resolve()
@@ -73,13 +74,18 @@ class SchedulerJournal:
             ) from exc
         if (
             not isinstance(document, dict)
-            or document.get("schema") != 1
+            or type(document.get("schema")) is not int
+            or document["schema"] not in {1, 2}
             or document.get("scheduler") != "git-watcher-v1"
             or document.get("phase") not in {"running", "recovered", "idle"}
             or type(document.get("cycle")) is not int
-            or not 0 <= document["cycle"] <= 10_000
+            or not 0 <= document["cycle"] <= (
+                10_000 if document["schema"] == 1 else self.MAX_COUNTER
+            )
             or type(document.get("failures")) is not int
-            or not 0 <= document["failures"] <= 10_000
+            or not 0 <= document["failures"] <= (
+                10_000 if document["schema"] == 1 else self.MAX_COUNTER
+            )
             or not isinstance(document.get("updated_at"), str)
             or len(document["updated_at"]) > 64
         ):
@@ -141,8 +147,11 @@ class SchedulerJournal:
 
     @staticmethod
     def _document(run_id, phase, cycle, failures, event=None, *, recovered_reason=None):
+        for value, name in ((cycle, "cycle"), (failures, "failure count")):
+            if type(value) is not int or not 0 <= value <= SchedulerJournal.MAX_COUNTER:
+                raise CoreError("GIT_WATCHER_INVALID", f"Scheduler {name} is out of bounds")
         document = {
-            "schema": 1,
+            "schema": 1 if max(cycle, failures) <= 10_000 else 2,
             "scheduler": "git-watcher-v1",
             "phase": phase,
             "run_id": run_id,
@@ -179,14 +188,9 @@ class SchedulerJournal:
         return current
 
     def mark_running(self, run_id, cycle, failures):
-        if type(cycle) is not int or not 0 <= cycle <= 10_000:
-            raise CoreError("GIT_WATCHER_INVALID", "Scheduler cycle is out of bounds")
-        if type(failures) is not int or not 0 <= failures <= 10_000:
-            raise CoreError(
-                "GIT_WATCHER_INVALID", "Scheduler failure count is out of bounds"
-            )
+        document = self._document(run_id, "running", cycle, failures)
         self._same_run(run_id)
-        self._write(self._document(run_id, "running", cycle, failures))
+        self._write(document)
 
     def record(self, run_id, cycle, failures, event, *, keep_running=True):
         if not isinstance(event, dict):

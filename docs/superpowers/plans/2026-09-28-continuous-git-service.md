@@ -29,22 +29,22 @@ at the service boundary and use a second journal schema for larger counters.
 `SchedulerJournal` retains begin/read/mark_running/record/stop/recover signatures.
 
 - [x] Inspect actual code and confirm clean baseline configuration tests on source main.
-- [ ] Add failing tests for explicit null in schema 2/3, existing bounded stop plus null,
+- [x] Add failing tests for explicit null in schema 2/3, existing bounded stop plus null,
   and default dry-run remaining inert. Remove None from rejected settings; retain all
   other rejected values. Parameterize the current active-tick stop test over 100/None.
-- [ ] Add journal tests: 10000 stays schema 1; 10001 uses schema 2; reopen/recover/new
+- [x] Add journal tests: 10000 stays schema 1; 10001 uses schema 2; reopen/recover/new
   begin preserve state and reset only at explicit begin; invalid counters for each writer
   leave bytes unchanged; corrupted schema/counter input fails on read; 10002 real journal
   ticks stop cooperatively and retain exactly 1000 events with unchanged outbox empty.
-- [ ] Run these cases before implementation; retain the actual failing JUnit.
-- [ ] Change the service annotation to `max_cycles: int | None = 1` and replace the Git
+- [x] Run these cases before implementation; retain the actual failing JUnit.
+- [x] Change the service annotation to `max_cycles: int | None = 1` and replace the Git
   budget check with `cycles is not None and (type(cycles) is not int or not 1 <= cycles <= 10000)`.
-- [ ] In SchedulerJournal introduce `MAX_COUNTER = 2**53 - 1`. Validate int counters in
+- [x] In SchedulerJournal introduce `MAX_COUNTER = 2**53 - 1`. Validate int counters in
   `_document` before any file write; use schema 1 when max(cycle, failures)<=10000 else 2.
   `_read` must require an integer schema in {1,2} and apply its corresponding counter cap.
   `mark_running` must accept the same safe counter range; all existing state checks remain.
-- [ ] Run the failing cases again, then the four relevant suites with a fresh JUnit.
-- [ ] Update product documentation and retain exact red/green counts and changed hashes.
+- [x] Run the failing cases again, then the five relevant suites with a fresh JUnit.
+- [x] Update product documentation and retain exact red/green counts and changed hashes.
 - [ ] Root review diff, `git diff --check`, commit the implementation and prepare its source PR.
 
 ## Task 2: Qualification and delivery

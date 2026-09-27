@@ -110,7 +110,7 @@ class GitServiceConfig:
     project: str
     diagnostics_root: Path
     interval_seconds: int
-    max_cycles: int = 1
+    max_cycles: int | None = 1
     mode: str = "dry-run"
     scanner: Path | None = None
 
@@ -129,8 +129,10 @@ def _git_config(data):
         not re.fullmatch(r"[A-Za-z][A-Za-z0-9_.-]{0,79}", name)
         or type(interval) is not int
         or not 5 <= interval <= 86400
-        or type(cycles) is not int
-        or not 1 <= cycles <= 10000
+        or (
+            cycles is not None
+            and (type(cycles) is not int or not 1 <= cycles <= 10000)
+        )
         or type(mode) is not str
         or mode not in {"dry-run", "read-only"}
     ):
@@ -307,7 +309,7 @@ def _execute(
                 ) from None
             ready()
             if scheduled:
-                # One scheduler owns the entire bounded lifetime and its backoff.
+                # One scheduler owns this lifetime and its backoff.
                 cycles = tick(stop)
             while (
                 not scheduled

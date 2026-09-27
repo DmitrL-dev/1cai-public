@@ -1,4 +1,4 @@
-# Native Observer service entrypoint and bounded Git audit composition
+# Native Observer service entrypoint and Git audit composition
 
 ## Git audit composition (schema 2)
 
@@ -26,8 +26,9 @@ Use the same `--console --config <absolute-local.json>` grammar. `mode` defaults
 to `dry-run`: only strict configuration and existing local paths are validated;
 no worker, Git/BSL process, journal, outbox or report is created. This is not a
 runtime-readiness or authorization check. Explicit `mode: "read-only"` enables
-the audit. These are the only accepted modes. `max_cycles` defaults to 1 and must
-be an integer from 1 to 10000; null/unbounded runs are rejected for schema 2.
+the audit. These are the only accepted modes. `max_cycles` defaults to 1. An
+integer from 1 to 10000 bounds the lifetime; explicit `null` runs until stop or
+failure. Booleans, strings, floats and out-of-range integers are rejected.
 `interval_seconds` is required and bounded to 5–86400. All other shown fields
 are required; unknown fields, duplicate JSON keys, identity overrides, arbitrary
 commands, scanner selection and notification URLs are rejected. Schema 2 uses
@@ -66,8 +67,8 @@ project state `owner-reports` store; each success outbox event includes its
 `owner_report_id`. Unchanged commit/snapshot pairs reuse a receipt within one
 lifetime; a new lifetime may create a new receipt.
 
-One scheduler owns the finite cycle budget and existing restricted transient
-backoff. Its wait uses the service stop Event, so STOP/SHUTDOWN or a console
+One scheduler owns the finite cycle budget or explicitly continuous lifetime
+and the existing restricted transient backoff. Its wait uses the service stop Event, so STOP/SHUTDOWN or a console
 stop wakes interval/backoff waiting. An active tick finishes before cleanup;
 there is no forced termination or wall-clock stop deadline. Journal, findings,
 reports and outbox remain separate durable stores, not one transaction: later
@@ -86,6 +87,45 @@ Git/Observer/store wiring with a typed fake BSL executor, fail-closed evidence,
 output-path containment and cooperative stop; the same pipeline is exercised
 through a mocked SCM lifecycle. No live SCM install/start/apply, service-account
 acceptance or native BSL acceptance is implied.
+
+## Continuous Git lifetime and journal compatibility
+
+For schema 2 and schema 3, set both `"mode": "read-only"` and
+`"max_cycles": null` to request continuous audit. Omitting `max_cycles` still
+runs one cycle; omitting `mode` still performs an inert dry-run. One scheduler
+retains the profile lease and run ID. Stop wakes an interval/backoff wait,
+finishes an active tick and prevents a later tick. An unresolved retryable
+failure on stop remains a service failure. This adds no automatic recovery or
+restart after a fatal error.
+
+The scheduler journal now reads two formats with the same fields:
+
+| Journal schema | `cycle` and `failures` bounds | Writer behavior |
+| --- | --- | --- |
+| 1 | 0..10000 | Preserved while both counters fit |
+| 2 | 0..9007199254740991 | Used when either counter exceeds 10000 |
+
+Every write validates both counters before replacing the current file. The
+second bound is the largest integer exactly represented by common JSON
+clients. The 1 MiB journal limit, atomic replacement, run identity and explicit
+interruption recovery remain. Recovery preserves a large counter; a new run
+starts a new ID at zero and therefore writes schema 1 again.
+
+Older Core versions cannot read schema 2. Stop the service and preserve its
+journal before considering a downgrade; compatibility of a retained profile
+must be reviewed separately. Do not delete or rewrite interrupted evidence to
+force an older version to start.
+
+Memory retains only the latest 1000 scheduler events. Schema 3 keeps unchanged
+cycles out of the notification outbox; the existing 1000-entry outbox capacity
+and explicit acknowledgement remain. Full storage/queues and authorization or
+integrity failures stop the service. Continuous mode does not grant source
+write permissions or call a model.
+
+Local contracts include schema 2/3 stop during a tick and wait, error handling,
+recovery across the journal boundary, and 10002 cycles with real journal persistence and
+a controlled watcher. They do not constitute native Git/BSL acceptance under
+LocalService, a long-running pilot, or general product readiness.
 
 ## Local BSL failure reason (Core dev12 candidate)
 
