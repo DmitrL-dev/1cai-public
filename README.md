@@ -19,7 +19,7 @@
 
 > **Ранний доступ — проверенные компоненты, продукт ещё развивается.**
 > Опубликованная пара: Windows x64, Python 3.11; [core `0.1.0.dev12`](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev12), [Companion `0.1.12`](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.12).
-> Исходники в этой ветке готовят dev13 / 0.1.13; результаты приёмки — в [READINESS](docs/product/READINESS.md).
+> Кандидат dev13 / 0.1.13 прошёл исходные CI, офлайн-установку и [новые нативные проверки](docs/product/NATIVE-DEV13-20260927.md); финальные CI и публикация ещё предстоят. Подробности — в [READINESS](docs/product/READINESS.md).
 > На 1С 8.3.27.2342 проверены синтетические сценарии компиляции и тестирования.
 > Отдельно подтверждены запись, чтение, переименование Article → SKU и удаление
 > данных в принадлежащей синтетической базе ([evidence](docs/product/NATIVE-BUSINESS-ROUNDTRIP-20260913.md)).

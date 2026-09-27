@@ -1,0 +1,117 @@
+{
+  "schema": 1,
+  "date": "2026-09-27",
+  "accepted": true,
+  "scope": "New developer-owned synthetic Designer XML source and new local file infobase; local installed dev13 candidate, CI release still pending",
+  "source_commit": "1519d8bbf0c5aabb4e804e88640a98bacff44a93",
+  "verifier_commit": "1519d8bbf0c5aabb4e804e88640a98bacff44a93",
+  "verifier_script_sha256": "8c671d5cbc359540297754a83447c27da60da948edec90a2f072c6f3bd4466ac",
+  "verifier_helper_sha256": "5cafef21860fffef94952b9659fe30a37ce1828f809e7a6b7704f0b463a41f11",
+  "core_version": "0.1.0.dev13",
+  "local_kit_sha256": "d16c4800dcc51b6774d01e25019dae6561b28da9adee4601efb6d0dd332989da",
+  "core_wheel_sha256": "b7b26fcd446e1841bcbc7ef1cb3f4797dd4fc992dfbe212c4555d07bb948b6cd",
+  "platform_version": "8.3.27.2342",
+  "platform_executable_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+  "native_fixture_report_sha256": "85a5c906c3b1d5b5a36e765009706e5feadb09c173edeae42df26c467a6c32c0",
+  "source_inventory": {
+    "ConfigDumpInfo.xml": "b4b49ddd980e4c5779cc59700bf289770519b5387c44390f3a4967a7e93f6bec",
+    "Configuration.xml": "48417e358fdc0ef60a210ca1b41bb978af92fb00d12f81db81d9bb52cbe03c58",
+    "CommonModules/RentgenPlatformProbe.xml": "11d8fe4d55b6e7ae0e297759ebe80b9af2d694ddc8940f8b21d5749d79d76f0f",
+    "CommonModules/RentgenPlatformProbe/Ext/Module.bsl": "93d1b97e4bc287d800c099c2b4de05c68c74acc68090d16e09d203a5b085a880",
+    "Ext/ManagedApplicationModule.bsl": "3d64b401ed69e6dbb05b494c7a39f6d1a7a4a8efd99aba99c06edd86e4bd09b8",
+    "Languages/Русский.xml": "0a26120a3a33466cd6e7e7ba99a0e616d0b00e57a38ce237c0a7e6cb0553c7f0"
+  },
+  "source_file_count": 6,
+  "source_inventory_restored_after_undo": true,
+  "runtime_values": {
+    "applied": 43,
+    "undone": 42
+  },
+  "module_uuid": "3cad2a5d-b745-4cdf-a109-7df694660efd",
+  "configuration_uuid": "5d6a4e80-ea98-4999-841d-c644f9e1ff96",
+  "operation_id": "125def5c-62f7-47bd-8274-38f40e1a5dda",
+  "applied_result_id": "d56f34ff0d8dd8f9d1140719e7138869ea55c2390f09af433555803ffc72e354",
+  "undone_result_id": "e2f373b3d33a30de71d174a4877b3ad25563003021236f100feff0dfc4b1cfdb",
+  "original_bsl_sha256": "93d1b97e4bc287d800c099c2b4de05c68c74acc68090d16e09d203a5b085a880",
+  "applied_bsl_sha256": "a3ca3b38935969afd50fedc6b3ac77f66c886968ce4f976c05ce9761af764428",
+  "native_candidate_checks": [
+    "passed",
+    "diagnostics_present"
+  ],
+  "native_steps": [
+    {
+      "name": "create",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "load-applied",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "check-applied",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "update-applied",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "execute-applied",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "applied-roundtrip",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "load-undone",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "check-undone",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "update-undone",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "execute-undone",
+      "exit_code": 0,
+      "timed_out": false
+    },
+    {
+      "name": "undone-roundtrip",
+      "exit_code": 0,
+      "timed_out": false
+    }
+  ],
+  "raw_acceptance_sha256": "c46d60e9489c5284d3fca1c803fe6a8f7572f04a987adc1b331ff58ea2c799a6",
+  "local_native_steps_sha256": "707d3c0f54ebd961d863af3f7921c16324646e2b0e804a845ede3aeddb09f035",
+  "source_restored": true,
+  "project_head_preserved": true,
+  "model_calls": 0,
+  "full_native_dump_byte_equal": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "published": false,
+  "not_verified": [
+    "typical configurations",
+    "extensions",
+    "forms and report composition",
+    "live production infobases",
+    "external concurrent writers",
+    "elevated SCM",
+    "new editor-to-platform flow"
+  ],
+  "recorded_utc": "2026-09-27T05:07:46.993887+00:00"
+}
