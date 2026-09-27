@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import sys
 from unittest.mock import Mock
+from contextlib import contextmanager
 
 import pytest
 
@@ -105,6 +106,7 @@ def test_unknown_existing_service_is_never_controlled_or_has_acl_restored(tmp_pa
     assert "remaining_service" in {e["stage"] for e in errors}
     assert not worker.installer.mock_calls
     assert not worker.icacls.mock_calls
+    worker.native.backup_privilege.assert_not_called()
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Actual Windows read-only evidence")
@@ -278,6 +280,17 @@ def test_cleanup_restores_acl_before_attempting_config_write(tmp_path, monkeypat
     worker = api.Acceptance(context, output)
     worker.native.query.return_value = {"exists": False}
     worker.native.owner.return_value = "S-1-5-21-123"
+    @contextmanager
+    def backup():
+        calls.append("backup-enabled")
+        yield
+        calls.append("backup-restored")
+    worker.native.backup_privilege.side_effect = backup
+    worker.native.privileges.side_effect = [
+        [{"name": "SeBackupPrivilege", "enabled": False}],
+        [{"name": "SeBackupPrivilege", "enabled": True}],
+        [{"name": "SeBackupPrivilege", "enabled": False}],
+    ]
     worker.backup_acl = Mock()
     saved = output / "fixture.acl"
     raw = ("fixture\nD:\nfixture\\service.json\nD:\n").encode("utf-16-le")
@@ -303,6 +316,7 @@ def test_cleanup_restores_acl_before_attempting_config_write(tmp_path, monkeypat
     monkeypatch.setattr(Path, "write_bytes", write)
     errors = worker.cleanup()
     assert "fixture-restore" in calls
+    assert calls.index("backup-enabled") < calls.index("backup-restored") < calls.index("fixture-restore")
     assert calls.index("fixture-restore") < calls.index("config")
     assert calls.index("fixture-verify") < calls.index("config")
     assert errors == ([{"stage": "config", "type": "PermissionError"}] if config_denied else [])
@@ -311,8 +325,8 @@ def test_cleanup_restores_acl_before_attempting_config_write(tmp_path, monkeypat
 @pytest.mark.skipif(sys.platform != "win32", reason="Actual Windows DACL round trip in an owned temporary tree")
 def test_native_explicit_policy_roundtrip_covers_files_and_directories(tmp_path):
     native = load("scm_native_evidence").NativeEvidence()
-    if not any(p["name"] == "SeRestorePrivilege" for p in native.privileges()):
-        pytest.skip("Actual icacls /restore requires SeRestorePrivilege; exercised on the elevated Windows CI runner")
+    if not {"SeRestorePrivilege", "SeBackupPrivilege"} <= {p["name"] for p in native.privileges()}:
+        pytest.skip("Actual DACL round trip requires SeRestorePrivilege and SeBackupPrivilege; exercised on the elevated Windows CI runner")
     api = load("scm_acceptance_worker")
     root = tmp_path / "owned tree"; root.mkdir()
     data = root / "data"; data.mkdir()
@@ -322,6 +336,7 @@ def test_native_explicit_policy_roundtrip_covers_files_and_directories(tmp_path)
     policy_path = tmp_path / "policy.acl"
     observed_path = tmp_path / "observed.acl"
     restored_path = tmp_path / "restored.acl"
+    hardlink = root / "alias.exe"
     def icacls(*args):
         p = subprocess.run([str(Path(os.environ["SystemRoot"]) / "System32/icacls.exe"), *map(str, args)],
                            capture_output=True, timeout=20)
@@ -346,8 +361,111 @@ def test_native_explicit_policy_roundtrip_covers_files_and_directories(tmp_path)
         with pytest.raises(PermissionError):
             executable.read_bytes()
         api.ROOT = root
-        assert api.inventory(root, hash_files=False)["python.exe"]["bytes"] == 7
+        privileges = native.privileges()
+        with native.backup_privilege():
+            assert api.inventory(root, hash_files=False)["python.exe"]["bytes"] == 7
+        assert native.privileges() == privileges
+        # A denied file with two names must still be rejected using actual
+        # metadata; zero from Python's unprivileged fallback is not accepted.
+        icacls(root.parent, "/restore", policy_path, "/Q")
+        hardlink.hardlink_to(executable)
+        icacls(root.parent, "/restore", denied, "/Q")
+        with native.backup_privilege():
+            with pytest.raises(RuntimeError, match="Hardlink"):
+                api.inventory(root, hash_files=False)
+        assert native.privileges() == privileges
     finally:
         icacls(root.parent, "/restore", baseline, "/Q")
+        if hardlink.exists():
+            hardlink.unlink()
     icacls(root, "/save", restored_path, "/T", "/Q")
     assert api.verify_acl_restoration(before, api.acl_entries(restored_path, root))["original_dacls_equal"]
+
+
+@pytest.mark.parametrize("already_enabled", [False, True])
+def test_backup_privilege_restores_previous_state_after_body_failure(already_enabled):
+    import ctypes
+    api = load("scm_native_evidence")
+    native = api.NativeEvidence.__new__(api.NativeEvidence)
+    calls = []
+    native.kernel = Mock()
+    native.kernel.GetCurrentProcess.return_value = 99
+    native.security = Mock()
+    def open_token(process, access, pointer):
+        assert process == 99 and access == 0x28
+        ctypes.cast(pointer, ctypes.POINTER(api.W.HANDLE)).contents.value = 123
+        return True
+    def lookup(system, name, pointer):
+        assert system is None and name == "SeBackupPrivilege"
+        ctypes.cast(pointer, ctypes.POINTER(api.Luid)).contents.low = 17
+        return True
+    def adjust(token, disable_all, requested, size, previous, needed):
+        assert token.value == 123 and not disable_all
+        value = ctypes.cast(requested, ctypes.POINTER(api.TokenPrivilegesOne)).contents
+        assert value.count == 1 and value.items[0].luid.low == 17
+        calls.append(value.items[0].attributes)
+        if previous is not None:
+            assert size == ctypes.sizeof(api.TokenPrivilegesOne)
+            state = ctypes.cast(previous, ctypes.POINTER(api.TokenPrivilegesOne)).contents
+            state.count = 0 if already_enabled else 1
+            if state.count:
+                state.items[0].luid.low = 17
+                state.items[0].attributes = 1  # Preserve enabled-by-default as well.
+            ctypes.cast(needed, ctypes.POINTER(api.W.DWORD)).contents.value = size
+        ctypes.set_last_error(0)
+        return True
+    native.security.OpenProcessToken.side_effect = open_token
+    native.security.LookupPrivilegeValueW.side_effect = lookup
+    native.security.AdjustTokenPrivileges.side_effect = adjust
+    with pytest.raises(ValueError, match="body failed"):
+        with native.backup_privilege():
+            assert calls == [2]
+            raise ValueError("body failed")
+    assert calls == ([2] if already_enabled else [2, 1])
+    assert native.kernel.CloseHandle.call_args.args[0].value == 123
+    native.kernel.CloseHandle.assert_called_once()
+
+
+def test_backup_privilege_refuses_success_bool_with_not_all_assigned():
+    import ctypes
+    api = load("scm_native_evidence")
+    native = api.NativeEvidence.__new__(api.NativeEvidence)
+    native.kernel, native.security = Mock(), Mock()
+    def adjust(*args):
+        ctypes.set_last_error(1300)
+        return True
+    native.security.AdjustTokenPrivileges.side_effect = adjust
+    with pytest.raises(api.NativeEvidenceError) as caught:
+        with native.backup_privilege():
+            pytest.fail("A missing privilege must never allow the body to run")
+    assert caught.value.code == 1300
+    native.kernel.CloseHandle.assert_called_once()
+    native.security.AdjustTokenPrivileges.assert_called_once()
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Actual Windows token privilege adjustment")
+def test_native_backup_privilege_is_scoped_or_refused_without_token_change():
+    api = load("scm_native_evidence")
+    native = api.NativeEvidence()
+    before = native.privileges()
+    if any(p["name"] == "SeBackupPrivilege" for p in before):
+        with pytest.raises(ValueError, match="restore on exception"):
+            with native.backup_privilege():
+                assert {"name": "SeBackupPrivilege", "enabled": True} in native.privileges()
+                raise ValueError("restore on exception")
+    else:
+        with pytest.raises(api.NativeEvidenceError) as caught:
+            with native.backup_privilege():
+                pytest.fail("Unelevated token unexpectedly obtained SeBackupPrivilege")
+        assert caught.value.code == 1300
+    assert native.privileges() == before
+
+
+def test_structural_inventory_rejects_real_hardlink(tmp_path):
+    api = load("scm_acceptance_worker")
+    api.ROOT = tmp_path
+    target = tmp_path / "first.txt"
+    target.write_bytes(b"two names for one file")
+    (tmp_path / "second.txt").hardlink_to(target)
+    with pytest.raises(RuntimeError, match="Hardlink"):
+        api.inventory(tmp_path, hash_files=False)

@@ -1,7 +1,7 @@
 """Bounded, owner-invoked acceptance of one prepared non-production SCM service.
 
 Default inspect is read-only. Run refuses before mutations without elevated
-SCM create access and SeRestorePrivilege. No UAC/elevation workaround exists.
+SCM create access and backup/restore privileges. No UAC/elevation workaround exists.
 """
 if not __debug__:
     raise RuntimeError('Acceptance requires assertions; do not use Python -O')
@@ -221,7 +221,8 @@ def preflight():
     if manager:
         native.require(native.security.CloseServiceHandle(manager),'CloseSCManagerHandle')
     authority = {'elevated':bool(ctypes.windll.shell32.IsUserAnAdmin()),'create_access':bool(manager),
-                 'create_error':error,'restore_privilege':any(p['name']=='SeRestorePrivilege' for p in privileges)}
+                 'create_error':error,'restore_privilege':any(p['name']=='SeRestorePrivilege' for p in privileges),
+                 'backup_privilege':any(p['name']=='SeBackupPrivilege' for p in privileges)}
     runtime = LocalRuntime(Path(cfg['registry']),RentgenGraphReaderFactory(),RentgenCapturedGoBuilder(ROOT/'bsl-scan.exe'))
     observer = Observer(runtime,Principal('windows-sid:'+SID,'local_os'),f['project_id'],Path(cfg['profile']))
     current = observer.status()
@@ -650,7 +651,18 @@ class Acceptance:
         for root,saved,digest in reversed(self.acl_backups):
             try:
                 require(sha(saved)==digest,'ACL backup changed')
-                inventory(root, hash_files=False)
+                privileges_before=self.native.privileges()
+                try:
+                    with self.native.backup_privilege():
+                        require({'name':'SeBackupPrivilege','enabled':True} in self.native.privileges(),
+                                'Backup privilege was not enabled for metadata')
+                        inventory(root, hash_files=False)
+                finally:
+                    privileges_after=self.native.privileges()
+                    require(privileges_before==privileges_after, 'Metadata inspection changed token privileges')
+                self.event('cleanup_metadata_verified',root=str(root),backup_enabled_during=True,
+                           privileges_before=privileges_before,privileges_after=privileges_after,
+                           privileges_restored=True)
                 self.icacls([root.parent,'/restore',saved,'/Q'],root.name+'-restore')
                 intermediate=self.output/(root.name+'-after-restore.acl')
                 self.icacls([root,'/save',intermediate,'/T','/Q'],root.name+'-after-restore')
@@ -711,7 +723,7 @@ def main():
         return
     context=preflight()
     f,cfg,spec,native,observer,service,authority=context
-    ready=all(authority[k] for k in ('elevated','create_access','restore_privilege')) and not service['exists']
+    ready=all(authority[k] for k in ('elevated','create_access','restore_privilege','backup_privilege')) and not service['exists']
     inspection={'service_name':NAME,'service_exists':service['exists'],'authority':authority,
                 'ready_for_privileged_run':ready,'mutations_performed':False,'input_hashes_verified':True,
                 'installed_runtime_files_verified':prep['installed_core_files'],'runner_sha256':sha(Path(__file__)),
@@ -724,7 +736,7 @@ def main():
     if args.mode=='inspect':
         print(json.dumps(inspection))
         return
-    require(ready,'SCM create access and elevated restore privilege are required before mutations')
+    require(ready,'SCM create access and elevated backup/restore privileges are required before mutations')
     output=B/'lifecycle'
     output.mkdir(exist_ok=False)
     BUDGET=Budget()

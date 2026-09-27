@@ -1,10 +1,14 @@
-"""Read-only Windows SCM/process evidence. No create/control/delete APIs are loaded.
+"""Windows SCM/process evidence. No SCM or file mutation APIs are loaded.
+
+Owned-tree metadata inspection can temporarily enable an existing backup
+privilege; its exact previous state is restored when the scope exits.
 
 Status layout and PID validity:
 https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-queryservicestatusex
 https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-service_status_process
 """
 import ctypes
+from contextlib import contextmanager
 from ctypes import wintypes as W
 import os
 from pathlib import Path
@@ -40,6 +44,10 @@ class LuidAttributes(ctypes.Structure):
     _fields_ = [('luid', Luid), ('attributes', W.DWORD)]
 
 
+class TokenPrivilegesOne(ctypes.Structure):
+    _fields_ = [('count', W.DWORD), ('items', LuidAttributes * 1)]
+
+
 class NativeEvidence:
     def __init__(self):
         if os.name != 'nt':
@@ -55,6 +63,11 @@ class NativeEvidence:
             (self.kernel.OpenProcess, [W.DWORD, W.BOOL, W.DWORD], W.HANDLE),
             (self.kernel.QueryFullProcessImageNameW, [W.HANDLE, W.DWORD, W.LPWSTR, ctypes.POINTER(W.DWORD)], W.BOOL),
             (self.kernel.CloseHandle, [W.HANDLE], W.BOOL),
+            (self.kernel.GetCurrentProcess, [], W.HANDLE),
+            (self.security.OpenProcessToken, [W.HANDLE, W.DWORD, ctypes.POINTER(W.HANDLE)], W.BOOL),
+            (self.security.LookupPrivilegeValueW, [W.LPCWSTR, W.LPCWSTR, ctypes.POINTER(Luid)], W.BOOL),
+            (self.security.AdjustTokenPrivileges, [W.HANDLE, W.BOOL, ctypes.POINTER(TokenPrivilegesOne), W.DWORD,
+                                                 ctypes.POINTER(TokenPrivilegesOne), ctypes.POINTER(W.DWORD)], W.BOOL),
         )
         for function, args, result in signatures:
             function.argtypes, function.restype = args, result
@@ -171,3 +184,41 @@ class NativeEvidence:
             return result
         finally:
             api.close_token(token)
+
+    @contextmanager
+    def backup_privilege(self):
+        # Cannot add privileges to a token. TRUE plus ERROR_NOT_ALL_ASSIGNED
+        # is a refusal, not a successful enable. PreviousState preserves all
+        # attributes and is empty when the privilege was already enabled.
+        # https://learn.microsoft.com/en-us/windows/win32/api/securitybaseapi/nf-securitybaseapi-adjusttokenprivileges
+        token = W.HANDLE()
+        self.require(self.security.OpenProcessToken(self.kernel.GetCurrentProcess(), 0x28,
+                                                    ctypes.byref(token)), 'OpenBackupToken')
+        previous = TokenPrivilegesOne()
+        try:
+            requested = TokenPrivilegesOne()
+            requested.count = 1
+            self.require(self.security.LookupPrivilegeValueW(None, 'SeBackupPrivilege',
+                         ctypes.byref(requested.items[0].luid)), 'LookupBackupPrivilege')
+            requested.items[0].attributes = 2
+            needed = W.DWORD()
+            ctypes.set_last_error(0)
+            changed = self.security.AdjustTokenPrivileges(token, False, ctypes.byref(requested),
+                         ctypes.sizeof(previous), ctypes.byref(previous), ctypes.byref(needed))
+            code = ctypes.get_last_error()
+            if not changed or code:
+                raise NativeEvidenceError('EnableBackupPrivilege', code)
+            if previous.count not in (0, 1) or needed.value > ctypes.sizeof(previous):
+                raise RuntimeError('Invalid previous backup privilege state')
+            yield
+        finally:
+            try:
+                if previous.count == 1:
+                    ctypes.set_last_error(0)
+                    restored = self.security.AdjustTokenPrivileges(token, False, ctypes.byref(previous),
+                                                                   0, None, None)
+                    code = ctypes.get_last_error()
+                    if not restored or code:
+                        raise NativeEvidenceError('RestoreBackupPrivilege', code)
+            finally:
+                self.require(self.kernel.CloseHandle(token), 'CloseBackupToken')
