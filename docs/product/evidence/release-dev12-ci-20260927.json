@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "date": "2026-09-27",
+  "source_commit": "a35711ca3d1363896afcbc0781a1518161874abb",
+  "tree_provenance": {
+    "head": "a35711ca3d1363896afcbc0781a1518161874abb",
+    "pr_checkout": "bd72956da1357892655a445fbb431bc81967bae2",
+    "head_tree": "f859771347a839fa13b6246dff7bbafe43d328ec",
+    "pr_tree": "f859771347a839fa13b6246dff7bbafe43d328ec",
+    "equal_trees": true,
+    "parents": [
+      "ebb4bbbb683b73b473f2b53c10e3310346d44228",
+      "a35711ca3d1363896afcbc0781a1518161874abb"
+    ]
+  },
+  "runs": [
+    {
+      "run_id": 36285189543,
+      "event": "push",
+      "head": "a35711ca3d1363896afcbc0781a1518161874abb",
+      "source_commit": "a35711ca3d1363896afcbc0781a1518161874abb",
+      "successful_steps": 24,
+      "junit": {
+        "tests": 2389,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "locally_qualified_cases_present": 226,
+      "artifacts": {
+        "python-contract-report": {
+          "id": 10920688592,
+          "sha256": "478c0361a1108074d05ee15b06f6d030afc19eb538da2ad8f873e414d95f9024",
+          "size_bytes": 40597
+        },
+        "verified-core-development": {
+          "id": 10919724978,
+          "sha256": "540c6656aa3b77a46e92293515a5bb32d6a0effedd6570f30fdf8e33d59959e2",
+          "size_bytes": 18560513
+        }
+      },
+      "kit_sha256": "b61513c78c180fdb690e16627289780624093b33f80c77cdfac7c4b0a495b978",
+      "kit_size_bytes": 20462285,
+      "wheel_sha256": "4eadf9014958306cb4b28d2a90a1214ec67d9f9ac6f71ca42ea3aee4a15abffb",
+      "sdist_sha256": "0ada2c4bff6b673db39a083a05c9b6dea717993e2869082b81f9a20c7227cea6",
+      "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+      "vsix_sha256": "c40d223aa2a83c5d38a3614354acda346a5d16e234a6c3ac439c545d14d2ab7f",
+      "vsix_size_bytes": 209030,
+      "kit_files": 41,
+      "local_kit_different_files": [
+        "rentgen-core-0.1.0.dev12-windows-py311/SHA256SUMS.json",
+        "rentgen-core-0.1.0.dev12-windows-py311/build-input-hashes.json"
+      ]
+    },
+    {
+      "run_id": 36285192198,
+      "event": "pull_request",
+      "head": "a35711ca3d1363896afcbc0781a1518161874abb",
+      "source_commit": "bd72956da1357892655a445fbb431bc81967bae2",
+      "successful_steps": 24,
+      "junit": {
+        "tests": 2389,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "locally_qualified_cases_present": 226,
+      "artifacts": {
+        "python-contract-report": {
+          "id": 10920940466,
+          "sha256": "6f057eae316f4bb77f76f9f056383380c9d2f096b672005809d3fee89ecc48ad",
+          "size_bytes": 40553
+        },
+        "verified-core-development": {
+          "id": 10920564344,
+          "sha256": "97114fe35e72d9c5c8ebad8373323fe805ab4a99988239b9af62419b2af1a6b5",
+          "size_bytes": 18560496
+        }
+      },
+      "kit_sha256": "1ed0b50a037e6d347e4c842228137f1c73293f3380a256c03ce2bfdcf81ad8f9",
+      "kit_size_bytes": 20462285,
+      "wheel_sha256": "4eadf9014958306cb4b28d2a90a1214ec67d9f9ac6f71ca42ea3aee4a15abffb",
+      "sdist_sha256": "0ada2c4bff6b673db39a083a05c9b6dea717993e2869082b81f9a20c7227cea6",
+      "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+      "vsix_sha256": "c40d223aa2a83c5d38a3614354acda346a5d16e234a6c3ac439c545d14d2ab7f",
+      "vsix_size_bytes": 209030,
+      "kit_files": 41,
+      "local_kit_different_files": [
+        "rentgen-core-0.1.0.dev12-windows-py311/SHA256SUMS.json",
+        "rentgen-core-0.1.0.dev12-windows-py311/build-input-hashes.json"
+      ]
+    }
+  ],
+  "artifact_audit_sha256": "45dd83f51141481eac2796beffbd505bc2802b41b9d73f0e94f095c826c73c83",
+  "accepted_ci_install": {
+    "archive_sha256": "b61513c78c180fdb690e16627289780624093b33f80c77cdfac7c4b0a495b978",
+    "verified_files": 40,
+    "offline_require_hashes": true,
+    "version": "0.1.0.dev12",
+    "tools": 32,
+    "receipt_sha256": "6b5d71955babcd54abfa957022276a24a652a6e6f39879a9648db23c05eb0b5c"
+  },
+  "stage": "candidate source qualified; release-record head and postmerge gates pending",
+  "full_product_ready": false
+}

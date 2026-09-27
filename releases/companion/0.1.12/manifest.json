@@ -1,0 +1,11 @@
+{
+  "version": "0.1.12",
+  "sha256": "c40d223aa2a83c5d38a3614354acda346a5d16e234a6c3ac439c545d14d2ab7f",
+  "size_bytes": 209030,
+  "required_core": "0.1.0.dev12",
+  "stage": "prerelease",
+  "platform_1c_tested": false,
+  "tested_1c_version": null,
+  "test_scope": "63 Node contracts, Python editor-profile/release contracts and deterministic VSIX build matched to exact source CI; no new editor-to-platform acceptance for this VSIX",
+  "spectorn_integrated": false
+}

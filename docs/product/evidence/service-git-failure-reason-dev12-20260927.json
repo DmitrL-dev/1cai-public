@@ -1,0 +1,169 @@
+{
+  "schema": 1,
+  "date": "2026-09-27",
+  "scope": "bounded installed service console diagnostic contract on synthetic Git projects; not cold reliability or full product acceptance",
+  "core_version": "0.1.0.dev12",
+  "source_commit": "a35711ca3d1363896afcbc0781a1518161874abb",
+  "kit_origin": "local reproducible build; package payload verified equal to accepted push CI kit",
+  "local_kit_sha256": "3cc89648588c94efdc008500a4ca78c2c763d70b3dfd42e4c613390ff142bb80",
+  "wheel_sha256": "4eadf9014958306cb4b28d2a90a1214ec67d9f9ac6f71ca42ea3aee4a15abffb",
+  "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+  "package_binding": {
+    "packages": [
+      "rentgen_core",
+      "rentgen_diagnostics",
+      "rentgen_graph"
+    ],
+    "files": 103,
+    "installed_equals_wheel_equals_commit": true,
+    "audit_sha256": "11874f3e620471865e67bb0cccfd5ac0bb4701ec3539e90800082ec2dc1bc64d"
+  },
+  "entrypoint": "stock installer and installed rentgen-service.exe --console",
+  "instrumented_runtime": false,
+  "harness_sha256": "d517ace62bd2a0abfe565d1e8f2e01c50edb7bc6837b210599af4c0e07607f18",
+  "trials": [
+    {
+      "trial": 1,
+      "scenario": "healthy_inputs_first_install",
+      "installer": "failed",
+      "reason": "BSL_INPUT_CHANGED",
+      "failure_location": "install_bsl_runtime.verify(stage) -> RuntimePins.verify directory inventory comparison",
+      "service_started": false,
+      "harness_exit": 1,
+      "failed_stage_preserved": true,
+      "stderr_sha256": "dfa209b3b7596878016f566e4bebf6a3cfe274b3645dea319c99fe585165c1ce",
+      "failure_receipt_sha256": "668a6de662812cbc8eac77bc0d47b1ef1039257ef9dd75ae00dab9daf915b81e"
+    },
+    {
+      "trial": 2,
+      "scenario": "controlled_jar_first_byte_mutation",
+      "installer": "installed",
+      "jdk_files": 490,
+      "service_started": true,
+      "service_exit": 2,
+      "harness_exit": 0,
+      "project_id": "b897dad4-8f2f-4f1e-90dc-b2e4ac09ad6d",
+      "git_commit": "7cd6e60a3c5b46dad7a02da364023c0d2c3d275b",
+      "snapshot_id": "51308a3ae337ebfe5c7fb7602fd45cde14d116676250f09478af88c5de501222",
+      "journal_event": {
+        "analysis_failure": {
+          "reason": "BSL_RUNTIME_MISMATCH",
+          "schema": 1
+        },
+        "code": "GIT_ANALYZER_INCOMPLETE",
+        "status": "fatal"
+      },
+      "outbox_statuses": [
+        "fatal"
+      ],
+      "acceptance_sha256": "2154e44cb3b300b4cbdd904c2060050599d3ca5ef846f9b73c76e953880b2bd4",
+      "receipt_sha256": "f560441bcbe01386087d4b2c57b0a698a0341d58961d862e2907824f4f758df1",
+      "journal_sha256": "e072b92d6f3a86a31fd739ab7b80b6a3adcecc0f5998fba2228cefe005af5739",
+      "outbox_sha256": "90bdeb5df1b7446c549afe63cd79d129a38e1e3de7c610d39edf04bd602269d2",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "aef3e4da7d85a003628b5975d8bf63848f1951314e563ebccf35255a329e949b",
+      "controlled_mutation": {
+        "target": "owned installed bsl-language-server.jar",
+        "offset": 0,
+        "operation": "xor1",
+        "beforeSha256": "de97f571e6474c5c151cf859294f589ee01152de3b4826b43e1a80b69ee2602a",
+        "afterSha256": "efb4f38ba59ca32767813f2fc67e362e714b7d9732f2ff97101deef69e11aa49",
+        "sizeBytes": 131962428,
+        "sizePreserved": true
+      },
+      "strict_external_error": {
+        "error": {
+          "code": "SERVICE_WORKER_FAILED"
+        }
+      },
+      "owner_reports_created": false,
+      "java_execution_tested": false
+    },
+    {
+      "trial": 3,
+      "scenario": "healthy_inputs_separate_install",
+      "installer": "installed",
+      "jdk_files": 490,
+      "service_started": true,
+      "service_exit": 0,
+      "harness_exit": 0,
+      "project_id": "721561a9-6580-4f37-896e-e416ee3277c1",
+      "git_commit": "bc297d8d0062e78eac91ca8fbfcb10291b1df8bf",
+      "snapshot_id": "43a909fe31c72f99b817b3e4e5cd481022ab0283989a235135c893fab846968d",
+      "journal_event": {
+        "status": "stopped"
+      },
+      "outbox_statuses": [
+        "analyzed"
+      ],
+      "acceptance_sha256": "9f45edccff1912e3b10be99845fd112da87e3d2d17ac8c5c7e27c4be05fccbf2",
+      "receipt_sha256": "90510d7cb2f2320eafd53a5da98074c4f88ac9711187fe0ace4d95eab4874d39",
+      "journal_sha256": "b5822f2d3478edb5ff9b01dbd479c70091e8f630c5a13514ce7b454c35ded502",
+      "outbox_sha256": "b3b1d9fddb3844a398a1181182809f45e0c177ba9e06ed75b924ab86ed11f836",
+      "stdout_sha256": "e6aeca07bf5d2a5813e487d88d036a2c77ffd7c48176ca117aa2e40dfefb4da0",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "owner_report": {
+        "report_id": "9f1f5817-b514-4acc-9a2b-4b145e272106",
+        "quality": {
+          "status": "available",
+          "provenance": "git_source_verified",
+          "total": 1,
+          "open": 1,
+          "resolved": 0
+        },
+        "sha256": "acdeca777e9c6552226dc1c9e93bb2db98c133b20da2a017948c442af3268684",
+        "finding_rules": [
+          "bsl/MagicNumber"
+        ]
+      }
+    }
+  ],
+  "source_preservation": {
+    "method": "exact UTF-8 without BOM / CRLF generator byte comparison plus Git status",
+    "trials": [
+      {
+        "trial": 1,
+        "sha256": "36e35933005bb0a2e54655098fad3bd934bb7f77bdfde0e6d2d391c666a46dac",
+        "unchanged": true
+      },
+      {
+        "trial": 2,
+        "sha256": "4ed2aecad7fe529d53c0f78dd80acdd21f467b645e74a155afcd1adbc6af9a37",
+        "unchanged": true
+      },
+      {
+        "trial": 3,
+        "sha256": "ec2216d895550d5fab01c3d5b853ae37d2873d45fcce33a33698e0c75ffa0fcc",
+        "unchanged": true
+      }
+    ],
+    "git_blob_normalizes_crlf_to_lf": true
+  },
+  "additional_checks": {
+    "trial1_2": {
+      "passed": 15,
+      "audit_sha256": "574dbc9033539e26f807f7a4071713f0b59d3b0333e9965660941791f9d4c370"
+    },
+    "trial3": {
+      "passed": 24,
+      "audit_sha256": "de19ac2474410f6d4521ca5ce945f07329ae0115c6f990f1773a84306951943c"
+    }
+  },
+  "cold_start_reliability_accepted": false,
+  "old_trial14_cause_identified": false,
+  "windows_scm_tested": false,
+  "platform_1c_tested": false,
+  "full_product_ready": false,
+  "public_protocol": "https://github.com/DmitrL-dev/1cai-public/issues/23#issuecomment-5851674397",
+  "accepted_ci_binding": {
+    "ci_run": 36285189543,
+    "archive_sha256": "b61513c78c180fdb690e16627289780624093b33f80c77cdfac7c4b0a495b978",
+    "wheel_sha256": "4eadf9014958306cb4b28d2a90a1214ec67d9f9ac6f71ca42ea3aee4a15abffb",
+    "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+    "native_trial_install_origin": "local build",
+    "native_trial_run_from_ci_install": false,
+    "native_payload_equals_ci_payload": true,
+    "separate_ci_offline_install_accepted": true,
+    "ci_install_receipt_sha256": "6b5d71955babcd54abfa957022276a24a652a6e6f39879a9648db23c05eb0b5c"
+  }
+}
