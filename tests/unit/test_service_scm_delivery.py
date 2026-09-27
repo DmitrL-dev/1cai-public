@@ -318,6 +318,11 @@ def test_cleanup_restores_acl_before_attempting_config_write(tmp_path, monkeypat
         if "/save" in args:
             args[args.index("/save") + 1].write_bytes(raw)
     worker.icacls = icacls
+    worker.restore_acl = lambda root, saved, label: calls.append(label)
+    def snapshot(root, path, label):
+        calls.append(label)
+        path.write_bytes(raw)
+    worker.snapshot_acl = snapshot
     monkeypatch.setattr(api, "owned_scanner_pids", lambda: [])
     monkeypatch.setattr(Path, "write_bytes", write)
     errors = worker.cleanup()
@@ -326,6 +331,61 @@ def test_cleanup_restores_acl_before_attempting_config_write(tmp_path, monkeypat
     assert calls.index("fixture-restore") < calls.index("config")
     assert calls.index("fixture-verify") < calls.index("config")
     assert errors == ([{"stage": "config", "type": "PermissionError"}] if config_denied else [])
+
+
+@pytest.mark.parametrize("invalid", ["outside", "missing-root", "descriptor"])
+def test_exact_acl_restore_validates_all_entries_before_native_calls(tmp_path, monkeypatch, invalid):
+    api = load("scm_acceptance_worker")
+    root = tmp_path / "owned"; root.mkdir()
+    entries = {root: "D:(A;;FA;;;SY)"}
+    if invalid == "outside":
+        entries[tmp_path / "outside"] = "D:(A;;FA;;;SY)"
+    elif invalid == "missing-root":
+        entries = {root / "child": "D:(A;;FA;;;SY)"}
+    else:
+        entries[root / "child"] = "not a DACL"
+    native = Mock(side_effect=AssertionError("Native calls preceded validation"))
+    monkeypatch.setattr(api.ctypes, "WinDLL", native)
+    with pytest.raises(RuntimeError):
+        api.restore_original_acls(root, entries)
+    native.assert_not_called()
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Actual owned Windows DACL restoration")
+@pytest.mark.parametrize("control", ["", "AI", "P", "PAI"])
+def test_native_exact_acl_restore_preserves_explicit_aces_without_parent_copies(tmp_path, control):
+    api = load("scm_acceptance_worker")
+    native = load("scm_native_evidence").NativeEvidence()
+    root = tmp_path / "owned"; root.mkdir()
+    folder = root / "data"; folder.mkdir()
+    file = folder / "value.txt"; file.write_bytes(b"owned")
+    paths = [root, folder, file]
+    owner = native.owner(root)
+    def read_acls():
+        return {p: native.dacl(p) for p in paths}
+    original = read_acls()
+    expected = {p: "D:" + control + "".join(
+        f"(A;{'OICI' if p.is_dir() else ''};FA;;;{sid})" for sid in ("SY", "BA", owner)) for p in paths}
+    def verify_expected():
+        observed = read_acls()
+        try:
+            return api.verify_acl_restoration(expected, observed)
+        except RuntimeError:
+            pytest.fail(json.dumps({"expected": {str(p.relative_to(root)): s for p,s in expected.items()},
+                                    "observed": {str(p.relative_to(root)): s for p,s in observed.items()}}), pytrace=False)
+    try:
+        api.restore_original_acls(root, expected)
+        assert verify_expected()["original_dacls_equal"]
+        changed = {p: f"D:P(A;;FA;;;{owner})" for p in paths}
+        api.restore_original_acls(root, changed)
+        assert any(api.dacl_parts(read_acls()[p]) != api.dacl_parts(expected[p]) for p in paths)
+        api.restore_original_acls(root, expected)
+        assert verify_expected()["original_dacls_equal"]
+        assert all(native.owner(p) == owner for p in paths)
+        assert file.read_bytes() == b"owned"
+    finally:
+        api.restore_original_acls(root, original)
+    assert api.verify_acl_restoration(original, read_acls())["original_dacls_equal"]
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Actual Windows DACL round trip in an owned temporary tree")
@@ -348,8 +408,8 @@ def test_native_explicit_policy_roundtrip_covers_files_and_directories(tmp_path)
         p = subprocess.run([str(Path(os.environ["SystemRoot"]) / "System32/icacls.exe"), *map(str, args)],
                            capture_output=True, timeout=20)
         assert p.returncode == 0, (p.returncode, p.stdout.decode(errors="replace"))
-    icacls(root, "/save", baseline, "/T", "/Q")
-    before = api.acl_entries(baseline, root)
+    before = {p: native.dacl(p) for p in (root, data, executable, database)}
+    api.write_acl_policy(baseline, root, before)
     policy = api.temporary_acl_policy(root, before, data)
     api.write_acl_policy(policy_path, root, policy)
     try:
@@ -382,13 +442,14 @@ def test_native_explicit_policy_roundtrip_covers_files_and_directories(tmp_path)
                 api.inventory(root, hash_files=False)
         assert native.privileges() == privileges
     finally:
-        icacls(root.parent, "/restore", baseline, "/Q")
+        api.restore_original_acls(root, before)
         try:
-            icacls(root, "/save", restored_with_alias_path, "/T", "/Q")
+            api.write_acl_policy(restored_with_alias_path, root,
+                                 {p: native.dacl(p) for p in [root, *root.rglob("*")]})
         finally:
             if hardlink.exists():
                 hardlink.unlink()
-    icacls(root, "/save", restored_path, "/T", "/Q")
+    api.write_acl_policy(restored_path, root, {p: native.dacl(p) for p in [root, *root.rglob("*")]})
     after = api.acl_entries(restored_path, root)
     try:
         verified = api.verify_acl_restoration(before, after)

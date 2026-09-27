@@ -272,6 +272,43 @@ def has_localservice_ace(dacl):
     return bool(re.search(r';(?:LS|S-1-5-19)\)', dacl))
 
 
+def restore_original_acls(root, entries):
+    """Restore saved DACLs without adding ACEs from the parent directory.
+
+    SetFileSecurityW is retained specifically for its non-propagating semantics.
+    SetNamedSecurityInfo/SetSecurityInfo convert inheritance and can add ACEs to
+    an unprotected legacy baseline. Only DACL_SECURITY_INFORMATION is written;
+    owners, groups and SACLs are not part of this operation.
+    https://learn.microsoft.com/en-us/windows/win32/api/securitybaseapi/nf-securitybaseapi-setfilesecurityw
+    """
+    require(root.is_absolute() and root in entries and len(entries) <= 20000, 'Invalid original ACL root')
+    for path, sddl in entries.items():
+        require(path.is_absolute() and path.is_relative_to(root) and path.resolve() == path,
+                'Original ACL path escapes owned root')
+        dacl_parts(sddl)
+    security = ctypes.WinDLL('advapi32', use_last_error=True)
+    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+    convert = security.ConvertStringSecurityDescriptorToSecurityDescriptorW
+    convert.argtypes = [W.LPCWSTR, W.DWORD, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(W.DWORD)]
+    convert.restype = W.BOOL
+    setter = security.SetFileSecurityW
+    setter.argtypes = [W.LPCWSTR, W.DWORD, ctypes.c_void_p]
+    setter.restype = W.BOOL
+    kernel.LocalFree.argtypes = [ctypes.c_void_p]
+    kernel.LocalFree.restype = ctypes.c_void_p
+    deadline = time.monotonic() + bounded(60)
+    for path in sorted(entries, key=lambda p: (len(p.parts), str(p).casefold())):
+        require(time.monotonic() < deadline, 'Original ACL restoration time budget exhausted')
+        descriptor = ctypes.c_void_p()
+        if not convert(entries[path], 1, ctypes.byref(descriptor), None):
+            raise ctypes.WinError(ctypes.get_last_error())
+        try:
+            if not setter(str(path), 4, descriptor):
+                raise ctypes.WinError(ctypes.get_last_error())
+        finally:
+            kernel.LocalFree(descriptor)
+
+
 def verify_acl_restoration(before, after):
     original = {path: dacl_parts(dacl) for path, dacl in before.items()}
     restored = {path: dacl_parts(dacl) for path, dacl in after.items()}
@@ -445,8 +482,7 @@ class Acceptance:
     def backup_acl(self, root, label):
         inventory(root)
         saved = self.output/(label+'.acl')
-        self.icacls([root, '/save', saved, '/T', '/Q'], label+'-save')
-        rows = acl_entries(saved, root)
+        rows = self.snapshot_acl(root, saved, label+'-save')
         owners = {str(path.relative_to(root)): self.native.owner(path) for path in rows}
         owner_path = self.output/(label+'-owners.json')
         save(owner_path, owners)
@@ -454,11 +490,29 @@ class Acceptance:
         self.acl_backups.append((root, saved, sha(saved)))
         return saved
 
+    def snapshot_acl(self, root, saved, label):
+        paths = [root/name for name in inventory(root, hash_files=False)]
+        rows = {}
+        deadline = time.monotonic() + bounded(60)
+        for path in paths:
+            require(time.monotonic() < deadline, 'Original ACL snapshot time budget exhausted')
+            rows[path] = self.native.dacl(path)
+        write_acl_policy(saved, root, rows)
+        self.event('original_dacls_read', root=str(root), label=label, entries=len(rows),
+                   observed_sha256=sha(saved), api='GetFileSecurityW', security_information=4)
+        return rows
+
+    def restore_acl(self, root, saved, label):
+        rows = acl_entries(saved, root)
+        restore_original_acls(root, rows)
+        self.event('original_dacls_applied', root=str(root), label=label,
+                   entries=len(rows), backup_sha256=sha(saved), api='SetFileSecurityW', security_information=4)
+
     def prepare_acl(self):
         # A no-change restore of the fixture baseline proves that this token can
         # restore ACLs before either tree receives a LocalService grant.
         fixture = self.backup_acl(ROOT, 'fixture')
-        self.icacls([ROOT.parent, '/restore', fixture, '/Q'], 'fixture-preflight-restore')
+        self.restore_acl(ROOT, fixture, 'fixture-preflight-restore')
         self.backup_acl(RUNTIME, 'runtime')
         for root in (RUNTIME, ROOT):
             baseline = next(saved for candidate, saved, _ in self.acl_backups if candidate == root)
@@ -663,9 +717,9 @@ class Acceptance:
                 self.event('cleanup_metadata_verified',root=str(root),backup_enabled_during=True,
                            privileges_before=privileges_before,privileges_after=privileges_after,
                            privileges_restored=True)
-                self.icacls([root.parent,'/restore',saved,'/Q'],root.name+'-restore')
+                self.restore_acl(root,saved,root.name+'-restore')
                 intermediate=self.output/(root.name+'-after-restore.acl')
-                self.icacls([root,'/save',intermediate,'/T','/Q'],root.name+'-after-restore')
+                self.snapshot_acl(root,intermediate,root.name+'-after-restore')
                 before=acl_entries(saved,root)
                 after=acl_entries(intermediate,root)
                 frontiers=new_acl_cleanup_frontiers(root,before,after)
@@ -679,7 +733,7 @@ class Acceptance:
                     self.icacls([path,'/setowner','*S-1-5-32-544','/T','/Q'],label+'-owner')
                     self.icacls([path,'/reset','/T','/Q'],label+'-reset')
                 observed=self.output/(root.name+'-restored.acl')
-                self.icacls([root,'/save',observed,'/T','/Q'],root.name+'-verify')
+                self.snapshot_acl(root,observed,root.name+'-verify')
                 restored=acl_entries(observed,root)
                 require(set(restored)==set(after), 'ACL cleanup changed entry inventory')
                 inventory(root)

@@ -158,6 +158,39 @@ class NativeEvidence:
         finally:
             api.kernel.LocalFree(descriptor)
 
+    def dacl(self, path):
+        """Read stored DACL flags/ACEs without converting the inheritance model.
+
+        GetNamedSecurityInfo and icacls can present a converted descriptor for
+        legacy ACLs. GetFileSecurityW preserves the representation being restored.
+        https://learn.microsoft.com/en-us/windows/win32/api/securitybaseapi/nf-securitybaseapi-getfilesecurityw
+        """
+        query = self.security.GetFileSecurityW
+        query.argtypes = [W.LPCWSTR, W.DWORD, ctypes.c_void_p, W.DWORD, ctypes.POINTER(W.DWORD)]
+        query.restype = W.BOOL
+        needed = W.DWORD()
+        ctypes.set_last_error(0)
+        first = query(str(path), 4, None, 0, ctypes.byref(needed))
+        if first or ctypes.get_last_error() != 122:
+            raise NativeEvidenceError('GetFileSecurity size', ctypes.get_last_error())
+        if not 0 < needed.value <= 1024*1024:
+            raise RuntimeError('DACL descriptor exceeds bound')
+        buffer = ctypes.create_string_buffer(needed.value)
+        self.require(query(str(path), 4, buffer, len(buffer), ctypes.byref(needed)), 'GetFileSecurity')
+        convert = self.security.ConvertSecurityDescriptorToStringSecurityDescriptorW
+        convert.argtypes = [ctypes.c_void_p, W.DWORD, W.DWORD, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(W.DWORD)]
+        convert.restype = W.BOOL
+        text = ctypes.c_void_p()
+        self.require(convert(buffer, 1, 4, ctypes.byref(text), None), 'ConvertDaclToString')
+        try:
+            if not text.value:
+                raise RuntimeError('DACL string is missing')
+            return ctypes.wstring_at(text)
+        finally:
+            self.kernel.LocalFree.argtypes = [ctypes.c_void_p]
+            self.kernel.LocalFree.restype = ctypes.c_void_p
+            self.kernel.LocalFree(text)
+
     def privileges(self):
         api = _WindowsTokenAPI()
         lookup = api.security.LookupPrivilegeNameW

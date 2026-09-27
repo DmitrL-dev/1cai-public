@@ -1,17 +1,17 @@
 {
   "schema": 1,
   "base_commit": "6b775db29f8eb75191981d443a281e28ad181e7c",
-  "scope": "Diagnostic early CI guard after four failed heads; original ACL mismatch remains under investigation",
+  "scope": "Stored DACL snapshots and non-propagating per-object restoration after exact fifth-head diagnostics; privileged SCM acceptance remains pending",
   "root_review_only": true,
   "independent_review": false,
   "python_regression": {
-    "tests": 282,
+    "tests": 289,
     "errors": 0,
     "failures": 0,
     "skipped": 1
   },
-  "regression_junit_sha256": "e39b16c6618fe7265c59fe56a85128c9c3c5ff3192c0cbfe65ad1b9a2ece566d",
-  "new_safeguard_cases": 36,
+  "regression_junit_sha256": "a9573713139ed76a6af413d701f10c079a6daa4dcf15c77934d69f141c296629",
+  "new_safeguard_cases": 43,
   "installed_core_files_equal_wheel": 103,
   "wheel_sha256": "b692c9efcb03541154e9e3ada228d4a03069fde82ef7f3d0635e45978833beb5",
   "local_kit_source_commit": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
@@ -25,10 +25,10 @@
   "production_deployment": false,
   "verification_scripts": {
     "scripts/verification/verify_service_scm_delivery.py": "dccc4516bee5e622cb934723ecd3ad2f4a3e03d74b34adf39eafc75608ec6ac4",
-    "scripts/verification/scm_acceptance_worker.py": "4fb309a0673b27316cfc909348af5ffc5a264c8e29ae0042e595c09c60034d0b",
-    "scripts/verification/scm_native_evidence.py": "b6c252b4695a820eda9f914a028cf143e57f325c8c2979f2c6970d684bffa0fe"
+    "scripts/verification/scm_acceptance_worker.py": "eaca437c48ae5497648d801b3d824981eb0ff4afa1930030ddd7ce8d2b19f0f0",
+    "scripts/verification/scm_native_evidence.py": "3f33a461bce6339a629ee58c3d570b74059ddb1ddb8198fd91d8ffd541948cb2"
   },
-  "recorded_utc": "2026-09-27T17:19:19.591019+00:00",
+  "recorded_utc": "2026-09-27T17:49:28.045974+00:00",
   "acl_fix": {
     "temporary_inheritance_removed": true,
     "temporary_principals_and_masks_verified": true,
@@ -48,9 +48,11 @@
     "exact_previous_privilege_state_restored": true,
     "missing_privilege_refused": true,
     "zero_link_count_not_treated_as_safe": true,
-    "closed_hardlink_guard_required_in_ci": true
+    "closed_hardlink_guard_required_in_ci": true,
+    "stored_dacls_read_without_inheritance_conversion": true,
+    "original_dacls_restored_without_propagation": true
   },
-  "python_passed": 281,
+  "python_passed": 288,
   "local_skipped_case": {
     "name": "test_native_explicit_policy_roundtrip_covers_files_and_directories",
     "reason": "Local token has neither SeRestorePrivilege nor SeBackupPrivilege; native DACL round trip must pass without a skip in elevated Windows CI"
@@ -113,6 +115,22 @@
       "failure_stage": "Final original-DACL equality after denied-file and denied-hardlink checks",
       "restoration_difference_not_yet_recorded": true,
       "accepted": false
+    },
+    {
+      "head": "a9ad0d3f0cb32fad8b0df13fd898899bd63c55ac",
+      "run_ids": [
+        36336965390,
+        36336960810
+      ],
+      "early_guard_tests_each": 84,
+      "python_passed_each": 83,
+      "python_failures_each": 1,
+      "python_skipped_each": 0,
+      "native_scm_job": "skipped",
+      "service_created": false,
+      "diagnostic_only": true,
+      "finding": "Three inherited ACE copies added to each of four baseline entries; alias unlink made no change",
+      "accepted": false
     }
   ],
   "local_authority": {
@@ -123,25 +141,36 @@
     "backup_privilege": false
   },
   "early_guard": {
-    "tests": 84,
+    "tests": 91,
     "errors": 0,
     "failures": 0,
     "skipped": 1,
-    "passed": 83,
-    "junit_sha256": "f0c9c72a9c8a6f612afaa9e87f1a9a46d394c296ba261ff212276a179970fe92"
+    "passed": 90,
+    "junit_sha256": "6048e33e24ebbec0eee8f90d51deb42dcc10a4e88fd2b06ee43ba1f48ec9a3d5"
   },
-  "diagnostic_change": {
-    "actual_sddl_in_junit_failure": true,
-    "relative_owned_fixture_paths_only": true,
-    "snapshot_before_alias_unlink": true,
-    "early_guard_cases": 84,
-    "full_suite_cases_unchanged": 2479,
-    "restoration_rules_unchanged": true,
-    "last_acl_mismatch_fixed": false
+  "expected_python_ci": 2486,
+  "local_passed_union": 519,
+  "actual_local_preflight": {
+    "receipt_sha256": "08dc0ada102281b55b11febe7c6c06e96893a87c4d29ea727194aefec1511f37",
+    "recorded_utc": "2026-09-27T17:46:37.273549+00:00"
   },
-  "local_preflight_reused_by_byte_identity": {
-    "receipt_sha256": "63835a59db4be780f309a4aff654c9b6c924aefb0d63a31ed35aeaf45fc0d630",
-    "all_three_verification_scripts_unchanged": true,
-    "actual_run_recorded_utc": "2026-09-27T16:27:37.266826+00:00"
+  "exact_restore": {
+    "read_api": "GetFileSecurityW",
+    "write_api": "SetFileSecurityW",
+    "security_information": 4,
+    "original_ace_and_p_ar_comparison_unchanged": true,
+    "ai_changes_reported_separately": true,
+    "four_actual_local_control_cases_passed": true,
+    "path_and_descriptor_validation_before_win32": true,
+    "set_file_security_obsolete_api_choice_documented": true,
+    "native_lifecycle_accepted": false
+  },
+  "local_reproduction": {
+    "modern_restore_added_aces": true,
+    "named_reader_converted_legacy_view": true,
+    "raw_reader_retained_stored_aces": true,
+    "direct_restoration_exact_for_explicit_baseline": true,
+    "original_aces_and_protection_restored": true,
+    "original_ai_bit_change_reported": true
   }
 }
