@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "core_version": "0.1.0.dev13",
+  "companion_version": "0.1.13",
+  "red": {
+    "junit_sha256": "143fdcae0543018c47f96a0b2b62d2bc390b2bac68a08b0f68470e81e44aeb4b",
+    "expected_failures": 1,
+    "reason": "previous adapter rejected the new dev13 profile"
+  },
+  "python": {
+    "tests": 77,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "by_class": {
+      "tests.unit.test_open_editor_profile": 21,
+      "tests.unit.test_repair_profile": 11,
+      "tests.unit.test_companion_release": 4,
+      "tests.unit.test_core_release": 3,
+      "tests.unit.test_proposal_live_apply": 15,
+      "tests.unit.test_metadata_live_apply": 23
+    },
+    "junit_sha256": "605446ee546a6e33ca3c8dd2481712a3abab9cd670417a01290d2234942d63d6"
+  },
+  "node": {
+    "tests": 65,
+    "passed": 65,
+    "failures": 0,
+    "skipped": 0,
+    "log_sha256": "76a6c2aab98f8f46047319e8f09209d36d27b1a5f7f6765f836f2c31f05ddce7"
+  },
+  "existing_versions_preserved": true,
+  "unknown_version_refused": "0.1.0.dev999",
+  "installed_candidate_accepted": false,
+  "ci_qualified": false,
+  "published": false,
+  "full_product_ready": false,
+  "production_deployment": false
+}

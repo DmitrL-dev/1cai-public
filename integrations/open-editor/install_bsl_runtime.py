@@ -33,6 +33,7 @@ def contract():
             "0.1.0.dev10",
             "0.1.0.dev11",
             "0.1.0.dev12",
+            "0.1.0.dev13",
         }
         or not Path(rentgen_core.__file__)
         .resolve()
