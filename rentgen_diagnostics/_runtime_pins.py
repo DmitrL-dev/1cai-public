@@ -119,6 +119,24 @@ class RuntimePins:
                 self.check()
                 if len(result) >= 1024:
                     raise PinFailure("BSL_RESOURCE_LIMIT")
+                if stamp.directory:
+                    child = path / name
+                    child_handle = self.directory(child)
+                    retained = _call(self.ops.stamp, child_handle)
+                    initial = self.stamps[child]
+                    if (
+                        not initial.directory
+                        or not retained.directory
+                        or retained.identity != initial.identity
+                        or retained.identity != stamp.identity
+                        or retained.attributes != stamp.attributes
+                        or retained.creation != stamp.creation
+                        or _call(self.ops.final_path, child_handle) != child
+                    ):
+                        raise PinFailure("BSL_INPUT_CHANGED")
+                    # NTFS enumeration can refresh cached directory times after
+                    # a read-only reopen. Compare complete retained stamps instead.
+                    stamp = retained
                 result.append((name, stamp))
         except CoreError:
             raise PinFailure() from None

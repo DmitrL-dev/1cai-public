@@ -29,11 +29,11 @@ handle; enumeration задаёт membership и проверяемую привя
 - [x] Сохранить instrumented неравную пару и повтор на неизменённом установленном
   классе; проверить сохранность полных directory stamps и file inventory.
 - [x] Подготовить свободную чистую копию без потери старой merged-ветки.
-- [ ] Создать `tests/unit/test_runtime_pins.py`. Для timing-independent
+- [x] Создать `tests/unit/test_runtime_pins.py`. Для timing-independent
   воспроизведения наследовать WindowsHandleOps, сохранив настоящие opens,
   stamps, final paths и closure; только directory entries enumeration выдавать
   сначала с сохранёнными значениями, затем с изменённым write/change/size.
-- [ ] Параметризованный тест `test_directory_cache_refresh_preserves_runtime`
+- [x] Параметризованный тест `test_directory_cache_refresh_preserves_runtime`
   вызывает `pins.tree`, переключает cache phase, вызывает `pins.verify`, затем
   закрывает pins. Ожидание — успех и отсутствие оставшихся собственных handles.
   На старом коде ожидается `PinFailure: BSL_INPUT_CHANGED` при verify.
@@ -47,28 +47,28 @@ $py = 'C:/Users/chg/AppData/Local/Temp/rentgen-readiness-evidence-20260927/test-
 
 ## 2. Исправление и инварианты
 
-- [ ] В `_inventory` перед append нормализовать только directory entries:
+- [x] В `_inventory` перед append нормализовать только directory entries:
   получить `handle = self.directory(child)`, свежий stamp через `_call`, проверить
   directory/type, identity enumeration/initial pin, attributes, creation и final
   path. При несовпадении выбросить `PinFailure("BSL_INPUT_CHANGED")`; в result
   добавить `(name, retained)`. Files добавить как прежде.
-- [ ] Пройти RED-тесты; добавить негативные проверки настоящих directory
+- [x] Пройти RED-тесты; добавить негативные проверки настоящих directory
   write/change/size/attributes/creation/identity/type изменений, file stamp
   изменений и неправильного final path. Для этих проверок seam меняет только
   authoritative результат нужного Win32 чтения, остальные операции настоящие.
-- [ ] Проверить deduplication, resource bound перед дополнительным open,
+- [x] Проверить deduplication, resource bound перед дополнительным open,
   callback failure и закрытие всех собственных handles после admission error.
-- [ ] Проверить настоящую `OwnedAttempt.create` → capture inventory → cleanup
+- [x] Проверить настоящую `OwnedAttempt.create` → capture inventory → cleanup
   на собственном временном дереве, без изменения lifecycle implementation.
-- [ ] Узкая регрессия: новый файл, git_bsl_analyzer, git_watcher,
+- [x] Узкая регрессия: новый файл, git_bsl_analyzer, git_watcher,
   service_composition, service_entry и service_installer. Сохранить JUnit.
-- [ ] Корневое ревью diff: отсутствие изменения file/hardlink guards, увеличение
+- [x] Корневое ревью diff: отсутствие изменения file/hardlink guards, увеличение
   числа handles только за счёт ранее открываемых при tree/cleanup каталогов,
   отсутствие retry и корректный initial/current timestamp lifetime.
 
 ## 3. Native proof и поставка
 
-- [ ] Повторить read-only reopen на отдельном свежем дереве с исправленным кодом.
+- [x] Повторить read-only reopen на отдельном свежем дереве с исправленным кодом.
   Проверить original bytes, directory identity и закрытие handles.
 - [ ] Подготовить новый кандидат и штатную native installer/service/cleanup
   проверку после завершения текущей публикации dev12. Не объявлять исправленными
@@ -82,3 +82,10 @@ $py = 'C:/Users/chg/AppData/Local/Temp/rentgen-readiness-evidence-20260927/test-
 authoritative mutation-проверки различают источники метаданных. Cleanup и лимиты
 имеют отдельные gates; они не выводятся из единственного положительного теста.
 Успешный новый пакет не превращает всю платформенную матрицу в принятую.
+
+## Проверено в исходной ветке
+
+33 новых контракта и узкая регрессия из 337 тестов прошли. Native repeat на
+окончательных байтах исходного модуля прошёл с 9 наблюдаемыми обновлениями
+кэша. [Протокол](../../product/RUNTIME-DIRECTORY-STAMPS.md) и машинная квитанция
+сохраняют RED, оба исходных отказа и границы новой проверки.

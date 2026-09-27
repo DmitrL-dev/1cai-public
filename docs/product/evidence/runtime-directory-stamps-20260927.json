@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "scope": "local Windows source fix; installed candidate and release acceptance pending",
+  "base_commit": "35361853927c13c6152aa9860146865efc10e90f",
+  "stock_module_sha256": "3bba1041347a0aea6f806029edbe8dcdf2e425501995c94d34c910a2a7d1760f",
+  "fixed_module_sha256": "5ab0e566086aa2571bf2b2daeafd31c3942401cbe92fb23ee7d34034b94f4d72",
+  "instrumented_stock": {
+    "receipt_sha256": "8e5c420819748fc0ce72120a3edf5c71074976cd51f2518b8927a60e88ece3f7",
+    "baseline_verified": true,
+    "reason": "BSL_INPUT_CHANGED",
+    "original_failed_comparison_captured": true,
+    "changed_fields": [
+      "write",
+      "change"
+    ],
+    "retained_directory_stamps_unchanged": true,
+    "file_inventory_unchanged": true
+  },
+  "unchanged_installed_stock": {
+    "receipt_sha256": "26942b09db91696ea02dcdc2ca70421ef83ea9e02814e623473a35fb27916aed",
+    "baseline_verified": true,
+    "reason": "BSL_INPUT_CHANGED",
+    "class_wrapped": false,
+    "operations_replaced": false,
+    "retained_directory_stamps_unchanged": true,
+    "file_inventory_unchanged": true,
+    "after_enumeration_is_original_failed_return": false
+  },
+  "fixed_source_native": {
+    "receipt_sha256": "87a459ad49c6d6c8e12d9efe35b27ebe97d11bba4d740fcba06c2bc84faffb3b",
+    "accepted": true,
+    "class_wrapped": false,
+    "operations_replaced": false,
+    "verified_reopens": 9,
+    "actual_cache_changes": 9,
+    "retained_stamps_unchanged": true,
+    "file_inventory_unchanged": true,
+    "all_handles_closed": true,
+    "files": 128,
+    "child_directories": 16
+  },
+  "tests": [
+    {
+      "report": "runtime-directory-stamps-red.xml",
+      "sha256": "01ad361ae1a8d82ff3762dc4b08d86aa29cbb71e924150b7d8b633badbe4f3a0",
+      "tests": 3,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "report": "runtime-directory-stamps-formatted.xml",
+      "sha256": "556c95a6866b0c61dc2b2f3cc3c4725864d5afada73e9d97cdd38a5f55766620",
+      "tests": 33,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "report": "runtime-directory-stamps-regression.xml",
+      "sha256": "44f52503a954d43c87bcc4e5dc616ca95fcf231fb9e5707a3e5a5abbff9248ff",
+      "tests": 337,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "root_only_review": true,
+  "new_peer_review_claimed": false,
+  "historical_failures_explained": false,
+  "installed_new_release_accepted": false,
+  "product_ready": false,
+  "production_deployment": false
+}
