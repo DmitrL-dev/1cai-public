@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "base_commit": "6b775db29f8eb75191981d443a281e28ad181e7c",
+  "scope": "Local preflight and verifier safeguards; native CI lifecycle remains pending",
+  "root_review_only": true,
+  "independent_review": false,
+  "python_regression": {
+    "tests": 258,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "regression_junit_sha256": "6261ecc5d170415103f874a24e6a4caa2a9d5b150d8cc13914e1544f7c893c09",
+  "new_safeguard_cases": 12,
+  "installed_core_files_equal_wheel": 103,
+  "wheel_sha256": "b692c9efcb03541154e9e3ada228d4a03069fde82ef7f3d0635e45978833beb5",
+  "local_kit_source_commit": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
+  "local_kit_sha256": "a9443557cecd9aa3b0261fc548f06877de71d0214c1756f5ee7fc4abc56ce671",
+  "direct_runtime_pid_verified": true,
+  "actual_unelevated_run_refused_before_scm_and_acl_mutations": true,
+  "original_acls_unchanged": true,
+  "source_unchanged": true,
+  "service_absent": true,
+  "native_scm_lifecycle_accepted": false,
+  "production_deployment": false,
+  "verification_scripts": {
+    "scripts/verification/scm_acceptance_worker.py": "5a2ef4bbce3724ad6f56f4bc60cc416083cec14ce737d3e4192011e6cd63e4cc",
+    "scripts/verification/scm_native_evidence.py": "6f857a6e8b1edf271f5551f88cd0d23ea43b7a4a6b557100ba75b3255bc0eb0d",
+    "scripts/verification/verify_service_scm_delivery.py": "dccc4516bee5e622cb934723ecd3ad2f4a3e03d74b34adf39eafc75608ec6ac4"
+  },
+  "recorded_utc": "2026-09-27T13:32:22.266413+00:00"
+}
