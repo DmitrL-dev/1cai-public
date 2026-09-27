@@ -8,16 +8,25 @@
 синтетический EDT read-only contract от исторических native экспериментов;
 добавление corpus не квалифицирует типовые `.cf/.cfe` и live apply.
 
-## Кандидат Core dev14 / Companion 0.1.14 — исходный CI принят
+## Выпуск 27 сентября 2026 — Core dev14 и Companion 0.1.14
 
-В [PR #34](https://github.com/DmitrL-dev/1cai-public/pull/34) исходный commit
-`3d36b5ac83ce36e3418378a104d7ba52ede0f9d1` принят после
+Опубликованы [Core dev14](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev14) и
+[Companion 0.1.14](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.14) как prerelease.
+[PR #34](https://github.com/DmitrL-dev/1cai-public/pull/34) объединён в main
+`319871ced7c224c54af5b4cd1a622935646a2544`.
+Исходный commit `3d36b5ac83ce36e3418378a104d7ba52ede0f9d1` принят после
 [push CI 36306417536](https://github.com/DmitrL-dev/1cai-public/actions/runs/36306417536)
 и [PR CI 36306421451](https://github.com/DmitrL-dev/1cai-public/actions/runs/36306421451).
-В каждом — **2443 Python-теста**, **67 Node-тестов**, Go и **24 успешных шага**,
-без ошибок и пропусков. Все 440 локальных случаев присутствуют в обоих JUnit.
-[Квитанция](evidence/release-dev14-ci-20260927.json) связывает checkout, дерево,
-скачанные артефакты и отдельную установку принятого push ZIP.
+Финальные CI [36309242973](https://github.com/DmitrL-dev/1cai-public/actions/runs/36309242973) /
+[36309245906](https://github.com/DmitrL-dev/1cai-public/actions/runs/36309245906) и
+[CI main 36311493158](https://github.com/DmitrL-dev/1cai-public/actions/runs/36311493158)
+также приняты. В каждом из пяти запусков — **2443 Python-теста**,
+**67 Node-тестов**, Go и **24 успешных шага**, без ошибок и пропусков.
+Все 440 локальных случаев, включая 38 случаев двух live-apply suites,
+присутствуют в каждом JUnit; эти количества входят в 2443.
+[Квитанция исходного CI](evidence/release-dev14-ci-20260927.json) сохраняет
+состояние своего этапа; [квитанция публикации](evidence/release-dev14-publication-20260927.json)
+добавляет финальные проверки, main, теги и публичные файлы.
 
 Core переносит отказ `verify_metadata_migration.py` при `-O`/`-OO` перед импортами.
 Обычный путь, проверки UUID/данных и timeout не меняются. Два теста подтверждают
@@ -29,7 +38,7 @@ Companion и генераторы профилей добавляют явную
 `a9443557cecd9aa3b0261fc548f06877de71d0214c1756f5ee7fc4abc56ce671`.
 Отдельная офлайн-установка проверила внешний хеш, 40 файлов, 30 wheels и
 32 MCP-инструмента. Все 103 рабочих файла ядра совпали с локальной установкой
-и рабочими файлами опубликованного dev13. Два VSIX и VSIX обоих CI совпали:
+и рабочими файлами опубликованного dev13. Два локальных VSIX, VSIX пяти CI и релизного workflow совпали:
 **209585 байт**, SHA-256
 `277b28cce455d4e21fc5d647fd43f02c96d63b1dfb7e171ef64ef25bcf72851f`.
 
@@ -46,9 +55,15 @@ Companion и генераторы профилей добавляют явную
 
 Подробные notes: [Core](../../releases/core/0.1.0.dev14/RELEASE_NOTES.md) и
 [Companion](../../releases/companion/0.1.14/RELEASE_NOTES.md).
-**Финальные CI, объединение в main и публикация dev14 ещё ожидаются.**
-Опубликованной парой остаётся dev13/0.1.13. Типовые конфигурации, live SCM,
-защищённый модельный маршрут и полная self-hosted готовность не приняты.
+Core сохраняет принятый ZIP исходного commit `3d36b5a`; теги и файлы
+прежних выпусков не заменены. Companion собран из main `319871c`:
+[workflow 36314083559](https://github.com/DmitrL-dev/1cai-public/actions/runs/36314083559)
+прошёл 67 Node-тестов и все 20 шагов. Скачанный артефакт совпал с четырьмя
+подготовленными файлами; в релизе опубликованы VSIX, release.json и SHA256SUMS.
+**Все семь публичных файлов двух выпусков скачаны без авторизации и сверены побайтно.**
+
+Типовые конфигурации, live SCM, защищённый модельный маршрут и полная
+self-hosted готовность не приняты.
 Работа выполнена основным агентом без субагентов; нового независимого peer
 review нет. Production deployment не выполнялся.
 
