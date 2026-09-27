@@ -47,7 +47,7 @@ function createPlatformService({root, config, client, trusted = () => true, canc
   let busy = false, disposed = false, cancelled = false;
   function check() {
     if (disposed || !trusted()) throw new Error('TRUST_REQUIRED');
-    if (!['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13'].includes(config.core_version)) throw new Error('PLATFORM_REQUIRES_DEV8');
+    if (!['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14'].includes(config.core_version)) throw new Error('PLATFORM_REQUIRES_DEV8');
   }
   async function safeDirectory(file) {
     const stat = await fs.lstat(file);

@@ -19,7 +19,7 @@ def adapter(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "core", ["0.1.0.dev7", "0.1.0.dev8", "0.1.0.dev9", "0.1.0.dev10", "0.1.0.dev11", "0.1.0.dev12", "0.1.0.dev13"]
+    "core", ["0.1.0.dev7", "0.1.0.dev8", "0.1.0.dev9", "0.1.0.dev10", "0.1.0.dev11", "0.1.0.dev12", "0.1.0.dev13", "0.1.0.dev14"]
 )
 def test_matching_supported_runtime_is_accepted(adapter, core):
     config = {"schema": 1, "core_version": core, "python": sys.executable}
