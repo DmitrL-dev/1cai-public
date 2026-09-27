@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "diagnostic_source": "cc7e7f6fb108351571d54a83c54f0a23ad076f25",
+  "root_cause": "A successful native directory creation is rejected because the actual protected DACL renders the local administrator trustee as LA, while the expected string contains its numeric SID.",
+  "ci_reproduction": [
+    {
+      "run_id": 36295054030,
+      "event": "pull_request",
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36295054030",
+      "artifact_sha256": "92bf22e938f22c4af356e0381c64b2f8ab85053acdf5913a88d7e363b8272c89",
+      "junit_sha256": "9226714904010ac12c822e11f29d57800428f3409ad9efe848247117088b771b",
+      "tests": 33,
+      "passed": 32,
+      "failed": 1,
+      "skipped": 0,
+      "create_directory_succeeded": true,
+      "principal_rid": 500,
+      "actual_dacl": "D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;LA)"
+    },
+    {
+      "run_id": 36295050972,
+      "event": "push",
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36295050972",
+      "artifact_sha256": "0a46a21e57ce01d5b2242401f0ff5681eda3fc7c93f79f1654cb02d1fba8dfc2",
+      "junit_sha256": "4bf0538942eaaf9a90ddcf047aad7e7e25b7351a331b5ebb91850cc92fa0a63c",
+      "tests": 33,
+      "passed": 32,
+      "failed": 1,
+      "skipped": 0,
+      "create_directory_succeeded": true,
+      "principal_rid": 500,
+      "actual_dacl": "D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;LA)"
+    }
+  ],
+  "local_readonly_alias_probe_sha256": "873108478439175c629169e38fc4e254962d6b09074f9263279587407a1bb0ea",
+  "red": {
+    "file": "owned-attempt-sddl-red.xml",
+    "sha256": "8f80778db200757f1a2528fcd632db651e92967da7f02cbd5bab5a1d2dc65786",
+    "tests": 15,
+    "failures": 6,
+    "errors": 0,
+    "skipped": 0
+  },
+  "green": {
+    "file": "owned-attempt-sddl-green.xml",
+    "sha256": "eb5a01e600637d0394ae12bbac1ed9453ad44e615a2cb0f3e1f361a2978288ac",
+    "tests": 48,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "regression": {
+    "file": "owned-attempt-sddl-regression.xml",
+    "sha256": "a5a148bc336e0c3562207b9313ad50981280f44056c11d1df38fbc8587a2ab29",
+    "tests": 352,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "fixed_module_sha256": "4a72b322343215da11aeb94326adb1fecb05936e2b7d855333a6e5ec61b337dc",
+  "unchanged_runtime_pins_sha256": "5ab0e566086aa2571bf2b2daeafd31c3942401cbe92fb23ee7d34034b94f4d72",
+  "policy": "Both descriptors are rendered by Windows with DACL_SECURITY_INFORMATION; exact comparison retains flags, ACE order, trustees, rights and inheritance. No manual alias substitution or retry.",
+  "limits": [
+    "Service-account test identities use a filesystem seam; descriptor conversion is native.",
+    "Actual creation/inventory/cleanup runs under current process SID.",
+    "New installed wheel, source/full/main CI and release are not yet qualified.",
+    "No elevated SCM proof or production deployment."
+  ],
+  "root_only_review": true,
+  "sources": [
+    "https://learn.microsoft.com/en-us/windows/win32/secauthz/sid-strings",
+    "https://learn.microsoft.com/en-us/windows/win32/api/sddl/nf-sddl-convertsecuritydescriptortostringsecuritydescriptorw"
+  ]
+}

@@ -91,6 +91,29 @@ cleanup не увеличиваются. Класс не получает retrie
 
 ## Приёмка
 
+### Уточнение после первого CI: строковое представление DACL
+
+На CI `cc7e7f6` создание private directory успешно, но Windows возвращает
+полученный DACL с trustee `LA` вместо полного SID локального администратора
+с RID 500. Политика совпадает, исходное текстовое сравнение даёт ложный отказ.
+Для сравнения ожидаемый descriptor и прочитанный через handle descriptor
+преобразуются одним `ConvertSecurityDescriptorToStringSecurityDescriptorW`
+с `DACL_SECURITY_INFORMATION`. Флаги защиты, ACE, права, наследование, порядок
+и trustees остаются частью точного сравнения. Алгоритм не заменяет SID вручную.
+
+Ожидаемое представление вычисляется до создания каталога. Ошибка/пустой результат
+конвертации запрещают создание; все buffers освобождаются через LocalFree,
+ошибка освобождения помечает cleanup_uncertain. Handle ownership сохраняется.
+15 дополнительных контрактов проверяют SY/LS/NS, обычный SID, восемь настоящих
+отличий политики и ошибки конвертации/освобождения. Для service-account SID
+изменение ACL на диске заменено seam, преобразования descriptor выполняет Windows.
+Настоящее создание и cleanup под текущим SID остаются отдельным native тестом.
+
+Основание: [SID strings](https://learn.microsoft.com/en-us/windows/win32/secauthz/sid-strings)
+и [правила преобразования и освобождения](https://learn.microsoft.com/en-us/windows/win32/api/sddl/nf-sddl-convertsecuritydescriptortostringsecuritydescriptorw).
+
+### Общие критерии
+
 - Детерминированный тест реального RuntimePins с контролируемой только Win32
   enumeration seam сначала падает на старом коде при обновлении кэша directory
   write/change/size, затем проходит.

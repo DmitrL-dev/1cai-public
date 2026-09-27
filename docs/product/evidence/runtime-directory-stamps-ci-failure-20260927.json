@@ -45,7 +45,7 @@
       ]
     }
   ],
-  "observation": "Both original source CI runs fail in CreateDirectoryW before cleanup inventory; path and native error are absent from original logs. Root cause is not yet established.",
+  "observation": "Both original source CI runs failed at the protected-DACL string comparison after directory creation. Follow-up diagnostics establish SID alias rendering as the cause; the initial CreateDirectoryW-failure interpretation was incorrect.",
   "local_diagnostic_tests": {
     "tests": 33,
     "failures": 0,
@@ -56,5 +56,6 @@
   "next_check": "Record CreateDirectoryW path/result/immediate GetLastError in the test and run 33 native filesystem contracts before the full unchanged 2424-case suite.",
   "product_runtime_bytes_changed": false,
   "root_only_review": true,
-  "production_deployment": false
+  "production_deployment": false,
+  "followup_evidence": "owned-attempt-sddl-20260927.json"
 }
