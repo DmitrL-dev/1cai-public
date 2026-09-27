@@ -12,7 +12,7 @@ const config = {schema: 1, python: "C:\\путь ' $()\\python.exe", registry: '
 const output = value => ({code: 0, stdout: Buffer.from(JSON.stringify({result: value}))});
 
 test('an unqualified future core profile is refused', () => {
-  assert.throws(() => createClient({...config, core_version: '0.1.0.dev12'}, {execute: async () => output({})}), /INVALID_EDITOR_PROFILE/);
+  assert.throws(() => createClient({...config, core_version: '0.1.0.dev13'}, {execute: async () => output({})}), /INVALID_EDITOR_PROFILE/);
 });
 
 test('source text preserves BOM/CRLF and rejects altered bytes or reference', () => {
@@ -95,7 +95,7 @@ test('native result lookup is a read without snapshot or executable and rejects 
   await assert.rejects(client.platformResult(id),/PLATFORM_RESULT_MISMATCH/);
 });
 
-for (const core_version of ['0.1.0.dev9','0.1.0.dev10','0.1.0.dev11']) test(`${core_version} profile can use native result lookup and test profile listing`,async()=>{
+for (const core_version of ['0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12']) test(`${core_version} profile can use native result lookup and test profile listing`,async()=>{
   const id='00000000-0000-4000-8000-000000000003';
   const commands=[];
   const client=createClient({...config,core_version},{execute:async(_,args)=>{

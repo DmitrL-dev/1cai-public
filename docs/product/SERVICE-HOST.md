@@ -87,6 +87,36 @@ output-path containment and cooperative stop; the same pipeline is exercised
 through a mocked SCM lifecycle. No live SCM install/start/apply, service-account
 acceptance or native BSL acceptance is implied.
 
+## Local BSL failure reason (Core dev12 candidate)
+
+When a bound BSL analysis fails, `profile/git-journal.json` can preserve its
+validated reason in the fatal event:
+
+```json
+{
+  "status": "fatal",
+  "code": "GIT_ANALYZER_INCOMPLETE",
+  "analysis_failure": {"schema": 1, "reason": "BSL_RUNTIME_MISMATCH"}
+}
+```
+
+The journal's `run_id`, `cycle` and `updated_at` identify the run. Copy the journal
+after a failure **before restarting**: a new run replaces this current-state
+record. It is not an immutable failure archive.
+
+Only known reasons from the fixed BSL runtime profile are recorded, after DTO
+binding validation and a fresh authorization check. An invalid, unknown or
+unavailable reason leaves `analysis_failure` absent; that absence does not mean
+analysis succeeded. No source, paths, principal, stdout/stderr or exception text
+is added. Access revocation takes precedence over analysis diagnostics.
+
+The outbox retains its generic fatal `GIT_ANALYZER_INCOMPLETE` event and the
+service CLI reports `SERVICE_WORKER_FAILED`. Transport error serialization is
+unchanged. The optional journal field needs no state migration and does not
+change retries, runtime integrity checks, cleanup or owner-report acceptance.
+This diagnostics slice alone does not fix the intermittent cold-start failures
+tracked in [issue #23](https://github.com/DmitrL-dev/1cai-public/issues/23).
+
 ## Autonomous snapshot preparation (schema 3)
 
 Schema 3 opts into owned snapshot capture before the same bounded Git audit.

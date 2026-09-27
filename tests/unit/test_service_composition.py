@@ -12,7 +12,7 @@ from rentgen_core import service_entry
 from rentgen_core.errors import CoreError
 from rentgen_core.git_watcher import NotificationOutbox, SchedulerJournal
 from rentgen_core.owner_report_store import OwnerReportStore
-from test_git_bsl_analyzer import FakeAdapter
+from test_git_bsl_analyzer import FakeAdapter, FailureAdapter
 from test_git_watcher import git
 import test_git_snapshot_evidence as evidence_fixtures
 
@@ -260,6 +260,30 @@ def test_incomplete_evidence_never_publishes_findings_or_success_notification(
     assert [item["event"]["status"] for item in events] == ["fatal"]
     if failure == "missing_snapshot":
         assert adapter.calls == []
+
+
+@pytest.mark.parametrize("reason", ["BSL_INPUT_CHANGED", "BSL_CLEANUP_FAILED", "BSL_INPUT_CHANGED_CLEANUP_FAILED"])
+def test_service_failure_keeps_reason_local_without_findings_or_owner_report(
+    configured, workspace, monkeypatch, reason,
+):
+    from dataclasses import replace
+
+    adapter = FailureAdapter(transform=lambda value: replace(value, reason=reason))
+    observer, _, module, _, _ = wire(configured, workspace, monkeypatch, adapter=adapter)
+    original = module.read_bytes()
+    result = service_entry.run_console(configured.path)
+    assert (result.exit_code, result.error_code) == (2, "SERVICE_WORKER_FAILED")
+    assert observer.findings_status()["state"] is None
+    assert module.read_bytes() == original
+    state_root = observer.runtime.registry.get(observer.project_id).state_root
+    assert not (state_root / "owner-reports").exists()
+    assert SchedulerJournal(observer.profile / "git-journal.json").read()["event"] == {
+        "status": "fatal", "code": "GIT_ANALYZER_INCOMPLETE",
+        "analysis_failure": {"schema": 1, "reason": reason},
+    }
+    assert [item["event"] for item in NotificationOutbox(observer.profile / "git-outbox.json").peek()] == [
+        {"status": "fatal", "code": "GIT_ANALYZER_INCOMPLETE"},
+    ]
 
 
 @pytest.mark.parametrize("capture", [False, True])
