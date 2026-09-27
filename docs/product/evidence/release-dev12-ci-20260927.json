@@ -100,6 +100,7 @@
     "tools": 32,
     "receipt_sha256": "6b5d71955babcd54abfa957022276a24a652a6e6f39879a9648db23c05eb0b5c"
   },
-  "stage": "candidate source qualified; release-record head and postmerge gates pending",
-  "full_product_ready": false
+  "stage": "source, release-record head and postmerge main qualified; both component prereleases published",
+  "full_product_ready": false,
+  "publication_evidence": "release-dev12-publication-20260927.json"
 }

@@ -8,9 +8,9 @@
 синтетический EDT read-only contract от исторических native экспериментов;
 добавление corpus не квалифицирует типовые `.cf/.cfe` и live apply.
 
-## Кандидат 27 сентября 2026 — Core dev12 и Companion 0.1.12
+## Выпуск 27 сентября 2026 — Core dev12 и Companion 0.1.12
 
-Кандидат `a35711c` добавляет проверенный код причины отказа BSL Git-аудита
+Core dev12 из исходного коммита `a35711c` добавляет проверенный код причины отказа BSL Git-аудита
 в локальный журнал. [Протокол нового установленного кандидата](SERVICE-GIT-FAILURE-REASON-DEV12.md)
 и [квитанция](evidence/service-git-failure-reason-dev12-20260927.json)
 фиксируют три отдельных опыта: отказ холодной установки до worker,
@@ -25,15 +25,27 @@
 прошёл отдельную офлайн-установку. [Квитанция CI](evidence/release-dev12-ci-20260927.json)
 связывает исходный коммит, виртуальное слияние PR, артефакты и проверки.
 
-Итоговые релизные записи и main/postmerge квалифицируются в
-[PR #32](https://github.com/DmitrL-dev/1cai-public/pull/32). Dev12 и Companion
-0.1.12 пока не опубликованы. [Манифест Core](../../releases/core/0.1.0.dev12/manifest.json)
-фиксирует принятые байты. Холодная надёжность остаётся открытой в issue #23;
-этот диагностический срез не объявляется её исправлением.
+Опубликованы [Core dev12](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev12)
+и [Companion 0.1.12](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.12)
+как prerelease. [PR #32](https://github.com/DmitrL-dev/1cai-public/pull/32) объединён
+в main `3536185`; [проверка main](https://github.com/DmitrL-dev/1cai-public/actions/runs/36289797132)
+подтвердила 2389 Python-тестов без ошибок и пропусков, 63 Node-контракта, Go,
+сборку и установленные сценарии. Оба CI итоговых релизных записей тоже прошли.
+[Релизный workflow Companion](https://github.com/DmitrL-dev/1cai-public/actions/runs/36291879355)
+завершил 20 шагов и повторно проверил 63 Node-теста. VSIX: 209030 байт, SHA256
+`c40d223aa2a83c5d38a3614354acda346a5d16e234a6c3ac439c545d14d2ab7f`.
+
+Все семь публичных файлов скачаны без авторизации и сверены побайтно.
+[Квитанция публикации](evidence/release-dev12-publication-20260927.json) связывает
+main, workflow, теги, идентификаторы assets и хэши.
+[Манифест Core](../../releases/core/0.1.0.dev12/manifest.json) относится к прежнему
+принятому CI ZIP `b61513c…` из `a35711c`; main ZIP его не заменял. Тег Companion
+указывает на `3536185`. Холодная надёжность остаётся открытой в issue #23;
+этот диагностический выпуск не объявляется её исправлением.
 
 ## Выпуск 24 сентября 2026 — core dev11 и Companion 0.1.11
 
-Текущая пара раннего доступа: [core `0.1.0.dev11`](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev11)
+Предыдущая пара раннего доступа: [core `0.1.0.dev11`](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev11)
 и [Companion `0.1.11`](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.11).
 Core исправляет запись полных Windows file ID в запечатанном архиве нативных
 запусков: большие значения сохраняются без потери старших битов, а повторная
