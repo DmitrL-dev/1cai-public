@@ -1,16 +1,32 @@
 # Выпуск компонентов Рентгена
 
 `main` содержит продуктовый код. Пакеты выпускаются отдельными тегами:
-`companion-v0.1.13`, `core-v0.1.0-dev13`. Тег и уже опубликованные байты не
+`companion-v<версия>` и `core-v<версия>`. Принятые выпуски перечислены в
+[README](../../README.md) и [GitHub Releases](https://github.com/DmitrL-dev/1cai-public/releases).
+Тег и уже опубликованные байты не
 перезаписываются. Полная готовность продукта отдельным тегом не заявляется.
 
 ## Companion
 
 В `releases/companion/VERSION` фиксируются проверенный SHA256/размер VSIX и
-заметки для пользователя. `prepare_companion.py build --tag companion-v0.1.13
---output NEW_DIRECTORY` собирает VSIX, сверяет его с принятым хешем и создаёт
-SHA256SUMS/release.json. Входы должны быть закоммичены. Команда `verify` заново
-проверяет пакет, заметки, состав каталога и commit provenance без пересборки.
+заметки для пользователя. Выполняйте команды из корня чистого checkout с
+закоммиченными входами и записью принятой версии. Версия тега должна точно
+совпадать с `integrations/vscode-rentgen/package.json`:
+
+```powershell
+$companionVersion = (Get-Content -Raw integrations/vscode-rentgen/package.json | ConvertFrom-Json).version
+$companionTag = "companion-v$companionVersion"
+py -3.11 scripts/release/prepare_companion.py build --tag $companionTag --output NEW_COMPANION_DIRECTORY
+py -3.11 scripts/release/prepare_companion.py verify --tag $companionTag --output NEW_COMPANION_DIRECTORY
+```
+
+Замените `NEW_COMPANION_DIRECTORY` путём к новому каталогу. `build` собирает
+VSIX, сверяет его с принятым хешем и создаёт SHA256SUMS/release.json;
+`verify` заново проверяет пакет, заметки, состав каталога и commit provenance
+без пересборки. Для проверки уже опубликованного Companion используйте checkout
+его тега: `release.json` привязан к конкретному HEAD. Более поздний commit
+документации может содержать тот же VSIX, но другой provenance. Он не заменяет
+метаданные опубликованного выпуска.
 
 Workflow `release.yml` реагирует только на `companion-v*`: выполняет тесты
 расширения на Windows, собирает принятые байты и отдельно перепроверяет скачанный
@@ -29,14 +45,24 @@ Workflow `release.yml` реагирует только на `companion-v*`: вы
 через `scripts/verification/verify_core_kit.py` с внешним SHA256.
 
 ```powershell
-py -3.11 scripts/release/prepare_core.py prepare --version 0.1.0.dev13 --kit PATH_TO_ACCEPTED_KIT.zip --output NEW_DIRECTORY
-py -3.11 scripts/release/prepare_core.py verify --version 0.1.0.dev13 --output NEW_DIRECTORY
+$coreVersion = py -3.11 -c "import pathlib,tomllib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8'))['project']['version'])"
+py -3.11 scripts/release/prepare_core.py prepare --version $coreVersion --kit PATH_TO_ACCEPTED_KIT.zip --output NEW_CORE_DIRECTORY
+py -3.11 scripts/release/prepare_core.py verify --version $coreVersion --output NEW_CORE_DIRECTORY
 ```
+
+Замените `PATH_TO_ACCEPTED_KIT.zip` путём к принятому CI-архиву данной версии,
+а `NEW_CORE_DIRECTORY` — путём к новому каталогу. Версия берётся из текущего
+`pyproject.toml`; до запуска для неё должны быть приняты и закоммичены
+`releases/core/VERSION/manifest.json` и `RELEASE_NOTES.md`. Само изменение
+номера версии не означает, что соответствующий релиз принят.
 
 Команды сверяют принятые SHA256/размер, исходный коммит внутри комплекта,
 wheel/sdist и точный состав файлов выпуска. Манифест и заметки должны быть
 закоммичены. Тег core указывает на `source_commit` сборки; записи выпуска
 фиксируются позже, поскольку SHA256 архива зависит от встроенного коммита.
+Поэтому подготовку Core выполняют из checkout с закоммиченной записью выпуска
+и доступным в истории `source_commit`; сам исходный Core-тег может ещё не
+содержать манифест, добавленный после приёмки его сборки.
 Нельзя подменять принятый ZIP сборкой последующего коммита документации.
 Публикуются ZIP, manifest.json, SHA256SUMS и RELEASE_NOTES.md как prerelease.
 
