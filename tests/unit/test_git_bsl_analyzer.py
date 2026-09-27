@@ -3,6 +3,7 @@
 import hashlib
 import os
 import subprocess
+from dataclasses import replace
 
 import pytest
 
@@ -93,6 +94,133 @@ class FakeAdapter:
         )
 
 
+FAILURE_REASONS = (
+    "BSL_CLEANUP_FAILED", "BSL_COORDINATES_UNSUPPORTED", "BSL_COVERAGE_MISMATCH",
+    "BSL_ENCODING_UNSUPPORTED", "BSL_INPUT_CHANGED", "BSL_OWNER_BUSY",
+    "BSL_OWNER_QUARANTINED", "BSL_PLATFORM_UNSUPPORTED", "BSL_PROCESS_FAILED",
+    "BSL_REPORT_INVALID", "BSL_RESOURCE_LIMIT", "BSL_RUNTIME_MISMATCH",
+    "BSL_RUNTIME_UNAVAILABLE", "BSL_SOURCE_TYPE_UNSUPPORTED", "BSL_TIMEOUT",
+)
+
+
+class FailureAdapter(FakeAdapter):
+    def __init__(self, *, transform=lambda value: value, after=lambda: None):
+        super().__init__(complete=False)
+        self.transform, self.after = transform, after
+
+    def analyze(self, *args, **kwargs):
+        result = self.transform(super().analyze(*args, **kwargs))
+        self.after()
+        return result
+
+
+def test_all_known_bound_failure_reasons_have_exact_internal_type(repository):
+    from rentgen_core._git_analysis_failure import GitAnalysisFailure
+
+    observation = observe_git(repository)
+    for base in FAILURE_REASONS:
+        for reason in (base, base + "_CLEANUP_FAILED"):
+            adapter = FailureAdapter(transform=lambda value: replace(value, reason=reason))
+            with pytest.raises(CoreError) as error:
+                BslGitAnalyzer(adapter, lambda: None)(observation)
+            assert type(error.value) is GitAnalysisFailure
+            assert error.value.reason == reason
+            assert error.value.details == {}
+            assert error.value.to_dict("request") == {
+                "error": {
+                    "code": "GIT_ANALYZER_INCOMPLETE",
+                    "message": "BSL-LS result is not bound to the committed blob",
+                    "request_id": "request",
+                    "details": {},
+                }
+            }
+
+
+@pytest.mark.parametrize("status,reason", [
+    ("failed", "BSL_INPUT_CHANGED"),
+    ("unsupported", "BSL_PLATFORM_UNSUPPORTED"),
+])
+def test_valid_failed_and_unsupported_results_preserve_reason(repository, status, reason):
+    from rentgen_core.diagnostics import _analysis_valid
+
+    def transform(value):
+        result = replace(value, status=status, reason=reason, coverage="not_run", runtime_verified=False)
+        assert _analysis_valid(result, adapter.calls[-1][0])
+        return result
+
+    adapter = FailureAdapter(transform=transform)
+    with pytest.raises(CoreError) as error:
+        BslGitAnalyzer(adapter, lambda: None)(observe_git(repository))
+    assert error.value.reason == reason
+
+
+@pytest.mark.parametrize("updates", [
+    {"candidate_sha256": "f" * 64}, {"candidate_size_bytes": 0},
+    {"candidate_size_bytes": True}, {"profile_id": "other"},
+    {"runtime_manifest_sha256": "f" * 64}, {"config_sha256": "f" * 64},
+    {"runtime_verified": 1}, {"diagnostics_complete": 0}, {"diagnostics": []},
+    {"status": "other"}, {"status": None}, {"coverage": "exact_one"},
+    {"scope": "other"}, {"total_diagnostics": 0}, {"exit_code": True},
+    {"reason": None}, {"reason": 1}, {"reason": "BSL_UNKNOWN"},
+    {"reason": "C:\\secret\\runtime"}, {"reason": "BSL_TIMEOUT\nsecret"},
+    {"reason": "BSL_" + "A" * 200},
+    {"reason": "BSL_TIMEOUT_CLEANUP_FAILED_CLEANUP_FAILED"},
+    {"status": "unsupported", "reason": "BSL_TIMEOUT"},
+])
+def test_unbound_or_invalid_failure_does_not_disclose_reason(repository, updates):
+    adapter = FailureAdapter(transform=lambda value: replace(value, **updates))
+    with pytest.raises(CoreError) as error:
+        BslGitAnalyzer(adapter, lambda: None)(observe_git(repository))
+    assert type(error.value) is CoreError
+    assert error.value.code == "GIT_ANALYZER_INCOMPLETE"
+    assert not hasattr(error.value, "reason")
+    assert error.value.details == {}
+
+
+@pytest.mark.parametrize("kind", ["subclass", "dictionary", "reason_subclass"])
+def test_failure_dto_and_reason_require_exact_types(repository, kind):
+    from dataclasses import asdict
+
+    class SubAnalysis(BslAnalysis):
+        pass
+
+    class SubReason(str):
+        pass
+
+    def transform(value):
+        if kind == "dictionary":
+            return asdict(value)
+        if kind == "reason_subclass":
+            return replace(value, reason=SubReason("BSL_TIMEOUT"))
+        return SubAnalysis(**asdict(value))
+
+    with pytest.raises(CoreError) as error:
+        BslGitAnalyzer(FailureAdapter(transform=transform), lambda: None)(observe_git(repository))
+    assert type(error.value) is CoreError
+    assert not hasattr(error.value, "reason")
+
+
+@pytest.mark.parametrize("complete", [False, True])
+def test_revocation_after_adapter_has_priority_over_analysis(repository, complete):
+    revoked = False
+
+    def authorize():
+        if revoked:
+            raise CoreError("PROJECT_FORBIDDEN", "revoked")
+
+    class RevokingAdapter(FakeAdapter):
+        def analyze(self, *args, **kwargs):
+            nonlocal revoked
+            result = super().analyze(*args, **kwargs)
+            revoked = True
+            return result
+
+    with pytest.raises(CoreError) as error:
+        BslGitAnalyzer(RevokingAdapter(complete=complete), authorize)(observe_git(repository))
+    assert error.value.code == "PROJECT_FORBIDDEN"
+    assert not hasattr(error.value, "reason")
+
+
 def test_analyzer_reads_only_bsl_blobs_and_returns_bound_findings(repository):
     observation = observe_git(repository)
     calls = []
@@ -119,6 +247,14 @@ def test_incomplete_bsl_result_is_not_published(repository):
     with pytest.raises(CoreError) as error:
         BslGitAnalyzer(FakeAdapter(complete=False), lambda: None)(observation)
     assert error.value.code == "GIT_ANALYZER_INCOMPLETE"
+
+
+def test_bound_incomplete_bsl_reason_is_preserved_internally(repository):
+    observation = observe_git(repository)
+    with pytest.raises(CoreError) as error:
+        BslGitAnalyzer(FakeAdapter(complete=False), lambda: None)(observation)
+    assert error.value.code == "GIT_ANALYZER_INCOMPLETE"
+    assert getattr(error.value, "reason", None) == "BSL_PROCESS_FAILED"
 
 
 def test_dirty_repository_is_rejected_before_analysis(repository):

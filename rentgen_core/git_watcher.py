@@ -11,6 +11,7 @@ import time
 from uuid import UUID, uuid4
 
 from .errors import CoreError
+from ._git_analysis_failure import local_failure_event
 from .git_observer import FindingReport, GitObservation, observe_git, require_ancestor
 
 
@@ -701,7 +702,7 @@ class GitWatcherScheduler:
                                     run_id,
                                     cycle,
                                     failures,
-                                    {"status": "fatal", "code": exc.code},
+                                    local_failure_event(exc),
                                     keep_running=False,
                                 )
                         if self.outbox is not None:

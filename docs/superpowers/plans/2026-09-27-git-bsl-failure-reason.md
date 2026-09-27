@@ -1,0 +1,52 @@
+# Локальная причина отказа Git BSL: план реализации
+
+> **For agentic workers:** выполнять задачи последовательно с TDD и независимым ревью; сбор тестовых результатов поручается Sol, окончательная проверка остаётся у основного агента.
+
+**Goal:** после отказа обычного установленного GitAuditWorker сохранить проверенную BSL-причину только в локальном fatal journal.
+
+**Architecture:** внутренний `GitAnalysisFailure(CoreError)` переносит ограниченный код причины от BSL Git adapter до scheduler. Adapter проверяет точный DTO, привязку и авторизацию после ответа. Scheduler повторно проверяет точный тип ошибки и allowlist; outbox и транспортный `to_dict()` сохраняют прежний формат.
+
+**Tech Stack:** Python 3.11, pytest, существующие Windows CLI, SchedulerJournal, Core kit и Product checks.
+
+## Общие ограничения
+
+- Основа: [спецификация](../specs/2026-09-27-git-bsl-failure-reason-design.md), head до реализации `a4aa57633b58965eca12839801ce9edb0a310869`.
+- 15 кодов из спецификации и ровно один суффикс `_CLEANUP_FAILED`; произвольные строки, paths, stdout/stderr и details в журнал не копируются.
+- Дополнительный объект: `analysis_failure = {"schema": 1, "reason": reason}` только для fatal `GIT_ANALYZER_INCOMPLETE`.
+- Поведение retries, cleanup/quarantine, целостность runtime, критерии успешных findings и owner report сохраняются.
+- Новый запуск заменяет предыдущую запись журнала. Этот журнал не является архивом.
+- Продолжение локального среза входит в действующее поручение владельца. Отдельное одобрение именно текста дизайна не заявляется. Production deployment требует отдельного разрешения.
+
+## 1. Передача проверенной причины
+
+**Файлы:** создать `rentgen_core/_git_analysis_failure.py`; изменить `rentgen_diagnostics/git_bsl_analyzer.py`, `rentgen_core/git_watcher.py`; тесты в `tests/unit/test_git_bsl_analyzer.py`, `tests/unit/test_git_watcher.py`, `tests/unit/test_service_composition.py`.
+
+- [ ] Сначала добавить тесты: валидные failed/unsupported DTO передают известную причину; подмена hash/size/profile/manifest/config, неверный тип DTO/статуса/reason, неизвестные и опасные строки её не передают; отзыв авторизации после adapter имеет приоритет.
+- [ ] Выполнить новый положительный тест причины до реализации: ожидается отсутствие атрибута/значения причины у прежнего `CoreError`.
+- [ ] Ввести внутренний тип с прежними `code="GIT_ANALYZER_INCOMPLETE"`, `message="BSL-LS result is not bound to the committed blob"`, пустыми `details` и отдельным `reason`. Проверка причины использует точный `str` и конечный `frozenset`.
+- [ ] После `adapter.analyze` вызвать `self.authorize()`. Обогащать только точный `BslAnalysis` со статусом `failed`/`unsupported`, для которого `_analysis_valid(analysis, raw)` истинен и причина входит в allowlist. Иначе выбрасывать прежний общий `CoreError`.
+- [ ] На fatal-ветке scheduler сформировать локальное событие через helper `local_failure_event(error)`: общий status/code всегда, причина только для точного `GitAnalysisFailure`, прежнего code и повторно разрешённой причины. В outbox передавать прежний отдельный словарь status/code.
+- [ ] Проверить границы: транспортная сериализация без причины, поддельные CoreError/details и подклассы не обогащают journal, изменённые атрибуты повторно проверяются, ошибка journal сохраняет первичное исключение, следующий запуск удаляет старую причину.
+- [ ] Выполнить узкую регрессию трёх файлов и отдельный процесс с управляемым adapter; это проверка контракта, не репродукция runtime-дефекта.
+
+Команда узкой регрессии (из корня репозитория, Python из приватного test-env):
+
+```powershell
+python -m pytest -q --tb=short -p no:cacheprovider tests/unit/test_git_bsl_analyzer.py tests/unit/test_git_watcher.py tests/unit/test_service_composition.py --junitxml=output/git-failure-focused.xml
+```
+
+## 2. Кандидат и установленная проверка
+
+- [ ] Подготовить Core `0.1.0.dev12`, обновить совместимость runtime installer и необходимые release contracts; dev11 assets сохраняются.
+- [ ] Построить kit существующим release workflow, проверить offline install, CLI/MCP, snapshot/observer contracts на точном коммите. Проверить реальную область покрытия verifier и SHA256 скачанных артефактов.
+- [ ] В собственной свежей установке выполнить обычный service CLI без probe/monkeypatch; сохранить commit/snapshot, exit, journal/outbox, owner reports и чистоту исходников.
+- [ ] В отдельной своей установке изменить только первый байт JAR, сохранив размер; обычный CLI обязан дать общий `SERVICE_WORKER_FAILED`, outbox fatal `GIT_ANALYZER_INCOMPLETE`, отсутствие успешного отчёта и journal reason точно `BSL_RUNTIME_MISMATCH`.
+- [ ] Не считать три успешные диагностические установки 27.09 доказательством исправления исходного `BSL_INPUT_CHANGED`; issue #23 остаётся открытым.
+
+## 3. Ревью, поставка, checkpoint
+
+- [ ] Независимое ревью реализации и доказательств; исправить существенные замечания до принятия.
+- [ ] Обновить `docs/product/READINESS.md`, документацию service journal и подробный протокол установленного кандидата с компактной квитанцией.
+- [ ] Обновить PR #32 фактическим изменением и проверками, дождаться Product checks на итоговом head, проверить точный checkout и артефакты.
+- [ ] Принятый срез довести до public main и проверить postmerge CI.
+- [ ] Опубликовать новый prerelease с подробным описанием, неизменяемыми артефактами и хэшами; обновить issue #23 и checkpoint. Полную готовность продукта и устранение старой перемежающейся ошибки не заявлять без соответствующих доказательств.

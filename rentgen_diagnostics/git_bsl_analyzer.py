@@ -6,8 +6,12 @@ from pathlib import Path, PurePosixPath
 import subprocess
 
 from rentgen_core.errors import CoreError
+from rentgen_core._git_analysis_failure import (
+    GitAnalysisFailure,
+    is_known_bsl_failure_reason,
+)
 from rentgen_core.git_observer import Finding, FindingReport, GitObservation
-from rentgen_core.diagnostics import BslAnalysis, BSL_PROFILE_ID
+from rentgen_core.diagnostics import BslAnalysis, BSL_PROFILE_ID, _analysis_valid
 
 
 MAX_FILES = 256
@@ -188,6 +192,7 @@ class BslGitAnalyzer:
             analysis = self.adapter.analyze(
                 raw, suffix=suffix, authorize=self.authorize
             )
+            self.authorize()
             if (
                 not isinstance(analysis, BslAnalysis)
                 or analysis.candidate_sha256 != hashlib.sha256(raw).hexdigest()
@@ -195,6 +200,14 @@ class BslGitAnalyzer:
                 or analysis.runtime_verified is not True
                 or analysis.diagnostics_complete is not True
             ):
+                if (
+                    type(analysis) is BslAnalysis
+                    and type(analysis.status) is str
+                    and analysis.status in {"failed", "unsupported"}
+                    and _analysis_valid(analysis, raw)
+                    and is_known_bsl_failure_reason(analysis.reason)
+                ):
+                    raise GitAnalysisFailure(analysis.reason)
                 raise CoreError(
                     "GIT_ANALYZER_INCOMPLETE",
                     "BSL-LS result is not bound to the committed blob",

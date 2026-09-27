@@ -3,6 +3,7 @@
 import json
 import os
 import subprocess
+import sys
 
 import pytest
 
@@ -415,6 +416,155 @@ def test_scheduler_journal_keeps_fatal_event(tmp_path):
     state = journal.read()
     assert state["phase"] == "idle"
     assert state["event"] == {"status": "fatal", "code": "PROJECT_FORBIDDEN"}
+
+
+@pytest.mark.parametrize("reason", [
+    "BSL_INPUT_CHANGED", "BSL_CLEANUP_FAILED", "BSL_TIMEOUT_CLEANUP_FAILED",
+])
+def test_scheduler_keeps_reason_only_in_local_journal(tmp_path, reason):
+    from rentgen_core._git_analysis_failure import GitAnalysisFailure
+
+    journal = implementation.SchedulerJournal(tmp_path / "journal.json")
+    outbox = implementation.NotificationOutbox(tmp_path / "outbox.json")
+    primary = GitAnalysisFailure(reason)
+    with pytest.raises(CoreError) as error:
+        implementation.GitWatcherScheduler(
+            _ScheduledWatcher([primary]), interval=5, max_cycles=1,
+            journal=journal, outbox=outbox, retry_codes=frozenset(),
+        ).run()
+    assert error.value is primary
+    assert journal.read()["event"] == {
+        "status": "fatal", "code": "GIT_ANALYZER_INCOMPLETE",
+        "analysis_failure": {"schema": 1, "reason": reason},
+    }
+    assert [item["event"] for item in outbox.peek()] == [
+        {"status": "fatal", "code": "GIT_ANALYZER_INCOMPLETE"},
+    ]
+    assert "reason" not in json.dumps(primary.to_dict("request"))
+    previous_run = journal.read()["run_id"]
+    observed = []
+
+    class NextWatcher:
+        def tick(self):
+            observed.append(journal.read()["event"])
+            return {"status": "unchanged"}
+
+    implementation.GitWatcherScheduler(
+        NextWatcher(), interval=5, max_cycles=1, journal=journal, outbox=outbox,
+    ).run()
+    assert observed == [None]
+    assert journal.read()["run_id"] != previous_run
+    assert journal.read()["event"] == {"status": "stopped"}
+    assert outbox.peek()[-1]["event"] == {"status": "unchanged"}
+
+
+@pytest.mark.parametrize("kind", ["details", "attribute", "subclass", "reason", "reason_type", "code"])
+def test_scheduler_does_not_trust_spoofed_or_mutated_reason(tmp_path, kind):
+    from rentgen_core._git_analysis_failure import GitAnalysisFailure, local_failure_event
+
+    class SubFailure(GitAnalysisFailure):
+        pass
+
+    if kind == "details":
+        primary = CoreError("GIT_ANALYZER_INCOMPLETE", "opaque", details={
+            "analysis_failure": {"schema": 1, "reason": "BSL_TIMEOUT"},
+        })
+    elif kind == "attribute":
+        primary = CoreError("GIT_ANALYZER_INCOMPLETE", "opaque")
+        primary.reason = "BSL_TIMEOUT"
+    elif kind == "subclass":
+        primary = SubFailure("BSL_TIMEOUT")
+    else:
+        primary = GitAnalysisFailure("BSL_TIMEOUT")
+        if kind == "code":
+            primary.code = "PROJECT_FORBIDDEN"
+        else:
+            primary.reason = "BSL_UNKNOWN" if kind == "reason" else ["BSL_TIMEOUT"]
+    expected = {"status": "fatal", "code": primary.code}
+    assert local_failure_event(primary) == expected
+    journal = implementation.SchedulerJournal(tmp_path / "journal.json")
+    outbox = implementation.NotificationOutbox(tmp_path / "outbox.json")
+    with pytest.raises(CoreError) as error:
+        implementation.GitWatcherScheduler(
+            _ScheduledWatcher([primary]), interval=5, max_cycles=1,
+            journal=journal, outbox=outbox, retry_codes=frozenset(),
+        ).run()
+    assert error.value is primary
+    assert journal.read()["event"] == expected
+    assert [item["event"] for item in outbox.peek()] == [expected]
+
+
+@pytest.mark.parametrize("reason", [None, 1, [], "BSL_UNKNOWN", "BSL_TIMEOUT\nsecret", "C:\\secret", "BSL_" + "A" * 200, "BSL_TIMEOUT_CLEANUP_FAILED_CLEANUP_FAILED"])
+def test_internal_failure_constructor_rejects_unlisted_reason(reason):
+    from rentgen_core._git_analysis_failure import GitAnalysisFailure, is_known_bsl_failure_reason
+
+    assert is_known_bsl_failure_reason(reason) is False
+    with pytest.raises(ValueError):
+        GitAnalysisFailure(reason)
+
+
+def test_scheduler_journal_failure_preserves_primary_analysis_error(tmp_path, monkeypatch):
+    from rentgen_core._git_analysis_failure import GitAnalysisFailure
+
+    primary = GitAnalysisFailure("BSL_INPUT_CHANGED")
+    journal = implementation.SchedulerJournal(tmp_path / "journal.json")
+    outbox = implementation.NotificationOutbox(tmp_path / "outbox.json")
+
+    def persistence_failure(*args, **kwargs):
+        raise OSError("controlled journal persistence failure")
+
+    monkeypatch.setattr(journal, "record", persistence_failure)
+    with pytest.raises(CoreError) as error:
+        implementation.GitWatcherScheduler(
+            _ScheduledWatcher([primary]), interval=5, max_cycles=1,
+            journal=journal, outbox=outbox, retry_codes=frozenset(),
+        ).run()
+    assert error.value is primary
+    assert primary.reason == "BSL_INPUT_CHANGED"
+    assert len(primary.__notes__) == 1
+    assert "OSError" in primary.__notes__[0]
+    assert [item["event"] for item in outbox.peek()] == [
+        {"status": "fatal", "code": "GIT_ANALYZER_INCOMPLETE"},
+    ]
+
+
+@pytest.mark.parametrize("reason", ["BSL_INPUT_CHANGED", "BSL_CLEANUP_FAILED", "BSL_INPUT_CHANGED_CLEANUP_FAILED"])
+def test_failure_journal_survives_contract_process_exit(tmp_path, reason):
+    # Contract process only: controlled watcher, real scheduler and persistence;
+    # this does not reproduce a native BSL runtime failure.
+    script = """
+import sys
+from pathlib import Path
+from rentgen_core._git_analysis_failure import GitAnalysisFailure
+from rentgen_core.git_watcher import GitWatcherScheduler, SchedulerJournal, NotificationOutbox
+root, reason = Path(sys.argv[1]), sys.argv[2]
+class Watcher:
+    def tick(self):
+        raise GitAnalysisFailure(reason)
+try:
+    GitWatcherScheduler(Watcher(), interval=5, max_cycles=1,
+        journal=SchedulerJournal(root/'journal.json'),
+        outbox=NotificationOutbox(root/'outbox.json'), retry_codes=frozenset()).run()
+except GitAnalysisFailure:
+    sys.exit(7)
+sys.exit(9)
+"""
+    result = subprocess.run(
+        [sys.executable, "-B", "-c", script, str(tmp_path), reason],
+        capture_output=True, text=True, encoding="utf-8", timeout=30,
+        check=False,
+    )
+    assert result.returncode == 7, result.stderr
+    journal = json.loads((tmp_path / "journal.json").read_text(encoding="utf-8"))
+    outbox = json.loads((tmp_path / "outbox.json").read_text(encoding="utf-8"))
+    assert journal["phase"] == "idle"
+    assert journal["event"] == {
+        "status": "fatal", "code": "GIT_ANALYZER_INCOMPLETE",
+        "analysis_failure": {"schema": 1, "reason": reason},
+    }
+    assert [item["event"] for item in outbox["events"]] == [
+        {"status": "fatal", "code": "GIT_ANALYZER_INCOMPLETE"},
+    ]
 
 
 def test_scheduler_does_not_duplicate_controlled_fatal_notification(tmp_path):
