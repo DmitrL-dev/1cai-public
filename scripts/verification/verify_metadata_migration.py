@@ -1,4 +1,8 @@
 """Verify stored data across an owned EDT fixture migration on real 1C/YAxUnit."""
+
+if not __debug__:
+    raise RuntimeError("Verification requires assertions; do not use Python -O")
+
 import argparse
 import base64
 from contextlib import ExitStack

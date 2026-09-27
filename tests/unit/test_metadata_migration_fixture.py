@@ -71,6 +71,35 @@ def test_engine_adaptation_preserves_borrowed_identity_and_unrelated_code(
     assert exported_inventory(source, authorize=lambda: None) == rows
 
 
+@pytest.mark.parametrize("optimization", ["-O", "-OO"])
+def test_optimized_verifier_refuses_before_native_imports(optimization):
+    script = """
+import sys
+sys.path.insert(0, 'scripts/verification')
+class RejectVerificationImports:
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname in {'argparse', 'rentgen_core', 'verify_edt_metadata_fixture'}:
+            raise RuntimeError('unexpected import before optimization guard: ' + fullname)
+        return None
+sys.meta_path.insert(0, RejectVerificationImports())
+try:
+    import verify_metadata_migration
+except RuntimeError as error:
+    if str(error) != 'Verification requires assertions; do not use Python -O':
+        raise
+else:
+    raise RuntimeError('optimized verifier was accepted')
+"""
+    result = subprocess.run(
+        [sys.executable, "-I", optimization, "-B", "-c", script],
+        cwd=ROOT,
+        capture_output=True,
+        timeout=10,
+    )
+    assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
+    assert not result.stdout and not result.stderr
+
+
 def test_optimized_python_cannot_skip_structural_assertions():
     script = "import sys;sys.path.insert(0,'scripts/verification');import verify_metadata_migration as v;v.verify(None)"
     result = subprocess.run(
