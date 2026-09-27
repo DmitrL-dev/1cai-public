@@ -1,0 +1,62 @@
+{
+  "documents": {
+    "docs/product/CORE-INSTALLATION.md": "5f9cd0a4f248f000806f033de1d8f0b73f390cb3f40f318f632a33d05e9b1064",
+    "docs/product/CORE-OFFLINE-KIT.md": "306cec5419493e88106986970459d7e41b0cbfe306cfffb683de5560db42615a"
+  },
+  "pyproject_sha256": "3888c0cef99ddd86342f806f6bdee6ebf3436d4b888286e21b045d09a088710c",
+  "wheel_sha256": "4ff661d731ff1f01fc158c02f6ee922a4c0f6794d053fc60063d65bd61ba0328",
+  "mcp_lock_sha256": "9deebbb73122246e79be7b648ba6f71b4dd1ad531b002ec7792fc25d42edaf4f",
+  "cases": [
+    {
+      "kind": "core",
+      "missing_wheel": false,
+      "source_version": "0.1.0.dev15",
+      "commands_sha256": "329122bb3ea5014cd38bc2af5833afaa3ae081f4e21b6e889af0b134eed2bdfe",
+      "document_block_sha256": "001f2c08a529ceba8820b02a44b3b7ee97dc7520e6687dcae6da36455b63db08",
+      "log_sha256": "c6ef196f4f829480d572097bc04712bedae021f4846070f1991ea8a9ee2a8e01",
+      "returncode": 0,
+      "installed_version": "0.1.0.dev15",
+      "installed_files_equal_wheel": 103,
+      "pip_check_passed": true
+    },
+    {
+      "kind": "core",
+      "missing_wheel": true,
+      "source_version": "0.1.0.dev15",
+      "commands_sha256": "329122bb3ea5014cd38bc2af5833afaa3ae081f4e21b6e889af0b134eed2bdfe",
+      "document_block_sha256": "001f2c08a529ceba8820b02a44b3b7ee97dc7520e6687dcae6da36455b63db08",
+      "log_sha256": "fb10b202cc2a739045d1125364002ab928654c0d95ee078f8bdc136d266ce033",
+      "returncode": 1,
+      "refused_before_core_install": true
+    },
+    {
+      "kind": "mcp",
+      "missing_wheel": false,
+      "source_version": "0.1.0.dev15",
+      "commands_sha256": "ce21db5dd2daaf4f051f1ae8c01ed945445157334557dc832f9eeaaadb878577",
+      "document_block_sha256": "823e52b7b194c191ad5d6e552071e616ab1c4b4151770ebf972ee599da81da8f",
+      "log_sha256": "384012f54442705a35d0548008e5b951f3d891753d99fc87d82b14655fd0a88d",
+      "returncode": 0,
+      "installed_version": "0.1.0.dev15",
+      "installed_files_equal_wheel": 103,
+      "pip_check_passed": true
+    },
+    {
+      "kind": "mcp",
+      "missing_wheel": true,
+      "source_version": "0.1.0.dev15",
+      "commands_sha256": "ce21db5dd2daaf4f051f1ae8c01ed945445157334557dc832f9eeaaadb878577",
+      "document_block_sha256": "823e52b7b194c191ad5d6e552071e616ab1c4b4151770ebf972ee599da81da8f",
+      "log_sha256": "e29c2052320cedc4bda1d7c297de0b4b656450a60f031beeaa330558fec76894",
+      "returncode": 1,
+      "refused_before_core_install": true
+    }
+  ],
+  "mcp_tools": 32,
+  "mcp_client_sha256": "81c855df4fa6f9eb4eb6c828d4272949f3023c1c4afac1d2b7e6d4d610d883a9",
+  "mcp_result_sha256": "cdb45e32da67d2eb1adf288cb90256489512574e85c4bc5466170aaba919204b",
+  "tested_source_version": "0.1.0.dev15",
+  "native_scm_accepted": false,
+  "new_release_qualified": false,
+  "recorded_utc": "2026-09-27T15:05:37.127119+00:00"
+}

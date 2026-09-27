@@ -1,0 +1,21 @@
+{
+  "version": "0.1.0.dev15",
+  "tag": "core-v0.1.0-dev15",
+  "prerelease": true,
+  "asset": "rentgen-core-0.1.0.dev15-windows-py311.zip",
+  "size_bytes": 20463588,
+  "sha256": "30040b536163a8b92f7aa611392c1bed29701819b1fd9ceb024248bf4482f867",
+  "wheel_sha256": "4ff661d731ff1f01fc158c02f6ee922a4c0f6794d053fc60063d65bd61ba0328",
+  "sdist_sha256": "353f7ec3239c36b03a9b0539e7963de6c804341401e7bb9cf8e616796bf0bbae",
+  "source_commit": "a792e638bd736a6ac075140e02d0dd972802cb34",
+  "ci_run": 36346205723,
+  "pr_ci_run": 36346211891,
+  "python_tests": 2488,
+  "platform": "Windows x64 / CPython 3.11",
+  "tested_1c_version": "8.3.27.2342",
+  "native_1c_smoke_accepted": true,
+  "native_editor_source_commit": "242ed98bf51bf4dd10dd925de093c3b83f7ce368",
+  "native_1c_scope": "Dev15/0.1.15 selected-revision test and recovery on one synthetic project: 23 native steps; accepted CI wheel/VSIX and103 installed files equal native payload. No editor rerun after SCM integration, no typical configuration or editor live apply acceptance.",
+  "platform_1c_acceptance": false,
+  "full_product_ready": false
+}

@@ -1,6 +1,7 @@
 # Локальное ядро: сборка, установка и первый проект
 
-Срез исходников `rentgen-core 0.1.0.dev13`, Windows x64 / CPython 3.11. Это CLI снимков,
+Исходники `rentgen-core`, Windows x64 / CPython 3.11. Версия выбранного среза
+задана в `pyproject.toml` (`project.version`). Это CLI снимков,
 графа и предложенных правок с BSL-диагностикой и локальным stdio MCP. Полная
 приёмка продукта ведётся в полном репозитории (`docs/product/READINESS.md`). Инструкции не
 устанавливают платформу 1С, EDT или модели и не запускают HTTP-сервер или старый
@@ -51,10 +52,19 @@ SNAPSHOT-METADATA, SNAPSHOT-READ-SESSIONS и SNAPSHOT-PUBLICATION-ADR.
 
 ```powershell
 py -3.11 -m venv .venv-core
-.\.venv-core\Scripts\python.exe -m pip install --no-index --no-deps .\dist\rentgen_core-0.1.0.dev13-py3-none-any.whl
-.\.venv-core\Scripts\python.exe -m pip check
+$corePython = (Resolve-Path .\.venv-core\Scripts\python.exe -ErrorAction Stop).Path
+$coreVersion = & $corePython -c "import pathlib,tomllib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8'))['project']['version'])"
+if ($LASTEXITCODE -ne 0) { throw 'Не удалось прочитать версию Core из pyproject.toml' }
+$coreWheel = (Resolve-Path -LiteralPath (".\dist\rentgen_core-{0}-py3-none-any.whl" -f $coreVersion) -ErrorAction Stop).Path
+& $corePython -m pip install --no-index --no-deps $coreWheel
+& $corePython -m pip check
 .\.venv-core\Scripts\rentgen.exe --help
 ```
+
+Выполняйте блок из корня выбранных исходников после сборки. В `dist` должен
+находиться wheel именно версии из этого `pyproject.toml`; его отсутствие
+останавливает выбор пути. Другие версии в `dist` не подставляются. Путь с пробелами
+передаётся pip одним аргументом.
 
 Альтернативная точка входа — `python -m rentgen_core`. Обычный успешный ответ —
 один JSON с `result` и `request_id`; ошибки — JSON с `error`, код выхода 2.
@@ -75,25 +85,32 @@ go -C go build -buildvcs=false -trimpath -o ..\output\bsl-scan.exe ./cmd/bsl-sca
 
 Extra `mcp` добавляет официальный SDK `mcp==1.30.0`; обязательных зависимостей у
 базового wheel по-прежнему нет. Для воспроизводимой установки SDK используйте
-существующий проверенный Windows runtime profile, который входит в sdist:
+проверенный профиль MCP из `requirements/locks/mcp-py311-windows.txt`, который
+входит в sdist и используется офлайн-комплектом. Он содержит только зависимости
+этого сценария с закреплёнными версиями и SHA256.
 
-Полный профиль закреплён в `requirements/locks/product-py311-windows.txt`, а его
-исходный список требований опубликован рядом в `requirements-rentgen.txt`. При
-обновлении версий сначала изменяется этот список, затем lock пересобирается и
-проверяется с теми же параметрами Windows x64 / CPython 3.11.
+Полный профиль остальных частей продукта остаётся в
+`requirements/locks/product-py311-windows.txt`; исходный список требований —
+`requirements-rentgen.txt`. Обновление профилей требует пересборки lock и проверки
+на Windows x64 / CPython 3.11.
 
 ```powershell
 py -3.11 -m venv .venv-mcp
-.\.venv-mcp\Scripts\python.exe -m pip install --require-hashes --only-binary=:all: -r requirements/locks/product-py311-windows.txt
-.\.venv-mcp\Scripts\python.exe -m pip install --no-index --no-deps ".\dist\rentgen_core-0.1.0.dev13-py3-none-any.whl[mcp]"
-.\.venv-mcp\Scripts\python.exe -m pip check
+$mcpPython = (Resolve-Path .\.venv-mcp\Scripts\python.exe -ErrorAction Stop).Path
+$coreVersion = & $mcpPython -c "import pathlib,tomllib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8'))['project']['version'])"
+if ($LASTEXITCODE -ne 0) { throw 'Не удалось прочитать версию Core из pyproject.toml' }
+$coreWheel = (Resolve-Path -LiteralPath (".\dist\rentgen_core-{0}-py3-none-any.whl" -f $coreVersion) -ErrorAction Stop).Path
+& $mcpPython -m pip install --require-hashes --only-binary=:all: -r requirements/locks/mcp-py311-windows.txt
+& $mcpPython -m pip install --no-index --no-deps ("{0}[mcp]" -f $coreWheel)
+& $mcpPython -m pip check
 .\.venv-mcp\Scripts\rentgen-mcp.exe --registry C:\RentgenState\registry.sqlite3 --scanner C:\RentgenTools\bsl-scan.exe
 ```
 
-Runtime profile также содержит зависимости других частей продукта; его установка
-сама по себе их не запускает. Первая команда установки требует индекса или заранее
-подготовленного wheelhouse. Для offline используйте `--no-index --find-links PATH`
-с тем же hash lock. Версии транзитивных зависимостей берутся из этого профиля;
+Блок MCP также выполняется из корня выбранных исходников и сам определяет
+версию wheel. В последней строке замените registry/scanner существующими путями
+своей установки. Установка зависимостей требует индекса или заранее подготовленного
+wheelhouse. Для offline добавьте `--no-index --find-links PATH` к команде
+установки профиля с тем же hash lock. Версии транзитивных зависимостей берутся из этого профиля;
 обычный незакреплённый resolver для extra не заменяет проверку поставки.
 
 Альтернативная точка входа — `python -m rentgen_core.stdio_mcp`. MCP-клиент запускает
