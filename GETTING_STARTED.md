@@ -6,17 +6,17 @@
 
 ## 1. Установить ядро
 
-В [релизе core dev11](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev11)
-скачайте `rentgen-core-0.1.0.dev11-windows-py311.zip`.
+В [релизе core dev13](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev13)
+скачайте `rentgen-core-0.1.0.dev13-windows-py311.zip`.
 SHA256 архива:
 
 ```text
-9351d2b8790a358f66931a3067e8ba1823b61b7ca6b97989bb430f8fd124441a
+1fb3ee3a41dd30a1efc754f41297a0ae930a1a31f994df5f9a695c7b12ac0de6
 ```
 
-Проверьте `Get-FileHash .\rentgen-core-0.1.0.dev11-windows-py311.zip -Algorithm SHA256`.
+Проверьте `Get-FileHash .\rentgen-core-0.1.0.dev13-windows-py311.zip -Algorithm SHA256`.
 Распакуйте архив в новый каталог и откройте PowerShell внутри папки
-`rentgen-core-0.1.0.dev11-windows-py311`:
+`rentgen-core-0.1.0.dev13-windows-py311`:
 
 ```powershell
 py -3.11 -m venv .venv
@@ -60,11 +60,11 @@ cd 1cai-public
 и собирает companion из исходников. Один VSIX без профиля недостаточен:
 расширению нужны Python, registry и ID проекта.
 
-Готовый [Companion `0.1.11`](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.11)
+Готовый [Companion `0.1.13`](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.13)
 также есть в релизах; SHA256 VSIX:
 
 ```text
-916e1311a5bd8ea43c05e7220c547239bb056a963b85ab7746a13ff8e67f83d5
+cefb0b365951ad3dd072794c414211bce0425177d75b101bb62e99f164f98d03
 ```
 
 ## 4. Проверить результат

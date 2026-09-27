@@ -1,13 +1,13 @@
 # Выпуск компонентов Рентгена
 
 `main` содержит продуктовый код. Пакеты выпускаются отдельными тегами:
-`companion-v0.1.12`, `core-v0.1.0-dev12`. Тег и уже опубликованные байты не
+`companion-v0.1.13`, `core-v0.1.0-dev13`. Тег и уже опубликованные байты не
 перезаписываются. Полная готовность продукта отдельным тегом не заявляется.
 
 ## Companion
 
 В `releases/companion/VERSION` фиксируются проверенный SHA256/размер VSIX и
-заметки для пользователя. `prepare_companion.py build --tag companion-v0.1.12
+заметки для пользователя. `prepare_companion.py build --tag companion-v0.1.13
 --output NEW_DIRECTORY` собирает VSIX, сверяет его с принятым хешем и создаёт
 SHA256SUMS/release.json. Входы должны быть закоммичены. Команда `verify` заново
 проверяет пакет, заметки, состав каталога и commit provenance без пересборки.
@@ -29,8 +29,8 @@ Workflow `release.yml` реагирует только на `companion-v*`: вы
 через `scripts/verification/verify_core_kit.py` с внешним SHA256.
 
 ```powershell
-py -3.11 scripts/release/prepare_core.py prepare --version 0.1.0.dev12 --kit PATH_TO_ACCEPTED_KIT.zip --output NEW_DIRECTORY
-py -3.11 scripts/release/prepare_core.py verify --version 0.1.0.dev12 --output NEW_DIRECTORY
+py -3.11 scripts/release/prepare_core.py prepare --version 0.1.0.dev13 --kit PATH_TO_ACCEPTED_KIT.zip --output NEW_DIRECTORY
+py -3.11 scripts/release/prepare_core.py verify --version 0.1.0.dev13 --output NEW_DIRECTORY
 ```
 
 Команды сверяют принятые SHA256/размер, исходный коммит внутри комплекта,
