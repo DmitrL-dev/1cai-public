@@ -131,6 +131,7 @@ def validate_profile(config, installed_core, installed_mcp, executable):
         "0.1.0.dev10",
         "0.1.0.dev11",
         "0.1.0.dev12",
+        "0.1.0.dev13",
     }:
         raise ValueError("Use a prepared supported core profile")
     if installed_core != config["core_version"] or installed_mcp != "1.30.0":

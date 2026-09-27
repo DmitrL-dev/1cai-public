@@ -8,9 +8,57 @@
 синтетический EDT read-only contract от исторических native экспериментов;
 добавление corpus не квалифицирует типовые `.cf/.cfe` и live apply.
 
-## Кандидат 27 сентября 2026 — Core dev12 и Companion 0.1.12
+## Выпуск 27 сентября 2026 — Core dev13 и Companion 0.1.13
 
-Кандидат `a35711c` добавляет проверенный код причины отказа BSL Git-аудита
+Опубликованы [Core dev13](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev13) и
+[Companion 0.1.13](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.13) как prerelease.
+[PR #33](https://github.com/DmitrL-dev/1cai-public/pull/33) объединён в main `acfb69dadea81e7a8caec8ed7834c97f510fbb33`.
+Исходные CI `36295543652` / `36295545877`, финальные CI `36297904960` /
+`36297906524` и [CI main 36299757744](https://github.com/DmitrL-dev/1cai-public/actions/runs/36299757744)
+подтвердили каждый **2439 Python-тестов**, **65 Node-тестов**, Go и
+**24 успешных шага** без ошибок и пропусков. Все 429 локальных случаев
+регрессии присутствуют в каждом JUnit; 48 предварительных ACL/runtime тестов
+входят в 2439 и не прибавляются повторно.
+
+[Исправлены](RUNTIME-DIRECTORY-STAMPS.md) кэшированные NTFS directory stamps
+и ложное несовпадение DACL при записи числового SID встроенного администратора
+как LA. Неуспешные первые CI и диагностическая история сохранены.
+Это конкретные проверенные причины; issue #23 не закрывается для всех
+исторических отказов.
+
+Core сохраняет принятый ZIP исходного `1519d8bbf0c5aabb4e804e88640a98bacff44a93`:
+SHA256 `1fb3ee3a41dd30a1efc754f41297a0ae930a1a31f994df5f9a695c7b12ac0de6`.
+Архив отдельно установлен офлайн с внешним хэшем: 40 файлов, 30 wheels и
+32 MCP-инструмента. Wheel/sdist/scanner и зависимости последующих CI
+совпадают; другой provenance ZIP из main не заменяет принятый архив.
+[Квитанция исходного CI](evidence/release-dev13-ci-20260927.json).
+
+Companion собран из `acfb69dadea81e7a8caec8ed7834c97f510fbb33`. [Релизный workflow 36301278458](https://github.com/DmitrL-dev/1cai-public/actions/runs/36301278458)
+прошёл 20 шагов, повторно проверил 65 Node-тестов, скачанный артефакт и
+его четыре файла. VSIX: **209308 байт**, SHA256
+`cefb0b365951ad3dd072794c414211bce0425177d75b101bb62e99f164f98d03`.
+
+**Все семь публичных файлов скачаны без авторизации и сверены побайтно.**
+[Квитанция публикации](evidence/release-dev13-publication-20260927.json)
+связывает main, workflow, теги, release/asset ID и хэши. Прежние выпуски
+dev12/0.1.12 сохранены.
+
+[Нативные проверки](NATIVE-DEV13-20260927.md) связывают новые байты с service/
+cleanup и отрицательным JAR-контролем, 11 шагами BSL apply43/undo42,
+выбранной ревизией Companion и чтением прежнего отчёта после отключения профиля.
+Дополнительный [опыт изменения метаданных](METADATA-LIVE-NATIVE-DEV13-20260927.md)
+на установленном принятом CI-комплекте выполнил 36 шагов платформы/ibcmd:
+Article → SKU, сохранность трёх записей и полных ссылок, возврат схемы,
+восстановление пяти исходных файлов и ожидаемый failure при подмене UUID.
+
+Проверки ограничены собственными синтетическими проектами и базами.
+Новый независимый peer review не выполнялся по указанию без субагентов.
+Типовые конфигурации, live SCM и полная self-hosted готовность не приняты;
+production deployment не выполнялся.
+
+## Выпуск 27 сентября 2026 — Core dev12 и Companion 0.1.12
+
+Core dev12 из исходного коммита `a35711c` добавляет проверенный код причины отказа BSL Git-аудита
 в локальный журнал. [Протокол нового установленного кандидата](SERVICE-GIT-FAILURE-REASON-DEV12.md)
 и [квитанция](evidence/service-git-failure-reason-dev12-20260927.json)
 фиксируют три отдельных опыта: отказ холодной установки до worker,
@@ -25,15 +73,27 @@
 прошёл отдельную офлайн-установку. [Квитанция CI](evidence/release-dev12-ci-20260927.json)
 связывает исходный коммит, виртуальное слияние PR, артефакты и проверки.
 
-Итоговые релизные записи и main/postmerge квалифицируются в
-[PR #32](https://github.com/DmitrL-dev/1cai-public/pull/32). Dev12 и Companion
-0.1.12 пока не опубликованы. [Манифест Core](../../releases/core/0.1.0.dev12/manifest.json)
-фиксирует принятые байты. Холодная надёжность остаётся открытой в issue #23;
-этот диагностический срез не объявляется её исправлением.
+Опубликованы [Core dev12](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev12)
+и [Companion 0.1.12](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.12)
+как prerelease. [PR #32](https://github.com/DmitrL-dev/1cai-public/pull/32) объединён
+в main `3536185`; [проверка main](https://github.com/DmitrL-dev/1cai-public/actions/runs/36289797132)
+подтвердила 2389 Python-тестов без ошибок и пропусков, 63 Node-контракта, Go,
+сборку и установленные сценарии. Оба CI итоговых релизных записей тоже прошли.
+[Релизный workflow Companion](https://github.com/DmitrL-dev/1cai-public/actions/runs/36291879355)
+завершил 20 шагов и повторно проверил 63 Node-теста. VSIX: 209030 байт, SHA256
+`c40d223aa2a83c5d38a3614354acda346a5d16e234a6c3ac439c545d14d2ab7f`.
+
+Все семь публичных файлов скачаны без авторизации и сверены побайтно.
+[Квитанция публикации](evidence/release-dev12-publication-20260927.json) связывает
+main, workflow, теги, идентификаторы assets и хэши.
+[Манифест Core](../../releases/core/0.1.0.dev12/manifest.json) относится к прежнему
+принятому CI ZIP `b61513c…` из `a35711c`; main ZIP его не заменял. Тег Companion
+указывает на `3536185`. Холодная надёжность остаётся открытой в issue #23;
+этот диагностический выпуск не объявляется её исправлением.
 
 ## Выпуск 24 сентября 2026 — core dev11 и Companion 0.1.11
 
-Текущая пара раннего доступа: [core `0.1.0.dev11`](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev11)
+Предыдущая пара раннего доступа: [core `0.1.0.dev11`](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev11)
 и [Companion `0.1.11`](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.11).
 Core исправляет запись полных Windows file ID в запечатанном архиве нативных
 запусков: большие значения сохраняются без потери старших битов, а повторная

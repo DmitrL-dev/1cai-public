@@ -1,0 +1,11 @@
+{
+  "version": "0.1.13",
+  "sha256": "cefb0b365951ad3dd072794c414211bce0425177d75b101bb62e99f164f98d03",
+  "size_bytes": 209308,
+  "required_core": "0.1.0.dev13",
+  "stage": "prerelease",
+  "platform_1c_tested": true,
+  "tested_1c_version": "8.3.27.2342",
+  "test_scope": "65 Node contracts, exact-source Python/VSIX checks and one synthetic selected-revision editor-to-1C/YAxUnit run plus completed-result recovery in a new editor process; no typical configuration or editor live-apply acceptance",
+  "spectorn_integrated": false
+}

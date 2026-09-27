@@ -1,0 +1,140 @@
+{
+  "schema": 1,
+  "qualified_main": {
+    "main": "35361853927c13c6152aa9860146865efc10e90f",
+    "run_id": 36289797132,
+    "run_url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36289797132",
+    "tree": "1711d1a56ce1eca657489ebccf0644ec3a4394b1",
+    "pr": 32,
+    "actual_checkout": "35361853927c13c6152aa9860146865efc10e90f",
+    "audit_sha256": "44c783b9657a8b6b2c2ee0ff4baeaeb1bceda1cc5819274c4af142094713d9ff",
+    "python_tests": 2389,
+    "node_tests": 63,
+    "go_passed": true,
+    "all_steps_success": 24,
+    "qualified": true,
+    "recorded_utc": "2026-09-27T03:30:59.090761+00:00"
+  },
+  "core": {
+    "mode": "publish",
+    "release_id": 397476293,
+    "url": "https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev12",
+    "source_commit": "a35711ca3d1363896afcbc0781a1518161874abb",
+    "qualified_main": "35361853927c13c6152aa9860146865efc10e90f",
+    "main_run": 36289797132,
+    "draft": false,
+    "prerelease": true,
+    "body_sha256": "42192a08a63079f17a33ebfd45d77a778132b7cf63f8d4d4bb0cf01199ec38c0",
+    "assets": [
+      {
+        "id": 591948538,
+        "name": "manifest.json",
+        "sha256": "5d38c62818bdf481454d5bcfd3545057e5627f6ebb0fc5f130ff8f902513f7e1",
+        "size_bytes": 758,
+        "download_verified": true
+      },
+      {
+        "id": 591948486,
+        "name": "RELEASE_NOTES.md",
+        "sha256": "42192a08a63079f17a33ebfd45d77a778132b7cf63f8d4d4bb0cf01199ec38c0",
+        "size_bytes": 10967,
+        "download_verified": true
+      },
+      {
+        "id": 591948592,
+        "name": "rentgen-core-0.1.0.dev12-windows-py311.zip",
+        "sha256": "b61513c78c180fdb690e16627289780624093b33f80c77cdfac7c4b0a495b978",
+        "size_bytes": 20462285,
+        "download_verified": true
+      },
+      {
+        "id": 591948511,
+        "name": "SHA256SUMS",
+        "sha256": "5712d0979ae117320071a974e53b232fb3b824792c512bcf5758f6ac1afd25ad",
+        "size_bytes": 109,
+        "download_verified": true
+      }
+    ],
+    "tag_commit": "a35711ca3d1363896afcbc0781a1518161874abb",
+    "anonymous_public_download_verified": true,
+    "recorded_utc": "2026-09-27T03:32:07.532689+00:00"
+  },
+  "companion": {
+    "mode": "publish",
+    "release_id": 397496962,
+    "url": "https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.12",
+    "draft": false,
+    "prerelease": true,
+    "tag": "companion-v0.1.12",
+    "source_commit": "35361853927c13c6152aa9860146865efc10e90f",
+    "main_run": 36289797132,
+    "release_run": 36291879355,
+    "artifact": {
+      "id": 10922069580,
+      "sha256": "d57415d0197415cb399734a55f81a1b08323cfa6fc3d3c621b18f155470a6a5c",
+      "size_bytes": 55977,
+      "all_four_files_match_local": true
+    },
+    "body_sha256": "375400e2167ef60a6d1be08817e54f7c7bdc1af37229597bc767689bdd1729bb",
+    "assets": [
+      {
+        "id": 592057606,
+        "name": "release.json",
+        "sha256": "569a4f7892e7d929d3ea5d43041536d1c126247f41e0cb084a6755e6472b1949",
+        "size_bytes": 618,
+        "download_verified": true
+      },
+      {
+        "id": 592057609,
+        "name": "rentgen-companion-0.1.12.vsix",
+        "sha256": "c40d223aa2a83c5d38a3614354acda346a5d16e234a6c3ac439c545d14d2ab7f",
+        "size_bytes": 209030,
+        "download_verified": true
+      },
+      {
+        "id": 592057610,
+        "name": "SHA256SUMS",
+        "sha256": "9fcdc215ba4bc95671a03ccd420956dd65666fd2cdc238b42adf25175b51481a",
+        "size_bytes": 96,
+        "download_verified": true
+      }
+    ],
+    "anonymous_public_download_verified": true,
+    "recorded_utc": "2026-09-27T03:40:17.190763+00:00"
+  },
+  "companion_workflow_audit": {
+    "run_id": 36291879355,
+    "head": "35361853927c13c6152aa9860146865efc10e90f",
+    "attempt": 1,
+    "successful_steps": 20,
+    "node_tests": 63,
+    "node_failures": 0,
+    "node_skipped": 0,
+    "build_and_draft_checkout_match": true,
+    "manifest_log_files_checked": [
+      "build/6_Build accepted component.txt",
+      "draft/5_Verify downloaded assets.txt"
+    ],
+    "artifact": {
+      "id": 10922069580,
+      "name": "accepted-companion",
+      "size_in_bytes": 55977,
+      "expired": false,
+      "created_at": "2026-09-27T03:36:29Z",
+      "updated_at": "2026-09-27T03:36:29Z",
+      "digest": "sha256:d57415d0197415cb399734a55f81a1b08323cfa6fc3d3c621b18f155470a6a5c"
+    },
+    "artifact_all_four_files_match_local": true,
+    "logs_sha256": "313d4cfeddb0578f2a097dd89f046a3ac22751c204f309ddd584b90947f0981f",
+    "root_review": true,
+    "recorded_utc": "2026-09-27T03:39:29.741187+00:00"
+  },
+  "companion_workflow_audit_sha256": "6ec06367fa2dd1714453bc875105b60f8e02d45ae6b5668e2d5d11443bc80f09",
+  "announcement": "https://github.com/DmitrL-dev/1cai-public/issues/23#issuecomment-5852377131",
+  "announcement_body_sha256": "0f80037a90721f1db84cecac30a44fda172b5eb0efb274038a5602500105a381",
+  "pr": "https://github.com/DmitrL-dev/1cai-public/pull/32",
+  "pr_body_sha256": "cb815f347921e883c5aa64d3038c171c2b98b3334fe27c89fe4c86d139c7377d",
+  "public_readback_verified": true,
+  "full_product_ready": false,
+  "production_deployment": false
+}

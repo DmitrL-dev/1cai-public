@@ -77,6 +77,7 @@ def probe(python, registry, project_id):
         "0.1.0.dev10",
         "0.1.0.dev11",
         "0.1.0.dev12",
+        "0.1.0.dev13",
     } or runtime != {
         "core": runtime["core"],
         "mcp": "1.30.0",

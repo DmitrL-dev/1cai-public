@@ -18,16 +18,12 @@
 модели и сторонние инструменты распространяются на своих условиях.
 
 > **Ранний доступ — проверенные компоненты, продукт ещё развивается.**
-> Текущий профиль: Windows x64, Python 3.11; [core `0.1.0.dev11`](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev11), [Companion `0.1.11`](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.11).
-> На 1С 8.3.27.2342 проверены синтетические сценарии компиляции и тестирования.
-> Отдельно подтверждены запись, чтение, переименование Article → SKU и удаление
-> данных в принадлежащей синтетической базе ([evidence](docs/product/NATIVE-BUSINESS-ROUNDTRIP-20260913.md)).
-> Для установленного dev10 отдельно проверены ограниченное BSL apply/Undo и
-> выполнение на новой синтетической базе ([evidence](docs/product/PROPOSAL-LIVE-APPLY.md#installed-dev10-follow-up-on-native-1c)).
-> Новые байты dev11 прошли CI, офлайн-установку и ограниченный локальный прогон
-> на отдельной тестовой ИБ 1С
-> ([машинная квитанция](docs/product/evidence/proposal-live-native-dev11-20260924.json)).
-> Типовые конфигурации и живая рабочая ИБ ещё не приняты.
+> Опубликованная пара: Windows x64, Python 3.11; [Core `0.1.0.dev13`](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev13), [Companion `0.1.13`](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.13).
+> Выпуск прошёл исходные и финальные CI, проверку main и офлайн-установку. [Квитанция публикации](docs/product/evidence/release-dev13-publication-20260927.json).
+> На 1С 8.3.27.2342 проверены собственные синтетические проекты: BSL apply/Undo,
+> выбранная ревизия из редактора и восстановление отчёта ([нативные проверки](docs/product/NATIVE-DEV13-20260927.md)),
+> а также [переименование реквизита с сохранением данных и возвратом схемы](docs/product/METADATA-LIVE-NATIVE-DEV13-20260927.md).
+> Типовые конфигурации и рабочие базы ещё не приняты. Подробности — в [READINESS](docs/product/READINESS.md).
 
 Начиная с dev8 доступны
 [сравнение сохранённых снимков](docs/product/SNAPSHOT-DIFF.md) и
@@ -37,7 +33,7 @@
 на отдельной базе из сохранённой выгрузки.
 Из редактора можно запустить [BSL-проверку](docs/product/EDITOR-BSL-CHECK.md),
 проверку компилятором и [тесты сохранённой версии](docs/product/EDITOR-TESTS.md),
-а затем восстановить отчёт без повторного запуска. Устанавливайте dev11
+а затем восстановить отчёт без повторного запуска. Устанавливайте опубликованный dev13
 в отдельное окружение по инструкции ниже.
 Предыдущий Companion 0.1.10 отдельно прошёл
 [нативный editor-to-platform сценарий с установленным core dev10](docs/product/EDITOR-TESTS.md).
@@ -60,7 +56,7 @@
 | Следить за выгрузкой | Сравнение снимков и observer с сохранёнными отчётами без обращений к модели |
 | Принять уведомление локально | [HTTPS/ASGI-приёмник](docs/product/NOTIFICATION-RECEIVER.md) dev10 принимает `POST /notifications`, сохраняет digest-квитанцию и безопасно отвечает на повтор; проверен на loopback TLS с закреплённым Uvicorn/httptools. Публичная служба не развёрнута. |
 
-Таблица описывает core-v0.1.0-dev11. В dev11 исправлена запись полных Windows
+Таблица описывает опубликованный core-v0.1.0-dev13. Начиная с dev11 исправлена запись полных Windows
 file ID в [архив нативных запусков](releases/core/0.1.0.dev11/RELEASE_NOTES.md).
 Dev10 содержит остальные перечисленные сценарии, но сохраняет прежнюю ошибку
 архивирования больших Windows ID. Предыдущий dev9 не содержит ASGI-границу. Dev8 не
@@ -125,9 +121,9 @@ namespace/QName-фрагменты.
 
 ### Как устроен Рентген
 
-[![Шесть шагов работы с Рентгеном: выгрузка 1С, снимок, изучение проекта, черновик, проверка и ваше решение](docs/assets/how-rentgen-works.svg)](docs/assets/how-rentgen-works.svg)
+[![Шесть шагов работы с Рентгеном: выгрузка 1С, снимок, изучение проекта, черновик, проверка и ваше решение](docs/assets/how-rentgen-works.svg)](https://raw.githubusercontent.com/DmitrL-dev/1cai-public/refs/heads/main/docs/assets/how-rentgen-works.svg)
 
-[Открыть схему в полном размере](docs/assets/how-rentgen-works.svg).
+[Открыть схему в полном размере](https://raw.githubusercontent.com/DmitrL-dev/1cai-public/refs/heads/main/docs/assets/how-rentgen-works.svg).
 
 Источник истины — локальное ядро. Модель предлагает текст; адаптер и ядро
 проверяют структуру операций, права и ожидаемую ревизию. Восстановление по
