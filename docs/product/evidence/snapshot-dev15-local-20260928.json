@@ -1,0 +1,22 @@
+{
+  "accepted": true,
+  "installed_core": {
+    "version": "0.1.0.dev15",
+    "installed": true
+  },
+  "before": "14caa7116b38ee9dbd31636d415d1cb57e9b74c8df4d69088396fd2102dd01c4",
+  "after": "315abc6576a91f6231dd1750b9b0c3d9ae87b93819e9ace84a53279ac3743065",
+  "counts": {
+    "added": 1,
+    "removed": 1,
+    "modified": 1,
+    "unchanged": 1
+  },
+  "pages": 3,
+  "source_bytes_preserved": true,
+  "head_and_database_preserved": true,
+  "retained_source_read": true,
+  "wrong_pair_cursor_rejected": true,
+  "model_calls": 0,
+  "scope": "Installed CLI snapshot comparison, not a continuous observer or 1C platform test"
+}

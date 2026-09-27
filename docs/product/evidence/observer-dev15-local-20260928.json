@@ -1,0 +1,12 @@
+{
+  "accepted": true,
+  "separate_processes": true,
+  "cross_process_lock": true,
+  "recovery_after_idle_process_termination": true,
+  "unchanged_source_no_generation": true,
+  "persisted_reports": 2,
+  "modified_files": 1,
+  "source_bytes_preserved": true,
+  "model_calls": 0,
+  "scope": "Installed file-change observer, not quality/business metrics or 1C execution"
+}
