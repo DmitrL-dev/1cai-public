@@ -57,7 +57,7 @@ def save(path, value):
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
 
 
-def inventory(root):
+def inventory(root, *, hash_files=True):
     """Reject links/aliases before granting rights or hashing owned test trees."""
     require(root.resolve() == root and root in (ROOT, RUNTIME, ROOT/'localservice/source'), 'Unowned inventory root')
     items = [root, *root.rglob('*')]
@@ -68,7 +68,8 @@ def inventory(root):
         require(not value.st_file_attributes & 0x400, 'Reparse point in owned tree')
         require(path.is_dir() or value.st_nlink == 1, 'Hardlink in owned tree')
     return {str(p.relative_to(root)): {'directory': p.is_dir(),
-             **({} if p.is_dir() else {'bytes': p.stat().st_size, 'sha256': sha(p)})} for p in items}
+             **({} if p.is_dir() else {'bytes': p.stat().st_size,
+                **({'sha256': sha(p)} if hash_files else {})})} for p in items}
 
 
 def configure(workdir):
@@ -305,6 +306,42 @@ def new_acl_cleanup_frontiers(root, before, after):
     return sorted(roots)
 
 
+def temporary_acl_policy(root, baseline, data):
+    """An explicit protected descriptor for every file and directory.
+
+    icacls inheritance flags apply to directories. /grant with OI/CI followed
+    by /inheritancelevel:r can leave file DACLs empty. Restore complete
+    per-entry descriptors instead of layering grants on inherited permissions.
+    https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/icacls
+    """
+    require(root.is_absolute() and root in baseline
+            and all(path.is_absolute() and path.is_relative_to(root) for path in baseline),
+            'Temporary policy escapes owned root')
+    require(data is None or (data in baseline and data.is_relative_to(root) and data.is_dir()),
+            'Temporary policy data directory is outside its inventory')
+    result = {}
+    for path in baseline:
+        require(path.exists(), 'Temporary policy entry is missing')
+        inheritance = 'OICI' if path.is_dir() else ''
+        rights = '0x1301bf' if data is not None and path.is_relative_to(data) else '0x1200a9'
+        result[path] = ('D:P' + ''.join(f'(A;{inheritance};{mask};;;{sid})'
+                       for sid, mask in (('BA', 'FA'), ('SY', 'FA'), ('LS', rights))))
+    return result
+
+
+def write_acl_policy(path, root, entries):
+    lines = []
+    for target, sddl in entries.items():
+        require(target.is_relative_to(root), 'ACL policy escapes owned root')
+        name = str(target.relative_to(root.parent))
+        require(not any(c in name for c in '\r\n\0'), 'Invalid ACL policy path')
+        dacl_parts(sddl)
+        lines.extend((name, sddl))
+    with path.open('xb') as stream:
+        stream.write(('\r\n'.join(lines) + '\r\n').encode('utf-16-le'))
+    require(acl_entries(path, root) == entries, 'Written ACL policy differs')
+
+
 def verify_temporary_acls(root, entries, data):
     """No inherited BU/CREATOR OWNER grants may broaden service RX or M."""
     require(root in entries and all(path.is_relative_to(root) for path in entries),
@@ -319,7 +356,7 @@ def verify_temporary_acls(root, entries, data):
         for ace in re.findall(r'\(([^()]*)\)', aces):
             kind, inheritance, rights, object_id, inherited_object, sid = ace.split(';')
             sid = aliases.get(sid, sid)
-            require(kind == 'A' and inheritance in ('', 'OI', 'CI', 'OICI')
+            require(kind == 'A' and inheritance == ('OICI' if path.is_dir() else '')
                     and not object_id and not inherited_object and sid not in observed,
                     'Temporary ACL has unexpected ACE flags or duplicate principal')
             observed[sid] = rights
@@ -422,22 +459,26 @@ class Acceptance:
         fixture = self.backup_acl(ROOT, 'fixture')
         self.icacls([ROOT.parent, '/restore', fixture, '/Q'], 'fixture-preflight-restore')
         self.backup_acl(RUNTIME, 'runtime')
-        # Keep administrator/system access before removing inherited permissions.
-        # Adding RX alone cannot limit BU creation rights or CREATOR OWNER grants.
         for root in (RUNTIME, ROOT):
-            self.icacls([root, '/grant:r', '*S-1-5-32-544:(OI)(CI)F', '*S-1-5-18:(OI)(CI)F',
-                         '/T', '/Q'], root.name+'-administrators')
-            self.icacls([root, '/inheritancelevel:r', '/T', '/Q'], root.name+'-isolate')
-            self.icacls([root, '/grant:r', '*S-1-5-19:(OI)(CI)RX', '/T', '/Q'], root.name+'-read')
-        self.icacls([self.f['service_data'], '/grant:r', '*S-1-5-19:(OI)(CI)M', '/T', '/Q'], 'data-modify')
-        for root in (RUNTIME, ROOT):
+            baseline = next(saved for candidate, saved, _ in self.acl_backups if candidate == root)
+            before = acl_entries(baseline, root)
+            current_paths = {root/name for name in inventory(root)}
+            require(current_paths == set(before), 'Temporary ACL inventory changed before application')
+            data = Path(self.f['service_data']) if root == ROOT else None
+            requested = self.output/(root.name+'-requested.acl')
+            write_acl_policy(requested, root, temporary_acl_policy(root, before, data))
+            requested_digest = sha(requested)
+            # /restore applies the complete DACL to each named entry. Files get
+            # explicit grants without inheritance flags; directories get OI/CI.
+            self.icacls([root.parent, '/restore', requested, '/Q'], root.name+'-apply-policy')
+            require(sha(requested) == requested_digest, 'Requested ACL policy changed')
             policy = self.output/(root.name+'-temporary.acl')
             self.icacls([root, '/save', policy, '/T', '/Q'], root.name+'-policy')
             rows = acl_entries(policy, root)
-            baseline = next(saved for candidate, saved, _ in self.acl_backups if candidate == root)
-            require(set(rows) == set(acl_entries(baseline, root)), 'Temporary ACL inventory changed')
-            proof = verify_temporary_acls(root, rows, Path(self.f['service_data']) if root == ROOT else None)
-            self.event('temporary_acl_verified', root=str(root), observed_sha256=sha(policy), **proof)
+            require(set(rows) == set(before), 'Temporary ACL inventory changed')
+            proof = verify_temporary_acls(root, rows, data)
+            self.event('temporary_acl_verified', root=str(root), observed_sha256=sha(policy),
+                       requested_sha256=requested_digest, **proof)
 
     def status(self):
         return self.observer.status()
@@ -579,11 +620,6 @@ class Acceptance:
 
     def cleanup(self):
         errors=[]
-        try:
-            Path(self.f['config']).write_bytes(self.original_config)
-            require(sha(Path(self.f['config']))==self.f['config_sha256'],'Config cleanup failed')
-        except Exception as error:
-            errors.append({'stage':'config','type':type(error).__name__})
         if self.created:
             try:
                 row=self.current()
@@ -614,7 +650,7 @@ class Acceptance:
         for root,saved,digest in reversed(self.acl_backups):
             try:
                 require(sha(saved)==digest,'ACL backup changed')
-                inventory(root)
+                inventory(root, hash_files=False)
                 self.icacls([root.parent,'/restore',saved,'/Q'],root.name+'-restore')
                 intermediate=self.output/(root.name+'-after-restore.acl')
                 self.icacls([root,'/save',intermediate,'/T','/Q'],root.name+'-after-restore')
@@ -652,6 +688,14 @@ class Acceptance:
                            cleanup_frontiers=[str(path.relative_to(root)) for path in frontiers],**verification)
             except Exception as error:
                 errors.append({'stage':'acl','root':str(root),'type':type(error).__name__,'message':str(error)[:400]})
+        # Config may be inaccessible after a partial ACL failure. Its rewrite
+        # must follow process shutdown and both ACL restoration attempts; a file
+        # write failure must never prevent safe restoration of the owned trees.
+        try:
+            Path(self.f['config']).write_bytes(self.original_config)
+            require(sha(Path(self.f['config']))==self.f['config_sha256'],'Config cleanup failed')
+        except Exception as error:
+            errors.append({'stage':'config','type':type(error).__name__})
         return errors
 
 

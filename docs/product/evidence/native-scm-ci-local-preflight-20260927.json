@@ -1,17 +1,17 @@
 {
   "schema": 1,
   "base_commit": "6b775db29f8eb75191981d443a281e28ad181e7c",
-  "scope": "Local safeguards and actual unelevated refusal after ACL fix; first-head native CI failed cleanup; corrected native lifecycle remains pending",
+  "scope": "Local safeguards and actual unelevated refusal after two failed native CI heads; explicit per-entry DACL fix awaits native CI",
   "root_review_only": true,
   "independent_review": false,
   "python_regression": {
-    "tests": 271,
+    "tests": 277,
     "errors": 0,
     "failures": 0,
-    "skipped": 0
+    "skipped": 1
   },
-  "regression_junit_sha256": "efb6e6875e9d741bd334a61a4bd4e543712e2a201ad05b7479f964d0c1043fba",
-  "new_safeguard_cases": 25,
+  "regression_junit_sha256": "46d1b0699d7e79f4a2ffe621e0363fdaee10a90a366634394fbee5148a60cb08",
+  "new_safeguard_cases": 31,
   "installed_core_files_equal_wheel": 103,
   "wheel_sha256": "b692c9efcb03541154e9e3ada228d4a03069fde82ef7f3d0635e45978833beb5",
   "local_kit_source_commit": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
@@ -24,23 +24,11 @@
   "native_scm_lifecycle_accepted": false,
   "production_deployment": false,
   "verification_scripts": {
-    "scripts/verification/scm_acceptance_worker.py": "5644306409371ea12dfe8a17693d18953a3b3619179be25cef3ffbdbaf5e1dee",
+    "scripts/verification/scm_acceptance_worker.py": "0def6b2503e47def6af184008047e9ddf1cef67ca42c9af51887a9831f1c89c4",
     "scripts/verification/scm_native_evidence.py": "59e6fdc5a38ad0e50b66143aee42459e35f3f3f3abae872a1e24f35bdb29cbc6",
     "scripts/verification/verify_service_scm_delivery.py": "dccc4516bee5e622cb934723ecd3ad2f4a3e03d74b34adf39eafc75608ec6ac4"
   },
-  "recorded_utc": "2026-09-27T14:33:26.339303+00:00",
-  "previous_native_ci": {
-    "head": "8f49390f63c8bb64080caa82ce3d30852791e96e",
-    "run_ids": [
-      36322819712,
-      36322904352
-    ],
-    "windows_job": "success",
-    "native_scm_job": "failure",
-    "service_deleted": true,
-    "failure_stage": "ACL cleanup",
-    "accepted": false
-  },
+  "recorded_utc": "2026-09-27T15:28:44.654457+00:00",
   "acl_fix": {
     "temporary_inheritance_removed": true,
     "temporary_principals_and_masks_verified": true,
@@ -49,6 +37,46 @@
     "auto_inherited_control_changes_reported_separately": true,
     "original_owners_checked": true,
     "new_service_grants_removed_using_validated_new_subtrees_only": true,
-    "implemented_not_yet_native_accepted": true
-  }
+    "implemented_not_yet_native_accepted": true,
+    "explicit_per_entry_dacls": true,
+    "file_aces_without_inheritance_flags": true,
+    "directory_aces_with_oi_ci": true,
+    "requested_and_observed_policy_hashes": true,
+    "structural_inventory_without_file_reads_before_restore": true,
+    "config_rewrite_after_acl_restore_attempts": true
+  },
+  "python_passed": 276,
+  "local_skipped_case": {
+    "name": "test_native_explicit_policy_roundtrip_covers_files_and_directories",
+    "reason": "Local token has no SeRestorePrivilege; actual icacls /restore test must pass without a skip in elevated Windows CI"
+  },
+  "previous_native_ci_history": [
+    {
+      "head": "8f49390f63c8bb64080caa82ce3d30852791e96e",
+      "run_ids": [
+        36322819712,
+        36322904352
+      ],
+      "windows_job": "success",
+      "native_scm_job": "failure",
+      "service_deleted": true,
+      "failure_stage": "ACL cleanup",
+      "accepted": false
+    },
+    {
+      "head": "182bdbfc2b3822f552de9afdc544888bdcba846c",
+      "run_ids": [
+        36326514201,
+        36326516502
+      ],
+      "windows_python_each": 2468,
+      "native_scm_job": "failure",
+      "failure_stage": "temporary ACL validation before service creation",
+      "service_created": false,
+      "empty_file_dacls_each": 5609,
+      "duplicate_administrator_directory_dacls_each": 441,
+      "config_cleanup_error": "PermissionError",
+      "accepted": false
+    }
+  ]
 }

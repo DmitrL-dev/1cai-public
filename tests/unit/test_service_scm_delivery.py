@@ -98,8 +98,10 @@ def test_unknown_existing_service_is_never_controlled_or_has_acl_restored(tmp_pa
     worker.native.query.return_value = {"exists": True, "name": api.NAME}
     worker.installer = Mock()
     worker.icacls = Mock()
+    config.write_bytes(b"foreign service config")
     monkeypatch.setattr(api, "owned_scanner_pids", lambda: [])
     errors = worker.cleanup()
+    assert config.read_bytes() == b"foreign service config"
     assert "remaining_service" in {e["stage"] for e in errors}
     assert not worker.installer.mock_calls
     assert not worker.icacls.mock_calls
@@ -196,6 +198,7 @@ def test_new_acl_cleanup_frontiers_cover_only_new_owned_subtrees(tmp_path):
 def test_temporary_acl_policy_rejects_inherited_writes_and_unexpected_principals(tmp_path):
     api = load("scm_acceptance_worker")
     data = tmp_path / "data"
+    data.mkdir()
     prefix = "D:P(A;OICI;FA;;;BA)(A;OICI;FA;;;SY)"
     read = prefix + "(A;OICI;0x1200a9;;;LS)"
     modify = prefix + "(A;OICI;0x1301bf;;;LS)"
@@ -225,3 +228,126 @@ def test_native_file_owner_matches_windows_acl_and_missing_file_fails(tmp_path):
     assert native.owner(target) == result.stdout.decode().strip()
     with pytest.raises(api.NativeEvidenceError):
         native.owner(tmp_path / "missing")
+
+
+def test_temporary_policy_materializes_file_permissions(tmp_path):
+    api = load("scm_acceptance_worker")
+    root = tmp_path / "owned"; root.mkdir()
+    data = root / "data"; data.mkdir()
+    executable = root / "python.exe"; executable.write_bytes(b"runtime")
+    database = data / "state.db"; database.write_bytes(b"database")
+    baseline = {p: "D:" for p in (root, data, executable, database)}
+    policy = api.temporary_acl_policy(root, baseline, data)
+    assert set(policy) == set(baseline)
+    assert policy[executable] == "D:P(A;;FA;;;BA)(A;;FA;;;SY)(A;;0x1200a9;;;LS)"
+    assert policy[database] == "D:P(A;;FA;;;BA)(A;;FA;;;SY)(A;;0x1301bf;;;LS)"
+    assert policy[root] == "D:P(A;OICI;FA;;;BA)(A;OICI;FA;;;SY)(A;OICI;0x1200a9;;;LS)"
+    assert policy[data] == policy[root].replace("0x1200a9", "0x1301bf")
+    assert api.verify_temporary_acls(root, policy, data)["entries"] == 4
+    with pytest.raises(RuntimeError, match="owned root"):
+        api.temporary_acl_policy(root, {**baseline, tmp_path: "D:"}, data)
+    with pytest.raises(RuntimeError, match="data"):
+        api.temporary_acl_policy(root, baseline, tmp_path)
+
+
+def test_second_ci_empty_file_and_duplicate_directory_acls_are_rejected(tmp_path):
+    api = load("scm_acceptance_worker")
+    for sddl in ("D:PAI", "D:PAI(A;;FA;;;BA)(A;OICI;0x1200a9;;;LS)(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)"):
+        with pytest.raises(RuntimeError, match="Temporary ACL"):
+            api.verify_temporary_acls(tmp_path, {tmp_path: sddl}, None)
+
+
+def test_cleanup_structural_inventory_does_not_read_locked_file_bytes(tmp_path, monkeypatch):
+    api = load("scm_acceptance_worker")
+    api.ROOT = tmp_path
+    path = tmp_path / "locked.txt"; path.write_bytes(b"locked")
+    monkeypatch.setattr(api, "sha", Mock(side_effect=PermissionError("file data inaccessible")))
+    result = api.inventory(tmp_path, hash_files=False)
+    assert result["locked.txt"] == {"directory": False, "bytes": 6}
+    api.sha.assert_not_called()
+
+
+@pytest.mark.parametrize("config_denied", [False, True])
+def test_cleanup_restores_acl_before_attempting_config_write(tmp_path, monkeypatch, config_denied):
+    api = load("scm_acceptance_worker")
+    root = tmp_path / "fixture"; root.mkdir()
+    output = tmp_path / "evidence"; output.mkdir()
+    api.ROOT, api.RUNTIME, api.NAME = root, tmp_path / "runtime", "Rentgen.CI.test"
+    config = root / "service.json"; config.write_bytes(b"{}")
+    context = ({"config": str(config), "config_sha256": api.sha(config)}, {}, Mock(), Mock(), Mock(), {}, {})
+    worker = api.Acceptance(context, output)
+    worker.native.query.return_value = {"exists": False}
+    worker.native.owner.return_value = "S-1-5-21-123"
+    worker.backup_acl = Mock()
+    saved = output / "fixture.acl"
+    raw = ("fixture\nD:\nfixture\\service.json\nD:\n").encode("utf-16-le")
+    saved.write_bytes(raw)
+    owners = output / "fixture-owners.json"
+    owners.write_text(json.dumps({".": "S-1-5-21-123", "service.json": "S-1-5-21-123"}), "utf-8")
+    worker.acl_backups = [(root, saved, api.sha(saved))]
+    worker.owner_backups = {root: (owners, api.sha(owners))}
+    calls = []
+    original_write = Path.write_bytes
+    def write(path, value):
+        if path == config:
+            calls.append("config")
+            if config_denied:
+                raise PermissionError("test denied config")
+        return original_write(path, value)
+    def icacls(args, label):
+        calls.append(label)
+        if "/save" in args:
+            args[args.index("/save") + 1].write_bytes(raw)
+    worker.icacls = icacls
+    monkeypatch.setattr(api, "owned_scanner_pids", lambda: [])
+    monkeypatch.setattr(Path, "write_bytes", write)
+    errors = worker.cleanup()
+    assert "fixture-restore" in calls
+    assert calls.index("fixture-restore") < calls.index("config")
+    assert calls.index("fixture-verify") < calls.index("config")
+    assert errors == ([{"stage": "config", "type": "PermissionError"}] if config_denied else [])
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Actual Windows DACL round trip in an owned temporary tree")
+def test_native_explicit_policy_roundtrip_covers_files_and_directories(tmp_path):
+    native = load("scm_native_evidence").NativeEvidence()
+    if not any(p["name"] == "SeRestorePrivilege" for p in native.privileges()):
+        pytest.skip("Actual icacls /restore requires SeRestorePrivilege; exercised on the elevated Windows CI runner")
+    api = load("scm_acceptance_worker")
+    root = tmp_path / "owned tree"; root.mkdir()
+    data = root / "data"; data.mkdir()
+    executable = root / "python.exe"; executable.write_bytes(b"runtime")
+    database = data / "state.db"; database.write_bytes(b"database")
+    baseline = tmp_path / "baseline.acl"
+    policy_path = tmp_path / "policy.acl"
+    observed_path = tmp_path / "observed.acl"
+    restored_path = tmp_path / "restored.acl"
+    def icacls(*args):
+        p = subprocess.run([str(Path(os.environ["SystemRoot"]) / "System32/icacls.exe"), *map(str, args)],
+                           capture_output=True, timeout=20)
+        assert p.returncode == 0, (p.returncode, p.stdout.decode(errors="replace"))
+    icacls(root, "/save", baseline, "/T", "/Q")
+    before = api.acl_entries(baseline, root)
+    policy = api.temporary_acl_policy(root, before, data)
+    api.write_acl_policy(policy_path, root, policy)
+    try:
+        icacls(root.parent, "/restore", policy_path, "/Q")
+        icacls(root, "/save", observed_path, "/T", "/Q")
+        observed = api.acl_entries(observed_path, root)
+        assert set(observed) == set(before)
+        assert api.verify_temporary_acls(root, observed, data)["entries"] == 4
+        assert executable.read_bytes() == b"runtime" and database.read_bytes() == b"database"
+        assert api.dacl_parts(observed[executable])[1] == api.dacl_parts(policy[executable])[1]
+        # Reproduce the second CI failure on one disposable file. Cleanup's
+        # structural guard must remain usable when file contents are denied.
+        denied = tmp_path / "denied.acl"
+        api.write_acl_policy(denied, root, {root: policy[root], executable: "D:P"})
+        icacls(root.parent, "/restore", denied, "/Q")
+        with pytest.raises(PermissionError):
+            executable.read_bytes()
+        api.ROOT = root
+        assert api.inventory(root, hash_files=False)["python.exe"]["bytes"] == 7
+    finally:
+        icacls(root.parent, "/restore", baseline, "/Q")
+    icacls(root, "/save", restored_path, "/T", "/Q")
+    assert api.verify_acl_restoration(before, api.acl_entries(restored_path, root))["original_dacls_equal"]
