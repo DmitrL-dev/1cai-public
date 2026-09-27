@@ -30,8 +30,8 @@ def verify(args):
         ],
         timeout=15,
     )
-    if json.loads(identity) != {"installed": True, "version": "0.1.0.dev13"}:
-        raise ValueError("Installed dev13 required")
+    if json.loads(identity) != {"installed": True, "version": "0.1.0.dev14"}:
+        raise ValueError("Installed dev14 required")
     registry = output / "registry.sqlite3"
     project, sequence = None, 0
 

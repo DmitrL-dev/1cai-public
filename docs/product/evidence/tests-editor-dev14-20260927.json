@@ -1,0 +1,102 @@
+{
+  "schema": "rentgen-native-editor-acceptance/1",
+  "accepted": true,
+  "source_commit": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
+  "core_wheel_sha256": "b692c9efcb03541154e9e3ada228d4a03069fde82ef7f3d0635e45978833beb5",
+  "companion_vsix_sha256": "277b28cce455d4e21fc5d647fd43f02c96d63b1dfb7e171ef64ef25bcf72851f",
+  "editor": {
+    "editor_commit": "04c0d99f4fb0d8afe6ce4f0c58e31e183ac3e4b1",
+    "editor_executable_sha256": "8717f573f61a46d932b6d00f5b903f26b486f0c0ea0899346b37858be1511a80",
+    "editor_runtime_before_sha256": "c50fbeaead629a91ad321c6e54662742ee011a1ce0bd17a8213726d96235d6ae",
+    "editor_version": "1.139.1"
+  },
+  "editor_run": {
+    "selected_revision": 1,
+    "latest_revision": 2,
+    "new_test_runs": 1,
+    "run_id": "1ca0ce08-6d16-474f-8324-0a7e24223b1f",
+    "baseline_counts": {
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 0
+    },
+    "candidate_counts": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 1
+    },
+    "native_steps": 23,
+    "native_step_logs_sha256_verified": true,
+    "first_acceptance_sha256": "1b1456918e1deff4ee7e0cdad6ee93494bf55442f65bb9e039dde1c6c5d0fcbe"
+  },
+  "recovery": {
+    "new_test_runs": 0,
+    "separate_editor_process": true,
+    "profile_disabled": true,
+    "same_result": true,
+    "completed_cli_replay_unchanged": true,
+    "disabled_new_run_refused": "TEST_PROFILE_DISABLED",
+    "test_run_files_unchanged": 909,
+    "run_inventory_sha256": "83dfda908bded82ce8c1f3df196c16e3e9d92beef36e9f42a81f081f691349f0",
+    "recovery_acceptance_sha256": "2e497feb21ef54c38ff413d6bc6c1fc56922704ae3e815129914aa781a8df779",
+    "commands": [
+      {
+        "command": "proposal-test",
+        "exit_code": 0,
+        "stdout_sha256": "79b1c8f9d1315d350e8bd197caa5142427bff56a2abe703aa30f4776bc41f4e0",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "command": "proposal-test-result",
+        "exit_code": 0,
+        "stdout_sha256": "b37121cf27fc3bd9cd2def105073d79695b0dd58f942ad29ba0895e8af2935f3",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "command": "proposal-test",
+        "exit_code": 2,
+        "stdout_sha256": "64f4b603c8497b627eeea870f01eea9f66558bc20ad6e204c4c55ca391a66213",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "command": "project-head",
+        "exit_code": 0,
+        "stdout_sha256": "c09fca06548c94a83c9c60f901e03ea7c61449d4e47f95aadeb16875ffa5b01b",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  },
+  "source_files_preserved": 6,
+  "head_preserved": true,
+  "model_calls": 0,
+  "runtime_installation_snapshots_equal": true,
+  "runtime_snapshot_sha256": "c50fbeaead629a91ad321c6e54662742ee011a1ce0bd17a8213726d96235d6ae",
+  "runtime_snapshot_files": 2651,
+  "native_platform_executable_sha256": "2a9ef3653367b6de29000a3a51749a19e6450134347925713c9075674e9f0956",
+  "native_report_sha256": "c623ad30151923a25f2979a491a57141c3421772f6c8f45cc1ce04c24b9debb0",
+  "request_file_sha256": "1acb1e665ffb86eb8ac16558b931b972b9fffcf37d654379ffaee210126ac06f",
+  "report_file_sha256": "8f69610be1170f1a792726c6dbd48e2ad64e438087e013037f7b4e459eecb9f5",
+  "harness": {
+    "inputs_sha256": "1a4620aebeff837fcfbba6d19110bea8efa1a4a1d8d6b7048e8d0ab68efec07d",
+    "temporary_changes": [
+      "Expected Companion version 0.1.14",
+      "Retained editor/extension auto-update controls in isolated user settings"
+    ],
+    "product_vsix_changed": false
+  },
+  "runtime_reused_from_qualified_dev13_probe": true,
+  "core_version": "0.1.0.dev14",
+  "companion_version": "0.1.14",
+  "limitations": [
+    "Synthetic owned project only",
+    "Editor test execution and recovery; no editor live apply",
+    "Runtime snapshots do not attest system libraries or changes between snapshots",
+    "Local unattested native reports; no typical-configuration acceptance"
+  ],
+  "production_deployment": false,
+  "independent_peer_review": false
+}

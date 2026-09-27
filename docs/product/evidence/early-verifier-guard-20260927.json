@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "base_commit": "35361853927c13c6152aa9860146865efc10e90f",
+  "scope": "local source fix for verifier startup; public CI and main integration pending",
+  "path": "scripts/verification/verify_metadata_migration.py",
+  "original_sha256": "94283306596db8a6bbc030e4910d59be801133b5bfaa1d52f6d70635104837ff",
+  "fixed_sha256": "c646f0c59525ed3ddd76f4e8cbf806287e7fad147b01938b91a97f05d4dd0693",
+  "normal_body_ast_unchanged_except_early_guard": true,
+  "guard_precedes_imports": true,
+  "downstream_guard_preserved": true,
+  "subprocess_timeout_seconds": 10,
+  "regression_reports": [
+    {
+      "name": "early-verifier-guard-red.xml",
+      "sha256": "715a91fb629e7964329018f078f88c47391b2afb1b5c8d1987d56cfa027dae66",
+      "tests": 2,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "name": "early-verifier-guard-green.xml",
+      "sha256": "68c80e2bd7a8a77bd01394d0f5f70fc831653e9124fb073221be42860c748946",
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "controlled_import_order_probe_sha256": "ff7e4cf2a517f4b30465985bf30000ceb9a32b958e3e13b1fd41d77b8cb36937",
+  "historical_timeout_reproduced": false,
+  "all_ci_flakes_eliminated": false,
+  "root_only_review": true,
+  "peer_review_claimed": false,
+  "native_1c_started": false,
+  "product_release_published": false,
+  "production_deployment": false
+}

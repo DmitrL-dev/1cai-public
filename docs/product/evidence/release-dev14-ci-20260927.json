@@ -1,0 +1,126 @@
+{
+  "source_commit": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
+  "base_commit": "d44770c5ba203008015afae2a23b26d1a0010e97",
+  "pr": 34,
+  "qualified": true,
+  "artifact_audit_sha256": "013e227d1ae494ded8f90ff6b2349aeed89b35159cb3442f1503ea6af806f771",
+  "source_tree": "23c6959b8f83eab760106f118ca70a6d4267c768",
+  "runs": [
+    {
+      "run_id": 36306421451,
+      "event": "pull_request",
+      "head": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
+      "source_commit": "57d98daf5a7c050722d1c7d7fcfcb9290d05711b",
+      "successful_steps": 24,
+      "junit": {
+        "tests": 2443,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "locally_qualified_cases_present": 440,
+      "artifacts": {
+        "verified-core-development": {
+          "id": 10928217601,
+          "sha256": "21c2e9587bef642eaa70194cde5500959ac0769ba8c987718844b3d0e7928c30",
+          "size_bytes": 18561368
+        },
+        "python-contract-report": {
+          "id": 10927654742,
+          "sha256": "f1479affd54bc0b45230e281e0ba1929d27f2a09e44ea51cc4a5074dceeab6b5",
+          "size_bytes": 41070
+        }
+      },
+      "kit_sha256": "67720b8e63e9e6867dac218137e4420f583734708e0e60dca8c122e87a57a2a0",
+      "kit_size_bytes": 20463189,
+      "wheel_sha256": "b692c9efcb03541154e9e3ada228d4a03069fde82ef7f3d0635e45978833beb5",
+      "sdist_sha256": "0e523f629b310d3dd1002b682af9fe9b97ce80d92add5470928993c5c359e954",
+      "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+      "vsix_sha256": "277b28cce455d4e21fc5d647fd43f02c96d63b1dfb7e171ef64ef25bcf72851f",
+      "vsix_size_bytes": 209585,
+      "kit_files": 41,
+      "local_kit_different_files": [
+        "rentgen-core-0.1.0.dev14-windows-py311/SHA256SUMS.json",
+        "rentgen-core-0.1.0.dev14-windows-py311/build-input-hashes.json"
+      ],
+      "tree": "23c6959b8f83eab760106f118ca70a6d4267c768",
+      "parents": [
+        "d44770c5ba203008015afae2a23b26d1a0010e97",
+        "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1"
+      ],
+      "log_evidence": {
+        "actual_checkout": "57d98daf5a7c050722d1c7d7fcfcb9290d05711b",
+        "python_tests": 2443,
+        "node_tests": 67,
+        "node_failures": 0,
+        "node_skipped": 0,
+        "go_extractor_scanner_passed": true,
+        "logs_sha256": "af9bf040f7d7ed9c787f22cfe7b373c82274f05231f2d4f8f3fb579561fdef51"
+      }
+    },
+    {
+      "run_id": 36306417536,
+      "event": "push",
+      "head": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
+      "source_commit": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
+      "successful_steps": 24,
+      "junit": {
+        "tests": 2443,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "locally_qualified_cases_present": 440,
+      "artifacts": {
+        "python-contract-report": {
+          "id": 10928400063,
+          "sha256": "e7f5e50e1d608eb6f5931fda91cb7e0f2663fd91157162516783179c6b0ba7ee",
+          "size_bytes": 41099
+        },
+        "verified-core-development": {
+          "id": 10927843869,
+          "sha256": "bf02c23ed7546e5cb53dba719c8479e3075c4f3ef4c1a8d238b998d5165f1a82",
+          "size_bytes": 18561367
+        }
+      },
+      "kit_sha256": "a9443557cecd9aa3b0261fc548f06877de71d0214c1756f5ee7fc4abc56ce671",
+      "kit_size_bytes": 20463189,
+      "wheel_sha256": "b692c9efcb03541154e9e3ada228d4a03069fde82ef7f3d0635e45978833beb5",
+      "sdist_sha256": "0e523f629b310d3dd1002b682af9fe9b97ce80d92add5470928993c5c359e954",
+      "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+      "vsix_sha256": "277b28cce455d4e21fc5d647fd43f02c96d63b1dfb7e171ef64ef25bcf72851f",
+      "vsix_size_bytes": 209585,
+      "kit_files": 41,
+      "local_kit_different_files": [
+        "rentgen-core-0.1.0.dev14-windows-py311/SHA256SUMS.json",
+        "rentgen-core-0.1.0.dev14-windows-py311/build-input-hashes.json"
+      ],
+      "tree": "23c6959b8f83eab760106f118ca70a6d4267c768",
+      "parents": [
+        "d6d28f1f4a1aa9b3c7c025a85afca9bbb22707b2"
+      ],
+      "log_evidence": {
+        "actual_checkout": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
+        "python_tests": 2443,
+        "node_tests": 67,
+        "node_failures": 0,
+        "node_skipped": 0,
+        "go_extractor_scanner_passed": true,
+        "logs_sha256": "1112af9404d39ee69c1d3af3d2b7a651df60a1e6bf9bdabc478f58fecc0e2805"
+      }
+    }
+  ],
+  "recorded_utc": "2026-09-27T09:15:10.963350+00:00",
+  "stage": "source CI and accepted ZIP installation qualified; final/main and public releases pending",
+  "source_qualification_sha256": "125f2ebb643fccc713e6329e1a835f03373165efa431ede7b8fae49a721fd0d3",
+  "accepted_ci_install": {
+    "archive_sha256": "a9443557cecd9aa3b0261fc548f06877de71d0214c1756f5ee7fc4abc56ce671",
+    "verified_files": 40,
+    "mcp_tools": 32,
+    "offline_require_hashes": true,
+    "receipt_sha256": "93603e13807a8be343519cdfd54381fd6888997b201ab50b23c32a4e82e01d82",
+    "installed_audit_sha256": "eeef83c8a2185d45b0934d7aa7a34eca74242fb6d884ce40b081be9c9ecfa378"
+  },
+  "full_product_ready": false,
+  "production_deployment": false
+}

@@ -1,0 +1,11 @@
+{
+  "version": "0.1.14",
+  "sha256": "277b28cce455d4e21fc5d647fd43f02c96d63b1dfb7e171ef64ef25bcf72851f",
+  "size_bytes": 209585,
+  "required_core": "0.1.0.dev14",
+  "stage": "prerelease",
+  "platform_1c_tested": true,
+  "tested_1c_version": "8.3.27.2342",
+  "test_scope": "67 Node contracts, source CI and reproducible VSIX; fresh selected-revision editor-to-1C/YAxUnit test plus completed-result recovery in a new editor process, fixed VS Code 1.139.1; no typical configuration or editor live-apply acceptance",
+  "spectorn_integrated": false
+}

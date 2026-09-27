@@ -1,0 +1,20 @@
+{
+  "version": "0.1.0.dev14",
+  "tag": "core-v0.1.0-dev14",
+  "prerelease": true,
+  "asset": "rentgen-core-0.1.0.dev14-windows-py311.zip",
+  "size_bytes": 20463189,
+  "sha256": "a9443557cecd9aa3b0261fc548f06877de71d0214c1756f5ee7fc4abc56ce671",
+  "wheel_sha256": "b692c9efcb03541154e9e3ada228d4a03069fde82ef7f3d0635e45978833beb5",
+  "sdist_sha256": "0e523f629b310d3dd1002b682af9fe9b97ce80d92add5470928993c5c359e954",
+  "source_commit": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
+  "ci_run": 36306417536,
+  "pr_ci_run": 36306421451,
+  "python_tests": 2443,
+  "platform": "Windows x64 / CPython 3.11",
+  "tested_1c_version": "8.3.27.2342",
+  "native_1c_smoke_accepted": true,
+  "native_1c_scope": "Fresh Companion 0.1.14 selected-revision test on one owned synthetic project: baseline failure/candidate pass, 23 native steps and completed-result recovery; no new dev14 EDT/live-apply acceptance",
+  "platform_1c_acceptance": false,
+  "full_product_ready": false
+}
