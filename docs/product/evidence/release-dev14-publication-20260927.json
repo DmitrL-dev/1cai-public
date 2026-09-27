@@ -1,0 +1,406 @@
+{
+  "schema": "rentgen-component-publication/1",
+  "recorded_utc": "2026-09-27T11:02:00.170256+00:00",
+  "main": "319871ced7c224c54af5b4cd1a622935646a2544",
+  "main_tree": "32424f25dcf78f1a62db2007a8d2507d0710cca7",
+  "main_ci": {
+    "run_id": 36311493158,
+    "run_url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36311493158",
+    "actual_checkout": "319871ced7c224c54af5b4cd1a622935646a2544",
+    "audit_sha256": "371e921367af2b322655ddeac811226dca825d03de5e8c84ff445ed4d5d74aa4",
+    "python_tests": 2443,
+    "node_tests": 67,
+    "go_passed": true,
+    "all_steps_success": 24,
+    "qualified": true,
+    "recorded_utc": "2026-09-27T10:47:54.767135+00:00"
+  },
+  "source_ci": {
+    "source_commit": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
+    "base_commit": "d44770c5ba203008015afae2a23b26d1a0010e97",
+    "pr": 34,
+    "qualified": true,
+    "artifact_audit_sha256": "013e227d1ae494ded8f90ff6b2349aeed89b35159cb3442f1503ea6af806f771",
+    "source_tree": "23c6959b8f83eab760106f118ca70a6d4267c768",
+    "runs": [
+      {
+        "run_id": 36306421451,
+        "event": "pull_request",
+        "head": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
+        "source_commit": "57d98daf5a7c050722d1c7d7fcfcb9290d05711b",
+        "successful_steps": 24,
+        "junit": {
+          "tests": 2443,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "locally_qualified_cases_present": 440,
+        "artifacts": {
+          "verified-core-development": {
+            "id": 10928217601,
+            "sha256": "21c2e9587bef642eaa70194cde5500959ac0769ba8c987718844b3d0e7928c30",
+            "size_bytes": 18561368
+          },
+          "python-contract-report": {
+            "id": 10927654742,
+            "sha256": "f1479affd54bc0b45230e281e0ba1929d27f2a09e44ea51cc4a5074dceeab6b5",
+            "size_bytes": 41070
+          }
+        },
+        "kit_sha256": "67720b8e63e9e6867dac218137e4420f583734708e0e60dca8c122e87a57a2a0",
+        "kit_size_bytes": 20463189,
+        "wheel_sha256": "b692c9efcb03541154e9e3ada228d4a03069fde82ef7f3d0635e45978833beb5",
+        "sdist_sha256": "0e523f629b310d3dd1002b682af9fe9b97ce80d92add5470928993c5c359e954",
+        "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+        "vsix_sha256": "277b28cce455d4e21fc5d647fd43f02c96d63b1dfb7e171ef64ef25bcf72851f",
+        "vsix_size_bytes": 209585,
+        "kit_files": 41,
+        "local_kit_different_files": [
+          "rentgen-core-0.1.0.dev14-windows-py311/SHA256SUMS.json",
+          "rentgen-core-0.1.0.dev14-windows-py311/build-input-hashes.json"
+        ],
+        "tree": "23c6959b8f83eab760106f118ca70a6d4267c768",
+        "parents": [
+          "d44770c5ba203008015afae2a23b26d1a0010e97",
+          "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1"
+        ],
+        "log_evidence": {
+          "actual_checkout": "57d98daf5a7c050722d1c7d7fcfcb9290d05711b",
+          "python_tests": 2443,
+          "node_tests": 67,
+          "node_failures": 0,
+          "node_skipped": 0,
+          "go_extractor_scanner_passed": true,
+          "logs_sha256": "af9bf040f7d7ed9c787f22cfe7b373c82274f05231f2d4f8f3fb579561fdef51"
+        }
+      },
+      {
+        "run_id": 36306417536,
+        "event": "push",
+        "head": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
+        "source_commit": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
+        "successful_steps": 24,
+        "junit": {
+          "tests": 2443,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "locally_qualified_cases_present": 440,
+        "artifacts": {
+          "python-contract-report": {
+            "id": 10928400063,
+            "sha256": "e7f5e50e1d608eb6f5931fda91cb7e0f2663fd91157162516783179c6b0ba7ee",
+            "size_bytes": 41099
+          },
+          "verified-core-development": {
+            "id": 10927843869,
+            "sha256": "bf02c23ed7546e5cb53dba719c8479e3075c4f3ef4c1a8d238b998d5165f1a82",
+            "size_bytes": 18561367
+          }
+        },
+        "kit_sha256": "a9443557cecd9aa3b0261fc548f06877de71d0214c1756f5ee7fc4abc56ce671",
+        "kit_size_bytes": 20463189,
+        "wheel_sha256": "b692c9efcb03541154e9e3ada228d4a03069fde82ef7f3d0635e45978833beb5",
+        "sdist_sha256": "0e523f629b310d3dd1002b682af9fe9b97ce80d92add5470928993c5c359e954",
+        "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+        "vsix_sha256": "277b28cce455d4e21fc5d647fd43f02c96d63b1dfb7e171ef64ef25bcf72851f",
+        "vsix_size_bytes": 209585,
+        "kit_files": 41,
+        "local_kit_different_files": [
+          "rentgen-core-0.1.0.dev14-windows-py311/SHA256SUMS.json",
+          "rentgen-core-0.1.0.dev14-windows-py311/build-input-hashes.json"
+        ],
+        "tree": "23c6959b8f83eab760106f118ca70a6d4267c768",
+        "parents": [
+          "d6d28f1f4a1aa9b3c7c025a85afca9bbb22707b2"
+        ],
+        "log_evidence": {
+          "actual_checkout": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
+          "python_tests": 2443,
+          "node_tests": 67,
+          "node_failures": 0,
+          "node_skipped": 0,
+          "go_extractor_scanner_passed": true,
+          "logs_sha256": "1112af9404d39ee69c1d3af3d2b7a651df60a1e6bf9bdabc478f58fecc0e2805"
+        }
+      }
+    ],
+    "recorded_utc": "2026-09-27T09:15:10.963350+00:00",
+    "qualification_sha256": "125f2ebb643fccc713e6329e1a835f03373165efa431ede7b8fae49a721fd0d3"
+  },
+  "final_ci": {
+    "source_commit": "07c8f7db00e43dc5a7b544cfd75e077531e7a93d",
+    "base_commit": "d44770c5ba203008015afae2a23b26d1a0010e97",
+    "pr": 34,
+    "qualified": true,
+    "artifact_audit_sha256": "1e3e67c808da627ca0badc42f5fa60e6f50b1db06288d179768aa6da2e4eb52f",
+    "source_tree": "32424f25dcf78f1a62db2007a8d2507d0710cca7",
+    "runs": [
+      {
+        "run_id": 36309245906,
+        "event": "pull_request",
+        "head": "07c8f7db00e43dc5a7b544cfd75e077531e7a93d",
+        "source_commit": "ea593a2eee777ee8ed4e4dcc88678834ff294a3a",
+        "successful_steps": 24,
+        "junit": {
+          "tests": 2443,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "locally_qualified_cases_present": 440,
+        "artifacts": {
+          "verified-core-development": {
+            "id": 10929426945,
+            "sha256": "88cfef72c958cdd1d499c04d361f3fd144a71d7eacf04bca3d6ab4a05c1c82f2",
+            "size_bytes": 18561367
+          },
+          "python-contract-report": {
+            "id": 10928657466,
+            "sha256": "b850b41d0c95ace2f09c66344d7baaa04eeb50b258bcbcaf422ea1b2cb255cf3",
+            "size_bytes": 41267
+          }
+        },
+        "kit_sha256": "87b750bca127855b1985069434b108588bc20ac740549ff68088850a8b42edea",
+        "kit_size_bytes": 20463189,
+        "wheel_sha256": "b692c9efcb03541154e9e3ada228d4a03069fde82ef7f3d0635e45978833beb5",
+        "sdist_sha256": "0e523f629b310d3dd1002b682af9fe9b97ce80d92add5470928993c5c359e954",
+        "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+        "vsix_sha256": "277b28cce455d4e21fc5d647fd43f02c96d63b1dfb7e171ef64ef25bcf72851f",
+        "vsix_size_bytes": 209585,
+        "kit_files": 41,
+        "local_kit_different_files": [
+          "rentgen-core-0.1.0.dev14-windows-py311/SHA256SUMS.json",
+          "rentgen-core-0.1.0.dev14-windows-py311/build-input-hashes.json"
+        ],
+        "tree": "32424f25dcf78f1a62db2007a8d2507d0710cca7",
+        "parents": [
+          "d44770c5ba203008015afae2a23b26d1a0010e97",
+          "07c8f7db00e43dc5a7b544cfd75e077531e7a93d"
+        ],
+        "log_evidence": {
+          "actual_checkout": "ea593a2eee777ee8ed4e4dcc88678834ff294a3a",
+          "python_tests": 2443,
+          "node_tests": 67,
+          "node_failures": 0,
+          "node_skipped": 0,
+          "go_extractor_scanner_passed": true,
+          "logs_sha256": "1104f5dfee42a1fda156f903ffdd9693a002bdbb0934705bc1ffe5513c20aba9"
+        }
+      },
+      {
+        "run_id": 36309242973,
+        "event": "push",
+        "head": "07c8f7db00e43dc5a7b544cfd75e077531e7a93d",
+        "source_commit": "07c8f7db00e43dc5a7b544cfd75e077531e7a93d",
+        "successful_steps": 24,
+        "junit": {
+          "tests": 2443,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "locally_qualified_cases_present": 440,
+        "artifacts": {
+          "python-contract-report": {
+            "id": 10929511289,
+            "sha256": "8c0b54d159b43257ee50df6dcb7c65cc88f939bd305a71c0d32befebc0c0e684",
+            "size_bytes": 41054
+          },
+          "verified-core-development": {
+            "id": 10928587426,
+            "sha256": "4d352abd11afc6ae7421ac735eb820410809ee1ec9219fe223989a63e3059e36",
+            "size_bytes": 18561357
+          }
+        },
+        "kit_sha256": "d7987be15374e9569fe76773b9c2385682b0537d4e830c44dbd11239b9521f42",
+        "kit_size_bytes": 20463189,
+        "wheel_sha256": "b692c9efcb03541154e9e3ada228d4a03069fde82ef7f3d0635e45978833beb5",
+        "sdist_sha256": "0e523f629b310d3dd1002b682af9fe9b97ce80d92add5470928993c5c359e954",
+        "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+        "vsix_sha256": "277b28cce455d4e21fc5d647fd43f02c96d63b1dfb7e171ef64ef25bcf72851f",
+        "vsix_size_bytes": 209585,
+        "kit_files": 41,
+        "local_kit_different_files": [
+          "rentgen-core-0.1.0.dev14-windows-py311/SHA256SUMS.json",
+          "rentgen-core-0.1.0.dev14-windows-py311/build-input-hashes.json"
+        ],
+        "tree": "32424f25dcf78f1a62db2007a8d2507d0710cca7",
+        "parents": [
+          "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1"
+        ],
+        "log_evidence": {
+          "actual_checkout": "07c8f7db00e43dc5a7b544cfd75e077531e7a93d",
+          "python_tests": 2443,
+          "node_tests": 67,
+          "node_failures": 0,
+          "node_skipped": 0,
+          "go_extractor_scanner_passed": true,
+          "logs_sha256": "ccbffc0b9a6694446174fed5c990668c6a8e77d216a6181f39f9024e6fc90754"
+        }
+      }
+    ],
+    "recorded_utc": "2026-09-27T10:05:50.134034+00:00",
+    "qualification_sha256": "feca58085fb2378c4cfd77dd7e8113c5d6b806d44f0fa502df9d47b2723f101b"
+  },
+  "core_release": {
+    "mode": "publish",
+    "release_id": 397586159,
+    "url": "https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev14",
+    "source_commit": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
+    "qualified_main": "319871ced7c224c54af5b4cd1a622935646a2544",
+    "main_run": 36311493158,
+    "draft": false,
+    "prerelease": true,
+    "body_sha256": "2736ee16df1377fdecce288a03f17b891687d3be0c7e976fbf9203384e29963d",
+    "assets": [
+      {
+        "id": 592594194,
+        "name": "manifest.json",
+        "sha256": "1e8940169dd96d5821f29b14c647745a441ffdf86eee5de094c6a42514f8f973",
+        "size_bytes": 963,
+        "download_verified": true
+      },
+      {
+        "id": 592594102,
+        "name": "RELEASE_NOTES.md",
+        "sha256": "2736ee16df1377fdecce288a03f17b891687d3be0c7e976fbf9203384e29963d",
+        "size_bytes": 11863,
+        "download_verified": true
+      },
+      {
+        "id": 592594216,
+        "name": "rentgen-core-0.1.0.dev14-windows-py311.zip",
+        "sha256": "a9443557cecd9aa3b0261fc548f06877de71d0214c1756f5ee7fc4abc56ce671",
+        "size_bytes": 20463189,
+        "download_verified": true
+      },
+      {
+        "id": 592594155,
+        "name": "SHA256SUMS",
+        "sha256": "4caee9cda161a1c090181de8901e3d52118a9443145303bd0cca078e2e36eb3d",
+        "size_bytes": 109,
+        "download_verified": true
+      }
+    ],
+    "tag_commit": "3d36b5ac83ce36e3418378a104d7ba52ede0f9d1",
+    "anonymous_public_download_verified": true,
+    "recorded_utc": "2026-09-27T10:49:15.514724+00:00"
+  },
+  "companion_release": {
+    "mode": "publish",
+    "release_id": 397612162,
+    "url": "https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.14",
+    "draft": false,
+    "prerelease": true,
+    "tag": "companion-v0.1.14",
+    "source_commit": "319871ced7c224c54af5b4cd1a622935646a2544",
+    "main_run": 36311493158,
+    "release_run": 36314083559,
+    "artifact": {
+      "id": 10930130899,
+      "sha256": "8814f1b7afc10af184618f0504abf86fa180812fc2af8655ee01ecdb0a21f45c",
+      "size_bytes": 57376,
+      "all_four_files_match_local": true
+    },
+    "body_sha256": "8d9ecebd325fc13774ae21630d02aeeda13862f9abc5d78663d22799379881df",
+    "assets": [
+      {
+        "id": 592732323,
+        "name": "release.json",
+        "sha256": "03ec8e3f3ac3954670b1424f800f5cba00999d55c837ef801c6c55dcea13ca12",
+        "size_bytes": 697,
+        "download_verified": true
+      },
+      {
+        "id": 592732325,
+        "name": "rentgen-companion-0.1.14.vsix",
+        "sha256": "277b28cce455d4e21fc5d647fd43f02c96d63b1dfb7e171ef64ef25bcf72851f",
+        "size_bytes": 209585,
+        "download_verified": true
+      },
+      {
+        "id": 592732324,
+        "name": "SHA256SUMS",
+        "sha256": "70a5e3fcd2838904e266aee0c5b5fe20ae97f9d205b847867804c06e8d37eef9",
+        "size_bytes": 96,
+        "download_verified": true
+      }
+    ],
+    "anonymous_public_download_verified": true,
+    "recorded_utc": "2026-09-27T10:58:53.841805+00:00"
+  },
+  "companion_workflow": {
+    "qualified": true,
+    "main": "319871ced7c224c54af5b4cd1a622935646a2544",
+    "main_run": 36311493158,
+    "release_run": 36314083559,
+    "tag": "companion-v0.1.14",
+    "node_tests": 67,
+    "node_failures": 0,
+    "node_skipped": 0,
+    "all_steps_success": 20,
+    "build_and_draft_checkout_verified": true,
+    "logs_sha256": "37a1e8e42a44dfacf8b16587e1625bcbfbecdfff66c73dc497f0cb31f242994c",
+    "artifact": {
+      "id": 10930130899,
+      "sha256": "8814f1b7afc10af184618f0504abf86fa180812fc2af8655ee01ecdb0a21f45c",
+      "size_bytes": 57376,
+      "all_four_files_match_local": true
+    },
+    "assets": {
+      "RELEASE_NOTES.md": {
+        "sha256": "8d9ecebd325fc13774ae21630d02aeeda13862f9abc5d78663d22799379881df",
+        "size_bytes": 8251
+      },
+      "SHA256SUMS": {
+        "sha256": "70a5e3fcd2838904e266aee0c5b5fe20ae97f9d205b847867804c06e8d37eef9",
+        "size_bytes": 96
+      },
+      "release.json": {
+        "sha256": "03ec8e3f3ac3954670b1424f800f5cba00999d55c837ef801c6c55dcea13ca12",
+        "size_bytes": 697
+      },
+      "rentgen-companion-0.1.14.vsix": {
+        "sha256": "277b28cce455d4e21fc5d647fd43f02c96d63b1dfb7e171ef64ef25bcf72851f",
+        "size_bytes": 209585
+      }
+    },
+    "recorded_utc": "2026-09-27T10:58:01.099847+00:00"
+  },
+  "local_regression_case_union": 440,
+  "live_apply_cases_in_each_core_ci_junit": 38,
+  "native_editor": {
+    "evidence": "tests-editor-dev14-20260927.json",
+    "sha256": "38a706e0a2cc38c99a615df671a708eb48b3bb9c5ec66d051adfd8d418ca8efa",
+    "native_steps": 23,
+    "model_calls": 0,
+    "scope": "Owned synthetic selected revision and completed-result recovery; no fresh dev14 EDT or typical configuration acceptance"
+  },
+  "all_seven_public_assets_downloaded_and_byte_equal": true,
+  "release_tags_and_assets_replaced": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "new_independent_peer_review": false,
+  "subagents_used": false,
+  "announcement": {
+    "url": "https://github.com/DmitrL-dev/1cai-public/pull/34#issuecomment-5855272984",
+    "comment_id": 5855272984,
+    "comment_body_sha256": "889e567dbf9ede6eac7d345bf13a7fe8fe67dbfb8ad11296d8a1310bd3a70f8f",
+    "readback_verified": true
+  },
+  "publication_docs_local_regression": {
+    "base": "319871ced7c224c54af5b4cd1a622935646a2544",
+    "counts": {
+      "tests": 38,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "xml_sha256": "c6ae1667767d797adb176a6eece7e4d9ccf603d7b703bf0eca18b3284a93627d",
+    "log_sha256": "65e63b05739dd91b261ff119e4ba8ed1daf5ed1c2d5bda4611031c06d9a77f32",
+    "code_changes": false
+  }
+}
