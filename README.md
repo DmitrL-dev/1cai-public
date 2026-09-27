@@ -126,9 +126,9 @@ namespace/QName-фрагменты.
 
 ### Как устроен Рентген
 
-[![Шесть шагов работы с Рентгеном: выгрузка 1С, снимок, изучение проекта, черновик, проверка и ваше решение](docs/assets/how-rentgen-works.svg)](docs/assets/how-rentgen-works.svg)
+[![Шесть шагов работы с Рентгеном: выгрузка 1С, снимок, изучение проекта, черновик, проверка и ваше решение](docs/assets/how-rentgen-works.svg)](https://raw.githubusercontent.com/DmitrL-dev/1cai-public/refs/heads/main/docs/assets/how-rentgen-works.svg)
 
-[Открыть схему в полном размере](docs/assets/how-rentgen-works.svg).
+[Открыть схему в полном размере](https://raw.githubusercontent.com/DmitrL-dev/1cai-public/refs/heads/main/docs/assets/how-rentgen-works.svg).
 
 Источник истины — локальное ядро. Модель предлагает текст; адаптер и ядро
 проверяют структуру операций, права и ожидаемую ревизию. Восстановление по
