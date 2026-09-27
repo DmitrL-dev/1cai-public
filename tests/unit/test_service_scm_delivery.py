@@ -135,6 +135,12 @@ def test_workflow_keeps_scm_separate_and_retains_failure_evidence():
     assert download["with"] == {"name": "verified-core-development", "path": "output/scm-input"}
     assert "always()" in native[-1]["if"]
     assert native[-1]["with"]["name"] == "native-scm-evidence"
+    contracts = next(s for s in jobs["windows"]["steps"] if s.get("id") == "python_contracts")["run"]
+    commands = [line.strip() for line in contracts.splitlines() if line.strip().startswith("python -m pytest")]
+    assert len(commands) == 2
+    assert "tests/unit/test_service_scm_delivery.py" in commands[0]
+    assert "if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }" in contracts
+    assert "tests/unit/" not in commands[1]
 
 
 @pytest.mark.parametrize("name", ["verify_service_scm_delivery", "scm_acceptance_worker"])
@@ -336,6 +342,7 @@ def test_native_explicit_policy_roundtrip_covers_files_and_directories(tmp_path)
     policy_path = tmp_path / "policy.acl"
     observed_path = tmp_path / "observed.acl"
     restored_path = tmp_path / "restored.acl"
+    restored_with_alias_path = tmp_path / "restored-with-alias.acl"
     hardlink = root / "alias.exe"
     def icacls(*args):
         p = subprocess.run([str(Path(os.environ["SystemRoot"]) / "System32/icacls.exe"), *map(str, args)],
@@ -376,10 +383,28 @@ def test_native_explicit_policy_roundtrip_covers_files_and_directories(tmp_path)
         assert native.privileges() == privileges
     finally:
         icacls(root.parent, "/restore", baseline, "/Q")
-        if hardlink.exists():
-            hardlink.unlink()
+        try:
+            icacls(root, "/save", restored_with_alias_path, "/T", "/Q")
+        finally:
+            if hardlink.exists():
+                hardlink.unlink()
     icacls(root, "/save", restored_path, "/T", "/Q")
-    assert api.verify_acl_restoration(before, api.acl_entries(restored_path, root))["original_dacls_equal"]
+    after = api.acl_entries(restored_path, root)
+    try:
+        verified = api.verify_acl_restoration(before, after)
+    except RuntimeError as error:
+        # Preserve actual SDDL in the JUnit failure, including a snapshot before
+        # unlinking the alias. Relative fixture paths avoid host path disclosure.
+        def relative(rows):
+            return {str(path.relative_to(root)): value for path, value in rows.items()}
+        evidence = {
+            "error": str(error), "before": relative(before),
+            "requested": relative(policy), "observed": relative(observed),
+            "restored_with_alias": relative(api.acl_entries(restored_with_alias_path, root)),
+            "restored_after_unlink": relative(after),
+        }
+        pytest.fail("Native DACL restoration evidence: " + json.dumps(evidence, sort_keys=True), pytrace=False)
+    assert verified["original_dacls_equal"]
 
 
 @pytest.mark.parametrize("already_enabled", [False, True])

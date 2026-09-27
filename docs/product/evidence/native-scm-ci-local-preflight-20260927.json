@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "base_commit": "6b775db29f8eb75191981d443a281e28ad181e7c",
-  "scope": "Local safeguards and actual unelevated refusal after three failed CI heads; scoped backup privilege metadata fix awaits privileged CI",
+  "scope": "Diagnostic early CI guard after four failed heads; original ACL mismatch remains under investigation",
   "root_review_only": true,
   "independent_review": false,
   "python_regression": {
@@ -10,7 +10,7 @@
     "failures": 0,
     "skipped": 1
   },
-  "regression_junit_sha256": "28323d987f85a203b1592c5c7fd146ca3ecdfd62233903f62873989dcccf0ff7",
+  "regression_junit_sha256": "e39b16c6618fe7265c59fe56a85128c9c3c5ff3192c0cbfe65ad1b9a2ece566d",
   "new_safeguard_cases": 36,
   "installed_core_files_equal_wheel": 103,
   "wheel_sha256": "b692c9efcb03541154e9e3ada228d4a03069fde82ef7f3d0635e45978833beb5",
@@ -28,7 +28,7 @@
     "scripts/verification/scm_acceptance_worker.py": "4fb309a0673b27316cfc909348af5ffc5a264c8e29ae0042e595c09c60034d0b",
     "scripts/verification/scm_native_evidence.py": "b6c252b4695a820eda9f914a028cf143e57f325c8c2979f2c6970d684bffa0fe"
   },
-  "recorded_utc": "2026-09-27T16:31:12.059450+00:00",
+  "recorded_utc": "2026-09-27T17:19:19.591019+00:00",
   "acl_fix": {
     "temporary_inheritance_removed": true,
     "temporary_principals_and_masks_verified": true,
@@ -97,6 +97,22 @@
       "service_created": false,
       "failure_stage": "native DACL test metadata guard after empty DACL",
       "accepted": false
+    },
+    {
+      "head": "3cf801e79d708e148a1c04a0696bfce5b37b6ade",
+      "run_ids": [
+        36333725412,
+        36333723336
+      ],
+      "windows_python_each": 2479,
+      "python_passed_each": 2478,
+      "python_failures_each": 1,
+      "python_skipped_each": 0,
+      "native_scm_job": "skipped",
+      "service_created": false,
+      "failure_stage": "Final original-DACL equality after denied-file and denied-hardlink checks",
+      "restoration_difference_not_yet_recorded": true,
+      "accepted": false
     }
   ],
   "local_authority": {
@@ -105,5 +121,27 @@
     "create_error": 5,
     "restore_privilege": false,
     "backup_privilege": false
+  },
+  "early_guard": {
+    "tests": 84,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 1,
+    "passed": 83,
+    "junit_sha256": "f0c9c72a9c8a6f612afaa9e87f1a9a46d394c296ba261ff212276a179970fe92"
+  },
+  "diagnostic_change": {
+    "actual_sddl_in_junit_failure": true,
+    "relative_owned_fixture_paths_only": true,
+    "snapshot_before_alias_unlink": true,
+    "early_guard_cases": 84,
+    "full_suite_cases_unchanged": 2479,
+    "restoration_rules_unchanged": true,
+    "last_acl_mismatch_fixed": false
+  },
+  "local_preflight_reused_by_byte_identity": {
+    "receipt_sha256": "63835a59db4be780f309a4aff654c9b6c924aefb0d63a31ed35aeaf45fc0d630",
+    "all_three_verification_scripts_unchanged": true,
+    "actual_run_recorded_utc": "2026-09-27T16:27:37.266826+00:00"
   }
 }
