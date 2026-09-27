@@ -10,7 +10,7 @@
     "failures": 0,
     "skipped": 1
   },
-  "regression_junit_sha256": "a9573713139ed76a6af413d701f10c079a6daa4dcf15c77934d69f141c296629",
+  "regression_junit_sha256": "9dc62741f518c6139786b42b261ab7577994db6123dba0837aeccbebd1ff1ffc",
   "new_safeguard_cases": 43,
   "installed_core_files_equal_wheel": 103,
   "wheel_sha256": "b692c9efcb03541154e9e3ada228d4a03069fde82ef7f3d0635e45978833beb5",
@@ -28,7 +28,7 @@
     "scripts/verification/scm_acceptance_worker.py": "eaca437c48ae5497648d801b3d824981eb0ff4afa1930030ddd7ce8d2b19f0f0",
     "scripts/verification/scm_native_evidence.py": "3f33a461bce6339a629ee58c3d570b74059ddb1ddb8198fd91d8ffd541948cb2"
   },
-  "recorded_utc": "2026-09-27T17:49:28.045974+00:00",
+  "recorded_utc": "2026-09-27T17:56:13.830975+00:00",
   "acl_fix": {
     "temporary_inheritance_removed": true,
     "temporary_principals_and_masks_verified": true,
@@ -146,7 +146,7 @@
     "failures": 0,
     "skipped": 1,
     "passed": 90,
-    "junit_sha256": "6048e33e24ebbec0eee8f90d51deb42dcc10a4e88fd2b06ee43ba1f48ec9a3d5"
+    "junit_sha256": "9cae38dcb9d4b7cd45fc32ef2f47e43e44e9da2560ea0e5d3f5c7d2e3bf80336"
   },
   "expected_python_ci": 2486,
   "local_passed_union": 519,
