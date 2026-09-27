@@ -364,11 +364,12 @@ def test_native_exact_acl_restore_preserves_explicit_aces_without_parent_copies(
     # Elevated runner files are owned by Administrators. Windows serializes
     # this well-known SID as BA, so use the same SDDL spelling in the fixture.
     owner_trustee = {"S-1-5-32-544": "BA", "S-1-5-18": "SY"}.get(owner, owner)
+    trustees = tuple(dict.fromkeys(("SY", "BA", owner_trustee)))
     def read_acls():
         return {p: native.dacl(p) for p in paths}
     original = read_acls()
     expected = {p: "D:" + control + "".join(
-        f"(A;{'OICI' if p.is_dir() else ''};FA;;;{sid})" for sid in ("SY", "BA", owner_trustee)) for p in paths}
+        f"(A;{'OICI' if p.is_dir() else ''};FA;;;{sid})" for sid in trustees) for p in paths}
     def verify_expected():
         observed = read_acls()
         try:

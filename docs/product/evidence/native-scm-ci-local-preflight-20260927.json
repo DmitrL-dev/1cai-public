@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "base_commit": "6b775db29f8eb75191981d443a281e28ad181e7c",
-  "scope": "Stored DACL snapshots and non-propagating per-object restoration after exact fifth-head diagnostics; privileged SCM acceptance remains pending",
+  "scope": "Distinct trustees in synthetic DACL fixtures; original privileged roundtrip passed on both sixth-head workflows; SCM acceptance still pending",
   "root_review_only": true,
   "independent_review": false,
   "python_regression": {
@@ -28,7 +28,7 @@
     "scripts/verification/scm_acceptance_worker.py": "eaca437c48ae5497648d801b3d824981eb0ff4afa1930030ddd7ce8d2b19f0f0",
     "scripts/verification/scm_native_evidence.py": "3f33a461bce6339a629ee58c3d570b74059ddb1ddb8198fd91d8ffd541948cb2"
   },
-  "recorded_utc": "2026-09-27T17:56:13.830975+00:00",
+  "recorded_utc": "2026-09-27T18:09:15.051540+00:00",
   "acl_fix": {
     "temporary_inheritance_removed": true,
     "temporary_principals_and_masks_verified": true,
@@ -131,6 +131,22 @@
       "diagnostic_only": true,
       "finding": "Three inherited ACE copies added to each of four baseline entries; alias unlink made no change",
       "accepted": false
+    },
+    {
+      "head": "2f8417c11deb676305c9c70dd634e50dab4c8079",
+      "run_ids": [
+        36338861065,
+        36338858481
+      ],
+      "early_guard_tests_each": 91,
+      "python_passed_each": 87,
+      "python_failures_each": 4,
+      "python_skipped_each": 0,
+      "original_privileged_roundtrip_passed_each": true,
+      "native_scm_job": "skipped",
+      "service_created": false,
+      "finding": "Duplicate BA in four synthetic expected DACLs when owner is Administrators; Windows returned one BA ACE",
+      "accepted": false
     }
   ],
   "local_authority": {
@@ -146,7 +162,7 @@
     "failures": 0,
     "skipped": 1,
     "passed": 90,
-    "junit_sha256": "9cae38dcb9d4b7cd45fc32ef2f47e43e44e9da2560ea0e5d3f5c7d2e3bf80336"
+    "junit_sha256": "2be2fd6f541fe7b2c441e608c4bc55da64c8c21ba1859c7c2d4b11a14302ec2a"
   },
   "expected_python_ci": 2486,
   "local_passed_union": 519,
@@ -172,5 +188,16 @@
     "direct_restoration_exact_for_explicit_baseline": true,
     "original_aces_and_protection_restored": true,
     "original_ai_bit_change_reported": true
+  },
+  "regression_reused_by_unchanged_helpers": {
+    "review_recorded_utc": "2026-09-27T17:56:13.830975+00:00",
+    "junit_sha256": "9dc62741f518c6139786b42b261ab7577994db6123dba0837aeccbebd1ff1ffc",
+    "all_three_runtime_helpers_unchanged": true,
+    "fresh_early_guard_covers_all_changed_test_cases": true
+  },
+  "fixture_correction": {
+    "distinct_principals_preserve_order": true,
+    "expected_owner_aliases_retained": true,
+    "comparison_and_runtime_helpers_unchanged": true
   }
 }
