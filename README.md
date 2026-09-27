@@ -18,28 +18,21 @@
 модели и сторонние инструменты распространяются на своих условиях.
 
 > **Ранний доступ — проверенные компоненты, продукт ещё развивается.**
-> Опубликованная пара: Windows x64, Python 3.11; [Core `0.1.0.dev14`](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev14), [Companion `0.1.14`](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.14).
+> Опубликованная пара: Windows x64, Python 3.11; [Core `0.1.0.dev15`](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev15), [Companion `0.1.15`](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.15).
 > Исходные и финальные CI, проверка main и отдельная офлайн-установка пройдены.
 > Все семь публичных файлов скачаны без авторизации и сверены побайтно.
-> [Квитанция публикации](docs/product/evidence/release-dev14-publication-20260927.json).
-> Новая пара прошла [нативный тест выбранной ревизии и восстановления отчёта](docs/product/EDITOR-NATIVE-DEV14-20260927.md)
+> [Квитанция публикации](docs/product/evidence/release-dev15-publication-20260928.json).
+> Поставка связана с [нативным тестом dev15 и восстановлением отчёта](docs/product/DEV15-RELEASE-QUALIFICATION-20260928.md)
 > на 1С 8.3.27.2342. Типовые конфигурации и рабочие базы ещё не приняты.
 > Подробности — в [READINESS](docs/product/READINESS.md).
 
-В [PR #39](https://github.com/DmitrL-dev/1cai-public/pull/39) подготовлен
-следующий кандидат **Core dev15 / Companion 0.1.15**: исправленные инструкции
-установки выбранной версии и совместимые профили редактора. Оба исходных CI
-приняты: по 2488 Python- и 69 Node-тестов, Go и настоящая служба LocalService.
-Принятый CI ZIP отдельно установлен; пакеты связаны с проверенным нативным
-[опытом dev15](docs/product/DEV15-RELEASE-QUALIFICATION-20260928.md). Финальные CI,
-main и публикация ожидаются; опубликованной парой остаётся dev14/0.1.14.
-
-Выпуск dev14 добавляет ранний отказ проверочного скрипта при отключённых
-assertions и совместимость профилей редактора. [PR #34](https://github.com/DmitrL-dev/1cai-public/pull/34)
-объединён в main; каждый из пяти CI прошёл 2443 Python- и 67 Node-тестов,
-Go и 24 шага. Подробные изменения и ограничения:
-[Core](releases/core/0.1.0.dev14/RELEASE_NOTES.md) и
-[Companion](releases/companion/0.1.14/RELEASE_NOTES.md).
+Выпуск dev15 исправляет поставляемые команды установки выбранной версии Core
+и добавляет явную совместимость профилей редактора. Отсутствующий wheel вызывает
+отказ до установки; другая версия не подставляется. [PR #39](https://github.com/DmitrL-dev/1cai-public/pull/39)
+объединён в main; каждый из пяти Core CI прошёл 2488 Python- и 69 Node-тестов,
+Go и проверку настоящей службы Source Observer под LocalService.
+Подробные изменения и ограничения: [Core](releases/core/0.1.0.dev15/RELEASE_NOTES.md)
+и [Companion](releases/companion/0.1.15/RELEASE_NOTES.md).
 
 Прежние [нативные проверки BSL apply/Undo](docs/product/NATIVE-DEV13-20260927.md),
 [переименования реквизита с сохранением данных](docs/product/METADATA-LIVE-NATIVE-DEV13-20260927.md)
@@ -54,7 +47,7 @@ Go и 24 шага. Подробные изменения и ограничени
 на отдельной базе из сохранённой выгрузки.
 Из редактора можно запустить [BSL-проверку](docs/product/EDITOR-BSL-CHECK.md),
 проверку компилятором и [тесты сохранённой версии](docs/product/EDITOR-TESTS.md),
-а затем восстановить отчёт без повторного запуска. Устанавливайте опубликованный dev14
+а затем восстановить отчёт без повторного запуска. Устанавливайте опубликованный dev15
 в отдельное окружение по инструкции ниже.
 Предыдущий Companion 0.1.10 отдельно прошёл
 [нативный editor-to-platform сценарий с установленным core dev10](docs/product/EDITOR-TESTS.md).
@@ -77,7 +70,7 @@ Go и 24 шага. Подробные изменения и ограничени
 | Следить за выгрузкой | Сравнение снимков и observer с сохранёнными отчётами без обращений к модели |
 | Принять уведомление локально | [HTTPS/ASGI-приёмник](docs/product/NOTIFICATION-RECEIVER.md) dev10 принимает `POST /notifications`, сохраняет digest-квитанцию и безопасно отвечает на повтор; проверен на loopback TLS с закреплённым Uvicorn/httptools. Публичная служба не развёрнута. |
 
-Таблица описывает опубликованный core-v0.1.0-dev14. Начиная с dev11 исправлена запись полных Windows
+Таблица описывает опубликованный core-v0.1.0-dev15. Начиная с dev11 исправлена запись полных Windows
 file ID в [архив нативных запусков](releases/core/0.1.0.dev11/RELEASE_NOTES.md).
 Dev10 содержит остальные перечисленные сценарии, но сохраняет прежнюю ошибку
 архивирования больших Windows ID. Предыдущий dev9 не содержит ASGI-границу. Dev8 не
