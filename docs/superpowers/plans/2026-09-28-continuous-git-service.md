@@ -46,15 +46,18 @@ at the service boundary and use a second journal schema for larger counters.
 - [x] Run the failing cases again, then the five relevant suites with a fresh JUnit.
 - [x] Update product documentation and retain exact red/green counts and changed hashes.
 - [x] Root review diff, `git diff --check`, commit the implementation.
-- [ ] Prepare the source PR after the native Git diagnostic slice.
+- [x] Prepare the source PR after the native Git diagnostic slice.
 
 ## Task 2: Qualification and delivery
 
 - [x] Integrate qualified SCM main and dev15 publication main into the continuous candidate;
   seven source/test hashes unchanged, fresh regression253passed/zero skips, merge9c31dfc.
   Continuous runtime changes require a subsequent Core version.
-- [ ] Push the source branch and create/attach a draft PR with actual tests, scope and limits.
-- [ ] Qualify actual source CI artifacts and merged-main CI before claiming acceptance.
+- [x] Push the source branch and create/attach a draft PR with actual tests, scope and limits.
+- [x] Qualify f7 source push/PR artifacts: 2636 Python / 69 Companion cases per run,
+  Go extractor/scanner, zero skips; 391 local cases present. Actual Source Observer
+  and the separate Git ownership/availability diagnostic accepted from raw evidence.
+- [ ] Qualify merged-main CI before claiming main acceptance of this source slice.
 - [ ] Carry changed package files into a new component version after dev15, execute its
   installation/native Git-SCM checks, publish immutable assets and detailed release notes.
 
@@ -71,3 +74,14 @@ git -c core.whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol diff
 
 Expected final result: no failures, errors or skips in these local contracts. SCM and
 native BSL acceptance require their separate privileged installed-runtime run.
+
+## Native diagnostic milestone
+
+Draft PR 41 contains the continuous runtime and the separately qualified Git
+diagnostic. Measured source is f7ec27e921a69facc2a6237ed928377d07194674;
+evidence is `docs/product/evidence/native-git-scm-diagnostic-ci-20260928.json`.
+Announcement: https://github.com/DmitrL-dev/1cai-public/pull/41#issuecomment-5862897491.
+This actual diagnostic does not accept stock schema3 GitAuditWorker/native BSL
+or the subsequent Core release. Production trust has not yet been selected.
+All 3 direct Git launches and 11 callers were inventoried for that next design,
+including Observer verification and owner-report capture.

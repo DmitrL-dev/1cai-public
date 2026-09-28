@@ -121,7 +121,7 @@ cleanup; it installs only its fixed diagnostic ImagePath.
   remain false even when `diagnostic_accepted` is true.
 - [x] Add a Windows CI job depending on the built kit, retain evidence with `always()`
   even on failed lifecycle, and run local contracts before push.
-- [ ] Push/attach a draft PR with exact local tests and explicit pending native scope.
+- [x] Push/attach a draft PR with exact local tests and explicit pending native scope.
   Qualify actual checkout, installed payload, raw process/ACL/probe evidence from CI.
 
 ## Task 4: Evidence and next production slice
@@ -130,9 +130,9 @@ cleanup; it installs only its fixed diagnostic ImagePath.
 - Update this plan and continuous service plan only with actual accepted results.
 - Create a public redacted diagnostic evidence JSON and detailed PR announcement.
 
-- [ ] Download terminal CI artifacts/logs once, verify their hashes and raw fields;
+- [x] Download terminal CI artifacts/logs once, verify their hashes and raw fields;
   preserve unsuccessful outcomes and distinguish diagnostic from product acceptance.
-- [ ] Publish detailed measured results with readback; keep the production trust
+- [x] Publish detailed measured results with readback; keep the production trust
   policy unset until the actual evidence justifies a separate design.
 - [ ] Then qualify stock schema3 GitAuditWorker with native BSL and subsequent Core
   payload through source/main/release checks and immutable release publication.
@@ -172,3 +172,45 @@ actual execution remains a CI gate. Positive LocalService flows in unit tests ar
 injected observations. Actual diagnostic SCM, stock schema3 Git/BSL, production
 trust policy and subsequent Core release remain unaccepted. Existing public tags
 and assets retain their prior payloads.
+
+## Actual Task 3/4 evidence — f7 source only
+
+Both original attempt 1 runs completed successfully: push 36370772638 and
+PR 36370775331. Raw artifact qualification accepted source f7ec27e921a69facc2a6237ed928377d07194674,
+tree 963d4ea30474d4f3a873d60743fd498d8e02037b. Actual PR checkout is
+c0b289343660f58d7ceba991995416551f07e5fe with parents main c715 and f7.
+Each run passed 2636 Python / 69 Companion tests and Go extractor/scanner with zero
+skips. All 391 unique cases from the local test sets were present in raw JUnit;
+the privileged DACL round trip actually executed.
+
+Each separate diagnostic job bound one actual LocalService PID/image/SID to
+the Git result and clean STOP/close. Git 2.55.0.windows.5 was available in the
+actual service PATH. Outcomes in both runs: product-style default accepted;
+isolated default refused foreign ownership; exact selected-root exception
+accepted; other root with selected trust refused; next selected-root child
+without the exception refused. Default acceptance on hosted runners does not
+establish ownership isolation or explain the external Git configuration.
+
+Four actual SCM controls, bounded raw streams/retention hashes, repository
+bytes/owners and input hashes were verified. Service absent after cleanup;
+original owners/DACLs restored for 89 fixture + 6051 runtime entries per Git job.
+The 14 new fixture entries were assigned Administrators, rather than restored
+from a nonexistent original owner snapshot. The separate Source Observer
+job observed five actual LocalService processes per run; its new fixture
+entries were 2347 in push and 2344 in PR.
+
+The root-only offline artifact validator passed 42 injected field/process
+contracts. Its first real-artifact read exposed an initial-state assumption:
+newly created STOPPED may carry 1077 ERROR_SERVICE_NEVER_STARTED before START.
+Red/green regressions separate that state from the final clean STOPPED, reject
+unknown errors/nonzero initial PID and enforce measurement→STOPPED→STOP proof.
+No CI/product source or original raw evidence was changed for this correction.
+
+Public redacted evidence:
+`docs/product/evidence/native-git-scm-diagnostic-ci-20260928.json`.
+Detailed announcement and anonymous readback:
+https://github.com/DmitrL-dev/1cai-public/pull/41#issuecomment-5862897491.
+Source/diagnostic qualification applies to measured f7; later documentation
+commits need their own source CI. Stock schema3/native BSL, continuous product
+acceptance, production trust policy, main/release delivery and full readiness
+remain pending. Existing release payloads are immutable; no deployment.
