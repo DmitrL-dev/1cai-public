@@ -5,24 +5,16 @@ must analyze the exact commit, authorize access and persist state atomically.
 """
 
 from dataclasses import dataclass
-import os
 from pathlib import Path, PurePosixPath
 import re
 import subprocess
 from typing import Literal
 
 from .errors import CoreError
+from ._git_policy import git_command, git_environment as _git_env
 
 
 _COMMIT_RE = r"(?:[0-9a-f]{40}|[0-9a-f]{64})"
-
-
-def _git_env():
-    env = {
-        key: value for key, value in os.environ.items() if not key.startswith("GIT_")
-    }
-    env.update(GIT_OPTIONAL_LOCKS="0", GIT_TERMINAL_PROMPT="0", GIT_NO_LAZY_FETCH="1")
-    return env
 
 
 @dataclass(frozen=True)
@@ -32,7 +24,7 @@ class GitObservation:
     ref: str | None
 
 
-def observe_git(repository: Path | str) -> GitObservation:
+def observe_git(repository: Path | str, *, trust=None) -> GitObservation:
     """Read local HEAD twice, rejecting dirty tracked files or visible ref races.
 
     Untracked/ignored files are outside this committed-only scope. This is not
@@ -44,15 +36,7 @@ def observe_git(repository: Path | str) -> GitObservation:
     def run(*args, allow_one=False):
         try:
             result = subprocess.run(
-                [
-                    "git",
-                    "--no-pager",
-                    "-c",
-                    "core.fsmonitor=false",
-                    "-C",
-                    str(root),
-                    *args,
-                ],
+                git_command(root, *args, trust=trust),
                 env=env,
                 stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE,
@@ -100,7 +84,7 @@ def observe_git(repository: Path | str) -> GitObservation:
     return after
 
 
-def require_ancestor(repository: Path | str, base: str, tip: str) -> None:
+def require_ancestor(repository: Path | str, base: str, tip: str, *, trust=None) -> None:
     """Require ``tip`` to descend from ``base`` without touching the repo.
 
     A watcher must not reconcile findings from unrelated histories or accept a
@@ -119,18 +103,7 @@ def require_ancestor(repository: Path | str, base: str, tip: str) -> None:
     root = Path(repository).resolve()
     try:
         result = subprocess.run(
-            [
-                "git",
-                "--no-pager",
-                "-c",
-                "core.fsmonitor=false",
-                "-C",
-                str(root),
-                "merge-base",
-                "--is-ancestor",
-                base,
-                tip,
-            ],
+            git_command(root, "merge-base", "--is-ancestor", base, tip, trust=trust),
             env=_git_env(),
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
