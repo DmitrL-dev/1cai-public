@@ -114,3 +114,28 @@ no LocalService BSL execution, and grants no native or full-product acceptance.
 Public record: `docs/product/evidence/stock-scm-source-manifest-local-20260928.json`.
 The e902 original CI attempts remain unchanged; stock native composition is still
 pending and the later capture/manifest source needs its own CI qualification.
+
+
+Stock control/ACL prerequisites: the verification-only adapter retains the public
+ServiceInstallSpec for `python.exe -I -m rentgen_core.service_entry --service`
+with one fixed owned schema3 config. It hashes interpreter/config/source-manifest/
+installed stock entry, retains bounded raw System32 sc.exe controls and reuses
+the diagnostic adapter's acknowledged-create, authority, exact-binding and
+unknown-outcome refusal guards. No diagnostic module is the new SCM ImagePath.
+The coordinator must still bind verifier source hashes and installed wheel bytes.
+
+Temporary ACL preparation now has a separate stock policy for exactly the fixed
+data and diagnostics scratch trees. Original Git source, JDK/JAR, runtime and
+all other fixture entries stay read/execute. Exact protected ACE validation is
+applied to both partitions; the original SourceObserver ACL verifier is unchanged.
+Native owner/DACL restoration and descendant cleanup remain mandatory gates.
+
+TDD: 21 new control contracts and 14 new ACL contracts were red before their
+APIs. Final four-suite regression: 138 passed /1 existing privileged DACL skip.
+Control observations are injected; ACL tests construct/validate descriptors and
+perform no native grants. This proves local prerequisites, not stock SCM/BSL
+acceptance. Public record: `docs/product/evidence/stock-scm-control-acl-local-20260928.json`.
+Pinned upstream metadata was inspected: BSL exec JAR bytes131962428; JDK ZIP
+bytes205073461 with the checked-in archive hash. Java profile size343823876 is
+the sum of all 490 installed manifest file sizes, not ZIP length. Preparation
+will reuse the checked-in local-file installer and avoid a Java warm-up run.

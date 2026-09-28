@@ -1,0 +1,46 @@
+{
+  "schema": "rentgen-stock-scm-control-acl-local/1",
+  "source_base": "166fe303341d2386c02b2c5535f85bb74ca3d2ef",
+  "source_files": {
+    "scripts/verification/scm_stock_git_control.py": "6a769dfd587c57e43e09afd72854f8414c2e632da12dcd899e971fa3221354b7",
+    "scripts/verification/scm_stock_git_acl.py": "acbb49e92eb9afd6c86697619f0d582be54fb206dbae45515dd2adcfe875a4b0",
+    "tests/unit/test_stock_git_scm_control.py": "ac3d8fd9fd3d4ca87d0aa3acad8dda932870e4b6eb10aaa216bd30bc78055f12",
+    "tests/unit/test_stock_git_scm_acl.py": "cef8d3c2ccd5f3fdd09e7c78baea69ac89074b3e00196e1b4bab3783651c07c7"
+  },
+  "tests": {
+    "control_red_failed": 21,
+    "acl_red_failed": 14,
+    "new_cases": 35,
+    "first_control_regression_passed": 82,
+    "final_passed": 138,
+    "final_skipped": 1,
+    "failures": 0,
+    "errors": 0,
+    "skipped_case": "test_native_explicit_policy_roundtrip_covers_files_and_directories",
+    "final_junit_sha256": "889a0137584ed72ac9da303839396e551785d1ac187b0ff9681fd7c98ef05db3"
+  },
+  "service_entry": "rentgen_core.service_entry",
+  "uses_public_service_install_spec": true,
+  "fixed_config_name": "stock-git-service.json",
+  "fixed_manifest_name": "stock-source-manifest.json",
+  "bound_input_files": 4,
+  "implicit_start_allowed": false,
+  "existing_service_adoption_allowed": false,
+  "control_success_ack_required": true,
+  "control_observations": "injected unit observations only",
+  "service_modify_paths": [
+    "fixture/localservice/data",
+    "fixture/localservice/diagnostics/Rentgen/diagnostic-runs"
+  ],
+  "source_and_runtime_modify_granted": false,
+  "original_acl_verifier_unchanged": true,
+  "native_acl_mutations_performed": false,
+  "stock_native_coordinator_implemented": false,
+  "native_git_scm_accepted": false,
+  "native_bsl_accepted": false,
+  "continuous_git_accepted": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "independent_review": false,
+  "recorded_utc": "2026-09-28T05:34:31.029495+00:00"
+}
