@@ -12,6 +12,7 @@ from typing import Literal
 
 from .errors import CoreError
 from ._git_policy import git_command, git_environment as _git_env
+from ._git_capture import capture_git, GitOutputLimitExceeded
 
 
 _COMMIT_RE = r"(?:[0-9a-f]{40}|[0-9a-f]{64})"
@@ -35,16 +36,13 @@ def observe_git(repository: Path | str, *, trust=None) -> GitObservation:
 
     def run(*args, allow_one=False):
         try:
-            result = subprocess.run(
+            result = capture_git(
                 git_command(root, *args, trust=trust),
                 env=env,
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
+                max_stdout=8192,
                 timeout=10,
-                check=False,
             )
-        except (OSError, subprocess.TimeoutExpired) as exc:
+        except (OSError, subprocess.TimeoutExpired, GitOutputLimitExceeded) as exc:
             raise CoreError("GIT_PROBE_FAILED", "Local Git probe failed") from exc
         if result.returncode not in ({0, 1} if allow_one else {0}):
             raise CoreError("GIT_PROBE_FAILED", "Local Git command failed")
@@ -102,16 +100,13 @@ def require_ancestor(repository: Path | str, base: str, tip: str, *, trust=None)
         raise CoreError("GIT_ANCESTRY_FAILED", "Invalid commit identity")
     root = Path(repository).resolve()
     try:
-        result = subprocess.run(
+        result = capture_git(
             git_command(root, "merge-base", "--is-ancestor", base, tip, trust=trust),
             env=_git_env(),
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
+            max_stdout=0,
             timeout=10,
-            check=False,
         )
-    except (OSError, subprocess.TimeoutExpired) as exc:
+    except (OSError, subprocess.TimeoutExpired, GitOutputLimitExceeded) as exc:
         raise CoreError("GIT_ANCESTRY_FAILED", "Git ancestry probe failed") from exc
     if result.returncode == 1:
         raise CoreError(

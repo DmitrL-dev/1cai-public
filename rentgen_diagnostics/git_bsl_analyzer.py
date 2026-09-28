@@ -6,6 +6,7 @@ import subprocess
 
 from rentgen_core.errors import CoreError
 from rentgen_core._git_policy import git_command, git_environment
+from rentgen_core._git_capture import capture_git, GitOutputLimitExceeded
 from rentgen_core._git_analysis_failure import (
     GitAnalysisFailure,
     is_known_bsl_failure_reason,
@@ -17,6 +18,7 @@ from rentgen_core.diagnostics import BslAnalysis, BSL_PROFILE_ID, _analysis_vali
 MAX_FILES = 256
 MAX_FILE = 1024 * 1024
 MAX_TOTAL = 64 * 1024 * 1024
+MAX_TREE = 4 * 1024 * 1024
 PROFILE_ID = BSL_PROFILE_ID + ":git-v1"
 SCOPE_ID = "whole-repository-bsl"
 
@@ -58,17 +60,16 @@ class BslGitAnalyzer:
         return git_environment()
 
     @classmethod
-    def _run(cls, repository, *args, trust=None):
+    def _run(cls, repository, *args, trust=None, max_stdout=MAX_TREE):
         try:
-            result = subprocess.run(
+            result = capture_git(
                 git_command(repository, *args, trust=trust),
                 env=cls._env(),
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
+                max_stdout=max_stdout,
                 timeout=10,
-                check=False,
             )
+        except GitOutputLimitExceeded as exc:
+            raise CoreError("GIT_ANALYZER_LIMIT", "Git output exceeds analyzer limit") from exc
         except (OSError, subprocess.TimeoutExpired) as exc:
             raise CoreError(
                 "GIT_ANALYZER_FAILED", "Git analyzer command failed"
@@ -79,7 +80,8 @@ class BslGitAnalyzer:
 
     @classmethod
     def _paths(cls, repository, commit, max_files, **git_options):
-        raw = cls._run(repository, "ls-tree", "-r", "--name-only", "-z", commit, **git_options)
+        raw = cls._run(repository, "ls-tree", "-r", "--name-only", "-z", commit,
+                       max_stdout=MAX_TREE, **git_options)
         paths = []
         for item in raw.split(b"\0"):
             if not item:
@@ -101,7 +103,8 @@ class BslGitAnalyzer:
 
     @classmethod
     def _blob(cls, repository, commit, path, **git_options):
-        raw = cls._run(repository, "cat-file", "blob", f"{commit}:{path}", **git_options)
+        raw = cls._run(repository, "cat-file", "blob", f"{commit}:{path}",
+                       max_stdout=MAX_FILE, **git_options)
         if len(raw) > MAX_FILE:
             raise CoreError("GIT_ANALYZER_LIMIT", "BSL module exceeds analyzer limit")
         return raw

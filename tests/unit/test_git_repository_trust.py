@@ -74,7 +74,7 @@ def test_wrong_root_refused_before_any_child(tmp_path, monkeypatch, operation, t
     nested.mkdir()
     trust = api().GitRepositoryTrust(root.resolve())
     destination = {'parent': tmp_path, 'nested': nested, 'other': other}[target]
-    monkeypatch.setattr(subprocess, 'run', lambda *args, **kwargs: pytest.fail('foreign root launched Git'))
+    monkeypatch.setattr(subprocess, 'Popen', lambda *args, **kwargs: pytest.fail('foreign root launched Git'))
     with pytest.raises(CoreError) as error:
         if operation == 'observe': observe_git(destination, trust=trust)
         elif operation == 'ancestor': require_ancestor(destination, 'a' * 40, 'b' * 40, trust=trust)
@@ -92,18 +92,18 @@ def inventory(root):
 def test_real_observation_and_ancestry_do_not_persist_exception(repository, monkeypatch):
     trust = api().GitRepositoryTrust(repository.resolve())
     original = inventory(repository)
-    calls, run = [], subprocess.run
+    calls, run = [], subprocess.Popen
     def capture(command, **kwargs):
         calls.append((command, kwargs['env']))
         return run(command, **kwargs)
-    monkeypatch.setattr(subprocess, 'run', capture)
+    monkeypatch.setattr(subprocess, 'Popen', capture)
     observation = observe_git(repository, trust=trust)
     require_ancestor(repository, observation.commit, observation.commit, trust=trust)
     assert observation.repository == str(repository.resolve()) and len(calls) == 7
     assert all(command[4:8] == ['-c', 'safe.directory=', '-c', 'safe.directory=' + str(repository)]
         and env['GIT_NO_REPLACE_OBJECTS'] == '1' for command, env in calls)
     assert inventory(repository) == original
-    monkeypatch.setattr(subprocess, 'run', run)
+    monkeypatch.setattr(subprocess, 'Popen', run)
     assert observe_git(repository) == observation
 
 
@@ -113,11 +113,11 @@ def test_real_analyzer_propagates_permission_to_probe_tree_and_blob(repository, 
     expected_blob = subprocess.check_output(['git', '-C', str(repository), 'cat-file',
         'blob', observed.commit + ':Module.bsl'])
     original = inventory(repository)
-    calls, run = [], subprocess.run
+    calls, run = [], subprocess.Popen
     def capture(command, **kwargs):
         calls.append(command)
         return run(command, **kwargs)
-    monkeypatch.setattr(subprocess, 'run', capture)
+    monkeypatch.setattr(subprocess, 'Popen', capture)
     adapter = FakeAdapter()
     result = BslGitAnalyzer(adapter, lambda: None, git_trust=trust)(observed)
     assert result.complete and adapter.calls[0][0] == expected_blob

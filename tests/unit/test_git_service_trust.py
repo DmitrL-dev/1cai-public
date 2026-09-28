@@ -83,12 +83,12 @@ def test_one_authorized_permission_reaches_every_real_child_and_durable_report(
     observer, source, module, _, adapter = wire(configured, workspace, monkeypatch, scanner, schema)
     config = replace(service_entry.load_config(configured.path), max_cycles=2)
     worker = service_entry.create_worker(config)
-    seen, active, run = [], [True], subprocess.run
+    seen, active, run = [], [True], subprocess.Popen
     def capture(command, **kwargs):
         if active[0] and Path(command[0]).name.casefold() in ('git', 'git.exe'):
             seen.append((command, kwargs['env']))
         return run(command, **kwargs)
-    monkeypatch.setattr(subprocess, 'run', capture)
+    monkeypatch.setattr(subprocess, 'Popen', capture)
     try:
         reporting = worker.watcher
         watcher = reporting.watcher
@@ -141,7 +141,7 @@ def test_revocation_precedes_every_service_git_read(configured, workspace, monke
     try:
         with ctx.state.transaction(ctx.principal, write=True) as tx:
             grant_membership(tx, ctx.principal, {'project:read', 'project:admin'})
-        monkeypatch.setattr(subprocess, 'run', lambda *args, **kwargs: pytest.fail('revoked service launched a child'))
+        monkeypatch.setattr(subprocess, 'Popen', lambda *args, **kwargs: pytest.fail('revoked service launched a child'))
         with pytest.raises(CoreError) as error:
             worker.watcher.tick()
         assert error.value.code == 'PROJECT_FORBIDDEN' and adapter.calls == []
