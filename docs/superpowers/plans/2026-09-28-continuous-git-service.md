@@ -45,11 +45,14 @@ at the service boundary and use a second journal schema for larger counters.
   `mark_running` must accept the same safe counter range; all existing state checks remain.
 - [x] Run the failing cases again, then the five relevant suites with a fresh JUnit.
 - [x] Update product documentation and retain exact red/green counts and changed hashes.
-- [ ] Root review diff, `git diff --check`, commit the implementation and prepare its source PR.
+- [x] Root review diff, `git diff --check`, commit the implementation.
+- [ ] Prepare the source PR after the native Git diagnostic slice.
 
 ## Task 2: Qualification and delivery
 
-- [ ] Integrate the qualified SCM main without changing the dev15 candidate payload.
+- [x] Integrate qualified SCM main and dev15 publication main into the continuous candidate;
+  seven source/test hashes unchanged, fresh regression253passed/zero skips, merge9c31dfc.
+  Continuous runtime changes require a subsequent Core version.
 - [ ] Push the source branch and create/attach a draft PR with actual tests, scope and limits.
 - [ ] Qualify actual source CI artifacts and merged-main CI before claiming acceptance.
 - [ ] Carry changed package files into a new component version after dev15, execute its
