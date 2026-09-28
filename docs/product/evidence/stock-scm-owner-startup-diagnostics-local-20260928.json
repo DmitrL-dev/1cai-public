@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "scope": "Local fixture owner binding and bounded Windows service failure diagnostics",
+  "parent_source": "fcb34b2e884cb4fb3e04f61301f1bdfdc39978fd",
+  "payload_sha256": {
+    "rentgen_core/service_entry.py": "603abbdd6eefce550402b7610ed7b200bdd1d61a01c589c2493adeb40d7147ab",
+    "scripts/verification/scm_stock_git_lifecycle.py": "c09318eed648e43731d5143a0262c2b4775ceec41803fdae399e22e575ba3f74",
+    "tests/unit/test_service_entry.py": "bf1b4480cea50f1406c2d8d73e7562c49ca42befb6afbf5a42d5495ba96140af",
+    "tests/unit/test_stock_git_scm_lifecycle.py": "a0eb7158227196cd99fba159190e63edab8e0ed17baf1f8380368bc40a732606",
+    "tests/unit/test_stock_git_scm_publication.py": "cf887b7a3f4cf2a2bc931a685d456c2b6eca4b4c27ef17fb8942af11f11da36d"
+  },
+  "junit": [
+    {
+      "name": "service-failure-event-green.xml",
+      "sha256": "b9fe08ecdd049ff8958568e9ebbdcff913eb5ed3cdc755525ccf4cbc67d80ff8",
+      "cases": 164,
+      "passed": 164,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "stock-owner-failure-events-green.xml",
+      "sha256": "5f57392a806588771b36255c21864300396bcc1b41ed66370cad9ca1263c760f",
+      "cases": 82,
+      "passed": 82,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "red_junit": [
+    {
+      "name": "stock-scm-owner-profile-red.xml",
+      "sha256": "a1eb7e433eb2a68faf5573dab635bffd3c0779de77236fd6547b873c9361831f",
+      "cases": 1,
+      "passed": 0,
+      "failed": 1,
+      "skipped": 0
+    },
+    {
+      "name": "service-failure-event-red.xml",
+      "sha256": "3da5dea650148e0cf931c554a4abab9e1b8afa5a376e4b802ab2a98bede2b9a6",
+      "cases": 8,
+      "passed": 1,
+      "failed": 7,
+      "skipped": 0
+    },
+    {
+      "name": "stock-failure-event-reader-red.xml",
+      "sha256": "81fa088852d7ce2969d9e0e7ec96fd96e295aa4416b3f4d0781fa09af481152d",
+      "cases": 12,
+      "passed": 0,
+      "failed": 12,
+      "skipped": 0
+    }
+  ],
+  "verified_case_union": 244,
+  "new_case_count_after_parent": 21,
+  "production_observer_binding_policy_unchanged": true,
+  "real_git_sqlite_go_with_injected_bsl_and_service_identity": true,
+  "actual_owner_authorization_required_for_fixture_view": true,
+  "localservice_profile_binding_preserved_after_parent_reads": true,
+  "service_failure_event_fields": [
+    "schema",
+    "event",
+    "service_name",
+    "pid",
+    "failure.stage",
+    "failure.kind",
+    "failure.reason"
+  ],
+  "event_size_characters": 512,
+  "event_source": "Rentgen.Core.Service",
+  "event_id": 1,
+  "exception_text_paths_and_unknown_codes_excluded": true,
+  "event_api_ctypes_seams_injected": true,
+  "actual_localservice_eventlog_not_yet_verified": true,
+  "telemetry_failure_cannot_change_service_result_or_cleanup": true,
+  "full_stock_scope_preserved": true,
+  "source_ci_qualified": false,
+  "native_stock_git_accepted": false,
+  "stock_native_bsl_accepted": false,
+  "new_main_qualified": false,
+  "new_release_qualified": false,
+  "production_trust_policy_selected": false,
+  "production_deployment": false,
+  "independent_review": false,
+  "review": "root only",
+  "recorded_utc": "2026-09-28T08:25:32.906234+00:00"
+}

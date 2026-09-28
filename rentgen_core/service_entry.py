@@ -277,10 +277,33 @@ def create_worker(config):
 class RunResult:
     cycles: int = 0
     error_code: str | None = None
+    failure_detail: dict | None = None
 
     @property
     def exit_code(self):
         return 2 if self.error_code else 0
+
+
+_FAILURE_STAGES = frozenset({'config','factory','interface','ready','run','tick','wait','close'})
+_FAILURE_KINDS = frozenset({'CoreError','RuntimeError','OSError','TypeError','ValueError',
+    'ImportError','ModuleNotFoundError','AttributeError','KeyboardInterrupt','UNEXPECTED'})
+_FAILURE_REASONS = frozenset({'UNCLASSIFIED','SERVICE_CONFIG_INVALID','LOCAL_IDENTITY_UNAVAILABLE',
+    'STATE_BUSY','STATE_UNAVAILABLE','PROJECT_FORBIDDEN','PROJECT_NOT_FOUND',
+    'OBSERVER_PROFILE_MISMATCH','OBSERVER_PROFILE_UNSAFE','OBSERVER_BUSY',
+    'CAPTURE_PLATFORM_UNSUPPORTED','GIT_TRUST_CONTEXT','GIT_WATCHER_INVALID',
+    'GIT_WATCHER_RECOVERY_REQUIRED','DIAGNOSTIC_PROFILE_UNAVAILABLE',
+    'DIAGNOSTIC_RUNTIME_UNAVAILABLE'})
+
+
+def _failure_detail(error,stage):
+    """Fixed diagnostics only; never retain exception text, paths or arbitrary codes."""
+    kinds = {CoreError:'CoreError',RuntimeError:'RuntimeError',OSError:'OSError',
+        TypeError:'TypeError',ValueError:'ValueError',ImportError:'ImportError',
+        ModuleNotFoundError:'ModuleNotFoundError',AttributeError:'AttributeError',
+        KeyboardInterrupt:'KeyboardInterrupt'}
+    reason = error.code if type(error) is CoreError and type(error.code) is str \
+        and error.code in _FAILURE_REASONS else 'UNCLASSIFIED'
+    return {'stage':stage,'kind':kinds.get(type(error),'UNEXPECTED'),'reason':reason}
 
 
 def _execute(
@@ -289,16 +312,20 @@ def _execute(
     cleanup = None
     cycles = 0
     error_code = None
+    failure_detail = None
+    stage = "config"
     try:
         try:
             config = loader()
-        except BaseException:
+        except BaseException as error:
             error_code = "SERVICE_CONFIG_INVALID"
-            return RunResult(cycles, error_code)
+            return RunResult(cycles, error_code, _failure_detail(error,stage))
         if isinstance(config, GitServiceConfig) and config.mode == "dry-run":
             return RunResult()
         if not stop.is_set():
+            stage = "factory"
             worker = factory(config)
+            stage = "interface"
             try:
                 # Resolve cleanup first so a failing tick accessor still releases
                 # owned resources. Descriptors are caller code and may raise.
@@ -313,33 +340,40 @@ def _execute(
                 raise CoreError(
                     "SERVICE_WORKER_FAILED", "Worker interface unavailable"
                 ) from None
+            stage = "ready"
             ready()
             if scheduled:
                 # One scheduler owns this lifetime and its backoff.
+                stage = "run"
                 cycles = tick(stop)
             while (
                 not scheduled
                 and not stop.is_set()
                 and (config.max_cycles is None or cycles < config.max_cycles)
             ):
+                stage = "tick"
                 tick()
                 cycles += 1
                 if config.max_cycles is None or cycles < config.max_cycles:
+                    stage = "wait"
                     stop.wait(config.interval_seconds)
-    except KeyboardInterrupt:
+    except KeyboardInterrupt as error:
         # Foreground Ctrl+C cooperatively exits this lifetime and releases lease.
         if not console:
             error_code = "SERVICE_WORKER_FAILED"
-    except BaseException:
+            failure_detail = _failure_detail(error,stage)
+    except BaseException as error:
         error_code = "SERVICE_WORKER_FAILED"
+        failure_detail = _failure_detail(error,stage)
     finally:
         finishing()
         if callable(cleanup):
             try:
                 cleanup()
-            except BaseException:
+            except BaseException as error:
                 error_code = error_code or "SERVICE_WORKER_FAILED"
-    return RunResult(cycles, error_code)
+                failure_detail = failure_detail or _failure_detail(error,"close")
+    return RunResult(cycles, error_code, failure_detail)
 
 
 def run_console(config_path, *, worker_factory=create_worker, stop_event=None):
@@ -478,6 +512,38 @@ class Win32SCM:
             raise _scm_error()
 
 
+    def report_failure(self,name,detail):
+        """One bounded Application log record; no source registry changes.
+
+        Windows uses Application when this fixed source is not registered.
+        https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-registereventsourcew
+        https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-reporteventw
+        """
+        if type(name) is not str or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_.-]{0,79}',name) \
+            or type(detail) is not dict or set(detail)!={'stage','kind','reason'}:
+            return False
+        for key,values in (('stage',_FAILURE_STAGES),('kind',_FAILURE_KINDS),('reason',_FAILURE_REASONS)):
+            if type(detail[key]) is not str or detail[key] not in values: return False
+        import os
+        text = json.dumps({'schema':1,'event':'service_failed','service_name':name,
+            'pid':os.getpid(),'failure':detail},sort_keys=True,separators=(',',':'))
+        if len(text)>512: return False
+        library = self._library
+        signatures = (
+            (library.RegisterEventSourceW,[ctypes.c_wchar_p,ctypes.c_wchar_p],ctypes.c_void_p),
+            (library.ReportEventW,[ctypes.c_void_p,ctypes.c_uint16,ctypes.c_uint16,ctypes.c_uint32,
+                ctypes.c_void_p,ctypes.c_uint16,ctypes.c_uint32,ctypes.POINTER(ctypes.c_wchar_p),ctypes.c_void_p],ctypes.c_int32),
+            (library.DeregisterEventSource,[ctypes.c_void_p],ctypes.c_int32))
+        for function,args,result in signatures: function.argtypes,function.restype=args,result
+        handle = library.RegisterEventSourceW(None,'Rentgen.Core.Service')
+        if not handle: return False
+        try:
+            strings = (ctypes.c_wchar_p*1)(text)
+            return bool(library.ReportEventW(handle,1,0,1,None,1,0,strings,None))
+        finally:
+            library.DeregisterEventSource(handle)
+
+
 class NativeService:
     """One SCM lifetime; a ServiceMain coordinator owns all status writes.
 
@@ -584,6 +650,12 @@ class NativeService:
             )
             if scm_failed:
                 self._result = RunResult(self._result.cycles, "SERVICE_SCM_FAILED")
+            if self._result.error_code and self._result.failure_detail is not None:
+                try:
+                    logger = getattr(self._scm,"report_failure",None)
+                    if callable(logger): logger(name,self._result.failure_detail)
+                except BaseException:
+                    pass  # Telemetry cannot change the failure, lease cleanup or STOPPED.
             if handle is not None:
                 try:
                     report(STOPPED, self._result.error_code)

@@ -16,6 +16,38 @@ from uuid import uuid4
 SCOPE='stock schema3 Git/native BSL full owned lifecycle'
 
 
+
+def validate_failure_events(rows,service_name,pids):
+    """Read diagnostics only when their PID was actually observed by SCM."""
+    from rentgen_core.service_entry import _FAILURE_STAGES,_FAILURE_KINDS,_FAILURE_REASONS
+    def require(ok):
+        if not ok: raise RuntimeError('Failure event binding or fixed fields differ')
+    require(type(rows) is list and 0<len(rows)<=16 and type(pids) is set
+        and pids and all(type(pid) is int and pid>0 for pid in pids))
+    matches=[];records=set()
+    for row in rows:
+        require(type(row) is dict and set(row)=={'provider','event_id','level','record_id','utc','data'})
+        require(row['provider']=='Rentgen.Core.Service' and type(row['event_id']) is int
+            and row['event_id']==1 and type(row['level']) is int and row['level']==2
+            and type(row['record_id']) is int and row['record_id']>0 and row['record_id'] not in records)
+        records.add(row['record_id'])
+        require(type(row['utc']) is str and datetime.fromisoformat(row['utc'].replace('Z','+00:00')).tzinfo is not None)
+        require(type(row['data']) is str and len(row['data'])<=512)
+        def pairs(items):
+            result=dict(items);require(len(result)==len(items));return result
+        doc=json.loads(row['data'],object_pairs_hook=pairs)
+        require(type(doc) is dict and set(doc)=={'schema','event','service_name','pid','failure'}
+            and type(doc['schema']) is int and doc['schema']==1 and doc['event']=='service_failed'
+            and type(doc['service_name']) is str and type(doc['pid']) is int and doc['pid']>0)
+        detail=doc['failure']
+        require(type(detail) is dict and set(detail)=={'stage','kind','reason'})
+        for key,values in (('stage',_FAILURE_STAGES),('kind',_FAILURE_KINDS),('reason',_FAILURE_REASONS)):
+            require(type(detail[key]) is str and detail[key] in values)
+        if doc['service_name']==service_name:
+            require(doc['pid'] in pids);matches.append(doc)
+    require(0<len(matches)<=4)
+    return matches
+
 def require_ready(worker,context):
     worker.require(context[5].get('exists') is False and all(context[6].get(key) is True
         for key in ('elevated','create_access','backup_privilege','restore_privilege')),
@@ -50,6 +82,11 @@ def run_lifecycle(test,worker,metadata):
     except BaseException as error:
         failure={'type':type(error).__name__,'message':str(error)[:400]}
         test.event('stock_failure',**failure)
+        try:
+            observe=getattr(test,'failure_telemetry',None)
+            if callable(observe): observe()
+        except BaseException as error:
+            test.event('stock_failure_telemetry_unavailable',type=type(error).__name__)
     finally:
         worker.BUDGET.begin_cleanup()
         try: cleanup=test.cleanup()
@@ -112,6 +149,34 @@ class HeldProcess:
             self.handle=None
 
 
+
+def fixture_owner_profile(service_observer,owner):
+    """Authorize the owned verifier and preserve the LocalService binding.
+
+    The owner must retain project admin and analysis permissions. This view
+    reads durable publications and tests the file lease after SCM exits. The
+    installed service retains the unchanged production Observer policy.
+    The view changes neither the database binding nor service membership.
+    """
+    from dataclasses import asdict
+    from rentgen_core.context import Principal
+    from rentgen_core.errors import CoreError
+    from rentgen_core.observer import Observer
+    service=Principal('windows-sid:S-1-5-19','local_os')
+    if service_observer.principal!=service or owner==service:
+        raise CoreError('OBSERVER_PROFILE_MISMATCH','Owned LocalService fixture required')
+    class OwnerView(Observer):
+        def _context(self,*,write=False):
+            return self.runtime.state_context(owner,self.project_id,
+                permissions={'project:read','project:admin','analysis:run'})
+        def _binding(self,ctx):
+            if ctx.principal!=owner:
+                raise CoreError('OBSERVER_PROFILE_MISMATCH','Fixture owner context changed')
+            return {**super()._binding(ctx),'principal':asdict(service)}
+    return OwnerView(service_observer.runtime,owner,service_observer.project_id,
+        service_observer.profile,**({'git_trust':service_observer._git_options['trust']}
+            if service_observer._git_options else {}))
+
 def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
     class StockAcceptance(worker.Acceptance):
         def __init__(self,context,output,metadata,files):
@@ -131,8 +196,9 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
             # Parent observations use the actual fixture owner so revoking LS
             # cannot revoke the coordinator's evidence access.
             self.owner=current_windows_principal()
-            self.observer=worker.Observer(self.observer.runtime,self.owner,self.f['project_id'],self.observer.profile,
-                git_trust=GitRepositoryTrust(self.source))
+            service_observer=worker.Observer(self.observer.runtime,self.observer.principal,
+                self.f['project_id'],self.observer.profile,git_trust=GitRepositoryTrust(self.source))
+            self.observer=fixture_owner_profile(service_observer,self.owner)
             self.context=self.observer._context(write=True)
             from rentgen_core.git_watcher import SchedulerJournal,NotificationOutbox
             self.journal=SchedulerJournal(self.observer.profile/'git-journal.json')
@@ -201,6 +267,29 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
                     selected=selected or any(argv[i]=='-C' and Path(argv[i+1])==self.source for i in range(len(argv)-1))
                 if selected: owned.append(row)
             return owned
+
+        def failure_telemetry(self):
+            pwsh=shutil.which('pwsh.exe');worker.require(pwsh is not None,'PowerShell 7 required')
+            script="$ErrorActionPreference='Stop'; [Console]::OutputEncoding=[Text.UTF8Encoding]::new(); " \
+                "$filter=\"*[System[Provider[@Name='Rentgen.Core.Service'] and EventID=1 " \
+                "and TimeCreated[timediff(@SystemTime)<=1200000]]]\"; " \
+                "$rows=@(Get-WinEvent -LogName Application -FilterXPath $filter -MaxEvents 16 | ForEach-Object { " \
+                "@{provider=$_.ProviderName;event_id=$_.Id;level=$_.Level;record_id=$_.RecordId;" \
+                "utc=$_.TimeCreated.ToUniversalTime().ToString('o');data=$_.Properties[0].Value}}); " \
+                "ConvertTo-Json -Compress -InputObject $rows"
+            label='stock-failure-events'
+            result=probe.capture((pwsh,'-NoProfile','-NonInteractive','-Command',script),dict(os.environ),self.output,label)
+            worker.save(self.output/(label+'.json'),result)
+            worker.require(result['exit_code']==0 and result['child_reaped'] is True and not result['timed_out']
+                and not result['output_limit_exceeded'] and result['process_error'] is None,'Failure event read incomplete')
+            raw=(self.output/'events.jsonl').read_bytes();worker.require(len(raw)<=4*1024**2,'Event inventory exceeds bound')
+            observations=[json.loads(line) for line in raw.splitlines()]
+            pids={row['status']['pid'] for row in observations if row['kind']=='service_status' and row['status']['pid']>0}
+            rows=json.loads(probe._raw(result,'stdout').decode('utf-8-sig'))
+            matches=validate_failure_events(rows,self.spec.service_name,pids)
+            for doc in matches:
+                self.event('stock_service_failure_detail',pid=doc['pid'],failure=doc['failure'],
+                    capture_sha256=worker.sha(self.output/(label+'.json')),observed_scm_pid=True)
 
         def source_guard(self):
             files=worker.inventory(self.source)

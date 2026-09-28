@@ -97,3 +97,14 @@ review is explicit under the user's prohibition on subagents. No deployment.
 
 - https://git-scm.com/docs/git-config/2.55.0#Documentation/git-config.txt-safedirectory
 - https://git-scm.com/docs/git/2.55.0#Documentation/git.txt-GIT_NO_REPLACE_OBJECTS
+
+
+## Owned verifier and failure diagnostics follow-up
+
+The verifier reads the LS-bound profile through its actual fixture owner,
+authorized for admin/analysis; original LS binding stays exact. Production
+Observer principal policy stays unchanged. Failure metadata is limited to fixed
+stage/type/known reason, public service name and PID; optional Windows event at
+most512 characters cannot change result/cleanup. Raw bounded reads require SCM
+PID binding. See docs/product/service-failure-events.md. Actual LS event and full
+stock source qualification remain pending; original failed5b attempts unchanged.

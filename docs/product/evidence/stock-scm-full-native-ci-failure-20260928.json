@@ -1,0 +1,200 @@
+{
+  "schema": 1,
+  "scope": "Exact original5b CI subjob accounting and failed full stock SCM startup",
+  "source_head": "5b38b60bd2374dcb749dcae2f0a358852b87dbfb",
+  "tree": "d2a6541fa48a2ec14cd9c869e337b68f63926576",
+  "runs": [
+    {
+      "run_id": 36389149702,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36389149702",
+      "event": "pull_request",
+      "attempt": 1,
+      "conclusion": "failure",
+      "actual_checkout": "57df66341f981e616f5c410affa663ce3ee5e68d",
+      "tree": "d2a6541fa48a2ec14cd9c869e337b68f63926576",
+      "parents": [
+        "c715e9b65b75ae667376f331c3c0fac14be2f7f3",
+        "5b38b60bd2374dcb749dcae2f0a358852b87dbfb"
+      ],
+      "python_cases": 2857,
+      "node_cases": 69,
+      "go_packages": [
+        "internal/extractor",
+        "internal/scanner"
+      ],
+      "zero_skips": true,
+      "local_cases_present": 612,
+      "wheel_core_files": 105,
+      "wheel_source_bytes_exact": true,
+      "kit_sha256": "86e919ead4d8d486d7b04dcc31f48ef9829d1f2d1c4ce5c41515d5bdf18777ae",
+      "wheel_sha256": "7caec8ae7f6c1a6a602d1f4c274e42de1f489c2f369269a8920ffcc8ffc8256e",
+      "source_observer_native_lifetimes": 5,
+      "source_observer_raw_acl_and_process_binding_verified": true,
+      "git_diagnostic_native_lifetimes": 1,
+      "git_diagnostic_raw_acl_and_process_binding_verified": true,
+      "stock": {
+        "accepted": false,
+        "failure": {
+          "type": "RuntimeError",
+          "message": "Service stopped before RUNNING"
+        },
+        "scm_statuses": [
+          {
+            "service_type": 16,
+            "state": 2,
+            "controls": 0,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 1,
+            "wait_hint": 30000,
+            "pid": 8560,
+            "flags": 0
+          },
+          {
+            "service_type": 16,
+            "state": 1,
+            "controls": 0,
+            "win32_exit": 1066,
+            "service_exit": 2,
+            "checkpoint": 0,
+            "wait_hint": 0,
+            "pid": 0,
+            "flags": 0
+          }
+        ],
+        "remaining_service": true,
+        "cleanup_errors": [
+          {
+            "stage": "stock_process_lifetime",
+            "type": "RuntimeError"
+          },
+          {
+            "stage": "retention",
+            "type": "RuntimeError"
+          },
+          {
+            "stage": "remaining_service"
+          }
+        ],
+        "process_observation_count": 200,
+        "coordinator_pid": 3304,
+        "actual_running_token_not_observed": true,
+        "actual_native_bsl_not_reached": true,
+        "runtime_inputs_hashes_verified_without_java_warmup": true,
+        "source_binding_verified": true,
+        "events_sha256": "097cbc3a6e71d28704ae43168ac51db932bde0be3620e29efe668c7d047f3626"
+      },
+      "artifact_sha256": {
+        "native-scm-evidence": "5a38d6e18f87db84bf7999f423d8dc93478bd64e965085bee74b7f3cdc95645f",
+        "native-git-diagnostic-evidence": "130f4799b5000c0c729de83c3a6010cd67b4356aa51fa13348ec030c7e9f3435",
+        "python-contract-report": "1b9d7caf6571880ffa86b16cd119d70b0400b74c673c5e3fae4b62bee6d8cae1",
+        "verified-core-development": "8ea538cd4e2cc98834fe09bfa047be7100d798a5f52fdc2308c441cabf116211",
+        "native-stock-git-evidence": "03ee2ffed4f1e322075f148e2936c572430bad061ad246e4d1035835bef12fd0"
+      },
+      "root_raw_audit_sha256": "a3162edaa31d08b6f8fec34420b2ddefd9c103be623c471020f920d62084ff9e"
+    },
+    {
+      "run_id": 36389146238,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36389146238",
+      "event": "push",
+      "attempt": 1,
+      "conclusion": "failure",
+      "actual_checkout": "5b38b60bd2374dcb749dcae2f0a358852b87dbfb",
+      "tree": "d2a6541fa48a2ec14cd9c869e337b68f63926576",
+      "parents": [
+        "bbd545bd371880a3f3633c26c190658e64314c31"
+      ],
+      "python_cases": 2857,
+      "node_cases": 69,
+      "go_packages": [
+        "internal/extractor",
+        "internal/scanner"
+      ],
+      "zero_skips": true,
+      "local_cases_present": 612,
+      "wheel_core_files": 105,
+      "wheel_source_bytes_exact": true,
+      "kit_sha256": "b0c77be4a9f3c66096419abc0e7f3b6cadee3ac486d0c9188538dbc9369efcac",
+      "wheel_sha256": "7caec8ae7f6c1a6a602d1f4c274e42de1f489c2f369269a8920ffcc8ffc8256e",
+      "source_observer_native_lifetimes": 5,
+      "source_observer_raw_acl_and_process_binding_verified": true,
+      "git_diagnostic_native_lifetimes": 1,
+      "git_diagnostic_raw_acl_and_process_binding_verified": true,
+      "stock": {
+        "accepted": false,
+        "failure": {
+          "type": "RuntimeError",
+          "message": "Service stopped before RUNNING"
+        },
+        "scm_statuses": [
+          {
+            "service_type": 16,
+            "state": 2,
+            "controls": 0,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 1,
+            "wait_hint": 30000,
+            "pid": 4060,
+            "flags": 0
+          },
+          {
+            "service_type": 16,
+            "state": 1,
+            "controls": 0,
+            "win32_exit": 1066,
+            "service_exit": 2,
+            "checkpoint": 0,
+            "wait_hint": 0,
+            "pid": 0,
+            "flags": 0
+          }
+        ],
+        "remaining_service": true,
+        "cleanup_errors": [
+          {
+            "stage": "stock_process_lifetime",
+            "type": "RuntimeError"
+          },
+          {
+            "stage": "retention",
+            "type": "RuntimeError"
+          },
+          {
+            "stage": "remaining_service"
+          }
+        ],
+        "process_observation_count": 200,
+        "coordinator_pid": 5620,
+        "actual_running_token_not_observed": true,
+        "actual_native_bsl_not_reached": true,
+        "runtime_inputs_hashes_verified_without_java_warmup": true,
+        "source_binding_verified": true,
+        "events_sha256": "49d033529de622661c96c519b84a29a8083977ca7c6bd22df68ec3c7158349da"
+      },
+      "artifact_sha256": {
+        "native-git-diagnostic-evidence": "d26c64465a6417c31f8f3e1a1ff5578a7306ac406b5bf808d29d83c53e97fd1e",
+        "python-contract-report": "5b59563051f1c4e4cafaaa112d33f351fa27c6894b1a01c7e2a51b51497c45f5",
+        "native-scm-evidence": "2ab689f9009f13e68539fea1b8fb7a6e1c5210704a4b6b3e80c9ed387b4c497f",
+        "native-stock-git-evidence": "bb083a0477bf1df9361e64bb1b39c26b88ba953acbd5afcc27988d0adee55176",
+        "verified-core-development": "592d42c9ce57064e2db8f38cbe743f7e33be3f24c49e8bd3cd5598d86bfbce94"
+      },
+      "root_raw_audit_sha256": "60d91413caba8f0f628a918253981f7953fe4c5ca3de45a1ccb3da944685f632"
+    }
+  ],
+  "first_start_control_acknowledged_and_reaped": true,
+  "stock_scm_started_then_stopped_before_running": true,
+  "first_factory_or_interface_exception_not_yet_identified": true,
+  "cleanup_self_wait_reproduced_from_200_raw_cim_observations": true,
+  "full_scope_preserved": true,
+  "source_ci_qualified": false,
+  "native_stock_git_accepted": false,
+  "stock_native_bsl_accepted": false,
+  "new_main_qualified": false,
+  "new_release_qualified": false,
+  "production_trust_policy_selected": false,
+  "production_deployment": false,
+  "independent_review": false,
+  "review": "root only",
+  "recorded_utc": "2026-09-28T08:25:32.896246+00:00"
+}

@@ -222,3 +222,32 @@ that wait. Exclude exactly the live verifier os.getpid; other owned service,
 Java and scanner rows remain. One actual-current-PID injected regression was
 red, then all69 four-suite cases passed with zero skips. Original5b attempts
 remain intact; local successor and native cleanup acceptance are separate.
+
+
+Original5b push36389146238 and PR36389149702 attempt1 are terminal failures.
+Raw audit verified2857 Python/69 Node/two Go packages,105 byte-exact wheel files,
+actual checkout/tree/PR parents, five SourceObserver LS lifetimes and one Git
+ownership diagnostic LS lifetime with original ACL restoration/process binding.
+The stock service acknowledged its first start, then stopped1066/2 before RUNNING.
+No Java/BSL acceptance. Each200 CIM observations retained the live coordinator;
+cleanup left the test service and retention incomplete. First factory/interface
+exception still unidentified. Public stock-scm-full-native-ci-failure-20260928.json
+accounts original attempts; no whole-source/main/release/production qualification.
+
+Owner-view regression reproduced service-principal profile mismatch. Verifier now
+authorizes its actual fixture owner with admin/analysis rights while validating
+original LS profile binding. Real Git/SQLite/Go publication test now uses an
+LS-bound metadata row and granted service identity; BSL/identity injected.
+Revoking LS preserves owner reads; revoking owner rights refuses them. Stored
+profile binding stays LS. Production Observer binding validation is unchanged.
+
+Bounded service failure event records fixed stage/type/known reason, service name,
+PID;512 characters, fixed source/Event ID1. No exception text/path/unknown code.
+Logging failure cannot change result or skip cleanup; handle close in finally.
+Stock failure collector retains bounded raw reads and requires observed SCM PID.
+Failure remains failure; no retry, first-cycle shortcut or Java warmup.
+TDD: owner1 red; event7 red/one behavior pass; reader12 red. Final service suites164
+passed and four stock suites82 passed; union244 distinct cases/zero skips.
+stock-scm-owner-startup-diagnostics-local-20260928.json binds source/report hashes.
+Actual LS event/source CI pending. Root-only review. Modified Core payload still
+requires its own later version/release after qualification.

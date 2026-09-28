@@ -198,3 +198,29 @@ def test_owned_children_does_not_wait_for_its_own_live_coordinator(tmp_path):
     # and the cooperative STOP/cleanup wait must be able to complete.
     test.processes=lambda:[{'ProcessId':coordinator_pid,'ExecutablePath':str(python)}]
     assert test.children()==[]
+
+
+@pytest.mark.parametrize('change',['valid','missing','pid','service','private','code','stage','kind','record','provider','level','event_id'])
+def test_failure_event_reader_requires_fixed_fields_and_observed_scm_pid(change):
+    from copy import deepcopy
+    module=api();name='Rentgen.CI.'+'a'*12
+    doc={'schema':1,'event':'service_failed','service_name':name,'pid':321,
+        'failure':{'stage':'factory','kind':'CoreError','reason':'OBSERVER_PROFILE_MISMATCH'}}
+    row={'provider':'Rentgen.Core.Service','event_id':1,'level':2,'record_id':42,
+        'utc':'2026-09-28T08:00:00.0000000Z','data':__import__('json').dumps(doc)}
+    rows=[row]
+    if change=='missing': rows=[]
+    elif change=='pid': doc['pid']=654
+    elif change=='service': doc['service_name']='Other.Service'
+    elif change=='private': doc['private']='private-value'
+    elif change=='code': doc['failure']['reason']='PRIVATE_VALUE'
+    elif change=='stage': doc['failure']['stage']='private-value'
+    elif change=='kind': doc['failure']['kind']='private-value'
+    elif change=='record': row['record_id']=True
+    elif change=='provider': row['provider']='Other.Provider'
+    elif change=='level': row['level']=4
+    elif change=='event_id': row['event_id']=2
+    row['data']=__import__('json').dumps(doc)
+    if change=='valid': assert module.validate_failure_events(rows,name,{321})==[doc]
+    else:
+        with pytest.raises(RuntimeError): module.validate_failure_events(rows,name,{321})
