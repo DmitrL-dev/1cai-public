@@ -77,17 +77,17 @@ cleanup; it installs only its fixed diagnostic ImagePath.
 - `main(argv=None)` accepts only `--service --config <owned service.json>` and calls
   `NativeService(config_path, worker_factory=...)`.
 
-- [ ] Add red tests for wrong config/runtime/module paths, absent/changed manifests,
+- [x] Add red tests for wrong config/runtime/module paths, absent/changed manifests,
   wrong service/project binding, linked inputs and duplicate output use.
-- [ ] Implement fixed paths derived from the direct runtime and the schema1 config;
+- [x] Implement fixed paths derived from the direct runtime and the schema1 config;
   verify both repository inventories/HEAD identities and auxiliary module hashes.
-- [ ] First tick records PID/current token SID, bounded PATH digest, resolved Git
+- [x] First tick records PID/current token SID, bounded PATH digest, resolved Git
   executable digest/version; the coordinator verifies the SCM PID/image/SID.
-- [ ] Perform product-style default, isolated default, selected trusted, other with
+- [x] Perform product-style default, isolated default, selected trusted, other with
   selected trust, and selected default again, with distinct environment/argv receipts.
-- [ ] Write the complete result once, hold the service until SCM STOP, and record
+- [x] Write the complete result once, hold the service until SCM STOP, and record
   close. Failures retain a failure result and produce a nonzero service exit.
-- [ ] Run narrow tests and existing service-entry contracts; commit the worker slice.
+- [x] Run narrow tests and existing service-entry contracts; commit the worker slice.
 
 ## Task 3: Owned coordinator, actual SCM and cleanup
 
@@ -145,3 +145,12 @@ while owned config/raw inputs still reject hardlinks. That real Git case
 confirmed exact root/commit, unchanged repository/global config and no
 safe.directory persistence in the next process. Actual LocalService has
 not been run for this diagnostic; production trust remains unset.
+
+## Local Task 2 evidence
+
+Fresh JUnit:34 probe/manifest/worker cases plus69 service-entry cases,
+103passed/zero failures/errors/skips. Nine input cases and five worker/entry
+cases were red before their implementation. Positive ownership flows use
+injected unit observations; they do not prove LocalService. All worker
+acceptance fields stay false until the owned coordinator validates actual
+SCM/process/raw evidence and cleanup. Core/public installer bytes unchanged.

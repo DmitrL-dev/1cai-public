@@ -1,11 +1,14 @@
 """Diagnostic contracts; these never accept a LocalService or stock Git worker."""
 import hashlib
 import importlib.util
+import json
 import os
 from pathlib import Path
 import shutil
 import subprocess
 import sys
+from types import SimpleNamespace
+from uuid import uuid4
 
 import pytest
 
@@ -215,3 +218,203 @@ def test_real_current_user_git_probe_is_read_only_and_trust_does_not_persist(tmp
     after = module.capture((str(git), 'config', '--get-all', 'safe.directory'), env, tmp_path, 'next-config')
     assert after['exit_code'] == 1 and Path(after['stdout']['path']).read_bytes() == b''
     assert inventory() == before and empty.read_bytes() == b''
+
+
+def prepared_inputs(tmp_path, monkeypatch):
+    from rentgen_core.service_entry import load_config
+    module = api()
+    work = tmp_path / ('rg-scm-' + 'a' * 12)
+    runtime, fixture = work / 'runtime', work / 'fixture'
+    executable = runtime / 'python.exe'
+    executable.parent.mkdir(parents=True)
+    executable.write_bytes(b'owned test interpreter metadata')
+    installed = runtime / 'Lib/site-packages/scm_git_probe_service.py'
+    installed.parent.mkdir(parents=True)
+    installed.write_bytes(SCRIPT.read_bytes())
+    monkeypatch.setattr(module, '__file__', str(installed))
+    monkeypatch.setattr(sys, 'executable', str(executable))
+    data = fixture / 'localservice/data'
+    (data / 'observer-profile').mkdir(parents=True)
+    output = data / 'git-probe'
+    output.mkdir()
+    registry = data / 'registry.sqlite3'
+    registry.write_bytes(b'owned diagnostic fixture metadata; DB not accessed')
+    scanner = fixture / 'bsl-scan.exe'
+    scanner.write_bytes(b'owned unused scanner metadata')
+    config_path = fixture / 'localservice/service.json'
+    config_path.write_text(json.dumps({'schema': 1, 'service_name': 'Rentgen.CI.' + 'a' * 12,
+        'registry': str(registry), 'profile': str(data / 'observer-profile'), 'project': str(uuid4()),
+        'scanner': str(scanner), 'interval_seconds': 5, 'max_cycles': None}), 'utf-8')
+    config = load_config(config_path)
+    probe = fixture / 'git-probe'
+    repositories = {}
+    for name in ('selected', 'other'):
+        repo = probe / 'source' / name
+        (repo / '.git/refs/heads').mkdir(parents=True)
+        (repo / '.git/HEAD').write_bytes(b'ref: refs/heads/main\n')
+        (repo / '.git/refs/heads/main').write_bytes(('a' * 40 + '\n').encode())
+        (repo / '.git/config').write_bytes(b'')
+        repositories[name] = {'root': str(repo), 'commit': 'a' * 40,
+            'owner_sid': 'S-1-5-32-544', 'files': {
+                path.relative_to(repo).as_posix(): {'size_bytes': path.stat().st_size,
+                    'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
+                for path in repo.rglob('*') if path.is_file()}}
+    empty = probe / 'empty-global.cfg'
+    empty.write_bytes(b'')
+    inputs = {'schema': 1, 'workdir': str(work), 'service_name': config.service_name,
+        'project': config.project, 'config_sha256': hashlib.sha256(config_path.read_bytes()).hexdigest(),
+        'module_sha256': hashlib.sha256(installed.read_bytes()).hexdigest(),
+        'repositories': repositories, 'empty_global_sha256': hashlib.sha256(b'').hexdigest()}
+    sidecar = probe / 'inputs.json'
+    sidecar.write_text(json.dumps(inputs), 'utf-8')
+    return module, config, config_path, sidecar, inputs, output
+
+
+def test_fixed_probe_inputs_bind_runtime_module_config_and_repositories(tmp_path, monkeypatch):
+    module, config, path, sidecar, inputs, output = prepared_inputs(tmp_path, monkeypatch)
+    loaded = module.load_inputs(config, path)
+    assert loaded['document'] == inputs and loaded['output'] == output
+    assert loaded['selected'] == Path(inputs['repositories']['selected']['root'])
+    assert loaded['other'] == Path(inputs['repositories']['other']['root'])
+    assert loaded['empty_global'] == sidecar.parent / 'empty-global.cfg'
+
+
+@pytest.mark.parametrize('changed', ['service_name', 'project', 'module_sha256', 'config_sha256', 'workdir'])
+def test_probe_inputs_refuse_changed_bindings_before_measurement(tmp_path, monkeypatch, changed):
+    module, config, path, sidecar, inputs, _ = prepared_inputs(tmp_path, monkeypatch)
+    inputs[changed] = 'unbound changed value'
+    sidecar.write_text(json.dumps(inputs), 'utf-8')
+    with pytest.raises(ValueError):
+        module.load_inputs(config, path)
+
+
+def test_probe_inputs_refuse_changed_repository_and_nonempty_global(tmp_path, monkeypatch):
+    module, config, path, sidecar, inputs, _ = prepared_inputs(tmp_path, monkeypatch)
+    head = Path(inputs['repositories']['selected']['root']) / '.git/HEAD'
+    original = head.read_bytes()
+    head.write_bytes(b'changed')
+    with pytest.raises(ValueError):
+        module.load_inputs(config, path)
+    head.write_bytes(original)
+    (sidecar.parent / 'empty-global.cfg').write_bytes(b'[safe]\n directory=*\n')
+    with pytest.raises(ValueError):
+        module.load_inputs(config, path)
+
+
+def test_probe_inputs_refuse_missing_sidecar_and_preexisting_output(tmp_path, monkeypatch):
+    module, config, path, sidecar, _, output = prepared_inputs(tmp_path, monkeypatch)
+    (output / 'retained.json').write_bytes(b'old result')
+    with pytest.raises(ValueError):
+        module.load_inputs(config, path)
+    (output / 'retained.json').unlink()
+    sidecar.unlink()
+    with pytest.raises(ValueError):
+        module.load_inputs(config, path)
+
+
+def test_probe_inputs_refuse_escaped_trust_root_and_linked_source(tmp_path, monkeypatch):
+    module, config, path, sidecar, inputs, _ = prepared_inputs(tmp_path, monkeypatch)
+    selected = inputs['repositories']['selected']['root']
+    inputs['repositories']['selected']['root'] = str(tmp_path)
+    sidecar.write_text(json.dumps(inputs), 'utf-8')
+    with pytest.raises(ValueError):
+        module.load_inputs(config, path)
+    inputs['repositories']['selected']['root'] = selected
+    sidecar.write_text(json.dumps(inputs), 'utf-8')
+    source = Path(selected) / '.git/HEAD'
+    os.link(source, tmp_path / 'foreign-alias')
+    with pytest.raises(ValueError):
+        module.load_inputs(config, path)
+
+
+def fake_capture(module, monkeypatch, *, default='accepted', selected_error=False):
+    calls = []
+    def invoke(command, environment, output, label, **bounds):
+        calls.append((tuple(command), dict(environment), label))
+        if label == 'git-version':
+            stdout, stderr, code = b'git version 2.51.2.windows.1\n', b'', 0
+        else:
+            root = Path(command[command.index('-C') + 1])
+            accepted = label == 'trusted-selected' or (label == 'default-env' and default == 'accepted')
+            stdout = (str(root) + '\n' + 'a' * 40 + '\n').encode() if accepted else b''
+            stderr = b'' if accepted else ("fatal: detected dubious ownership in repository at '" + str(root) + "'\n").encode()
+            code = 0 if accepted else 128
+            if selected_error and label == 'trusted-selected':
+                stdout, stderr, code = b'', b'Access denied', 128
+        result = {'argv': list(command), 'exit_code': code, 'timed_out': False,
+                  'output_limit_exceeded': False, 'process_error': None, 'child_reaped': True}
+        for stream, raw in (('stdout', stdout), ('stderr', stderr)):
+            path = output / (label + '-' + stream + '.raw')
+            path.write_bytes(raw)
+            result[stream] = {'path': str(path), 'size_bytes': len(raw),
+                             'sha256': hashlib.sha256(raw).hexdigest()}
+        return result
+    monkeypatch.setattr(module, 'capture', invoke)
+    monkeypatch.setattr(module, 'current_identity', lambda: 'S-1-5-19', raising=False)
+    return calls
+
+
+@pytest.mark.parametrize('default', ['accepted', 'foreign_owner_refused'])
+def test_worker_keeps_default_and_isolated_cases_separate_and_waits_for_stop(tmp_path, monkeypatch, default):
+    module, config, path, _, _, output = prepared_inputs(tmp_path, monkeypatch)
+    calls = fake_capture(module, monkeypatch, default=default)
+    worker = module.ProbeWorker(config, path)
+    worker.tick()
+    result = json.loads((output / 'result.json').read_text('utf-8'))
+    assert result['ownership_pattern_verified']
+    assert result['cases']['default-env']['classification'] == default
+    assert {name: item['classification'] for name, item in result['cases'].items() if name != 'default-env'} == {
+        'isolated-default': 'foreign_owner_refused', 'trusted-selected': 'accepted',
+        'isolated-other': 'foreign_owner_refused', 'isolated-after': 'foreign_owner_refused'}
+    assert 'GIT_CONFIG_NOSYSTEM' not in calls[1][1]
+    assert all(env['GIT_CONFIG_NOSYSTEM'] == '1' for _, env, _ in calls[2:])
+    assert all(not result[name] for name in ('diagnostic_accepted', 'native_git_scm_accepted',
+        'continuous_git_accepted', 'production_trust_policy_selected', 'full_product_ready', 'production_deployment'))
+    assert not (output / 'closed.json').exists()
+    worker.tick()
+    assert len(calls) == 6
+    worker.close()
+    worker.close()
+    assert json.loads((output / 'closed.json').read_text('utf-8'))['closed']
+
+
+def test_worker_preserves_failed_measurement_and_never_relabels_generic_error(tmp_path, monkeypatch):
+    module, config, path, _, _, output = prepared_inputs(tmp_path, monkeypatch)
+    fake_capture(module, monkeypatch, selected_error=True)
+    worker = module.ProbeWorker(config, path)
+    with pytest.raises(RuntimeError):
+        worker.tick()
+    result = json.loads((output / 'result.json').read_text('utf-8'))
+    assert result['cases']['trusted-selected']['classification'] == 'command_failed'
+    assert not result['ownership_pattern_verified'] and not result['diagnostic_accepted']
+    assert result['failure']
+    worker.close()
+
+
+def test_worker_rejects_non_localservice_sid_before_any_git_child(tmp_path, monkeypatch):
+    module, config, path, _, _, output = prepared_inputs(tmp_path, monkeypatch)
+    monkeypatch.setattr(module, 'current_identity', lambda: 'S-1-5-21-123', raising=False)
+    monkeypatch.setattr(module, 'capture', lambda *a, **k: pytest.fail('Git must not run with wrong token'))
+    worker = module.ProbeWorker(config, path)
+    with pytest.raises(RuntimeError):
+        worker.tick()
+    result = json.loads((output / 'result.json').read_text('utf-8'))
+    assert result['process']['token_user_sid'] == 'S-1-5-21-123' and not result['cases']
+    assert not result['diagnostic_accepted']
+
+
+def test_main_dispatches_only_fixed_service_entry_and_never_allows_console(tmp_path, monkeypatch):
+    import rentgen_core.service_entry as entry
+    module, _, path, _, _, _ = prepared_inputs(tmp_path, monkeypatch)
+    calls = []
+    class FakeService:
+        def __init__(self, config_path, *, worker_factory):
+            calls.append((config_path, worker_factory))
+        def run(self):
+            return SimpleNamespace(exit_code=0)
+    monkeypatch.setattr(entry, 'NativeService', FakeService)
+    assert module.main(['--service', '--config', str(path)]) == 0
+    assert len(calls) == 1 and calls[0][0] == path and callable(calls[0][1])
+    assert module.main(['--console', '--config', str(path)]) == 2
+    assert module.main(['--service', '--config', str(tmp_path / 'foreign.json')]) == 2
+    assert len(calls) == 1
