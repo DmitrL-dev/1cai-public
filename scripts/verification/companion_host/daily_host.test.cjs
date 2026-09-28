@@ -15,11 +15,12 @@ function fixture(options={}){
  const module='CommonModules/Probe/Ext/Module.bsl',original=Buffer.from('constructed original, never executable'),candidate=Buffer.from('constructed candidate, never executable');
  const snapshot={project_id:project,snapshot_id:'a'.repeat(64),manifest_hash:'a'.repeat(64)};
  const ref={snapshot,layer_id:'base',relative_path:module,raw_sha256:sha(original)};
- const receipt={project_id:project,draft_id:'44444444-4444-4444-4444-444444444444',operation_id:'55555555-5555-5555-5555-555555555555',revision:2,proposal_content_id:'b'.repeat(64),source_ref:ref};
- const proposal={content_id:receipt.proposal_content_id,replacement:{base64:candidate.toString('base64'),raw_sha256:sha(candidate)}};
+ const receipt={project_id:project,draft_id:'44444444-4444-4444-4444-444444444444',operation_id:'55555555-5555-5555-5555-555555555555',revision:options.noRevision?1:2,proposal_content_id:'b'.repeat(64),source_ref:ref};
+ const replacement=options.noRevision?original:candidate;
+ const proposal={content_id:receipt.proposal_content_id,replacement:{base64:replacement.toString('base64'),raw_sha256:sha(replacement)}};
  const request={id:repairId,project_id:project,source_ref:ref,model:'constructed-model'};
  const testRequest={id:testId,receipt,profile:{profile_id:'c'.repeat(64)}};
- const repair={id:repairId,status:'analysis_clean',truncated:false,receipt:options.noRevision?null:receipt};
+ const repair={id:repairId,status:options.noRevision?'saved_unverified':'analysis_clean',truncated:false,receipt};
  const report={status:repair.status,receipt,before:{diagnostic:null},after:{receipt,diagnostic:null},candidate_sha256:sha(candidate),model:{}};
  const phase=(status,failures)=>({status,counts:{tests:1,failures,errors:0,skipped:0,passed:1-failures}});
  const result=options.unfinished?{status:'running',run_id:testId}:{status:'completed',run_id:testId,report:{proposal_content_id:proposal.content_id,candidate_sha256:sha(candidate),profile_id:testRequest.profile.profile_id,tests:{baseline:phase('failed',1),candidate:phase('passed',0),steps:['baseline','candidate'].map(p=>({name:p+'-compile',exit_code:0,log_sha256:'d'.repeat(64),stdout_sha256:'e'.repeat(64),stderr_sha256:'f'.repeat(64)}))}}};
@@ -39,7 +40,7 @@ function fixture(options={}){
   async readdir(folder){const entries=new Map();for(const file of files.keys()){if(!file.startsWith(folder+path.sep))continue;const relative=file.slice(folder.length+1),name=relative.split(path.sep)[0],directory=relative.includes(path.sep);entries.set(name,{name,isDirectory:()=>directory,isFile:()=>!directory,isSymbolicLink:()=>false});}return [...entries.values()];},
   async writeFile(){throw new Error('Actual environment writes are forbidden in pure VM tests');}
  };
- const editor={window:{activeTextEditor:null},commands:{async executeCommand(name,...args){calls.push({name,args});if(name==='rentgen.repairSource'){state.repairStarted=true;return repair;}if(name==='rentgen.repairResult'){editor.window.activeTextEditor={document:{languageId:'json',getText:()=>JSON.stringify(repair)}};return repair;}if(name==='rentgen.testDraft'){state.testStarted=true;return options.noTestRequest?null:result;}if(name==='rentgen.testResult'){editor.window.activeTextEditor={document:{languageId:'json',getText:()=>JSON.stringify(result)}};return result;}throw new Error('Unexpected constructed command '+name);}}};
+ const editor={window:{activeTextEditor:null,visibleTextEditors:[]},commands:{async executeCommand(name,...args){calls.push({name,args});if(name==='rentgen.repairSource'){state.repairStarted=true;return repair;}if(name==='rentgen.repairResult'){editor.window.activeTextEditor={document:{languageId:'plaintext',uri:{scheme:'rentgen-view',authority:'constructed-opaque-view',path:'/[v'+receipt.revision+'] '+path.posix.basename(ref.relative_path),query:'',fragment:''},getText:()=>new TextDecoder('utf-8',{fatal:true}).decode(replacement)}};editor.window.visibleTextEditors=[editor.window.activeTextEditor];return repair;}if(name==='rentgen.testDraft'){state.testStarted=true;return options.noTestRequest?null:result;}if(name==='rentgen.testResult'){editor.window.activeTextEditor={document:{languageId:'json',getText:()=>JSON.stringify(result)}};return result;}throw new Error('Unexpected constructed command '+name);}}};
  const safeAssert={...assert,deepEqual:(a,b,message)=>assert.deepEqual(plain(a),plain(b),message)};
  const context=vm.createContext({Buffer,TextDecoder,JSON,process:{env:{}},exports:{},require(name){if(name==='vscode')return editor;if(name==='node:fs/promises')return memory;if(name==='node:assert/strict')return safeAssert;if(name==='node:child_process')return {execFile(){throw new Error('Process launch forbidden');}};if(name==='./daily_semantic.cjs')return {createDailySemantic};return require(name);}});
  vm.runInContext(source+'\n;globalThis.host={diagnosticVerdict,evidence,attempt,recover};globalThis.bindEnvironment=env=>{environment=async()=>env;};',context);
@@ -140,4 +141,22 @@ for(const present of [false,true])test('failed native run requires its durable f
  const f=fixture({unfinished:true});Object.assign(f.result,{status:'failed',request:{},failure:{run_id:testId}});if(present)f.put('state/test-runs/'+testId+'/failure.json',{run_id:testId});
  await f.host.attempt();assert.equal(f.record.preservation_verified,present);if(present)assert.equal(f.record.raw_evidence_errors,undefined);else assert.ok(f.record.raw_evidence_errors?.some(error=>error.path==='state/test-runs/'+testId+'/failure.json'&&error.code==='ENOENT'));
  assert.equal(f.record.eligible_for_raw_qualification,false);assert.equal(f.record.task_accepted,false);
+});
+
+// Regression: repairResult opens an immutable read-only draft diff, not a JSON result document.
+test('repair-only recovery reads the visible saved revision when the original side has focus',async()=>{
+ const f=fixture({noRevision:true,noTestRequest:true});await f.host.attempt();bindRecovery(f);
+ const command=f.editor.commands.executeCommand;f.editor.commands.executeCommand=async(name,...args)=>{const result=await command(name,...args);if(name==='rentgen.repairResult')f.editor.window.activeTextEditor={document:{languageId:'plaintext',uri:{scheme:'rentgen-view',path:'/[snapshot] Module.bsl'},getText:()=> 'constructed focused original'}};return result;};
+ await f.host.recover();assert.equal(f.record.recovered,true);assert.equal(f.record.recovery_scope,'repair_only');assert.equal(f.record.model_requests_started,0);assert.equal(f.record.test_requests_started,0);assert.equal(f.calls.filter(c=>['rentgen.repairSource','rentgen.testDraft'].includes(c.name)).length,0);assert.equal(f.record.task_accepted,false);
+});
+for(const mutation of ['text','revision','scheme','missing'])test('repair-only recovery refuses a mismatched readonly draft view '+mutation,async()=>{
+ const f=fixture({noTestRequest:true});await f.host.attempt();bindRecovery(f);
+ const command=f.editor.commands.executeCommand;f.editor.commands.executeCommand=async(name,...args)=>{const result=await command(name,...args);if(name==='rentgen.repairResult'){
+  const doc=f.editor.window.visibleTextEditors[0].document;
+  if(mutation==='text')doc.getText=()=> 'constructed unrelated shown draft';
+  if(mutation==='revision')doc.uri.path='/[v3] Module.bsl';
+  if(mutation==='scheme')doc.uri.scheme='file';
+  if(mutation==='missing')f.editor.window.visibleTextEditors=[];
+ }return result;};
+ await assert.rejects(f.host.recover(),/DAILY_REPAIR_VIEW/);assert.notEqual(f.record.recovered,true);assert.notEqual(f.record.preservation_verified,true);assert.equal(f.record.model_requests_started,0);assert.equal(f.record.test_requests_started,0);assert.equal(f.calls.filter(c=>['rentgen.repairSource','rentgen.testDraft'].includes(c.name)).length,0);assert.equal(f.record.task_accepted,false);
 });
