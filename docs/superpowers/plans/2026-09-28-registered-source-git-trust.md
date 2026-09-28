@@ -139,3 +139,28 @@ Pinned upstream metadata was inspected: BSL exec JAR bytes131962428; JDK ZIP
 bytes205073461 with the checked-in archive hash. Java profile size343823876 is
 the sum of all 490 installed manifest file sizes, not ZIP length. Preparation
 will reuse the checked-in local-file installer and avoid a Java warm-up run.
+
+
+Stock fixture preparation/inspection is implemented locally, not yet published.
+It reuses the checked-in pinned local-file BSL installer with no downloads or
+Java warm-up, initializes Git on the existing registered root using empty global
+setup config/core.autocrlf=false, and writes one fixed stock schema3 config and
+complete source manifest. Inspection binds verifier scripts/input hashes/actual
+Git HEAD, full installed runtime pins, foreign source owner and the original
+profile. Both APIs perform no SCM creation or native ACL grants.
+
+Local TDD: nine preparation contracts were red, then green. Root review found
+that false fixture commit metadata and hardlinked evidence could still pass;
+two added negative cases were red (2 failed/9 passed). Inspection now uses actual
+production registered-root Git observation and regular single-link metadata
+validation. Final fixture/control/ACL/source-manifest run:73 passed, no skips.
+Runtime installation/preflight/native owner observations in these unit cases
+are injected; Git commits/observation and Windows source inventory are real.
+Physical 490-file installation and LocalService/native BSL are still unaccepted.
+Public local record: `docs/product/evidence/stock-scm-fixture-local-20260928.json`.
+
+Published c1b capture/manifest/control/ACL/e902-CI record and detailed announcement:
+https://github.com/DmitrL-dev/1cai-public/pull/41#issuecomment-5864184011
+45 exact source paths, anonymous body/comment/four-record readback confirmed.
+Keep original c1b push36383076884/PR36383080465 attempts while local stock work
+continues; qualify their raw artifacts before advancing the remote branch.
