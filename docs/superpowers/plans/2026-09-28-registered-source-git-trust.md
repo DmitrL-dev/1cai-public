@@ -276,3 +276,21 @@ stock групп, холодный запуск Java, реальные PID/token
 остаются обязательными. Actual stock RUNNING/Java ещё не квалифицированы.
 Ревью выполняет root; subagents/independent review/production deployment отсутствуют.
 Записи: stock-scm-module-entry-ci-failure-20260928.json и stock-scm-module-entry-local-20260928.json.
+
+
+## Совместимость следующего Core dev16 / Companion 0.1.16
+
+Оба компонента готовятся с новыми версиями. Явные списки допуска в трёх
+Python-адаптерах и семи файлах Companion расширены dev16; прежние версии
+и точное совпадение профиля с установленным Core/MCP сохраняются.
+CI и четыре инструмента подготовки/проверки используют имена dev16.
+До исправления: три отказа Python и 21 отказ Companion. После: 41 Python
+и 71 Node passed без пропусков. Три новых Python-теста после форматирования
+повторно passed и входят в те же 41 случая. Сборщик обнаружил 2900 Python
+cases; это collection, полный прогон ещё не принят. Две локальные VSIX
+сборки совпадают по байтам, версия и все 39 членов проверены.
+Запись: core-dev16-compatibility-local-20260928.json. Review root only.
+Нужны квалификация исходников/main, все пять native stock групп, установленный
+Core, новые неизменяемые теги/артефакты и подробные публичные release notes.
+Core dev15/Companion 0.1.15 сохраняются; новый выпуск и production deployment
+этими локальными проверками не подтверждаются.
