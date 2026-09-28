@@ -3,6 +3,7 @@ if not __debug__:
     raise RuntimeError('Stock acceptance requires assertions; do not use Python -O')
 
 import ctypes
+from contextlib import contextmanager
 from ctypes import wintypes as W
 from datetime import datetime,timezone
 import json
@@ -50,8 +51,8 @@ def validate_failure_events(rows,service_name,pids):
 
 def require_ready(worker,context):
     worker.require(context[5].get('exists') is False and all(context[6].get(key) is True
-        for key in ('elevated','create_access','backup_privilege','restore_privilege')),
-        'Fresh service and actual elevated SCM/backup/restore authority required')
+        for key in ('elevated','create_access','backup_privilege','restore_privilege','debug_privilege')),
+        'Fresh service and actual elevated SCM/backup/restore/debug authority required')
 
 
 def exercise(test):
@@ -233,15 +234,43 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
             self.created=self.installer.created
             self.current();self.event('stock_service_created',binary_path=self.spec.binary_path)
 
+        @contextmanager
+        def inspection_privilege(self):
+            # Win32_Process.ExecutablePath requires SeDebugPrivilege. Keep the
+            # native image/token read in the same scope as its bounded CIM row.
+            # https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-process
+            before=self.native.privileges();enabled=False
+            try:
+                with self.native.debug_privilege():
+                    enabled={'name':'SeDebugPrivilege','enabled':True} in self.native.privileges()
+                    worker.require(enabled,'Existing debug privilege was not enabled for native inspection')
+                    yield
+            finally:
+                after=self.native.privileges();restored=before==after
+                self.event('stock_debug_privilege_inspected',enabled_during=enabled,
+                    privileges_before=before,privileges_after=after,privileges_restored=restored)
+                worker.require(restored,'Native inspection changed original token privileges')
+
         def processes(self):
+            with self.inspection_privilege():
+                return self._processes()
+
+        def _processes(self):
             self.query_sequence+=1
             worker.require(self.query_sequence<=200,'Stock native process observations exceed bound')
             pwsh=shutil.which('pwsh.exe');worker.require(pwsh is not None,'PowerShell 7 required')
             script="$ErrorActionPreference='Stop'; [Console]::OutputEncoding=[Text.UTF8Encoding]::new(); " \
-                "ConvertTo-Json -Compress -InputObject @(Get-CimInstance -ClassName Win32_Process " \
-                "-Filter \"Name='java.exe' OR Name='git.exe' OR Name='bsl-scan.exe' OR Name='python.exe'\" " \
-                "-Property ProcessId,ParentProcessId,ExecutablePath,CommandLine | " \
-                "Select-Object ProcessId,ParentProcessId,ExecutablePath,CommandLine)"
+                "$locator=New-Object -ComObject WbemScripting.SWbemLocator; " \
+                "$service=$locator.ConnectServer('.','root\\cimv2'); " \
+                "$service.Security_.ImpersonationLevel=3; " \
+                "$service.Security_.Privileges.AddAsString('SeDebugPrivilege',$true) | Out-Null; " \
+                "$rows=@($service.ExecQuery(\"SELECT ProcessId,ParentProcessId,ExecutablePath,CommandLine " \
+                "FROM Win32_Process WHERE Name='java.exe' OR Name='git.exe' OR Name='bsl-scan.exe' OR Name='python.exe'\",'WQL',48) " \
+                "| ForEach-Object { @{ProcessId=[int64]$_.Properties_.Item('ProcessId').Value; " \
+                "ParentProcessId=[int64]$_.Properties_.Item('ParentProcessId').Value; " \
+                "ExecutablePath=$_.Properties_.Item('ExecutablePath').Value; " \
+                "CommandLine=$_.Properties_.Item('CommandLine').Value} }); " \
+                "ConvertTo-Json -Compress -InputObject $rows"
             label='stock-processes-'+str(self.query_sequence)
             result=probe.capture((pwsh,'-NoProfile','-NonInteractive','-Command',script),dict(os.environ),self.output,label)
             worker.save(self.output/(label+'.json'),result)
@@ -309,8 +338,9 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
 
         def start(self):
             worker.require(self.held is None,'Previous held process not closed')
-            row=super().start();pid=row['status']['pid']
-            self.held=HeldProcess(self,worker,pid);self.service_pids.add(pid)
+            with self.inspection_privilege():
+                row=super().start();pid=row['status']['pid']
+                self.held=HeldProcess(self,worker,pid);self.service_pids.add(pid)
             return row
 
         def stop(self):
@@ -349,14 +379,15 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
             def inspect():
                 row=self.current();worker.require(row['status']['state']==4,'Stock service stopped before findings')
                 if native_bsl and label not in self.java_proofs:
-                    for child in self.processes():
-                        if Path(child['ExecutablePath'])!=self.runtime/'jdk/bin/java.exe': continue
-                        try: process=self.native.process(child['ProcessId'])
-                        except Exception as error:
-                            if getattr(error,'code',None)==87: continue  # exited during read-only sampling
-                            raise
-                        proof=measurement.validate_java(child,process,service_pid=self.held.pid,runtime=self.runtime,scratch=self.scratch)
-                        self.java_proofs[label]=proof;self.event('stock_native_bsl_process',label=label,**proof)
+                    with self.inspection_privilege():
+                        for child in self._processes():
+                            if Path(child['ExecutablePath'])!=self.runtime/'jdk/bin/java.exe': continue
+                            try: process=self.native.process(child['ProcessId'])
+                            except Exception as error:
+                                if getattr(error,'code',None)==87: continue  # exited during read-only sampling
+                                raise
+                            proof=measurement.validate_java(child,process,service_pid=self.held.pid,runtime=self.runtime,scratch=self.scratch)
+                            self.java_proofs[label]=proof;self.event('stock_native_bsl_process',label=label,**proof)
                 doc=self.publication();events=doc['outbox']
                 worker.require(all(item['event'].get('status')=='analyzed' for item in events),'Stock analyzer reported failure')
                 worker.require(len(events)<=len(commits),'Duplicate stock notification')

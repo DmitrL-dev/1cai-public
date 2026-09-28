@@ -294,3 +294,55 @@ cases; это collection, полный прогон ещё не принят. Д
 Core, новые неизменяемые теги/артефакты и подробные публичные release notes.
 Core dev15/Companion 0.1.15 сохраняются; новый выпуск и production deployment
 этими локальными проверками не подтверждаются.
+
+
+## 62ef: неполные WMI сведения и область Debug
+
+Оригинальные push 36404042951 и PR 36404049696 attempt 1 завершились failure.
+Оба raw-аудита подтвердили 2895 Python/69 Node/2 Go packages без пропусков,
+105 исходных файлов wheel, пять SourceObserver и отдельную Git diagnostic
+LocalService lifetime. Stock впервые достиг RUNNING под S-1-5-19 и завершился
+чистым STOP; удержанный исходный объект процесса reap выполнен. Строгий verifier
+отказал: у двух потомков NULL ExecutablePath/CommandLine. Их образы неизвестны;
+durable analyzed baseline с complete findings/owner receipt не заменяет native
+Java proof. Cleanup без ошибок, служба удалена, owners/DACL/privileges
+восстановлены; девять JSON/SQLite файлов сохранены и проверены в каждом run.
+
+Debug у координатора уже включён в исходных capture metadata. Исправление
+явно задаёт ImpersonationLevel=3 и SeDebugPrivilege на локальном SWbemServices.
+Доступность имеющейся Debug добавлена в read-only readiness. Native reads
+временно используют эту привилегию с восстановлением точных исходных attributes
+и закрытием token handles. Независимый reviewer нашёл чтение токена службы вне
+scope в start; super().start и HeldProcess теперь находятся в одном scope.
+Восемь тестов воспроизвели пропуск и затем passed, включая оба исходных состояния
+Debug, ошибки base/held reads и несовпадение восстановленного состояния.
+
+Финальные 130 scoped coordinator tests и четыре backup regressions дают 134
+уникальных passed без пропусков. Добавлено 29 WMI/start/authority cases;
+с пятью dev16 cases ожидаются 2929 Python tests и 684 локальные CI identities.
+2929 collection не означает полный прогон. Future raw auditor требует exact
+source-bound WMI command, исходные streams/rows/parent/argv, восстановление
+Debug после каждого query и пяти положительных стартов. Его 92 уникальных
+parser cases прошли; constructed evidence не является native выполнением.
+
+Все пять stock групп и холодный Java запуск остаются обязательными. Эффективность
+WMI исправления должны доказать новые точные source/main CI artifacts.
+Пользователь разрешил двух GPT-6 Sol Max reviewers; исторические root-only
+записи сохраняют свой исходный scope. Новые release/production claims отсутствуют.
+Записи: stock-scm-wmi-ci-failure-20260928.json и stock-scm-wmi-debug-local-20260928.json.
+
+
+### Два независимых Max ревью завершены
+
+WMI reviewer независимо выполнил 52 injected/parser checks без пропусков;
+пять итоговых source SHA совпали. Start scope, COM/raw query compatibility и
+query_source delegate wiring отмечены resolved. Native acceptance не заявлен.
+Dev16 reviewer сверил 30 committed paths, 105 Git/wheel/installed source/data
+files, повторные Core artifacts, 30 dependency wheels, 39 VSIX members и
+свежие offline Core/MCP origins/32+3 handlers. Открытых регрессий нет.
+Проверка exact installed/profile версии подтверждена для run_repair.py;
+general CJS client не делает отдельный version probe для каждой CLI операции.
+Это прежняя граница, не новое обещание. JDK manifest/pins проверены по bytes,
+физическое установленное дерево JDK reviewer не проверял. VSIX reviewer
+проверил один сохранённый пакет, повторяемость VSIX — историческое root evidence.
+Публичная запись: core-dev16-stock-wmi-independent-review-20260928.json.

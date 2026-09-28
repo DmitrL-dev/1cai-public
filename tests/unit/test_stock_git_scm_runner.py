@@ -23,7 +23,8 @@ def test_runtime_inspection_binds_coordinator_hashes_and_never_constructs_native
         if not ok: raise RuntimeError(msg)
     worker=SimpleNamespace(B=evidence,NAME='Rentgen.CI.'+'a'*12,configure=lambda _:prep,
         require=require,sha=lambda _: 'e'*64,save=lambda p,v:p.write_text(json.dumps(v),'utf-8'))
-    context=(None,None,None,None,None,{'exists':False},{k:True for k in ('elevated','create_access','backup_privilege','restore_privilege')})
+    native=SimpleNamespace(privileges=lambda:[{'name':'SeDebugPrivilege','enabled':False}])
+    context=(None,None,None,native,None,{'exists':False},{k:True for k in ('elevated','create_access','backup_privilege','restore_privilege')})
     metadata={'fixture_commit':'f'*40,'source_commit':prep['source_commit']}
     fixture=SimpleNamespace(prepare_stock=lambda *a,**kw:events.append(('prepare',kw)),
         inspect_stock=lambda *a:(context,metadata,{}),read_object=lambda p:json.loads(p.read_text('utf-8')))
@@ -58,6 +59,35 @@ def test_outer_entry_uses_copied_interpreter_and_same_owned_fixture(tmp_path,mon
     assert '--java-home' in calls[0][0][1] and java in calls[0][0][1]
     assert calls[1][0][1][-1]=='inspect'
     if run: assert calls[-1][1]['timeout']==1260
+
+
+@pytest.mark.parametrize('available',[False,True])
+def test_stock_inspection_reports_debug_authority_without_enabling_it_or_creating_service(tmp_path,monkeypatch,available):
+    module=api();evidence=tmp_path/'evidence';evidence.mkdir()
+    native=SimpleNamespace(privileges=lambda:[{'name':'SeDebugPrivilege','enabled':False}] if available else [])
+    def require(ok,message):
+        if not ok: raise RuntimeError(message)
+    prep={'source_commit':'a'*40,'kit_sha256':'b'*64,'wheel_sha256':'c'*64,'scanner_sha256':'d'*64,'installed_core_files':105}
+    worker=SimpleNamespace(B=evidence,NAME='Rentgen.CI.'+'a'*12,configure=lambda _:prep,
+        require=require,sha=lambda _: 'e'*64,save=lambda path,value:path.write_text(json.dumps(value),'utf-8'))
+    context=(None,None,None,native,None,{'exists':False},{key:True for key in ('elevated','create_access','backup_privilege','restore_privilege')})
+    fixture=SimpleNamespace(prepare_stock=lambda *a,**kw:None,
+        inspect_stock=lambda *a:(context,{},{}),read_object=lambda path:json.loads(path.read_text('utf-8')))
+    lifecycle=SimpleNamespace(acceptance_type=lambda *a:pytest.fail('Unavailable debug privilege constructed controls'))
+    actual_lifecycle=importlib.util.spec_from_file_location('ready_test',Path(__file__).resolve().parents[2]/'scripts/verification/scm_stock_git_lifecycle.py')
+    api_lifecycle=importlib.util.module_from_spec(actual_lifecycle);actual_lifecycle.loader.exec_module(api_lifecycle)
+    lifecycle.require_ready=api_lifecycle.require_ready
+    monkeypatch.setattr(module,'load_script',lambda name:{'scm_acceptance_worker':worker,'scm_stock_git_fixture':fixture,'scm_stock_git_lifecycle':lifecycle}[name])
+    assert module.runtime_stage(tmp_path,'prepare',java_home=tmp_path/'jdk',jar=tmp_path/'jar')==0
+    assert module.runtime_stage(tmp_path,'inspect')==0
+    proof=json.loads((evidence/'stock-inspection.json').read_text('utf-8'))
+    assert proof['authority']['debug_privilege'] is available
+    assert proof['ready_for_privileged_run'] is available
+    assert native.privileges()==([{'name':'SeDebugPrivilege','enabled':False}] if available else [])
+    assert proof['mutations_performed'] is False
+    if not available:
+        with pytest.raises(RuntimeError): module.runtime_stage(tmp_path,'run')
+        assert not (evidence/'lifecycle').exists()
 
 
 def test_stock_job_uses_verified_kit_pins_no_warmup_and_retains_failures():

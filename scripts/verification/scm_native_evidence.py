@@ -1,7 +1,7 @@
 """Windows SCM/process evidence. No SCM or file mutation APIs are loaded.
 
-Owned-tree metadata inspection can temporarily enable an existing backup
-privilege; its exact previous state is restored when the scope exits.
+Owned-tree metadata inspection and native process inspection can temporarily
+enable existing backup/debug privileges. Exact previous states are restored.
 
 Status layout and PID validity:
 https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-queryservicestatusex
@@ -218,21 +218,28 @@ class NativeEvidence:
         finally:
             api.close_token(token)
 
-    @contextmanager
     def backup_privilege(self):
+        return self._privilege('Backup')
+
+    def debug_privilege(self):
+        return self._privilege('Debug')
+
+    @contextmanager
+    def _privilege(self, label):
         # Cannot add privileges to a token. TRUE plus ERROR_NOT_ALL_ASSIGNED
         # is a refusal, not a successful enable. PreviousState preserves all
         # attributes and is empty when the privilege was already enabled.
         # https://learn.microsoft.com/en-us/windows/win32/api/securitybaseapi/nf-securitybaseapi-adjusttokenprivileges
+        name = {'Backup': 'SeBackupPrivilege', 'Debug': 'SeDebugPrivilege'}[label]
         token = W.HANDLE()
         self.require(self.security.OpenProcessToken(self.kernel.GetCurrentProcess(), 0x28,
-                                                    ctypes.byref(token)), 'OpenBackupToken')
+                                                    ctypes.byref(token)), 'Open' + label + 'Token')
         previous = TokenPrivilegesOne()
         try:
             requested = TokenPrivilegesOne()
             requested.count = 1
-            self.require(self.security.LookupPrivilegeValueW(None, 'SeBackupPrivilege',
-                         ctypes.byref(requested.items[0].luid)), 'LookupBackupPrivilege')
+            self.require(self.security.LookupPrivilegeValueW(None, name,
+                         ctypes.byref(requested.items[0].luid)), 'Lookup' + label + 'Privilege')
             requested.items[0].attributes = 2
             needed = W.DWORD()
             ctypes.set_last_error(0)
@@ -240,9 +247,9 @@ class NativeEvidence:
                          ctypes.sizeof(previous), ctypes.byref(previous), ctypes.byref(needed))
             code = ctypes.get_last_error()
             if not changed or code:
-                raise NativeEvidenceError('EnableBackupPrivilege', code)
+                raise NativeEvidenceError('Enable' + label + 'Privilege', code)
             if previous.count not in (0, 1) or needed.value > ctypes.sizeof(previous):
-                raise RuntimeError('Invalid previous backup privilege state')
+                raise RuntimeError('Invalid previous ' + label.lower() + ' privilege state')
             yield
         finally:
             try:
@@ -252,6 +259,6 @@ class NativeEvidence:
                                                                    0, None, None)
                     code = ctypes.get_last_error()
                     if not restored or code:
-                        raise NativeEvidenceError('RestoreBackupPrivilege', code)
+                        raise NativeEvidenceError('Restore' + label + 'Privilege', code)
             finally:
-                self.require(self.kernel.CloseHandle(token), 'CloseBackupToken')
+                self.require(self.kernel.CloseHandle(token), 'Close' + label + 'Token')

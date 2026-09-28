@@ -40,8 +40,10 @@ def runtime_stage(workdir,mode,*,java_home=None,jar=None):
     worker.require(stored==expected,'Stock coordinator source/kit/scripts binding differs')
     context,extra,files=fixture.inspect_stock(worker,prep)
     authority,service=context[6],context[5]
+    authority={**authority,'debug_privilege':any(row['name']=='SeDebugPrivilege' for row in context[3].privileges())}
+    context=(*context[:6],authority)
     ready=service.get('exists') is False and all(authority.get(key) is True for key in
-        ('elevated','create_access','backup_privilege','restore_privilege'))
+        ('elevated','create_access','backup_privilege','restore_privilege','debug_privilege'))
     metadata={'schema':1,'source_commit':prep['source_commit'],'kit_sha256':prep['kit_sha256'],
         'wheel_sha256':prep['wheel_sha256'],'scanner_sha256':prep['scanner_sha256'],
         'installed_core_files':prep['installed_core_files'],'auxiliary_preparation':extra,

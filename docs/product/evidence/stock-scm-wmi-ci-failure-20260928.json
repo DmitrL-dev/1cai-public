@@ -1,0 +1,384 @@
+{
+  "schema": "rentgen-stock-wmi-ci-failure/1",
+  "source_head": "62efee79e250773db29d4522bc36d2bc6fc5d3a7",
+  "source_tree": "f9059fabca6382ad445b58ad2ad2749cd88181e9",
+  "runs": [
+    {
+      "run_id": 36404049696,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36404049696",
+      "event": "pull_request",
+      "run_attempt": 1,
+      "conclusion": "failure",
+      "actual_checkout": "243af7ffbff1ba6fdd55ef30daf0a45476d89659",
+      "tree": "f9059fabca6382ad445b58ad2ad2749cd88181e9",
+      "parents": [
+        "c715e9b65b75ae667376f331c3c0fac14be2f7f3",
+        "62efee79e250773db29d4522bc36d2bc6fc5d3a7"
+      ],
+      "python_passed": 2895,
+      "python_skipped": 0,
+      "local_cases_present": 650,
+      "node_passed": 69,
+      "go_packages_passed": 2,
+      "wheel_source_files": 105,
+      "kit_sha256": "662553cf7348c35a1059c11fec8d96ea380963b9c543ce1642ade70c1ff4bab3",
+      "wheel_sha256": "a63a599a46c98864571db49e40f87fc26b0814feef1517f4ce03bb5c55700381",
+      "artifact_sha256": {
+        "verified-core-development": "86d01db83e32e17da36077eba4af36f95ea0fa55796b5eefbf6decdd46362876",
+        "native-stock-git-evidence": "f85e8f9a526a17c1b652c7625c2821c5204323cb874905d342cc4c67bfed2d4b",
+        "native-git-diagnostic-evidence": "17b85fe96f5d0b9cf81e3f73d9e82247844b330e529c77725779bd6e5e4fa060",
+        "native-scm-evidence": "0a34d0abdda5b3f596c23cd7c95d7f25cf20dd3d382011c838a56973e86178a9",
+        "python-contract-report": "36d6e66f22ebc9586d2f99bd5a7a65ae51f9b61e77dec0f158778d118a6aca9f"
+      },
+      "junit_sha256": "a6a66f551f2f437ad4ed06180e63292a8c113251115025f5cb3649d6de72473d",
+      "root_audit_sha256": "3e55c17ef749b58e624ca4ddbd9c4e4799d84ce01d9b6c06c8300be80b45d1e1",
+      "source_observer_localservice_lifetimes": 5,
+      "git_diagnostic_localservice_lifetimes": 1,
+      "native_stock_git": {
+        "failure": {
+          "type": "RuntimeError",
+          "message": "Native process inventory is incomplete"
+        },
+        "scm_statuses": [
+          {
+            "service_type": 16,
+            "state": 2,
+            "controls": 0,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 1,
+            "wait_hint": 30000,
+            "pid": 1720,
+            "flags": 0
+          },
+          {
+            "service_type": 16,
+            "state": 4,
+            "controls": 5,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 0,
+            "wait_hint": 0,
+            "pid": 1720,
+            "flags": 0
+          },
+          {
+            "service_type": 16,
+            "state": 3,
+            "controls": 0,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 1,
+            "wait_hint": 30000,
+            "pid": 1720,
+            "flags": 0
+          },
+          {
+            "service_type": 16,
+            "state": 1,
+            "controls": 0,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 0,
+            "wait_hint": 0,
+            "pid": 0,
+            "flags": 0
+          }
+        ],
+        "running_localservice_pid": 1720,
+        "original_held_process_reaped": true,
+        "control_receipts": [
+          {
+            "label": "control-1-create",
+            "receipt_sha256": "5c5b0dedaa7b49d351f57767ae8d29001b132bd621d6f169ee9a1e80132058c2",
+            "exit_code": 0,
+            "child_reaped": true
+          },
+          {
+            "label": "control-2-start",
+            "receipt_sha256": "81b2288d7302813a7828fc7adec59b6a17cc8f27f5d9a2faa8cd6d5e22213f48",
+            "exit_code": 0,
+            "child_reaped": true
+          },
+          {
+            "label": "control-3-stop",
+            "receipt_sha256": "793248a9f0661aa21c7173f71cf91a0764c33855a8f2207efb1a64ea1b1d2036",
+            "exit_code": 0,
+            "child_reaped": true
+          },
+          {
+            "label": "control-4-delete",
+            "receipt_sha256": "7c820c8bd170b617b0632942a96af7da69ddc320c7a76472a05e5f90cc1b4143",
+            "exit_code": 0,
+            "child_reaped": true
+          }
+        ],
+        "process_observation_count": 4,
+        "coordinator_pid": 7196,
+        "incomplete_process_rows": [
+          {
+            "sample": 3,
+            "pid": 7864,
+            "parent_pid": 1720,
+            "executable_path": null,
+            "command_line": null,
+            "capture_sha256": "c1de865b40298db5bf603312b3232f74888bff1ee94eec31772d9df31471ebca"
+          },
+          {
+            "sample": 3,
+            "pid": 2168,
+            "parent_pid": 7864,
+            "executable_path": null,
+            "command_line": null,
+            "capture_sha256": "c1de865b40298db5bf603312b3232f74888bff1ee94eec31772d9df31471ebca"
+          }
+        ],
+        "coordinator_debug_already_enabled_at_cleanup": true,
+        "first_durable_analyzed_event": {
+          "commit": "cdbb0115f8d8053a161550512b0c0ab789187c7d",
+          "owner_report_id": "bb822f60-2fdf-4d98-9171-a8299435cf58",
+          "complete": true,
+          "findings": 0
+        },
+        "remaining_service": false,
+        "cleanup_errors": [],
+        "acl_fields": [
+          {
+            "root": "fixture",
+            "original_entries": 630,
+            "new_entries": 47,
+            "reassigned_new_entries": 47,
+            "original_dacls_equal": true,
+            "original_owners_equal": true,
+            "metadata_privileges_restored": true,
+            "no_new_service_ace": true,
+            "temporary_service_modify_only_data_and_scratch": true
+          },
+          {
+            "root": "runtime",
+            "original_entries": 6054,
+            "new_entries": 0,
+            "reassigned_new_entries": 0,
+            "original_dacls_equal": true,
+            "original_owners_equal": true,
+            "metadata_privileges_restored": true,
+            "no_new_service_ace": true,
+            "temporary_service_modify_only_data_and_scratch": true
+          }
+        ],
+        "retained_files_verified": [
+          "bb822f60-2fdf-4d98-9171-a8299435cf58.json",
+          "git-journal.json",
+          "git-outbox.json",
+          "observer.sqlite3",
+          "project.sqlite3",
+          "stock-coordinator.json",
+          "stock-git-service.json",
+          "stock-preparation.json",
+          "stock-source-manifest.json"
+        ],
+        "events_sha256": "601785863bc7f610612af0a246c6db7f8aeb7639f1e40194abecd07fb63f5465",
+        "actual_native_bsl_process_not_proved": true,
+        "all_five_groups_not_exercised": true,
+        "runtime_inputs_hashes_verified_without_java_warmup": true,
+        "source_binding_verified": true
+      }
+    },
+    {
+      "run_id": 36404042951,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36404042951",
+      "event": "push",
+      "run_attempt": 1,
+      "conclusion": "failure",
+      "actual_checkout": "62efee79e250773db29d4522bc36d2bc6fc5d3a7",
+      "tree": "f9059fabca6382ad445b58ad2ad2749cd88181e9",
+      "parents": [
+        "f88575af3a23746c6a7836edbc695f85a3a11ee0"
+      ],
+      "python_passed": 2895,
+      "python_skipped": 0,
+      "local_cases_present": 650,
+      "node_passed": 69,
+      "go_packages_passed": 2,
+      "wheel_source_files": 105,
+      "kit_sha256": "eab15287cfc8a1eb8bb7dbb2fbadd31fa0e3b136812f53a806ab15d01f545b58",
+      "wheel_sha256": "a63a599a46c98864571db49e40f87fc26b0814feef1517f4ce03bb5c55700381",
+      "artifact_sha256": {
+        "python-contract-report": "808ccb11df92bf08afc500a1489a8ef889ec7f979fb96ae132d02735c23bfb48",
+        "native-scm-evidence": "f49adaa275727458a49212b37d8f3dc6201f8795155bf70f73e01651abac8034",
+        "native-stock-git-evidence": "d791dfe664926253a397abcf61d8ca09cfb6b395ad8f8ed938a3a5ee677b2d3b",
+        "verified-core-development": "2420968463d0427ad5776813211781b9ce637ad37d20b640b5e4e1e839ca2842",
+        "native-git-diagnostic-evidence": "be7e8acb7b159ebdc0fd23cf6fbc29b1a1b2907365dad19dd8d3df7b18052aaf"
+      },
+      "junit_sha256": "8a982a6c9fc4d330243d4e127919c2bc35263235c5cbc4847723c20661e050d1",
+      "root_audit_sha256": "2980a3fec265c6c7ef0162af9bd543d372a0393724ed7dba24c4ba6d6c17f7b9",
+      "source_observer_localservice_lifetimes": 5,
+      "git_diagnostic_localservice_lifetimes": 1,
+      "native_stock_git": {
+        "failure": {
+          "type": "RuntimeError",
+          "message": "Native process inventory is incomplete"
+        },
+        "scm_statuses": [
+          {
+            "service_type": 16,
+            "state": 2,
+            "controls": 0,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 1,
+            "wait_hint": 30000,
+            "pid": 2740,
+            "flags": 0
+          },
+          {
+            "service_type": 16,
+            "state": 4,
+            "controls": 5,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 0,
+            "wait_hint": 0,
+            "pid": 2740,
+            "flags": 0
+          },
+          {
+            "service_type": 16,
+            "state": 3,
+            "controls": 0,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 1,
+            "wait_hint": 30000,
+            "pid": 2740,
+            "flags": 0
+          },
+          {
+            "service_type": 16,
+            "state": 1,
+            "controls": 0,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 0,
+            "wait_hint": 0,
+            "pid": 0,
+            "flags": 0
+          }
+        ],
+        "running_localservice_pid": 2740,
+        "original_held_process_reaped": true,
+        "control_receipts": [
+          {
+            "label": "control-1-create",
+            "receipt_sha256": "fb7dab72abb4454a66dde322ac9136da5d7d42f0ad15d6774c5599905765fdd2",
+            "exit_code": 0,
+            "child_reaped": true
+          },
+          {
+            "label": "control-2-start",
+            "receipt_sha256": "d1e6b5bd1580cb38e76668cb05cd73abe5b113befda80ace564c57fc351a7923",
+            "exit_code": 0,
+            "child_reaped": true
+          },
+          {
+            "label": "control-3-stop",
+            "receipt_sha256": "62bf014fc60621fa22ce381f61d95e322273595000b6d074b2a2bfc4365609f5",
+            "exit_code": 0,
+            "child_reaped": true
+          },
+          {
+            "label": "control-4-delete",
+            "receipt_sha256": "69898ac3c03fb563f15d986d69d80b3aa709ec0aa2c50b5bea9c1c12f3e58718",
+            "exit_code": 0,
+            "child_reaped": true
+          }
+        ],
+        "process_observation_count": 4,
+        "coordinator_pid": 6736,
+        "incomplete_process_rows": [
+          {
+            "sample": 3,
+            "pid": 6976,
+            "parent_pid": 2740,
+            "executable_path": null,
+            "command_line": null,
+            "capture_sha256": "bc7f5a635336c8fb723aef2d39d79f821fb1cfc5fea10281ca85c7312899cce2"
+          },
+          {
+            "sample": 3,
+            "pid": 4944,
+            "parent_pid": 6976,
+            "executable_path": null,
+            "command_line": null,
+            "capture_sha256": "bc7f5a635336c8fb723aef2d39d79f821fb1cfc5fea10281ca85c7312899cce2"
+          }
+        ],
+        "coordinator_debug_already_enabled_at_cleanup": true,
+        "first_durable_analyzed_event": {
+          "commit": "a6b14585d9d4d92fd493c19bb965cb5db09e2da6",
+          "owner_report_id": "51c76d55-9cbc-4b95-a2bc-f1dbb2b0df03",
+          "complete": true,
+          "findings": 0
+        },
+        "remaining_service": false,
+        "cleanup_errors": [],
+        "acl_fields": [
+          {
+            "root": "fixture",
+            "original_entries": 630,
+            "new_entries": 47,
+            "reassigned_new_entries": 47,
+            "original_dacls_equal": true,
+            "original_owners_equal": true,
+            "metadata_privileges_restored": true,
+            "no_new_service_ace": true,
+            "temporary_service_modify_only_data_and_scratch": true
+          },
+          {
+            "root": "runtime",
+            "original_entries": 6054,
+            "new_entries": 0,
+            "reassigned_new_entries": 0,
+            "original_dacls_equal": true,
+            "original_owners_equal": true,
+            "metadata_privileges_restored": true,
+            "no_new_service_ace": true,
+            "temporary_service_modify_only_data_and_scratch": true
+          }
+        ],
+        "retained_files_verified": [
+          "51c76d55-9cbc-4b95-a2bc-f1dbb2b0df03.json",
+          "git-journal.json",
+          "git-outbox.json",
+          "observer.sqlite3",
+          "project.sqlite3",
+          "stock-coordinator.json",
+          "stock-git-service.json",
+          "stock-preparation.json",
+          "stock-source-manifest.json"
+        ],
+        "events_sha256": "c71c5ccbdeb3e32ee57e86c3e3df33417bddf31e6db39173bcd13579675fa643",
+        "actual_native_bsl_process_not_proved": true,
+        "all_five_groups_not_exercised": true,
+        "runtime_inputs_hashes_verified_without_java_warmup": true,
+        "source_binding_verified": true
+      }
+    }
+  ],
+  "root_accounting": {
+    "filename": "root-partial-source-stock-failure-accounting.json",
+    "sha256": "633e3ee29bc3cb24dfdb897e63bf079ab60c45027025162e2a4c2165a9d2fdd1"
+  },
+  "finding": "WMI returned two descendant rows with NULL ExecutablePath and CommandLine; strict native inventory refused both original attempts. Their images cannot be inferred from those rows.",
+  "coordinator_debug_already_enabled": true,
+  "repair_inference": "Enabling only the coordinator token does not address explicit WMI security configuration. The successor requests Debug on the local SWbemServices object and scopes existing token privilege for native reads; fresh native CI must verify effectiveness.",
+  "native_bsl_accepted": false,
+  "all_five_stock_groups_accepted": false,
+  "source_ci_qualified": false,
+  "main_qualified_by_this_record": false,
+  "release_qualified_by_this_record": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "independent_review": false,
+  "recorded_utc": "2026-09-28T11:02:01.930208+00:00"
+}
