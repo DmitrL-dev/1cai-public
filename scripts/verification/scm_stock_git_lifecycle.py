@@ -259,17 +259,23 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
             self.query_sequence+=1
             worker.require(self.query_sequence<=200,'Stock native process observations exceed bound')
             pwsh=shutil.which('pwsh.exe');worker.require(pwsh is not None,'PowerShell 7 required')
+            # PowerShell treats SWbemObjectSet as one COM object in a pipeline.
+            # A bidirectional query supports Count and explicit ItemIndex reads.
+            # https://learn.microsoft.com/en-us/windows/win32/wmisdk/swbemobjectset-count
             script="$ErrorActionPreference='Stop'; [Console]::OutputEncoding=[Text.UTF8Encoding]::new(); " \
                 "$locator=New-Object -ComObject WbemScripting.SWbemLocator; " \
                 "$service=$locator.ConnectServer('.','root\\cimv2'); " \
                 "$service.Security_.ImpersonationLevel=3; " \
                 "$service.Security_.Privileges.AddAsString('SeDebugPrivilege',$true) | Out-Null; " \
-                "$rows=@($service.ExecQuery(\"SELECT ProcessId,ParentProcessId,ExecutablePath,CommandLine " \
-                "FROM Win32_Process WHERE Name='java.exe' OR Name='git.exe' OR Name='bsl-scan.exe' OR Name='python.exe'\",'WQL',48) " \
-                "| ForEach-Object { @{ProcessId=[int64]$_.Properties_.Item('ProcessId').Value; " \
-                "ParentProcessId=[int64]$_.Properties_.Item('ParentProcessId').Value; " \
-                "ExecutablePath=$_.Properties_.Item('ExecutablePath').Value; " \
-                "CommandLine=$_.Properties_.Item('CommandLine').Value} }); " \
+                "$objects=$service.ExecQuery(\"SELECT ProcessId,ParentProcessId,ExecutablePath,CommandLine " \
+                "FROM Win32_Process WHERE Name='java.exe' OR Name='git.exe' OR Name='bsl-scan.exe' OR Name='python.exe'\",'WQL',16); " \
+                "$count=$objects.Count; if($null -eq $count){throw 'Native process inventory count unavailable'}; " \
+                "$count=[int]$count; if($count -lt 0 -or $count -gt 100){throw 'Native process inventory row limit'}; " \
+                "$rows=@(for($i=0;$i -lt $count;$i++){ $process=$objects.ItemIndex($i); " \
+                "@{ProcessId=[int64]$process.Properties_.Item('ProcessId').Value; " \
+                "ParentProcessId=[int64]$process.Properties_.Item('ParentProcessId').Value; " \
+                "ExecutablePath=$process.Properties_.Item('ExecutablePath').Value; " \
+                "CommandLine=$process.Properties_.Item('CommandLine').Value} }); " \
                 "ConvertTo-Json -Compress -InputObject $rows"
             label='stock-processes-'+str(self.query_sequence)
             result=probe.capture((pwsh,'-NoProfile','-NonInteractive','-Command',script),dict(os.environ),self.output,label)

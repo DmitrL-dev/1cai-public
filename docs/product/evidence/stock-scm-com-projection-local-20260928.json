@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "source_parent": "49f8347507f3a579cc651f885f937d5e4fe0f8c2",
+  "source_files": {
+    "scripts/verification/scm_stock_git_lifecycle.py": "da1c8c009fba3992e8f5463975c1b8052fdaaa892be85f8409023d009659a62b",
+    "tests/unit/test_scm_process_projection.py": "4879679e8cb43dbe4a609f37d8ab66a5d1f1d1b5389414031a042f2bcbce131f",
+    "integrations/open-editor/README.md": "7ea2a41e64f28be272f258b8f30d98ca353240d5755338ad70dbd273506486bb"
+  },
+  "reports": {
+    "stock-objectset-projection-actual-old-red.xml": {
+      "sha256": "36995b43cc71f1a4305c4df7b5528ec7436200f153b3bbe4095f23997e023099",
+      "testcases": 11,
+      "passed": 1,
+      "failed": 10,
+      "errors": 0,
+      "skips": 0
+    },
+    "stock-objectset-projection-first-green.xml": {
+      "sha256": "5e58f8dadcf3938c5086b845806a017f63ddbb8f0aa9d6fc2c4516a4e79c0e2f",
+      "testcases": 44,
+      "passed": 43,
+      "failed": 1,
+      "errors": 0,
+      "skips": 0
+    },
+    "stock-objectset-projection-final-green.xml": {
+      "sha256": "e06cdc92230074144d7cdfd3a97d5045bdc9feea7811e92f010bd9b4a8bfeb13",
+      "testcases": 44,
+      "passed": 44,
+      "failed": 0,
+      "errors": 0,
+      "skips": 0
+    },
+    "stock-indexed-raw-parser-green.xml": {
+      "sha256": "34dfe88061add0556933cf75a6a98f5231cb1be9f3167e1c8056bd8e1762deb7",
+      "testcases": 97,
+      "passed": 97,
+      "failed": 0,
+      "errors": 0,
+      "skips": 0
+    }
+  },
+  "known_old_null_projection_reproduced": true,
+  "indexed_count_null_to_zero_regression_found_and_fixed": true,
+  "source_projection_cases": 11,
+  "expected_source_local_case_union": 695,
+  "expected_source_python_cases": 2940,
+  "actual_source_collection": 2940,
+  "node_expected_cases": 71,
+  "installed_core_expected_files": 105,
+  "own_pid_readonly_probe": {
+    "source_sha256": "da1c8c009fba3992e8f5463975c1b8052fdaaa892be85f8409023d009659a62b",
+    "full_process_query_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+    "exit_code": 0,
+    "stdout_sha256": "340a10488d54f755883639441b326e7e581497b32a6369af5191f108c26d1471",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "actual_shell": "7.6.5",
+    "row_count": 1,
+    "own_pid_binding_verified": true,
+    "parent_pid_positive": true,
+    "image_and_command_present": true,
+    "source_transformations": [
+      "remove only Debug AddAsString call",
+      "restrict query to own probe PID",
+      "append ownPID binding and JSON wrapper"
+    ],
+    "token_privilege_adjustments": false,
+    "service_controls": false,
+    "actual_localservice_or_java_acceptance": false
+  },
+  "own_pid_probe_receipt_sha256": "645bc702befe0ddf517ba86166b7afa92ba99a02ea043b7437724be9d033887a",
+  "future_raw_reader_sha256": "9006089c6bdb769d0cb8b5286a92cee579173ca2639772ea49d260e3879669ac",
+  "future_raw_reader_tests_sha256": "5611a45d7bf160e5a8e14345dc427cf37cac819627452cdc47348296d83dfa3f",
+  "historical_raw_readers_preserved": true,
+  "pure_parser_tests_are_not_native_acceptance": true,
+  "source_ci_qualified": false,
+  "native_stock_git_accepted": false,
+  "release_published": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "recorded_utc": "2026-09-28T12:39:15.587754+00:00"
+}

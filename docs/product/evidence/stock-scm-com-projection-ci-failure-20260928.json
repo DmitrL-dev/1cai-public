@@ -1,0 +1,442 @@
+{
+  "schema": 1,
+  "source_head": "49f8347507f3a579cc651f885f937d5e4fe0f8c2",
+  "tree": "b5e6c8fd8b4badc380d16e4621e3505746096429",
+  "base_main": "c715e9b65b75ae667376f331c3c0fac14be2f7f3",
+  "scope": "original49f attempt1 raw accounting; successful subjobs remain separate",
+  "runs": [
+    {
+      "run_id": 36414749721,
+      "event": "pull_request",
+      "source_head": "49f8347507f3a579cc651f885f937d5e4fe0f8c2",
+      "actual_checkout": "53f5af5221f7fcc912a6538739a8d03620652d0e",
+      "tree": "b5e6c8fd8b4badc380d16e4621e3505746096429",
+      "parents": [
+        "c715e9b65b75ae667376f331c3c0fac14be2f7f3",
+        "49f8347507f3a579cc651f885f937d5e4fe0f8c2"
+      ],
+      "wheel_core_files": 105,
+      "artifact_sha256": {
+        "native-stock-git-evidence": "832ae07f24c006de778e0ec06df3d7fb0dce1fe07f1d4c43560604169ea153ee",
+        "verified-core-development": "352e07b1d0ed5820bae4bc284b303b356397b79bd043a748cfd3b061733214c9",
+        "native-git-diagnostic-evidence": "a187021ba58c60bbcf07cd0aaadf9458cccf7e27f189836cac406fceca320790",
+        "python-contract-report": "3b3aa5ecfd359bede7eb374f483f972f510960f26cd955c5c94627e5f9cff059",
+        "native-scm-evidence": "a3e8cf41228403f9dce7f6d844696fd7ac39e2543f091e0ac7494958a02bb2cb"
+      },
+      "junit_sha256": "d3377d49338e1afee3370ea8cfa7f861c5288ba3420be3e08f83ca56d30f4840",
+      "python_cases": 2929,
+      "local_cases_present": 684,
+      "node_cases": 71,
+      "zero_skips": true,
+      "kit_sha256": "f11db1e900541c507ea44ff48e15528a56083b647c70ffa1b3dd96e9890ecc49",
+      "wheel_sha256": "bc08acabac8ec5f824992ae6acb65d355f715423c4469f5b3e169f0f534e692c",
+      "native_stock_git": {
+        "accepted": false,
+        "failure": {
+          "type": "RuntimeError",
+          "message": "Native process inventory failed"
+        },
+        "cleanup_errors": [
+          {
+            "stage": "stock_process_lifetime",
+            "type": "RuntimeError"
+          },
+          {
+            "stage": "retention",
+            "type": "RuntimeError"
+          },
+          {
+            "stage": "remaining_service"
+          }
+        ],
+        "remaining_service": true,
+        "retention_accepted": false,
+        "cleanup_accepted": false,
+        "acl_restoration_accepted": false,
+        "baseline_accepted": false,
+        "native_bsl_process_accepted": false,
+        "all_five_groups_exercised": false,
+        "running_localservice_pid": 8036,
+        "scm_statuses": [
+          {
+            "service_type": 16,
+            "state": 2,
+            "controls": 0,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 1,
+            "wait_hint": 30000,
+            "pid": 8036,
+            "flags": 0
+          },
+          {
+            "service_type": 16,
+            "state": 4,
+            "controls": 5,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 0,
+            "wait_hint": 0,
+            "pid": 8036,
+            "flags": 0
+          },
+          {
+            "service_type": 16,
+            "state": 3,
+            "controls": 0,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 1,
+            "wait_hint": 30000,
+            "pid": 8036,
+            "flags": 0
+          },
+          {
+            "service_type": 16,
+            "state": 1,
+            "controls": 0,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 0,
+            "wait_hint": 0,
+            "pid": 0,
+            "flags": 0
+          }
+        ],
+        "original_held_process_reaped": true,
+        "control_receipts": [
+          {
+            "label": "control-1-create",
+            "receipt_sha256": "843032c27a53b62aec521aee0350d250f00a9fa6305d2086e026f4960bfd864b",
+            "exit_code": 0,
+            "child_reaped": true
+          },
+          {
+            "label": "control-2-start",
+            "receipt_sha256": "da8540123165dd3066ddec30e26f3112642394746bb23f41c27ead316716e044",
+            "exit_code": 0,
+            "child_reaped": true
+          },
+          {
+            "label": "control-3-stop",
+            "receipt_sha256": "39170d24165d6d751070186911799d05e9913d71212c09458eb5d0cfe7e5401d",
+            "exit_code": 0,
+            "child_reaped": true
+          }
+        ],
+        "process_captures": [
+          {
+            "label": "stock-processes-1",
+            "receipt_sha256": "d509d324168ba55ae572d28015b29b9fb8ad43faa94b6ce0ce88847011cf8ca3",
+            "script_sha256": "f3c0a47850ec4b11f50d0679d2cf661556ed0600d4059d4c6a7be6277464c069",
+            "exit_code": 1,
+            "stdout_bytes": 0,
+            "stderr_bytes": 89,
+            "stderr_sha256": "a36592260c467beb0213681123258b7780ffc665f6b97a74d67b64c7a05f9c8f",
+            "child_reaped": true,
+            "timed_out": false,
+            "output_limit_exceeded": false
+          },
+          {
+            "label": "stock-processes-2",
+            "receipt_sha256": "d1fffcc569cc5f8f30b95fc4d3e696000ad77c42ac85eb2bc44338426303dc81",
+            "script_sha256": "f3c0a47850ec4b11f50d0679d2cf661556ed0600d4059d4c6a7be6277464c069",
+            "exit_code": 1,
+            "stdout_bytes": 0,
+            "stderr_bytes": 89,
+            "stderr_sha256": "a36592260c467beb0213681123258b7780ffc665f6b97a74d67b64c7a05f9c8f",
+            "child_reaped": true,
+            "timed_out": false,
+            "output_limit_exceeded": false
+          }
+        ],
+        "source_bound_wmi_queries": 2,
+        "debug_privilege_scopes": 3,
+        "privilege_inventory_count": 24,
+        "exact_privileges_restored": true,
+        "events_sha256": "e010656418e1251ca0447176a6c76587c0e9a0ebce162138dd044b53a92ec39c",
+        "runtime_inputs_hashes_verified_without_java_warmup": true,
+        "source_binding_verified": true,
+        "scope": "original49f projection failure accounting only"
+      },
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36414749721",
+      "run_attempt": 1,
+      "conclusion": "failure",
+      "job_conclusions": {
+        "windows": "success",
+        "native-git-diagnostic": "success",
+        "native-scm": "success",
+        "native-stock-git": "failure"
+      },
+      "artifacts": [
+        {
+          "id": 10969016040,
+          "name": "native-stock-git-evidence",
+          "size_in_bytes": 386098,
+          "digest": "sha256:832ae07f24c006de778e0ec06df3d7fb0dce1fe07f1d4c43560604169ea153ee"
+        },
+        {
+          "id": 10967399108,
+          "name": "verified-core-development",
+          "size_in_bytes": 18571555,
+          "digest": "sha256:352e07b1d0ed5820bae4bc284b303b356397b79bd043a748cfd3b061733214c9"
+        },
+        {
+          "id": 10967324466,
+          "name": "native-git-diagnostic-evidence",
+          "size_in_bytes": 506246,
+          "digest": "sha256:a187021ba58c60bbcf07cd0aaadf9458cccf7e27f189836cac406fceca320790"
+        },
+        {
+          "id": 10967189296,
+          "name": "python-contract-report",
+          "size_in_bytes": 49286,
+          "digest": "sha256:3b3aa5ecfd359bede7eb374f483f972f510960f26cd955c5c94627e5f9cff059"
+        },
+        {
+          "id": 10967139548,
+          "name": "native-scm-evidence",
+          "size_in_bytes": 612743,
+          "digest": "sha256:a3e8cf41228403f9dce7f6d844696fd7ac39e2543f091e0ac7494958a02bb2cb"
+        }
+      ],
+      "root_audit_sha256": "5342952c5cc7bcd6cabb90ebb02995a1fa807273fbde00f951836083a0c9fb06",
+      "source_observer_scm": {
+        "accepted_in_separate_scope": true,
+        "localservice_lifetimes": 5,
+        "original_owners_dacls_and_privileges_restored": true,
+        "service_absent": true
+      },
+      "git_diagnostic": {
+        "accepted_in_separate_scope": true,
+        "localservice_lifetimes": 1,
+        "diagnostic_accepted": true,
+        "stock_lifecycle_accepted": false,
+        "events_sha256": "ddc342e5027bc1a2ea2d4a2f4e656f00b28cc4b79b1498ecc230aff515fe126e",
+        "service_absent": true
+      },
+      "go_package_passes": 2
+    },
+    {
+      "run_id": 36414744469,
+      "event": "push",
+      "source_head": "49f8347507f3a579cc651f885f937d5e4fe0f8c2",
+      "actual_checkout": "49f8347507f3a579cc651f885f937d5e4fe0f8c2",
+      "tree": "b5e6c8fd8b4badc380d16e4621e3505746096429",
+      "parents": [
+        "7e78ad41ecc8cdcd964abfce71bd81ea70c26bd5"
+      ],
+      "wheel_core_files": 105,
+      "artifact_sha256": {
+        "verified-core-development": "a340ef965f56941383b9f3f3a8f9e199752ff96568862ce2158ec0e522334682",
+        "python-contract-report": "bc6c04c9693d22a991dc8495c79690d4d34327fb966caa85cb9744f02007c80e",
+        "native-scm-evidence": "28a179c0d2652f4bce6b958de673c2ea3fd348da2218841aee8ee32237ccd39e",
+        "native-stock-git-evidence": "9d8ae571160fc27809b4ed288b4860e6f1debf37a9037f67d211550bc6fbc8f6",
+        "native-git-diagnostic-evidence": "ca6bac26e1acdc8fc07d140bf3b81550e7224960db37c2f559339eafb8b77504"
+      },
+      "junit_sha256": "d33e53396bc83d61516a425dfff6f47e4e055e8a53fe3acd2c3c24a3976c4fcd",
+      "python_cases": 2929,
+      "local_cases_present": 684,
+      "node_cases": 71,
+      "zero_skips": true,
+      "kit_sha256": "dcd25d1a15631530c2ad66433339a8b35f8372641b4c5d32531b2b62ba861fb6",
+      "wheel_sha256": "bc08acabac8ec5f824992ae6acb65d355f715423c4469f5b3e169f0f534e692c",
+      "native_stock_git": {
+        "accepted": false,
+        "failure": {
+          "type": "RuntimeError",
+          "message": "Native process inventory failed"
+        },
+        "cleanup_errors": [
+          {
+            "stage": "stock_process_lifetime",
+            "type": "RuntimeError"
+          },
+          {
+            "stage": "retention",
+            "type": "RuntimeError"
+          },
+          {
+            "stage": "remaining_service"
+          }
+        ],
+        "remaining_service": true,
+        "retention_accepted": false,
+        "cleanup_accepted": false,
+        "acl_restoration_accepted": false,
+        "baseline_accepted": false,
+        "native_bsl_process_accepted": false,
+        "all_five_groups_exercised": false,
+        "running_localservice_pid": 856,
+        "scm_statuses": [
+          {
+            "service_type": 16,
+            "state": 2,
+            "controls": 0,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 1,
+            "wait_hint": 30000,
+            "pid": 856,
+            "flags": 0
+          },
+          {
+            "service_type": 16,
+            "state": 4,
+            "controls": 5,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 0,
+            "wait_hint": 0,
+            "pid": 856,
+            "flags": 0
+          },
+          {
+            "service_type": 16,
+            "state": 3,
+            "controls": 0,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 1,
+            "wait_hint": 30000,
+            "pid": 856,
+            "flags": 0
+          },
+          {
+            "service_type": 16,
+            "state": 1,
+            "controls": 0,
+            "win32_exit": 0,
+            "service_exit": 0,
+            "checkpoint": 0,
+            "wait_hint": 0,
+            "pid": 0,
+            "flags": 0
+          }
+        ],
+        "original_held_process_reaped": true,
+        "control_receipts": [
+          {
+            "label": "control-1-create",
+            "receipt_sha256": "4e0e36b37b4adb221107ccc5297f47305c7f95dd77b842121dcfeb90b8a51b4d",
+            "exit_code": 0,
+            "child_reaped": true
+          },
+          {
+            "label": "control-2-start",
+            "receipt_sha256": "0b2b1496840b4f19bd9d6b7a1c443ac9d8e55117e630d2fa919ed5f0d13ed073",
+            "exit_code": 0,
+            "child_reaped": true
+          },
+          {
+            "label": "control-3-stop",
+            "receipt_sha256": "7365a2eba8347ca816c76b0656fd9631d8da889c62783ee58c28494c853b921f",
+            "exit_code": 0,
+            "child_reaped": true
+          }
+        ],
+        "process_captures": [
+          {
+            "label": "stock-processes-1",
+            "receipt_sha256": "d7de0e5a408b193eb5baa7bac553f3bdb8a3338867e03f0038e1fac4e15ef0ee",
+            "script_sha256": "f3c0a47850ec4b11f50d0679d2cf661556ed0600d4059d4c6a7be6277464c069",
+            "exit_code": 1,
+            "stdout_bytes": 0,
+            "stderr_bytes": 89,
+            "stderr_sha256": "a36592260c467beb0213681123258b7780ffc665f6b97a74d67b64c7a05f9c8f",
+            "child_reaped": true,
+            "timed_out": false,
+            "output_limit_exceeded": false
+          },
+          {
+            "label": "stock-processes-2",
+            "receipt_sha256": "c4117bd5c5a8b991961ff0b894b46881384a43b7d55db60e45efded90d898f4b",
+            "script_sha256": "f3c0a47850ec4b11f50d0679d2cf661556ed0600d4059d4c6a7be6277464c069",
+            "exit_code": 1,
+            "stdout_bytes": 0,
+            "stderr_bytes": 89,
+            "stderr_sha256": "a36592260c467beb0213681123258b7780ffc665f6b97a74d67b64c7a05f9c8f",
+            "child_reaped": true,
+            "timed_out": false,
+            "output_limit_exceeded": false
+          }
+        ],
+        "source_bound_wmi_queries": 2,
+        "debug_privilege_scopes": 3,
+        "privilege_inventory_count": 24,
+        "exact_privileges_restored": true,
+        "events_sha256": "7332f8d723e423ea9e294ef90ea8869c4cfdc8754bee8336dc54f49fa22d6819",
+        "runtime_inputs_hashes_verified_without_java_warmup": true,
+        "source_binding_verified": true,
+        "scope": "original49f projection failure accounting only"
+      },
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36414744469",
+      "run_attempt": 1,
+      "conclusion": "failure",
+      "job_conclusions": {
+        "windows": "success",
+        "native-scm": "success",
+        "native-git-diagnostic": "success",
+        "native-stock-git": "failure"
+      },
+      "artifacts": [
+        {
+          "id": 10968941429,
+          "name": "verified-core-development",
+          "size_in_bytes": 18571551,
+          "digest": "sha256:a340ef965f56941383b9f3f3a8f9e199752ff96568862ce2158ec0e522334682"
+        },
+        {
+          "id": 10968831253,
+          "name": "python-contract-report",
+          "size_in_bytes": 49032,
+          "digest": "sha256:bc6c04c9693d22a991dc8495c79690d4d34327fb966caa85cb9744f02007c80e"
+        },
+        {
+          "id": 10968691962,
+          "name": "native-scm-evidence",
+          "size_in_bytes": 613135,
+          "digest": "sha256:28a179c0d2652f4bce6b958de673c2ea3fd348da2218841aee8ee32237ccd39e"
+        },
+        {
+          "id": 10968612098,
+          "name": "native-stock-git-evidence",
+          "size_in_bytes": 386106,
+          "digest": "sha256:9d8ae571160fc27809b4ed288b4860e6f1debf37a9037f67d211550bc6fbc8f6"
+        },
+        {
+          "id": 10968447194,
+          "name": "native-git-diagnostic-evidence",
+          "size_in_bytes": 506254,
+          "digest": "sha256:ca6bac26e1acdc8fc07d140bf3b81550e7224960db37c2f559339eafb8b77504"
+        }
+      ],
+      "root_audit_sha256": "61aca2ad83069ad8302d2a81d4bbda4767dc11fa05a7fd5ebb92a6a00cf98c0a",
+      "source_observer_scm": {
+        "accepted_in_separate_scope": true,
+        "localservice_lifetimes": 5,
+        "original_owners_dacls_and_privileges_restored": true,
+        "service_absent": true
+      },
+      "git_diagnostic": {
+        "accepted_in_separate_scope": true,
+        "localservice_lifetimes": 1,
+        "diagnostic_accepted": true,
+        "stock_lifecycle_accepted": false,
+        "events_sha256": "a2d71d3c131748d0976c18ce3843b505a25cfb847d5063e9a6e410e3977c0fae",
+        "service_absent": true
+      },
+      "go_package_passes": 2
+    }
+  ],
+  "root_aggregate_sha256": "e0520df32d05eb1f32ddb31dcd28b3dc871db47a2f9c552432e251004d560bbf",
+  "terminal_snapshot_sha256": "38c68e3a2b5f695559e3c457de120b21c1d725d1ed6c6ca4214b5637849ae633",
+  "independent_raw_audit_sha256": "21f18e00eb3b7b7faf491036a5e5b2c6b2bd7617078e4c9146ba1ff0abb6035d",
+  "original_runs_restarted_or_cancelled": false,
+  "source_ci_qualified": false,
+  "native_stock_git_accepted": false,
+  "cleanup_accepted": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "recorded_utc": "2026-09-28T12:39:15.560750+00:00"
+}
