@@ -1,0 +1,666 @@
+{
+  "schema": "rentgen-component-publication/2",
+  "recorded_utc": "2026-09-27T22:18:38.529033+00:00",
+  "main": "d489f50ebf9b5874790e40a8b36a005af17ce9d3",
+  "main_tree": "29ee4ab33f9534805163b10e034f89ba29c27caa",
+  "pr": 39,
+  "source_ci": {
+    "source_commit": "a792e638bd736a6ac075140e02d0dd972802cb34",
+    "qualification_sha256": "d4ec544e3c27b2a3ffaa41d41d791c415a0fe5dbf7c1d3b26e340a1aa20fe62a",
+    "runs": [
+      {
+        "run_id": 36346211891,
+        "event": "pull_request",
+        "head": "a792e638bd736a6ac075140e02d0dd972802cb34",
+        "source_commit": "663dd23a65ed9ee115dfb314e3db4a5c1e827c18",
+        "junit": {
+          "tests": 2488,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "successful_steps": 24,
+        "locally_qualified_cases_present": 521,
+        "privileged_dacl_case_passed": true,
+        "artifacts": {
+          "python-contract-report": {
+            "id": 10941686070,
+            "sha256": "24af23f73ac4417e4ff2eefc95973911ca4843b61ad010357358a21c6c9f7910",
+            "size_bytes": 42024
+          },
+          "native-scm-evidence": {
+            "id": 10941656577,
+            "sha256": "00c06f25df4cbc1b6be3db025bffb8f3b44ac8a8a7bf94f6db1ceec3205e4dd1",
+            "size_bytes": 613012
+          },
+          "verified-core-development": {
+            "id": 10940793651,
+            "sha256": "d4f93df704ab90442196ba262ee671d20a4fd334baa0b8b38f7153edc5159ed0",
+            "size_bytes": 18561602
+          }
+        },
+        "kit_sha256": "2d8508b26f0432fa425bfe3408ffc7ab3ee45b0a1740a82974ad4330fa325903",
+        "kit_size_bytes": 20463588,
+        "wheel_sha256": "4ff661d731ff1f01fc158c02f6ee922a4c0f6794d053fc60063d65bd61ba0328",
+        "sdist_sha256": "353f7ec3239c36b03a9b0539e7963de6c804341401e7bb9cf8e616796bf0bbae",
+        "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+        "vsix_sha256": "57a3f8f9b3193e2d6284df542010384ac13000695becbe1dfff887f6c5a872fa",
+        "vsix_size_bytes": 209862,
+        "tree": "709190b2f1655555c404d1a748802c634ab9b572",
+        "parents": [
+          "cb8c077196536cb2b44b688d50f34c0648ea09e6",
+          "a792e638bd736a6ac075140e02d0dd972802cb34"
+        ],
+        "log_evidence": {
+          "actual_checkout": "663dd23a65ed9ee115dfb314e3db4a5c1e827c18",
+          "python_tests": 2488,
+          "node_tests": 69,
+          "node_failures": 0,
+          "node_skipped": 0,
+          "go_extractor_scanner_passed": true,
+          "logs_sha256": "6a5aaba2272336ed85ae5b1faded0aeb0007ca546f16040a14187d9fb1c4205b",
+          "native_scm_checkout": "663dd23a65ed9ee115dfb314e3db4a5c1e827c18"
+        },
+        "native_scm": {
+          "accepted": true,
+          "successful_steps": 10,
+          "running_processes": 5,
+          "acl_roots_restored": 2,
+          "worker_sha256": "eaca437c48ae5497648d801b3d824981eb0ff4afa1930030ddd7ce8d2b19f0f0",
+          "events_sha256": "92180887e5271fbf568aa0de8730150b93d296ea0c1a5f97248c05dc1ebafecc",
+          "required_events": [
+            "acl_restoration_verified",
+            "first_report",
+            "interrupted_capture_recovered",
+            "no_owned_scanner_before_recovery",
+            "owned_process_interrupted",
+            "repeat_without_publication",
+            "service_absent_after_cleanup",
+            "service_created",
+            "stop_accepted_during_capture",
+            "temporary_acl_verified",
+            "wrong_project_refused"
+          ],
+          "actual_acl_fields": [
+            {
+              "root": "fixture",
+              "original_entries": 16,
+              "new_entries": 2347,
+              "baseline_aces_and_protection_equal": true,
+              "original_owners_equal": true,
+              "auto_inherited_control_changes": 0,
+              "no_new_service_ace": true,
+              "temporary_policy_verified": true,
+              "metadata_privileges_restored": true,
+              "reassigned_new_entries": 2347
+            },
+            {
+              "root": "runtime",
+              "original_entries": 6050,
+              "new_entries": 0,
+              "baseline_aces_and_protection_equal": true,
+              "original_owners_equal": true,
+              "auto_inherited_control_changes": 0,
+              "no_new_service_ace": true,
+              "temporary_policy_verified": true,
+              "metadata_privileges_restored": true,
+              "reassigned_new_entries": 0
+            }
+          ]
+        }
+      },
+      {
+        "run_id": 36346205723,
+        "event": "push",
+        "head": "a792e638bd736a6ac075140e02d0dd972802cb34",
+        "source_commit": "a792e638bd736a6ac075140e02d0dd972802cb34",
+        "junit": {
+          "tests": 2488,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "successful_steps": 24,
+        "locally_qualified_cases_present": 521,
+        "privileged_dacl_case_passed": true,
+        "artifacts": {
+          "verified-core-development": {
+            "id": 10941467981,
+            "sha256": "db2aa4f90cb025cff280c5b192fc70539a6979c4f2ee98f5b143b21186a6ca36",
+            "size_bytes": 18561605
+          },
+          "native-scm-evidence": {
+            "id": 10941373714,
+            "sha256": "2cbcf01028f4afd05c096f7c9a79c7d9b42ecac921fac7ebdc31467a1f732f34",
+            "size_bytes": 612878
+          },
+          "python-contract-report": {
+            "id": 10940808247,
+            "sha256": "7090ce1deeafd937e3e8a2d2551aea2bfc7fe632ffc8202be0da127c0dbd1634",
+            "size_bytes": 41897
+          }
+        },
+        "kit_sha256": "30040b536163a8b92f7aa611392c1bed29701819b1fd9ceb024248bf4482f867",
+        "kit_size_bytes": 20463588,
+        "wheel_sha256": "4ff661d731ff1f01fc158c02f6ee922a4c0f6794d053fc60063d65bd61ba0328",
+        "sdist_sha256": "353f7ec3239c36b03a9b0539e7963de6c804341401e7bb9cf8e616796bf0bbae",
+        "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+        "vsix_sha256": "57a3f8f9b3193e2d6284df542010384ac13000695becbe1dfff887f6c5a872fa",
+        "vsix_size_bytes": 209862,
+        "tree": "709190b2f1655555c404d1a748802c634ab9b572",
+        "parents": [
+          "a32d0a6718f09505bac9f14b3b64816ebcbc7c15",
+          "cb8c077196536cb2b44b688d50f34c0648ea09e6"
+        ],
+        "log_evidence": {
+          "actual_checkout": "a792e638bd736a6ac075140e02d0dd972802cb34",
+          "python_tests": 2488,
+          "node_tests": 69,
+          "node_failures": 0,
+          "node_skipped": 0,
+          "go_extractor_scanner_passed": true,
+          "logs_sha256": "379ccd1f34b19142ac0bb6b667777e2c6bf8041a5cb6e834c6e785e9b44938b1",
+          "native_scm_checkout": "a792e638bd736a6ac075140e02d0dd972802cb34"
+        },
+        "native_scm": {
+          "accepted": true,
+          "successful_steps": 10,
+          "running_processes": 5,
+          "acl_roots_restored": 2,
+          "worker_sha256": "eaca437c48ae5497648d801b3d824981eb0ff4afa1930030ddd7ce8d2b19f0f0",
+          "events_sha256": "ec5edb8a681516e329fabd0a463ffbb6c5471e1ac445e48fa63dc5b7aae905ed",
+          "required_events": [
+            "acl_restoration_verified",
+            "first_report",
+            "interrupted_capture_recovered",
+            "no_owned_scanner_before_recovery",
+            "owned_process_interrupted",
+            "repeat_without_publication",
+            "service_absent_after_cleanup",
+            "service_created",
+            "stop_accepted_during_capture",
+            "temporary_acl_verified",
+            "wrong_project_refused"
+          ],
+          "actual_acl_fields": [
+            {
+              "root": "fixture",
+              "original_entries": 16,
+              "new_entries": 2347,
+              "baseline_aces_and_protection_equal": true,
+              "original_owners_equal": true,
+              "auto_inherited_control_changes": 0,
+              "no_new_service_ace": true,
+              "temporary_policy_verified": true,
+              "metadata_privileges_restored": true,
+              "reassigned_new_entries": 2347
+            },
+            {
+              "root": "runtime",
+              "original_entries": 6050,
+              "new_entries": 0,
+              "baseline_aces_and_protection_equal": true,
+              "original_owners_equal": true,
+              "auto_inherited_control_changes": 0,
+              "no_new_service_ace": true,
+              "temporary_policy_verified": true,
+              "metadata_privileges_restored": true,
+              "reassigned_new_entries": 0
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "final_ci": {
+    "source_commit": "52c8f4dc4182a26965cb5d58c7d04a9679acef79",
+    "qualification_sha256": "033413f7f94c7017d2393e39580de66e9cb24017c6ca6917d38a4e033e1bd2f5",
+    "runs": [
+      {
+        "run_id": 36349311952,
+        "event": "pull_request",
+        "head": "52c8f4dc4182a26965cb5d58c7d04a9679acef79",
+        "source_commit": "a729f3d7874aeb0f9d961f0004e3391e305371fa",
+        "junit": {
+          "tests": 2488,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "successful_steps": 24,
+        "locally_qualified_cases_present": 521,
+        "privileged_dacl_case_passed": true,
+        "artifacts": {
+          "native-scm-evidence": {
+            "id": 10942590770,
+            "sha256": "8d52938ace3bb5da6246f18a761800eb196c1064a25e7acd4e0ccc362cd921b6",
+            "size_bytes": 612956
+          },
+          "python-contract-report": {
+            "id": 10942371868,
+            "sha256": "193470514f64952d5671e0740187383ddca6f5409306aa2d855deb83a3fe24e4",
+            "size_bytes": 42011
+          },
+          "verified-core-development": {
+            "id": 10942192476,
+            "sha256": "68b6be28cd17b0f11028352c0ca6ab3f35755433fc586388e157a536a98f309f",
+            "size_bytes": 18561611
+          }
+        },
+        "kit_sha256": "9c0ebcb58ca7994af7851be128cc2df71fdcb2500dbe754f1b8edc787b4d068f",
+        "kit_size_bytes": 20463588,
+        "wheel_sha256": "4ff661d731ff1f01fc158c02f6ee922a4c0f6794d053fc60063d65bd61ba0328",
+        "sdist_sha256": "353f7ec3239c36b03a9b0539e7963de6c804341401e7bb9cf8e616796bf0bbae",
+        "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+        "vsix_sha256": "57a3f8f9b3193e2d6284df542010384ac13000695becbe1dfff887f6c5a872fa",
+        "vsix_size_bytes": 209862,
+        "tree": "29ee4ab33f9534805163b10e034f89ba29c27caa",
+        "parents": [
+          "cb8c077196536cb2b44b688d50f34c0648ea09e6",
+          "52c8f4dc4182a26965cb5d58c7d04a9679acef79"
+        ],
+        "log_evidence": {
+          "actual_checkout": "a729f3d7874aeb0f9d961f0004e3391e305371fa",
+          "python_tests": 2488,
+          "node_tests": 69,
+          "node_failures": 0,
+          "node_skipped": 0,
+          "go_extractor_scanner_passed": true,
+          "logs_sha256": "a562dd8864516ef44072fbfbfb287264bbcee38931d6aba440fbfb3ff65820de",
+          "native_scm_checkout": "a729f3d7874aeb0f9d961f0004e3391e305371fa"
+        },
+        "native_scm": {
+          "accepted": true,
+          "successful_steps": 10,
+          "running_processes": 5,
+          "acl_roots_restored": 2,
+          "worker_sha256": "eaca437c48ae5497648d801b3d824981eb0ff4afa1930030ddd7ce8d2b19f0f0",
+          "events_sha256": "9ac8844f5271b073058baee3b3efc4154d9463c246a25ab2942e654ac4f65736",
+          "required_events": [
+            "acl_restoration_verified",
+            "first_report",
+            "interrupted_capture_recovered",
+            "no_owned_scanner_before_recovery",
+            "owned_process_interrupted",
+            "repeat_without_publication",
+            "service_absent_after_cleanup",
+            "service_created",
+            "stop_accepted_during_capture",
+            "temporary_acl_verified",
+            "wrong_project_refused"
+          ],
+          "actual_acl_fields": [
+            {
+              "root": "fixture",
+              "original_entries": 16,
+              "new_entries": 2347,
+              "baseline_aces_and_protection_equal": true,
+              "original_owners_equal": true,
+              "auto_inherited_control_changes": 0,
+              "no_new_service_ace": true,
+              "temporary_policy_verified": true,
+              "metadata_privileges_restored": true,
+              "reassigned_new_entries": 2347
+            },
+            {
+              "root": "runtime",
+              "original_entries": 6050,
+              "new_entries": 0,
+              "baseline_aces_and_protection_equal": true,
+              "original_owners_equal": true,
+              "auto_inherited_control_changes": 0,
+              "no_new_service_ace": true,
+              "temporary_policy_verified": true,
+              "metadata_privileges_restored": true,
+              "reassigned_new_entries": 0
+            }
+          ]
+        }
+      },
+      {
+        "run_id": 36349309624,
+        "event": "push",
+        "head": "52c8f4dc4182a26965cb5d58c7d04a9679acef79",
+        "source_commit": "52c8f4dc4182a26965cb5d58c7d04a9679acef79",
+        "junit": {
+          "tests": 2488,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "successful_steps": 24,
+        "locally_qualified_cases_present": 521,
+        "privileged_dacl_case_passed": true,
+        "artifacts": {
+          "verified-core-development": {
+            "id": 10942486257,
+            "sha256": "d96332969ce2e5a4999409f3709ed40c618ec35130d124f0f2eb4c3fecb5d1be",
+            "size_bytes": 18561596
+          },
+          "python-contract-report": {
+            "id": 10942187739,
+            "sha256": "c91de9bb78329c97432dc47d2d584b0d61dc0a2bb812fefb042c546ff8d00c2f",
+            "size_bytes": 42025
+          },
+          "native-scm-evidence": {
+            "id": 10942118273,
+            "sha256": "70f03b257124756602b6eea51f2bd54db6685ecffc2cca869e15fb67b28eb9be",
+            "size_bytes": 612946
+          }
+        },
+        "kit_sha256": "d6d48b2112027f013ae8be063ae25328b50424252685ea2feedeb2b386c3d3b8",
+        "kit_size_bytes": 20463588,
+        "wheel_sha256": "4ff661d731ff1f01fc158c02f6ee922a4c0f6794d053fc60063d65bd61ba0328",
+        "sdist_sha256": "353f7ec3239c36b03a9b0539e7963de6c804341401e7bb9cf8e616796bf0bbae",
+        "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+        "vsix_sha256": "57a3f8f9b3193e2d6284df542010384ac13000695becbe1dfff887f6c5a872fa",
+        "vsix_size_bytes": 209862,
+        "tree": "29ee4ab33f9534805163b10e034f89ba29c27caa",
+        "parents": [
+          "a792e638bd736a6ac075140e02d0dd972802cb34"
+        ],
+        "log_evidence": {
+          "actual_checkout": "52c8f4dc4182a26965cb5d58c7d04a9679acef79",
+          "python_tests": 2488,
+          "node_tests": 69,
+          "node_failures": 0,
+          "node_skipped": 0,
+          "go_extractor_scanner_passed": true,
+          "logs_sha256": "932864fc9e811ffbb345e9ad46da0fc7e66300a26383646f6c6436373e685426",
+          "native_scm_checkout": "52c8f4dc4182a26965cb5d58c7d04a9679acef79"
+        },
+        "native_scm": {
+          "accepted": true,
+          "successful_steps": 10,
+          "running_processes": 5,
+          "acl_roots_restored": 2,
+          "worker_sha256": "eaca437c48ae5497648d801b3d824981eb0ff4afa1930030ddd7ce8d2b19f0f0",
+          "events_sha256": "d6da320861534be7647c86d5369d7da1f6f46c7fe263fe85bb93448f749619c3",
+          "required_events": [
+            "acl_restoration_verified",
+            "first_report",
+            "interrupted_capture_recovered",
+            "no_owned_scanner_before_recovery",
+            "owned_process_interrupted",
+            "repeat_without_publication",
+            "service_absent_after_cleanup",
+            "service_created",
+            "stop_accepted_during_capture",
+            "temporary_acl_verified",
+            "wrong_project_refused"
+          ],
+          "actual_acl_fields": [
+            {
+              "root": "fixture",
+              "original_entries": 16,
+              "new_entries": 2347,
+              "baseline_aces_and_protection_equal": true,
+              "original_owners_equal": true,
+              "auto_inherited_control_changes": 0,
+              "no_new_service_ace": true,
+              "temporary_policy_verified": true,
+              "metadata_privileges_restored": true,
+              "reassigned_new_entries": 2347
+            },
+            {
+              "root": "runtime",
+              "original_entries": 6050,
+              "new_entries": 0,
+              "baseline_aces_and_protection_equal": true,
+              "original_owners_equal": true,
+              "auto_inherited_control_changes": 0,
+              "no_new_service_ace": true,
+              "temporary_policy_verified": true,
+              "metadata_privileges_restored": true,
+              "reassigned_new_entries": 0
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "main_ci": {
+    "qualification_sha256": "7d30199e9f6ea3d8b99f7471f1b46ad56451e95da09aa7b7a50091731c0ad6e3",
+    "actual_checkout": "d489f50ebf9b5874790e40a8b36a005af17ce9d3",
+    "native_scm_checkout": "d489f50ebf9b5874790e40a8b36a005af17ce9d3",
+    "node_tests": 69,
+    "go_passed": true,
+    "run": {
+      "run_id": 36351601703,
+      "event": "push",
+      "head": "d489f50ebf9b5874790e40a8b36a005af17ce9d3",
+      "source_commit": "d489f50ebf9b5874790e40a8b36a005af17ce9d3",
+      "junit": {
+        "tests": 2488,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "successful_steps": 24,
+      "locally_qualified_cases_present": 521,
+      "privileged_dacl_case_passed": true,
+      "artifacts": {
+        "native-scm-evidence": {
+          "id": 10943595219,
+          "sha256": "cfca72452759de5b33250f984e6e7ce9e748afd1dff7c288804ebcf6ec967b53",
+          "size_bytes": 612578
+        },
+        "verified-core-development": {
+          "id": 10942829890,
+          "sha256": "6c40abaf9a53da17122fa477956257462fdd7f7a22ac475afe4cfaf4a436705d",
+          "size_bytes": 18561618
+        },
+        "python-contract-report": {
+          "id": 10942708522,
+          "sha256": "efe66078805843b7aeaa75e8ab891588a6c7ed7d608255d8fc316d35168233b0",
+          "size_bytes": 42009
+        }
+      },
+      "kit_sha256": "cbabcb628c37d5b40070bdeaface4387256ae66183c73c8adc8d649ff69cc36a",
+      "kit_size_bytes": 20463588,
+      "wheel_sha256": "4ff661d731ff1f01fc158c02f6ee922a4c0f6794d053fc60063d65bd61ba0328",
+      "sdist_sha256": "353f7ec3239c36b03a9b0539e7963de6c804341401e7bb9cf8e616796bf0bbae",
+      "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+      "vsix_sha256": "57a3f8f9b3193e2d6284df542010384ac13000695becbe1dfff887f6c5a872fa",
+      "vsix_size_bytes": 209862,
+      "native_scm": {
+        "accepted": true,
+        "successful_steps": 10,
+        "running_processes": 5,
+        "acl_roots_restored": 2,
+        "worker_sha256": "eaca437c48ae5497648d801b3d824981eb0ff4afa1930030ddd7ce8d2b19f0f0",
+        "events_sha256": "43622191aa4d6a56f4e2464ab728130c80c1470466e770f96e634413023ed75b",
+        "required_events": [
+          "acl_restoration_verified",
+          "first_report",
+          "interrupted_capture_recovered",
+          "no_owned_scanner_before_recovery",
+          "owned_process_interrupted",
+          "repeat_without_publication",
+          "service_absent_after_cleanup",
+          "service_created",
+          "stop_accepted_during_capture",
+          "temporary_acl_verified",
+          "wrong_project_refused"
+        ],
+        "actual_acl_fields": [
+          {
+            "root": "fixture",
+            "original_entries": 16,
+            "new_entries": 2347,
+            "baseline_aces_and_protection_equal": true,
+            "original_owners_equal": true,
+            "auto_inherited_control_changes": 0,
+            "no_new_service_ace": true,
+            "temporary_policy_verified": true,
+            "metadata_privileges_restored": true,
+            "reassigned_new_entries": 2347
+          },
+          {
+            "root": "runtime",
+            "original_entries": 6050,
+            "new_entries": 0,
+            "baseline_aces_and_protection_equal": true,
+            "original_owners_equal": true,
+            "auto_inherited_control_changes": 0,
+            "no_new_service_ace": true,
+            "temporary_policy_verified": true,
+            "metadata_privileges_restored": true,
+            "reassigned_new_entries": 0
+          }
+        ]
+      }
+    }
+  },
+  "core_release": {
+    "mode": "publish",
+    "release_id": 397809621,
+    "url": "https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev15",
+    "source_commit": "a792e638bd736a6ac075140e02d0dd972802cb34",
+    "qualified_main": "d489f50ebf9b5874790e40a8b36a005af17ce9d3",
+    "main_run": 36351601703,
+    "draft": false,
+    "prerelease": true,
+    "body_sha256": "06427f9ced55a9216b863dc152d9b2ba6fae7c14bdd72f6e2329c277867c24d6",
+    "assets": [
+      {
+        "id": 593761310,
+        "name": "manifest.json",
+        "sha256": "46d64f59eae81d025168da7214cf0655d21b85bd5e636d4206044f1d42f7cdf9",
+        "size_bytes": 1100,
+        "download_verified": true
+      },
+      {
+        "id": 593761231,
+        "name": "RELEASE_NOTES.md",
+        "sha256": "06427f9ced55a9216b863dc152d9b2ba6fae7c14bdd72f6e2329c277867c24d6",
+        "size_bytes": 15946,
+        "download_verified": true
+      },
+      {
+        "id": 593761348,
+        "name": "rentgen-core-0.1.0.dev15-windows-py311.zip",
+        "sha256": "30040b536163a8b92f7aa611392c1bed29701819b1fd9ceb024248bf4482f867",
+        "size_bytes": 20463588,
+        "download_verified": true
+      },
+      {
+        "id": 593761275,
+        "name": "SHA256SUMS",
+        "sha256": "e3ad8c564e74f9cb978dd424f2ec942c0ef99824de5f7e355de544be1274b6d3",
+        "size_bytes": 109,
+        "download_verified": true
+      }
+    ],
+    "tag_commit": "a792e638bd736a6ac075140e02d0dd972802cb34",
+    "anonymous_public_download_verified": true,
+    "recorded_utc": "2026-09-27T22:09:30.554599+00:00"
+  },
+  "companion_release": {
+    "mode": "publish",
+    "release_id": 397833145,
+    "url": "https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.15",
+    "draft": false,
+    "prerelease": true,
+    "tag": "companion-v0.1.15",
+    "source_commit": "d489f50ebf9b5874790e40a8b36a005af17ce9d3",
+    "main_run": 36351601703,
+    "release_run": 36354341023,
+    "artifact": {
+      "id": 10943133676,
+      "sha256": "1ab270d86abd4aee8cf45de0be32fdc98e72fedf30dde9b9575a0ae11ed356c4",
+      "size_bytes": 58449,
+      "all_four_files_match_local": true
+    },
+    "body_sha256": "c2595b598ccd566a51adb3207c14592373e3d5221cd484c42904e96eccd0445f",
+    "assets": [
+      {
+        "id": 593879817,
+        "name": "release.json",
+        "sha256": "1ec5ef62ea716e10bc9ceeb0187c0a93004a0b5687755d0f70017dee4232d58d",
+        "size_bytes": 803,
+        "download_verified": true
+      },
+      {
+        "id": 593879820,
+        "name": "rentgen-companion-0.1.15.vsix",
+        "sha256": "57a3f8f9b3193e2d6284df542010384ac13000695becbe1dfff887f6c5a872fa",
+        "size_bytes": 209862,
+        "download_verified": true
+      },
+      {
+        "id": 593879816,
+        "name": "SHA256SUMS",
+        "sha256": "959a89ee43f51607d1369e8841d8e22cbd2730941e53e7dd96b250bd7c8c9a29",
+        "size_bytes": 96,
+        "download_verified": true
+      }
+    ],
+    "anonymous_public_download_verified": true,
+    "recorded_utc": "2026-09-27T22:14:08.138179+00:00"
+  },
+  "companion_workflow": {
+    "qualified": true,
+    "main": "d489f50ebf9b5874790e40a8b36a005af17ce9d3",
+    "main_run": 36351601703,
+    "release_run": 36354341023,
+    "tag": "companion-v0.1.15",
+    "node_tests": 69,
+    "node_failures": 0,
+    "node_skipped": 0,
+    "all_steps_success": 20,
+    "build_and_draft_checkout_verified": true,
+    "logs_sha256": "b7168fa6f8f62efa3b8942f536b3f0acbca42f4730bcacd521332260dc7a4af3",
+    "artifact": {
+      "id": 10943133676,
+      "sha256": "1ab270d86abd4aee8cf45de0be32fdc98e72fedf30dde9b9575a0ae11ed356c4",
+      "size_bytes": 58449,
+      "all_four_files_match_local": true
+    },
+    "assets": {
+      "RELEASE_NOTES.md": {
+        "sha256": "c2595b598ccd566a51adb3207c14592373e3d5221cd484c42904e96eccd0445f",
+        "size_bytes": 11443
+      },
+      "SHA256SUMS": {
+        "sha256": "959a89ee43f51607d1369e8841d8e22cbd2730941e53e7dd96b250bd7c8c9a29",
+        "size_bytes": 96
+      },
+      "release.json": {
+        "sha256": "1ec5ef62ea716e10bc9ceeb0187c0a93004a0b5687755d0f70017dee4232d58d",
+        "size_bytes": 803
+      },
+      "rentgen-companion-0.1.15.vsix": {
+        "sha256": "57a3f8f9b3193e2d6284df542010384ac13000695becbe1dfff887f6c5a872fa",
+        "size_bytes": 209862
+      }
+    },
+    "recorded_utc": "2026-09-27T22:12:31.520811+00:00"
+  },
+  "announcement": {
+    "url": "https://github.com/DmitrL-dev/1cai-public/pull/39#issuecomment-5860339115",
+    "comment_sha256": "de8b20bfb018e75c52824fc7450fa63b737f0c2b2e181f23715ce45941d9d896",
+    "readback_verified": true
+  },
+  "accepted_source_kit_sha256": "30040b536163a8b92f7aa611392c1bed29701819b1fd9ceb024248bf4482f867",
+  "accepted_source_run": 36346205723,
+  "local_regression_case_union": 521,
+  "live_apply_cases_in_each_core_ci_junit": 38,
+  "native_editor": {
+    "source_commit": "242ed98bf51bf4dd10dd925de093c3b83f7ce368",
+    "evidence": "tests-editor-dev15-20260928.json",
+    "sha256": "ba84b9dcd3b428c2bed1a429da92f451b6719ad64f8bd31222c3b1d7273ccaa7",
+    "native_steps": 23,
+    "model_calls": 0,
+    "rerun_after_scm_integration": false,
+    "payload_binding_sha256": "0d885a86772c43af12eaa8bf0df0fcc28b3992d3df406f45efc0573561b437c2",
+    "scope": "Owned synthetic selected-revision test and completed-result recovery. Accepted CI payload bound by byte equality; no native editor live apply or typical configuration acceptance."
+  },
+  "native_git_scm_accepted": false,
+  "all_seven_public_assets_downloaded_and_byte_equal": true,
+  "old_release_tags_and_assets_replaced": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "independent_peer_review": false,
+  "subagents_used": false
+}

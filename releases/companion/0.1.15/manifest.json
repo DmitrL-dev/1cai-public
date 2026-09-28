@@ -1,0 +1,12 @@
+{
+  "version": "0.1.15",
+  "sha256": "57a3f8f9b3193e2d6284df542010384ac13000695becbe1dfff887f6c5a872fa",
+  "size_bytes": 209862,
+  "required_core": "0.1.0.dev15",
+  "stage": "prerelease",
+  "platform_1c_tested": true,
+  "tested_1c_version": "8.3.27.2342",
+  "native_editor_source_commit": "242ed98bf51bf4dd10dd925de093c3b83f7ce368",
+  "test_scope": "69 Node contracts and reproducible VSIX in both source CI workflows; selected-revision editor/1C/YAxUnit test and completed-result recovery on native source242 payload, bound by byte equality to accepted CI. No editor live apply or typical configuration acceptance.",
+  "spectorn_integrated": false
+}

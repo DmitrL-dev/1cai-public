@@ -1,0 +1,232 @@
+{
+  "schema": "rentgen-dev15-source-release-evidence/1",
+  "source_commit": "a792e638bd736a6ac075140e02d0dd972802cb34",
+  "source_tree": "709190b2f1655555c404d1a748802c634ab9b572",
+  "base_commit": "cb8c077196536cb2b44b688d50f34c0648ea09e6",
+  "pr": 39,
+  "source_ci_qualified": true,
+  "source_qualification_sha256": "d4ec544e3c27b2a3ffaa41d41d791c415a0fe5dbf7c1d3b26e340a1aa20fe62a",
+  "runs": [
+    {
+      "run_id": 36346211891,
+      "event": "pull_request",
+      "head": "a792e638bd736a6ac075140e02d0dd972802cb34",
+      "source_commit": "663dd23a65ed9ee115dfb314e3db4a5c1e827c18",
+      "tree": "709190b2f1655555c404d1a748802c634ab9b572",
+      "parents": [
+        "cb8c077196536cb2b44b688d50f34c0648ea09e6",
+        "a792e638bd736a6ac075140e02d0dd972802cb34"
+      ],
+      "junit": {
+        "tests": 2488,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "successful_steps": 24,
+      "locally_qualified_cases_present": 521,
+      "privileged_dacl_case_passed": true,
+      "artifacts": {
+        "python-contract-report": {
+          "id": 10941686070,
+          "sha256": "24af23f73ac4417e4ff2eefc95973911ca4843b61ad010357358a21c6c9f7910",
+          "size_bytes": 42024
+        },
+        "native-scm-evidence": {
+          "id": 10941656577,
+          "sha256": "00c06f25df4cbc1b6be3db025bffb8f3b44ac8a8a7bf94f6db1ceec3205e4dd1",
+          "size_bytes": 613012
+        },
+        "verified-core-development": {
+          "id": 10940793651,
+          "sha256": "d4f93df704ab90442196ba262ee671d20a4fd334baa0b8b38f7153edc5159ed0",
+          "size_bytes": 18561602
+        }
+      },
+      "kit_sha256": "2d8508b26f0432fa425bfe3408ffc7ab3ee45b0a1740a82974ad4330fa325903",
+      "kit_size_bytes": 20463588,
+      "wheel_sha256": "4ff661d731ff1f01fc158c02f6ee922a4c0f6794d053fc60063d65bd61ba0328",
+      "sdist_sha256": "353f7ec3239c36b03a9b0539e7963de6c804341401e7bb9cf8e616796bf0bbae",
+      "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+      "vsix_sha256": "57a3f8f9b3193e2d6284df542010384ac13000695becbe1dfff887f6c5a872fa",
+      "vsix_size_bytes": 209862,
+      "log_evidence": {
+        "actual_checkout": "663dd23a65ed9ee115dfb314e3db4a5c1e827c18",
+        "python_tests": 2488,
+        "node_tests": 69,
+        "node_failures": 0,
+        "node_skipped": 0,
+        "go_extractor_scanner_passed": true,
+        "logs_sha256": "6a5aaba2272336ed85ae5b1faded0aeb0007ca546f16040a14187d9fb1c4205b",
+        "native_scm_checkout": "663dd23a65ed9ee115dfb314e3db4a5c1e827c18"
+      },
+      "native_scm": {
+        "accepted": true,
+        "successful_steps": 10,
+        "running_processes": 5,
+        "acl_roots_restored": 2,
+        "worker_sha256": "eaca437c48ae5497648d801b3d824981eb0ff4afa1930030ddd7ce8d2b19f0f0",
+        "events_sha256": "92180887e5271fbf568aa0de8730150b93d296ea0c1a5f97248c05dc1ebafecc",
+        "required_events": [
+          "acl_restoration_verified",
+          "first_report",
+          "interrupted_capture_recovered",
+          "no_owned_scanner_before_recovery",
+          "owned_process_interrupted",
+          "repeat_without_publication",
+          "service_absent_after_cleanup",
+          "service_created",
+          "stop_accepted_during_capture",
+          "temporary_acl_verified",
+          "wrong_project_refused"
+        ],
+        "actual_acl_fields": [
+          {
+            "root": "fixture",
+            "original_entries": 16,
+            "new_entries": 2347,
+            "baseline_aces_and_protection_equal": true,
+            "original_owners_equal": true,
+            "auto_inherited_control_changes": 0,
+            "no_new_service_ace": true,
+            "temporary_policy_verified": true,
+            "metadata_privileges_restored": true,
+            "reassigned_new_entries": 2347
+          },
+          {
+            "root": "runtime",
+            "original_entries": 6050,
+            "new_entries": 0,
+            "baseline_aces_and_protection_equal": true,
+            "original_owners_equal": true,
+            "auto_inherited_control_changes": 0,
+            "no_new_service_ace": true,
+            "temporary_policy_verified": true,
+            "metadata_privileges_restored": true,
+            "reassigned_new_entries": 0
+          }
+        ]
+      }
+    },
+    {
+      "run_id": 36346205723,
+      "event": "push",
+      "head": "a792e638bd736a6ac075140e02d0dd972802cb34",
+      "source_commit": "a792e638bd736a6ac075140e02d0dd972802cb34",
+      "tree": "709190b2f1655555c404d1a748802c634ab9b572",
+      "parents": [
+        "a32d0a6718f09505bac9f14b3b64816ebcbc7c15",
+        "cb8c077196536cb2b44b688d50f34c0648ea09e6"
+      ],
+      "junit": {
+        "tests": 2488,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "successful_steps": 24,
+      "locally_qualified_cases_present": 521,
+      "privileged_dacl_case_passed": true,
+      "artifacts": {
+        "verified-core-development": {
+          "id": 10941467981,
+          "sha256": "db2aa4f90cb025cff280c5b192fc70539a6979c4f2ee98f5b143b21186a6ca36",
+          "size_bytes": 18561605
+        },
+        "native-scm-evidence": {
+          "id": 10941373714,
+          "sha256": "2cbcf01028f4afd05c096f7c9a79c7d9b42ecac921fac7ebdc31467a1f732f34",
+          "size_bytes": 612878
+        },
+        "python-contract-report": {
+          "id": 10940808247,
+          "sha256": "7090ce1deeafd937e3e8a2d2551aea2bfc7fe632ffc8202be0da127c0dbd1634",
+          "size_bytes": 41897
+        }
+      },
+      "kit_sha256": "30040b536163a8b92f7aa611392c1bed29701819b1fd9ceb024248bf4482f867",
+      "kit_size_bytes": 20463588,
+      "wheel_sha256": "4ff661d731ff1f01fc158c02f6ee922a4c0f6794d053fc60063d65bd61ba0328",
+      "sdist_sha256": "353f7ec3239c36b03a9b0539e7963de6c804341401e7bb9cf8e616796bf0bbae",
+      "scanner_sha256": "8d81c1eda05d9c358385396861eb1df611d83489582f7293ad461c45017817c4",
+      "vsix_sha256": "57a3f8f9b3193e2d6284df542010384ac13000695becbe1dfff887f6c5a872fa",
+      "vsix_size_bytes": 209862,
+      "log_evidence": {
+        "actual_checkout": "a792e638bd736a6ac075140e02d0dd972802cb34",
+        "python_tests": 2488,
+        "node_tests": 69,
+        "node_failures": 0,
+        "node_skipped": 0,
+        "go_extractor_scanner_passed": true,
+        "logs_sha256": "379ccd1f34b19142ac0bb6b667777e2c6bf8041a5cb6e834c6e785e9b44938b1",
+        "native_scm_checkout": "a792e638bd736a6ac075140e02d0dd972802cb34"
+      },
+      "native_scm": {
+        "accepted": true,
+        "successful_steps": 10,
+        "running_processes": 5,
+        "acl_roots_restored": 2,
+        "worker_sha256": "eaca437c48ae5497648d801b3d824981eb0ff4afa1930030ddd7ce8d2b19f0f0",
+        "events_sha256": "ec5edb8a681516e329fabd0a463ffbb6c5471e1ac445e48fa63dc5b7aae905ed",
+        "required_events": [
+          "acl_restoration_verified",
+          "first_report",
+          "interrupted_capture_recovered",
+          "no_owned_scanner_before_recovery",
+          "owned_process_interrupted",
+          "repeat_without_publication",
+          "service_absent_after_cleanup",
+          "service_created",
+          "stop_accepted_during_capture",
+          "temporary_acl_verified",
+          "wrong_project_refused"
+        ],
+        "actual_acl_fields": [
+          {
+            "root": "fixture",
+            "original_entries": 16,
+            "new_entries": 2347,
+            "baseline_aces_and_protection_equal": true,
+            "original_owners_equal": true,
+            "auto_inherited_control_changes": 0,
+            "no_new_service_ace": true,
+            "temporary_policy_verified": true,
+            "metadata_privileges_restored": true,
+            "reassigned_new_entries": 2347
+          },
+          {
+            "root": "runtime",
+            "original_entries": 6050,
+            "new_entries": 0,
+            "baseline_aces_and_protection_equal": true,
+            "original_owners_equal": true,
+            "auto_inherited_control_changes": 0,
+            "no_new_service_ace": true,
+            "temporary_policy_verified": true,
+            "metadata_privileges_restored": true,
+            "reassigned_new_entries": 0
+          }
+        ]
+      }
+    }
+  ],
+  "accepted_install": {
+    "kit_sha256": "30040b536163a8b92f7aa611392c1bed29701819b1fd9ceb024248bf4482f867",
+    "verified_files": 40,
+    "mcp_tools": 32,
+    "installed_files_equal_native": 103,
+    "offline_require_hashes": true,
+    "acceptance_sha256": "c3dc8273867a7010c84d258b92e35d62be94b048af1aab3a84cb1a03652497f5",
+    "installed_audit_sha256": "23fdef4de4c11cc2a57641f8f18ed633cf3f866647ebee2357b7ea786b7cfb0e"
+  },
+  "native_source_commit": "242ed98bf51bf4dd10dd925de093c3b83f7ce368",
+  "native_editor_rerun": false,
+  "native_receipt_sha256": "ba84b9dcd3b428c2bed1a429da92f451b6719ad64f8bd31222c3b1d7273ccaa7",
+  "native_binding_sha256": "0d885a86772c43af12eaa8bf0df0fcc28b3992d3df406f45efc0573561b437c2",
+  "final_ci_qualified": false,
+  "main_ci_qualified": false,
+  "public_release_qualified": false,
+  "independent_review": false,
+  "full_product_ready": false,
+  "production_deployment": false
+}

@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "scope": "Documented Core/MCP install commands tested against accepted dev14 payload; incorporation in a new release remains pending",
+  "root_review_only": true,
+  "independent_review": false,
+  "tested_source_version": "0.1.0.dev14",
+  "documents": {
+    "docs/product/CORE-INSTALLATION.md": "5f9cd0a4f248f000806f033de1d8f0b73f390cb3f40f318f632a33d05e9b1064",
+    "docs/product/CORE-OFFLINE-KIT.md": "306cec5419493e88106986970459d7e41b0cbfe306cfffb683de5560db42615a"
+  },
+  "pyproject_sha256": "a0145f531eabb599d7f96ad5b99fe463bfe22d694e769620c51dda75680170a4",
+  "wheel_sha256": "b692c9efcb03541154e9e3ada228d4a03069fde82ef7f3d0635e45978833beb5",
+  "mcp_lock_sha256": "9deebbb73122246e79be7b648ba6f71b4dd1ad531b002ec7792fc25d42edaf4f",
+  "old_command_failure": {
+    "source_document_sha256": "b9c8e8b68dfcc409a1f249a8aeac859370d447dd4edcbf06096a0a7a772fc40e",
+    "selected_absent_dev13_wheel": true,
+    "returncode": 1,
+    "log_sha256": "418a44372f204d42f7957c61453aa3211f043545be2aa975abab0042cb13fb73"
+  },
+  "cases": [
+    {
+      "kind": "core",
+      "missing_wheel": false,
+      "source_version": "0.1.0.dev14",
+      "commands_sha256": "329122bb3ea5014cd38bc2af5833afaa3ae081f4e21b6e889af0b134eed2bdfe",
+      "document_block_sha256": "001f2c08a529ceba8820b02a44b3b7ee97dc7520e6687dcae6da36455b63db08",
+      "log_sha256": "f0659840c98a078f3e843b52bb61352346bdf6187caf0e1d8b3a98f2c74668ef",
+      "returncode": 0,
+      "installed_version": "0.1.0.dev14",
+      "installed_files_equal_wheel": 103,
+      "pip_check_passed": true
+    },
+    {
+      "kind": "core",
+      "missing_wheel": true,
+      "source_version": "0.1.0.dev14",
+      "commands_sha256": "329122bb3ea5014cd38bc2af5833afaa3ae081f4e21b6e889af0b134eed2bdfe",
+      "document_block_sha256": "001f2c08a529ceba8820b02a44b3b7ee97dc7520e6687dcae6da36455b63db08",
+      "log_sha256": "aacd9602dcdb2e9aea63fd4a63737363f82eab5747dad145e055702043020dc2",
+      "returncode": 1,
+      "refused_before_core_install": true
+    },
+    {
+      "kind": "mcp",
+      "missing_wheel": false,
+      "source_version": "0.1.0.dev14",
+      "commands_sha256": "116c7b1ceeabe5ef8ae3004d0fb3e69619d17c7ff96f0fc1717cbb9f59d515ea",
+      "document_block_sha256": "823e52b7b194c191ad5d6e552071e616ab1c4b4151770ebf972ee599da81da8f",
+      "log_sha256": "4ebc273a1b6af382199d2cb52871bb7a3f6f541bb5cf30bf11079a0a371a7f0b",
+      "returncode": 0,
+      "installed_version": "0.1.0.dev14",
+      "installed_files_equal_wheel": 103,
+      "pip_check_passed": true
+    },
+    {
+      "kind": "mcp",
+      "missing_wheel": true,
+      "source_version": "0.1.0.dev14",
+      "commands_sha256": "116c7b1ceeabe5ef8ae3004d0fb3e69619d17c7ff96f0fc1717cbb9f59d515ea",
+      "document_block_sha256": "823e52b7b194c191ad5d6e552071e616ab1c4b4151770ebf972ee599da81da8f",
+      "log_sha256": "16997e3d883a6a7d996f9108712a387e0442f7418786ae46405a707258c2988d",
+      "returncode": 1,
+      "refused_before_core_install": true
+    }
+  ],
+  "mcp_tools": 32,
+  "mcp_result_sha256": "44e078a0ec856ebcfaddcc15e396536b039f56e6c1a2cac6d1e3565c28300004",
+  "mcp_startup_example_paths_replaced_by_owned_client_fixture": true,
+  "offline_flags_from_document_applied_to_mcp_profile": true,
+  "test_harness_does_not_force_terminating_powershell_errors": true,
+  "new_release_qualified": false,
+  "native_scm_accepted": false,
+  "recorded_utc": "2026-09-27T14:53:31.637116+00:00"
+}
