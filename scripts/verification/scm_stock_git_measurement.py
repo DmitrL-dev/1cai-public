@@ -20,6 +20,18 @@ def validate_stopped(status,*,failed=False):
         'Terminal SCM state/exit/PID binding differs')
 
 
+def validate_refused_start_control(result,*,sc,service_name):
+    # StartService may acknowledge START_PENDING or return the actual service
+    # specific error. Access denied/timeout/unknown capture cannot qualify an
+    # expected worker refusal using a previous lifetime's unchanged exit status.
+    # https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-startservicew
+    require(result.get('argv')==[str(sc),'start',service_name]
+        and type(result.get('exit_code')) is int and result['exit_code'] in (0,1066)
+        and result.get('child_reaped') is True and result.get('timed_out') is False
+        and result.get('output_limit_exceeded') is False and result.get('process_error') is None,
+        'Expected refusal lacks acknowledged fresh bounded SCM start')
+
+
 def command_line_argv(command):
     # https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-commandlinetoargvw
     require(type(command) is str and 0<len(command)<=32768 and '\0' not in command,'Invalid process command line')

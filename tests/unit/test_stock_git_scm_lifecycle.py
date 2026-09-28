@@ -149,3 +149,31 @@ def test_final_source_refusal_precedes_runtime_or_success_claim():
     cls=module.acceptance_type(worker,None,None,None,None,None,None);test=cls.__new__(cls)
     test.operator_git=lambda *args:'b'*40;test.final_commit='a'*40
     with pytest.raises(RuntimeError): test.final_inputs()
+
+
+def test_old_worker_failure_cannot_turn_access_denied_start_into_expected_refusal(tmp_path):
+    module=api();events=[]
+    def require(ok,msg):
+        if not ok: raise RuntimeError(msg)
+    class Lease:
+        def __enter__(self): pass
+        def __exit__(self,*a): pass
+    worker=SimpleNamespace(Acceptance=object,require=require,wait_until=lambda check,*a:check())
+    from tests.unit.test_stock_git_scm_measurement import api as measurement_api
+    measurement=measurement_api()
+    fixture=SimpleNamespace(read_object=lambda path:__import__('json').loads(path.read_text('utf-8')))
+    cls=module.acceptance_type(worker,fixture,None,None,None,None,measurement);test=cls.__new__(cls)
+    test.output=tmp_path;test.spec=SimpleNamespace(service_name='Rentgen.CI.'+'a'*12)
+    test.event=lambda name,**kw:events.append(name)
+    test.current=lambda:{'status':{'state':1,'pid':0,'win32_exit':1066,'service_exit':2}}
+    test.state=lambda *a:test.current();test.observer=SimpleNamespace(locked=Lease);test.children=lambda:[]
+    test.installer=SimpleNamespace(sequence=12,sc=tmp_path/'sc.exe')
+    def denied(_):
+        test.installer.sequence+=1
+        row={'argv':[str(test.installer.sc),'start',test.spec.service_name],
+            'exit_code':5,'child_reaped':True,'timed_out':False,'output_limit_exceeded':False,'process_error':None}
+        (tmp_path/'control-13-start.json').write_text(__import__('json').dumps(row),'utf-8')
+        raise RuntimeError('SCM access denied')
+    test.installer.start=denied
+    with pytest.raises(RuntimeError): test.failed_start('analysis-permission-revoked')
+    assert 'stock_start_refused' not in events

@@ -113,3 +113,27 @@ def test_native_java_proof_requires_fixed_argv_parent_and_localservice(tmp_path)
         module.validate_java(row,{**process,'token_user_sid':'S-1-5-18'},service_pid=11,runtime=runtime,scratch=scratch)
     row['CommandLine']=subprocess.list2cmdline([*argv,'--override'])
     with pytest.raises(RuntimeError): module.validate_java(row,process,service_pid=11,runtime=runtime,scratch=scratch)
+
+
+@pytest.mark.parametrize('changed',['denied','timeout','overflow','unreaped','process_error','wrong_name','wrong_verb','wrong_image','bool_exit'])
+def test_expected_refusal_requires_fresh_bounded_actual_start_control(tmp_path,changed):
+    row={'argv':[str(tmp_path/'sc.exe'),'start','Rentgen.CI.'+'a'*12],'exit_code':0,
+        'child_reaped':True,'timed_out':False,'output_limit_exceeded':False,'process_error':None}
+    if changed=='denied': row['exit_code']=5
+    elif changed=='timeout': row['timed_out']=True
+    elif changed=='overflow': row['output_limit_exceeded']=True
+    elif changed=='unreaped': row['child_reaped']=False
+    elif changed=='process_error': row['process_error']='unknown create result'
+    elif changed=='wrong_name': row['argv'][2]='foreign'
+    elif changed=='wrong_verb': row['argv'][1]='query'
+    elif changed=='wrong_image': row['argv'][0]=str(tmp_path/'other.exe')
+    elif changed=='bool_exit': row['exit_code']=False
+    with pytest.raises(RuntimeError):
+        api().validate_refused_start_control(row,sc=tmp_path/'sc.exe',service_name='Rentgen.CI.'+'a'*12)
+
+
+@pytest.mark.parametrize('exit_code',[0,1066])
+def test_refused_start_control_accepts_only_ack_or_service_specific_failure(tmp_path,exit_code):
+    row={'argv':[str(tmp_path/'sc.exe'),'start','Rentgen.CI.'+'a'*12],'exit_code':exit_code,
+        'child_reaped':True,'timed_out':False,'output_limit_exceeded':False,'process_error':None}
+    api().validate_refused_start_control(row,sc=tmp_path/'sc.exe',service_name='Rentgen.CI.'+'a'*12)

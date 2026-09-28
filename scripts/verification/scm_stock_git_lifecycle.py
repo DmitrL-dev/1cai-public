@@ -325,8 +325,16 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
 
         def failed_start(self,label):
             worker.require(self.current()['status']['state']==1,'Refusal start requires STOPPED')
+            previous=self.installer.sequence
             try: self.installer.start(self.spec)
             except RuntimeError as error: self.event('stock_expected_start_control_error',label=label,type=type(error).__name__)
+            worker.require(self.installer.sequence==previous+1,'Refusal start did not invoke a fresh SCM control')
+            path=self.output/('control-'+str(self.installer.sequence)+'-start.json')
+            result=fixture.read_object(path)
+            measurement.validate_refused_start_control(result,sc=self.installer.sc,service_name=self.spec.service_name)
+            for stream in ('stdout','stderr'): probe._raw(result,stream)
+            self.event('stock_refused_start_control_verified',label=label,control_sha256=worker.sha(path),
+                exit_code=result['exit_code'],fresh_control=True,child_reaped=True)
             row=self.state(1,45);measurement.validate_stopped(row['status'],failed=True)
             with self.observer.locked(): pass
             worker.wait_until(lambda:not self.children(),45,'failed stock process exits')

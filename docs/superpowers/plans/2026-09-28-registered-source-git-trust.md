@@ -200,3 +200,16 @@ cases pass. Original failed attempts remain unchanged; no c1b source success cla
 Public records: stock-scm-native-coordinator-local-20260928.json and
 registered-source-git-capture-ci-failure-20260928.json under docs/product/evidence.
 Root-only review; source/main/new Core qualification and full product gates open.
+
+
+Root review reproduced a stale-status refusal-verifier bug after publication of
+5b38b60: a new access-denied SCM start could reuse the preceding lifetime's
+1066/2 STOPPED status. Require exactly one fresh fixed-service start command,
+bounded and reaped capture, acknowledged zero or service-specific1066 return,
+and raw stream hashes before accepting terminal status. Unknown outcomes,
+timeout, overflow, another image/service/verb and boolean exit codes fail.
+TDD: one lifecycle and11 control cases failed before the fix; all68 cases in
+the four coordinator suites now pass without skips. This is local verifier
+evidence, not actual native refusal acceptance. Original5b push36389146238 and
+PR36389149702 attempts stay intact; this successor is held locally until their
+terminal artifacts are collected. No push, new release or deployment here.
