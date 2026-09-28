@@ -1,0 +1,285 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-09-28T18:21:04.176872+00:00",
+  "scope": "Original fa35 source pair accounting; failed candidate retained",
+  "source_commit": "fa35be067eb16a721955bb6a591507a12b23dd20",
+  "source_tree": "4b3fc5851194588874fda98e85c1d3f9e91b9d39",
+  "base_main": "813fbf110bea4812f517012174690bf643c3fa8a",
+  "original_attempts": [
+    {
+      "run": 36452539576,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36452539576",
+      "attempt": 1,
+      "event": "pull_request",
+      "conclusion": "success",
+      "all_five_ZIPs_checked": true,
+      "Python_unique_passed": 2991,
+      "Python_skipped": 0,
+      "Node_unique_passed": 159,
+      "Go_passed_packages": 2,
+      "selected_local_IDs_present": 746,
+      "LiveApply_IDs_present": 38,
+      "Core_source_files": 105,
+      "kit_files": 40,
+      "offline_dependencies": 30,
+      "SDK_full_tools": 32,
+      "SDK_scoped_tools": 3,
+      "corrected_README_exact_wheel_and_sdist": true,
+      "source_archive_preimage_retained": false,
+      "ZIPs": [
+        {
+          "id": 10986970004,
+          "name": "native-git-diagnostic-evidence",
+          "size_bytes": 506247,
+          "sha256": "acb00aa71af91d6f40b0c9734fd2fde469f14e7d1bc4fd27886703fb1867df6b"
+        },
+        {
+          "id": 10986415736,
+          "name": "verified-core-development",
+          "size_bytes": 18572260,
+          "sha256": "734b308120d8263e23514d97f35115dac82b8de1d7fba64301855968b839e47f"
+        },
+        {
+          "id": 10986271269,
+          "name": "native-scm-evidence",
+          "size_bytes": 613097,
+          "sha256": "bf6b66bcd32174f624f2ed3a5dfce91969f26cd52af727b7d403134e74e40d46"
+        },
+        {
+          "id": 10986036090,
+          "name": "python-contract-report",
+          "size_bytes": 50088,
+          "sha256": "f1a4452e76b03b265a1e29a3a04b279cb644ec0eade512ab10762c5ad719ff8e"
+        },
+        {
+          "id": 10985866813,
+          "name": "native-stock-git-evidence",
+          "size_bytes": 676968,
+          "sha256": "a83416c5a9622e36df2025f2ffe23704849d8953d4a447b03fd2b9a5c69e9377"
+        }
+      ],
+      "logs_measured_sha256": "0d2b2551991dde75c5dfe9c8df3f98c48f271b2bff1d4aa5ab76aead2c8af1a5",
+      "logs_API_digest_available": false
+    },
+    {
+      "run": 36452526360,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36452526360",
+      "attempt": 1,
+      "event": "push",
+      "conclusion": "failure",
+      "all_five_ZIPs_checked": true,
+      "Python_unique_passed": 2991,
+      "Python_skipped": 0,
+      "Node_unique_passed": 159,
+      "Go_passed_packages": 2,
+      "selected_local_IDs_present": 746,
+      "LiveApply_IDs_present": 38,
+      "Core_source_files": 105,
+      "kit_files": 40,
+      "offline_dependencies": 30,
+      "SDK_full_tools": 32,
+      "SDK_scoped_tools": 3,
+      "corrected_README_exact_wheel_and_sdist": true,
+      "source_archive_preimage_retained": false,
+      "ZIPs": [
+        {
+          "id": 10987006039,
+          "name": "native-stock-git-evidence",
+          "size_bytes": 603070,
+          "sha256": "db71fec674e2cade5d76ed28c4a3b4af95f1b34ecc16e4ae309f5144785dbc6a"
+        },
+        {
+          "id": 10986591849,
+          "name": "native-git-diagnostic-evidence",
+          "size_bytes": 506259,
+          "sha256": "adfd25d90f3cbe8857545b5dfbbaf3b68b0c228a1d3f5add3d28af4275ec579c"
+        },
+        {
+          "id": 10986352218,
+          "name": "native-scm-evidence",
+          "size_bytes": 612932,
+          "sha256": "10f72714a551bbd569c595f35332156ef59a48c7aedee6ec68868b3e56e5a503"
+        },
+        {
+          "id": 10986256832,
+          "name": "verified-core-development",
+          "size_bytes": 18572256,
+          "sha256": "fd550a5183fc2ac21451a480c55605e319da52fcf966339d07f5b999507d1fa6"
+        },
+        {
+          "id": 10985617353,
+          "name": "python-contract-report",
+          "size_bytes": 50034,
+          "sha256": "662a596d1c9a3c878eca92b31058b460ce882695eb8c593cd50f66f43be9ca33"
+        }
+      ],
+      "logs_measured_sha256": "20679f6c4722f2acc310e555d607024be5787d338bd22f76c141172bf6cc8887",
+      "logs_API_digest_available": false
+    }
+  ],
+  "confirmed_trigger": {
+    "error_type": "RuntimeError",
+    "message": "Native process inventory is incomplete",
+    "phase": "Second native BSL window before second publication",
+    "whole_snapshot_attempts": [
+      {
+        "capture": "stock-processes-12",
+        "attempt": 1,
+        "rows": 5,
+        "NULL_image_and_argv_pids": [
+          7312,
+          4484
+        ],
+        "exit_code": 0,
+        "stderr_bytes": 0,
+        "privilege_scope_restored": true,
+        "capture_sha256": "eedd989ef0b259a23e50a6b4787c89e2989ad30c6a1a672ee84b6d3381c93c72",
+        "stdout_sha256": "124d01fd2adc322140bd7bc16593fe63a7e9caa9de39743f50ab7bc0c3f3bc4f"
+      },
+      {
+        "capture": "stock-processes-13",
+        "attempt": 2,
+        "rows": 5,
+        "NULL_image_and_argv_pids": [
+          6072,
+          1888
+        ],
+        "exit_code": 0,
+        "stderr_bytes": 0,
+        "privilege_scope_restored": true,
+        "capture_sha256": "e726dc64d4a9406971f20f37807a857d7afc2b9307b6cf6b9611353d91bd27bf",
+        "stdout_sha256": "3df747eac50d2f22d176ca0912ccb5c605aadc7e69492673635c23af64b4b882"
+      },
+      {
+        "capture": "stock-processes-14",
+        "attempt": 3,
+        "rows": 5,
+        "NULL_image_and_argv_pids": [
+          988,
+          2860
+        ],
+        "exit_code": 0,
+        "stderr_bytes": 0,
+        "privilege_scope_restored": true,
+        "capture_sha256": "0fd439364990c4bb8baa71c14d04bf0fe600577c8ddeece5d4072a07f26b63a0",
+        "stdout_sha256": "79bbee9aa9042571849071bcdc32f50e6d523bbe408a17f09d47ac8fa2d9ab0b"
+      }
+    ],
+    "NULL_cause": "Unproven. Process exit, executable identity and privilege policy cause are not established."
+  },
+  "retained_cleanup": [
+    {
+      "run_id": 36452539576,
+      "events": 184,
+      "captures": 26,
+      "incomplete_captures": 3,
+      "restored_debug_scopes": 31,
+      "held": 5,
+      "reaped": 5,
+      "left_observed_service_processes": 0,
+      "service_exists_after_exact_key": false,
+      "cleanup_errors": [],
+      "retention_complete": true,
+      "retained_files_verified": 10,
+      "sqlite_integrity_verified": true,
+      "acl_raw_verification": [
+        {
+          "root": "fixture",
+          "original_entries": 630,
+          "new_entries": 111,
+          "reassigned_new_entries": 111,
+          "original_dacls_equal": true,
+          "original_owners_equal": true,
+          "metadata_privileges_restored": true,
+          "no_new_service_ace": true,
+          "temporary_service_modify_only_data_and_scratch": true
+        },
+        {
+          "root": "runtime",
+          "original_entries": 6054,
+          "new_entries": 0,
+          "reassigned_new_entries": 0,
+          "original_dacls_equal": true,
+          "original_owners_equal": true,
+          "metadata_privileges_restored": true,
+          "no_new_service_ace": true,
+          "temporary_service_modify_only_data_and_scratch": true
+        }
+      ],
+      "java_labels": [
+        "first",
+        "next"
+      ],
+      "analyzed_labels": [
+        "first",
+        "next"
+      ],
+      "scope": "Source-selected WMI process names and exactly observed service/coordinator PIDs"
+    },
+    {
+      "run_id": 36452526360,
+      "events": 109,
+      "captures": 15,
+      "incomplete_captures": 7,
+      "restored_debug_scopes": 17,
+      "held": 2,
+      "reaped": 2,
+      "left_observed_service_processes": 0,
+      "service_exists_after_exact_key": false,
+      "cleanup_errors": [],
+      "retention_complete": true,
+      "retained_files_verified": 10,
+      "sqlite_integrity_verified": true,
+      "acl_raw_verification": [
+        {
+          "root": "fixture",
+          "original_entries": 630,
+          "new_entries": 111,
+          "reassigned_new_entries": 111,
+          "original_dacls_equal": true,
+          "original_owners_equal": true,
+          "metadata_privileges_restored": true,
+          "no_new_service_ace": true,
+          "temporary_service_modify_only_data_and_scratch": true
+        },
+        {
+          "root": "runtime",
+          "original_entries": 6054,
+          "new_entries": 0,
+          "reassigned_new_entries": 0,
+          "original_dacls_equal": true,
+          "original_owners_equal": true,
+          "metadata_privileges_restored": true,
+          "no_new_service_ace": true,
+          "temporary_service_modify_only_data_and_scratch": true
+        }
+      ],
+      "java_labels": [
+        "first"
+      ],
+      "analyzed_labels": [
+        "first"
+      ],
+      "scope": "Source-selected WMI process names and exactly observed service/coordinator PIDs"
+    }
+  ],
+  "independent_reviews": [
+    {
+      "artifact": "daily-fa35-stock-failure-independent-max-review-20260929.json",
+      "sha256": "a70e9221ac2f611fb1d213be5f2431662f8445838815b444b264b90527191d51"
+    },
+    {
+      "artifact": "fa35-originals-independent-max-package-contract-accounting-20260928175113.json",
+      "sha256": "4a7032dc46855ffaedf64d28c307eb88b49e2e498eb3ec2a717c577f3a3d511b"
+    }
+  ],
+  "root_independent_accounting": {
+    "artifact": "root-daily-dev16-failed-original-independent-accounting.json",
+    "sha256": "d7e024304909b9bb5e4fa7527f2ba67fdf3fef841e396c501d1921f1d116f845"
+  },
+  "source_pair_qualified": false,
+  "installation_qualified": false,
+  "release_accepted": false,
+  "full_product_ready": false,
+  "production_deployment": false
+}

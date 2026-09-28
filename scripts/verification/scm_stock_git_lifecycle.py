@@ -15,7 +15,11 @@ import time
 from uuid import uuid4
 
 SCOPE='stock schema3 Git/native BSL full owned lifecycle'
+NATIVE_BSL_CLEANUP_QUERY_RESERVE=6  # Three STOP observations plus three final cleanup observations.
 
+
+class ProcessInventoryIncomplete(RuntimeError):
+    """All three restored whole observations lacked required image/argv fields."""
 
 
 def validate_failure_events(rows,service_name,pids):
@@ -261,7 +265,8 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
                     if rows is not None:
                         yield rows
                         return
-                worker.require(attempt<3,'Native process inventory is incomplete')
+                if attempt==3:
+                    raise ProcessInventoryIncomplete('Native process inventory is incomplete')
                 self.event('stock_process_inventory_retry',label='stock-processes-'+str(self.query_sequence),
                     attempt=attempt,next_attempt=attempt+1,max_attempts=3)
 
@@ -407,15 +412,27 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
             def inspect():
                 row=self.current();worker.require(row['status']['state']==4,'Stock service stopped before findings')
                 if native_bsl and label not in self.java_proofs:
-                    with self.process_inspection() as rows:
-                        for child in rows:
-                            if Path(child['ExecutablePath'])!=self.runtime/'jdk/bin/java.exe': continue
-                            try: process=self.native.process(child['ProcessId'])
-                            except Exception as error:
-                                if getattr(error,'code',None)==87: continue  # exited during read-only sampling
-                                raise
-                            proof=measurement.validate_java(child,process,service_pid=self.held.pid,runtime=self.runtime,scratch=self.scratch)
-                            self.java_proofs[label]=proof;self.event('stock_native_bsl_process',label=label,**proof)
+                    worker.require(label in ('first','next'),'Native BSL sampling label differs')
+                    worker.require(self.query_sequence+3+NATIVE_BSL_CLEANUP_QUERY_RESERVE<=200,
+                        'Native BSL sampling would exhaust reserved cleanup observations')
+                    try:
+                        with self.process_inspection() as rows:
+                            for child in rows:
+                                if Path(child['ExecutablePath'])!=self.runtime/'jdk/bin/java.exe': continue
+                                try: process=self.native.process(child['ProcessId'])
+                                except Exception as error:
+                                    if getattr(error,'code',None)==87: continue  # exited during read-only sampling
+                                    raise
+                                proof=measurement.validate_java(child,process,service_pid=self.held.pid,runtime=self.runtime,scratch=self.scratch)
+                                self.java_proofs[label]=proof;self.event('stock_native_bsl_process',label=label,**proof)
+                    except ProcessInventoryIncomplete:
+                        # Availability during active sampling is not an ownership
+                        # proof. Retry via the existing bounded publication wait;
+                        # direct inventory, STOP and cleanup keep their hard refusal.
+                        self.event('stock_native_bsl_inventory_deferred',label=label,
+                            last_capture='stock-processes-'+str(self.query_sequence),max_attempts=3,
+                            cleanup_query_reserve=NATIVE_BSL_CLEANUP_QUERY_RESERVE)
+                        return None
                 doc=self.publication();events=doc['outbox']
                 worker.require(all(item['event'].get('status')=='analyzed' for item in events),'Stock analyzer reported failure')
                 worker.require(len(events)<=len(commits),'Duplicate stock notification')
