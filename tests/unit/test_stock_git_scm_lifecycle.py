@@ -177,3 +177,24 @@ def test_old_worker_failure_cannot_turn_access_denied_start_into_expected_refusa
     test.installer.start=denied
     with pytest.raises(RuntimeError): test.failed_start('analysis-permission-revoked')
     assert 'stock_start_refused' not in events
+
+
+def test_owned_children_does_not_wait_for_its_own_live_coordinator(tmp_path):
+    module=api();runtime=tmp_path/'runtime';root=tmp_path/'fixture';python=runtime/'python.exe'
+    worker=SimpleNamespace(Acceptance=object,PYTHON=python,ROOT=root)
+    from tests.unit.test_stock_git_scm_measurement import api as measurement_api
+    measurement=measurement_api()
+    cls=module.acceptance_type(worker,None,None,None,None,None,measurement);test=cls.__new__(cls)
+    test.runtime=root/'localservice/diagnostics/Rentgen/runtimes/p';test.source=root/'localservice/source'
+    coordinator_pid=module.os.getpid()
+    test.processes=lambda:[
+        {'ProcessId':coordinator_pid,'ExecutablePath':str(python)},
+        {'ProcessId':coordinator_pid+1,'ExecutablePath':str(python)},
+        {'ProcessId':coordinator_pid+2,'ExecutablePath':str(test.runtime/'jdk/bin/java.exe')},
+        {'ProcessId':coordinator_pid+3,'ExecutablePath':str(root/'bsl-scan.exe')},
+        {'ProcessId':coordinator_pid+4,'ExecutablePath':str(tmp_path/'foreign/python.exe')}]
+    assert [row['ProcessId'] for row in test.children()]==[coordinator_pid+1,coordinator_pid+2,coordinator_pid+3]
+    # After the real owned service/children exit, the coordinator remains live
+    # and the cooperative STOP/cleanup wait must be able to complete.
+    test.processes=lambda:[{'ProcessId':coordinator_pid,'ExecutablePath':str(python)}]
+    assert test.children()==[]

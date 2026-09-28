@@ -190,6 +190,10 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
         def children(self):
             owned=[]
             for row in self.processes():
+                # The verifier itself uses the same copied interpreter as SCM.
+                # Its live PID is not a service child and must not prevent STOP
+                # or cleanup from completing after the real owned processes exit.
+                if row['ProcessId']==os.getpid(): continue
                 image=Path(row['ExecutablePath'])
                 selected=image in (worker.PYTHON,worker.ROOT/'bsl-scan.exe',self.runtime/'jdk/bin/java.exe')
                 if image.name.casefold()=='git.exe':

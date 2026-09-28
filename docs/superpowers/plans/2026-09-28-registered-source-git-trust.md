@@ -213,3 +213,12 @@ the four coordinator suites now pass without skips. This is local verifier
 evidence, not actual native refusal acceptance. Original5b push36389146238 and
 PR36389149702 attempts stay intact; this successor is held locally until their
 terminal artifacts are collected. No push, new release or deployment here.
+
+
+Root review reproduced a stock owned-child wait defect: the coordinator uses
+the same copied interpreter as the SCM service, so matching its image alone
+also included its own still-live PID. A clean STOP/cleanup could not complete
+that wait. Exclude exactly the live verifier os.getpid; other owned service,
+Java and scanner rows remain. One actual-current-PID injected regression was
+red, then all69 four-suite cases passed with zero skips. Original5b attempts
+remain intact; local successor and native cleanup acceptance are separate.

@@ -1,0 +1,40 @@
+{
+  "schema": "rentgen-stock-scm-coordinator-self-wait-local/1",
+  "source_base": "1ae115e8fd4a3105898dfc261605cb4bf0caaecc",
+  "remote_ci_source": "5b38b60bd2374dcb749dcae2f0a358852b87dbfb",
+  "source_files": {
+    "scripts/verification/scm_stock_git_lifecycle.py": "6ad7b4f50e68506f07f05c84cf3936951f68eac8c1b62f2d588fcc695c0a4176",
+    "tests/unit/test_stock_git_scm_lifecycle.py": "1f883e9d4bb18134fb41b556b9e965fbafa1317169712944d05052cb0a7e5a59"
+  },
+  "new_cases": 1,
+  "bug_reproduced": "owned-child wait included the still-running copied-Python coordinator itself",
+  "fix": "exclude exactly os.getpid of the live verifier; retain all other owned service/Java/scanner child rows",
+  "red": {
+    "file": "stock-scm-coordinator-self-wait-red.xml",
+    "sha256": "8aef0d2e188ec885bb0c22978f31ed5d02d8bee64932856855603ea5b39e22a7",
+    "cases": 1,
+    "failed": 1,
+    "errors": 0,
+    "skipped": 0
+  },
+  "four_suite_green": {
+    "file": "stock-scm-coordinator-self-wait-green.xml",
+    "sha256": "39c51632c5273ea173cb7753c44d195ee9aab8a604026d5dc3be220f70f49975",
+    "cases": 69,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "local_scope": "constructed process rows with real live coordinator PID and actual Git/SQLite/Go with injected BSL",
+  "actual_native_cleanup_accepted": false,
+  "native_stock_git_accepted": false,
+  "source_ci_qualified": false,
+  "full_product_ready": false,
+  "independent_review": false,
+  "root_only_review": true,
+  "production_deployment": false,
+  "pushed": false,
+  "release_published": false,
+  "original_ci_attempts_preserved": true,
+  "recorded_utc": "2026-09-28T07:49:50.742839+00:00"
+}
