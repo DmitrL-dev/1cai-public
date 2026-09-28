@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "scope": "verification-only Git measurement primitives under current user",
+  "before_commit": "d2db111c3732d2782f93027cbada401d495b8199",
+  "files": {
+    "scripts/verification/scm_git_probe_service.py": "64eb2221282b0e00117ae3e15c14a94653e9415feb5a427cd3a91794f531ed65",
+    "tests/unit/test_scm_git_probe.py": "e8a621ddf9100f07d0c9b1cf3278a5125508c3b8474b36dc645868bae9d3b4e5"
+  },
+  "reports": {
+    "scm-git-probe-primitives-red.xml": {
+      "tests": 18,
+      "failures": 18,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "12e9780445c8f14136fffd7fa1285fd665f3dfa8b8ea8f43a15bd2957c05169d"
+    },
+    "scm-git-probe-real-current-user.xml": {
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "7a17e1bfcbe8f678d84adc83f4f5de662ffd26831b62e6500fcdc719f9c7d264"
+    },
+    "scm-git-probe-primitives-final.xml": {
+      "tests": 20,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "4789d1fe6a4f724c0c4167dda9f031f2a2daabbd214fd2cc69d9259bb4c12141"
+    }
+  },
+  "real_git_current_user_contract_passed": true,
+  "native_git_scm_accepted": false,
+  "continuous_git_accepted": false,
+  "production_trust_policy_selected": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "independent_review": false,
+  "observed_git": {
+    "path": "C:/Program Files/Git/cmd/git.exe",
+    "hardlinks": 2,
+    "version": "git version 2.51.2.windows.1",
+    "sha256": "54194a1af7cfb6730448ce14b8f2c1dddd9f950b7f995dc351c1ed16eb179249"
+  },
+  "next": "Fixed service worker/owned coordinator, then actual disposable LocalService diagnostic. Stock GitAuditWorker/BSL qualification and subsequent version remain separate.",
+  "recorded_utc": "2026-09-28T01:23:53.344262+00:00"
+}

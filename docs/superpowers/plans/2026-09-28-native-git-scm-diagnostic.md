@@ -43,11 +43,11 @@ cleanup; it installs only its fixed diagnostic ImagePath.
   `foreign_owner_refused`, or an explicit unsuccessful reason; a generic error never
   proves an ownership denial.
 
-- [ ] Write failing tests for inherited Git config/simulation removal, default
+- [x] Write failing tests for inherited Git config/simulation removal, default
   environment separation, exact argv/reset, wildcard and unsafe input rejection,
   output/timeout bounds and generic errors remaining distinct from owner refusal.
-- [ ] Run `python -m pytest tests/unit/test_scm_git_probe.py -q` and retain red JUnit.
-- [ ] Implement the fixed command/environment boundary. Command form:
+- [x] Run `python -m pytest tests/unit/test_scm_git_probe.py -q` and retain red JUnit.
+- [x] Implement the fixed command/environment boundary. Command form:
   ```python
   (git, '--no-pager', '-c', 'core.fsmonitor=false',
    '-c', 'safe.directory=', '-c', 'safe.directory=' + selected,
@@ -55,13 +55,13 @@ cleanup; it installs only its fixed diagnostic ImagePath.
   ```
   Omit both safe.directory pairs for the default probe. Isolated environment uses
   an empty owned `GIT_CONFIG_GLOBAL` and `GIT_CONFIG_NOSYSTEM=1`.
-- [ ] Capture pipes with separate bounded readers; overflow terminates the child,
+- [x] Capture pipes with separate bounded readers; overflow terminates the child,
   timeout terminates and waits for that same child. Preserve the bounded bytes in
   exclusive owned files and SHA-256 them before reporting.
-- [ ] Check exact root plus known commit for success. Require nonzero Git exit and
+- [x] Check exact root plus known commit for success. Require nonzero Git exit and
   the explicit `detected dubious ownership in repository` diagnostic for refusal;
   do not classify timeout, output limit or command-not-found as owner evidence.
-- [ ] Run the narrow suite, inspect diff/whitespace, commit this complete slice.
+- [x] Run the narrow suite, inspect diff/whitespace, commit this complete slice.
 
 ## Task 2: Service worker and fixed inputs
 
@@ -135,3 +135,13 @@ cleanup; it installs only its fixed diagnostic ImagePath.
   policy unset until the actual evidence justifies a separate design.
 - [ ] Then qualify stock schema3 GitAuditWorker with native BSL and subsequent Core
   payload through source/main/release checks and immutable release publication.
+
+## Local Task 1 evidence
+
+20 contracts passed with zero failures/errors/skips. Initial18 cases failed
+because the module was absent. A real current-user Git case then found the
+installed cmd/git.exe has two hardlinks; binary observation accepts that,
+while owned config/raw inputs still reject hardlinks. That real Git case
+confirmed exact root/commit, unchanged repository/global config and no
+safe.directory persistence in the next process. Actual LocalService has
+not been run for this diagnostic; production trust remains unset.
