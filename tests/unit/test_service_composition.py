@@ -806,3 +806,70 @@ def test_continuous_git_stopping_after_retryable_failure_is_not_success(configur
     ]
     with observer.locked():
         pass
+
+
+@pytest.mark.parametrize("schema", [2, 3])
+@pytest.mark.parametrize("mode", ["--console", "--service"])
+def test_module_entry_uses_canonical_git_config_and_factory(
+    configured, workspace, monkeypatch, scanner, capsys, schema, mode
+):
+    """Exercise -m's __main__ namespace with the real factory and publication."""
+    import runpy
+    import sys
+    import warnings
+
+    if schema == 3:
+        observer, source, module, snapshot, adapter = autonomous(
+            configured, workspace, monkeypatch, scanner
+        )
+    else:
+        observer, source, module, snapshot, adapter = wire(
+            configured, workspace, monkeypatch
+        )
+    original = module.read_bytes()
+    from rentgen_core import service_composition
+    factory = service_composition.GitAuditWorker
+    canonical_types = []
+    def construct(config):
+        canonical_types.append(isinstance(config, service_entry.GitServiceConfig))
+        return factory(config)
+    monkeypatch.setattr(service_composition, "GitAuditWorker", construct)
+    scm = None
+    if mode == "--service":
+        from test_service_entry import SCM
+        class GitSCM(SCM):
+            def dispatch(self, callback):
+                callback("Rentgen.GitAudit", True)
+            def register(self, name, handler):
+                assert name == "Rentgen.GitAudit"
+                self.handler = handler
+                return 123
+        scm = GitSCM()
+        monkeypatch.setattr(service_entry, "Win32SCM", lambda: scm)
+    capsys.readouterr()
+    monkeypatch.setattr(sys, "argv", [
+        "rentgen_core.service_entry", mode, "--config", str(configured.path)
+    ])
+    with warnings.catch_warnings():
+        # Canonical imports already loaded by this test process. A fresh -m
+        # interpreter does not emit this runpy warning.
+        warnings.filterwarnings("ignore", message=".*found in sys.modules.*", category=RuntimeWarning)
+        with pytest.raises(SystemExit) as stopped:
+            runpy.run_module("rentgen_core.service_entry", run_name="__main__")
+    assert canonical_types == [True]
+    assert stopped.value.code == 0
+    output = capsys.readouterr()
+    if mode == "--console":
+        assert json.loads(output.out) == {"status": "stopped", "cycles": 1}
+    else:
+        from test_service_entry import states
+        assert output.out == ""
+        assert states(scm) == [service_entry.START_PENDING, service_entry.RUNNING,
+                               service_entry.STOP_PENDING, service_entry.STOPPED]
+    # The graph builder may emit progress; the entry must not report failure.
+    assert '"error"' not in output.err
+    assert len(adapter.calls) == 1 and module.read_bytes() == original
+    assert observer.findings_status()["state"]["report"]["complete"] is True
+    assert len(NotificationOutbox(observer.profile / "git-outbox.json").peek()) == 1
+    with observer.locked():
+        pass

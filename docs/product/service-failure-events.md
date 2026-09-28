@@ -34,5 +34,11 @@ Get-WinEvent -LogName Application -FilterXPath "*[System[Provider[@Name='Rentgen
 Stock-сценарий читает максимум 16 событий за последние 20 минут, проверяет поля
 и связывает PID с исходными наблюдениями SCM. Прочитанный код объясняет отказ;
 успешность native-сценария устанавливают его прежние пять групп проверок.
-Фактическая запись под LocalService ожидает нового CI. Локально проверены
-инъекции Windows API и защита полей.
+В исходных push/PR CI коммита f88575af3a23 подтверждена фактическая запись
+события от процесса службы, созданной для LocalService. Оба события связаны с
+наблюдавшимися SCM PID и указывают factory/CoreError/SERVICE_CONFIG_INVALID.
+Причина — разные классы конфигурации в __main__ и импортированном модуле Python.
+Точка входа теперь вызывает каноническую функцию main пакета. Native token
+stock-процесса до RUNNING не был измерен; полный stock Git/BSL требует нового CI.
+Подробности: [исходные отказы](evidence/stock-scm-module-entry-ci-failure-20260928.json)
+и [локальная проверка исправления](evidence/stock-scm-module-entry-local-20260928.json).

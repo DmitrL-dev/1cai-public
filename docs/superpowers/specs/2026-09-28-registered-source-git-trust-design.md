@@ -108,3 +108,19 @@ stage/type/known reason, public service name and PID; optional Windows event at
 most512 characters cannot change result/cleanup. Raw bounded reads require SCM
 PID binding. See docs/product/service-failure-events.md. Actual LS event and full
 stock source qualification remain pending; original failed5b attempts unchanged.
+
+
+## Канонический Python module entry
+
+SCM сохраняет установленную команду python -I -m rentgen_core.service_entry.
+Её __main__ guard импортирует и вызывает каноническую main из пакета. Загрузчик,
+GitServiceConfig, фабрика, NativeService и зависимости используют одну идентичность
+классов. Все другие AST statements service_entry и строгий isinstance фабрики
+сохранены. Схемы 2/3, dry-run, контекст, права, trusted source, lease и generic CLI
+ошибки продолжают проверяться прежними контрактами. Четыре новых теста проходят
+реальную фабрику/публикацию через __main__; Windows SCM и BSL в них инъецированы.
+
+Оригинальные f885 события factory/CoreError/SERVICE_CONFIG_INVALID объясняют отказ
+до RUNNING. Успешная запись диагностического события, cleanup и предыдущие native
+SourceObserver/Git diagnostic scopes отдельно подтверждены исходными артефактами.
+Полный stock Git/BSL lifecycle требует CI нового source и всех пяти групп.

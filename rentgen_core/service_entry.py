@@ -688,4 +688,8 @@ def main(argv=None, *, worker_factory=create_worker):
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # -m executes this file as __main__. Use the package module's classes and
+    # factory together, including SCM, so configuration type identity is stable.
+    from rentgen_core.service_entry import main as _module_main
+
+    sys.exit(_module_main())

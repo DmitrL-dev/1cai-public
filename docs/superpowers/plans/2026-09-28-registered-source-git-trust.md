@@ -251,3 +251,28 @@ passed and four stock suites82 passed; union244 distinct cases/zero skips.
 stock-scm-owner-startup-diagnostics-local-20260928.json binds source/report hashes.
 Actual LS event/source CI pending. Root-only review. Modified Core payload still
 requires its own later version/release after qualification.
+
+
+## f885: установленная точка входа Python и диагностированный отказ
+
+Оригинальные push 36397696372 и PR 36397703021 attempt 1 завершились failure.
+Оба сохранили 2891 Python/69 Node/2 Go packages без пропусков, 105 исходных файлов
+wheel, пять native SourceObserver lifetimes и отдельную Git diagnostic lifetime.
+Stock остановился до RUNNING. Оба события Application/Rentgen.Core.Service/EventID1
+связаны с наблюдавшимся SCM PID: factory/CoreError/SERVICE_CONFIG_INVALID.
+В обоих stock cleanup ошибок нет, служба отсутствует, DACL/owners/privileges
+восстановлены, шесть исходных JSON/SQLite файлов сохранены и проверены.
+
+Причина воспроизведена через runpy с __main__: класс GitServiceConfig в точке
+входа отличается от импортированного фабрикой класса. Теперь -m вызывает main
+из канонического rentgen_core.service_entry. Строгая проверка фабрики сохранена.
+Два первоначальных теста падали. После исправления четыре маршрута schema2/schema3,
+console/injected SCM проходят с настоящей фабрикой, публикацией и освобождением
+lease. Локальное объединение: 168 уникальных passed; промежуточные два отказа
+из-за неверного требования к пустому stderr сохранены и исправлены.
+
+Новый source CI ожидает 2895 Python cases/650 локальных identities. Все пять
+stock групп, холодный запуск Java, реальные PID/token/parent/argv и cleanup
+остаются обязательными. Actual stock RUNNING/Java ещё не квалифицированы.
+Ревью выполняет root; subagents/independent review/production deployment отсутствуют.
+Записи: stock-scm-module-entry-ci-failure-20260928.json и stock-scm-module-entry-local-20260928.json.
