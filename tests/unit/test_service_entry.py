@@ -664,3 +664,62 @@ def test_tick_accessor_failure_releases_bound_cleanup(configured):
     result = entry().run_console(configured.path, worker_factory=lambda _: worker)
     assert result.error_code == "SERVICE_WORKER_FAILED"
     assert worker.closed == 1
+
+
+@pytest.mark.parametrize('failure',[CoreError('OBSERVER_PROFILE_MISMATCH','private-value'),
+    CoreError('PRIVATE_VALUE','private-value'),RuntimeError('private-value'),OSError('private-value')])
+def test_failure_detail_keeps_only_fixed_stage_type_and_known_code(configured,failure,capsys):
+    module=entry()
+    def factory(config): raise failure
+    result=module.run_console(configured.path,worker_factory=factory)
+    detail=result.failure_detail
+    assert detail['stage']=='factory' and detail['kind'] in {'CoreError','RuntimeError','OSError'}
+    assert detail['reason']==('OBSERVER_PROFILE_MISMATCH' if type(failure) is CoreError
+        and failure.code=='OBSERVER_PROFILE_MISMATCH' else 'UNCLASSIFIED')
+    assert 'private-value' not in repr(result) and 'PRIVATE_VALUE' not in repr(result)
+    assert capsys.readouterr()==('','') and result.error_code=='SERVICE_WORKER_FAILED'
+
+
+def test_native_failure_event_contains_no_private_values_and_precedes_stopped(configured,monkeypatch):
+    module=entry();monkeypatch.setattr(module,'_platform','win32');scm=SCM();events=[]
+    def factory(config): raise CoreError('OBSERVER_PROFILE_MISMATCH','private-value')
+    def capture(name,detail): events.append((name,detail,list(states(scm))))
+    scm.report_failure=capture
+    result=module.NativeService(configured.path,scm=scm,worker_factory=factory).run()
+    assert len(events)==1 and events[0][0]=='Rentgen.Observer'
+    assert events[0][1]=={'stage':'factory','kind':'CoreError','reason':'OBSERVER_PROFILE_MISMATCH'}
+    assert events[0][2][-1]==module.STOP_PENDING and states(scm)[-1]==module.STOPPED
+    assert 'private-value' not in repr(events) and result.error_code=='SERVICE_WORKER_FAILED'
+
+
+def test_unavailable_failure_event_does_not_skip_cleanup_or_change_service_result(configured,monkeypatch):
+    module=entry();monkeypatch.setattr(module,'_platform','win32');scm=SCM()
+    def tick(): raise RuntimeError('private-value')
+    def unavailable(*args): raise OSError('private-value')
+    scm.report_failure=unavailable;worker=Worker(tick=tick)
+    result=module.NativeService(configured.path,scm=scm,worker_factory=lambda _:worker).run()
+    assert result.error_code=='SERVICE_WORKER_FAILED' and worker.closed==1 and states(scm)[-1]==module.STOPPED
+
+
+@pytest.mark.parametrize('report_ok',[True,False])
+def test_failure_event_ctypes_handle_is_closed_and_fields_are_bounded(report_ok):
+    module=entry();calls=[]
+    class Function:
+        def __init__(self,fn): self.fn=fn
+        def __call__(self,*args): return self.fn(*args)
+    def register(server,source):
+        assert server is None and source=='Rentgen.Core.Service';calls.append('register');return 432
+    def report(handle,kind,category,event,sid,count,size,strings,data):
+        assert (handle,kind,category,event,sid,count,size,data)==(432,1,0,1,None,1,0,None)
+        doc=json.loads(strings[0]);assert len(strings[0])<=512
+        assert doc['schema']==1 and doc['event']=='service_failed' and doc['service_name']=='Rentgen.Observer'
+        assert doc['pid']>0 and doc['failure']=={'stage':'factory','kind':'CoreError','reason':'OBSERVER_PROFILE_MISMATCH'}
+        calls.append('report');return int(report_ok)
+    def close(handle): assert handle==432;calls.append('close');return 1
+    library=SimpleNamespace(StartServiceCtrlDispatcherW=Function(lambda *a:1),
+        RegisterServiceCtrlHandlerExW=Function(lambda *a:1),SetServiceStatus=Function(lambda *a:1),
+        RegisterEventSourceW=Function(register),ReportEventW=Function(report),DeregisterEventSource=Function(close))
+    scm=module.Win32SCM(library=library)
+    detail={'stage':'factory','kind':'CoreError','reason':'OBSERVER_PROFILE_MISMATCH'}
+    assert scm.report_failure('Rentgen.Observer',detail)==report_ok
+    assert calls==['register','report','close']

@@ -1,0 +1,57 @@
+{
+  "schema": "rentgen-stock-module-entry-local/1",
+  "parent_source_head": "f88575af3a23746c6a7836edbc695f85a3a11ee0",
+  "source_files": {
+    "rentgen_core/service_entry.py": "176ebadc5dabe94c5dbebc803a24cb542d3bbc0ffaea7f1c52cfd6b1a388cbc6",
+    "tests/unit/test_service_composition.py": "238b8640d467e26e7f6b900c301c49c0e571f5b10aefb3935f57facf2a6fd2a1"
+  },
+  "red": {
+    "cases": 2,
+    "failed": 2,
+    "junit_sha256": "0884e14c6ff5238619ca341c25ae19c9abbb059b2a068ef723206791c2f27189"
+  },
+  "regression": {
+    "cases": 168,
+    "passed": 166,
+    "failed": 2,
+    "skipped": 0,
+    "junit_sha256": "cc599f7bb2ee5276fa4a189fc7ee4a721952eab0b54f460bd270d7459c0f05d0",
+    "failures": "Two new assertions incorrectly required empty stderr despite normal graph-builder progress. Corrected in the final four-case run; original report retained."
+  },
+  "final_module_entry": {
+    "cases": 4,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "junit_sha256": "09dc770a5f68bda85ba5f73245cbb00273f8c96eb02efe12352a941b39626a5f"
+  },
+  "verified_passed_case_union": 168,
+  "case_union_method": "Only passing regression cases plus all four final cases; duplicate identities counted once.",
+  "routes": [
+    "schema2 console",
+    "schema3 console",
+    "schema2 injected SCM",
+    "schema3 injected SCM"
+  ],
+  "assertions": [
+    "canonical GitServiceConfig passed to unchanged strict real factory",
+    "one complete finding publication",
+    "one durable outbox event",
+    "source bytes unchanged",
+    "Observer lifetime lease released",
+    "injected SCM START_PENDING/RUNNING/STOP_PENDING/STOPPED"
+  ],
+  "bsl_output_injected": true,
+  "scm_injected": true,
+  "actual_localservice_executed": false,
+  "entry_fix_only": true,
+  "all_other_service_entry_ast_unchanged": true,
+  "expected_new_source_python_cases": 2895,
+  "expected_new_source_local_case_union": 650,
+  "source_ci_qualified": false,
+  "native_stock_git_accepted": false,
+  "new_release_qualified": false,
+  "production_deployment": false,
+  "independent_review": false,
+  "recorded_utc": "2026-09-28T09:27:46.520016+00:00"
+}

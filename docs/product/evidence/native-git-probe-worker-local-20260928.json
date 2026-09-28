@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "scope": "verification-only manifest/service worker contracts",
+  "before_commit": "71031a678bf5e85e4ccf8cec1f2c2f9a0019b567",
+  "files": {
+    "scripts/verification/scm_git_probe_service.py": "5c14bbabf672a27ef98783d2eeb16994543a6e377294044e6d77f191859ba90c",
+    "tests/unit/test_scm_git_probe.py": "63a2b05affa2b8b0aaf436fb195d8fa58b8cbf10a45381214209d232a69f2b1e"
+  },
+  "reports": {
+    "scm-git-probe-inputs-red-corrected.xml": {
+      "tests": 9,
+      "failures": 9,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "3717e78972d1b352a89e458a15b4bccd55f30e66421d3b9a787015b853109b3f"
+    },
+    "scm-git-probe-worker-red.xml": {
+      "tests": 5,
+      "failures": 5,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "882c71d362128b6c7cf032ec64c8207cf9c485a00628df462199034cdc21c6b6"
+    },
+    "scm-git-probe-worker-service-regression.xml": {
+      "tests": 103,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "7c17664fc97f4adef45cad65914041b2649a99d281a9f6d72a0b305549bc5719"
+    }
+  },
+  "probe_cases": 34,
+  "service_entry_cases": 69,
+  "actual_localservice_exercised": false,
+  "positive_owner_flows_use_injected_unit_observations": true,
+  "diagnostic_accepted": false,
+  "native_git_scm_accepted": false,
+  "continuous_git_accepted": false,
+  "production_trust_policy_selected": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "independent_review": false,
+  "next": "Strict owned diagnostic SCM coordinator and disposable CI; no production trust policy selected.",
+  "recorded_utc": "2026-09-28T01:38:16.019935+00:00"
+}

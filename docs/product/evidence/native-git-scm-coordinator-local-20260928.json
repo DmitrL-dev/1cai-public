@@ -1,0 +1,69 @@
+{
+  "schema": "rentgen-git-scm-coordinator-local/1",
+  "binding": "Source file hashes identify the tested slice; its enclosing Git commit records all documentation.",
+  "parent_source_commit": "7c8901c23110e7caf07f63f4343fd4d14dee501d",
+  "verification": {
+    "junit_sha256": "fca02b2cf5b85c6ac8e1be61d3bcd33ca500c91f31170c7cd1442c8b42393c06",
+    "passed": 137,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1,
+    "modules": {
+      "tests.unit.test_git_scm_diagnostic": {
+        "tests": 61,
+        "passed": 61,
+        "skipped": 0
+      },
+      "tests.unit.test_scm_git_probe": {
+        "tests": 34,
+        "passed": 34,
+        "skipped": 0
+      },
+      "tests.unit.test_service_scm_delivery": {
+        "tests": 43,
+        "passed": 42,
+        "skipped": 1
+      }
+    },
+    "skip": {
+      "case": "test_native_explicit_policy_roundtrip_covers_files_and_directories",
+      "reason": "Actual DACL round trip requires SeRestorePrivilege and SeBackupPrivilege; exercised on the elevated Windows CI runner"
+    },
+    "positive_service_unit_observations": "injected; not actual SCM/LocalService evidence"
+  },
+  "source_files": {
+    "scripts/verification/scm_git_diagnostic_control.py": "81ab15c0f07b98204bef84d47e09b0e11a7e1e28d0241d000f501fd75e5b7975",
+    "scripts/verification/verify_git_scm_diagnostic.py": "b6b089b94d5ffccb8ed9ef97b53ed75abdde3cdb3a5f870dbd68ee87be7d6fa4",
+    "tests/unit/test_git_scm_diagnostic.py": "cc9aa80f020e715603866f5b4a2a51fd33296c0447dea451882c195981ac3b31",
+    ".github/workflows/core-ci.yml": "49542fc1b56cbfd176fb708546f57130e871081da78c0f4214467200ecbb3a51"
+  },
+  "implemented": [
+    "Fixed owned SCM controls, unknown service refusal and uncertain-create refusal",
+    "Accepted-kit provenance, direct runtime and auxiliary module/input hashes",
+    "SCM PID/image/LocalService SID binding and raw five-case recomputation",
+    "STOP, same-process close, source inventory/owner and input hash equality",
+    "Inherited ACL/owner cleanup and retained bounded raw evidence on failure",
+    "Separate native-git-diagnostic CI job with always-upload"
+  ],
+  "scope": {
+    "local_contracts_accepted": true,
+    "actual_diagnostic_scm_exercised": false,
+    "diagnostic_accepted": false,
+    "native_git_scm_accepted": false,
+    "continuous_git_accepted": false,
+    "production_trust_policy_selected": false,
+    "full_product_ready": false,
+    "production_deployment": false,
+    "independent_review": false
+  },
+  "release": {
+    "subsequent_core_version_required": true,
+    "existing_public_tags_and_assets_replaced": false
+  },
+  "pending": [
+    "Actual diagnostic CI raw measurements and cleanup qualification",
+    "Production Git trust policy from actual observations",
+    "Stock GitAuditWorker schema3 and native BSL",
+    "Subsequent Core source/main/release qualification"
+  ]
+}

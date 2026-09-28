@@ -1,0 +1,278 @@
+{
+  "schema": "rentgen-stock-module-entry-ci-failure/1",
+  "source_head": "f88575af3a23746c6a7836edbc695f85a3a11ee0",
+  "source_tree": "03f88e15acb572e68bf2c4652ed4e6c4184f1225",
+  "runs": [
+    {
+      "run_id": 36397703021,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36397703021",
+      "event": "pull_request",
+      "run_attempt": 1,
+      "conclusion": "failure",
+      "actual_checkout": "3392b0c73ce9f89657258b0d780856239ecd32c9",
+      "tree": "03f88e15acb572e68bf2c4652ed4e6c4184f1225",
+      "parents": [
+        "c715e9b65b75ae667376f331c3c0fac14be2f7f3",
+        "f88575af3a23746c6a7836edbc695f85a3a11ee0"
+      ],
+      "python_passed": 2891,
+      "local_cases_present": 646,
+      "python_skipped": 0,
+      "node_passed": 69,
+      "go_packages_passed": 2,
+      "wheel_core_files": 105,
+      "kit_sha256": "911643ce4201d0643d5929e7eb486f9dea1c6955d9f202aaf71a832ff1518c0c",
+      "wheel_sha256": "009ec4f27050f4d20db3c2dcae8c0f7b1b664e24562a42f0fdf459769390c48a",
+      "artifact_sha256": {
+        "verified-core-development": "1bb3cbabb234d0671199b18ecc0b476563ce148122815d796e63d73f8a0615f6",
+        "native-scm-evidence": "6cfdaa1fd4031aea3ed315c56474e1a169cdac6b747ad133a9901e05840291a1",
+        "native-stock-git-evidence": "cdff7267e783eb69ac19dd9504a1d30fa278ee0eb0c5d849603b281f337d5d35",
+        "python-contract-report": "7730c1950ddc759764f18a3359a4dfaa996e62b5631d132e1ca490741d25f248",
+        "native-git-diagnostic-evidence": "ae39a32881b7579cee9a0be719ab37a8528ce722f53ad7e5ed7166d72115ce13"
+      },
+      "root_audit_sha256": "be95c893eeacbec14a1ed195c567f3c343bc9fd84c620ab157318d3cff12589d",
+      "source_observer_native_lifetimes": 5,
+      "git_diagnostic_accepted": true,
+      "stock_failure": {
+        "type": "RuntimeError",
+        "message": "Service stopped before RUNNING"
+      },
+      "failure_event": {
+        "event": "service_failed",
+        "failure": {
+          "kind": "CoreError",
+          "reason": "SERVICE_CONFIG_INVALID",
+          "stage": "factory"
+        },
+        "pid": 2256,
+        "schema": 1,
+        "service_name": "Rentgen.CI.e5f207241475"
+      },
+      "failure_event_record_id": 3824,
+      "failure_event_utc": "2026-09-28T09:12:31.3360091Z",
+      "failure_event_scm_pid_bound": true,
+      "stock_scm_statuses": [
+        {
+          "service_type": 16,
+          "state": 2,
+          "controls": 0,
+          "win32_exit": 0,
+          "service_exit": 0,
+          "checkpoint": 1,
+          "wait_hint": 30000,
+          "pid": 2256,
+          "flags": 0
+        },
+        {
+          "service_type": 16,
+          "state": 1,
+          "controls": 0,
+          "win32_exit": 1066,
+          "service_exit": 2,
+          "checkpoint": 0,
+          "wait_hint": 0,
+          "pid": 0,
+          "flags": 0
+        }
+      ],
+      "stock_controls": [
+        {
+          "label": "control-1-create",
+          "exit_code": 0,
+          "child_reaped": true,
+          "receipt_sha256": "3f4faf0a703f67387542c638f00b47e92bff0c58d7c5c2513cfd8b9213e086c4"
+        },
+        {
+          "label": "control-2-start",
+          "exit_code": 0,
+          "child_reaped": true,
+          "receipt_sha256": "865098c17861ad4a499c387b69a3fb0b8e3f4d598504481a0ec6e3932e968eeb"
+        },
+        {
+          "label": "control-3-delete",
+          "exit_code": 0,
+          "child_reaped": true,
+          "receipt_sha256": "d49bb5705eb457edc98b749cfaeca619d07d7f7a9df36841011471493658d962"
+        }
+      ],
+      "stock_cleanup_errors": [],
+      "stock_service_exists_after": false,
+      "stock_acl_fields": [
+        {
+          "root": "fixture",
+          "original_entries": 630,
+          "new_entries": 0,
+          "reassigned_new_entries": 0,
+          "original_dacls_equal": true,
+          "original_owners_equal": true,
+          "metadata_privileges_restored": true,
+          "no_new_service_ace": true,
+          "temporary_service_modify_only_data_and_scratch": true
+        },
+        {
+          "root": "runtime",
+          "original_entries": 6054,
+          "new_entries": 0,
+          "reassigned_new_entries": 0,
+          "original_dacls_equal": true,
+          "original_owners_equal": true,
+          "metadata_privileges_restored": true,
+          "no_new_service_ace": true,
+          "temporary_service_modify_only_data_and_scratch": true
+        }
+      ],
+      "stock_retained_files_verified": [
+        "observer.sqlite3",
+        "project.sqlite3",
+        "stock-coordinator.json",
+        "stock-git-service.json",
+        "stock-preparation.json",
+        "stock-source-manifest.json"
+      ],
+      "stock_process_observations": 1,
+      "stock_running_token_observed": false,
+      "actual_native_bsl_reached": false,
+      "java_warmup": false
+    },
+    {
+      "run_id": 36397696372,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36397696372",
+      "event": "push",
+      "run_attempt": 1,
+      "conclusion": "failure",
+      "actual_checkout": "f88575af3a23746c6a7836edbc695f85a3a11ee0",
+      "tree": "03f88e15acb572e68bf2c4652ed4e6c4184f1225",
+      "parents": [
+        "fcb34b2e884cb4fb3e04f61301f1bdfdc39978fd"
+      ],
+      "python_passed": 2891,
+      "local_cases_present": 646,
+      "python_skipped": 0,
+      "node_passed": 69,
+      "go_packages_passed": 2,
+      "wheel_core_files": 105,
+      "kit_sha256": "c1ad9299287921bd6be734035629292acf9c80256ea66dd1b082ae3b6a70bb4a",
+      "wheel_sha256": "009ec4f27050f4d20db3c2dcae8c0f7b1b664e24562a42f0fdf459769390c48a",
+      "artifact_sha256": {
+        "verified-core-development": "46155081d0226196831028b3f30b127e01b0ff0f75426d650a42c18bf1a002a3",
+        "native-stock-git-evidence": "fd27a8eb1ba17e5d27da722a68b5a71ee2480eb1c491de3dce8d4d265e78ed74",
+        "native-scm-evidence": "3f29223ea2f1441396eb360c5fdd7ab32e69d1843cd786d92069c325a7378aa3",
+        "python-contract-report": "aef23b5585347cdb4a51eec31e89b60f221987e7bb4fa8598d9e1efbcb9e95b7",
+        "native-git-diagnostic-evidence": "c7a2add2df7e659b3aeac64564978c92d663f24181e0e7a27f395991f16b349d"
+      },
+      "root_audit_sha256": "0da6fa04d21204ebe6e337043ded12d92f77e181a242cfa289e17da1804738f1",
+      "source_observer_native_lifetimes": 5,
+      "git_diagnostic_accepted": true,
+      "stock_failure": {
+        "type": "RuntimeError",
+        "message": "Service stopped before RUNNING"
+      },
+      "failure_event": {
+        "event": "service_failed",
+        "failure": {
+          "kind": "CoreError",
+          "reason": "SERVICE_CONFIG_INVALID",
+          "stage": "factory"
+        },
+        "pid": 2516,
+        "schema": 1,
+        "service_name": "Rentgen.CI.97e1fba54050"
+      },
+      "failure_event_record_id": 3799,
+      "failure_event_utc": "2026-09-28T09:07:05.6030858Z",
+      "failure_event_scm_pid_bound": true,
+      "stock_scm_statuses": [
+        {
+          "service_type": 16,
+          "state": 2,
+          "controls": 0,
+          "win32_exit": 0,
+          "service_exit": 0,
+          "checkpoint": 1,
+          "wait_hint": 30000,
+          "pid": 2516,
+          "flags": 0
+        },
+        {
+          "service_type": 16,
+          "state": 1,
+          "controls": 0,
+          "win32_exit": 1066,
+          "service_exit": 2,
+          "checkpoint": 0,
+          "wait_hint": 0,
+          "pid": 0,
+          "flags": 0
+        }
+      ],
+      "stock_controls": [
+        {
+          "label": "control-1-create",
+          "exit_code": 0,
+          "child_reaped": true,
+          "receipt_sha256": "8cb369eb7b3b9f5b9ce44ed5e9b0b78f07de3cdbe7fab4d8dc55ab0240d9ea00"
+        },
+        {
+          "label": "control-2-start",
+          "exit_code": 0,
+          "child_reaped": true,
+          "receipt_sha256": "0a982a78256b963a6a364ee27b273f2e730c060e010739ca83311bcfc1c8b39b"
+        },
+        {
+          "label": "control-3-delete",
+          "exit_code": 0,
+          "child_reaped": true,
+          "receipt_sha256": "e1007e8afbbe68a02998da7dee4b7ad4e3d1fd1b6087e40ba8c9158dcb810806"
+        }
+      ],
+      "stock_cleanup_errors": [],
+      "stock_service_exists_after": false,
+      "stock_acl_fields": [
+        {
+          "root": "fixture",
+          "original_entries": 630,
+          "new_entries": 0,
+          "reassigned_new_entries": 0,
+          "original_dacls_equal": true,
+          "original_owners_equal": true,
+          "metadata_privileges_restored": true,
+          "no_new_service_ace": true,
+          "temporary_service_modify_only_data_and_scratch": true
+        },
+        {
+          "root": "runtime",
+          "original_entries": 6054,
+          "new_entries": 0,
+          "reassigned_new_entries": 0,
+          "original_dacls_equal": true,
+          "original_owners_equal": true,
+          "metadata_privileges_restored": true,
+          "no_new_service_ace": true,
+          "temporary_service_modify_only_data_and_scratch": true
+        }
+      ],
+      "stock_retained_files_verified": [
+        "observer.sqlite3",
+        "project.sqlite3",
+        "stock-coordinator.json",
+        "stock-git-service.json",
+        "stock-preparation.json",
+        "stock-source-manifest.json"
+      ],
+      "stock_process_observations": 1,
+      "stock_running_token_observed": false,
+      "actual_native_bsl_reached": false,
+      "java_warmup": false
+    }
+  ],
+  "source_ci_qualified": false,
+  "native_stock_git_accepted": false,
+  "production_trust_policy_selected": false,
+  "full_product_ready": false,
+  "new_release_qualified": false,
+  "production_deployment": false,
+  "independent_review": false,
+  "root_cause": "The -m entry defines GitServiceConfig in __main__; GitAuditWorker imports the package class, so strict isinstance rejects the otherwise valid read-only configuration.",
+  "diagnostic_scope": "EventLog provider/EventID/fixed fields, raw capture SHA, job time and observed SCM PID; stock RUNNING/token and native BSL were not reached.",
+  "recorded_utc": "2026-09-28T09:27:46.520016+00:00"
+}

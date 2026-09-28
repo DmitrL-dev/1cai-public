@@ -1,0 +1,78 @@
+{
+  "schema": "rentgen-ci-failure-accounting/1",
+  "source_head": "c1b3fd3944f460b43a26f0ff1f1f28209311b84c",
+  "source_tree": "f3cf0e5c7915a9a2d2cdbba883637a3972e56aea",
+  "source_ci_qualified": false,
+  "original_attempts_preserved": true,
+  "runs": [
+    {
+      "run_id": 36383080465,
+      "run_attempt": 1,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36383080465",
+      "event": "pull_request",
+      "actual_checkout": "62c2022e4bded5b911fe983498af8e3ad84364bc",
+      "checkout_parents": [
+        "c715e9b65b75ae667376f331c3c0fac14be2f7f3",
+        "c1b3fd3944f460b43a26f0ff1f1f28209311b84c"
+      ],
+      "tree": "f3cf0e5c7915a9a2d2cdbba883637a3972e56aea",
+      "conclusion": "failure",
+      "python_cases": 2786,
+      "passed": 2785,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "failed_class": "tests.unit.test_scm_stock_source_manifest",
+      "failed_test": "test_real_initialized_registered_root_manifest_and_metadata_hash_refusal",
+      "artifact_id": 10955080902,
+      "artifact_sha256": "4276150fce1d8a956ac6f5b261a8fa6dfb5cc390ee79134199bfe293d733a4f8",
+      "junit_sha256": "8a1c95664f092845b1103170b4e71dada9298601d093243a7ff3181e56c46629",
+      "logs_sha256": "aa15c825bda494cb8249838df39e8bbeb53f176e7821ef7632c80fd47acec5c7",
+      "checkout_log_sha256": "a8ee481f761849e4e3fc4c3d1dd550c4be37e2a65444e9d12e8c8ab84948932f",
+      "native_jobs_skipped": [
+        "native-scm",
+        "native-git-diagnostic"
+      ]
+    },
+    {
+      "run_id": 36383076884,
+      "run_attempt": 1,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36383076884",
+      "event": "push",
+      "actual_checkout": "c1b3fd3944f460b43a26f0ff1f1f28209311b84c",
+      "checkout_parents": [
+        "6dc33bf6d2fcf193a0bdccc252c348f74a8f6077"
+      ],
+      "tree": "f3cf0e5c7915a9a2d2cdbba883637a3972e56aea",
+      "conclusion": "failure",
+      "python_cases": 2786,
+      "passed": 2785,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "failed_class": "tests.unit.test_scm_stock_source_manifest",
+      "failed_test": "test_real_initialized_registered_root_manifest_and_metadata_hash_refusal",
+      "artifact_id": 10954147672,
+      "artifact_sha256": "e1fb4a7c718b2ca91cfc747c6546442f3de458e572b56380c1ece5b4f8f0c50c",
+      "junit_sha256": "658f7f91e2ce6bce20c5462c21afd7728626efa64fe1664f4cea709e1bdb4453",
+      "logs_sha256": "eeb98da509cb9d000e042f919e6a9217b1c37f879944a9a5303bd350e388e064",
+      "checkout_log_sha256": "2e8017190dcb96e3eecafd2b86bbbe9b3dfcfd31a71303ea3cc59b6f966e6cfe",
+      "native_jobs_skipped": [
+        "native-scm",
+        "native-git-diagnostic"
+      ]
+    }
+  ],
+  "cause": "test fixture commit did not specify a Git author; reproduced without global identity",
+  "local_reproduction_report": "stock-manifest-cold-identity-red.xml",
+  "local_reproduction_sha256": "1fc69a838728e12d98c7c5d772483fd97a3c25ed1d3b8323ef60c06e4d82b715",
+  "local_fix_report": "stock-manifest-cold-identity-green.xml",
+  "local_fix_report_sha256": "997c573693c9aefbc01c4a9dab498960bff5d3471cc655087c2563c70481ba7e",
+  "local_fix_passed": 27,
+  "local_fix_skipped": 0,
+  "native_stock_git_accepted": false,
+  "release_published": false,
+  "production_deployment": false,
+  "independent_review": false,
+  "recorded_utc": "2026-09-28T06:50:34.656671+00:00"
+}

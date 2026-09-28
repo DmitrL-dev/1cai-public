@@ -1,0 +1,251 @@
+{
+  "schema": "rentgen-native-git-scm-diagnostic-ci/1",
+  "measured_source_head": "f7ec27e921a69facc2a6237ed928377d07194674",
+  "measured_tree": "963d4ea30474d4f3a873d60743fd498d8e02037b",
+  "main_base": "c715e9b65b75ae667376f331c3c0fac14be2f7f3",
+  "source_pull_request": 41,
+  "source_ci_qualified": true,
+  "diagnostic_scm_qualified": true,
+  "runs": [
+    {
+      "run_id": 36370772638,
+      "event": "push",
+      "actual_checkout": "f7ec27e921a69facc2a6237ed928377d07194674",
+      "tree": "963d4ea30474d4f3a873d60743fd498d8e02037b",
+      "parents": [
+        "7c8901c23110e7caf07f63f4343fd4d14dee501d"
+      ],
+      "artifact_sha256": {
+        "verified-core-development": "20bc460535419c246b4fffedcfd767551a28712635a57da70dbe450dfa67c28d",
+        "native-scm-evidence": "970c72047ec9b27350ee83feb2fbc6227a0bc3e28f29b3efed18e038c627438e",
+        "native-git-diagnostic-evidence": "5a70649b8c0699627d0c6e200c8ee80f76c9e85a87d10e55889df5937f3f93fb",
+        "python-contract-report": "6c5d7990b61c5c24955db077aef254c68d0d2c6c2b8d565c6697e0d5efccd057"
+      },
+      "junit_sha256": "662c5e6501380bad7ce46775e04607465a1199ed3b9967259da57f1c092fc23f",
+      "python_cases": 2636,
+      "local_cases_present": 391,
+      "node_cases": 69,
+      "zero_skips": true,
+      "kit_sha256": "08ceb802d03be0a67074789466332dfd0d2c4eb7ecc6dc69cc40c0982bb4a02b",
+      "wheel_sha256": "7173b2379ef9631dc05d84ff86d3f907f54914adda0724853eee1cee79854209",
+      "run_url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36370772638",
+      "root_audit_sha256": "a6dda62ff10961830a459dadbbdc845d6ecf6a06e102b2af28d9fe879c8ae926",
+      "source_observer_scm": {
+        "accepted": true,
+        "actual_localservice_processes": 5,
+        "acl_fields": [
+          {
+            "root": "fixture",
+            "original_entries": 16,
+            "new_entries": 2347,
+            "baseline_aces_and_protection_equal": true,
+            "original_owners_equal": true,
+            "auto_inherited_control_changes": 0,
+            "no_new_service_ace": true,
+            "temporary_policy_verified": true,
+            "metadata_privileges_restored": true,
+            "reassigned_new_entries": 2347
+          },
+          {
+            "root": "runtime",
+            "original_entries": 6050,
+            "new_entries": 0,
+            "baseline_aces_and_protection_equal": true,
+            "original_owners_equal": true,
+            "auto_inherited_control_changes": 0,
+            "no_new_service_ace": true,
+            "temporary_policy_verified": true,
+            "metadata_privileges_restored": true,
+            "reassigned_new_entries": 0
+          }
+        ]
+      },
+      "git_diagnostic": {
+        "diagnostic_accepted": true,
+        "scope": "actual Git ownership/availability diagnostic only",
+        "outcomes": {
+          "default-env": "accepted",
+          "isolated-default": "foreign_owner_refused",
+          "trusted-selected": "accepted",
+          "isolated-other": "foreign_owner_refused",
+          "isolated-after": "foreign_owner_refused"
+        },
+        "events_sha256": "485f3005f6c63ac786b91dfabd5d85e38e9442a6ef4a91b649c73e7f809395f7",
+        "raw_result_sha256": "2ab7496c20158e8d4b5be038db8848ea24ccaed58c606a01ade609621062d2d0",
+        "retention_sha256": "fba60c5b8e0a453bff18af071c490498df11842404403971745dea8202397fbb",
+        "original_repository_owners_equal": true,
+        "acl_fields": [
+          {
+            "root": "fixture",
+            "original_entries": 89,
+            "new_entries": 14,
+            "baseline_aces_and_protection_equal": true,
+            "original_owners_equal": true,
+            "auto_inherited_control_changes": 0,
+            "no_new_service_ace": true,
+            "temporary_policy_verified": true,
+            "metadata_privileges_restored": true,
+            "reassigned_new_entries": 14
+          },
+          {
+            "root": "runtime",
+            "original_entries": 6051,
+            "new_entries": 0,
+            "baseline_aces_and_protection_equal": true,
+            "original_owners_equal": true,
+            "auto_inherited_control_changes": 0,
+            "no_new_service_ace": true,
+            "temporary_policy_verified": true,
+            "metadata_privileges_restored": true,
+            "reassigned_new_entries": 0
+          }
+        ],
+        "git": {
+          "version": "git version 2.55.0.windows.5",
+          "sha256": "78211c7ed73988da93a6d8a33d47ec6187f464d7ea2a9a00c182bbd7a1ecf30f",
+          "hardlinks": 1
+        },
+        "actual_localservice_processes": 1,
+        "localservice_sid": "S-1-5-19",
+        "fixed_image_path_verified": true,
+        "scm_control_commands_verified": 4,
+        "same_process_clean_stop_and_close_verified": true,
+        "service_absent_after_cleanup": true,
+        "repository_bytes_and_input_hashes_unchanged": true
+      }
+    },
+    {
+      "run_id": 36370775331,
+      "event": "pull_request",
+      "actual_checkout": "c0b289343660f58d7ceba991995416551f07e5fe",
+      "tree": "963d4ea30474d4f3a873d60743fd498d8e02037b",
+      "parents": [
+        "c715e9b65b75ae667376f331c3c0fac14be2f7f3",
+        "f7ec27e921a69facc2a6237ed928377d07194674"
+      ],
+      "artifact_sha256": {
+        "native-git-diagnostic-evidence": "f534172c3869f56b55a11c0a9f5500e3f6a1553d4c8baae9784093a7d9e282b1",
+        "verified-core-development": "6791c6de5a5e68c4efd4064779077ef9a383c17da19d60d2e0f042415eaa21b1",
+        "native-scm-evidence": "482e5d4154d79e47a1989d53319a9a76f5bd93be1c7764388fd628f16b09cb97",
+        "python-contract-report": "10ec12b71b2acf65f632af1ff5d28a80a44d5490c0f61900abd05b59e033536a"
+      },
+      "junit_sha256": "aa871dd9d413595c7916fca64f5f54eff4770143522dc3b524b0cd1a18f7a2e6",
+      "python_cases": 2636,
+      "local_cases_present": 391,
+      "node_cases": 69,
+      "zero_skips": true,
+      "kit_sha256": "774a07e6ed666a7a4d1253240ec419940c7d7aa6af0b2f2020b039757151d64d",
+      "wheel_sha256": "7173b2379ef9631dc05d84ff86d3f907f54914adda0724853eee1cee79854209",
+      "run_url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36370775331",
+      "root_audit_sha256": "39a1bd9e0cca5db2f008f0846a130d8124bd832f5d6d29bc76ab873286b4c68f",
+      "source_observer_scm": {
+        "accepted": true,
+        "actual_localservice_processes": 5,
+        "acl_fields": [
+          {
+            "root": "fixture",
+            "original_entries": 16,
+            "new_entries": 2344,
+            "baseline_aces_and_protection_equal": true,
+            "original_owners_equal": true,
+            "auto_inherited_control_changes": 0,
+            "no_new_service_ace": true,
+            "temporary_policy_verified": true,
+            "metadata_privileges_restored": true,
+            "reassigned_new_entries": 2344
+          },
+          {
+            "root": "runtime",
+            "original_entries": 6050,
+            "new_entries": 0,
+            "baseline_aces_and_protection_equal": true,
+            "original_owners_equal": true,
+            "auto_inherited_control_changes": 0,
+            "no_new_service_ace": true,
+            "temporary_policy_verified": true,
+            "metadata_privileges_restored": true,
+            "reassigned_new_entries": 0
+          }
+        ]
+      },
+      "git_diagnostic": {
+        "diagnostic_accepted": true,
+        "scope": "actual Git ownership/availability diagnostic only",
+        "outcomes": {
+          "default-env": "accepted",
+          "isolated-default": "foreign_owner_refused",
+          "trusted-selected": "accepted",
+          "isolated-other": "foreign_owner_refused",
+          "isolated-after": "foreign_owner_refused"
+        },
+        "events_sha256": "d92a67e30b41e10ea0e1c667e12ea7dafa2c496edccd078db6d548c5fb317470",
+        "raw_result_sha256": "cedf0bb5b4dad5c36912c9a46bfc6b34f96cb7abf15d0ab7ca138950a7d9cb23",
+        "retention_sha256": "e028943ec9037cd8d0d0aeb3c706896dcacc09b5d8946664eb0a49d44a695518",
+        "original_repository_owners_equal": true,
+        "acl_fields": [
+          {
+            "root": "fixture",
+            "original_entries": 89,
+            "new_entries": 14,
+            "baseline_aces_and_protection_equal": true,
+            "original_owners_equal": true,
+            "auto_inherited_control_changes": 0,
+            "no_new_service_ace": true,
+            "temporary_policy_verified": true,
+            "metadata_privileges_restored": true,
+            "reassigned_new_entries": 14
+          },
+          {
+            "root": "runtime",
+            "original_entries": 6051,
+            "new_entries": 0,
+            "baseline_aces_and_protection_equal": true,
+            "original_owners_equal": true,
+            "auto_inherited_control_changes": 0,
+            "no_new_service_ace": true,
+            "temporary_policy_verified": true,
+            "metadata_privileges_restored": true,
+            "reassigned_new_entries": 0
+          }
+        ],
+        "git": {
+          "version": "git version 2.55.0.windows.5",
+          "sha256": "78211c7ed73988da93a6d8a33d47ec6187f464d7ea2a9a00c182bbd7a1ecf30f",
+          "hardlinks": 1
+        },
+        "actual_localservice_processes": 1,
+        "localservice_sid": "S-1-5-19",
+        "fixed_image_path_verified": true,
+        "scm_control_commands_verified": 4,
+        "same_process_clean_stop_and_close_verified": true,
+        "service_absent_after_cleanup": true,
+        "repository_bytes_and_input_hashes_unchanged": true
+      }
+    }
+  ],
+  "root_only_review": true,
+  "independent_review": false,
+  "offline_validator_contracts": {
+    "passed": 42,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit_sha256": "5d55c5ba56f77231001aaf79b7dcd2a2fa2f7e4d3980965574ca6ea7dbb4a969",
+    "scope": "injected fields; actual acceptance established separately from downloaded native artifacts"
+  },
+  "native_git_scm_accepted": false,
+  "continuous_git_accepted": false,
+  "production_trust_policy_selected": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "new_component_release_published": false,
+  "limits": [
+    "Git availability/ownership diagnostic only; stock schema3 GitAuditWorker/native BSL pending",
+    "Default environment accepted on both hosted runners; this does not establish ownership isolation",
+    "Selected-root exception confined to each Git child; other root and next untrusted child refused",
+    "Continuous Core payload requires a subsequent component version after dev15",
+    "Original owners restored; newly created objects assigned Administrators, not restored from a snapshot"
+  ],
+  "raw_runner_paths_redacted": true,
+  "recorded_utc": "2026-09-28T03:30:48.103337+00:00"
+}

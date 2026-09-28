@@ -143,7 +143,8 @@ def test_workflow_keeps_scm_separate_and_retains_failure_evidence():
     assert "tests/unit/" not in commands[1]
 
 
-@pytest.mark.parametrize("name", ["verify_service_scm_delivery", "scm_acceptance_worker"])
+@pytest.mark.parametrize("name", ["verify_service_scm_delivery", "scm_acceptance_worker",
+    "verify_stock_git_scm", "scm_stock_git_lifecycle"])
 @pytest.mark.parametrize("flag", ["-O", "-OO"])
 def test_optimized_interpreter_refuses_before_loading_product(name, flag, tmp_path):
     result = subprocess.run([sys.executable, flag, "-I", str(SCRIPTS / (name + ".py")),

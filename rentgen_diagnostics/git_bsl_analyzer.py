@@ -1,11 +1,12 @@
 """Read-only BSL-LS analyzer for one exact committed Git observation."""
 
 import hashlib
-import os
 from pathlib import Path, PurePosixPath
 import subprocess
 
 from rentgen_core.errors import CoreError
+from rentgen_core._git_policy import git_command, git_environment
+from rentgen_core._git_capture import capture_git, GitOutputLimitExceeded
 from rentgen_core._git_analysis_failure import (
     GitAnalysisFailure,
     is_known_bsl_failure_reason,
@@ -17,6 +18,7 @@ from rentgen_core.diagnostics import BslAnalysis, BSL_PROFILE_ID, _analysis_vali
 MAX_FILES = 256
 MAX_FILE = 1024 * 1024
 MAX_TOTAL = 64 * 1024 * 1024
+MAX_TREE = 4 * 1024 * 1024
 PROFILE_ID = BSL_PROFILE_ID + ":git-v1"
 SCOPE_ID = "whole-repository-bsl"
 
@@ -45,45 +47,29 @@ class BslGitAnalyzer:
     before returning a complete FindingReport.
     """
 
-    def __init__(self, adapter, authorize, *, max_files=MAX_FILES):
+    def __init__(self, adapter, authorize, *, max_files=MAX_FILES, git_trust=None):
         if not callable(getattr(adapter, "analyze", None)) or not callable(authorize):
             raise ValueError("Trusted analyzer and authorization callback are required")
         if type(max_files) is not int or not 1 <= max_files <= MAX_FILES:
             raise ValueError("max_files must be bounded")
         self.adapter, self.authorize, self.max_files = adapter, authorize, max_files
+        self._git_options = {} if git_trust is None else {"trust": git_trust}
 
     @staticmethod
     def _env():
-        env = {
-            key: value
-            for key, value in os.environ.items()
-            if not key.startswith("GIT_")
-        }
-        env.update(
-            GIT_OPTIONAL_LOCKS="0", GIT_TERMINAL_PROMPT="0", GIT_NO_LAZY_FETCH="1"
-        )
-        return env
+        return git_environment()
 
     @classmethod
-    def _run(cls, repository, *args):
+    def _run(cls, repository, *args, trust=None, max_stdout=MAX_TREE):
         try:
-            result = subprocess.run(
-                [
-                    "git",
-                    "--no-pager",
-                    "-c",
-                    "core.fsmonitor=false",
-                    "-C",
-                    str(repository),
-                    *args,
-                ],
+            result = capture_git(
+                git_command(repository, *args, trust=trust),
                 env=cls._env(),
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
+                max_stdout=max_stdout,
                 timeout=10,
-                check=False,
             )
+        except GitOutputLimitExceeded as exc:
+            raise CoreError("GIT_ANALYZER_LIMIT", "Git output exceeds analyzer limit") from exc
         except (OSError, subprocess.TimeoutExpired) as exc:
             raise CoreError(
                 "GIT_ANALYZER_FAILED", "Git analyzer command failed"
@@ -93,8 +79,9 @@ class BslGitAnalyzer:
         return result.stdout
 
     @classmethod
-    def _paths(cls, repository, commit, max_files):
-        raw = cls._run(repository, "ls-tree", "-r", "--name-only", "-z", commit)
+    def _paths(cls, repository, commit, max_files, **git_options):
+        raw = cls._run(repository, "ls-tree", "-r", "--name-only", "-z", commit,
+                       max_stdout=MAX_TREE, **git_options)
         paths = []
         for item in raw.split(b"\0"):
             if not item:
@@ -115,8 +102,9 @@ class BslGitAnalyzer:
         return paths
 
     @classmethod
-    def _blob(cls, repository, commit, path):
-        raw = cls._run(repository, "cat-file", "blob", f"{commit}:{path}")
+    def _blob(cls, repository, commit, path, **git_options):
+        raw = cls._run(repository, "cat-file", "blob", f"{commit}:{path}",
+                       max_stdout=MAX_FILE, **git_options)
         if len(raw) > MAX_FILE:
             raise CoreError("GIT_ANALYZER_LIMIT", "BSL module exceeds analyzer limit")
         return raw
@@ -174,15 +162,15 @@ class BslGitAnalyzer:
         self.authorize()
         from rentgen_core.git_observer import observe_git
 
-        if observe_git(repository) != observation:
+        if observe_git(repository, **self._git_options) != observation:
             raise CoreError(
                 "GIT_HEAD_CHANGED", "Observed Git HEAD is no longer current"
             )
-        paths = self._paths(repository, commit, self.max_files)
+        paths = self._paths(repository, commit, self.max_files, **self._git_options)
         findings, used = [], 0
         for path in paths:
             self.authorize()
-            raw = self._blob(repository, commit, path)
+            raw = self._blob(repository, commit, path, **self._git_options)
             used += len(raw)
             if used > MAX_TOTAL:
                 raise CoreError(
@@ -214,7 +202,7 @@ class BslGitAnalyzer:
                 )
             findings.extend(self._findings(path, analysis))
         self.authorize()
-        if observe_git(repository) != observation:
+        if observe_git(repository, **self._git_options) != observation:
             raise CoreError("GIT_HEAD_CHANGED", "Git HEAD changed during BSL analysis")
         return FindingReport(
             observation=observation,

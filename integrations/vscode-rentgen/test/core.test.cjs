@@ -95,7 +95,7 @@ test('native result lookup is a read without snapshot or executable and rejects 
   await assert.rejects(client.platformResult(id),/PLATFORM_RESULT_MISMATCH/);
 });
 
-for (const core_version of ['0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15']) test(`${core_version} profile can use native result lookup and test profile listing`,async()=>{
+for (const core_version of ['0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16']) test(`${core_version} profile can use native result lookup and test profile listing`,async()=>{
   const id='00000000-0000-4000-8000-000000000003';
   const commands=[];
   const client=createClient({...config,core_version},{execute:async(_,args)=>{

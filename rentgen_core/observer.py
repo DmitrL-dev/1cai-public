@@ -154,10 +154,11 @@ def _boundary(name):
 
 
 class Observer:
-    def __init__(self, runtime, principal, project_id, profile):
+    def __init__(self, runtime, principal, project_id, profile, *, git_trust=None):
         self.runtime, self.principal, self.project_id = runtime, principal, project_id
         self.profile = Path(profile).resolve()
         self.database = self.profile / "observer.sqlite3"
+        self._git_options = {} if git_trust is None else {"trust": git_trust}
 
     def _context(self, *, write=False):
         return self.runtime.state_context(
@@ -394,7 +395,7 @@ class Observer:
             ctx.source_root.resolve()
         ):
             raise CoreError("GIT_SNAPSHOT_CONTEXT", "Repository must match source root")
-        if observe_git(ctx.source_root) != observation:
+        if observe_git(ctx.source_root, **self._git_options) != observation:
             raise CoreError("GIT_HEAD_CHANGED", "Git HEAD changed before source probe")
         head, digest = probe_sources(ctx)
         with ctx.state.transaction(ctx.principal) as tx:
@@ -411,7 +412,7 @@ class Observer:
                     "GIT_SNAPSHOT_MISMATCH",
                     "Published snapshot differs from observed sources",
                 )
-        if observe_git(ctx.source_root) != observation:
+        if observe_git(ctx.source_root, **self._git_options) != observation:
             raise CoreError("GIT_HEAD_CHANGED", "Git HEAD changed during source probe")
         with ctx.state.transaction(ctx.principal) as tx:
             tx.require_all({"project:read", "analysis:run"})

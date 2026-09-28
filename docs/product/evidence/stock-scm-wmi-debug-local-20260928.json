@@ -1,0 +1,278 @@
+{
+  "schema": "rentgen-stock-wmi-debug-local/1",
+  "parent_source_head": "7e78ad41ecc8cdcd964abfce71bd81ea70c26bd5",
+  "diagnosed_public_source_head": "62efee79e250773db29d4522bc36d2bc6fc5d3a7",
+  "source_files": {
+    "scripts/verification/scm_native_evidence.py": "0ab924bd45ba3764ba7f8f4300a4c5f5dcb70117c2c685f7d7c52d80414f87a8",
+    "scripts/verification/scm_stock_git_lifecycle.py": "6f4e216de41df8daf2402260932fc61af68c7aa1613d6d373ac808c6353bc09e",
+    "scripts/verification/verify_stock_git_scm.py": "3c1f63407b5ac0fc1dc2c14d512d7f9246de58db43cad7271fe062b089f3ecb9",
+    "tests/unit/test_stock_git_scm_runner.py": "22ad432c3469d873362d4a8d8b09128f2f7a5cdc45fa05b463312b012aaa293f",
+    "tests/unit/test_scm_debug_privilege.py": "fbe75ef1494be77274024053a650eb3e906d74d2c81c64ff7debaeea30170bfd"
+  },
+  "authority": "Read-only readiness adds availability of existing Debug privilege; missing authority refuses before lifecycle/SCM construction.",
+  "temporary_scope": "Enable only existing SeDebugPrivilege for WMI/native reads, including super().start and original HeldProcess token verification. Restore exact PreviousState attributes and close token handles on normal/error paths; restoration uncertainty refuses acceptance.",
+  "wmi": {
+    "connection": "local root\\cimv2",
+    "impersonation_level": 3,
+    "explicit_privilege": "SWbemServices.Security_.Privileges.AddAsString('SeDebugPrivilege', True)",
+    "query_fields": [
+      "ProcessId",
+      "ParentProcessId",
+      "ExecutablePath",
+      "CommandLine"
+    ],
+    "names": [
+      "java.exe",
+      "git.exe",
+      "bsl-scan.exe",
+      "python.exe"
+    ],
+    "query_limit": 200,
+    "row_limit": 100,
+    "child_timeout_seconds": 10,
+    "each_raw_stream_max_bytes": 32768,
+    "null_image_refusal_preserved": true
+  },
+  "red_reports": [
+    {
+      "tests": 19,
+      "passed": 0,
+      "failed": 19,
+      "skipped": 0,
+      "filename": "stock-debug-privilege-red.xml",
+      "sha256": "e58e10675f7ebee722bbf400739b2b4015c29a21e7e7b50c3f3f5398655c769a"
+    },
+    {
+      "tests": 2,
+      "passed": 0,
+      "failed": 2,
+      "skipped": 0,
+      "filename": "stock-debug-authority-red.xml",
+      "sha256": "0809374e6d56ff74549aac79932dd960d54cca4d124863dba2bac03b630186f8"
+    },
+    {
+      "tests": 6,
+      "passed": 1,
+      "failed": 5,
+      "skipped": 0,
+      "filename": "stock-wmi-debug-request-red.xml",
+      "sha256": "6d522d51ff92a22cf49703a13243345018c04897e50b36e84a56d97eb0d95ad5"
+    },
+    {
+      "tests": 8,
+      "passed": 0,
+      "failed": 8,
+      "skipped": 0,
+      "filename": "stock-start-debug-scope-red.xml",
+      "sha256": "c321a41f188c6b0690a766b82ab5870168f12f8592715940083b437224f86610"
+    }
+  ],
+  "final_scoped_inspection": {
+    "tests": 130,
+    "passed": 130,
+    "failed": 0,
+    "skipped": 0,
+    "filename": "stock-wmi-final-scoped-inspection-green.xml",
+    "sha256": "7145e278dfe39c23a22b617e1a6ff31320350fbe5a3d5f2e1e9fd41ef90977a2"
+  },
+  "backup_regression": {
+    "tests": 4,
+    "passed": 4,
+    "failed": 0,
+    "skipped": 0,
+    "filename": "stock-debug-backup-regression.xml",
+    "sha256": "813750edceca4eeef2d63567ae63b40e8a5f2b24584955600339056c2ceb5948"
+  },
+  "passed_case_union": 134,
+  "final_start_scope": {
+    "tests": 8,
+    "passed": 8,
+    "failed": 0,
+    "skipped": 0,
+    "filename": "stock-start-debug-scope-green.xml",
+    "sha256": "72c80a5fec7c25055e78940eda3fab8dffae2f19caacb002da6e8166f7a1263e"
+  },
+  "new_wmi_cases": 29,
+  "new_case_identities": [
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_debug_lookup_failure_closes_opened_token_before_inspection"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_debug_privilege_restores_all_previous_attributes_and_closes_token[False-0]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_debug_privilege_restores_all_previous_attributes_and_closes_token[False-1]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_debug_privilege_restores_all_previous_attributes_and_closes_token[False-2]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_debug_privilege_restores_all_previous_attributes_and_closes_token[False-3]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_debug_privilege_restores_all_previous_attributes_and_closes_token[True-0]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_debug_privilege_restores_all_previous_attributes_and_closes_token[True-1]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_debug_privilege_restores_all_previous_attributes_and_closes_token[True-2]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_debug_privilege_restores_all_previous_attributes_and_closes_token[True-3]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_debug_restoration_failure_is_reported_and_token_handle_still_closes[outcome0]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_debug_restoration_failure_is_reported_and_token_handle_still_closes[outcome1]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_java_native_image_token_query_stays_in_the_same_scoped_inspection"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_missing_or_denied_debug_privilege_never_enters_inspection[outcome0]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_missing_or_denied_debug_privilege_never_enters_inspection[outcome1]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_process_inventory_requires_scoped_debug_and_restores_on_every_read_outcome[capture]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_process_inventory_requires_scoped_debug_and_restores_on_every_read_outcome[incomplete]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_process_inventory_requires_scoped_debug_and_restores_on_every_read_outcome[not_enabled]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_process_inventory_requires_scoped_debug_and_restores_on_every_read_outcome[restore_mismatch]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_process_inventory_requires_scoped_debug_and_restores_on_every_read_outcome[valid]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_stock_service_start_scopes_both_native_token_reads_and_restores[base-False]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_stock_service_start_scopes_both_native_token_reads_and_restores[base-True]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_stock_service_start_scopes_both_native_token_reads_and_restores[held-False]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_stock_service_start_scopes_both_native_token_reads_and_restores[held-True]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_stock_service_start_scopes_both_native_token_reads_and_restores[restore_mismatch-False]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_stock_service_start_scopes_both_native_token_reads_and_restores[restore_mismatch-True]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_stock_service_start_scopes_both_native_token_reads_and_restores[valid-False]"
+    ],
+    [
+      "tests.unit.test_scm_debug_privilege",
+      "test_stock_service_start_scopes_both_native_token_reads_and_restores[valid-True]"
+    ],
+    [
+      "tests.unit.test_stock_git_scm_runner",
+      "test_stock_inspection_reports_debug_authority_without_enabling_it_or_creating_service[False]"
+    ],
+    [
+      "tests.unit.test_stock_git_scm_runner",
+      "test_stock_inspection_reports_debug_authority_without_enabling_it_or_creating_service[True]"
+    ]
+  ],
+  "collection": {
+    "tests": 2929,
+    "is_test_execution": false,
+    "filename": "stock-wmi-final-python-collection-stdout.raw",
+    "sha256": "348012f0e9c796a20d66b014af70a6d70b13f1a2fb24b91c5f56276b2fba4514"
+  },
+  "expected_source_local_case_union": 684,
+  "case_union": {
+    "filename": "stock-wmi-successor-local-case-union.json",
+    "sha256": "6dcb694d4d80c3ebdd886b16418e19aaa3e84f3f33d4eb33bd2d0cd4afb17611"
+  },
+  "private_future_raw_auditor": {
+    "reader": {
+      "filename": "stock_scm_artifact_fields.py",
+      "sha256": "8994d18c7d057f812f5a3188cf03a36c0cbb2fe48f55929d702e89192673b624"
+    },
+    "tests": {
+      "filename": "test_stock_scm_artifact_fields.py",
+      "sha256": "cca9b9a5580c5e9445f5abc82b315ff0381548c227368defcac8f5dc1ac47ed9"
+    },
+    "initial_green": {
+      "tests": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "filename": "stock-wmi-raw-auditor-green.xml",
+      "sha256": "b6577be56e8a6a294819dcf6b8ae18a623bd000e6593e677a68658d4c51a39be"
+    },
+    "final_delegate_green": {
+      "tests": 16,
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0,
+      "filename": "stock-wmi-raw-delegate-green.xml",
+      "sha256": "13cf35c869c992a6917bd67e2a3764105e10546c83124460d242066287d92578"
+    },
+    "passed_case_union": 92,
+    "scopes": "Require source-byte-exact WMI command, raw rows/streams/child reaping, one restored Debug scope per query and five positive starts; all original native acceptance gates remain required.",
+    "native_acceptance_established": false
+  },
+  "native_gate_groups_required": [
+    "first cold Java and baseline A",
+    "stopped operator commit B and actual Java",
+    "unchanged restart/clean STOP/no duplicates",
+    "quiet interruption/refused restart/explicit recovery",
+    "history rewrite and LocalService permission refusal/restoration"
+  ],
+  "primary_sources": [
+    "https://learn.microsoft.com/en-us/windows/win32/cimwin32prov/win32-process",
+    "https://learn.microsoft.com/en-us/windows/win32/wmisdk/swbemsecurity-privileges",
+    "https://learn.microsoft.com/en-us/windows/win32/wmisdk/executing-privileged-operations",
+    "https://learn.microsoft.com/en-us/windows/win32/api/securitybaseapi/nf-securitybaseapi-adjusttokenprivileges",
+    "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-openprocesstoken"
+  ],
+  "review_status": "Two authorized GPT-6 Sol Max independent read-only reviews completed; three current WMI/raw-reader findings resolved and rechecked. Compatibility/7e local package bytes have bounded no findings. Native source/main/release acceptance remains pending.",
+  "source_ci_qualified": false,
+  "native_stock_git_accepted": false,
+  "native_bsl_accepted": false,
+  "release_published": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "recorded_utc": "2026-09-28T11:02:01.953102+00:00",
+  "independent_review_record": "core-dev16-stock-wmi-independent-review-20260928.json",
+  "independent_review_record_sha256": "c5eadb4b035163f3d11a424603a07382d40fb44e66d626b3fc4c90829b2bbf0b"
+}

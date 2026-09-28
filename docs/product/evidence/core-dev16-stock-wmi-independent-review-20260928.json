@@ -1,0 +1,252 @@
+{
+  "schema": "rentgen-dev16-stock-wmi-independent-review/1",
+  "authorization": "User explicitly requested two GPT-6 Sol subagents at reasoning effort Max, superseding prior root-only preference.",
+  "model": "gpt-6-sol",
+  "reasoning_effort": "max",
+  "reviews": [
+    {
+      "reviewer": "wmi_privilege_review_max",
+      "report": {
+        "filename": "wmi-independent-max-review-20260928.json",
+        "sha256": "2701e16e2bf2c915cc4ed9de86fbf8835a484043aba0002235c618d013f992e5"
+      },
+      "source_parent": "7e78ad41ecc8cdcd964abfce71bd81ea70c26bd5",
+      "source_files": {
+        "scripts/verification/scm_native_evidence.py": "0ab924bd45ba3764ba7f8f4300a4c5f5dcb70117c2c685f7d7c52d80414f87a8",
+        "scripts/verification/scm_stock_git_lifecycle.py": "6f4e216de41df8daf2402260932fc61af68c7aa1613d6d373ac808c6353bc09e",
+        "scripts/verification/verify_stock_git_scm.py": "3c1f63407b5ac0fc1dc2c14d512d7f9246de58db43cad7271fe062b089f3ecb9",
+        "tests/unit/test_stock_git_scm_runner.py": "22ad432c3469d873362d4a8d8b09128f2f7a5cdc45fa05b463312b012aaa293f",
+        "tests/unit/test_scm_debug_privilege.py": "fbe75ef1494be77274024053a650eb3e906d74d2c81c64ff7debaeea30170bfd"
+      },
+      "findings": [
+        {
+          "id": "WMI-MAX-1",
+          "priority": 2,
+          "status": "resolved",
+          "title": "Service start token reads were outside the debug scope",
+          "line": 341,
+          "symptom": "Readiness accepts existing but disabled Debug. Initial StockAcceptance.start called the base native process read and HeldProcess token read without enabling it.",
+          "source": "scm_acceptance_worker.py:508 and scm_stock_git_lifecycle.py:127 read the LocalService process token. Cross-account OpenProcessToken requires enabled SE_DEBUG_NAME.",
+          "consequence": "A supported disabled token can reach SCM RUNNING and then fail token inspection before the WMI scope.",
+          "remedy": "Root wrapped super().start() and HeldProcess in inspection_privilege and added eight state/failure fixtures.",
+          "verification": "Real Acceptance.start AST replay with injected OS operations now succeeds for initially disabled/enabled tokens: one scope, native/held reads enabled=True, original state restored. Source fixtures36 passed/no skips.",
+          "primary_source": "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-openprocesstoken",
+          "file_scope": "scripts/verification/scm_stock_git_lifecycle.py"
+        },
+        {
+          "id": "WMI-MAX-2",
+          "priority": 2,
+          "status": "resolved",
+          "title": "Future raw auditor rejected the new COM query",
+          "initial_line": 345,
+          "final_line": 384,
+          "symptom": "Initial full-success parser required Get-CimInstance in retained argv; the new COM script does not contain it.",
+          "consequence": "A successful successor native artifact would be refused as Native process observation command differs.",
+          "remedy": "Root extracts the exact query from SHA-verified source bytes through AST, requires explicit local WMI/impersonation/Debug and restored scope proofs for each query and five held starts.",
+          "verification": "Final helper hashes checked. Full five-lifetime, raw argv/parent/PID/LocalService, publication, refusal, cleanup/ACL and cold-runtime gates inspected and preserved.",
+          "file_scope": "private future raw artifact auditor"
+        },
+        {
+          "id": "WMI-MAX-3",
+          "priority": 2,
+          "status": "resolved",
+          "title": "Raw auditor omitted query_source in lifetime delegation",
+          "line": 318,
+          "related_line": 320,
+          "affected_intermediate_sha256": "0cf03dbf06dec550ae1a9aa1d56dd7ec75274a2529d4ff1df65e4365f441cfb8",
+          "symptom": "query_source was a local in verify, but a global lookup in the separate verify_lifetime function.",
+          "consequence": "First stock-processes receipt would raise NameError; helper-only tests missed the delegate wiring.",
+          "remedy": "Root added the actual call keyword and mandatory delegate keyword parameter plus a real-call AST/signature regression.",
+          "verification": "Independent symbol-table check confirms local parameter and no global lookup. All16 new query/scope/delegate fixtures passed.",
+          "file_scope": "private future raw artifact auditor"
+        }
+      ],
+      "unresolved_findings": [],
+      "independent_final_tests": {
+        "source_fixtures_passed": 36,
+        "raw_helper_fixtures_passed": 16,
+        "total": 52,
+        "skipped": 0
+      },
+      "powershell_AST": {
+        "parse_errors": 0,
+        "token_count": 141,
+        "query_sha256": "f3c0a47850ec4b11f50d0679d2cf661556ed0600d4059d4c6a7be6277464c069",
+        "matches_existing_fixture": true,
+        "query_executed": false
+      },
+      "actual_start_AST_replay": {
+        "initial_enabled_states": [
+          false,
+          true
+        ],
+        "native_reads_enabled": true,
+        "held_reads_enabled": true,
+        "initial_state_restored": true,
+        "scope_entries_per_start": 1,
+        "all_OS_operations_injected": true
+      },
+      "future_raw_helper_sha256": "8994d18c7d057f812f5a3188cf03a36c0cbb2fe48f55929d702e89192673b624",
+      "scope": "Read-only review and injected OS contracts only; no actual WMI/privilege/SCM action. Successor raw caller must pass exact source_read; all five native scenarios remain required."
+    },
+    {
+      "reviewer": "dev16_package_review_max",
+      "report": {
+        "filename": "dev16-independent-max-review-20260928-20260928110841566.json",
+        "sha256": "326221baeb0329d182c832b7e26922f9ce2ce23dd77b054f61799f156735e2a3"
+      },
+      "source_commit": "7e78ad41ecc8cdcd964abfce71bd81ea70c26bd5",
+      "source_tree": "1b28faf6d9cefe21a09e34a98c7dbb7b6605132a",
+      "source_patch_sha256": "526168b97917738e9d659f47c370a0847a25acd30b1ad47c89bcfaf4645b1c29",
+      "source_files": {
+        ".github/workflows/core-ci.yml": "55fa46ad97789fe977f0c3201fd8c1053c4c6efc98702a7f11f76ca9286549de",
+        "docs/product/evidence/core-dev16-compatibility-local-20260928.json": "c381645b221623c1e1df0222116300e602aa9314c5e7877f96ec4c9eb07ae11d",
+        "docs/superpowers/plans/2026-09-28-registered-source-git-trust.md": "5c3416286faac2f902ecbbaa4dc69fc839e14dd3fc579890d09774b2c5ecf852",
+        "integrations/open-editor/README.md": "32da365cb974a5ee5f9df4997a5d8b2105955589c4022f5bba661c1c232e3824",
+        "integrations/open-editor/install_bsl_runtime.py": "38f4357545b5a75f0c9e30459fdd740c39769293b00b72d90f013253ffd1414c",
+        "integrations/open-editor/prepare.py": "f2820cdb438a0b54c7baad1508b35c9de0b62b26560066b081c8fbfb88ad54e3",
+        "integrations/open-editor/run_repair.py": "8d4dad08cc2219fccdb46761ae27ebf587638995fe659f88425aed7792ed173d",
+        "integrations/vscode-rentgen/README.md": "ec9d7724b09abbdcfef25c7de92aae2403b88ce194e561136818f057a89c778b",
+        "integrations/vscode-rentgen/extension.cjs": "9d06c6a62211c9e88d9233cabc53b6aacbdd3674569766c65979a30c83a18810",
+        "integrations/vscode-rentgen/lib/bsl.cjs": "02928963d4eafe5415950b4c6d440b0e7488ae38678c2b5f32e1874261d954b5",
+        "integrations/vscode-rentgen/lib/core.cjs": "086663058d9c3fe403393916bc68e675fec3711486f69618b0cf37ec89bee3ad",
+        "integrations/vscode-rentgen/lib/edit.cjs": "a2dc0fdf7704342f30712c43e452db62449adfb1ce9901dabf1ce8da6ef2d266",
+        "integrations/vscode-rentgen/lib/platform.cjs": "453a96552f23932082551d965688c0162be70108822b3489db379c6bf27a01fb",
+        "integrations/vscode-rentgen/lib/repair.cjs": "fc2d9a9a878738bd73cb9b1239542031af6b0694a5a96a4f7c35305546169369",
+        "integrations/vscode-rentgen/lib/testing.cjs": "ce64e19df67ff1e89594f4c26d7a31d943eee27bb48ebb1c8af798a04d2dfb1e",
+        "integrations/vscode-rentgen/package.json": "0d9c0dfa9bc3f45ca2e1099911a584f70740ccbd265fd6415294c7e89857e97f",
+        "integrations/vscode-rentgen/test/bsl.test.cjs": "fee16cff97d6529a22889dc161048e7ad90b31e61179512b8f062cf898f884d7",
+        "integrations/vscode-rentgen/test/core.test.cjs": "63d07c26696dbd0f4334e719a0b34dc0ff3b0d4838a312d83805ce2b1763c5fb",
+        "integrations/vscode-rentgen/test/edit.test.cjs": "ad0f05a2684cf4c2b2af07df960c7eed2b768512590b46d1fb083365910ff1a7",
+        "integrations/vscode-rentgen/test/platform.test.cjs": "482bdd776696518f1d4a438aa4d8828e795f6a460ea5edf15f65962d4dcc8126",
+        "integrations/vscode-rentgen/test/repair.test.cjs": "28a0921e9b4b02cdb2a13f57bf12d881b8cf597db864446fab591e56ddbf587e",
+        "integrations/vscode-rentgen/test/testing.test.cjs": "ea11cdf29bc827ce0beba6e1250767b056bf59077cc204e691f1ae33c52cc147",
+        "pyproject.toml": "8d38191eafbd8db4f58dbec44858050a712dd56ecc77146a649cd81da9da2653",
+        "scripts/verification/prepare_daily_platform.py": "9198bbe425fd0742bde01b5785105680a1a59691c6269ce1ea0caeb63fff5a5f",
+        "scripts/verification/prepare_test_editor_profile.py": "8d5e9558567cf0dec1cdc82d858534cd2f283ee48df5819f9317622e23d15f44",
+        "scripts/verification/verify_snapshot_diff_delivery.py": "3dae63a1cd4dc7498cd5689a087ca56859502f140e159de9bd78e0ffdd3eee15",
+        "scripts/verification/verify_test_profile_delivery.py": "5564718015f9f2c7f20c83747c52d74f82bedf7d1581f52f6a6ea9a069690a69",
+        "tests/unit/test_core_dev16_compatibility.py": "4ccf220c2dcc4f995015408d5ee7e07e08f3657b6fca8f8b44294dbdb5083b14",
+        "tests/unit/test_open_editor_profile.py": "131f359eaf72bc9f147453990abeda2767052f49a2ede3e0cbb71ced0118db6d",
+        "tests/unit/test_repair_profile.py": "50374a90116f0f56bde896ac32c3e0894fab6445f2366929355c22b0f34e8a7c"
+      },
+      "findings": [],
+      "checked_scope": [
+        "All 30 changed-file diffs and context of admission guards, tests and docs read; 30 root/commit source hashes and 28 public source hashes match Git.",
+        "7 CJS files / 14 admission arrays and 3 Python adapters retain parent byte content after removing only dev16 literal.",
+        "CI development names and four verification files contain only expected version substitutions.",
+        "VSIX: 39 members / 37 source members bound to Git; two XML metadata members and inventory/order/attributes/timestamps checked.",
+        "Core kit: 41 ZIP members / 40 manifest-covered files, SHA256/size/inventory and unpacked/repeat physical bytes checked.",
+        "Wheel: 110 members/RECORD rows, 105 own source/data files match Git/sdist/offline install (90 rentgen_core, 5 rentgen_graph, 10 rentgen_diagnostics).",
+        "Source ZIP: all 650 Git files match. Sdist: 260 Git-bound members plus generated PKG-INFO.",
+        "30 dependency wheels match hash locks and previous dev15 cache; offline lock contains 31 hashed requirements including Core dev16.",
+        "All 10 diagnostics files match parent; git_bsl_analyzer.py already differs from main in parent62. Four engine/pin/manifest files match parent and main.",
+        "490 JDK manifest records / 343823876 bytes; installed contract validates pinned descriptor/manifest, not physical JDK tree.",
+        "Fresh -B -I offline identity and seven origins: installed Core dev16/MCP1.30.0/Windows/Python3.11.9. In-memory SDK handlers list full32/scoped3 matching historical acceptance.",
+        "Historical raw reports: 41 Python passed; 3-case repeat wholly overlaps41; 71 Node named cases passed; 2900 collection only."
+      ],
+      "vsix": {
+        "sha256": "ca55ec93306f6ce3a267d74766694305cff285beab0f8098f121e57c092d6fc4",
+        "bytes": 210382,
+        "members": 39,
+        "git_source_members": 37,
+        "repeat_scope": "Independently read a single saved VSIX. Historical reports state a second identical build; no second saved VSIX independently byte-compared."
+      },
+      "core_kit": {
+        "sha256": "1b9900a5d3ee2f4c928a0f99f8bcc678cde2732497175d9f8598bff9ce27d050",
+        "bytes": 20474025,
+        "own_source_data_files": 105,
+        "repeat_scope": "Existing first/second wheel, sdist, scanner and existing first/repeat kit ZIPs independently byte-compared."
+      },
+      "runtime_pins": {
+        "rentgen_diagnostics/bsl_language_server.py": {
+          "sha256": "fe26b4f1990a907842d290060ef4513c5947542c4b4bb07e239ff8e0e330435f",
+          "unchanged_from_parent": true,
+          "unchanged_from_main": true
+        },
+        "rentgen_diagnostics/_runtime_pins.py": {
+          "sha256": "5ab0e566086aa2571bf2b2daeafd31c3942401cbe92fb23ee7d34034b94f4d72",
+          "unchanged_from_parent": true,
+          "unchanged_from_main": true
+        },
+        "rentgen_diagnostics/profiles/bsl-ls-1.0.5-temurin21-win64.json": {
+          "sha256": "2835e1a268e67be020e99ecd8d2a64c7b390e3752ed99c89d71a5340eb792ca5",
+          "unchanged_from_parent": true,
+          "unchanged_from_main": true
+        },
+        "rentgen_diagnostics/profiles/temurin21.0.12.1-win64-files.json": {
+          "sha256": "8bc41043a586a2f3c6ee425cef8815c127c2ea9cd2e051a216eda20394babafd",
+          "unchanged_from_parent": true,
+          "unchanged_from_main": true
+        }
+      },
+      "physical_JDK_tree_reverified": false,
+      "exact_match_evidence": {
+        "path": "integrations/open-editor/run_repair.py",
+        "line": 140,
+        "assertion": "Core equals profile.core_version, MCP equals 1.30.0, executable equals profile.python.",
+        "unchanged_guard_bytes_from_parent": true,
+        "scenarios": [
+          {
+            "case": "matching_installed",
+            "accepted": true
+          },
+          {
+            "case": "profile_mismatch",
+            "accepted": false,
+            "reason": "Installed core must match the profile exactly; MCP 1.30.0 required"
+          },
+          {
+            "case": "runtime_mismatch",
+            "accepted": false,
+            "reason": "Installed core must match the profile exactly; MCP 1.30.0 required"
+          },
+          {
+            "case": "unknown_profile",
+            "accepted": false,
+            "reason": "Use a prepared supported core profile"
+          },
+          {
+            "case": "wrong_mcp",
+            "accepted": false,
+            "reason": "Installed core must match the profile exactly; MCP 1.30.0 required"
+          },
+          {
+            "case": "wrong_python",
+            "accepted": false,
+            "reason": "Interpreter does not match the selected profile"
+          }
+        ],
+        "scope": "Selected function AST from git show 7e; actual installed Core/MCP identities plus supplied negative cases. No model/repair/MCP tool workflow run."
+      },
+      "pre_existing_scope_boundaries": [
+        {
+          "path": "integrations/vscode-rentgen/lib/core.cjs",
+          "line": 89,
+          "related_path": "integrations/vscode-rentgen/extension.cjs",
+          "related_line": 45,
+          "fact": "General CJS client executes configured Python with -I -m rentgen_core and no separate installed Core version probe. Extension activation validates config and project access. This existed in parent62 and is unchanged by dev16.",
+          "consequence": "Do not generalize run_repair's exact installed Core/profile equality guard to all Companion CLI operations.",
+          "separate_action_if_global_exact_identity_required": "Add version/origin probing to common client or activation path and refusal before CLI actions that rely on that identity."
+        }
+      ],
+      "historical_contracts_observed": {
+        "python": 41,
+        "node": 71,
+        "repeated_new3_overlap_python41": true,
+        "collection_only": 2900
+      },
+      "scope": "Historical committed 7e local development kit/VSIX and admission patch; fresh bounded offline identity/SDK probes. No package rebuild/install, full suite, native run, main/release/deployment qualification."
+    }
+  ],
+  "unresolved_findings": [],
+  "historical_root_only_receipts_relabeled": false,
+  "source_ci_qualified": false,
+  "native_stock_git_accepted": false,
+  "native_bsl_accepted": false,
+  "main_qualified": false,
+  "release_qualified": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "recorded_utc": "2026-09-28T11:14:02.946699+00:00"
+}

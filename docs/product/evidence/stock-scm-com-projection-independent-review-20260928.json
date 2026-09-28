@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "source_parent": "49f8347507f3a579cc651f885f937d5e4fe0f8c2",
+  "reviewed_source_files": {
+    "scripts/verification/scm_stock_git_lifecycle.py": "da1c8c009fba3992e8f5463975c1b8052fdaaa892be85f8409023d009659a62b",
+    "tests/unit/test_scm_process_projection.py": "4879679e8cb43dbe4a609f37d8ab66a5d1f1d1b5389414031a042f2bcbce131f",
+    "integrations/open-editor/README.md": "7ea2a41e64f28be272f258b8f30d98ca353240d5755338ad70dbd273506486bb"
+  },
+  "reviewers": [
+    {
+      "agent": "/root/wmi_privilege_review_max",
+      "model": "gpt-6-sol",
+      "reasoning_effort": "max",
+      "receipt_sha256": "6308ddea3c11b90d1e901c6232d552ce256571878c1af7f3b2cf08a4722d2903",
+      "scope": "Three projection/test/README bytes and separate future raw reader admission; read retained44/97 reports; independently executed11 pure admission cases; no native calls"
+    },
+    {
+      "agent": "/root/dev16_package_review_max",
+      "model": "gpt-6-sol",
+      "reasoning_effort": "max",
+      "receipt_sha256": "e64bb9867449cb7a7e809d9b7bde4fcb262d6c0e45a6e3a7b40e8d729db7fab7",
+      "scope": "Three projection/test/README bytes, exact ownPID transformations/raws, future reader diff/delegate and retained44/97 reports; no new test/native/network execution"
+    }
+  ],
+  "root_synthesis_scope": "Public failure/local/review JSON and qualification document authored and byte-checked by root; late public additions are outside peer source diff scope",
+  "resolved_findings": [
+    "COM ObjectSet pipeline projection",
+    "NULL Count converted to empty inventory",
+    "Separate indexed raw reader admission preserving historical48 reader",
+    "README current editor profiles omitted already supported dev16"
+  ],
+  "unresolved_findings": [],
+  "original49_raw_independent_audit_sha256": "21f18e00eb3b7b7faf491036a5e5b2c6b2bd7617078e4c9146ba1ff0abb6035d",
+  "product_requirements_review": {
+    "receipt_sha256": "69034bc40d69ba953bf7d1df43437bdf85475c7778e3dd60ed46637fb13c0ec8",
+    "requirements": 32,
+    "source_references": 109,
+    "scoped_achieved": 13,
+    "unproven": 6,
+    "incomplete": 10,
+    "contradicted_current_attempt_or_known_case": 3,
+    "next_slice": "Exact AI revision to registered functional oracle and separate semantic verdict"
+  },
+  "source_ci_qualified": false,
+  "native_stock_git_accepted": false,
+  "main_qualified": false,
+  "release_published": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "recorded_utc": "2026-09-28T12:45:50.393755+00:00"
+}

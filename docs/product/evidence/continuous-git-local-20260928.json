@@ -1,0 +1,48 @@
+{
+  "base_commit": "6b775db29f8eb75191981d443a281e28ad181e7c",
+  "scope": "Local continuous Git service and scheduler persistence contracts",
+  "reports": {
+    "baseline": {
+      "tests": 17,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_sha256": "ad60f1570b6bdeec67920b6438ab2a7529500090797645e04455b373cdf5c7a8"
+    },
+    "red": {
+      "tests": 47,
+      "failures": 31,
+      "errors": 0,
+      "skipped": 0,
+      "junit_sha256": "8340d0ed3c7a2d80bac73b13594103589ffe17eb2b41c657331bae267e83ecdc"
+    },
+    "narrow_green": {
+      "tests": 47,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_sha256": "42e115453e489c3b8d4cebf23a6ae6c0911fd959609adf652df06d23579c8d62"
+    },
+    "regression": {
+      "tests": 253,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_sha256": "520fa34719a0f3fc024b187962ec55ca6de01fef9e1c99dd015d8757c89289aa"
+    }
+  },
+  "durable_cycles": 10002,
+  "retained_events": 1000,
+  "native_scm_for_git_executed": false,
+  "native_bsl_executed": false,
+  "independent_review": false,
+  "production_deployment": false,
+  "full_product_ready": false,
+  "recorded_utc": "2026-09-27T19:01:49.230368+00:00",
+  "source_files": {
+    "rentgen_core/git_watcher.py": "42a86f1343c11e2bf6fcbff8978f1c28b5fea7ec5c6775f92af2497504775311",
+    "rentgen_core/service_entry.py": "97183f2abe24470f5f19f65e40bda4c90abb578d81248a5adef87a27bd3a0873",
+    "tests/unit/test_service_composition.py": "bd6a3959d4f50e2f05b353cfc598d6f62b2a77ed3f319f7bb6601cab408cb266",
+    "tests/unit/test_continuous_git_journal.py": "372849741e6a074fa3828a7025589f6896b214fe9c7d9db41171a4c3ee6a628a"
+  }
+}

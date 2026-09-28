@@ -10,6 +10,7 @@ from contextlib import nullcontext
 import stat
 
 from .errors import CoreError
+from ._git_policy import GitRepositoryTrust
 from .git_observer import observe_git, require_ancestor
 from .git_watcher import (
     GitWatcher,
@@ -57,29 +58,31 @@ class _LeasedObserver:
 
 
 class _ReportingWatcher:
-    def __init__(self, watcher, store, authorize, *, capture=False):
+    def __init__(self, watcher, store, authorize, *, capture=False, git_trust=None):
         self.watcher, self.store, self.authorize = watcher, store, authorize
         self.capture = capture
         self._last_binding = self._receipt = None
+        self._git_options = {} if git_trust is None else {"trust": git_trust}
 
     def tick(self):
         observer = self.watcher.observer
         # GitWatcher itself permits unbound findings when no snapshot exists.
         # This composition requires a verified owner report, so refuse earlier.
-        if self.capture:
-            self.authorize()
-        observation = observe_git(self.watcher.repository)
+        self.authorize()
+        observation = observe_git(self.watcher.repository, **self._git_options)
         if self.capture:
             state = observer.findings_status(limit=1)["state"]
             commit = self.watcher._state_commit(
                 state, self.watcher.profile_id, self.watcher.scope_id
             )
             if commit is not None and commit != observation.commit:
-                require_ancestor(self.watcher.repository, commit, observation.commit)
+                require_ancestor(
+                    self.watcher.repository, commit, observation.commit, **self._git_options
+                )
             # This worker owns the lifetime lease; public tick would reacquire it.
             observer._tick()
             self.authorize()
-            if observe_git(self.watcher.repository) != observation:
+            if observe_git(self.watcher.repository, **self._git_options) != observation:
                 raise CoreError(
                     "GIT_HEAD_CHANGED", "Git HEAD changed during snapshot preparation"
                 )
@@ -150,7 +153,11 @@ class GitAuditWorker:
         from .observer import Observer
         from .service_entry import GitServiceConfig, _invalid, _local_path
 
-        if not isinstance(config, GitServiceConfig) or config.mode != "read-only":
+        if (
+            not isinstance(config, GitServiceConfig)
+            or config.mode != "read-only"
+            or type(config.trust_registered_source) is not bool
+        ):
             raise _invalid()
         self.config = config
         self._lease = None
@@ -189,22 +196,31 @@ class GitAuditWorker:
         for output in (config.profile, state, scratch.resolve()):
             if output.is_relative_to(source) or source.is_relative_to(output):
                 raise _invalid()
+        git_options = {}
+        if config.trust_registered_source:
+            git_options = {"git_trust": GitRepositoryTrust(source)}
+            observer = Observer(
+                runtime, observer.principal, config.project, config.profile, **git_options
+            )
+            authorize()
         adapter = InstalledDiagnostics(
             local_app_data=config.diagnostics_root
         ).for_profile(BSL_PROFILE_ID)
-        analyzer = BslGitAnalyzer(adapter, authorize)
+        analyzer = BslGitAnalyzer(adapter, authorize, **git_options)
         watcher = GitWatcher(
             _LeasedObserver(observer),
             analyzer,
             repository=source,
             profile_id=PROFILE_ID,
             scope_id=SCOPE_ID,
+            **git_options,
         )
         self.watcher = _ReportingWatcher(
             watcher,
             OwnerReportStore(state / "owner-reports"),
             authorize,
             capture=config.scanner is not None,
+            **git_options,
         )
         journal_path = config.profile / "git-journal.json"
         outbox_path = config.profile / "git-outbox.json"

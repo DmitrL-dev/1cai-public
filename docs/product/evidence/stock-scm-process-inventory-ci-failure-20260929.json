@@ -1,0 +1,466 @@
+{
+  "schema": 1,
+  "source_head": "6fe571a00af6f37b558b33544cc5f7ebb9a7f421",
+  "tree": "ad96fcc5d7ccb93d1eaa487e5c7a01bb056db06d",
+  "base_main": "c715e9b65b75ae667376f331c3c0fac14be2f7f3",
+  "scope": "original6fe attempt1 exact failed CI raw accounting; both originals retained",
+  "runs": [
+    {
+      "run_id": 36424228140,
+      "event": "pull_request",
+      "actual_checkout": "b7cbc62a87c46edde0ed9a61cc755cb07719fa50",
+      "tree": "ad96fcc5d7ccb93d1eaa487e5c7a01bb056db06d",
+      "parents": [
+        "c715e9b65b75ae667376f331c3c0fac14be2f7f3",
+        "6fe571a00af6f37b558b33544cc5f7ebb9a7f421"
+      ],
+      "artifact_sha256": {
+        "python-contract-report": "8944a0352bf5e3cdc38b633345d73bcf164df7d82eec9906a462e24a8b42dd5b",
+        "verified-core-development": "08d7414838d56a9ce4ff3ee27d5866f6484ebc638af0019978aef386dd1d1ebb",
+        "native-scm-evidence": "6bc965c47fcdfc3f57515a64ea4fc23848779184be423998019f5afbba835cd3",
+        "native-git-diagnostic-evidence": "77b8ec130690a30a93e347905f73c26deb6391ca377f229de510c69d4fe36c96",
+        "native-stock-git-evidence": "ac2016c8b47ee4f0958964ca0778c8c909c0e43c1f2c1eb58687e599b8b5e72e"
+      },
+      "junit_sha256": "c83ecb738ab4c9fa477cbaff8ca9931c4c1b526062a9a5afcfc99e73b6c0fc85",
+      "python_cases": 2940,
+      "local_cases_present": 695,
+      "node_cases": 71,
+      "zero_skips": true,
+      "wheel_core_files": 105,
+      "kit_sha256": "4c88dc2a2f86e1035004ff3553896ae860450d6b4dc2d1d0672dea57aadc7398",
+      "wheel_sha256": "bc08acabac8ec5f824992ae6acb65d355f715423c4469f5b3e169f0f534e692c",
+      "run_url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36424228140",
+      "conclusion": "failure",
+      "successful_jobs": [
+        "windows",
+        "native-scm",
+        "native-git-diagnostic"
+      ],
+      "failed_job": "native-stock-git",
+      "failed_step": 7,
+      "failure": {
+        "type": "RuntimeError",
+        "message": "Native process inventory is incomplete"
+      },
+      "cleanup_errors": [],
+      "service_exists_after": false,
+      "source_observer_scm_accepted": true,
+      "git_diagnostic_accepted": true,
+      "native_stock_git_accepted": false,
+      "full_five_groups_exercised": false,
+      "original_held_processes_reaped": 1,
+      "retention_complete": true,
+      "retention_sha256": "7a70059ee21ca648775d4d379f37e9b658f4ba4df71a4d00fc1233bfb051ca17",
+      "retained_files": {
+        "stock-git-service.json": {
+          "size_bytes": 597,
+          "sha256": "fec7a6b709379129ce933aad51400f4a815c33f21a935497054089c637a18cd8"
+        },
+        "stock-source-manifest.json": {
+          "size_bytes": 3855,
+          "sha256": "efc8fa67d0d1b5bdecdcbe38398e7e8199466729bea857ab13bd3499f396f3e5"
+        },
+        "stock-preparation.json": {
+          "size_bytes": 1466,
+          "sha256": "a2a209a941de1e15af8a5186193d6aa20338560dd6221542c401fb3eccfdfc16"
+        },
+        "stock-coordinator.json": {
+          "size_bytes": 593,
+          "sha256": "ab659a833a73d07807097f34f81229b0f5785bb62c9110c35200ba6e85d37be0"
+        },
+        "git-journal.json": {
+          "size_bytes": 204,
+          "sha256": "45d7992f5cb335f299240633cceed3e35975a2c6d12787b2303acbfae2b08e6e"
+        },
+        "git-outbox.json": {
+          "size_bytes": 1040,
+          "sha256": "7e39cd6a5dec84fda4e1f8ac6bbc8d1247b0a9633f89265797e8b18e5cb1ff85"
+        },
+        "3129653d-ee8e-49ae-be9c-e1b5508915eb.json": {
+          "size_bytes": 932,
+          "sha256": "eadd2ca8e231bbde94d53f7adad052e1c765eb48ddb9240d4768332d663605c9"
+        },
+        "observer.sqlite3": {
+          "size_bytes": 45056,
+          "sha256": "e97d9e00bb800fa284a50655fc53a9442e5e6c140643fa63d6d6112f41d3f543"
+        },
+        "project.sqlite3": {
+          "size_bytes": 176128,
+          "sha256": "c14c68fd6b35a7a52e7a531846dc2a26e2690bf75f3837e04536bfe132b0ef1f"
+        }
+      },
+      "actual_native_java_first_proof": null,
+      "first_complete_publication_and_clean_stop": false,
+      "process_captures": [
+        {
+          "label": "stock-processes-1",
+          "receipt_sha256": "de13fb08a20957cc704563b921f04b7580039740d5742c4b9b454ab490680cb9",
+          "stdout_sha256": "1d7ea49be7a00faadae2067a240b6455f50de9247873e87e469dd5af3a67cf12",
+          "stdout_bytes": 1897,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 0
+        },
+        {
+          "label": "stock-processes-2",
+          "receipt_sha256": "7d53adbd214460b1eaae00208d18f29941c17195f55885414d42012032995546",
+          "stdout_sha256": "e16eb9dede5c6b627a3cbfc7c139d9435521e5464fe24e66fdcd7378aa5825a3",
+          "stdout_bytes": 1681,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 0
+        },
+        {
+          "label": "stock-processes-3",
+          "receipt_sha256": "66e9920aa68e81f5d37da1241b01d0de53ab0f1feb4717fdb4c7f69fd824c066",
+          "stdout_sha256": "63564738d2d5d6d42be1ba3d2772817da36b65e39870017536ef3755f4f9a93d",
+          "stdout_bytes": 2043,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 0
+        },
+        {
+          "label": "stock-processes-4",
+          "receipt_sha256": "b1a57fe3772a0ce82cc6d6cc33dca9d4e855f8d33623826f38de1fff656ffec9",
+          "stdout_sha256": "5584723c79927ae9c0051a7967b04de726a00a0445fc0c374a5aa19255caee0f",
+          "stdout_bytes": 1498,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 2
+        },
+        {
+          "label": "stock-processes-5",
+          "receipt_sha256": "fff76ced65fa086387371d665817bb6ec11ea52e4d9c8250c49297be4b0b9253",
+          "stdout_sha256": "e06d842a6ff70dd3c3532b05804475caaf8e0f8a6c17d7e433b9cbcd3fcecf44",
+          "stdout_bytes": 1009,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 0
+        }
+      ],
+      "incomplete_captures": [
+        {
+          "label": "stock-processes-4",
+          "owned_parent_chain": true,
+          "rows": [
+            {
+              "pid": 8552,
+              "parent_pid": 6220,
+              "image_available": false,
+              "argv_available": false
+            },
+            {
+              "pid": 8260,
+              "parent_pid": 8552,
+              "image_available": false,
+              "argv_available": false
+            }
+          ],
+          "specific_executable_or_natural_exit_proved": false
+        }
+      ],
+      "debug_privilege_scopes": 6,
+      "exact_privileges_restored": true,
+      "events_sha256": "9f385816ed58ce9fcba775c8e8af859c0c450bb92a1194c69943b646abaf5f77",
+      "sdk_producer_receipt": {
+        "full_tools": 32,
+        "scoped_tools": [
+          "rentgen_project_head",
+          "rentgen_draft_read",
+          "rentgen_draft_receipt"
+        ],
+        "handler_origin_modules": [
+          "rentgen_core.draft_editing",
+          "rentgen_core.mcp_drafts",
+          "rentgen_core.source_catalog",
+          "rentgen_core.stdio_mcp"
+        ],
+        "paths_point_to_installed_site_packages": true,
+        "independent_rehash_of_unexported_ci_installation": false
+      },
+      "original_dacls_and_owners_restored": true
+    },
+    {
+      "run_id": 36424224397,
+      "event": "push",
+      "actual_checkout": "6fe571a00af6f37b558b33544cc5f7ebb9a7f421",
+      "tree": "ad96fcc5d7ccb93d1eaa487e5c7a01bb056db06d",
+      "parents": [
+        "49f8347507f3a579cc651f885f937d5e4fe0f8c2"
+      ],
+      "artifact_sha256": {
+        "native-git-diagnostic-evidence": "0e538abe3eca98302f9d397e774fbc3b51d9812bf4c2817b251a79f0d04c4cbf",
+        "native-stock-git-evidence": "f44e80c511a9355ae7d59a2af7d54da41d04c558464c6fbd9692c14a469893cf",
+        "python-contract-report": "ef72c18c43ef9a72f1d652f48e858e9c7cff1f80cbc270076d992e7ba93de77a",
+        "verified-core-development": "eca7e389cfd37cc9c9b45c2f7981edf976b96e724219016268e5f8324d7b18f6",
+        "native-scm-evidence": "b3ea6a5d1c3c5932b3bef2101dd157d46990a6c9c3ed85029c85152a25f31a41"
+      },
+      "junit_sha256": "c0eb0fc4f3e32ebd3b0e94bdf007b218433a1aab67693355534ac930bea46816",
+      "python_cases": 2940,
+      "local_cases_present": 695,
+      "node_cases": 71,
+      "zero_skips": true,
+      "wheel_core_files": 105,
+      "kit_sha256": "1832f857640b2f5814918fc2951ad12e359d8660b16f9f7cd4e02bf90488f936",
+      "wheel_sha256": "bc08acabac8ec5f824992ae6acb65d355f715423c4469f5b3e169f0f534e692c",
+      "run_url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/36424224397",
+      "conclusion": "failure",
+      "successful_jobs": [
+        "windows",
+        "native-scm",
+        "native-git-diagnostic"
+      ],
+      "failed_job": "native-stock-git",
+      "failed_step": 7,
+      "failure": {
+        "type": "RuntimeError",
+        "message": "Native process inventory is incomplete"
+      },
+      "cleanup_errors": [],
+      "service_exists_after": false,
+      "source_observer_scm_accepted": true,
+      "git_diagnostic_accepted": true,
+      "native_stock_git_accepted": false,
+      "full_five_groups_exercised": false,
+      "original_held_processes_reaped": 2,
+      "retention_complete": true,
+      "retention_sha256": "f75c08584484f5873a40a1fb29f1d230ccf86eb85923a33b780899a95c1a4ec8",
+      "retained_files": {
+        "stock-git-service.json": {
+          "size_bytes": 597,
+          "sha256": "b45ac10c1aa280b58ec42a68aedc50ae64d3e10597d7571d74b3c7006be4f3d0"
+        },
+        "stock-source-manifest.json": {
+          "size_bytes": 3855,
+          "sha256": "002faac53c3df0345b43282aec3adeb0b4620d26d053f0df68ecf93a14099b84"
+        },
+        "stock-preparation.json": {
+          "size_bytes": 1466,
+          "sha256": "d0fe647d2408e24cac5d9924f6e12fc752c21cbc51d596d7f8d274c4526661fd"
+        },
+        "stock-coordinator.json": {
+          "size_bytes": 593,
+          "sha256": "fa8b1cb5eb927ac918d766df7471b52a49da113e0af25b7d23a6211ed0873482"
+        },
+        "git-journal.json": {
+          "size_bytes": 204,
+          "sha256": "bce49eb579307da9eb11f85b15a396b327a7551346cbb744750f377d0f19d9e4"
+        },
+        "git-outbox.json": {
+          "size_bytes": 2020,
+          "sha256": "b92b68c58d0217d7d968ece13a9c72bfca942b4dd668052b9e23a6cdd5e21561"
+        },
+        "51ddebc1-4a51-4a0c-96bf-cea96a3c36d8.json": {
+          "size_bytes": 932,
+          "sha256": "ff5a52cc5308141c55bc195ee97ebf3a5d0fc6f6ef62c0f5bc0e1084b68602f7"
+        },
+        "59efb321-3ed6-4354-8f11-32e4c683cd9d.json": {
+          "size_bytes": 932,
+          "sha256": "baa3e018ff414514ec4e20a6d0bb2fbb0f987ba12f7780027021666e1aa9c511"
+        },
+        "observer.sqlite3": {
+          "size_bytes": 53248,
+          "sha256": "615d9a19784a3aa67ef22d4e1b1df7584adf1195e299724779f89ee4c5456e72"
+        },
+        "project.sqlite3": {
+          "size_bytes": 176128,
+          "sha256": "6bd8c181e3df4dd4b42cc3571e775c48724cb018cef5bfe7e8e569ef192e74b6"
+        }
+      },
+      "actual_native_java_first_proof": {
+        "pid": 8180,
+        "parent_pid": 1424,
+        "actual_localservice": true,
+        "fixed_pinned_argv": true
+      },
+      "first_complete_publication_and_clean_stop": true,
+      "process_captures": [
+        {
+          "label": "stock-processes-1",
+          "receipt_sha256": "1bc88000acc7a1574100b21642738cd335afeb3f1c01af0f8b1997bbe752f74e",
+          "stdout_sha256": "63f621fb9d9fc500e3539c21169cf1280721451da1ffbedaae65dcbdcfb0c0b7",
+          "stdout_bytes": 2043,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 0
+        },
+        {
+          "label": "stock-processes-2",
+          "receipt_sha256": "60de9a33ea83f10261fc04fdcb4a4d3c851f976ec51e41466fd052aa97afe7ad",
+          "stdout_sha256": "fc0cefb6f37c240cdaa897b26b26df858711e297024601af850f94ccdaddf9be",
+          "stdout_bytes": 1332,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 0
+        },
+        {
+          "label": "stock-processes-3",
+          "receipt_sha256": "546c818b9bcc879a86c8269d19f47cf9f43f024e2c6cfb348486c4ac381ef4ab",
+          "stdout_sha256": "64d332a240ba0c54f45c49876ae3b6086d1e25c836b6ec3718fabebaab55e45f",
+          "stdout_bytes": 1688,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 0
+        },
+        {
+          "label": "stock-processes-4",
+          "receipt_sha256": "4820f76b3f13f265758cd9c93fbb5577a9c2573b0bacf82b9d50e7ff9d39a815",
+          "stdout_sha256": "4b6a76459ac6820e767251b566c692df0a17c556c7cbcb025880a435768e5290",
+          "stdout_bytes": 1332,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 0
+        },
+        {
+          "label": "stock-processes-5",
+          "receipt_sha256": "876bd93b6d2d7f6e892ce08f84b49153ea18ef527f9b0c06212de1f0e4697f32",
+          "stdout_sha256": "bd4202bb0b82f61a0e4c5b01ee8a9f36121334ac3f46d6abfd42bde4a5022963",
+          "stdout_bytes": 1332,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 0
+        },
+        {
+          "label": "stock-processes-6",
+          "receipt_sha256": "43c45d23b54d234b8b83226c16d943c77f85dce3a6f78ded0e649c799a472139",
+          "stdout_sha256": "362c7b5ebc636b44a052be8027eb10dbc50f02b70b52e1cb00d7d2e940ddfd86",
+          "stdout_bytes": 3331,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 0
+        },
+        {
+          "label": "stock-processes-7",
+          "receipt_sha256": "c100a92232d6fb49024d9761a914d66f79c5e67d021818313cfe991d6f7dd031",
+          "stdout_sha256": "379801eb1f03f0de5ca20580c4f90fb89b7d6388bcaf33e02ab4e5be16621764",
+          "stdout_bytes": 1009,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 0
+        },
+        {
+          "label": "stock-processes-8",
+          "receipt_sha256": "8bab58de2ed08b9016600fa8529256ed677dc3ef1911aa151f900f689959bf78",
+          "stdout_sha256": "b8c9b06246b3b83f7f073082099c55fe94b5a1a2e57ec9cc08945c40c3a0c386",
+          "stdout_bytes": 1332,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 0
+        },
+        {
+          "label": "stock-processes-9",
+          "receipt_sha256": "206ca275cc6945dc879d47c50dfaafa40a18b02ad5cc2635ee10d41438d35756",
+          "stdout_sha256": "3cac1462604fd73902ebc91b3f4cb14c571b9c7da92bd40672347ee294e1988f",
+          "stdout_bytes": 1332,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 0
+        },
+        {
+          "label": "stock-processes-10",
+          "receipt_sha256": "14d6fd5efda7cc20a39edfb434375a18b69c355154aaa7ae776879783c6b3dce",
+          "stdout_sha256": "70c2da7ffab19e03a1145ee1535e1892702b2dc6900cb01cceffc11d4649ce52",
+          "stdout_bytes": 1332,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 0
+        },
+        {
+          "label": "stock-processes-11",
+          "receipt_sha256": "5e5b44f6a9a606d8e521f63c0eea37e294a72d7c5332dcf024d9ed70b6bbe24c",
+          "stdout_sha256": "35c0532f045f4c6ae22415c5fb75955f659cd0358bdd6cc119645e000ce45b61",
+          "stdout_bytes": 1415,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 1
+        },
+        {
+          "label": "stock-processes-12",
+          "receipt_sha256": "9baa2b63b800c972e3c1b90e7272946c7d577ca7e36c5b24360fe9fd5b7bccc6",
+          "stdout_sha256": "8a02a500426fa1cba81daa7de90d521f9eb0b9aa66a9343dd1e366240dfe9e9e",
+          "stdout_bytes": 1009,
+          "exit_code": 0,
+          "child_reaped": true,
+          "stderr_bytes": 0,
+          "script_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+          "incomplete_rows": 0
+        }
+      ],
+      "incomplete_captures": [
+        {
+          "label": "stock-processes-11",
+          "owned_parent_chain": true,
+          "rows": [
+            {
+              "pid": 5444,
+              "parent_pid": 8212,
+              "image_available": false,
+              "argv_available": false
+            }
+          ],
+          "specific_executable_or_natural_exit_proved": false
+        }
+      ],
+      "debug_privilege_scopes": 14,
+      "exact_privileges_restored": true,
+      "events_sha256": "fe42d12956b2f0144dd4d968c83c6daeca23a26f35190047d40d72d64df17d8a",
+      "sdk_producer_receipt": {
+        "full_tools": 32,
+        "scoped_tools": [
+          "rentgen_project_head",
+          "rentgen_draft_read",
+          "rentgen_draft_receipt"
+        ],
+        "handler_origin_modules": [
+          "rentgen_core.draft_editing",
+          "rentgen_core.mcp_drafts",
+          "rentgen_core.source_catalog",
+          "rentgen_core.stdio_mcp"
+        ],
+        "paths_point_to_installed_site_packages": true,
+        "independent_rehash_of_unexported_ci_installation": false
+      },
+      "original_dacls_and_owners_restored": true
+    }
+  ],
+  "cause_proved": "NULL executable path and command line for rows in the observed service parent chain; strict inventory refusal",
+  "specific_git_process_or_natural_exit_proved": false,
+  "source_ci_qualified": false,
+  "dev16_installed_from_this_source": false,
+  "main_qualified_from_this_source": false,
+  "release_qualified_from_this_source": false,
+  "full_product_ready": false,
+  "production_deployment": false
+}

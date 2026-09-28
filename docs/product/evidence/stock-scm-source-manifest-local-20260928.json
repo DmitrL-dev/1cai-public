@@ -1,0 +1,44 @@
+{
+  "schema": "rentgen-stock-scm-source-manifest-local/1",
+  "source_base": "730d05a2f1578bf60c53c704dead5d5eae44777d",
+  "source_files": {
+    "scripts/verification/scm_acceptance_worker.py": "433029818a11f6741bbfac9620e66d3f919805257d9a25d55656063c55917459",
+    "tests/unit/test_scm_stock_source_manifest.py": "42a0d5d60b4b262e276a2d56fc16942de4e665216c03b69fb439af924f313007"
+  },
+  "tests": {
+    "initial_red_failed": 27,
+    "green_passed": 27,
+    "new_manifest_cases": 27,
+    "actual_windows_git_cases": 1,
+    "final_passed": 69,
+    "final_skipped": 1,
+    "failures": 0,
+    "errors": 0,
+    "skipped_case": "test_native_explicit_policy_roundtrip_covers_files_and_directories",
+    "skip_reason": "existing DACL round trip requires native backup/restore privileges",
+    "final_junit_sha256": "7f9b786b586a0a4210e5782c38b976b8086d8dd39462cba99c5d7a556c1e6fd8"
+  },
+  "default_source_entries": 5,
+  "explicit_manifest_complete_equality": true,
+  "git_metadata_required": [
+    ".git",
+    ".git/HEAD",
+    ".git/config",
+    ".git/index"
+  ],
+  "maximum_manifest_entries": 512,
+  "maximum_entry_bytes": 1048576,
+  "maximum_total_bytes": 16777216,
+  "original_module_digest_preserved": true,
+  "service_json_manifest_selection": false,
+  "source_registration_policy_relaxed": false,
+  "scm_created_locally": false,
+  "native_localservice_accepted": false,
+  "native_bsl_accepted": false,
+  "continuous_git_accepted": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "independent_review": false,
+  "e902_original_ci_preserved": true,
+  "recorded_utc": "2026-09-28T05:22:50.404330+00:00"
+}

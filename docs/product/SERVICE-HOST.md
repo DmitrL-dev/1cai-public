@@ -1,4 +1,4 @@
-# Native Observer service entrypoint and bounded Git audit composition
+# Native Observer service entrypoint and Git audit composition
 
 ## Git audit composition (schema 2)
 
@@ -26,8 +26,9 @@ Use the same `--console --config <absolute-local.json>` grammar. `mode` defaults
 to `dry-run`: only strict configuration and existing local paths are validated;
 no worker, Git/BSL process, journal, outbox or report is created. This is not a
 runtime-readiness or authorization check. Explicit `mode: "read-only"` enables
-the audit. These are the only accepted modes. `max_cycles` defaults to 1 and must
-be an integer from 1 to 10000; null/unbounded runs are rejected for schema 2.
+the audit. These are the only accepted modes. `max_cycles` defaults to 1. An
+integer from 1 to 10000 bounds the lifetime; explicit `null` runs until stop or
+failure. Booleans, strings, floats and out-of-range integers are rejected.
 `interval_seconds` is required and bounded to 5–86400. All other shown fields
 are required; unknown fields, duplicate JSON keys, identity overrides, arbitrary
 commands, scanner selection and notification URLs are rejected. Schema 2 uses
@@ -66,8 +67,8 @@ project state `owner-reports` store; each success outbox event includes its
 `owner_report_id`. Unchanged commit/snapshot pairs reuse a receipt within one
 lifetime; a new lifetime may create a new receipt.
 
-One scheduler owns the finite cycle budget and existing restricted transient
-backoff. Its wait uses the service stop Event, so STOP/SHUTDOWN or a console
+One scheduler owns the finite cycle budget or explicitly continuous lifetime
+and the existing restricted transient backoff. Its wait uses the service stop Event, so STOP/SHUTDOWN or a console
 stop wakes interval/backoff waiting. An active tick finishes before cleanup;
 there is no forced termination or wall-clock stop deadline. Journal, findings,
 reports and outbox remain separate durable stores, not one transaction: later
@@ -86,6 +87,109 @@ Git/Observer/store wiring with a typed fake BSL executor, fail-closed evidence,
 output-path containment and cooperative stop; the same pipeline is exercised
 through a mocked SCM lifecycle. No live SCM install/start/apply, service-account
 acceptance or native BSL acceptance is implied.
+
+## Явное разрешение для зарегистрированного Git-каталога
+
+В конфигурациях schema 2 и schema 3 доступно необязательное поле
+`"trust_registered_source": true`. При отсутствии поля или значении `false`
+Рентген не добавляет исключение `safe.directory`; обычные настройки Git на
+машине продолжают действовать. Допускается только JSON boolean: числа, строки,
+`null`, массивы и объекты отклоняются. Schema 1 этого поля не принимает.
+В `dry-run` даже значение `true` не создаёт worker и не запускает Git.
+
+При `true` worker сначала проверяет существующие разрешения `project:read` и
+`analysis:run`, привязку Observer к проекту, пользователю и источникам, а также
+размещение рабочих каталогов. Затем он создаёт одно неизменяемое разрешение
+для канонического каталога источников из регистрации проекта. Каталог доверия,
+wildcard, произвольную команду или Git executable нельзя передать через JSON.
+Перед каждым циклом обеих схем разрешения проекта проверяются до чтения Git.
+
+Все чтения HEAD, ancestry, дерева, blob и повторные проверки snapshot используют
+тот же объект разрешения. Только дочерний процесс Git получает
+`-c safe.directory= -c safe.directory=<точный зарегистрированный каталог>`.
+Пустое значение сбрасывает унаследованный список, а следующая запись разрешает
+один каталог. Родительский, вложенный или другой репозиторий не получает этого
+разрешения; несовпадение обнаруживается до запуска дочернего процесса.
+Семантика описана в [документации Git](https://git-scm.com/docs/git-config/2.55.0#Documentation/git-config.txt-safedirectory).
+
+Рентген не записывает исключение в global/system/repository config, не меняет
+владельца, ACL, ref или index. Унаследованные переменные `GIT_*` удаляются без
+учёта регистра; дочерний процесс получает фиксированные запреты prompt,
+optional locks и lazy fetch, а также `GIT_NO_REPLACE_OBJECTS=1`. Поэтому чтение
+конкретного коммита игнорирует replacement refs, сохраняя сами refs без изменений.
+Значение этой переменной определено в [документации Git](https://git-scm.com/docs/git/2.55.0#Documentation/git.txt-GIT_NO_REPLACE_OBJECTS).
+
+Это изменение находится в разрабатываемом Core после dev15. Локальные тесты
+используют настоящий Git и Go scanner, SQLite, отчёты и outbox; результаты BSL
+внедряются тестовым адаптером. Проверка установленного stock worker под
+LocalService с настоящим BSL и новым релизом ещё требуется. Канонизация не
+фиксирует filesystem identity и не
+защищает от подмены каталога после проверки: требования к deployment ACL и
+целостности executable остаются действующими.
+
+### Ограничение вывода дочернего Git
+
+В разрабатываемом Core stdout ограничивается во время чтения binary pipe:
+HEAD/root/ref — 8192 байта, ancestry — 0 байт, tree listing — 4 MiB, один
+blob — 1 MiB. Сохраняются пределы 256 BSL-файлов и 64 MiB суммарного содержимого.
+Листинг может превысить предел и из-за файлов с неподдерживаемыми расширениями;
+такой репозиторий получает явный отказ анализа.
+
+Сохраняется максимум установленного предела плюс один байт для обнаружения
+переполнения. stdin и stderr направляются в DEVNULL. Переполнение/тайм-аут
+завершают принадлежащий вызову дочерний процесс, затем ожидается тот же handle
+и закрывается stdout. Reader thread не создаётся. На Windows единственный
+владелец pipe проверяет доступные байты через PeekNamedPipe, на POSIX читает
+неблокирующий descriptor. Порядок poll/read сохраняет последние байты, даже
+если процесс завершился сразу после пустого чтения.
+
+Переполнение probe возвращает `GIT_PROBE_FAILED`, ancestry —
+`GIT_ANCESTRY_FAILED`, analyzer — `GIT_ANALYZER_LIMIT`. Ошибки OS/тайм-аут
+сохраняют прежние command-specific коды; отрицательный ancestry по-прежнему
+возвращает `GIT_HISTORY_REWRITE`. Срок ожидания после spawn — 10 секунд.
+Создание процесса и OS cleanup не образуют жёсткого срока STOP службы.
+Эта граница проверяет завершение одного дочернего процесса; владение всем
+деревом descendants и cleanup при аварии контроллера ею не подтверждаются.
+Native SCM/BSL приёмка остаётся отдельным обязательным этапом.
+
+## Continuous Git lifetime and journal compatibility
+
+For schema 2 and schema 3, set both `"mode": "read-only"` and
+`"max_cycles": null` to request continuous audit. Omitting `max_cycles` still
+runs one cycle; omitting `mode` still performs an inert dry-run. One scheduler
+retains the profile lease and run ID. Stop wakes an interval/backoff wait,
+finishes an active tick and prevents a later tick. An unresolved retryable
+failure on stop remains a service failure. This adds no automatic recovery or
+restart after a fatal error.
+
+The scheduler journal now reads two formats with the same fields:
+
+| Journal schema | `cycle` and `failures` bounds | Writer behavior |
+| --- | --- | --- |
+| 1 | 0..10000 | Preserved while both counters fit |
+| 2 | 0..9007199254740991 | Used when either counter exceeds 10000 |
+
+Every write validates both counters before replacing the current file. The
+second bound is the largest integer exactly represented by common JSON
+clients. The 1 MiB journal limit, atomic replacement, run identity and explicit
+interruption recovery remain. Recovery preserves a large counter; a new run
+starts a new ID at zero and therefore writes schema 1 again.
+
+Older Core versions cannot read schema 2. Stop the service and preserve its
+journal before considering a downgrade; compatibility of a retained profile
+must be reviewed separately. Do not delete or rewrite interrupted evidence to
+force an older version to start.
+
+Memory retains only the latest 1000 scheduler events. Schema 3 keeps unchanged
+cycles out of the notification outbox; the existing 1000-entry outbox capacity
+and explicit acknowledgement remain. Full storage/queues and authorization or
+integrity failures stop the service. Continuous mode does not grant source
+write permissions or call a model.
+
+Local contracts include schema 2/3 stop during a tick and wait, error handling,
+recovery across the journal boundary, and 10002 cycles with real journal persistence and
+a controlled watcher. They do not constitute native Git/BSL acceptance under
+LocalService, a long-running pilot, or general product readiness.
 
 ## Local BSL failure reason (Core dev12 candidate)
 

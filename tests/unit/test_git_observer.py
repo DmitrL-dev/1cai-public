@@ -84,7 +84,7 @@ def test_probe_sees_new_commit_and_ignores_inherited_git_directory(
 
 def test_probe_rejects_visible_head_race(repository, monkeypatch):
     module = api()
-    real_run = subprocess.run
+    real_run = module.capture_git
     reads = 0
 
     def changing_head(argv, **kwargs):
@@ -96,7 +96,7 @@ def test_probe_rejects_visible_head_race(repository, monkeypatch):
                 result.stdout = b"b" * 40 + b"\n"
         return result
 
-    monkeypatch.setattr(subprocess, "run", changing_head)
+    monkeypatch.setattr(module, "capture_git", changing_head)
     with pytest.raises(module.CoreError) as error:
         module.observe_git(repository)
     assert error.value.code == "GIT_HEAD_CHANGED"
@@ -108,7 +108,7 @@ def test_probe_timeout_is_explicit(repository, monkeypatch):
     def timeout(argv, **kwargs):
         raise subprocess.TimeoutExpired(argv, kwargs["timeout"])
 
-    monkeypatch.setattr(subprocess, "run", timeout)
+    monkeypatch.setattr(module, "capture_git", timeout)
     with pytest.raises(module.CoreError) as error:
         module.observe_git(repository)
     assert error.value.code == "GIT_PROBE_FAILED"
@@ -121,7 +121,7 @@ def test_probe_rejects_non_utf8_git_output(repository, monkeypatch):
         returncode = 0
         stdout = b"\xff"
 
-    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: Result())
+    monkeypatch.setattr(module, "capture_git", lambda *args, **kwargs: Result())
     with pytest.raises(module.CoreError) as error:
         module.observe_git(repository)
     assert error.value.code == "GIT_PROBE_FAILED"

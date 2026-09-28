@@ -65,7 +65,6 @@ def test_git_config_defaults_to_dry_run_without_worker_or_writes(configured):
     [
         {"mode": "apply"},
         {"mode": "live"},
-        {"max_cycles": None},
         {"max_cycles": 0},
         {"max_cycles": 10001},
         {"max_cycles": True},
@@ -287,8 +286,9 @@ def test_service_failure_keeps_reason_local_without_findings_or_owner_report(
 
 
 @pytest.mark.parametrize("capture", [False, True])
+@pytest.mark.parametrize("max_cycles", [100, None])
 def test_git_worker_stop_finishes_active_cycle_and_prevents_later_ticks(
-    configured, workspace, monkeypatch, scanner, capture
+    configured, workspace, monkeypatch, scanner, capture, max_cycles
 ):
     entered, release, stop = Event(), Event(), Event()
 
@@ -308,7 +308,7 @@ def test_git_worker_stop_finishes_active_cycle_and_prevents_later_ticks(
         publish=not capture,
     )
     document = json.loads(configured.path.read_text(encoding="utf-8"))
-    document.update(max_cycles=100, interval_seconds=86400)
+    document.update(max_cycles=max_cycles, interval_seconds=86400)
     configured.path.write_text(json.dumps(document), encoding="utf-8")
     results = []
     thread = Thread(
@@ -731,3 +731,145 @@ def test_autonomous_restart_reuses_confirmed_capture_and_findings(
     assert len(receipts) == 1
     if saved:
         assert receipts == saved
+
+
+@pytest.mark.parametrize("schema", [2, 3])
+@pytest.mark.parametrize("mode", ["dry-run", "read-only"])
+def test_git_config_explicit_null_selects_continuous_lifetime(configured, scanner, schema, mode):
+    updates = {"schema": schema, "max_cycles": None, "mode": mode}
+    if schema == 3:
+        updates["scanner"] = str(scanner)
+    configured.write(**updates)
+    config = service_entry.load_config(configured.path)
+    assert config.max_cycles is None
+    assert config.mode == mode
+    if mode == "dry-run":
+        result = service_entry.run_console(
+            configured.path, worker_factory=lambda _: pytest.fail("dry run started worker")
+        )
+        assert (result.exit_code, result.cycles) == (0, 0)
+        assert list(config.profile.iterdir()) == []
+
+
+@pytest.mark.parametrize("capture", [False, True])
+def test_continuous_git_stop_interrupts_idle_wait(configured, workspace, monkeypatch, scanner, capture):
+    waiting = Event()
+
+    class ObservableStop(Event):
+        def wait(self, timeout=None):
+            waiting.set()
+            return super().wait(timeout)
+
+    stop = ObservableStop()
+    if capture:
+        configured.document.update(schema=3, scanner=str(scanner))
+    configured.document.update(max_cycles=None, interval_seconds=86400)
+    observer, _, module, _, adapter = wire(configured, workspace, monkeypatch, publish=not capture)
+    original = module.read_bytes()
+    results = []
+    thread = Thread(target=lambda: results.append(service_entry.run_console(configured.path, stop_event=stop)))
+    thread.start()
+    try:
+        assert waiting.wait(15)
+    finally:
+        stop.set()
+        thread.join(15)
+    assert not thread.is_alive()
+    assert (results[0].exit_code, results[0].cycles) == (0, 1)
+    assert len(adapter.calls) == 1
+    assert module.read_bytes() == original
+    with observer.locked():
+        pass
+    assert SchedulerJournal(observer.profile / "git-journal.json").read()["phase"] == "idle"
+
+
+@pytest.mark.parametrize("capture", [False, True])
+def test_continuous_git_stopping_after_retryable_failure_is_not_success(configured, workspace, monkeypatch, scanner, capture):
+    class StopAtBackoff(Event):
+        def wait(self, timeout=None):
+            self.set()
+            return True
+
+    if capture:
+        configured.document.update(schema=3, scanner=str(scanner))
+    configured.document.update(max_cycles=None)
+    observer, _, module, _, adapter = wire(configured, workspace, monkeypatch, publish=not capture)
+    module.write_bytes(module.read_bytes() + b"// controlled dirty tracked input\n")
+    original = module.read_bytes()
+    result = service_entry.run_console(configured.path, stop_event=StopAtBackoff())
+    assert (result.exit_code, result.error_code) == (2, "SERVICE_WORKER_FAILED")
+    assert adapter.calls == []
+    assert module.read_bytes() == original
+    notifications = NotificationOutbox(observer.profile / "git-outbox.json").peek()
+    assert [item["event"] for item in notifications] == [
+        {"status": "error", "code": "GIT_TRACKED_DIRTY", "attempt": 1}
+    ]
+    with observer.locked():
+        pass
+
+
+@pytest.mark.parametrize("schema", [2, 3])
+@pytest.mark.parametrize("mode", ["--console", "--service"])
+def test_module_entry_uses_canonical_git_config_and_factory(
+    configured, workspace, monkeypatch, scanner, capsys, schema, mode
+):
+    """Exercise -m's __main__ namespace with the real factory and publication."""
+    import runpy
+    import sys
+    import warnings
+
+    if schema == 3:
+        observer, source, module, snapshot, adapter = autonomous(
+            configured, workspace, monkeypatch, scanner
+        )
+    else:
+        observer, source, module, snapshot, adapter = wire(
+            configured, workspace, monkeypatch
+        )
+    original = module.read_bytes()
+    from rentgen_core import service_composition
+    factory = service_composition.GitAuditWorker
+    canonical_types = []
+    def construct(config):
+        canonical_types.append(isinstance(config, service_entry.GitServiceConfig))
+        return factory(config)
+    monkeypatch.setattr(service_composition, "GitAuditWorker", construct)
+    scm = None
+    if mode == "--service":
+        from test_service_entry import SCM
+        class GitSCM(SCM):
+            def dispatch(self, callback):
+                callback("Rentgen.GitAudit", True)
+            def register(self, name, handler):
+                assert name == "Rentgen.GitAudit"
+                self.handler = handler
+                return 123
+        scm = GitSCM()
+        monkeypatch.setattr(service_entry, "Win32SCM", lambda: scm)
+    capsys.readouterr()
+    monkeypatch.setattr(sys, "argv", [
+        "rentgen_core.service_entry", mode, "--config", str(configured.path)
+    ])
+    with warnings.catch_warnings():
+        # Canonical imports already loaded by this test process. A fresh -m
+        # interpreter does not emit this runpy warning.
+        warnings.filterwarnings("ignore", message=".*found in sys.modules.*", category=RuntimeWarning)
+        with pytest.raises(SystemExit) as stopped:
+            runpy.run_module("rentgen_core.service_entry", run_name="__main__")
+    assert canonical_types == [True]
+    assert stopped.value.code == 0
+    output = capsys.readouterr()
+    if mode == "--console":
+        assert json.loads(output.out) == {"status": "stopped", "cycles": 1}
+    else:
+        from test_service_entry import states
+        assert output.out == ""
+        assert states(scm) == [service_entry.START_PENDING, service_entry.RUNNING,
+                               service_entry.STOP_PENDING, service_entry.STOPPED]
+    # The graph builder may emit progress; the entry must not report failure.
+    assert '"error"' not in output.err
+    assert len(adapter.calls) == 1 and module.read_bytes() == original
+    assert observer.findings_status()["state"]["report"]["complete"] is True
+    assert len(NotificationOutbox(observer.profile / "git-outbox.json").peek()) == 1
+    with observer.locked():
+        pass

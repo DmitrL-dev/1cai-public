@@ -1,0 +1,218 @@
+{
+  "schema": "rentgen-core-dev16-compatibility-local/1",
+  "source_parent": "62efee79e250773db29d4522bc36d2bc6fc5d3a7",
+  "source_parent_tree": "f9059fabca6382ad445b58ad2ad2749cd88181e9",
+  "accepted_main": "c715e9b65b75ae667376f331c3c0fac14be2f7f3",
+  "versions": {
+    "core": "0.1.0.dev16",
+    "companion": "0.1.16"
+  },
+  "scope": "Explicit next-version admission and development artifact references; local fixtures and byte-exact development VSIX only.",
+  "changes": {
+    "python_adapters": [
+      "integrations/open-editor/prepare.py",
+      "integrations/open-editor/run_repair.py",
+      "integrations/open-editor/install_bsl_runtime.py"
+    ],
+    "companion_gates": [
+      "integrations/vscode-rentgen/extension.cjs",
+      "integrations/vscode-rentgen/lib/bsl.cjs",
+      "integrations/vscode-rentgen/lib/core.cjs",
+      "integrations/vscode-rentgen/lib/edit.cjs",
+      "integrations/vscode-rentgen/lib/platform.cjs",
+      "integrations/vscode-rentgen/lib/repair.cjs",
+      "integrations/vscode-rentgen/lib/testing.cjs"
+    ],
+    "delivery_and_version_files": [
+      "pyproject.toml",
+      "integrations/vscode-rentgen/package.json",
+      ".github/workflows/core-ci.yml",
+      "scripts/verification/prepare_daily_platform.py",
+      "scripts/verification/prepare_test_editor_profile.py",
+      "scripts/verification/verify_snapshot_diff_delivery.py",
+      "scripts/verification/verify_test_profile_delivery.py"
+    ],
+    "existing_supported_versions_preserved": true,
+    "installed_core_profile_exact_match_preserved": true,
+    "unknown_versions_still_refused": true,
+    "no_registry_schema_migration": true,
+    "no_runtime_download_or_install_in_local_verification": true
+  },
+  "source_file_sha256": {
+    ".github/workflows/core-ci.yml": "55fa46ad97789fe977f0c3201fd8c1053c4c6efc98702a7f11f76ca9286549de",
+    "integrations/open-editor/README.md": "32da365cb974a5ee5f9df4997a5d8b2105955589c4022f5bba661c1c232e3824",
+    "integrations/open-editor/install_bsl_runtime.py": "38f4357545b5a75f0c9e30459fdd740c39769293b00b72d90f013253ffd1414c",
+    "integrations/open-editor/prepare.py": "f2820cdb438a0b54c7baad1508b35c9de0b62b26560066b081c8fbfb88ad54e3",
+    "integrations/open-editor/run_repair.py": "8d4dad08cc2219fccdb46761ae27ebf587638995fe659f88425aed7792ed173d",
+    "integrations/vscode-rentgen/README.md": "ec9d7724b09abbdcfef25c7de92aae2403b88ce194e561136818f057a89c778b",
+    "integrations/vscode-rentgen/extension.cjs": "9d06c6a62211c9e88d9233cabc53b6aacbdd3674569766c65979a30c83a18810",
+    "integrations/vscode-rentgen/lib/bsl.cjs": "02928963d4eafe5415950b4c6d440b0e7488ae38678c2b5f32e1874261d954b5",
+    "integrations/vscode-rentgen/lib/core.cjs": "086663058d9c3fe403393916bc68e675fec3711486f69618b0cf37ec89bee3ad",
+    "integrations/vscode-rentgen/lib/edit.cjs": "a2dc0fdf7704342f30712c43e452db62449adfb1ce9901dabf1ce8da6ef2d266",
+    "integrations/vscode-rentgen/lib/platform.cjs": "453a96552f23932082551d965688c0162be70108822b3489db379c6bf27a01fb",
+    "integrations/vscode-rentgen/lib/repair.cjs": "fc2d9a9a878738bd73cb9b1239542031af6b0694a5a96a4f7c35305546169369",
+    "integrations/vscode-rentgen/lib/testing.cjs": "ce64e19df67ff1e89594f4c26d7a31d943eee27bb48ebb1c8af798a04d2dfb1e",
+    "integrations/vscode-rentgen/package.json": "0d9c0dfa9bc3f45ca2e1099911a584f70740ccbd265fd6415294c7e89857e97f",
+    "integrations/vscode-rentgen/test/bsl.test.cjs": "fee16cff97d6529a22889dc161048e7ad90b31e61179512b8f062cf898f884d7",
+    "integrations/vscode-rentgen/test/core.test.cjs": "63d07c26696dbd0f4334e719a0b34dc0ff3b0d4838a312d83805ce2b1763c5fb",
+    "integrations/vscode-rentgen/test/edit.test.cjs": "ad0f05a2684cf4c2b2af07df960c7eed2b768512590b46d1fb083365910ff1a7",
+    "integrations/vscode-rentgen/test/platform.test.cjs": "482bdd776696518f1d4a438aa4d8828e795f6a460ea5edf15f65962d4dcc8126",
+    "integrations/vscode-rentgen/test/repair.test.cjs": "28a0921e9b4b02cdb2a13f57bf12d881b8cf597db864446fab591e56ddbf587e",
+    "integrations/vscode-rentgen/test/testing.test.cjs": "ea11cdf29bc827ce0beba6e1250767b056bf59077cc204e691f1ae33c52cc147",
+    "pyproject.toml": "8d38191eafbd8db4f58dbec44858050a712dd56ecc77146a649cd81da9da2653",
+    "scripts/verification/prepare_daily_platform.py": "9198bbe425fd0742bde01b5785105680a1a59691c6269ce1ea0caeb63fff5a5f",
+    "scripts/verification/prepare_test_editor_profile.py": "8d5e9558567cf0dec1cdc82d858534cd2f283ee48df5819f9317622e23d15f44",
+    "scripts/verification/verify_snapshot_diff_delivery.py": "3dae63a1cd4dc7498cd5689a087ca56859502f140e159de9bd78e0ffdd3eee15",
+    "scripts/verification/verify_test_profile_delivery.py": "5564718015f9f2c7f20c83747c52d74f82bedf7d1581f52f6a6ea9a069690a69",
+    "tests/unit/test_core_dev16_compatibility.py": "4ccf220c2dcc4f995015408d5ee7e07e08f3657b6fca8f8b44294dbdb5083b14",
+    "tests/unit/test_open_editor_profile.py": "131f359eaf72bc9f147453990abeda2767052f49a2ede3e0cbb71ced0118db6d",
+    "tests/unit/test_repair_profile.py": "50374a90116f0f56bde896ac32c3e0894fab6445f2366929355c22b0f34e8a7c"
+  },
+  "red": {
+    "python": {
+      "raw": {
+        "file": "dev16-python-admission-red.xml",
+        "sha256": "14281992ded0a65b0bf8065a1123d141c4e2e3db5e43f8d7edb58109a2b43923"
+      },
+      "tests": 5,
+      "passed": 2,
+      "failed": 3,
+      "skipped": 0
+    },
+    "companion": {
+      "raw": {
+        "file": "dev16-node-red-stdout.raw",
+        "sha256": "8f459c27faebf683e025886558a45efaee83d21b8650cc96bbe3897861cfae17"
+      },
+      "counts": {
+        "tests": 71,
+        "pass": 50,
+        "fail": 21,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    }
+  },
+  "green": {
+    "python_adapters": {
+      "raw": {
+        "file": "dev16-python-admission-green.xml",
+        "sha256": "f058bf823695bcc781718d1d8908ce7144da839e573689d84ee00005d666d8dc"
+      },
+      "tests": 41,
+      "passed": 41,
+      "skipped": 0
+    },
+    "formatted_new_tests": {
+      "raw": {
+        "file": "dev16-python-new-tests-final.xml",
+        "sha256": "943ef566fe1977e4ee9502d12ce847df9f008d526e0189887d7aecdaa321e975"
+      },
+      "tests": 3,
+      "passed": 3,
+      "not_added_to_41_case_union": true
+    },
+    "companion": {
+      "raw": {
+        "file": "dev16-node-green-stdout.raw",
+        "sha256": "73bb2f0ba0162c9ed55224341008bb1e66e9f405ddd938bd0c7713b8efa122a9"
+      },
+      "counts": {
+        "tests": 71,
+        "pass": 71,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    }
+  },
+  "development_vsix": {
+    "sha256": "ca55ec93306f6ce3a267d74766694305cff285beab0f8098f121e57c092d6fc4",
+    "size_bytes": 210382,
+    "members": {
+      "[Content_Types].xml": "7915952e3f69d16c6a4c6c3df6138ac82331097ff408c751fa754abb898e8ef8",
+      "extension.vsixmanifest": "fbd23f24e9add428a00920a1d4ce5a8e246aaa256aeee3b312dd9afc3022ab7b",
+      "extension/LICENSE.txt": "9ca655dba61c79a8d08a35b785d1700c8c68a59fb7d09b409dc8997f06ff963a",
+      "extension/README.md": "ec9d7724b09abbdcfef25c7de92aae2403b88ce194e561136818f057a89c778b",
+      "extension/build.py": "d450e22b3f0f84067be1f91cf0b3d6e7a4171aca7c327dd6fe0dd67b2917640a",
+      "extension/extension.cjs": "9d06c6a62211c9e88d9233cabc53b6aacbdd3674569766c65979a30c83a18810",
+      "extension/lib/bsl-result.cjs": "a5f469e3966dbc84429758735d486fd01054f114186cb1d38eb9b07f25849bf1",
+      "extension/lib/bsl-ui.cjs": "8901c762a955dfd5ffac6ed2399871e2195a92c6365afb38fea64224a8a6bf8c",
+      "extension/lib/bsl.cjs": "02928963d4eafe5415950b4c6d440b0e7488ae38678c2b5f32e1874261d954b5",
+      "extension/lib/core.cjs": "086663058d9c3fe403393916bc68e675fec3711486f69618b0cf37ec89bee3ad",
+      "extension/lib/edit-ui.cjs": "d7addb98b3fc3d377fd08861decd35593e45138dfac188337e1030f876c0b48e",
+      "extension/lib/edit.cjs": "a2dc0fdf7704342f30712c43e452db62449adfb1ce9901dabf1ce8da6ef2d266",
+      "extension/lib/platform-ui.cjs": "fd95a335f59714b1343b4aee4a0417b318a4e32acbf3df4a6fcb3d721cabe1c1",
+      "extension/lib/platform.cjs": "453a96552f23932082551d965688c0162be70108822b3489db379c6bf27a01fb",
+      "extension/lib/process.cjs": "505e40ec259eb9557a2208b30f445c117e374c07169e8275e81d914d4874b271",
+      "extension/lib/repair-ui.cjs": "f1a1bb98f143bdc75d624b11459a9ab388cb980b537d33ddb8d6236db24ae6de",
+      "extension/lib/repair.cjs": "fc2d9a9a878738bd73cb9b1239542031af6b0694a5a96a4f7c35305546169369",
+      "extension/lib/state.cjs": "e8d9556e19cc82f5a40bd1d3251d19b16165b9057b6500227cd0019af0322f1b",
+      "extension/lib/testing.cjs": "ce64e19df67ff1e89594f4c26d7a31d943eee27bb48ebb1c8af798a04d2dfb1e",
+      "extension/lib/tests-result.cjs": "5950ba8b87ac742cb5ac618f9dc93d769608b77b68604126c0d2bb73080e87ef",
+      "extension/lib/tests-ui.cjs": "b6408f8f593094a0632241b7776e56b15c03ea1f5b341a3898c417efc640ff4e",
+      "extension/lib/views.cjs": "4ab9884750e2c6928130095d0c908a782425aba000cec418c5830bf05f5b20a1",
+      "extension/package.json": "0d9c0dfa9bc3f45ca2e1099911a584f70740ccbd265fd6415294c7e89857e97f",
+      "extension/repair/repair_model.py": "b7cd4d024a5cc8325f32c2cac29a1d3863922e5550b35c76820315efb61f6612",
+      "extension/repair/repair_workflow.py": "4e47e4f19fe497d5faf770f6f0edd665d95c478c6dcf7a547f9781799110d904",
+      "extension/repair/run_repair.py": "8d4dad08cc2219fccdb46761ae27ebf587638995fe659f88425aed7792ed173d",
+      "extension/test/bsl-ui.test.cjs": "a1b4622380566c223f8a89cd155eff1e25a4b6b00a98b77775eebcd648fefbf4",
+      "extension/test/bsl.test.cjs": "fee16cff97d6529a22889dc161048e7ad90b31e61179512b8f062cf898f884d7",
+      "extension/test/core.test.cjs": "63d07c26696dbd0f4334e719a0b34dc0ff3b0d4838a312d83805ce2b1763c5fb",
+      "extension/test/edit-ui.test.cjs": "5999d57cf7efa89bdacd86609a82cfd757350378a337abbf700c83e60a6c9f90",
+      "extension/test/edit.test.cjs": "ad0f05a2684cf4c2b2af07df960c7eed2b768512590b46d1fb083365910ff1a7",
+      "extension/test/platform-ui.test.cjs": "f90b4607c9facb3e52c0af8cac5212fd519e36f1c22536d909d951e51486a838",
+      "extension/test/platform.test.cjs": "482bdd776696518f1d4a438aa4d8828e795f6a460ea5edf15f65962d4dcc8126",
+      "extension/test/process.test.cjs": "12ef7c0deecd6da7e628925ef95c39976e603a26b7a81163717390c2a637953b",
+      "extension/test/repair-ui.test.cjs": "4844cb670bd5f95cb485b0828adf84f2f35d015551e0c8104006f83ba6882d54",
+      "extension/test/repair.test.cjs": "28a0921e9b4b02cdb2a13f57bf12d881b8cf597db864446fab591e56ddbf587e",
+      "extension/test/testing.test.cjs": "ea11cdf29bc827ce0beba6e1250767b056bf59077cc204e691f1ae33c52cc147",
+      "extension/test/tests-ui.test.cjs": "76d905a3dd2099c913784794868df14afb6dba515387dc69d10215984a809dc1",
+      "extension/test/views.test.cjs": "584d0fa54cf8b69d516fd49e269041e68a4c582b676c34504858da0e5a719dc2"
+    },
+    "identical_second_build": true
+  },
+  "python_collection": {
+    "tests": 2900,
+    "new_case_identities": [
+      "tests/unit/test_core_dev16_compatibility.py::test_editor_probe_accepts_dev16_with_exact_mcp_python_and_project",
+      "tests/unit/test_core_dev16_compatibility.py::test_runtime_installer_dev16_admission_keeps_unknown_versions_refused[0.1.0.dev16]",
+      "tests/unit/test_core_dev16_compatibility.py::test_runtime_installer_dev16_admission_keeps_unknown_versions_refused[0.1.0.dev999]",
+      "tests/unit/test_open_editor_profile.py::test_profile_records_actual_core_version[0.1.0.dev16]",
+      "tests/unit/test_repair_profile.py::test_matching_supported_runtime_is_accepted[0.1.0.dev16]"
+    ],
+    "stdout_sha256": "f044fd2ca42f074958e613ec4115f1ff137b2ee22d54574ada0980c38f83c2c5",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "exit_code": 0,
+    "passed_execution_claimed": false
+  },
+  "protected_live_apply": {
+    "source_sha256": {
+      "rentgen_core/proposal_live_apply.py": "d08f5b7dfa2ced5750967248955138351510ea8b6a0a33d944cc3cf9ab47b2cf",
+      "rentgen_core/metadata_live_apply.py": "fd23c2cda2adbc0690c77143b33ac263f3ba120f045e67aaf2ae11fc1d3f8c47",
+      "rentgen_core/_live_recovery_stage.py": "7717be22389ff676cfa1cf3e60cbfc5ad42023ea201aae665493a72ebafe7c63",
+      "tests/unit/test_proposal_live_apply.py": "52c19856e6ad0ede317eeb71c4e78b19eb523e54c301ebb83a2fc1335daafdee",
+      "tests/unit/test_metadata_live_apply.py": "6eaaf5e1f808396f7e3c1c4313b63483df5c545e27da693bd75265c41cb52478"
+    },
+    "unchanged_from_parent_and_main": true,
+    "existing_main_raw": {
+      "file": "live-apply-current-main-20260928.xml",
+      "sha256": "6fa11ba2326f115a65419f7b69ef203cff6463146345318adff82fc5dd1cb979"
+    },
+    "existing_main_passed": 38,
+    "rerun_due_to_version_only_patch": false
+  },
+  "limits": {
+    "full_2900_python_execution_accepted": false,
+    "installed_core_delivery_verified": false,
+    "native_stock_git_all_five_groups_accepted": false,
+    "new_release_published": false,
+    "immutable_previous_releases_preserved": true,
+    "independent_review": false,
+    "production_deployment": false
+  },
+  "reviewer": "root only",
+  "recorded_utc": "2026-09-28T10:12:13.976326+00:00"
+}

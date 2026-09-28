@@ -1,0 +1,60 @@
+{
+  "schema": "rentgen-stock-refused-start-control-local/1",
+  "source_base": "5b38b60bd2374dcb749dcae2f0a358852b87dbfb",
+  "source_files": {
+    "scripts/verification/scm_stock_git_lifecycle.py": "bf5985135cee0bdb5890b548bfda2f99fd226c5c512b25405dfd6b4723b3ad5f",
+    "scripts/verification/scm_stock_git_measurement.py": "dff79ef1728df4f2dbe25811ff6bf48fac50f5cc759d42d34cafc26f470bb50a",
+    "tests/unit/test_stock_git_scm_lifecycle.py": "07749504d6858ebaf2fd4420f70603334237409e09dd4617a290fb557dfe1e58",
+    "tests/unit/test_stock_git_scm_measurement.py": "fe637d91b114550865305a6c8638865ef48176bbc3942e004184377c16859302"
+  },
+  "bug_reproduced": "fresh sc start access denied previously accepted using old STOPPED 1066/2 status",
+  "fix": "require exactly one fresh bounded start control for the owned service, acknowledged 0 or service-specific 1066; verify raw streams before terminal status",
+  "new_cases": 12,
+  "tdd_red": [
+    {
+      "file": "stock-refused-start-stale-status-red.xml",
+      "sha256": "1e32f15f61104e56cdd9d631544b43c94973d8f7e08c514dc2e96aa0d7ecc418",
+      "cases": 1,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 0
+    },
+    {
+      "file": "stock-refused-start-control-red.xml",
+      "sha256": "b579f84b32ed4ac6991d0fe0218006b1e885258b597f0a3117ef6f0b58d41845",
+      "cases": 11,
+      "failed": 11,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 0
+    }
+  ],
+  "four_suite_green": {
+    "file": "stock-refused-start-control-green.xml",
+    "sha256": "c1b33b923e8806011598c54d21e0f89ac624fcba756bc84d1328e5b612ddc5f9",
+    "cases": 68,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 68
+  },
+  "local_scope": "constructed SCM control observations and actual Git/SQLite/Go publication with injected BSL",
+  "actual_native_refusals_accepted": false,
+  "source_ci_qualified": false,
+  "native_stock_git_accepted": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "independent_review": false,
+  "root_only_review": true,
+  "original_ci_head": "5b38b60bd2374dcb749dcae2f0a358852b87dbfb",
+  "original_ci_runs": [
+    36389146238,
+    36389149702
+  ],
+  "original_ci_attempts_preserved": true,
+  "pushed": false,
+  "release_published": false,
+  "reference": "https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--1000-1299-",
+  "recorded_utc": "2026-09-28T07:15:51.220737+00:00"
+}

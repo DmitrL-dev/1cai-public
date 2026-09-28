@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "parent_head": "6fe571a00af6f37b558b33544cc5f7ebb9a7f421",
+  "scope": "injected process inventory and exact PowerShell projection only; no full native service execution",
+  "source_files": {
+    "scripts/verification/scm_stock_git_lifecycle.py": "c54561d861f3af66708787488477c03ed0a9781607f79c72428fcbd4702f9adb",
+    "tests/unit/test_scm_process_inventory_retry.py": "64e4eb7bb593f2d165d7e4ea5cad7a4815777800c496b2de0fd7aa0abad8d948",
+    "tests/unit/test_scm_debug_privilege.py": "e6eaf27106f12efd712d2feb93b35e1e20daf698c6c6b8e9c7ada6151e54783a"
+  },
+  "exact_query_sha256": "081e84e89d703d4ed8dc8a487bf4a763e968447557092fdb0e0b7c6cfbcddcd9",
+  "reports": {
+    "initial_target_red": {
+      "sha256": "ad688b23b2af72d9cf8c0c6aee7f778465c97c1efd91f88b0c13012e5521d2ae",
+      "unique_cases": 28,
+      "passed": 6,
+      "failures": 22,
+      "errors": 0,
+      "skipped": 0
+    },
+    "pre_edit_broader_red": {
+      "sha256": "5c0c4b2e784cbf7f9f212ad64533768b304a63193ec5925471a0c1ae52182ebe",
+      "unique_cases": 101,
+      "passed": 79,
+      "failures": 22,
+      "errors": 0,
+      "skipped": 0
+    },
+    "final_narrow_green": {
+      "sha256": "06567e10553d146793046acb0be0fc2cbc46647ff0fd2acf890bc466f7d60e45",
+      "unique_cases": 101,
+      "passed": 101,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "future_raw_parser_initial_green": {
+      "sha256": "1454b13af08a14716c748594caf91a13615339100270cd34c125cb43ce7794ea",
+      "unique_cases": 27,
+      "passed": 27,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "future_raw_parser_green": {
+      "sha256": "b6eaf0266c13f8158cbb4d9eb3f658b1a5c42e977f9ee57dd5ff5ae3e0024a78",
+      "unique_cases": 29,
+      "passed": 29,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "max_attempts": 3,
+  "global_query_bound": 200,
+  "per_capture_seconds": 10,
+  "per_stream_bytes": 32768,
+  "per_inventory_rows": 100,
+  "retry_only_for_typed_null_or_empty_image_or_argv": true,
+  "unknown_descendant_skipped": false,
+  "malformed_or_failed_capture_retried": false,
+  "each_attempt_privileges_restored": true,
+  "java_image_token_read_in_final_admitted_scope": true,
+  "expected_next_ci": {
+    "python_cases": 2968,
+    "local_case_identities": 723,
+    "companion_cases": 71,
+    "go_packages": 2,
+    "wheel_source_files": 105
+  },
+  "future_raw_reader": {
+    "full_reader_sha256": "ae78cece76df7c76b602a7aa6ca01d4ae428b0b2c9fec5ab86eab90a202ce41e",
+    "retry_helper_sha256": "f8521e9efad11a6f9aafbc68801e7bdd045bac32fd241f8ecf1914ab10dbedce",
+    "constructed_cases": 29,
+    "actual_native_acceptance": false,
+    "java_argv_bound_to_same_final_scope_rows": true,
+    "native_command_parser_explicitly_injected": true,
+    "confirmed_initial_review_gap": "earlier matching argv could satisfy aggregate guard for later wrong final snapshot",
+    "actual_constructed_red_reproduction_sha256": "a06500e8b573cc3c145762376ee1df04d703ceba666a59031c18957b00873d2e"
+  },
+  "source_ci_qualified": false,
+  "native_stock_git_accepted": false,
+  "dev16_install_qualified": false,
+  "main_qualified": false,
+  "release_qualified": false,
+  "full_product_ready": false,
+  "production_deployment": false
+}
