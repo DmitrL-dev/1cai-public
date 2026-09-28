@@ -471,6 +471,7 @@ class GitWatcher:
         repository=None,
         profile_id="analyzer-v1",
         scope_id="whole-repository",
+        git_trust=None,
     ):
         if not callable(analyzer):
             raise CoreError("GIT_WATCHER_INVALID", "Analyzer callback is required")
@@ -479,6 +480,7 @@ class GitWatcher:
         self.repository = None if repository is None else Path(repository).resolve()
         self.profile_id = _option(profile_id, "profile_id")
         self.scope_id = _option(scope_id, "scope_id")
+        self._git_options = {} if git_trust is None else {"trust": git_trust}
 
     def _report(self, observation):
         report = self.analyzer(observation)
@@ -539,7 +541,7 @@ class GitWatcher:
                     "GIT_WATCHER_CONTEXT",
                     "Repository must match the registered project source root",
                 )
-            observation = observe_git(repository)
+            observation = observe_git(repository, **self._git_options)
             if expected_observation is not None and observation != expected_observation:
                 raise CoreError(
                     "GIT_HEAD_CHANGED", "Prepared Git observation is no longer current"
@@ -559,11 +561,11 @@ class GitWatcher:
                     "observation": asdict(observation),
                 }
             if commit is not None:
-                require_ancestor(repository, commit, observation.commit)
+                require_ancestor(repository, commit, observation.commit, **self._git_options)
 
             evidence = self.observer.verify_git_snapshot(observation)
             report = self._report(observation)
-            latest = observe_git(repository)
+            latest = observe_git(repository, **self._git_options)
             if latest != observation:
                 raise CoreError(
                     "GIT_HEAD_CHANGED",

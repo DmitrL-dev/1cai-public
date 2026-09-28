@@ -88,6 +88,45 @@ output-path containment and cooperative stop; the same pipeline is exercised
 through a mocked SCM lifecycle. No live SCM install/start/apply, service-account
 acceptance or native BSL acceptance is implied.
 
+## Явное разрешение для зарегистрированного Git-каталога
+
+В конфигурациях schema 2 и schema 3 доступно необязательное поле
+`"trust_registered_source": true`. При отсутствии поля или значении `false`
+Рентген не добавляет исключение `safe.directory`; обычные настройки Git на
+машине продолжают действовать. Допускается только JSON boolean: числа, строки,
+`null`, массивы и объекты отклоняются. Schema 1 этого поля не принимает.
+В `dry-run` даже значение `true` не создаёт worker и не запускает Git.
+
+При `true` worker сначала проверяет существующие разрешения `project:read` и
+`analysis:run`, привязку Observer к проекту, пользователю и источникам, а также
+размещение рабочих каталогов. Затем он создаёт одно неизменяемое разрешение
+для канонического каталога источников из регистрации проекта. Каталог доверия,
+wildcard, произвольную команду или Git executable нельзя передать через JSON.
+Перед каждым циклом обеих схем разрешения проекта проверяются до чтения Git.
+
+Все чтения HEAD, ancestry, дерева, blob и повторные проверки snapshot используют
+тот же объект разрешения. Только дочерний процесс Git получает
+`-c safe.directory= -c safe.directory=<точный зарегистрированный каталог>`.
+Пустое значение сбрасывает унаследованный список, а следующая запись разрешает
+один каталог. Родительский, вложенный или другой репозиторий не получает этого
+разрешения; несовпадение обнаруживается до запуска дочернего процесса.
+Семантика описана в [документации Git](https://git-scm.com/docs/git-config/2.55.0#Documentation/git-config.txt-safedirectory).
+
+Рентген не записывает исключение в global/system/repository config, не меняет
+владельца, ACL, ref или index. Унаследованные переменные `GIT_*` удаляются без
+учёта регистра; дочерний процесс получает фиксированные запреты prompt,
+optional locks и lazy fetch, а также `GIT_NO_REPLACE_OBJECTS=1`. Поэтому чтение
+конкретного коммита игнорирует replacement refs, сохраняя сами refs без изменений.
+Значение этой переменной определено в [документации Git](https://git-scm.com/docs/git/2.55.0#Documentation/git.txt-GIT_NO_REPLACE_OBJECTS).
+
+Это изменение находится в разрабатываемом Core после dev15. Локальные тесты
+используют настоящий Git и Go scanner, SQLite, отчёты и outbox; результаты BSL
+внедряются тестовым адаптером. Проверка установленного stock worker под
+LocalService с настоящим BSL, ограничением stdout во время чтения и новым
+релизом ещё требуется. Канонизация не фиксирует filesystem identity и не
+защищает от подмены каталога после проверки: требования к deployment ACL и
+целостности executable остаются действующими.
+
 ## Continuous Git lifetime and journal compatibility
 
 For schema 2 and schema 3, set both `"mode": "read-only"` and

@@ -113,6 +113,7 @@ class GitServiceConfig:
     max_cycles: int | None = 1
     mode: str = "dry-run"
     scanner: Path | None = None
+    trust_registered_source: bool = False
 
 
 def _git_config(data):
@@ -120,11 +121,14 @@ def _git_config(data):
     capture = data["schema"] == 3
     if capture:
         required |= {"scanner"}
-    if not required <= set(data) <= required | {"max_cycles", "mode"}:
+    if not required <= set(data) <= required | {
+        "max_cycles", "mode", "trust_registered_source"
+    }:
         raise _invalid()
     name = _text(data["service_name"])
     interval, cycles = data["interval_seconds"], data.get("max_cycles", 1)
     mode = data.get("mode", "dry-run")
+    trust_registered_source = data.get("trust_registered_source", False)
     if (
         not re.fullmatch(r"[A-Za-z][A-Za-z0-9_.-]{0,79}", name)
         or type(interval) is not int
@@ -135,6 +139,7 @@ def _git_config(data):
         )
         or type(mode) is not str
         or mode not in {"dry-run", "read-only"}
+        or type(trust_registered_source) is not bool
     ):
         raise _invalid()
     return GitServiceConfig(
@@ -147,6 +152,7 @@ def _git_config(data):
         cycles,
         mode,
         _local_path(data["scanner"], suffix=".exe") if capture else None,
+        trust_registered_source,
     )
 
 
