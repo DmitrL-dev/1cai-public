@@ -1,6 +1,7 @@
 """Exact owned source manifest contracts; real Git, no SCM/BSL acceptance."""
 import copy
 import importlib.util
+import os
 from pathlib import Path
 import shutil
 import sys
@@ -102,6 +103,15 @@ def test_module_digest_remains_bound_to_original_fixture():
     reason='Windows file attributes and Git required')
 def test_real_initialized_registered_root_manifest_and_metadata_hash_refusal(tmp_path, monkeypatch):
     module = worker()
+    # A fresh CI account has no Git author identity. Do not borrow the
+    # developer's global config, inherited author fields or signing settings.
+    for name in list(os.environ):
+        if name.upper().startswith('GIT_'):
+            monkeypatch.delenv(name)
+    empty=tmp_path/'empty-git-global.cfg'
+    empty.write_bytes(b'')
+    monkeypatch.setenv('GIT_CONFIG_GLOBAL',str(empty))
+    monkeypatch.setenv('GIT_CONFIG_NOSYSTEM','1')
     source = tmp_path / 'source'
     path = source / 'CommonModules/ServiceProbe/Ext/Module.bsl'
     path.parent.mkdir(parents=True)
@@ -109,7 +119,9 @@ def test_real_initialized_registered_root_manifest_and_metadata_hash_refusal(tmp
     git(source, 'init', '-q', '--template=', '--initial-branch=main')
     git(source, 'config', 'core.autocrlf', 'false')
     git(source, 'add', '.')
-    git(source, 'commit', '-q', '-m', 'owned stock source fixture')
+    git(source, '-c', 'user.name=Rentgen Stock Manifest Test',
+        '-c', 'user.email=stock-manifest@example.invalid', '-c', 'commit.gpgsign=false',
+        'commit', '-q', '-m', 'owned stock source fixture')
     monkeypatch.setattr(module, 'ROOT', source)
     observed = module.inventory(source)
     original = copy.deepcopy(observed)

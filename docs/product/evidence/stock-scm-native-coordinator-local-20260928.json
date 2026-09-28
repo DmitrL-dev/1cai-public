@@ -1,0 +1,90 @@
+{
+  "schema": "rentgen-stock-native-coordinator-local/1",
+  "source_base": "bbd545bd371880a3f3633c26c190658e64314c31",
+  "source_files": {
+    "scripts/verification/scm_stock_git_lifecycle.py": "eb0d991b63d75ba8fc0cc6e99ab0b1feee5c1ac6f6b94b0843d182bae802e325",
+    "scripts/verification/scm_stock_git_measurement.py": "4e6a43b6685299cb5796bf5993d39d8b5b03d434517605c2c41f61828988bf03",
+    "scripts/verification/verify_stock_git_scm.py": "71a122d0699a7a8cf459e2b5a3a6c8f287c233e22176c534b9c98228eabca8b6",
+    "tests/unit/test_stock_git_scm_lifecycle.py": "17c83b927a07284a9a2edb6e44e1ebce1ed1a3ed8758c69fcbf95fde07431e3d",
+    "tests/unit/test_stock_git_scm_measurement.py": "f762bba74f20933a2c3aba012c14a5215de57dffa470b9073a20f6edd3c6eac2",
+    "tests/unit/test_stock_git_scm_publication.py": "1b844193db0b6c450960a552bbafcb37ebab966a0ca97567710ab1503f8bc02a",
+    "tests/unit/test_stock_git_scm_runner.py": "f2d202a2f4de98548a40d6045f2c567a1715333ebbecbca6bf80651ea6a9b4b6",
+    ".github/workflows/core-ci.yml": "877db804ccce9e8c456a876c2c5dbf77c128d06f21565fc52b4b57dc89a833ea",
+    "tests/unit/test_scm_stock_source_manifest.py": "67d85e8a009214bd3955d5ae52c3c89f7ad3a0f58205e1fa4b718204c397f1d7",
+    "tests/unit/test_service_scm_delivery.py": "81b2b73a4351a1e4943d6401b21fda04649d9d04fd8e932dd758f4974bd9a246"
+  },
+  "tests": {
+    "new_coordinator_cases": 56,
+    "new_optimized_interpreter_guards": 4,
+    "new_cases": 60,
+    "regression": {
+      "file": "stock-scm-full-coordinator-regression.xml",
+      "sha256": "9bed987e0f15ed4ea9ecb66086fede491abbf6119018159753a5f2e22f15f1a8",
+      "passed": 234,
+      "skipped": 1
+    },
+    "final_coordinator": {
+      "file": "stock-scm-coordinator-final.xml",
+      "sha256": "5c796f21a8132e068e1da9c0b95dfd6984a4aaf343f89760c1e04caef1187906",
+      "passed": 56,
+      "skipped": 0
+    },
+    "cold_author_fixture": {
+      "file": "stock-manifest-cold-identity-green.xml",
+      "sha256": "997c573693c9aefbc01c4a9dab498960bff5d3471cc655087c2563c70481ba7e",
+      "passed": 27,
+      "skipped": 0
+    },
+    "unique_verified_cases": 237,
+    "unique_passed": 236,
+    "unique_skipped": 1,
+    "errors": 0,
+    "failures": 0
+  },
+  "tdd": {
+    "measurement_api_red_failed": 30,
+    "full_lifecycle_api_red_failed": 17,
+    "runner_api_red_failed": 4,
+    "quiet_running_null_event_red_failed": 1,
+    "cold_author_identity_red_failed": 1,
+    "real_publication_first_run_failed": 1,
+    "real_publication_path_canonicalization_fixed": true
+  },
+  "actual_local_scope": "current-user stock composition, real Git/SQLite/Go, injected BSL; native observations constructed in verifier unit cases",
+  "implemented_native_scope": [
+    "first actual pinned BSL lifetime",
+    "new operator commit only while STOPPED",
+    "unchanged continuous STOP with held process wait",
+    "quiet-lifetime native interruption and refused restart",
+    "explicit scheduler recovery without duplicate/acknowledged publication",
+    "history rewrite refused before capture",
+    "analysis permission revocation refused before capture",
+    "original owner/DACL/privilege restoration and service deletion",
+    "bounded raw controls/process observations and coherent SQLite backups"
+  ],
+  "native_job": "native-stock-git",
+  "native_job_runs_stock_entry": true,
+  "local_scm_creation": false,
+  "local_native_acl_grants": false,
+  "physical_runtime_installation_exercised_locally": false,
+  "java_warmup_performed": false,
+  "native_stock_git_accepted": false,
+  "native_bsl_accepted": false,
+  "continuous_git_accepted": false,
+  "source_ci_qualified": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "independent_review": false,
+  "root_only_review": true,
+  "native_bsl_provenance_gate": "actual pinned Java image/token/parent/argv, installed stock wheel, complete durable findings and verified Git snapshot",
+  "private_bsl_scratch_read_by_coordinator": false,
+  "raw_bsl_report_retained": false,
+  "active_bsl_interruption_exercised": false,
+  "interruption_scope": "quiet wait after unchanged tick",
+  "prior_ci_failure_record": {
+    "file": "docs/product/evidence/registered-source-git-capture-ci-failure-20260928.json",
+    "sha256": "7cc824a607bb5dd1b6a35b0fb4e0cc9ef1be85e52ce12164ab9dd5468a3f5582"
+  },
+  "release_published": false,
+  "recorded_utc": "2026-09-28T06:52:26.024147+00:00"
+}

@@ -164,3 +164,39 @@ https://github.com/DmitrL-dev/1cai-public/pull/41#issuecomment-5864184011
 45 exact source paths, anonymous body/comment/four-record readback confirmed.
 Keep original c1b push36383076884/PR36383080465 attempts while local stock work
 continues; qualify their raw artifacts before advancing the remote branch.
+
+
+Full stock native coordinator implemented locally. It launches the installed
+public schema3 service directly and retains all five required gate groups:
+fresh first analysis, an operator commit only while STOPPED, unchanged STOP,
+actual quiet-lifetime interruption/refused restart/explicit recovery, and
+history plus permission refusal before capture. Native acceptance is pending.
+The new native-stock-git CI job validates exact upstream archive/JAR bytes before
+extraction, reuses the 490-file installer, performs no Java warm-up, and always
+retains failed controls/process observations/state/journal/outbox/owner evidence.
+
+Private BSL scratch remains private to its real process. The coordinator does
+not weaken that DACL or copy an ephemeral BSL report. Its execution provenance
+gate is actual pinned Java image/token/parent/exact argv plus unchanged stock
+wheel bytes, committed Git evidence and complete durable findings/owner receipts.
+The interruption case is a quiet continuous wait, not an active BSL interruption.
+Per-lifetime source inventories and owners are retained both before and after.
+
+Local evidence: 30 measurement API red cases, 17 lifecycle API red cases, four
+runner/job API red cases. Review reproduced a null-event running journal race;
+the wait now accepts that valid intermediate state. Real stock composition with
+Git/SQLite/Go and injected BSL verified two commits and an unchanged restart;
+its first run exposed Windows path case normalization and is now green.
+Ten-suite regression:234 passed/1 existing privileged DACL skip. Final four
+coordinator suites:56 passed/0 skipped. Union:236 passed/1 skip across237 unique
+cases, including60 new coordinator/optimized-interpreter cases.
+
+Original c1b push36383076884/PR36383080465 attempts both failed after2785 passes
+and one stock manifest test commit failure; native jobs were skipped. Raw JUnit,
+artifact hashes and actual checkout/tree/PR parents were inspected and retained.
+The unseeded author identity was reproduced with isolated empty global config;
+fixed test supplies author/signing settings only for its commit. All27 manifest
+cases pass. Original failed attempts remain unchanged; no c1b source success claim.
+Public records: stock-scm-native-coordinator-local-20260928.json and
+registered-source-git-capture-ci-failure-20260928.json under docs/product/evidence.
+Root-only review; source/main/new Core qualification and full product gates open.

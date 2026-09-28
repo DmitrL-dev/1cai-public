@@ -192,3 +192,87 @@ jobs:
           path: ${{ steps.git_scm_paths.outputs.work }}/evidence/
           if-no-files-found: warn
           retention-days: 14
+
+  native-stock-git:
+    needs: windows
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11.9'
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: verified-core-development
+          path: output/stock-scm-input
+      - name: Prepare owned stock SCM and runtime input directories
+        id: stock_scm_paths
+        shell: pwsh
+        run: |
+          $nonce = [guid]::NewGuid().ToString('N').Substring(0, 12)
+          $work = Join-Path $env:RUNNER_TEMP ('rg-scm-' + $nonce)
+          $inputs = Join-Path $env:RUNNER_TEMP ('rg-bsl-' + $nonce)
+          if ((Test-Path -LiteralPath $work) -or (Test-Path -LiteralPath $inputs)) { throw 'Owned attempt must be new' }
+          New-Item -ItemType Directory -Path (Join-Path $inputs 'evidence') | Out-Null
+          "work=$work" >> $env:GITHUB_OUTPUT
+          "inputs=$inputs" >> $env:GITHUB_OUTPUT
+      - name: Acquire and verify pinned BSL runtime inputs
+        env:
+          STOCK_RUNTIME_INPUTS: ${{ steps.stock_scm_paths.outputs.inputs }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $folder = $env:STOCK_RUNTIME_INPUTS
+          $archive = Join-Path $folder 'jdk.zip'
+          $jar = Join-Path $folder 'bsl-language-server.jar'
+          $receipt = [ordered]@{ schema = 1; java_warmup = $false; downloaded = $false; hashes_verified = $false; error = $null }
+          try {
+            Invoke-WebRequest -Uri 'https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jdk_x64_windows_hotspot_21.0.12.1_1.zip' -OutFile $archive
+            Invoke-WebRequest -Uri 'https://github.com/1c-syntax/bsl-language-server/releases/download/v1.0.5/bsl-language-server-1.0.5-exec.jar' -OutFile $jar
+            $receipt.downloaded = $true
+            $receipt.java_archive_size = (Get-Item -LiteralPath $archive).Length
+            $receipt.jar_size = (Get-Item -LiteralPath $jar).Length
+            $receipt.java_archive_sha256 = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+            $receipt.jar_sha256 = (Get-FileHash -LiteralPath $jar -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($receipt.java_archive_size -ne 205073461 -or $receipt.java_archive_sha256 -ne 'f9d6e191ab098c0d416e7d588a24420a8621cd2f4720dab2459b8b7b2d2d8b4e') { throw 'Pinned Java archive differs' }
+            if ($receipt.jar_size -ne 131962428 -or $receipt.jar_sha256 -ne 'de97f571e6474c5c151cf859294f589ee01152de3b4826b43e1a80b69ee2602a') { throw 'Pinned BSL JAR differs' }
+            $receipt.hashes_verified = $true
+            $unpacked = Join-Path $folder 'unpacked'
+            Expand-Archive -LiteralPath $archive -DestinationPath $unpacked
+            $roots = @(Get-ChildItem -LiteralPath $unpacked -Directory)
+            if ($roots.Count -ne 1 -or -not (Test-Path -LiteralPath (Join-Path $roots[0].FullName 'bin/java.exe') -PathType Leaf)) { throw 'Expected one pinned JDK root' }
+            $receipt.java_home = $roots[0].FullName
+            $receipt.jar = $jar
+            "STOCK_JAVA_HOME=$($roots[0].FullName)" >> $env:GITHUB_ENV
+            "STOCK_BSL_JAR=$jar" >> $env:GITHUB_ENV
+          } catch {
+            $receipt.error = $_.Exception.Message
+            throw
+          } finally {
+            $receipt | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $folder 'evidence/runtime-inputs.json') -Encoding utf8
+          }
+      - name: Qualify actual stock LocalService Git and native BSL lifecycle
+        env:
+          SCM_WORKDIR: ${{ steps.stock_scm_paths.outputs.work }}
+          PYTHONUTF8: '1'
+        shell: pwsh
+        run: |
+          $kits = @(Get-ChildItem -LiteralPath output/stock-scm-input/core-kit -Filter 'rentgen-core-*-windows-py311.zip' -File)
+          if ($kits.Count -ne 1) { throw 'Expected one verified Core kit' }
+          $commit = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python scripts/verification/verify_stock_git_scm.py --kit $kits[0].FullName --build-receipt output/stock-scm-input/core-kit/acceptance.json --expected-commit $commit --output $env:SCM_WORKDIR --java-home $env:STOCK_JAVA_HOME --jar $env:STOCK_BSL_JAR --run
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Upload stock Git and BSL evidence including cold failures
+        if: always() && steps.stock_scm_paths.outputs.work != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: native-stock-git-evidence
+          path: |
+            ${{ steps.stock_scm_paths.outputs.work }}/evidence/
+            ${{ steps.stock_scm_paths.outputs.inputs }}/evidence/
+          if-no-files-found: warn
+          retention-days: 14
