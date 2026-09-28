@@ -6,7 +6,7 @@ SCM create access and backup/restore privileges. No UAC/elevation workaround exi
 if not __debug__:
     raise RuntimeError('Acceptance requires assertions; do not use Python -O')
 
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from datetime import datetime, timezone
 from dataclasses import asdict
 from uuid import uuid4
@@ -178,7 +178,55 @@ def prepare_fixture():
          'service_data':str(data),'service_source':str(source),'source_file_sha256':sha(module)})
 
 
-def preflight():
+def validate_source_inventory(observed, module_sha256, expected_module_sha256, *, expected=None):
+    """Keep the original fixture or require one complete owned Git manifest.
+
+    The trusted coordinator supplies the independently hashed manifest; no JSON
+    service setting can select it or relax the production source-root policy.
+    """
+    baseline = {'.', 'CommonModules', 'CommonModules\\ServiceProbe',
+        'CommonModules\\ServiceProbe\\Ext', 'CommonModules\\ServiceProbe\\Ext\\Module.bsl'}
+    module_name = 'CommonModules\\ServiceProbe\\Ext\\Module.bsl'
+
+    def check_rows(rows):
+        require(type(rows) is dict and 5 <= len(rows) <= 512, 'Invalid source inventory')
+        total = 0
+        for name, row in rows.items():
+            require(type(name) is str and 1 <= len(name) <= 240, 'Invalid source inventory name')
+            path = PureWindowsPath(name)
+            require(not path.is_absolute() and str(path) == name and '..' not in path.parts
+                and ':' not in name and not any(ord(char) < 32 for char in name)
+                and not path.is_reserved() and not any(part.endswith((' ', '.')) for part in path.parts)
+                and (name in baseline or (path.parts and path.parts[0] == '.git')),
+                'Source inventory expands outside fixed fixture')
+            require(type(row) is dict and type(row.get('directory')) is bool, 'Invalid source inventory row')
+            if row['directory']:
+                require(set(row) == {'directory'}, 'Unexpected directory metadata')
+            else:
+                require(set(row) == {'directory', 'bytes', 'sha256'} and type(row['bytes']) is int
+                    and 0 <= row['bytes'] <= 1024**2 and type(row['sha256']) is str
+                    and re.fullmatch(r'[a-f0-9]{64}', row['sha256']), 'Invalid file metadata')
+                total += row['bytes']
+        require(total <= 16 * 1024**2 and baseline <= set(rows), 'Source inventory exceeds fixture bound')
+        require(all(rows[name]['directory'] is (name != module_name) for name in baseline),
+            'Original source layout differs')
+
+    check_rows(observed)
+    require(type(module_sha256) is str and re.fullmatch(r'[a-f0-9]{64}', module_sha256)
+        and module_sha256 == expected_module_sha256 == observed[module_name]['sha256'],
+        'Prepared source module changed')
+    if expected is None:
+        require(set(observed) == baseline, 'Prepared source changed')
+    else:
+        check_rows(expected)
+        required = {'.git', '.git\\HEAD', '.git\\config', '.git\\index'}
+        require(required <= set(expected) and expected['.git']['directory'] is True
+            and all(expected[name]['directory'] is False for name in required - {'.git'}),
+            'Complete owned Git fixture required')
+        require(observed == expected, 'Prepared Git source manifest changed')
+
+
+def preflight(*, source_manifest=None):
     f, prep = read('fixture.json'), read('preparation.json')
     require(Path(sys.executable).resolve() == PYTHON, 'Use the prepared direct interpreter')
     require(Path(core.__file__).is_relative_to(RUNTIME/'Lib/site-packages'), 'Core imported outside prepared runtime')
@@ -210,7 +258,7 @@ def preflight():
     require(not owned_scanner_pids(), 'Owned scanner is already running')
     source = inventory(ROOT/'localservice/source')
     module = ROOT/'localservice/source/CommonModules/ServiceProbe/Ext/Module.bsl'
-    require(sha(module) == f['source_file_sha256'] and len(source) == 5, 'Prepared source changed')
+    validate_source_inventory(source, sha(module), f['source_file_sha256'], expected=source_manifest)
     spec = ServiceInstallSpec(service_name=NAME,display_name='Rentgen Isolated SCM CI',executable=str(PYTHON),
         arguments=('-I','-m','rentgen_core.service_entry','--service','--config',f['config']))
     native = load_native()

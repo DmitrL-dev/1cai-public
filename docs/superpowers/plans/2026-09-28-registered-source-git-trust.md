@@ -95,3 +95,22 @@ remain. Public local record:
 `docs/product/evidence/registered-source-git-capture-local-20260928.json`.
 The local capture commit is deliberately kept separate from the still-running
 e902 remote source CI; its own push/source/native/new Core acceptance is pending.
+
+
+Stock SCM preparation prerequisite: the original SourceObserver fixture remains
+exactly five source entries by default. An explicit coordinator-supplied manifest
+now allows Git metadata inside that same registered source root and compares the
+complete inventory, directory flags, file sizes and SHA256 values. Names cannot
+escape the fixed BSL layout or `.git`; Git root/HEAD/config/index are mandatory.
+The source module stays bound to the original fixture digest. This is a verifier
+argument; service JSON cannot select a manifest or relax registered-root policy.
+
+TDD: all 27 new source-manifest contracts were red before the helper, then all
+27 passed, including one real current-user Windows Git fixture and metadata hash
+refusal. The final new/existing SCM verifier run was 69 passed /1 skipped;
+the single existing native DACL test requires backup/restore privileges and is
+exercised separately by elevated CI. This local run performs no SCM create/start,
+no LocalService BSL execution, and grants no native or full-product acceptance.
+Public record: `docs/product/evidence/stock-scm-source-manifest-local-20260928.json`.
+The e902 original CI attempts remain unchanged; stock native composition is still
+pending and the later capture/manifest source needs its own CI qualification.
