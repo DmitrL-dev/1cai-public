@@ -1,0 +1,50 @@
+{
+  "schema": "rentgen-daily-semantic-local-contracts/1",
+  "source_base": "6fe571a00af6f37b558b33544cc5f7ebb9a7f421",
+  "source_files": {
+    ".github/workflows/core-ci.yml": "2216e5429cf2024be1be130d2b0de8e6f8ec519e013ceb157e22ca5a9a9f74ee",
+    "scripts/verification/companion_host/daily.cjs": "6dc4f56c9341b8a010b905d67cc6e0b50abb48158eef01049b37b971f8e5cc51",
+    "scripts/verification/prepare_daily_platform.py": "dc5470d5b29dfe81f45bc34d2712127e50b3ba9503ad5d5ae64a7a3ac9bfdf6f",
+    "scripts/verification/companion_host/daily_host.test.cjs": "10e3e033dd996bc790f35d6ca8518cb40bf0a04127e3abb20c73ab133b69c49f",
+    "scripts/verification/companion_host/daily_semantic.cjs": "e7a30befe997dec2f7204ecd7cc6a3e34471544349018dcfc273cce721ed5441",
+    "scripts/verification/companion_host/daily_semantic.test.cjs": "645149ff99945d1eefb95dcc9acd783d185ae81e5f72b3a50aa3c764fd01f8e0",
+    "scripts/verification/companion_host/daily_semantic_recovery.cjs": "62a1f3ec15771a58f6266dfdaf327457e9dad00317b42ad447e5daf78838f27b",
+    "scripts/verification/daily_frozen_inputs.py": "d6bd6dbfa87c9a2a02343c71fb3d517fd2eb70ce172a95aa3bf2263b47647a00",
+    "scripts/verification/run_daily_semantic_editor_host.py": "10e11316e5914af451ea9e3c41bed6a98dae1e611a0d4b285efeb6e21a0b8ac9",
+    "tests/unit/test_daily_editor_host_mode.py": "a7a0bfb4111e470b2b98a19db2ed74111f0e88f7d44118e22345723ab3abdd61",
+    "tests/unit/test_daily_frozen_inputs.py": "7a230cbb0e2abc1db0e7be048b15fd4eac89dcb0569d694c0167076b6005ba26",
+    "tests/unit/test_daily_preparation_refusals.py": "724d44a4ce7473ed2364eaa0c1016942da3a8f0ec8a6e1557b12faeab004264b"
+  },
+  "node_unique_passed": 159,
+  "python_unique_passed": 23,
+  "skips": 0,
+  "full_python_collection_only": 2963,
+  "full_python_suite_executed_locally": false,
+  "node_junit_sha256": "933e267583b5a15200367055b85ca700a80dba3394abcff648197e8b0ee28c2f",
+  "python_junit_sha256": "f3a9f7a41ff10c58d0530998b120a9dd42e55a4aaa48b3797ddb1b41e5602ae0",
+  "T3_red": {
+    "cases": 36,
+    "failures": 18,
+    "sha256": "3da85d20d05e43154646848753b66479f3596d25afa45c67f314c43547c4c019"
+  },
+  "T3_green": {
+    "cases": 36,
+    "failures": 0,
+    "skips": 0,
+    "sha256": "5954b4de022abc96d0b6471046d8deb9ee9ded73e045f836a31cb8fb6227bcb0"
+  },
+  "independent_resolutions": {
+    "T1": "0c140d542c4ee2f9f3abacaf820ab780b2d1138556c525e06b5af3d949a7b150",
+    "T2_wmi": "f8a11dc71acfe635810280651c5a6ed802a9a92eaa5ecdddf60e928477b5506f",
+    "T2_package": "47c65a18a94f9f90952503a208f6ebab04926d2983c77dca5df8d101ddb1bd6f",
+    "T3": "5ac3ccbdf8417aaa649bb4c24ae54a59d4341d1944de53af6c1020a7159e4d85"
+  },
+  "independent_model": "gpt-6-sol",
+  "effort": "max",
+  "actual_native_model_editor_execution": false,
+  "whole_source_ci_qualified": false,
+  "public_main_qualified_by_this_record": false,
+  "released_by_this_record": false,
+  "full_product_ready": false,
+  "production_deployment": false
+}
