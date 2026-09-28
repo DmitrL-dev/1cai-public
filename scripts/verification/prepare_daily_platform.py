@@ -5,6 +5,8 @@ from pathlib import Path
 import shutil
 import subprocess
 
+from daily_frozen_inputs import directory_inventory, require_separate_output, verify_frozen
+
 MODULE = "CommonModules/RentgenPlatformProbe/Ext/Module.bsl"
 SOURCE = """// Записывает подготовленный объект документа.
 //
@@ -20,12 +22,28 @@ SOURCE = """// Записывает подготовленный объект д
 """
 
 
-def prepare(python, scanner, fixture, diagnostics_root, platform, output):
+def prepare(python, scanner, fixture, diagnostics_root, platform, output, profile_spec, frozen_inputs):
     python, scanner, fixture, diagnostics_root, platform = (
         p.resolve(strict=True)
         for p in (python, scanner, fixture, diagnostics_root, platform)
     )
-    output = output.resolve()
+    binding, input_receipt = verify_frozen(frozen_inputs)
+    profile_spec = profile_spec.resolve(strict=True)
+    for role, argument in (("python", python), ("scanner", scanner), ("platform", platform), ("profile_spec", profile_spec)):
+        if str(argument) != input_receipt["files"][role]["path"]:
+            raise ValueError("INPUT_BINDING_MISMATCH")
+    for role, argument in (("fixture", fixture), ("diagnostics", diagnostics_root)):
+        if str(argument) != input_receipt["directories"][role]["path"]:
+            raise ValueError("INPUT_BINDING_MISMATCH")
+    specification = json.loads(profile_spec.read_text("utf-8"))
+    for role in ("platform", "ibcmd", "engine"):
+        pin = specification[role]
+        if Path(pin["path"]).resolve(strict=True) != Path(input_receipt["files"][role]["path"]) or pin["sha256"] != input_receipt["files"][role]["sha256"]:
+            raise ValueError("INPUT_BINDING_MISMATCH")
+    modules = specification["modules"]
+    if len(modules) != 1 or modules[0]["name"] != "ЮТРентгенПроверка" or modules[0]["tests"] != ["ОшибкаЗаписиПередается"] or Path(modules[0]["path"]).resolve(strict=True) != Path(input_receipt["files"]["test_module"]["path"]):
+        raise ValueError("INPUT_BINDING_MISMATCH")
+    output = require_separate_output(output, input_receipt)
     output.mkdir(parents=True, exist_ok=False)
     source = output / "source"
     shutil.copytree(fixture, source)
@@ -43,6 +61,7 @@ def prepare(python, scanner, fixture, diagnostics_root, platform, output):
     def cli(command, *extra):
         args = [
             str(python),
+            "-B",
             "-I",
             "-m",
             "rentgen_core",
@@ -90,9 +109,15 @@ def prepare(python, scanner, fixture, diagnostics_root, platform, output):
     )
     cli("layers-set", "--expected-revision", 1, "--layers-json", layers)
     cli("capture", "--scanner", scanner)
+    test_profile = cli("test-profile-register", "--profile-json", profile_spec)
+    if test_profile["profile_id"] != binding["profile_id"] or test_profile["enabled"] is not True or test_profile["modules"][0]["sha256"] != input_receipt["files"]["test_module"]["sha256"]:
+        raise ValueError("INPUT_BINDING_MISMATCH")
+    registered = json.loads((output / "state/test-profiles" / binding["profile_id"] / "profile.json").read_text("utf-8"))
+    if registered["project_id"] != project:
+        raise ValueError("INPUT_BINDING_MISMATCH")
     profile = {
         "schema": 1,
-        "core_version": "0.1.0.dev16",
+        "core_version": binding["core_version"],
         "python": str(python),
         "registry": str(registry),
         "project_id": project,
@@ -100,6 +125,12 @@ def prepare(python, scanner, fixture, diagnostics_root, platform, output):
     }
     (output / "profile.json").write_text(json.dumps(profile, indent=2), "utf-8")
     scenario = {
+        "schema": 1,
+        "core_version": binding["core_version"],
+        "companion_version": binding["companion_version"],
+        "profile": test_profile,
+        "frozen_inputs": input_receipt["manifest"],
+        "source_inventory": directory_inventory(source),
         "module": MODULE,
         "platform": str(platform),
         "model": "qwen3.5:9b",
@@ -109,6 +140,10 @@ def prepare(python, scanner, fixture, diagnostics_root, platform, output):
     (output / "daily-scenario.json").write_text(
         json.dumps(scenario, ensure_ascii=False, indent=2), "utf-8"
     )
+    _, after_inputs = verify_frozen(frozen_inputs)
+    if after_inputs != input_receipt:
+        raise ValueError("INPUT_BINDING_MISMATCH")
+    (output / "daily-inputs.json").write_text(json.dumps(input_receipt, ensure_ascii=False, indent=2), "utf-8")
     (output / "workspace").mkdir()
     return {"profile": str(output), "project_id": project}
 
@@ -122,6 +157,8 @@ if __name__ == "__main__":
         "diagnostics-root",
         "platform",
         "output",
+        "profile-spec",
+        "frozen-inputs",
     ):
         parser.add_argument("--" + name, required=True, type=Path)
     print(json.dumps(prepare(**vars(parser.parse_args()))))

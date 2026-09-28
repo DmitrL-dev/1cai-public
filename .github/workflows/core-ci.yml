@@ -70,7 +70,7 @@ jobs:
             Write-Output '::error title=Python contracts::Pytest exited non-zero without a testcase failure in JUnit'
           }
       - name: Companion contracts
-        run: node --test integrations/vscode-rentgen/test/*.test.cjs
+        run: node --test integrations/vscode-rentgen/test/*.test.cjs scripts/verification/companion_host/*.test.cjs
       - name: Scanner tests
         run: go -C go test ./...
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6

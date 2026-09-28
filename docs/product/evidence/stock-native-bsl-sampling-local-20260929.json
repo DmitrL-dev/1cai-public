@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "recorded_utc": "2026-09-28T18:21:04.177398+00:00",
+  "scope": "Constructed repository tests and raw-reader guards, before fresh source CI",
+  "parent_source_commit": "fa35be067eb16a721955bb6a591507a12b23dd20",
+  "changed_source_files": {
+    "scripts/verification/scm_stock_git_lifecycle.py": {
+      "size_bytes": 41997,
+      "sha256": "3b9f5f4b03675227ef0a0ec0fb7c6a08a4dec8998f0195dc0f5e1ae21847b47d"
+    },
+    "tests/unit/test_scm_native_bsl_sampling.py": {
+      "size_bytes": 16935,
+      "sha256": "dd33d20bacc5f8d23b699b068b285b49e5e61687512082c00165b0f6b8b87358"
+    },
+    "docs/product/STOCK-PROCESS-INVENTORY-QUALIFICATION.md": {
+      "size_bytes": 19307,
+      "sha256": "cff48e9e6cd60f84f7d06d4e2b5a47377b6b0db62f0c1cb302b1cc9f470d15f0"
+    }
+  },
+  "behavior": {
+    "exception": "ProcessInventoryIncomplete(RuntimeError)",
+    "raised_only_after": 3,
+    "sampling_labels": [
+      "first",
+      "next"
+    ],
+    "deferred_marker": "stock_native_bsl_inventory_deferred",
+    "cleanup_query_reserve": 6,
+    "before_active_chain": "query_sequence + 3 + 6 <= 200",
+    "whole_snapshot_attempts": 3,
+    "global_query_limit": 200,
+    "row_limit": 100,
+    "query_timeout_seconds": 10,
+    "query_stream_limit_bytes": 32768,
+    "incomplete_rows_admitted": false,
+    "eventual_complete_Java_proof_required": true,
+    "direct_inventory_STOP_cleanup_hard_refusal_preserved": true,
+    "capture_shape_native_privilege_budget_failures_fatal": true,
+    "existing_publication_wait_deadline_seconds": 180,
+    "inflight_condition_may_complete_after_deadline": true
+  },
+  "TDD": {
+    "red_before_source_edit": {
+      "artifact": "stock-native-bsl-sampling-functional-red-20260929.xml",
+      "sha256": "ae1102aa7fc3aeaf841061d9cc9dc3cf77e979f2543bce542fe0fe0e74bf2c3c",
+      "counts": {
+        "unique_cases": 40,
+        "failed": 22,
+        "errors": 0,
+        "skipped": 0
+      },
+      "namespace_bootstrap": true
+    },
+    "setup_error_not_functional_red": {
+      "artifact": "stock-native-bsl-sampling-initial-red-20260929.xml",
+      "sha256": "7ad18152423abd7e1effdf352960f379c2272e8aef8a6aa8cf8d733f40c7a389",
+      "counts": {
+        "unique_cases": 1,
+        "failed": 0,
+        "errors": 1,
+        "skipped": 0
+      },
+      "namespace_bootstrap": false
+    },
+    "first_focused_green": {
+      "artifact": "stock-native-bsl-sampling-focused-result-20260929.xml",
+      "sha256": "95246720c7680ca675a4c9254822895a64d04a0671936b13cbf27f8db9b1570c",
+      "counts": {
+        "unique_cases": 95,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "namespace_bootstrap": true
+    },
+    "pinned_focused_green": {
+      "artifact": "stock-native-bsl-sampling-pinned-focused-green-20260929.xml",
+      "sha256": "ad3a38fe0fc4f03faed8569428b5b342a8162b1d1d6658d4451dfe66dce1951d",
+      "counts": {
+        "unique_cases": 95,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "namespace_bootstrap": false
+    }
+  },
+  "root_focused40": {
+    "artifact": "daily-sampling-root-new40.xml",
+    "sha256": "d1439981e33ded43b1121451b33338115f655719100c223e1a35eb812f14b5bf"
+  },
+  "root_focused40_counts": {
+    "unique_cases": 40,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "actual_collected_Python_IDs": 3031,
+  "actual_passed_full_Python_suite_locally": false,
+  "selected_local_case_union": 786,
+  "historical_LiveApply38_actual_pass_and_exact_bytes_retained": true,
+  "root_local_verification": {
+    "artifact": "daily-sampling-successor-root-local-verification.json",
+    "sha256": "a4b56cafd40d778a40b255a0269d441ea8f410c0bad9c6849564898c8d534480"
+  },
+  "private_raw_reader_root_constructed_guards": {
+    "cases": 48,
+    "before_fix_mismatches": 8,
+    "after_fix_mismatches": 0,
+    "red": {
+      "artifact": "stock-sampling-inventory-root-private-red.json",
+      "sha256": "7ef8534a0c0ebcbee8d6f70a24a03e2c3236d16f5aa156fbf9f952ff2aeeeaaa"
+    },
+    "green": {
+      "artifact": "stock-sampling-inventory-root-private-green.json",
+      "sha256": "e684dd5969e0029033f04af1be374acf9c9638d09d6fd862d0d0ac4041ebff65"
+    },
+    "source_bound_full_reader_sha256": "9a54eee474072e56c2854faf65376a9ca5a8f830f397a139ef8227d7c116d4bc",
+    "inventory_reader_sha256": "a20fddb2da7891ca8807f8616a77259f71cef67d4ff30cc191c07fd440d87906",
+    "old_readers_unchanged": true
+  },
+  "real_native_WMI_SCM_operations": 0,
+  "model_calls": 0,
+  "editor_platform_launches": 0,
+  "fresh_source_CI_qualified": false,
+  "installation_qualified": false,
+  "release_accepted": false,
+  "full_product_ready": false,
+  "production_deployment": false,
+  "document_wording_followup": {
+    "path": "docs/product/STOCK-PROCESS-INVENTORY-QUALIFICATION.md",
+    "before_sha256": "cff48e9e6cd60f84f7d06d4e2b5a47377b6b0db62f0c1cb302b1cc9f470d15f0",
+    "after_sha256": "8c1e60be9bbe62a63e42a7ca4e369c6ff69e2821cac57d3dbaa2cc615e9824c7",
+    "reason": "Clarify existing180s wait deadline; a bounded inflight condition may finish later. Source code unchanged."
+  }
+}
