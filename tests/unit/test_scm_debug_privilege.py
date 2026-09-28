@@ -140,7 +140,7 @@ def inspection_fixture(tmp_path, monkeypatch, fault):
 
     native = SimpleNamespace(debug_privilege=debug, privileges=privileges)
 
-    def capture(*args):
+    def capture(*args, **options):
         assert state["enabled"], "CIM read executed outside privilege scope"
         script = args[0][-1]
         assert "Security_.ImpersonationLevel=3" in script
@@ -160,7 +160,7 @@ def inspection_fixture(tmp_path, monkeypatch, fault):
         if not ok:
             raise RuntimeError(message)
 
-    worker = SimpleNamespace(Acceptance=object, require=require, save=Mock(),
+    worker = SimpleNamespace(Acceptance=object, require=require, save=Mock(), bounded=lambda seconds:seconds,
                              wait_until=lambda check, *args: check())
     cls = api.acceptance_type(worker, None, probe, None, None, None, None)
     test = cls.__new__(cls)
@@ -181,12 +181,14 @@ def test_process_inventory_requires_scoped_debug_and_restores_on_every_read_outc
         with pytest.raises(RuntimeError):
             test.processes()
     assert state["enabled"] is (fault == "restore_mismatch")
-    assert state["captures"] == (0 if fault == "not_enabled" else 1)
+    expected_captures = 0 if fault == "not_enabled" else 3 if fault == "incomplete" else 1
+    assert state["captures"] == expected_captures
     if fault != "restore_mismatch":
-        assert len(state["events"]) == 1
-        _, proof = state["events"][0]
-        assert proof["enabled_during"] is (fault != "not_enabled")
-        assert proof["privileges_before"] == proof["privileges_after"]
+        scopes = [proof for name, proof in state["events"] if name == "stock_debug_privilege_inspected"]
+        assert len(scopes) == (3 if fault == "incomplete" else 1)
+        for proof in scopes:
+            assert proof["enabled_during"] is (fault != "not_enabled")
+            assert proof["privileges_before"] == proof["privileges_after"]
 
 
 def test_java_native_image_token_query_stays_in_the_same_scoped_inspection(tmp_path, monkeypatch):
@@ -211,7 +213,7 @@ def test_java_native_image_token_query_stays_in_the_same_scoped_inspection(tmp_p
 
     test.native.process = process
     measurement = SimpleNamespace(validate_java=validate, validate_publication=lambda *a, **kw: {"commit": "a" * 40})
-    def capture(*args):
+    def capture(*args, **options):
         assert "Security_.Privileges.AddAsString('SeDebugPrivilege',$true)" in args[0][-1]
         return {"exit_code": 0, "child_reaped": True, "timed_out": False,
                 "output_limit_exceeded": False, "process_error": None}

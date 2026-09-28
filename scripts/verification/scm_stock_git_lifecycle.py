@@ -251,11 +251,25 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
                     privileges_before=before,privileges_after=after,privileges_restored=restored)
                 worker.require(restored,'Native inspection changed original token privileges')
 
-        def processes(self):
-            with self.inspection_privilege():
-                return self._processes()
+        @contextmanager
+        def process_inspection(self):
+            # An unavailable WMI row is never evidence of an exited process.
+            # Retry the whole observation with a fresh, restored privilege scope.
+            for attempt in range(1,4):
+                with self.inspection_privilege():
+                    rows=self._processes(attempt=attempt)
+                    if rows is not None:
+                        yield rows
+                        return
+                worker.require(attempt<3,'Native process inventory is incomplete')
+                self.event('stock_process_inventory_retry',label='stock-processes-'+str(self.query_sequence),
+                    attempt=attempt,next_attempt=attempt+1,max_attempts=3)
 
-        def _processes(self):
+        def processes(self):
+            with self.process_inspection() as rows:
+                return rows
+
+        def _processes(self,*,attempt=1):
             self.query_sequence+=1
             worker.require(self.query_sequence<=200,'Stock native process observations exceed bound')
             pwsh=shutil.which('pwsh.exe');worker.require(pwsh is not None,'PowerShell 7 required')
@@ -278,15 +292,23 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
                 "CommandLine=$process.Properties_.Item('CommandLine').Value} }); " \
                 "ConvertTo-Json -Compress -InputObject $rows"
             label='stock-processes-'+str(self.query_sequence)
-            result=probe.capture((pwsh,'-NoProfile','-NonInteractive','-Command',script),dict(os.environ),self.output,label)
+            result=probe.capture((pwsh,'-NoProfile','-NonInteractive','-Command',script),dict(os.environ),self.output,label,
+                timeout=worker.bounded(10))
             worker.save(self.output/(label+'.json'),result)
             worker.require(result['exit_code']==0 and result['child_reaped'] is True and not result['timed_out']
                 and not result['output_limit_exceeded'] and result['process_error'] is None,'Native process inventory failed')
             rows=json.loads(probe._raw(result,'stdout').decode('utf-8-sig'))
             worker.require(type(rows) is list and len(rows)<=100 and all(type(row) is dict
-                and type(row.get('ProcessId')) is int and row['ProcessId']>0 and row.get('ExecutablePath') for row in rows),
-                'Native process inventory is incomplete')
-            return rows
+                and set(row)=={'ProcessId','ParentProcessId','ExecutablePath','CommandLine'}
+                and type(row['ProcessId']) is int and row['ProcessId']>0
+                and type(row['ParentProcessId']) is int and row['ParentProcessId']>=0
+                and all(row[key] is None or type(row[key]) is str for key in ('ExecutablePath','CommandLine')) for row in rows)
+                and len({row['ProcessId'] for row in rows})==len(rows),'Native process inventory shape differs')
+            complete=all(row['ExecutablePath'] and row['CommandLine'] for row in rows)
+            self.event('stock_process_inventory_observed',label=label,attempt=attempt,complete=complete,
+                rows_count=len(rows),incomplete_pids=[row['ProcessId'] for row in rows
+                    if not row['ExecutablePath'] or not row['CommandLine']])
+            return rows if complete else None
 
         def children(self):
             owned=[]
@@ -385,8 +407,8 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
             def inspect():
                 row=self.current();worker.require(row['status']['state']==4,'Stock service stopped before findings')
                 if native_bsl and label not in self.java_proofs:
-                    with self.inspection_privilege():
-                        for child in self._processes():
+                    with self.process_inspection() as rows:
+                        for child in rows:
                             if Path(child['ExecutablePath'])!=self.runtime/'jdk/bin/java.exe': continue
                             try: process=self.native.process(child['ProcessId'])
                             except Exception as error:

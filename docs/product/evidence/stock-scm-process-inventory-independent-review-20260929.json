@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "parent_head": "6fe571a00af6f37b558b33544cc5f7ebb9a7f421",
+  "scope": "two exact three-file source/test reviews; separate future raw reader argv resolution",
+  "reviewers": [
+    {
+      "model": "gpt-6-sol",
+      "effort": "max",
+      "review_sha256": "a9f7653cae4f0ec194b4616ccaf46382e01168f9b16b3d4aeba1e09f33ceb0b8"
+    },
+    {
+      "model": "gpt-6-sol",
+      "effort": "max",
+      "review_sha256": "366930d6e32ac2f127a94a75e4cf207bfbd1888becdea3d9a71278855ab8dd98"
+    }
+  ],
+  "source_files": {
+    "scripts/verification/scm_stock_git_lifecycle.py": "c54561d861f3af66708787488477c03ed0a9781607f79c72428fcbd4702f9adb",
+    "tests/unit/test_scm_process_inventory_retry.py": "64e4eb7bb593f2d165d7e4ea5cad7a4815777800c496b2de0fd7aa0abad8d948",
+    "tests/unit/test_scm_debug_privilege.py": "e6eaf27106f12efd712d2feb93b35e1e20daf698c6c6b8e9c7ada6151e54783a"
+  },
+  "source_unresolved_actionable_findings": 0,
+  "future_reader": {
+    "finding": "RETRY-RAW-ARGV-FINAL-SNAPSHOT",
+    "initial_priority": "P2",
+    "status": "resolved",
+    "initial_review_sha256": "366930d6e32ac2f127a94a75e4cf207bfbd1888becdea3d9a71278855ab8dd98",
+    "resolution_sha256": "caf82a05e325179bbe2dad5767ade4d7febe0cf7d1392bc8edce846e4c4e0807",
+    "helper_sha256": "f8521e9efad11a6f9aafbc68801e7bdd045bac32fd241f8ecf1914ab10dbedce",
+    "full_reader_sha256": "ae78cece76df7c76b602a7aa6ca01d4ae428b0b2c9fec5ab86eab90a202ce41e",
+    "same_final_scope_pid_parent_image_argv_required": true,
+    "remaining_actionable_findings": 0
+  },
+  "source_pure_probes": {
+    "first_reviewer": 11,
+    "scope": "constructed AST/memory only; no native execution"
+  },
+  "actual_raw_reports": {
+    "source_passed_unique": 101,
+    "source_junit_sha256": "06567e10553d146793046acb0be0fc2cbc46647ff0fd2acf890bc466f7d60e45",
+    "reader_passed_unique": 29,
+    "reader_junit_sha256": "b6eaf0266c13f8158cbb4d9eb3f658b1a5c42e977f9ee57dd5ff5ae3e0024a78",
+    "skips": 0
+  },
+  "original_failure_review_sha256": "444de9ed33f6345a04e87827110eaccaed166db85d05408ff07ed92aa06dd33d",
+  "historical_receipts_preserved": true,
+  "source_ci_qualified": false,
+  "native_stock_git_accepted": false,
+  "installed_dev16_qualified": false,
+  "main_qualified": false,
+  "release_qualified": false,
+  "full_product_ready": false,
+  "production_deployment": false
+}

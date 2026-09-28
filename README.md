@@ -188,6 +188,7 @@ namespace/QName-фрагменты.
 | [Runtime metrics](docs/product/RUNTIME-METRICS.md) | Bounded JSON-export adapter с двойной авторизацией и точной привязкой к snapshot |
 | [Notification receiver](docs/product/NOTIFICATION-RECEIVER.md) | Durable digest receipts, bearer check и conflict-safe deduplication для outbox; в dev10 локальный HTTPS/ASGI-путь проверен с Uvicorn/httptools, публичный host и downstream обработка не приняты |
 | [Service host](docs/product/SERVICE-HOST.md) | Native ServiceMain boundary для Observer и bounded foreground Git host с cooperative stop и fail-closed lifecycle; live SCM deployment ещё не принят |
+| [Снимок процессов Git-службы](docs/product/STOCK-PROCESS-INVENTORY-QUALIFICATION.md) | Оба CI6fe, отказ на недоступных метаданных потомков, успешная очистка и ограниченный повторный WMI опрос с доказательствами |
 | [Three-way updates](docs/product/THREE-WAY-UPDATES.md) | Plan и безопасный in-memory candidate для base/current/upstream по хэшу |
 | [UUID-aware updates](docs/product/METADATA-THREE-WAY.md) | Консервативное сопоставление объектов Designer XML по типу и UUID |
 | [EDT identity inventory](docs/product/EDT-INVENTORY-IDENTITY.md#local-cli) | CLI `edt-inventory`: профили для `.mdo` и реальных `MetaDataObject/*.xml`, проверенные UUID, владельцы форм/команд и evidence слоя в явно выбранном опубликованном EDT snapshot; partial coverage |
