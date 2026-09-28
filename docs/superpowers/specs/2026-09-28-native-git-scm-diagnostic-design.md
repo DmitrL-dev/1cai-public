@@ -1,7 +1,8 @@
 # Проверка Git под настоящим LocalService перед приёмкой Git-службы
 
 Основание: принятый main `c715e9b65b75ae667376f331c3c0fac14be2f7f3`, CI
-36359690277. Непрерывный кандидат остаётся локальным. Прежний пятислучайный
+36359690277. Непрерывный кандидат опубликован в draft PR41; его нативная
+Git/BSL приёмка ещё не завершена. Прежний пятислучайный
 опыт выполнялся текущим пользователем с `GIT_TEST_ASSUME_DIFFERENT_OWNER`;
 его результат не подтверждает работу Git под LocalService.
 
@@ -32,7 +33,7 @@ STOP и finally cleanup имеют собственный ограниченны
 Coordinator создаёт `fixture/git-probe/source/selected` и `fixture/git-probe/source/other` без remote
 и с минимальными BSL-файлами. Их исходный владелец отличается от S-1-5-19 и
 сохраняется до конца измерения. LocalService получает только Read/Execute для
-исходников/репозиториев и runtime, Modify только для `fixture/service_data`.
+исходников/репозиториев и runtime, Modify только для `fixture/localservice/data`.
 Source registry/profile/config связываются с тем же owned workspace. Перед
 запуском проверяются отсутствие links/reparse/hardlinks, полный file inventory,
 хеши, DACL, владельцы и точные script/runtime hashes.

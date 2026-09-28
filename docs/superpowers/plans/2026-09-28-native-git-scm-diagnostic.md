@@ -93,7 +93,8 @@ cleanup; it installs only its fixed diagnostic ImagePath.
 
 **Files:**
 - Create `scripts/verification/verify_git_scm_diagnostic.py`.
-- Extend `tests/unit/test_scm_git_probe.py`.
+- Create `scripts/verification/scm_git_diagnostic_control.py` for fixed SCM controls.
+- Create `tests/unit/test_git_scm_diagnostic.py` for coordinator/control safeguards.
 - Modify `.github/workflows/core-ci.yml` to add a separate diagnostic job and upload.
 
 **Interfaces:**
@@ -104,21 +105,21 @@ cleanup; it installs only its fixed diagnostic ImagePath.
 - `DiagnosticAcceptance` reuses baseline ACL/owner backup and finally cleanup from
   `scm_acceptance_worker.Acceptance`, with fixed diagnostic installer and exercise.
 
-- [ ] Red tests reject changed modules/runtime/manifest/repo paths and unknown
+- [x] Red tests reject changed modules/runtime/manifest/repo paths and unknown
   existing service before any SCM/ACL mutation; timeout never implies created ownership.
-- [ ] Prepare the standard Source Observer fixture unchanged, plus two local repos
+- [x] Prepare the standard Source Observer fixture unchanged, plus two local repos
   with no remotes and an empty global-config file. Hash all extra scripts and inputs.
-- [ ] Preflight the standard fixture/runtime, then verify auxiliary module/input
+- [x] Preflight the standard fixture/runtime, then verify auxiliary module/input
   bindings and foreign owners. Require elevated SCM create/backup/restore authority.
-- [ ] Fixed adapter uses absolute SystemRoot/System32/sc.exe and query-before-create;
+- [x] Fixed adapter uses absolute SystemRoot/System32/sc.exe and query-before-create;
   verify exact config/account/type/name before every subsequent control operation.
-- [ ] Exercise: baseline ACL → create → RUNNING/PID/image/SID → raw probe result →
+- [x] Implement exercise: baseline ACL → create → RUNNING/PID/image/SID → raw probe result →
   STOP/STOPPED → source/ref/index/config bytes equal → finally delete/ACL cleanup.
-- [ ] Validate all four isolated outcomes; preserve the default outcome as observed.
+- [x] Implement raw validation of all four isolated outcomes; preserve the default outcome as observed.
   Result fields `native_git_scm_accepted`, `continuous_git_accepted`,
   `production_trust_policy_selected`, `full_product_ready`, `production_deployment`
   remain false even when `diagnostic_accepted` is true.
-- [ ] Add a Windows CI job depending on the built kit, retain evidence with `always()`
+- [x] Add a Windows CI job depending on the built kit, retain evidence with `always()`
   even on failed lifecycle, and run local contracts before push.
 - [ ] Push/attach a draft PR with exact local tests and explicit pending native scope.
   Qualify actual checkout, installed payload, raw process/ACL/probe evidence from CI.
@@ -154,3 +155,20 @@ cases were red before their implementation. Positive ownership flows use
 injected unit observations; they do not prove LocalService. All worker
 acceptance fields stay false until the owned coordinator validates actual
 SCM/process/raw evidence and cleanup. Core/public installer bytes unchanged.
+
+## Local Task 3 evidence
+
+Implemented the fixed SCM adapter, auxiliary preparation/preflight, raw evidence
+validator, inherited ACL/owner cleanup, host/direct-runtime CLI and separate
+`native-git-diagnostic` job. Raw Git streams, result/close and fixed input manifest
+are copied with bounded sizes and hashes into uploaded evidence, including failed
+measurements. Cleanup failure prevents acceptance. The coordinator waits for
+complete JSON when the writer has created a file but not finished writing it.
+
+Fresh local JUnit: 61 coordinator/control contracts, 34 probe contracts and 43
+existing SCM-verifier contracts: 137 passed, one skipped. The skipped native DACL
+round trip requires backup/restore privileges absent from the local token; its
+actual execution remains a CI gate. Positive LocalService flows in unit tests are
+injected observations. Actual diagnostic SCM, stock schema3 Git/BSL, production
+trust policy and subsequent Core release remain unaccepted. Existing public tags
+and assets retain their prior payloads.
