@@ -188,7 +188,22 @@ async function recover(){
   assert.deepEqual(await api.repairRuns(),repairRequests);assert.deepEqual(await api.testRuns(),testRequests);assert.deepEqual(await cli('project-head'),head);assert.deepEqual(await inventory(path.join(root,'source')),sourceBefore);
   if(selected)assert.deepEqual((await api.drafts()).find(row=>row.receipt?.draft_id===selected.draft_id)?.receipt,latestBefore);
   record.raw_evidence=await evidence(root,prior.repair_run_id,testId,record.test,null,record.repair);assert.deepEqual(record.raw_evidence,rawBefore);
-  const shown=vscode.window.activeTextEditor?.document;assert.equal(shown?.languageId,'json');assert.deepEqual(JSON.parse(shown.getText()),testId?record.test:record.repair);
+  if(testId){
+   const shown=vscode.window.activeTextEditor?.document;assert.equal(shown?.languageId,'json');assert.deepEqual(JSON.parse(shown.getText()),record.test);
+  }else{
+   const receipt=record.repair.receipt,saved=await cli('draft-get','--draft-id',receipt.draft_id,'--revision',receipt.revision);
+   assert.deepEqual(saved.receipt,receipt,'DAILY_REPAIR_VIEW_RECEIPT');
+   const proposal=saved.proposal,replacement=proposal?.replacement;
+   assert.equal(proposal?.content_id,receipt.proposal_content_id,'DAILY_REPAIR_VIEW_PROPOSAL');
+   assert.equal(typeof replacement?.base64,'string','DAILY_REPAIR_VIEW_BYTES');
+   const bytes=Buffer.from(replacement.base64,'base64');
+   assert.equal(bytes.toString('base64'),replacement.base64,'DAILY_REPAIR_VIEW_BYTES');
+   assert.equal(digest(bytes),replacement.raw_sha256,'DAILY_REPAIR_VIEW_BYTES');
+   const basename=`/[v${receipt.revision}] ${path.posix.basename(receipt.source_ref.relative_path)}`;
+   const shown=vscode.window.visibleTextEditors.map(editor=>editor.document).filter(doc=>doc.uri.scheme==='rentgen-view'&&doc.uri.authority&&doc.uri.path===basename&&!doc.uri.query&&!doc.uri.fragment);
+   assert.equal(shown.length,1,'DAILY_REPAIR_VIEW_REQUIRED');
+   assert.equal(shown[0].getText(),decode(bytes),'DAILY_REPAIR_VIEW_TEXT');
+  }
   record.preservation_verified=true;record.recovered=true;record.status='collected';
  }catch(error){record.status='refused';record.error=error.stack;throw error;}finally{await captureAvailableEvidence(env);await progress();await terminal();}
 }
