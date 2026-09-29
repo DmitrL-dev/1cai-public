@@ -103,10 +103,44 @@ function selectedRepairVerdict({repairReceipt,selectedReceipt,proposal,profile,r
     const normalize=text=>text.replace(/^\uFEFF/,'').replace(/\r\n/g,'\n');
     const baseline=normalize(original),after=normalize(candidate);
     const empty='    Попытка\n        ДокументОбъект.Записать();\n    Исключение\n    КонецПопытки;';
-    if(baseline.split(empty).length!==2)return false;
-    const rethrow=baseline.replace(empty,empty.replace('    Исключение\n','    Исключение\n        ВызватьИсключение;\n'));
-    const direct=baseline.replace(empty,'    ДокументОбъект.Записать();');
-    return after===rethrow||after===direct;
+    const parts=baseline.split(empty);
+    if(parts.length!==2)return false;
+    const rethrow=empty.replace('    Исключение\n','    Исключение\n        ВызватьИсключение;\n');
+    const direct='    ДокументОбъект.Записать();';
+    const [prefix,suffix]=parts;
+    if(after===prefix+rethrow+suffix||after===prefix+direct+suffix)return true;
+    if(!after.startsWith(prefix)||!after.endsWith(suffix))return false;
+    const changed=after.slice(prefix.length,after.length-suffix.length);
+    const code=[],archived=[],markedCode=[];
+    let opened=false,closed=false,task=null;
+    for(const line of changed.split('\n')) {
+      const marker=line.match(/^[ \t]*\/\/ (\+\+|--)ДелоТех ([^\r\n]{1,160})$/);
+      if(marker) {
+        const label=marker[2];
+        if(label!==label.trim()||/[\u0000-\u001f\u007f-\u009f]/.test(label))return false;
+        if(marker[1]==='++') {
+          if(opened||closed)return false;
+          opened=true;task=label;
+        }else {
+          if(!opened||closed||task!==label)return false;
+          closed=true;
+        }
+        continue;
+      }
+      const comment=line.match(/^[ \t]*\/\/[ \t]*(.*)$/);
+      if(comment) {
+        if(!opened||closed)return false;
+        archived.push(comment[1].trim());
+        continue;
+      }
+      code.push(line);
+      if(opened&&!closed)markedCode.push(line);
+    }
+    if(!opened||!closed)return false;
+    const stripped=code.join('\n');
+    const fullArchive=same(archived,empty.split('\n').map(line=>line.trim()));
+    if(stripped===rethrow)return (archived.length===0||fullArchive)&&markedCode.includes('        ВызватьИсключение;');
+    return stripped===direct&&fullArchive&&markedCode.includes(direct);
   }
 
  return Object.freeze({selectedRepairVerdict,selectRepairRevision,uniqueNewRun,repairOrigin,recognizedSafeTransform});

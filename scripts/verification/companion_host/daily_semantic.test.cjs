@@ -188,3 +188,40 @@ for(const field of ['snapshot_id','manifest_hash','raw_sha256'])test('JSON-decod
 for(const field of ['snapshot_id','manifest_hash'])test('JSON-decoded source '+field+' array cannot establish AI origin',()=>{
  assert.equal(semantic.repairOrigin(arraySourcePins(originInput(),field)).ai_origin,'unproven');
 });
+
+// D7: edit markers are permitted only around the changed target code.
+const markedRethrow=baseline.replace('    Исключение\n','    Исключение\n        // ++ДелоТех Рентген D6\n        ВызватьИсключение;\n        // --ДелоТех Рентген D6\n');
+const markedDirect=baseline.replace('    Попытка\n        ДокументОбъект.Записать();\n    Исключение\n    КонецПопытки;',
+ '    // ++ДелоТех Рентген D6\n    // Попытка\n    // ДокументОбъект.Записать();\n    // Исключение\n    // КонецПопытки;\n    ДокументОбъект.Записать();\n    // --ДелоТех Рентген D6');
+test('D7 recognized local paired ДелоТех rethrow preserves the callable write',()=>{
+ assert.equal(semantic.recognizedSafeTransform(baseline,markedRethrow),true);
+});
+test('D7 recognized direct write retains ordered commented original handler inside the local pair',()=>{
+ assert.equal(semantic.recognizedSafeTransform(baseline,markedDirect),true);
+});
+test('D7 recognized paired edit permits a different matching task label and BOM CRLF transport',()=>{
+ const candidate=markedRethrow.replaceAll('Рентген D6','SD-26-018113').replace(/\n/g,'\r\n');
+ assert.equal(semantic.recognizedSafeTransform('\uFEFF'+baseline.replace(/\n/g,'\r\n'),'\uFEFF'+candidate),true);
+});
+for(const [label,candidate] of [
+ ['missing closing marker',markedRethrow.replace('        // --ДелоТех Рентген D6\n','')],
+ ['different closing task',markedRethrow.replace('--ДелоТех Рентген D6','--ДелоТех другая задача')],
+ ['nested opening marker',markedRethrow.replace('        ВызватьИсключение;','        // ++ДелоТех Рентген D6\n        ВызватьИсключение;')],
+ ['postfix marker outside target handler',markedRethrow.replace('        // --ДелоТех Рентген D6\n','')+'// --ДелоТех Рентген D6\n'],
+ ['an unrelated comment inside the pair',markedRethrow.replace('        ВызватьИсключение;','        // Добавленное пояснение\n        ВызватьИсключение;')],
+ ['original documentation removed',markedRethrow.replace('// Preserved comment\n','')],
+ ['unconditional exception replaces write',markedDirect.replace('    ДокументОбъект.Записать();\n','    ВызватьИсключение;\n')],
+ ['logging suppresses the write exception',markedRethrow.replace('        ВызватьИсключение;','        Сообщить(ОписаниеОшибки());')],
+ ['an additional executable statement',markedRethrow.replace('        ВызватьИсключение;','        ДополнительноеДействие();\n        ВызватьИсключение;')],
+ ['commented original lines reordered',markedDirect.replace('    // Попытка\n    // ДокументОбъект.Записать();','    // ДокументОбъект.Записать();\n    // Попытка')],
+ ['original line duplicated in comments',markedDirect.replace('    // Попытка\n','    // Попытка\n    // Попытка\n')],
+ ['markers wrap unchanged write while rethrow is outside the pair',baseline.replace('        ДокументОбъект.Записать();','        // ++ДелоТех Рентген D6\n        ДокументОбъект.Записать();\n        // --ДелоТех Рентген D6').replace('    Исключение\n','    Исключение\n        ВызватьИсключение;\n')],
+ ['valid local patch followed by a second empty pair',markedRethrow.replace('    КонецПопытки;','    // ++ДелоТех Рентген D6\n    // --ДелоТех Рентген D6\n    КонецПопытки;')]
+])test('D7 recognized marker admission rejects '+label,()=>{
+ assert.equal(semantic.recognizedSafeTransform(baseline,candidate),false);
+});
+
+test('D7 recognized full commented block rethrow preserves original write and handler',()=>{
+ const candidate=markedDirect.replace('    ДокументОбъект.Записать();\n','    Попытка\n        ДокументОбъект.Записать();\n    Исключение\n        ВызватьИсключение;\n    КонецПопытки;\n');
+ assert.equal(semantic.recognizedSafeTransform(baseline,candidate),true);
+});
