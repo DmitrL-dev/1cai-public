@@ -160,3 +160,36 @@ for(const mutation of ['text','revision','scheme','missing'])test('repair-only r
  }return result;};
  await assert.rejects(f.host.recover(),/DAILY_REPAIR_VIEW/);assert.notEqual(f.record.recovered,true);assert.notEqual(f.record.preservation_verified,true);assert.equal(f.record.model_requests_started,0);assert.equal(f.record.test_requests_started,0);assert.equal(f.calls.filter(c=>['rentgen.repairSource','rentgen.testDraft'].includes(c.name)).length,0);assert.equal(f.record.task_accepted,false);
 });
+
+// ibcmd extension-properties emits stdout/stderr, unlike platform /Out steps.
+function addTwoStreamSteps(f){
+ for(const phase of ['baseline','candidate']){
+  const name=phase+'-extension-properties',step={name,exit_code:0};
+  for(const stream of ['stdout','stderr']){const bytes=Buffer.from('constructed ibcmd '+name+' '+stream);step[stream+'_sha256']=sha(bytes);f.put('state/test-runs/'+testId+'/'+name+'.'+stream,bytes);}
+  f.result.report.tests.steps.push(step);
+ }
+ return f;
+}
+test('both ibcmd extension-properties retain two mandatory streams without invented log files',async()=>{
+ const f=addTwoStreamSteps(fixture());await f.host.attempt();assert.equal(f.record.preservation_verified,true);assert.equal(f.record.raw_evidence_errors,undefined);
+ for(const phase of ['baseline','candidate']){const base='state/test-runs/'+testId+'/'+phase+'-extension-properties';assert.ok(f.record.raw_evidence[base+'.stdout']);assert.ok(f.record.raw_evidence[base+'.stderr']);assert.equal(f.record.raw_evidence[base+'.log'],undefined);}
+ assert.equal(f.record.task_accepted,false);assert.equal(f.record.pipeline_verified,false);
+});
+test('two-stream native proof recovers cached results without starting either operation',async()=>{
+ const f=addTwoStreamSteps(fixture());await f.host.attempt();bindRecovery(f);await f.host.recover();assert.equal(f.record.recovered,true);assert.equal(f.record.preservation_verified,true);assert.equal(f.record.model_requests_started,0);assert.equal(f.record.test_requests_started,0);assert.equal(f.calls.filter(c=>['rentgen.repairSource','rentgen.testDraft'].includes(c.name)).length,0);assert.equal(f.record.task_accepted,false);
+});
+for(const phase of ['baseline','candidate'])for(const stream of ['stdout','stderr'])test('ibcmd still refuses a missing '+phase+' '+stream,async()=>{
+ const f=addTwoStreamSteps(fixture()),name='state/test-runs/'+testId+'/'+phase+'-extension-properties.'+stream;f.files.delete(path.join(f.root,name));await f.host.attempt();assert.equal(f.record.preservation_verified,false);assert.ok(f.record.raw_evidence_errors.some(error=>error.path===name&&error.code==='ENOENT'));assert.equal(f.record.eligible_for_raw_qualification,false);
+});
+for(const phase of ['baseline','candidate'])test('extension-properties with a declared log still requires '+phase+' log file',async()=>{
+ const f=addTwoStreamSteps(fixture()),name=phase+'-extension-properties';f.result.report.tests.steps.find(step=>step.name===name).log_sha256=sha('constructed declared log');await f.host.attempt();assert.equal(f.record.preservation_verified,false);assert.ok(f.record.raw_evidence_errors.some(error=>error.path==='state/test-runs/'+testId+'/'+name+'.log'&&error.code==='ENOENT'));
+});
+test('two-stream exception is limited to exact ibcmd phase names',async()=>{
+ const f=addTwoStreamSteps(fixture());f.result.report.tests.steps.at(-1).name='candidate-extension-property';await f.host.attempt();assert.equal(f.record.preservation_verified,false);assert.ok(f.record.raw_evidence_errors.some(error=>error.message==='DAILY_STEP_INVALID'));assert.equal(f.record.eligible_for_raw_qualification,false);
+});
+for(const [field,value]of [['stdout_sha256','bad'],['stderr_sha256',null],['log_sha256',null],['exit_code','0'],['log_sha256',undefined],['stdout_sha256',['a'.repeat(64)]],['exit_code',1]])test('ibcmd rejects malformed producer declaration '+field+' type='+typeof value,async()=>{
+ const f=addTwoStreamSteps(fixture());f.result.report.tests.steps.at(-1)[field]=value;await f.host.attempt();assert.equal(f.record.preservation_verified,false);assert.ok(f.record.raw_evidence_errors.some(error=>error.message==='DAILY_STEP_INVALID'));assert.equal(f.record.eligible_for_raw_qualification,false);assert.ok(f.record.raw_evidence['state/test-runs/'+testId+'/report.json']);
+});
+test('ordinary platform steps cannot omit their declared log hash',async()=>{
+ const f=fixture();delete f.result.report.tests.steps[1].log_sha256;try{await f.host.attempt();}catch{}assert.equal(f.record.preservation_verified,false);assert.ok(f.record.raw_evidence_errors.some(error=>error.message==='DAILY_STEP_INVALID'));assert.equal(f.record.eligible_for_raw_qualification,false);
+});

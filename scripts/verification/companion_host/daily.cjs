@@ -80,7 +80,14 @@ async function evidence(root,repairId,testId,result,errors=null,repair=null){
   }
   const steps=result?.report?.tests?.steps??[];
   if(!Array.isArray(steps)||steps.length>32)failed(base,new Error('DAILY_STEP_INVALID'));
-  else for(const step of steps){if(typeof step?.name!=='string'||!/^[a-z-]{1,64}$/.test(step.name)){failed(base,new Error('DAILY_STEP_INVALID'));continue;}for(const suffix of ['.log','.stdout','.stderr'])names.push([base+step.name+suffix,2097152,true]);}
+  else for(const step of steps){
+   if(typeof step?.name!=='string'||!/^[a-z-]{1,64}$/.test(step.name)){failed(base,new Error('DAILY_STEP_INVALID'));continue;}
+   // ibcmd produces exactly two streams for these successful extension-properties steps.
+   const twoStream=['baseline-extension-properties','candidate-extension-properties'].includes(step.name)&&!Object.prototype.hasOwnProperty.call(step,'log_sha256');
+   const fields=twoStream?['stdout_sha256','stderr_sha256']:['log_sha256','stdout_sha256','stderr_sha256'];
+   if(!Number.isSafeInteger(step.exit_code)||(twoStream&&step.exit_code!==0)||fields.some(field=>typeof step[field]!=='string'||!hash.test(step[field]))){failed(base+step.name,new Error('DAILY_STEP_INVALID'));continue;}
+   for(const suffix of twoStream?['.stdout','.stderr']:['.log','.stdout','.stderr'])names.push([base+step.name+suffix,2097152,true]);
+  }
  }
  const output={};for(const [name,limit,required]of names){try{const bytes=await read(path.join(root,name),limit,!required);if(bytes!==null)output[name]={size:bytes.length,sha256:digest(bytes)};}catch(error){failed(name,error);}}
  return output;
