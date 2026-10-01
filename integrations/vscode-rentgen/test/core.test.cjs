@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
-const { createClient, sourceText, draftText } = require('../lib/core.cjs');
+const { createClient, sourceText, draftText, profileConfig } = require('../lib/core.cjs');
 const project = '00000000-0000-4000-8000-000000000001';
 const draft = '00000000-0000-4000-8000-000000000002';
 const bytes = Buffer.from('\uFEFFПроцедура Проверка()\r\nКонецПроцедуры\r\n');
@@ -10,6 +10,22 @@ const hash = createHash('sha256').update(bytes).digest('hex');
 const ref = {snapshot: {project_id: project, snapshot_id: 'a'.repeat(64), manifest_hash: 'a'.repeat(64)}, layer_id: 'base', relative_path: 'Модуль $(not-code).bsl', raw_sha256: hash};
 const config = {schema: 1, python: "C:\\путь ' $()\\python.exe", registry: 'C:\\registry.sqlite3', project_id: project, core_version: '0.1.0.dev4'};
 const output = value => ({code: 0, stdout: Buffer.from(JSON.stringify({result: value}))});
+
+test('a profile without context_tokens resolves to the legacy 32768 context', () => {
+  assert.equal(profileConfig(config).context_tokens, 32768);
+});
+
+for (const context_tokens of [8192, 16384, 32768]) {
+  test(`profile retains explicit context_tokens=${context_tokens}`, () => {
+    assert.equal(profileConfig({...config, context_tokens}).context_tokens, context_tokens);
+  });
+}
+
+for (const context_tokens of [true, false, '8192', 8192.5, null, 0, 4096, 65536, [], {}]) {
+  test(`profile rejects invalid context_tokens=${JSON.stringify(context_tokens)}`, () => {
+    assert.throws(() => profileConfig({...config, context_tokens}), /INVALID_EDITOR_PROFILE/);
+  });
+}
 
 test('an unqualified future core profile is refused', () => {
   assert.throws(() => createClient({...config, core_version: '0.1.0.dev999'}, {execute: async () => output({})}), /INVALID_EDITOR_PROFILE/);

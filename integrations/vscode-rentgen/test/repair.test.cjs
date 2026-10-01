@@ -35,6 +35,51 @@ test(`${core_version}: lost process reply is reconciled from receipts with no se
 });
 }
 
+for (const context_tokens of [undefined, 8192]) {
+  const expected = context_tokens ?? 32768;
+  test(`repair journals frozen ${expected} context and asserts it in runner argv`, async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rentgen-repair-context-'));
+    const selectedConfig = context_tokens === undefined ? {...config} : {...config, context_tokens};
+    let args, executions = 0;
+    const runner = {dispose(){}, async execute(_, value) { executions++; args = value; return {code:1}; }};
+    const service = createRepairService({root, extensionRoot:root, config:selectedConfig, client:{}, runnerFactory:()=>runner});
+    selectedConfig.context_tokens = 16384;
+    const run = await service.start(ref, {model:'qwen3.5:9b', instruction:'Fix'});
+    const request = JSON.parse(await fs.readFile(path.join(root, 'repair-runs', run.id, 'request.json'), 'utf8'));
+    assert.equal(request.context_tokens, expected);
+    assert.equal(args.filter(value => value === '--context-tokens').length, 1);
+    assert.equal(args[args.indexOf('--context-tokens')+1], String(expected));
+    assert.equal(executions, 1);
+    service.dispose();
+  });
+}
+
+test('legacy request without context remains inspectable without a retrospective claim or replay', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rentgen-repair-legacy-context-'));
+  const operation = randomUUID(), draft = randomUUID(); let executions = 0;
+  const saved = {project_id:project, draft_id:draft, revision:2, operation_id:operation, source_ref:ref, proposal_content_id:'c'.repeat(64)};
+  const runner = {dispose(){}, async execute(_, args) {
+    executions++;
+    const output = args[args.indexOf('--output')+1]; await fs.mkdir(output);
+    await fs.writeFile(path.join(output, 'events.jsonl'), JSON.stringify({phase:'edit_requested', project_id:project, draft_id:draft, operation_id:operation})+'\n');
+    throw new Error('CLI_DISPOSED');
+  }};
+  const client = {async receipt(id) { assert.equal(id, operation); return saved; }};
+  const service = createRepairService({root, extensionRoot:root, config, client, runnerFactory:()=>runner});
+  const run = await service.start(ref, {model:'qwen3.5:9b', instruction:'Fix'});
+  assert.equal(run.status, 'saved_unverified'); service.dispose();
+  const file = path.join(root, 'repair-runs', run.id, 'request.json');
+  const journal = JSON.parse(await fs.readFile(file, 'utf8'));
+  delete journal.context_tokens; await fs.writeFile(file, JSON.stringify(journal));
+  const reopened = createRepairService({root, extensionRoot:root, config:{...config, context_tokens:8192}, client,
+    runnerFactory:()=>{throw new Error('Legacy reconciliation must not replay');}});
+  const rows = await reopened.list();
+  assert.equal(rows.length, 1); assert.equal(Object.hasOwn(rows[0], 'context_tokens'), false);
+  const recovered = await reopened.reconcile(run.id);
+  assert.equal(recovered.status, 'saved_unverified'); assert.deepEqual(recovered.receipt, saved);
+  assert.equal(executions, 1); reopened.dispose();
+});
+
 test('foreign selection is refused before writing or starting a process', async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rentgen-repair-refused-'));
   const service = createRepairService({root,extensionRoot:root,config,client:{},runnerFactory:()=>{throw new Error('Unexpected process');}});
@@ -87,20 +132,29 @@ test('cancelling the owned runner reconciles once and never replays a mutation',
   assert.equal(executions,1); assert.equal(service.running,false); service.dispose();
 });
 
-test('clean analysis requires exact saved bytes, full coverage and matching operation receipt', async () => {
+test('clean analysis requires matching model context, saved bytes, coverage and receipt', async () => {
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'rentgen-repair-binding-'));
   const operation=randomUUID(), draft=randomUUID(), candidate='\uFEFFПроцедура Проверка()\r\nКонецПроцедуры\r\n';
   const saved={project_id:project,draft_id:draft,operation_id:operation,revision:2,source_ref:ref,proposal_content_id:'c'.repeat(64)};
   const digest=createHash('sha256').update(candidate,'utf8').digest('hex');
-  const report={status:'analysis_clean',receipt:saved,candidate_sha256:digest,tests:{status:'not_run'},apply:{status:'unavailable'},
+  const report={status:'analysis_clean',receipt:saved,candidate_sha256:digest,model:{num_ctx:32768},tests:{status:'not_run'},apply:{status:'unavailable'},
     after:{receipt:saved,diagnostic:{source_ref:ref,proposal_content_id:saved.proposal_content_id,evidence:'ephemeral_unattested',
       analysis:{candidate_sha256:digest,status:'completed',exit_code:0,runtime_verified:true,diagnostics_complete:true,coverage:'exact_one',diagnostics:[]}}}};
   let output, receipt=saved;
   const runner={dispose(){},async execute(_,args){output=args[args.indexOf('--output')+1];await fs.mkdir(output);
     await fs.writeFile(path.join(output,'events.jsonl'),JSON.stringify({phase:'edit_requested',project_id:project,draft_id:draft,operation_id:operation})+'\n');
     await fs.writeFile(path.join(output,'result.json'),JSON.stringify(report));return {code:0};}};
-  const service=createRepairService({root,extensionRoot:root,config,client:{receipt:async()=>receipt,draft:async()=>({receipt:saved,text:candidate})},runnerFactory:()=>runner});
+  const client={receipt:async()=>receipt,draft:async()=>({receipt:saved,text:candidate})};
+  const service=createRepairService({root,extensionRoot:root,config,client,runnerFactory:()=>runner});
   const run=await service.start(ref,{model:'qwen3.5:9b',instruction:'Fix'});assert.equal(run.status,'analysis_clean');
+  report.model.num_ctx=8192;
+  await fs.writeFile(path.join(output,'result.json'),JSON.stringify(report));
+  const wrongContext=await service.reconcile(run.id);
+  assert.equal(wrongContext.status,'saved_unverified');assert.deepEqual(wrongContext.receipt,saved);
+  delete report.model;
+  await fs.writeFile(path.join(output,'result.json'),JSON.stringify(report));
+  assert.equal((await service.reconcile(run.id)).status,'saved_unverified');
+  report.model={num_ctx:32768};
   report.candidate_sha256='d'.repeat(64);
   await fs.writeFile(path.join(output,'result.json'),JSON.stringify(report));
   assert.equal((await service.reconcile(run.id)).status,'saved_unverified');

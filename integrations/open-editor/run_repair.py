@@ -12,7 +12,7 @@ import anyio
 
 # Explicit trusted adapter directory; -I keeps ambient project/PYTHONPATH out.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from repair_model import OllamaEditor, strict_json
+from repair_model import CONTEXT_TOKENS, OllamaEditor, strict_json, validate_context_tokens
 from repair_workflow import repair
 
 TOOLS = [
@@ -123,7 +123,7 @@ async def execute(config, source_ref, instruction, model, output):
         return report
 
 
-def validate_profile(config, installed_core, installed_mcp, executable):
+def validate_profile(config, installed_core, installed_mcp, executable, *, expected_context_tokens=None):
     if config.get("schema") != 1 or config.get("core_version") not in {
         "0.1.0.dev7",
         "0.1.0.dev8",
@@ -146,6 +146,12 @@ def validate_profile(config, installed_core, installed_mcp, executable):
         or Path(executable).resolve() != Path(config["python"]).resolve()
     ):
         raise ValueError("Interpreter does not match the selected profile")
+    context_tokens = validate_context_tokens(config.get("context_tokens", 32768))
+    if expected_context_tokens is not None:
+        validate_context_tokens(expected_context_tokens)
+        if expected_context_tokens != context_tokens:
+            raise ValueError("CONTEXT_TOKENS_MISMATCH")
+    return context_tokens
 
 
 def main():
@@ -153,6 +159,7 @@ def main():
     for name in ["profile", "source-ref", "instruction", "output"]:
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--model", required=True)
+    parser.add_argument("--context-tokens", type=int, choices=CONTEXT_TOKENS)
     parser.add_argument(
         "--think",
         action="store_true",
@@ -161,8 +168,9 @@ def main():
     args = parser.parse_args()
     config = strict_json(read_file(args.profile / "profile.json", 65536))
     try:
-        validate_profile(
-            config, version("rentgen-core"), version("mcp"), sys.executable
+        context_tokens = validate_profile(
+            config, version("rentgen-core"), version("mcp"), sys.executable,
+            expected_context_tokens=args.context_tokens,
         )
     except ValueError as exc:
         parser.error(str(exc))
@@ -178,7 +186,7 @@ def main():
         ) as stream:
             stream.write(content)
 
-    model = OllamaEditor(args.model, thinking=args.think, on_content=capture_content)
+    model = OllamaEditor(args.model, thinking=args.think, context_tokens=context_tokens, on_content=capture_content)
     output.mkdir(parents=True, exist_ok=False)
     report = anyio.run(execute, config, source_ref, instruction, model, output)
     print(

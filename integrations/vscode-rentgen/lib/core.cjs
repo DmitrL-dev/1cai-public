@@ -74,7 +74,9 @@ function profileConfig(value) {
     requireValue(typeof value[name] === 'string' && win32.isAbsolute(value[name]) &&
       /^[A-Za-z]:\\/.test(value[name]) && !controls.test(value[name]), 'INVALID_EDITOR_PROFILE');
   }
-  return Object.freeze({ schema: 1, core_version: value.core_version, python: value.python, registry: value.registry, project_id: value.project_id });
+  const context_tokens = Object.hasOwn(value, 'context_tokens') ? value.context_tokens : 32768;
+  requireValue(Number.isInteger(context_tokens) && [8192, 16384, 32768].includes(context_tokens), 'INVALID_EDITOR_PROFILE');
+  return Object.freeze({ schema: 1, core_version: value.core_version, python: value.python, registry: value.registry, project_id: value.project_id, context_tokens });
 }
 function createClient(config, { execute, trusted = () => true }) {
   config = profileConfig(config);

@@ -10,6 +10,16 @@ const validUuid=value=>typeof value==='string'&&uuid.test(value);
 const hash=/^[0-9a-f]{64}$/;
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 const decode=bytes=>new TextDecoder('utf-8',{fatal:true}).decode(bytes);
+function resolvedContext(value){
+ const context=Object.hasOwn(value,'context_tokens')?value.context_tokens:32768;
+ assert.ok(Number.isInteger(context)&&[8192,16384,32768].includes(context),'DAILY_CONTEXT_INVALID');
+ return context;
+}
+function matchingContext(config,scenario){
+ const context=resolvedContext(config);
+ assert.equal(resolvedContext(scenario),context,'DAILY_CONTEXT_MISMATCH');
+ return context;
+}
 async function read(file,limit,optional=false){
  let handle;
  try{
@@ -104,8 +114,20 @@ async function environment(mode){
  const root=process.env.RENTGEN_EDITOR_PROFILE,out=process.env.RENTGEN_DAILY_OUTPUT,inputFile=process.env.RENTGEN_DAILY_INPUTS;
  assert.ok(root&&out&&inputFile&&path.isAbsolute(root)&&path.isAbsolute(out)&&path.isAbsolute(inputFile),'DAILY_EXPLICIT_INPUTS_REQUIRED');
  assert.equal(Boolean(process.env.RENTGEN_DAILY_PRIOR),mode==='recovery','DAILY_MODE_MISMATCH');
- const scenario=await json(path.join(root,'daily-scenario.json')),config=await json(path.join(root,'profile.json'),65536),inputs=await json(inputFile,4194304);
+ const scenarioPath=path.join(root,'daily-scenario.json'),profilePath=path.join(root,'profile.json');
+ const scenarioBytes=await read(scenarioPath,2097152),profileBytes=await read(profilePath,65536),inputs=await json(inputFile,4194304);
+ const scenario=JSON.parse(decode(scenarioBytes)),config=JSON.parse(decode(profileBytes));
  assert.equal(scenario.schema,1);assert.equal(inputs.mode,mode);assert.deepEqual(scenario.frozen_inputs,inputs.manifest);assert.equal(config.core_version,inputs.core_version);assert.equal(scenario.companion_version,inputs.companion_version);assert.equal(config.python,inputs.files.python.path);
+ const context_tokens=matchingContext(config,scenario);
+ const hasContext=Object.hasOwn(inputs,'context_tokens'),hasProfileFiles=Object.hasOwn(inputs,'daily_profile_files');
+ assert.equal(hasContext,hasProfileFiles,'INPUT_BINDING_MISMATCH');
+ if(hasContext){
+  assert.equal(inputs.context_tokens,context_tokens,'INPUT_BINDING_MISMATCH');
+  assert.deepEqual(inputs.daily_profile_files,{
+   profile:{path:path.resolve(profilePath),size:profileBytes.length,sha256:digest(profileBytes)},
+   scenario:{path:path.resolve(scenarioPath),size:scenarioBytes.length,sha256:digest(scenarioBytes)}
+  },'INPUT_BINDING_MISMATCH');
+ }
  const extension=vscode.extensions.getExtension('rentgen.project-companion');assert.equal(extension?.packageJSON.version,inputs.companion_version);
  for(const [name,pin]of [['lib/tests-result.cjs',inputs.validator],['lib/core.cjs',inputs.source_validator]]){
   const bytes=await read(path.join(extension.extensionPath,name),2097152);assert.equal(digest(bytes),pin.sha256,'INPUT_BINDING_MISMATCH');assert.equal(bytes.length,pin.size,'INPUT_BINDING_MISMATCH');
@@ -113,18 +135,22 @@ async function environment(mode){
  const {validateTests}=require(path.join(extension.extensionPath,'lib/tests-result.cjs'));
  const {sourceRef}=require(path.join(extension.extensionPath,'lib/core.cjs'));
  const semantic=createDailySemantic({validateTests,sourceRef});
+ assert.deepEqual(await read(profilePath,65536),profileBytes,'INPUT_BINDING_MISMATCH');
+ assert.deepEqual(await read(scenarioPath,2097152),scenarioBytes,'INPUT_BINDING_MISMATCH');
  const api=await extension.activate();assert.equal(api.ready,true);
  const cli=async(command,...extra)=>JSON.parse((await execute(config.python,['-I','-m','rentgen_core',command,'--registry',config.registry,'--project',config.project_id,...extra.map(String)],{windowsHide:true,timeout:30000,maxBuffer:2097153,encoding:'utf8'})).stdout).result;
  const record={schema:'rentgen-daily-semantic/1',mode,profile_root:root,vscode:vscode.version,companion:inputs.companion_version,core:inputs.core_version,inputs,
   input:'registered-command-arguments',manual_picker_tested:false,pipeline_verified:false,task_accepted:false,raw_qualification:'pending',model_quality:{general_verdict:'unproven'},full_product_ready:false,production_deployment:false,repair:null,test:null};
  const progress=()=>fs.writeFile(path.join(path.dirname(out),'progress.json'),JSON.stringify(record,null,2));
  const terminal=()=>fs.writeFile(out,JSON.stringify(record,null,2),{flag:'wx'});
- return {root,out,scenario,config,inputs,extension,semantic,api,cli,record,progress,terminal};
+ return {root,out,scenario,config,context_tokens,inputs,extension,semantic,api,cli,record,progress,terminal};
 }
 async function attempt(){
- const env=await environment('attempt'),{root,scenario,api,cli,semantic,record,progress,terminal}=env;
+ const env=await environment('attempt'),{root,scenario,config,api,cli,semantic,record,progress,terminal}=env;
  record.preservation_verified=false;record.eligible_for_raw_qualification=false;
  try{
+  const context_tokens=matchingContext(config,scenario);
+  if(Object.hasOwn(env,'context_tokens'))assert.equal(env.context_tokens,context_tokens,'DAILY_CONTEXT_MISMATCH');
   const sourceRoot=path.join(root,'source'),source=path.join(sourceRoot,scenario.module),original=await read(source,1048576);
   record.source_before=await inventory(sourceRoot);assert.deepEqual(record.source_before,scenario.source_inventory);record.head=await cli('project-head');assert.deepEqual(record.head,scenario.head);
   record.repair_requests_before=await api.repairRuns();assert.deepEqual(record.repair_requests_before,[],'DAILY_NEW_PROFILE_REQUIRED');record.test_requests_before=await api.testRuns();assert.deepEqual(record.test_requests_before,[],'DAILY_NEW_PROFILE_REQUIRED');
@@ -135,6 +161,9 @@ async function attempt(){
   record.repair_requests_after=await api.repairRuns();const request=semantic.uniqueNewRun(record.repair_requests_before,record.repair_requests_after,row=>row.project_id===env.config.project_id&&same(row.source_ref,record.source_ref)&&row.model===scenario.model);
   if(!request){record.status='unproven';record.reason='No newly saved matching repair request';return;}
   record.repair_run_id=request.id;
+  const savedRequest=await json(path.join(root,'repair-runs',request.id,'request.json'),32768);
+  assert.deepEqual(savedRequest,request,'DAILY_MODEL_CONTEXT_MISMATCH');
+  assert.equal(savedRequest.context_tokens,context_tokens,'DAILY_MODEL_CONTEXT_MISMATCH');
   if(record.repair)assert.equal(record.repair.id,request.id);else record.repair=await vscode.commands.executeCommand('rentgen.repairResult',request.id);
   assert.deepEqual(await vscode.commands.executeCommand('rentgen.repairResult',request.id),record.repair);await progress();
   assert.deepEqual(await read(path.join(root,'repair-runs',request.id,'instruction.txt'),4096),Buffer.from(scenario.instruction));
@@ -142,6 +171,11 @@ async function attempt(){
   let events=[];if(journal&&journal.at(-1)===10)events=decode(journal).split('\n').filter(Boolean).map(JSON.parse);
   assert.ok(events.length<=64);record.repair_report=report;record.repair_journal_sha256=journal?digest(journal):null;
   if(!record.repair.receipt||record.repair.receipt.revision!==2){record.status='unproven';record.reason='No immutable AI revision2 is readable';return;}
+  if(!report||!['analysis_clean','diagnostics_present'].includes(record.repair.status)){
+   record.status='unproven';record.reason='No model report qualified for native TestDraft';return;
+  }
+  assert.equal(report.model?.num_ctx,context_tokens,'DAILY_MODEL_CONTEXT_MISMATCH');
+  record.model_context={context_tokens,request_context_tokens:savedRequest.context_tokens,reported_num_ctx:report.model.num_ctx};
   const version=await semantic.selectRepairRevision(api,record.repair.receipt);record.selected_receipt=version.receipt;
   const saved=await cli('draft-get','--draft-id',version.receipt.draft_id,'--revision',version.receipt.revision);assert.deepEqual(saved.receipt,version.receipt);
   const proposal=saved.proposal,candidate=Buffer.from(proposal.replacement.base64,'base64');assert.equal(candidate.toString('base64'),proposal.replacement.base64);assert.equal(digest(candidate),proposal.replacement.raw_sha256);

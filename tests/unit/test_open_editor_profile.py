@@ -1,8 +1,10 @@
 """Profile creation must not silently alter an existing editor or select a project."""
 import importlib.util
 import hashlib
+import inspect
 import json
 from pathlib import Path
+import sys
 from types import SimpleNamespace
 from uuid import uuid4
 from io import BytesIO
@@ -187,6 +189,80 @@ def test_local_model_configuration_is_explicit(inputs):
     assert state["actModeApiProvider"] == "ollama"
     assert state["planModeOllamaModelId"] == "qwen3.5:9b"
     assert state["ollamaBaseUrl"] == "http://127.0.0.1:11434"
+
+
+def test_context_tokens_is_an_optional_last_keyword_argument():
+    parameters = tuple(inspect.signature(profile.prepare).parameters.values())
+    assert parameters[-1].name == "context_tokens"
+    assert parameters[-1].kind is inspect.Parameter.KEYWORD_ONLY
+    assert parameters[-1].default == 32768
+
+
+def test_default_context_tokens_are_recorded_in_profile_and_cline(inputs):
+    profile.prepare(**inputs, ollama_model="qwen3.5:9b")
+    root = inputs["output"]
+    manifest = json.loads((root / "profile.json").read_text("utf-8"))
+    state = json.loads((root / "cline/data/globalState.json").read_text("utf-8"))
+    assert type(manifest["context_tokens"]) is int
+    assert manifest["context_tokens"] == 32768
+    assert state["ollamaApiOptionsCtxNum"] == "32768"
+
+
+@pytest.mark.parametrize("context_tokens", [8192, 16384, 32768])
+def test_explicit_context_tokens_match_cline_setting(inputs, context_tokens):
+    profile.prepare(
+        **inputs, ollama_model="qwen3.5:9b", context_tokens=context_tokens
+    )
+    root = inputs["output"]
+    manifest = json.loads((root / "profile.json").read_text("utf-8"))
+    state = json.loads((root / "cline/data/globalState.json").read_text("utf-8"))
+    assert type(manifest["context_tokens"]) is int
+    assert manifest["context_tokens"] == context_tokens
+    assert state["ollamaApiOptionsCtxNum"] == str(context_tokens)
+
+
+@pytest.mark.parametrize(
+    "context_tokens", [True, False, None, "8192", 8192.0, 8192.5, 0, 4096, 32769]
+)
+def test_invalid_context_tokens_fail_before_profile_activity(
+    inputs, monkeypatch, context_tokens
+):
+    def unexpected_activity(*_args, **_kwargs):
+        raise AssertionError("Invalid context tokens reached profile activity")
+
+    monkeypatch.setattr(profile, "probe", unexpected_activity)
+    monkeypatch.setattr(profile, "companion_package", unexpected_activity)
+    with pytest.raises(ValueError):
+        profile.prepare(**inputs, context_tokens=context_tokens)
+    assert not inputs["output"].exists()
+
+
+@pytest.mark.parametrize("context_tokens", [8192, 16384, 32768])
+def test_cli_accepts_context_tokens_as_an_integer(monkeypatch, context_tokens):
+    captured = {}
+
+    def capture_prepare(**kwargs):
+        captured.update(kwargs)
+        return {"profile": "prepared"}
+
+    monkeypatch.setattr(profile, "prepare", capture_prepare)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "prepare.py",
+            "--python", "python.exe",
+            "--registry", "registry.sqlite3",
+            "--editor", "editor.exe",
+            "--cline-vsix", "cline.vsix",
+            "--output", "new-profile",
+            "--project-id", str(uuid4()),
+            "--context-tokens", str(context_tokens),
+        ],
+    )
+    profile.main()
+    assert type(captured["context_tokens"]) is int
+    assert captured["context_tokens"] == context_tokens
 
 
 def test_explicit_diagnostics_root_is_confined_to_mcp_startup(inputs):

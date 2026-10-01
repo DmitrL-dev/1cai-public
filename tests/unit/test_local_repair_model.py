@@ -1,5 +1,6 @@
 """Model output is only a bounded code edit, never an executable tool call."""
 import importlib.util
+import hashlib
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -120,7 +121,8 @@ def test_endpoint_requires_literal_loopback_without_credentials_or_paths(model):
         "oversize",
     ],
 )
-def test_actual_http_request_has_schema_and_no_retry_or_tools(model, case):
+@pytest.mark.parametrize("context_tokens", [8192, 16384, 32768])
+def test_actual_http_request_has_schema_and_no_retry_or_tools(model, case, context_tokens):
     requests, captured = [], []
 
     class Handler(BaseHTTPRequestHandler):
@@ -170,6 +172,7 @@ def test_actual_http_request_has_schema_and_no_retry_or_tools(model, case):
             "qwen3.5:4b",
             endpoint=f"http://127.0.0.1:{server.server_port}",
             thinking=case == "thinking",
+            context_tokens=context_tokens,
             on_content=captured.append,
         )
         if case in {"valid", "thinking", "fenced"}:
@@ -186,6 +189,10 @@ def test_actual_http_request_has_schema_and_no_retry_or_tools(model, case):
         else:
             assert captured == []
         request = requests[0]
+        assert request["options"] == {"num_ctx": context_tokens, "num_predict": 4096, "temperature": 0}
+        wire = json.dumps(request, ensure_ascii=False).encode("utf8")
+        assert editor.last_metrics["num_ctx"] == context_tokens
+        assert editor.last_metrics["request_sha256"] == hashlib.sha256(wire).hexdigest()
         assert request["format"] == model.EDIT_SCHEMA and request["stream"] is False
         assert request["keep_alive"] == 0 and "tools" not in request
         assert request["think"] == (case == "thinking")
@@ -201,6 +208,55 @@ def test_actual_http_request_has_schema_and_no_retry_or_tools(model, case):
             "instruction",
             "diagnostics",
         }
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
+@pytest.mark.parametrize("value", [True, False, None, "8192", 8192.0, 4096, 12288, 65536])
+def test_invalid_context_is_rejected_before_transport(model, value):
+    with pytest.raises(ValueError, match="^INVALID_CONTEXT_TOKENS$"):
+        model.OllamaEditor("qwen3.5:4b", context_tokens=value)
+
+
+@pytest.mark.parametrize("context_tokens", [8192, 16384])
+def test_small_context_limit_counts_serialized_utf8(model, context_tokens):
+    requests = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, *_):
+            pass
+
+        def do_POST(self):
+            requests.append(self.rfile.read(int(self.headers["Content-Length"])))
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "model": "qwen3.5:4b", "done": True, "done_reason": "stop",
+                "message": {"role": "assistant", "content": json.dumps({
+                    "edits": [{"old_text": "Old", "new_text": "New"}], "summary": "Changed"
+                })}
+            }).encode())
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        editor = model.OllamaEditor("qwen3.5:4b",
+            endpoint=f"http://127.0.0.1:{server.server_port}", context_tokens=context_tokens)
+        seed = 'я"\\'
+        anyio.run(editor.propose, b"Old\n", "Change call", [seed])
+        limit = context_tokens - 4096 - 512
+        padding = limit - len(requests[0])
+        assert padding > 0
+        result = anyio.run(editor.propose, b"Old\n", "Change call", [seed + "a" * padding])
+        assert result["candidate"] == b"New\n"
+        assert len(requests[-1]) == limit
+        with pytest.raises(ValueError, match="^MODEL_CONTEXT_INPUT_LIMIT$"):
+            anyio.run(editor.propose, b"Old\n", "Change call", [seed + "a" * (padding + 1)])
+        assert len(requests) == 2
+        assert editor.last_metrics["request_bytes"] == limit + 1
     finally:
         server.shutdown()
         server.server_close()

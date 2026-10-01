@@ -131,3 +131,105 @@ def test_output_inside_protected_root_refuses_before_extract_or_process(construc
         run(ctx["args"])
     assert not ctx["args"].output.exists()
     assert ctx["process_calls"] == 0
+
+
+def set_daily_context(ctx, profile_value, scenario_value):
+    for name, value in (("profile.json", profile_value), ("daily-scenario.json", scenario_value)):
+        path = ctx["args"].profile / name
+        payload = json.loads(path.read_text("utf-8"))
+        payload["context_tokens"] = value
+        path.write_text(json.dumps(payload), "utf-8")
+
+
+@pytest.mark.parametrize("context_tokens", (None, 8192, 16384, 32768))
+def test_daily_context_is_bound_with_profile_bytes(constructed_host, context_tokens):
+    ctx = constructed_host
+    if context_tokens is not None:
+        set_daily_context(ctx, context_tokens, context_tokens)
+    expected = 32768 if context_tokens is None else context_tokens
+    assert run(ctx["args"]) == 0
+    inputs = json.loads((ctx["args"].output / "inputs.json").read_text("utf-8"))
+    receipt = json.loads((ctx["args"].output / "input-preservation.json").read_text("utf-8"))
+    assert inputs["context_tokens"] == receipt["context_tokens"] == expected
+    assert inputs["daily_profile_files"] == receipt["daily_profile_before"] == receipt["daily_profile_after"]
+    assert inputs["daily_profile_files"] == {
+        "profile": file_record(ctx["args"].profile / "profile.json"),
+        "scenario": file_record(ctx["args"].profile / "daily-scenario.json"),
+    }
+
+
+@pytest.mark.parametrize("field", ("profile", "scenario"))
+@pytest.mark.parametrize("bad_value", (None, True, "8192", 8192.0, 4096))
+def test_daily_context_invalid_refuses_before_output_or_editor(constructed_host, field, bad_value):
+    ctx = constructed_host
+    set_daily_context(ctx, bad_value if field == "profile" else 8192,
+                      bad_value if field == "scenario" else 8192)
+    with pytest.raises(ValueError, match="INPUT_BINDING_MISMATCH"):
+        run(ctx["args"])
+    assert not ctx["args"].output.exists()
+    assert ctx["process_calls"] == 0
+
+
+def test_daily_context_mismatch_refuses_before_output_or_editor(constructed_host):
+    ctx = constructed_host
+    set_daily_context(ctx, 8192, 16384)
+    with pytest.raises(ValueError, match="INPUT_BINDING_MISMATCH"):
+        run(ctx["args"])
+    assert not ctx["args"].output.exists()
+    assert ctx["process_calls"] == 0
+
+
+@pytest.mark.parametrize("name,limit", (("profile.json", 65536), ("daily-scenario.json", 2097152)))
+def test_daily_profile_size_limit_refuses_before_unbounded_read(
+    constructed_host, monkeypatch, name, limit
+):
+    ctx = constructed_host
+    target = ctx["args"].profile / name
+    record, read_bytes = host.file_record, host.Path.read_bytes
+
+    def pinned(path):
+        pin = record(path)
+        return {**pin, "size": limit + 1} if path == target else pin
+
+    def read(path):
+        if path == target:
+            raise AssertionError("Oversized profile must not reach read_bytes")
+        return read_bytes(path)
+
+    monkeypatch.setattr(host, "file_record", pinned)
+    monkeypatch.setattr(host.Path, "read_bytes", read)
+    with pytest.raises(ValueError, match="INPUT_BINDING_MISMATCH"):
+        run(ctx["args"])
+    assert not ctx["args"].output.exists()
+    assert ctx["process_calls"] == 0
+
+
+@pytest.mark.parametrize("field", ("profile.json", "daily-scenario.json"))
+@pytest.mark.parametrize("wait_failed", (False, True))
+def test_daily_profile_drift_retained_even_when_editor_wait_fails(
+    constructed_host, monkeypatch, field, wait_failed
+):
+    ctx = constructed_host
+    set_daily_context(ctx, 16384, 16384)
+    target = ctx["args"].profile / field
+    original = file_record(target)
+
+    def wait(*_, **__):
+        # Same context, changed bytes: all generated profile/scenario bytes are bound.
+        with target.open("a", encoding="utf-8") as stream:
+            stream.write("\n")
+        if wait_failed:
+            raise RuntimeError("constructed owned-wait refusal")
+        return 0
+
+    monkeypatch.setattr(host, "wait_owned", wait)
+    with pytest.raises((ValueError, RuntimeError)):
+        run(ctx["args"])
+    receipt = json.loads((ctx["args"].output / "input-preservation.json").read_text("utf-8"))
+    role = "profile" if field == "profile.json" else "scenario"
+    assert receipt["input_bytes_preserved"] is False
+    assert receipt["daily_profile_before"][role] == original
+    assert receipt["daily_profile_after"][role] == file_record(target)
+    if wait_failed:
+        assert receipt["execution_error"]["type"] == "RuntimeError"
+    assert ctx["process_calls"] == 1
