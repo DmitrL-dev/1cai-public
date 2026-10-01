@@ -18,6 +18,7 @@ from zipfile import ZipFile
 
 CLINE_VERSION = "4.1.17"
 CLINE_SHA256 = "82875472744ded4a360e22c726bb6101962ecf0a178aa8efe84a5c7ea728d2f5"
+ALLOWED_CONTEXT_TOKENS = (8192, 16384, 32768)
 MCP_EDITOR_TOOLS = (
     "rentgen_project_head",
     "rentgen_source_list",
@@ -116,7 +117,10 @@ def prepare(
     ollama_model=None,
     scanner=None,
     diagnostics_local_app_data=None,
+    context_tokens=32768,
 ):
+    if type(context_tokens) is not int or context_tokens not in ALLOWED_CONTEXT_TOKENS:
+        raise ValueError("context_tokens must be 8192, 16384, or 32768")
     output = Path(output).absolute()
     if output.exists():
         raise FileExistsError(
@@ -181,6 +185,7 @@ def prepare(
         {
             "schema": 1,
             "project_id": project_id,
+            "context_tokens": context_tokens,
             "editor": str(editor),
             "editor_cli": str(editor_cli),
             "python": str(python),
@@ -257,7 +262,7 @@ def prepare(
             {
                 "welcomeViewCompleted": True,
                 "ollamaBaseUrl": "http://127.0.0.1:11434",
-                "ollamaApiOptionsCtxNum": "32768",
+                "ollamaApiOptionsCtxNum": str(context_tokens),
                 "actModeApiProvider": "ollama",
                 "planModeApiProvider": "ollama",
                 "actModeOllamaModelId": ollama_model,
@@ -321,6 +326,9 @@ def main():
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--project-id", required=True)
     parser.add_argument("--ollama-model")
+    parser.add_argument(
+        "--context-tokens", type=int, choices=ALLOWED_CONTEXT_TOKENS, default=32768
+    )
     parser.add_argument("--scanner", type=Path)
     parser.add_argument("--diagnostics-local-app-data", type=Path)
     args = parser.parse_args()

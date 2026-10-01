@@ -12,6 +12,15 @@ from rentgen_core.errors import CoreError
 
 MAX_SOURCE = 32768
 MAX_RESPONSE = 24576
+CONTEXT_TOKENS = (8192, 16384, 32768)
+
+
+def validate_context_tokens(value):
+    if type(value) is not int or value not in CONTEXT_TOKENS:
+        raise ValueError("INVALID_CONTEXT_TOKENS")
+    return value
+
+
 EDIT_SCHEMA = {
     "type": "object",
     "additionalProperties": False,
@@ -102,6 +111,7 @@ class OllamaEditor:
         *,
         endpoint="http://127.0.0.1:11434",
         thinking=False,
+        context_tokens=32768,
         on_content=None,
     ):
         url = urlsplit(endpoint)
@@ -124,6 +134,7 @@ class OllamaEditor:
             raise ValueError("INVALID_MODEL_NAME")
         if type(thinking) is not bool:
             raise ValueError("INVALID_THINKING_SETTING")
+        self.context_tokens = validate_context_tokens(context_tokens)
         self.model, self.endpoint, self.thinking = model, endpoint, thinking
         self.last_metrics = {}
         if on_content is not None and not callable(on_content):
@@ -131,6 +142,7 @@ class OllamaEditor:
         self.on_content = on_content
 
     async def propose(self, original, instruction, diagnostics):
+        self.last_metrics = {}
         if type(original) is not bytes or len(original) > MAX_SOURCE:
             raise ValueError("MODEL_SOURCE_LIMIT")
         if (
@@ -152,7 +164,7 @@ class OllamaEditor:
             "stream": False,
             "think": self.thinking,
             "keep_alive": 0,
-            "options": {"num_ctx": 32768, "num_predict": 4096, "temperature": 0},
+            "options": {"num_ctx": self.context_tokens, "num_predict": 4096, "temperature": 0},
             "format": EDIT_SCHEMA,
             "messages": [
                 {
@@ -173,13 +185,19 @@ class OllamaEditor:
             ],
         }
         raw = json.dumps(body, ensure_ascii=False).encode("utf-8")
-        if len(raw) > 65536:
-            raise ValueError("MODEL_INPUT_LIMIT")
         self.last_metrics = {
             "model": self.model,
             "thinking": self.thinking,
+            "num_ctx": self.context_tokens,
             "request_bytes": len(raw),
+            "request_sha256": hashlib.sha256(raw).hexdigest(),
         }
+        if len(raw) > 65536:
+            raise ValueError("MODEL_INPUT_LIMIT")
+        # A conservative byte budget for smaller contexts, not a tokenizer count.
+        # Include the entire JSON request, output reservation and template margin.
+        if self.context_tokens < 32768 and len(raw) > self.context_tokens - 4096 - 512:
+            raise ValueError("MODEL_CONTEXT_INPUT_LIMIT")
         with anyio.fail_after(120):
             async with httpx.AsyncClient(
                 trust_env=False, follow_redirects=False, timeout=120

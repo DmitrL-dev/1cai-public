@@ -47,6 +47,9 @@ function createRepairService({root, extensionRoot, config, client, trusted = () 
     requireValue(value.id === id && value.project_id === config.project_id, 'PROJECT_MISMATCH');
     sourceRef(value.source_ref, config.project_id);
     requireValue(typeof value.created_at === 'string' && Number.isFinite(Date.parse(value.created_at)), 'INVALID_REPAIR_RUN');
+    if (Object.hasOwn(value, 'context_tokens')) {
+      requireValue(Number.isInteger(value.context_tokens) && [8192, 16384, 32768].includes(value.context_tokens), 'INVALID_REPAIR_RUN');
+    }
     return {folder, value};
   }
   async function list() {
@@ -91,7 +94,8 @@ function createRepairService({root, extensionRoot, config, client, trusted = () 
     let result = null;
     const report = await readBounded(path.join(folder, 'result/result.json'), 2097152, true);
     if (report) { try { result = JSON.parse(decode(report)); } catch { /* Preserve the actual receipt, never claim analysis. */ } }
-    if (receipt && status === 'saved_unverified' && result && ['analysis_clean','diagnostics_present'].includes(result.status) && same(result.receipt, receipt)) {
+    if (receipt && status === 'saved_unverified' && result && ['analysis_clean','diagnostics_present'].includes(result.status) &&
+      (!Object.hasOwn(value, 'context_tokens') || result.model?.num_ctx === value.context_tokens) && same(result.receipt, receipt)) {
       const saved = await client.draft(receipt.draft_id, receipt.revision); trust();
       requireValue(same(saved.receipt, receipt), 'REPAIR_RECEIPT_MISMATCH');
       const digest = createHash('sha256').update(Buffer.from(saved.text,'utf8')).digest('hex');
@@ -118,14 +122,14 @@ function createRepairService({root, extensionRoot, config, client, trusted = () 
       await fs.mkdir(directory, {recursive:true});
       const stat = await fs.lstat(directory); requireValue(stat.isDirectory() && !stat.isSymbolicLink(), 'INVALID_REPAIR_DIRECTORY');
       id = randomUUID(); const folder = path.join(directory,id); await fs.mkdir(folder);
-      const value = {id,project_id:config.project_id,source_ref:ref,model:options.model,created_at:new Date().toISOString()};
+      const value = {id,project_id:config.project_id,source_ref:ref,model:options.model,context_tokens:config.context_tokens,created_at:new Date().toISOString()};
       await writeNew(path.join(folder,'request.json'),JSON.stringify(value));
       await writeNew(path.join(folder,'source-ref.json'),JSON.stringify(ref));
       await writeNew(path.join(folder,'instruction.txt'),options.instruction);
       trust(); requireValue(!cancelled, 'REPAIR_CANCELLED'); active = runnerFactory();
       try {
         await active.execute(config.python, ['-I',path.join(extensionRoot,'repair/run_repair.py'),'--profile',root,'--source-ref',path.join(folder,'source-ref.json'),
-          '--instruction',path.join(folder,'instruction.txt'),'--output',path.join(folder,'result'),'--model',options.model]);
+          '--instruction',path.join(folder,'instruction.txt'),'--output',path.join(folder,'result'),'--model',options.model,'--context-tokens',String(config.context_tokens)]);
       } catch { /* A closed process does not prove whether a draft was committed. */ }
       finally { active.dispose(); active = null; }
       trust(); return await reconcile(id);

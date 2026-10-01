@@ -8,6 +8,7 @@ import subprocess
 from daily_frozen_inputs import directory_inventory, require_separate_output, verify_frozen
 
 MODULE = "CommonModules/RentgenPlatformProbe/Ext/Module.bsl"
+ALLOWED_CONTEXT_TOKENS = (8192, 16384, 32768)
 SOURCE = """// Записывает подготовленный объект документа.
 //
 // Параметры:
@@ -22,7 +23,9 @@ SOURCE = """// Записывает подготовленный объект д
 """
 
 
-def prepare(python, scanner, fixture, diagnostics_root, platform, output, profile_spec, frozen_inputs):
+def prepare(python, scanner, fixture, diagnostics_root, platform, output, profile_spec, frozen_inputs, context_tokens=32768):
+    if type(context_tokens) is not int or context_tokens not in ALLOWED_CONTEXT_TOKENS:
+        raise ValueError("context_tokens must be 8192, 16384, or 32768")
     python, scanner, fixture, diagnostics_root, platform = (
         p.resolve(strict=True)
         for p in (python, scanner, fixture, diagnostics_root, platform)
@@ -117,6 +120,7 @@ def prepare(python, scanner, fixture, diagnostics_root, platform, output, profil
         raise ValueError("INPUT_BINDING_MISMATCH")
     profile = {
         "schema": 1,
+        "context_tokens": context_tokens,
         "core_version": binding["core_version"],
         "python": str(python),
         "registry": str(registry),
@@ -126,6 +130,7 @@ def prepare(python, scanner, fixture, diagnostics_root, platform, output, profil
     (output / "profile.json").write_text(json.dumps(profile, indent=2), "utf-8")
     scenario = {
         "schema": 1,
+        "context_tokens": context_tokens,
         "core_version": binding["core_version"],
         "companion_version": binding["companion_version"],
         "profile": test_profile,
@@ -161,4 +166,5 @@ if __name__ == "__main__":
         "frozen-inputs",
     ):
         parser.add_argument("--" + name, required=True, type=Path)
+    parser.add_argument("--context-tokens", type=int, choices=ALLOWED_CONTEXT_TOKENS, default=32768)
     print(json.dumps(prepare(**vars(parser.parse_args()))))

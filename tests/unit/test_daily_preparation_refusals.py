@@ -1,8 +1,12 @@
 """Constructed input refusals; no Core, editor, model or native process runs."""
 import importlib.util
+import inspect
 import json
 import os
 from pathlib import Path
+import runpy
+import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -20,8 +24,16 @@ def load_prepare(monkeypatch):
     return module
 
 
-def preparation_inputs(tmp_path, monkeypatch):
+def preparation_inputs(tmp_path, monkeypatch, complete_fixture=False):
     binding = fixture(tmp_path)
+    if complete_fixture:
+        source = Path(binding["directories"]["fixture"]["path"])
+        module_path = source / "CommonModules/RentgenPlatformProbe/Ext/Module.bsl"
+        module_path.parent.mkdir(parents=True)
+        module_path.write_text("// constructed source\n", encoding="utf-8")
+        (source / "Ext").mkdir()
+        (source / "Configuration.xml").write_text("<Configuration />\n", encoding="utf-8")
+        binding["directories"]["fixture"]["files"] = frozen.directory_inventory(source)
     spec = {role: {key: binding["files"][role][key] for key in ("path", "sha256")}
             for role in ("platform", "ibcmd", "engine")}
     spec["modules"] = [{"name": "ЮТРентгенПроверка", "path": binding["files"]["test_module"]["path"],
@@ -36,6 +48,115 @@ def preparation_inputs(tmp_path, monkeypatch):
                      diagnostics_root=Path(binding["directories"]["diagnostics"]["path"]),
                      profile_spec=profile, frozen_inputs=manifest)
     return module, binding, arguments
+
+
+def stub_daily_core(monkeypatch, module, binding, output):
+    project_id = "constructed-project"
+
+    def process(args, **_kwargs):
+        command = args[5]
+        if command == "project-register":
+            result = {"project_id": project_id}
+        elif command == "test-profile-register":
+            registered = output / "state/test-profiles" / binding["profile_id"] / "profile.json"
+            registered.parent.mkdir(parents=True)
+            registered.write_text(json.dumps({"project_id": project_id}), encoding="utf-8")
+            result = {
+                "profile_id": binding["profile_id"],
+                "enabled": True,
+                "modules": [{"sha256": binding["files"]["test_module"]["sha256"]}],
+            }
+        elif command == "project-head":
+            result = {"project_id": project_id}
+        else:
+            result = {}
+        return SimpleNamespace(returncode=0, stdout=json.dumps({"result": result}))
+
+    monkeypatch.setattr(module.subprocess, "run", process)
+
+
+def test_context_tokens_is_an_optional_last_prepare_argument(tmp_path, monkeypatch):
+    module = load_prepare(monkeypatch)
+    parameters = tuple(inspect.signature(module.prepare).parameters.values())
+    assert parameters[-1].name == "context_tokens"
+    assert parameters[-1].default == 32768
+
+
+@pytest.mark.parametrize("context_tokens", [None, 8192, 16384, 32768], ids=["default", "8192", "16384", "32768"])
+def test_context_tokens_are_recorded_in_daily_profile_and_scenario(
+    tmp_path, monkeypatch, context_tokens
+):
+    module, binding, arguments = preparation_inputs(tmp_path, monkeypatch, complete_fixture=True)
+    output = tmp_path / "prepared"
+    stub_daily_core(monkeypatch, module, binding, output)
+    options = {} if context_tokens is None else {"context_tokens": context_tokens}
+    module.prepare(**arguments, output=output, **options)
+    expected = 32768 if context_tokens is None else context_tokens
+    profile = json.loads((output / "profile.json").read_text("utf-8"))
+    scenario = json.loads((output / "daily-scenario.json").read_text("utf-8"))
+    assert type(profile["context_tokens"]) is int
+    assert type(scenario["context_tokens"]) is int
+    assert profile["context_tokens"] == scenario["context_tokens"] == expected
+
+
+@pytest.mark.parametrize(
+    "context_tokens", [True, False, None, "8192", 8192.0, 8192.5, 0, 4096, 32769]
+)
+def test_invalid_context_tokens_refuse_before_frozen_verification_or_output(
+    tmp_path, monkeypatch, context_tokens
+):
+    module, _binding, arguments = preparation_inputs(tmp_path, monkeypatch)
+    output = tmp_path / "never-created"
+
+    def unexpected_activity(*_args, **_kwargs):
+        raise AssertionError("Invalid context tokens reached preparation activity")
+
+    class UnresolvedInput:
+        resolve = unexpected_activity
+
+    arguments["python"] = UnresolvedInput()
+    monkeypatch.setattr(module, "verify_frozen", unexpected_activity)
+    monkeypatch.setattr(module, "require_separate_output", unexpected_activity)
+    monkeypatch.setattr(module.subprocess, "run", unexpected_activity)
+    with pytest.raises(ValueError):
+        module.prepare(**arguments, output=output, context_tokens=context_tokens)
+    assert not output.exists()
+
+
+@pytest.mark.parametrize("context_tokens", [8192, 16384, 32768])
+def test_cli_accepts_each_context_choice_before_input_resolution(
+    tmp_path, monkeypatch, context_tokens
+):
+    script = Path(__file__).parents[2] / "scripts/verification/prepare_daily_platform.py"
+    missing = tmp_path / "missing-input"
+    monkeypatch.setitem(sys.modules, "daily_frozen_inputs", frozen)
+    monkeypatch.setattr(
+        sys, "argv",
+        [str(script)]
+        + [part for name in ("python", "scanner", "fixture", "diagnostics-root", "platform", "output", "profile-spec", "frozen-inputs")
+           for part in ("--" + name, str(missing))]
+        + ["--context-tokens", str(context_tokens)],
+    )
+    with pytest.raises(FileNotFoundError):
+        runpy.run_path(str(script), run_name="__main__")
+
+
+def test_cli_refuses_unsupported_context_choice_before_input_resolution(tmp_path, monkeypatch, capsys):
+    script = Path(__file__).parents[2] / "scripts/verification/prepare_daily_platform.py"
+    missing = tmp_path / "missing-input"
+    monkeypatch.setitem(sys.modules, "daily_frozen_inputs", frozen)
+    monkeypatch.setattr(
+        sys, "argv",
+        [str(script)]
+        + [part for name in ("python", "scanner", "fixture", "diagnostics-root", "platform", "output", "profile-spec", "frozen-inputs")
+           for part in ("--" + name, str(missing))]
+        + ["--context-tokens", "4096"],
+    )
+    with pytest.raises(SystemExit) as error:
+        runpy.run_path(str(script), run_name="__main__")
+    assert error.value.code == 2
+    assert "invalid choice" in capsys.readouterr().err
+    assert not missing.exists()
 
 
 def test_unreadable_unlisted_subtree_refuses_incomplete_inventory(tmp_path, monkeypatch):

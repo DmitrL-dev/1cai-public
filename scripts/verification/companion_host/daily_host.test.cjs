@@ -18,10 +18,10 @@ function fixture(options={}){
  const receipt={project_id:project,draft_id:'44444444-4444-4444-4444-444444444444',operation_id:'55555555-5555-5555-5555-555555555555',revision:options.noRevision?1:2,proposal_content_id:'b'.repeat(64),source_ref:ref};
  const replacement=options.noRevision?original:candidate;
  const proposal={content_id:receipt.proposal_content_id,replacement:{base64:replacement.toString('base64'),raw_sha256:sha(replacement)}};
- const request={id:repairId,project_id:project,source_ref:ref,model:'constructed-model'};
+ const request={id:repairId,project_id:project,source_ref:ref,model:'constructed-model',context_tokens:32768};
  const testRequest={id:testId,receipt,profile:{profile_id:'c'.repeat(64)}};
  const repair={id:repairId,status:options.noRevision?'saved_unverified':'analysis_clean',truncated:false,receipt};
- const report={status:repair.status,receipt,before:{diagnostic:null},after:{receipt,diagnostic:null},candidate_sha256:sha(candidate),model:{}};
+ const report={status:repair.status,receipt,before:{diagnostic:null},after:{receipt,diagnostic:null},candidate_sha256:sha(candidate),model:{num_ctx:32768}};
  const phase=(status,failures)=>({status,counts:{tests:1,failures,errors:0,skipped:0,passed:1-failures}});
  const result=options.unfinished?{status:'running',run_id:testId}:{status:'completed',run_id:testId,report:{proposal_content_id:proposal.content_id,candidate_sha256:sha(candidate),profile_id:testRequest.profile.profile_id,tests:{baseline:phase('failed',1),candidate:phase('passed',0),steps:['baseline','candidate'].map(p=>({name:p+'-compile',exit_code:0,log_sha256:'d'.repeat(64),stdout_sha256:'e'.repeat(64),stderr_sha256:'f'.repeat(64)}))}}};
  const head={project_id:project,revision:1,snapshot,source_revision:1};
@@ -42,16 +42,96 @@ function fixture(options={}){
  };
  const editor={window:{activeTextEditor:null,visibleTextEditors:[]},commands:{async executeCommand(name,...args){calls.push({name,args});if(name==='rentgen.repairSource'){state.repairStarted=true;return repair;}if(name==='rentgen.repairResult'){editor.window.activeTextEditor={document:{languageId:'plaintext',uri:{scheme:'rentgen-view',authority:'constructed-opaque-view',path:'/[v'+receipt.revision+'] '+path.posix.basename(ref.relative_path),query:'',fragment:''},getText:()=>new TextDecoder('utf-8',{fatal:true}).decode(replacement)}};editor.window.visibleTextEditors=[editor.window.activeTextEditor];return repair;}if(name==='rentgen.testDraft'){state.testStarted=true;return options.noTestRequest?null:result;}if(name==='rentgen.testResult'){editor.window.activeTextEditor={document:{languageId:'json',getText:()=>JSON.stringify(result)}};return result;}throw new Error('Unexpected constructed command '+name);}}};
  const safeAssert={...assert,deepEqual:(a,b,message)=>assert.deepEqual(plain(a),plain(b),message)};
- const context=vm.createContext({Buffer,TextDecoder,JSON,process:{env:{}},exports:{},require(name){if(name==='vscode')return editor;if(name==='node:fs/promises')return memory;if(name==='node:assert/strict')return safeAssert;if(name==='node:child_process')return {execFile(){throw new Error('Process launch forbidden');}};if(name==='./daily_semantic.cjs')return {createDailySemantic};return require(name);}});
- vm.runInContext(source+'\n;globalThis.host={diagnosticVerdict,evidence,attempt,recover};globalThis.bindEnvironment=env=>{environment=async()=>env;};',context);
+ const context=vm.createContext({Buffer,TextDecoder,JSON,process:{env:{}},exports:{},require(name){if(name==='vscode')return editor;if(name==='node:fs/promises')return memory;if(name==='node:assert/strict')return safeAssert;if(name==='node:child_process')return {execFile(){throw new Error('Process launch forbidden');}};if(name==='./daily_semantic.cjs')return {createDailySemantic};if(name===path.join(root,'lib/tests-result.cjs'))return {validateTests:r=>r};if(name===path.join(root,'lib/core.cjs'))return {sourceRef};return require(name);}});
+ vm.runInContext(source+'\n;globalThis.host={diagnosticVerdict,evidence,environment,attempt,recover};globalThis.bindEnvironment=env=>{environment=async()=>env;};',context);
  const state={repairStarted:false,testStarted:false,recovery:false};
  const api={async repairRuns(){return state.recovery||state.repairStarted?[request]:[];},async testRuns(){return (state.recovery||state.testStarted)&&!options.noTestRequest?[testRequest]:[];},async sources(){return [{ref:options.wrongSnapshot?{...ref,snapshot:{...snapshot,snapshot_id:'9'.repeat(64)}}:ref,token:'source'}];},async drafts(){return [{kind:'draft',token:'root',receipt}];},async history(){return [{kind:'version',token:'selected',receipt}];},selectedDraft(){return receipt;}};
  const semantic=createDailySemantic({validateTests:r=>r,sourceRef});
  const record={schema:'rentgen-daily-semantic/1',profile_root:root,inputs:{manifest:{sha256:'0'.repeat(64)},validator:{sha256:'1'.repeat(64)},source_validator:{sha256:'2'.repeat(64)}},repair:null,test:null,pipeline_verified:false,task_accepted:false,raw_qualification:'pending',full_product_ready:false};
  const env={root,scenario:{module,source_inventory:inventory,head,model:request.model,instruction:'constructed instruction',profile:testRequest.profile},config:{project_id:project},inputs:record.inputs,semantic,api,record,cli:async command=>command==='project-head'?head:{receipt,proposal},progress:async()=>{},terminal:async()=>{terminals.push(plain(record));}};
  context.bindEnvironment(env);
- return {host:context.host,context,env,record,files,faults,calls,terminals,repair,request,result,testRequest,receipt,head,state,root,put,editor};
+ return {host:context.host,context,env,record,files,faults,calls,terminals,repair,request,report,result,testRequest,receipt,head,state,root,put,editor};
 }
+
+function actualEnvironmentFixture(profileContext, scenarioContext){
+ const f=fixture(),python='C:\\constructed\\python.exe',coreVersion='0.1.0.dev16',companionVersion='0.1.17';
+ const manifest={sha256:'0'.repeat(64)};
+ const profile={schema:1,core_version:coreVersion,python,registry:'C:\\constructed\\registry.sqlite3',project_id:project};
+ const scenario={schema:1,companion_version:companionVersion,frozen_inputs:manifest};
+ if(profileContext!==undefined)profile.context_tokens=profileContext;
+ if(scenarioContext!==undefined)scenario.context_tokens=scenarioContext;
+ const validator=Buffer.from('constructed validator'),core=Buffer.from('constructed core');
+ const inputs={mode:'attempt',manifest,core_version:coreVersion,companion_version:companionVersion,
+  files:{python:{path:python}},validator:{sha256:sha(validator),size:validator.length},source_validator:{sha256:sha(core),size:core.length}};
+ f.put('profile.json',profile);f.put('daily-scenario.json',scenario);f.put('daily-inputs.json',inputs);
+ f.put('lib/tests-result.cjs',validator);f.put('lib/core.cjs',core);
+ f.context.process.env.RENTGEN_EDITOR_PROFILE=f.root;
+ f.context.process.env.RENTGEN_DAILY_OUTPUT=path.join(f.root,'out.json');
+ f.context.process.env.RENTGEN_DAILY_INPUTS=path.join(f.root,'daily-inputs.json');
+ let activations=0;
+ f.editor.extensions={getExtension:()=>({extensionPath:f.root,packageJSON:{version:companionVersion},async activate(){activations++;return {ready:true};}})};
+ return {...f,profile,scenario,inputs,get activations(){return activations;}};
+}
+
+function pinDailyProfileFiles(f,contextTokens=32768){
+ const pin=name=>{const file=path.join(f.root,name),bytes=f.files.get(file);return {path:file,size:bytes.length,sha256:sha(bytes)};};
+ f.inputs.context_tokens=contextTokens;
+ f.inputs.daily_profile_files={profile:pin('profile.json'),scenario:pin('daily-scenario.json')};
+ f.put('daily-inputs.json',f.inputs);
+}
+
+for(const contextTokens of [undefined,8192,16384,32768])test('actual environment accepts equal resolved context '+String(contextTokens),async()=>{
+ const f=actualEnvironmentFixture(contextTokens,contextTokens);
+ await f.host.environment('attempt');
+ assert.equal(f.activations,1);
+ assert.equal(f.calls.filter(c=>['rentgen.repairSource','rentgen.testDraft'].includes(c.name)).length,0);
+});
+for(const [profileContext,scenarioContext] of [[8192,16384],[undefined,8192],[8192,undefined]])test('actual environment refuses unequal resolved context '+String(profileContext)+'/'+String(scenarioContext)+' before activation',async()=>{
+ const f=actualEnvironmentFixture(profileContext,scenarioContext);
+ await assert.rejects(f.host.environment('attempt'),/DAILY_CONTEXT_MISMATCH/);
+ assert.equal(f.activations,0);
+ assert.equal(f.calls.filter(c=>['rentgen.repairSource','rentgen.testDraft'].includes(c.name)).length,0);
+});
+for(const role of ['profile','scenario'])for(const value of [true,'8192',8192.5,null,0,65536,[],{}])test('actual environment rejects invalid '+role+' context '+JSON.stringify(value)+' before activation',async()=>{
+ const f=actualEnvironmentFixture(8192,8192);
+ f[role].context_tokens=value;f.put(role==='profile'?'profile.json':'daily-scenario.json',f[role]);
+ await assert.rejects(f.host.environment('attempt'),/DAILY_CONTEXT_INVALID/);
+ assert.equal(f.activations,0);
+ assert.equal(f.calls.filter(c=>['rentgen.repairSource','rentgen.testDraft'].includes(c.name)).length,0);
+});
+test('actual environment accepts exact new wrapper context and profile/scenario byte pins before activation',async()=>{
+ const f=actualEnvironmentFixture(8192,8192);pinDailyProfileFiles(f,8192);
+ await f.host.environment('attempt');assert.equal(f.activations,1);
+});
+for(const role of ['profile','scenario'])test('actual environment rejects same-size changed '+role+' bytes before activation',async()=>{
+ const f=actualEnvironmentFixture(8192,8192);pinDailyProfileFiles(f,8192);
+ const name=role==='profile'?'profile.json':'daily-scenario.json',file=path.join(f.root,name),before=f.files.get(file);
+ const value=role==='profile'?{core_version:f.profile.core_version,schema:f.profile.schema,python:f.profile.python,registry:f.profile.registry,project_id:f.profile.project_id,context_tokens:8192}:
+  {companion_version:f.scenario.companion_version,schema:f.scenario.schema,frozen_inputs:f.scenario.frozen_inputs,context_tokens:8192};
+ const changed=Buffer.from(JSON.stringify(value));assert.equal(changed.length,before.length);assert.notEqual(sha(changed),sha(before));
+ f.files.set(file,changed);
+ await assert.rejects(f.host.environment('attempt'),/INPUT_BINDING_MISMATCH/);
+ assert.equal(f.activations,0);
+});
+test('actual environment refuses wrapper context different from equal profile and scenario before activation',async()=>{
+ const f=actualEnvironmentFixture(8192,8192);pinDailyProfileFiles(f,16384);
+ await assert.rejects(f.host.environment('attempt'),/INPUT_BINDING_MISMATCH/);
+ assert.equal(f.activations,0);
+});
+for(const field of ['path','size','sha256'])test('actual environment refuses forged profile byte pin '+field+' before activation',async()=>{
+ const f=actualEnvironmentFixture(8192,8192);pinDailyProfileFiles(f,8192);
+ const pin=f.inputs.daily_profile_files.profile;
+ pin[field]=field==='path'?path.join(f.root,'other-profile.json'):field==='size'?pin.size+1:'f'.repeat(64);
+ f.put('daily-inputs.json',f.inputs);
+ await assert.rejects(f.host.environment('attempt'),/INPUT_BINDING_MISMATCH/);
+ assert.equal(f.activations,0);
+});
+for(const missing of ['context_tokens','daily_profile_files'])test('actual environment refuses partial wrapper binding missing '+missing+' before activation',async()=>{
+ const f=actualEnvironmentFixture(8192,8192);pinDailyProfileFiles(f,8192);
+ delete f.inputs[missing];f.put('daily-inputs.json',f.inputs);
+ await assert.rejects(f.host.environment('attempt'),/INPUT_BINDING_MISMATCH/);
+ assert.equal(f.activations,0);
+});
 
 test('missing diagnostic receipt is unproven rather than a host exception',()=>{
  const f=fixture();assert.deepEqual(plain(f.host.diagnosticVerdict(undefined,undefined,'a'.repeat(64))),{status:'unproven'});
@@ -70,6 +150,43 @@ test('selected source snapshot binds to nested project head snapshot',async()=>{
 });
 test('wrong selected source snapshot refuses before requesting repair',async()=>{
  const f=fixture({wrongSnapshot:true});await assert.rejects(f.host.attempt(),/DAILY_SOURCE_HEAD_MISMATCH/);assert.equal(f.calls.filter(c=>c.name==='rentgen.repairSource').length,0);assert.notEqual(f.record.preservation_verified,true);
+});
+test('attempt refuses a changed profile/scenario context before model or native commands',async()=>{
+ const f=fixture();f.env.config.context_tokens=8192;f.env.scenario.context_tokens=16384;
+ await assert.rejects(f.host.attempt(),/DAILY_CONTEXT_MISMATCH/);
+ assert.equal(f.calls.filter(c=>['rentgen.repairSource','rentgen.testDraft'].includes(c.name)).length,0);
+ assert.notEqual(f.record.preservation_verified,true);
+});
+test('legacy profile and scenario resolve to 32768 and retain checked model context',async()=>{
+ const f=fixture();await f.host.attempt();
+ assert.equal(f.record.status,'collected');
+ assert.equal(f.record.model_context?.context_tokens,32768);
+ assert.equal(f.record.model_context?.request_context_tokens,32768);
+ assert.equal(f.record.model_context?.reported_num_ctx,32768);
+});
+test('explicit 8192 context is retained only after profile, scenario, journal and report agree',async()=>{
+ const f=fixture();f.env.config.context_tokens=8192;f.env.scenario.context_tokens=8192;
+ f.request.context_tokens=8192;f.report.model.num_ctx=8192;
+ f.put('repair-runs/'+repairId+'/request.json',f.request);
+ f.put('repair-runs/'+repairId+'/result/result.json',f.report);
+ await f.host.attempt();
+ assert.equal(f.record.status,'collected');
+ assert.equal(f.record.model_context?.context_tokens,8192);
+ assert.equal(f.record.model_context?.request_context_tokens,8192);
+ assert.equal(f.record.model_context?.reported_num_ctx,8192);
+ assert.equal(f.calls.filter(c=>c.name==='rentgen.testDraft').length,1);
+});
+for(const mutation of ['journal_context','journal_missing','file_only_context','report_context','report_missing'])test('context '+mutation+' refuses before native TestDraft',async()=>{
+ const f=fixture();
+ if(mutation==='journal_context'){f.request.context_tokens=8192;f.put('repair-runs/'+repairId+'/request.json',f.request);}
+ if(mutation==='journal_missing'){delete f.request.context_tokens;f.put('repair-runs/'+repairId+'/request.json',f.request);}
+ if(mutation==='file_only_context')f.put('repair-runs/'+repairId+'/request.json',{...f.request,context_tokens:8192});
+ if(mutation==='report_context'){f.report.model.num_ctx=8192;f.put('repair-runs/'+repairId+'/result/result.json',f.report);}
+ if(mutation==='report_missing'){delete f.report.model.num_ctx;f.put('repair-runs/'+repairId+'/result/result.json',f.report);}
+ await assert.rejects(f.host.attempt(),/DAILY_MODEL_CONTEXT_MISMATCH/);
+ assert.equal(f.calls.filter(c=>c.name==='rentgen.testDraft').length,0);
+ assert.equal(f.record.status,'refused');
+ assert.equal(f.record.model_context,undefined);
 });
 test('actual native phase basenames are retained as bounded raw identities',async()=>{
  const f=fixture();const raw=await f.host.evidence(f.root,repairId,testId,f.result);for(const name of ['baseline.junit.xml','candidate.junit.xml','baseline.exit','candidate.exit','baseline-settings.json','candidate-settings.json'])assert.ok(raw['state/test-runs/'+testId+'/'+name]);

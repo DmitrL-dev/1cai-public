@@ -33,19 +33,53 @@ def _observed_inputs(before):
             "files": {name: observed(pin) for name, pin in before["files"].items()}}
 
 
+def _daily_profile_files(root):
+    records = {}
+    for role, name in (("profile", "profile.json"), ("scenario", "daily-scenario.json")):
+        path = root / name
+        try:
+            records[role] = file_record(path)
+        except Exception as error:
+            records[role] = {"path": str(path), "error": _error_record(error)}
+    return records
+
+
+def _read_daily_profile(root):
+    records, values = {}, {}
+    for role, name, limit in (("profile", "profile.json", 65536), ("scenario", "daily-scenario.json", 2097152)):
+        path = root / name
+        pin = file_record(path)
+        if pin["size"] > limit:
+            raise ValueError("INPUT_BINDING_MISMATCH")
+        with path.open("rb") as stream:
+            raw = stream.read(limit + 1)
+        if len(raw) != pin["size"] or hashlib.sha256(raw).hexdigest() != pin["sha256"]:
+            raise ValueError("INPUT_BINDING_MISMATCH")
+        value = json.loads(raw)
+        if not isinstance(value, dict):
+            raise ValueError("INPUT_BINDING_MISMATCH")
+        context = value.get("context_tokens", 32768)
+        if type(context) is not int or context not in (8192, 16384, 32768):
+            raise ValueError("INPUT_BINDING_MISMATCH")
+        records[role], values[role] = pin, value
+    context = values["profile"].get("context_tokens", 32768)
+    if context != values["scenario"].get("context_tokens", 32768):
+        raise ValueError("INPUT_BINDING_MISMATCH")
+    return values["profile"], values["scenario"], context, records
+
+
 def run(args):
     if (args.mode == "recovery") != (args.prior is not None):
         raise ValueError("Recovery requires --prior; attempt does not accept --prior")
     binding, checked = verify_frozen(args.frozen_inputs)
     frozen_before = dict(checked)
     root = args.profile.resolve(strict=True)
-    scenario = json.loads((root / "daily-scenario.json").read_text("utf-8"))
+    config, scenario, context_tokens, daily_before = _read_daily_profile(root)
     if scenario["frozen_inputs"] != checked["manifest"]:
         raise ValueError("INPUT_BINDING_MISMATCH")
     for role, value in (("vsix", args.vsix), ("editor", args.editor)):
         if str(value.resolve(strict=True)) != checked["files"][role]["path"]:
             raise ValueError("INPUT_BINDING_MISMATCH")
-    config = json.loads((root / "profile.json").read_text("utf-8"))
     if config["python"] != checked["files"]["python"]["path"] or config["core_version"] != binding["core_version"] or scenario["companion_version"] != binding["companion_version"]:
         raise ValueError("INPUT_BINDING_MISMATCH")
     metadata = BytesParser().parsebytes(Path(checked["files"]["core_metadata"]["path"]).read_bytes())
@@ -69,7 +103,7 @@ def run(args):
         raise ValueError("INPUT_BINDING_MISMATCH")
     host = Path(__file__).with_name("companion_host")
     script = host / ("daily.cjs" if args.mode == "attempt" else "daily_semantic_recovery.cjs")
-    checked.update(mode=args.mode, core_version=binding["core_version"], companion_version=binding["companion_version"], validator=file_record(extension / "lib/tests-result.cjs"), source_validator=file_record(extension / "lib/core.cjs"), harness={name: file_record(host / name) for name in ("daily.cjs", "daily_semantic.cjs", "daily_semantic_recovery.cjs")})
+    checked.update(mode=args.mode, context_tokens=context_tokens, daily_profile_files=daily_before, core_version=binding["core_version"], companion_version=binding["companion_version"], validator=file_record(extension / "lib/tests-result.cjs"), source_validator=file_record(extension / "lib/core.cjs"), harness={name: file_record(host / name) for name in ("daily.cjs", "daily_semantic.cjs", "daily_semantic_recovery.cjs")})
     inputs = output / "inputs.json"
     inputs.write_text(json.dumps(checked, ensure_ascii=False, indent=2), "utf-8")
     env = os.environ.copy()
@@ -84,6 +118,8 @@ def run(args):
     startup.wShowWindow = 0
     code, failure, execution_error, recheck_error, after = None, None, None, None, None
     try:
+        if _daily_profile_files(root) != daily_before:
+            raise ValueError("INPUT_BINDING_MISMATCH")
         with (output / "host.log").open("w", encoding="utf-8") as log:
             process = subprocess.Popen(command, env=env, stdout=log, stderr=log, startupinfo=startup)
             code = wait_owned(process, log, timeout=1550 if args.mode == "attempt" else 120)
@@ -95,9 +131,12 @@ def run(args):
         recheck_error = _error_record(error)
         if failure is None:
             failure = error
-    preserved = after is not None and after == frozen_before
+    daily_after = _daily_profile_files(root)
+    preserved = after is not None and after == frozen_before and daily_after == daily_before
     receipt = {"input_bytes_preserved": preserved, "editor_exit_code": code,
                "before": frozen_before, "after": after, "execution_error": execution_error,
+               "context_tokens": context_tokens, "daily_profile_before": daily_before,
+               "daily_profile_after": daily_after,
                "input_recheck_error": recheck_error, "source_ci_qualified_by_this_check": False}
     if not preserved:
         receipt["observed_inputs"] = _observed_inputs(frozen_before)
