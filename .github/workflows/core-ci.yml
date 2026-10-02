@@ -40,7 +40,7 @@ jobs:
           New-Item -ItemType Directory -Force output | Out-Null
           python -m pytest -q --tb=short tests/unit/test_runtime_pins.py tests/unit/test_owned_attempt.py tests/unit/test_service_scm_delivery.py --junitxml=output/python-contracts.xml
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python -m pytest -q --tb=short --junitxml=output/python-contracts.xml
+          python -m pytest -q --tb=short -n 3 --dist=loadfile --max-worker-restart=0 --junitxml=output/python-contracts.xml
       - name: Upload Python contract report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
