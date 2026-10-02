@@ -5,6 +5,7 @@ const assert=require('node:assert/strict'),{createHash}=require('node:crypto');
 const {promisify,isDeepStrictEqual:same}=require('node:util');
 const execute=promisify(require('node:child_process').execFile);
 const {createDailySemantic}=require('./daily_semantic.cjs');
+const {makeReadyIntent}=require('./daily_ready_intent.cjs');
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const validUuid=value=>typeof value==='string'&&uuid.test(value);
 const hash=/^[0-9a-f]{64}$/;
@@ -111,6 +112,10 @@ async function captureAvailableEvidence({root,record}){
  if(errors.length){record.raw_evidence_errors=errors;record.preservation_verified=false;record.eligible_for_raw_qualification=false;if(record.recovered===true)record.recovered=false;if(record.status==='collected'){record.status='unproven';record.reason='Raw evidence collection is incomplete or changed';}}else delete record.raw_evidence_errors;
 }
 async function environment(mode){
+ // No authoritative Root editor-owner backend has been qualified yet.
+ // Marker/PID/nonce/caller JSON must not authorize activation or a CLI process.
+ if(mode==='ready-intent-only')throw new Error('DAILY_ROOT_EDITOR_OWNER_REQUIRED');
+ assert.ok(['attempt','recovery'].includes(mode),'DAILY_MODE_INVALID');
  const root=process.env.RENTGEN_EDITOR_PROFILE,out=process.env.RENTGEN_DAILY_OUTPUT,inputFile=process.env.RENTGEN_DAILY_INPUTS;
  assert.ok(root&&out&&inputFile&&path.isAbsolute(root)&&path.isAbsolute(out)&&path.isAbsolute(inputFile),'DAILY_EXPLICIT_INPUTS_REQUIRED');
  assert.equal(Boolean(process.env.RENTGEN_DAILY_PRIOR),mode==='recovery','DAILY_MODE_MISMATCH');
@@ -143,7 +148,33 @@ async function environment(mode){
   input:'registered-command-arguments',manual_picker_tested:false,pipeline_verified:false,task_accepted:false,raw_qualification:'pending',model_quality:{general_verdict:'unproven'},full_product_ready:false,production_deployment:false,repair:null,test:null};
  const progress=()=>fs.writeFile(path.join(path.dirname(out),'progress.json'),JSON.stringify(record,null,2));
  const terminal=()=>fs.writeFile(out,JSON.stringify(record,null,2),{flag:'wx'});
- return {root,out,scenario,config,context_tokens,inputs,extension,semantic,api,cli,record,progress,terminal};
+  return {root,out,scenario,config,context_tokens,inputs,extension,semantic,sourceRef,api,cli,record,progress,terminal};
+}
+async function readyIntentOnly(){
+ const env=await environment('ready-intent-only'),{root,out,scenario,config,inputs,sourceRef,api,cli,record,progress,terminal}=env;
+ record.preservation_verified=false;record.eligible_for_raw_qualification=false;
+ try{
+  const context_tokens=matchingContext(config,scenario);
+  assert.equal(env.context_tokens,context_tokens,'DAILY_CONTEXT_MISMATCH');
+  assert.equal(inputs.context_tokens,context_tokens,'INPUT_BINDING_MISMATCH');
+  const sourceRoot=path.join(root,'source'),original=await read(path.join(sourceRoot,scenario.module),1048576);
+  record.source_before=await inventory(sourceRoot);assert.deepEqual(record.source_before,scenario.source_inventory);
+  record.head=await cli('project-head');assert.deepEqual(record.head,scenario.head);
+  record.repair_requests_before=await api.repairRuns();assert.deepEqual(record.repair_requests_before,[],'DAILY_NEW_PROFILE_REQUIRED');
+  record.test_requests_before=await api.testRuns();assert.deepEqual(record.test_requests_before,[],'DAILY_NEW_PROFILE_REQUIRED');
+  const sources=await api.sources(),selected=sources.find(row=>row.ref?.relative_path===scenario.module);assert.ok(selected);
+  assert.equal(selected.ref.raw_sha256,digest(original));assert.deepEqual(selected.ref.snapshot,record.head.snapshot,'DAILY_SOURCE_HEAD_MISMATCH');
+  const checkedBinding={...inputs.daily_profile_files,manifest:inputs.manifest,context_tokens,core_version:inputs.core_version,companion_version:inputs.companion_version};
+  const intent=makeReadyIntent({schema:'rentgen-daily-ready-observation/1',mode:'ready-intent-only',ready:api.ready,
+   project_id:config.project_id,selected_source_ref:selected.ref,expected_module:scenario.module,expected_raw_sha256:digest(original),
+   head:record.head,expected_head:scenario.head,repair_history:record.repair_requests_before,test_history:record.test_requests_before,
+   binding:checkedBinding,expected_binding:{...inputs.daily_profile_files,manifest:scenario.frozen_inputs,context_tokens,core_version:config.core_version,companion_version:scenario.companion_version}},sourceRef);
+  record.source_ref=intent.source_ref;await progress();
+  const file=path.join(path.dirname(out),'ready-intent.json'),bytes=Buffer.from(JSON.stringify(intent));
+  await fs.writeFile(file,bytes,{flag:'wx'});
+  record.ready_intent={path:file,size:bytes.length,sha256:digest(bytes)};record.status='ready_intent_collected';
+  await progress();await terminal();
+ }catch(error){record.status='refused';record.error=error.stack;throw error;}
 }
 async function attempt(){
  const env=await environment('attempt'),{root,scenario,config,api,cli,semantic,record,progress,terminal}=env;
@@ -248,4 +279,4 @@ async function recover(){
   record.preservation_verified=true;record.recovered=true;record.status='collected';
  }catch(error){record.status='refused';record.error=error.stack;throw error;}finally{await captureAvailableEvidence(env);await progress();await terminal();}
 }
-exports.run=attempt;exports.recover=recover;
+exports.run=attempt;exports.recover=recover;exports.readyIntentOnly=readyIntentOnly;
