@@ -462,6 +462,115 @@ def wait_until(check, seconds, description):
         time.sleep(0.05)
 
 
+def classify_capture_wait(status, row, previous_ids):
+    """Select only an unambiguous new capture; never authorize service control."""
+    if row['status']['state'] != 4:
+        return 'service_stopped', None
+    if type(status) is not dict or type(status.get('jobs')) is not list or len(status['jobs']) > 10:
+        return 'invalid_status', None
+    if 'error' not in status or status['error'] is not None:
+        return 'observer_error', None
+    ids, new = set(), []
+    for job in status['jobs']:
+        if (type(job) is not dict or type(job.get('operation_id')) is not str
+                or not job['operation_id'] or job['operation_id'] in ids
+                or job.get('phase') not in {'capture', 'report', 'done', 'failed', 'superseded'}
+                or type(job.get('attempts')) is not int or job['attempts'] < 0 or 'error' not in job):
+            return 'invalid_job', None
+        ids.add(job['operation_id'])
+        if job['operation_id'] not in previous_ids:
+            new.append(job)
+    for job in new:
+        if job['phase'] in {'failed', 'superseded'}:
+            return 'job_' + job['phase'], None
+        if job['error'] is not None:
+            return 'job_error', None
+    if len(new) > 1:
+        return 'ambiguous_new_jobs', None
+    if not new:
+        return 'waiting_for_new_job', None
+    if new[0]['phase'] in {'report', 'done'}:
+        return 'missed_capture_window', None
+    return 'capture_observed', new[0]
+
+
+class CaptureObservation:
+    """Bounded first/transition/last summaries, excluding full report bodies."""
+    def __init__(self, previous_ids):
+        self.previous_ids = previous_ids
+        self.first = self.last = self.signature = None
+        self.transitions = []
+        self.omitted_transitions = self.poll_count = 0
+
+    def observe(self, status, row, elapsed, poll_count):
+        truncated = 0
+
+        def text(value, limit):
+            nonlocal truncated
+            if value is None:
+                return None
+            if type(value) is not str:
+                return '<invalid>'
+            truncated += len(value) > limit
+            return value[:limit]
+
+        def number(value):
+            return value if type(value) is int and 0 <= value <= 2**32 - 1 else None
+
+        valid = status if type(status) is dict else {}
+        jobs = valid.get('jobs', [])
+        jobs = jobs if type(jobs) is list else []
+        scm = row.get('status', {}) if type(row) is dict else {}
+        sample = {'elapsed_seconds': round(elapsed, 6), 'poll_count': poll_count,
+                  'checked_at': text(valid.get('checked_at'), 64),
+                  'observer_error': text(valid.get('error'), 160),
+                  'scm': {'state': number(scm.get('state')), 'pid': number(scm.get('pid')),
+                          'pid_valid': row.get('pid_valid') is True},
+                  'new_jobs': [], 'omitted_jobs': 0, 'truncated_fields': 0}
+        # Observer.status defaults to ten jobs. Malformed larger input is refused
+        # by the classifier; its diagnostic still examines at most ten rows.
+        for job in jobs[:10]:
+            if type(job) is not dict or type(job.get('operation_id')) is not str:
+                sample['omitted_jobs'] += 1
+                continue
+            if job['operation_id'] in self.previous_ids:
+                continue
+            summary = {'operation_id': text(job['operation_id'], 96),
+                       'phase': text(job.get('phase'), 24),
+                       'attempts': number(job.get('attempts')), 'error': text(job.get('error'), 160)}
+            sample['new_jobs'].append(summary)
+            sample['truncated_fields'] = truncated
+            if len(json.dumps(sample, ensure_ascii=False).encode('utf-8')) > 2000:
+                sample['new_jobs'].pop()
+                sample['omitted_jobs'] += 1
+        sample['omitted_jobs'] += max(0, len(jobs) - 10)
+        sample['truncated_fields'] = truncated
+        require(len(json.dumps(sample, ensure_ascii=False).encode('utf-8')) <= 2048,
+                'Capture diagnostic sample exceeds bound')
+        signature = {key: sample[key] for key in ('observer_error', 'scm', 'new_jobs', 'omitted_jobs')}
+        if self.first is None:
+            self.first = sample
+        elif signature != self.signature:
+            if len(self.transitions) < 14:
+                self.transitions.append(sample)
+            else:
+                self.omitted_transitions += 1
+        self.last, self.signature, self.poll_count = sample, signature, poll_count
+
+    def result(self, reason, error=None):
+        samples = [self.first, *self.transitions] if self.first is not None else []
+        if self.last is not None and self.last != samples[-1]:
+            samples.append(self.last)
+        result = {'reason': reason, 'poll_count': self.poll_count, 'samples': samples,
+                  'omitted_transitions': self.omitted_transitions,
+                  'previous_job_count': len(self.previous_ids),
+                  'error': None if error is None else
+                      {'type': type(error).__name__[:64], 'message': str(error)[:400]}}
+        require(len(samples) <= 16 and len(json.dumps(result, ensure_ascii=False).encode('utf-8')) <= 40*1024,
+                'Capture diagnostic summary exceeds bound')
+        return result
+
+
 class Acceptance:
     def __init__(self, context, output):
         self.f, self.cfg, self.spec, self.native, self.observer, _, self.authority = context
@@ -471,6 +580,7 @@ class Acceptance:
         self.acl_backups = []
         self.owner_backups = {}
         self.events = []
+        self.pending_capture_observation = None
         self.original_config = Path(self.f['config']).read_bytes()
 
     def event(self, kind, **details):
@@ -604,14 +714,42 @@ class Acceptance:
         return wait_until(inspect, 180, 'durable report '+str(count))
 
     def capture_job(self, previous_ids):
+        require(getattr(self, 'pending_capture_observation', None) is None,
+                'Previous capture observation not flushed')
+        trace = CaptureObservation(previous_ids)
+        started = time.monotonic()
+        reason = 'observation_error'
         def inspect():
+            nonlocal reason
+            trace.poll_count += 1
             status = self.status()
             row = self.current()
-            require(row['status']['state'] == 4, 'Service stopped before capture')
-            new = [j for j in status['jobs'] if j['operation_id'] not in previous_ids]
-            require(not any(j['phase'] in {'failed','superseded'} for j in new), 'Capture failed before observation')
-            return next((j for j in new if j['phase'] == 'capture'), None)
-        return wait_until(inspect, 90, 'active capture journal')
+            trace.observe(status, row, time.monotonic() - started, trace.poll_count)
+            reason, job = classify_capture_wait(status, row, previous_ids)
+            require(reason in {'waiting_for_new_job', 'capture_observed'},
+                    'Capture observation refused: ' + reason)
+            return job
+        try:
+            job = wait_until(inspect, 90, 'active capture journal')
+        except BaseException as error:
+            try:
+                if reason == 'waiting_for_new_job':
+                    reason = ('timeout' if type(error) is RuntimeError and
+                              error.args == ('Timed out: active capture journal',) else 'observation_error')
+                self.event('capture_wait', **trace.result(reason, error))
+            except BaseException:
+                pass  # A diagnostic write must never replace the original failure.
+            raise
+        # Defer file I/O until the post-control phase gate; the active window
+        # must not wait for events.jsonl to be opened/written/closed.
+        self.pending_capture_observation = trace
+        return job
+
+    def flush_capture_observation(self, *, reason='capture_observed', error=None):
+        trace = getattr(self, 'pending_capture_observation', None)
+        if trace is not None:
+            self.pending_capture_observation = None
+            self.event('capture_wait', **trace.result(reason, error))
 
     def seed_corpus(self):
         require(self.current()['status']['state'] == 1, 'Seed only while STOPPED')
@@ -679,6 +817,7 @@ class Acceptance:
         self.installer.stop(self.spec)
         during=self.status();same=next(j for j in during['jobs'] if j['operation_id']==job['operation_id'])
         require(same['phase']=='capture','Stop-in-tick window was not proved; do not claim acceptance')
+        self.flush_capture_observation()
         self.event('stop_accepted_during_capture',operation_id=job['operation_id'])
         stopped=self.state(1,180)
         require(stopped['status']['win32_exit']==stopped['status']['service_exit']==0,'Active stop failed')
@@ -697,6 +836,7 @@ class Acceptance:
         self.event('no_owned_scanner_before_recovery')
         durable=self.status();retained=next(j for j in durable['jobs'] if j['operation_id']==interrupted['operation_id'])
         require(retained['phase'] in {'capture','report'},'Interruption window not retained')
+        self.flush_capture_observation()
         with self.observer.locked():pass
         self.start();recovered=self.reported(3);self.stop()
         require({j['operation_id'] for j in recovered['jobs']}==old_ids|{interrupted['operation_id']},'Recovery replaced operation identity')
@@ -847,6 +987,10 @@ def main():
     try:
         test.exercise()
     except BaseException as error:
+        try:
+            test.flush_capture_observation(reason='control_or_phase_error', error=error)
+        except BaseException:
+            pass  # Keep the original lifecycle cause even when diagnostics fail.
         failure={'type':type(error).__name__,'message':str(error)[:400]}
         test.event('acceptance_failure',**failure)
     finally:
