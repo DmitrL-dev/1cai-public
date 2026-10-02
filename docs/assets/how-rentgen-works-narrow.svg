@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="4504" viewBox="0 0 360 4504" role="img" aria-labelledby="workflow-narrow-title workflow-narrow-desc">
+  <title id="workflow-narrow-title">Рентген: путь одной правки — вертикальная схема</title>
+  <desc id="workflow-narrow-desc">Шесть шагов сверху вниз. Подготовленная выгрузка 1С становится сохранённым снимком. Первый результат — снимок и список модулей; модель и установленная 1С для него не нужны, если выгрузка уже есть. Найдите и прочитайте модуль снимка. Первый ручной черновик создают командами ядра через CLI; затем существующий черновик можно дорабатывать в редакторе. Другой маршрут создаёт черновик с AI: пользователь изучает предложение модели. Сравните и проверьте выбранную сохранённую ревизию. При замечаниях вернитесь к черновику, создайте новую ревизию и проверьте её; прежняя проверка относится к прежнему тексту. Человек решает доработать, оставить предложение в истории или отдельно применить поддержанную правку с проверкой условий отдельной операции. Сохранение и успешный отчёт не применяют правку. Запись в выгрузку и обновление базы 1С — самостоятельные операции.</desc>
+  <defs>
+    <marker id="narrow-flow-arrow" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M3 2L10 6L3 10" fill="none" stroke="#62788e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="narrow-return-arrow" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M3 2L10 6L3 10" fill="none" stroke="#7852a9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <rect width="360" height="4504" rx="24" fill="#f5f7fc"/>
+  <g font-family="Segoe UI,Arial,sans-serif">
+  <text x="28" y="49" fill="#17314c" font-size="36" font-weight="800" text-anchor="start">Рентген</text>
+  <text x="28" y="89" fill="#17314c" font-size="28" font-weight="800" text-anchor="start">Путь одной правки</text>
+  <text x="28" y="125" fill="#475d76" font-size="24" font-weight="400" text-anchor="start">Читайте сверху вниз.</text>
+  <rect x="16" y="158" width="328" height="202" rx="20" fill="#fff1dd" stroke="#ddaf74" stroke-width="1.5"/>
+  <circle cx="48" cy="202" r="21" fill="#a45114"/>
+  <text x="48" y="212" fill="#ffffff" font-size="28" font-weight="800" text-anchor="middle">1</text>
+  <text x="82" y="210" fill="#5a3215" font-size="26" font-weight="800" text-anchor="start">Выгрузка 1С</text>
+  <text x="36" y="252" fill="#67462a" font-size="24" font-weight="400" text-anchor="start">Папка с XML</text>
+  <text x="36" y="284" fill="#67462a" font-size="24" font-weight="400" text-anchor="start">и модулями 1С.</text>
+  <text x="36" y="316" fill="#67462a" font-size="24" font-weight="400" text-anchor="start">Подготовлена заранее.</text>
+  <path d="M180 378V406" fill="none" stroke="#62788e" stroke-width="3" marker-end="url(#narrow-flow-arrow)"/>
+  <rect x="16" y="426" width="328" height="300" rx="20" fill="#e1f4eb" stroke="#93c8b2" stroke-width="1.5"/>
+  <circle cx="48" cy="470" r="21" fill="#176b53"/>
+  <text x="48" y="480" fill="#ffffff" font-size="28" font-weight="800" text-anchor="middle">2</text>
+  <text x="82" y="478" fill="#174d3c" font-size="26" font-weight="800" text-anchor="start">Снимок файлов</text>
+  <text x="36" y="520" fill="#315f4e" font-size="24" font-weight="400" text-anchor="start">Копия выбранной</text>
+  <text x="36" y="552" fill="#315f4e" font-size="24" font-weight="400" text-anchor="start">версии файлов.</text>
+  <text x="36" y="584" fill="#315f4e" font-size="24" font-weight="400" text-anchor="start">ID для чтения</text>
+  <text x="36" y="616" fill="#315f4e" font-size="24" font-weight="400" text-anchor="start">и сравнения.</text>
+  <text x="36" y="648" fill="#315f4e" font-size="24" font-weight="400" text-anchor="start">Файлы остаются</text>
+  <text x="36" y="680" fill="#315f4e" font-size="24" font-weight="400" text-anchor="start">в истории.</text>
+  <rect x="16" y="746" width="328" height="258" rx="20" fill="#cceade" stroke="#93c8b2" stroke-width="1.5"/>
+  <text x="36" y="788" fill="#174d3c" font-size="26" font-weight="800" text-anchor="start">Первый результат</text>
+  <text x="36" y="832" fill="#315f4e" font-size="24" font-weight="400" text-anchor="start">Снимок + список</text>
+  <text x="36" y="864" fill="#315f4e" font-size="24" font-weight="400" text-anchor="start">модулей.</text>
+  <text x="36" y="896" fill="#315f4e" font-size="24" font-weight="400" text-anchor="start">AI и установленная</text>
+  <text x="36" y="928" fill="#315f4e" font-size="24" font-weight="400" text-anchor="start">1С не нужны, если</text>
+  <text x="36" y="960" fill="#315f4e" font-size="24" font-weight="400" text-anchor="start">выгрузка уже есть.</text>
+  <path d="M180 1022V1050" fill="none" stroke="#62788e" stroke-width="3" marker-end="url(#narrow-flow-arrow)"/>
+  <rect x="16" y="1070" width="328" height="270" rx="20" fill="#e8efff" stroke="#a8bce4" stroke-width="1.5"/>
+  <circle cx="48" cy="1114" r="21" fill="#3e5b9c"/>
+  <text x="48" y="1124" fill="#ffffff" font-size="28" font-weight="800" text-anchor="middle">3</text>
+  <text x="82" y="1122" fill="#263e6f" font-size="26" font-weight="800" text-anchor="start">Найдите модуль</text>
+  <text x="36" y="1164" fill="#435b81" font-size="24" font-weight="400" text-anchor="start">Откройте и прочитайте</text>
+  <text x="36" y="1196" fill="#435b81" font-size="24" font-weight="400" text-anchor="start">код выбранного снимка</text>
+  <text x="36" y="1228" fill="#435b81" font-size="24" font-weight="400" text-anchor="start">в редакторе.</text>
+  <text x="36" y="1260" fill="#435b81" font-size="24" font-weight="400" text-anchor="start">Ищите модуль</text>
+  <text x="36" y="1292" fill="#435b81" font-size="24" font-weight="400" text-anchor="start">по части пути.</text>
+  <path d="M180 1358V1386" fill="none" stroke="#62788e" stroke-width="3" marker-end="url(#narrow-flow-arrow)"/>
+  <rect x="16" y="1406" width="328" height="748" rx="20" fill="#f1eafb" stroke="#c4afe0" stroke-width="1.5"/>
+  <circle cx="48" cy="1450" r="21" fill="#74509f"/>
+  <text x="48" y="1460" fill="#ffffff" font-size="28" font-weight="800" text-anchor="middle">4</text>
+  <text x="82" y="1458" fill="#4f3470" font-size="26" font-weight="800" text-anchor="start">Черновик правки</text>
+  <text x="36" y="1500" fill="#614b7b" font-size="24" font-weight="400" text-anchor="start">Отдельное предложение</text>
+  <text x="36" y="1532" fill="#614b7b" font-size="24" font-weight="400" text-anchor="start">изменения.</text>
+  <rect x="32" y="1554" width="296" height="240" rx="16" fill="#ffffff" stroke="#d5c5e8" stroke-width="1.5"/>
+  <text x="48" y="1595" fill="#4f3470" font-size="26" font-weight="700" text-anchor="start">Вручную</text>
+  <text x="48" y="1634" fill="#4f3470" font-size="24" font-weight="400" text-anchor="start">Первый — командами</text>
+  <text x="48" y="1666" fill="#4f3470" font-size="24" font-weight="400" text-anchor="start">ядра через CLI.</text>
+  <text x="48" y="1698" fill="#4f3470" font-size="24" font-weight="400" text-anchor="start">Дальше дорабатывают</text>
+  <text x="48" y="1730" fill="#4f3470" font-size="24" font-weight="400" text-anchor="start">сохранённый черновик</text>
+  <text x="48" y="1762" fill="#4f3470" font-size="24" font-weight="400" text-anchor="start">в редакторе.</text>
+  <rect x="32" y="1810" width="296" height="184" rx="16" fill="#ffffff" stroke="#d5c5e8" stroke-width="1.5"/>
+  <text x="48" y="1851" fill="#4f3470" font-size="26" font-weight="700" text-anchor="start">С помощью AI</text>
+  <text x="48" y="1890" fill="#4f3470" font-size="24" font-weight="400" text-anchor="start">Модель предложит</text>
+  <text x="48" y="1922" fill="#4f3470" font-size="24" font-weight="400" text-anchor="start">правку.</text>
+  <text x="48" y="1954" fill="#4f3470" font-size="24" font-weight="400" text-anchor="start">Вы изучите результат.</text>
+  <text x="36" y="2040" fill="#614b7b" font-size="24" font-weight="400" text-anchor="start">Версии черновика</text>
+  <text x="36" y="2072" fill="#614b7b" font-size="24" font-weight="400" text-anchor="start">связаны с исходным</text>
+  <text x="36" y="2104" fill="#614b7b" font-size="24" font-weight="400" text-anchor="start">снимком.</text>
+  <path d="M180 2172V2200" fill="none" stroke="#62788e" stroke-width="3" marker-end="url(#narrow-flow-arrow)"/>
+  <rect x="16" y="2220" width="328" height="764" rx="20" fill="#e3f1ff" stroke="#a2c4e0" stroke-width="1.5"/>
+  <circle cx="48" cy="2264" r="21" fill="#23648e"/>
+  <text x="48" y="2274" fill="#ffffff" font-size="28" font-weight="800" text-anchor="middle">5</text>
+  <text x="82" y="2272" fill="#1e4b6c" font-size="26" font-weight="800" text-anchor="start">Проверки версии</text>
+  <text x="36" y="2314" fill="#365e7d" font-size="24" font-weight="400" text-anchor="start">Сравните изменения</text>
+  <text x="36" y="2346" fill="#365e7d" font-size="24" font-weight="400" text-anchor="start">и проверьте эту</text>
+  <text x="36" y="2378" fill="#365e7d" font-size="24" font-weight="400" text-anchor="start">сохранённую ревизию.</text>
+  <rect x="32" y="2400" width="296" height="120" rx="16" fill="#ffffff" stroke="#bfd6e9" stroke-width="1.5"/>
+  <text x="48" y="2441" fill="#1e4b6c" font-size="26" font-weight="700" text-anchor="start">Сравнение</text>
+  <text x="48" y="2480" fill="#1e4b6c" font-size="24" font-weight="400" text-anchor="start">Изменённые строки</text>
+  <rect x="32" y="2536" width="296" height="120" rx="16" fill="#ffffff" stroke="#bfd6e9" stroke-width="1.5"/>
+  <text x="48" y="2577" fill="#1e4b6c" font-size="26" font-weight="700" text-anchor="start">BSL</text>
+  <text x="48" y="2616" fill="#1e4b6c" font-size="24" font-weight="400" text-anchor="start">Java + BSL-LS</text>
+  <rect x="32" y="2672" width="296" height="152" rx="16" fill="#ffffff" stroke="#bfd6e9" stroke-width="1.5"/>
+  <text x="48" y="2713" fill="#1e4b6c" font-size="26" font-weight="700" text-anchor="start">1С и тесты</text>
+  <text x="48" y="2752" fill="#1e4b6c" font-size="24" font-weight="400" text-anchor="start">Платформа +</text>
+  <text x="48" y="2784" fill="#1e4b6c" font-size="24" font-weight="400" text-anchor="start">профиль YAxUnit.</text>
+  <text x="36" y="2870" fill="#365e7d" font-size="24" font-weight="400" text-anchor="start">Для BSL, платформы</text>
+  <text x="36" y="2902" fill="#365e7d" font-size="24" font-weight="400" text-anchor="start">и тестов нужна</text>
+  <text x="36" y="2934" fill="#365e7d" font-size="24" font-weight="400" text-anchor="start">настройка.</text>
+  <rect x="16" y="3004" width="328" height="318" rx="20" fill="#f1eafb" stroke="#c4afe0" stroke-width="1.5"/>
+  <text x="36" y="3046" fill="#4f3470" font-size="26" font-weight="800" text-anchor="start">Есть замечания?</text>
+  <text x="36" y="3090" fill="#614b7b" font-size="24" font-weight="400" text-anchor="start">Вернитесь к шагу 4.</text>
+  <text x="36" y="3122" fill="#614b7b" font-size="24" font-weight="400" text-anchor="start">Доработайте черновик</text>
+  <text x="36" y="3154" fill="#614b7b" font-size="24" font-weight="400" text-anchor="start">новой ревизией.</text>
+  <text x="36" y="3186" fill="#614b7b" font-size="24" font-weight="400" text-anchor="start">Проверьте её снова.</text>
+  <text x="36" y="3234" fill="#614b7b" font-size="24" font-weight="400" text-anchor="start">Прежняя проверка —</text>
+  <text x="36" y="3266" fill="#614b7b" font-size="24" font-weight="400" text-anchor="start">для прежнего текста.</text>
+  <path d="M344 3170H352V1454H344" fill="none" stroke="#7852a9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#narrow-return-arrow)"/>
+  <path d="M180 3340V3360" fill="none" stroke="#62788e" stroke-width="3" marker-end="url(#narrow-flow-arrow)"/>
+  <rect x="16" y="3380" width="328" height="796" rx="20" fill="#edf1f8" stroke="#b4c3d6" stroke-width="1.5"/>
+  <circle cx="48" cy="3424" r="21" fill="#324e6e"/>
+  <text x="48" y="3434" fill="#ffffff" font-size="28" font-weight="800" text-anchor="middle">6</text>
+  <text x="82" y="3432" fill="#243f5d" font-size="26" font-weight="800" text-anchor="start">Решает человек</text>
+  <text x="36" y="3474" fill="#4a607a" font-size="24" font-weight="400" text-anchor="start">Выберите, что сделать</text>
+  <text x="36" y="3506" fill="#4a607a" font-size="24" font-weight="400" text-anchor="start">с предложением.</text>
+  <rect x="32" y="3528" width="296" height="120" rx="16" fill="#ffffff" stroke="#c4d0df" stroke-width="1.5"/>
+  <text x="48" y="3569" fill="#243f5d" font-size="26" font-weight="700" text-anchor="start">Доработать</text>
+  <text x="48" y="3608" fill="#243f5d" font-size="24" font-weight="400" text-anchor="start">новой ревизией.</text>
+  <rect x="32" y="3664" width="296" height="152" rx="16" fill="#ffffff" stroke="#c4d0df" stroke-width="1.5"/>
+  <text x="48" y="3705" fill="#243f5d" font-size="26" font-weight="700" text-anchor="start">Оставить</text>
+  <text x="48" y="3744" fill="#243f5d" font-size="24" font-weight="400" text-anchor="start">предложение</text>
+  <text x="48" y="3776" fill="#243f5d" font-size="24" font-weight="400" text-anchor="start">в истории.</text>
+  <rect x="32" y="3832" width="296" height="152" rx="16" fill="#fff0d6" stroke="#d8b27b" stroke-width="1.5"/>
+  <text x="48" y="3873" fill="#704613" font-size="26" font-weight="700" text-anchor="start">Применить</text>
+  <text x="48" y="3912" fill="#704613" font-size="24" font-weight="400" text-anchor="start">поддержанную правку</text>
+  <text x="48" y="3944" fill="#704613" font-size="24" font-weight="400" text-anchor="start">отдельной операцией.</text>
+  <text x="36" y="4030" fill="#4a607a" font-size="24" font-weight="400" text-anchor="start">Для применения нужен</text>
+  <text x="36" y="4062" fill="#4a607a" font-size="24" font-weight="400" text-anchor="start">поддержанный сценарий</text>
+  <text x="36" y="4094" fill="#4a607a" font-size="24" font-weight="400" text-anchor="start">и проверка условий</text>
+  <text x="36" y="4126" fill="#4a607a" font-size="24" font-weight="400" text-anchor="start">отдельной операции.</text>
+  <rect x="16" y="4200" width="328" height="280" rx="20" fill="#17314c" stroke="#17314c" stroke-width="1.5"/>
+  <text x="36" y="4246" fill="#ffffff" font-size="24" font-weight="700" text-anchor="start">Сохранение и</text>
+  <text x="36" y="4278" fill="#ffffff" font-size="24" font-weight="700" text-anchor="start">успешный отчёт</text>
+  <text x="36" y="4310" fill="#ffffff" font-size="24" font-weight="700" text-anchor="start">не применяют правку.</text>
+  <text x="36" y="4358" fill="#ffffff" font-size="24" font-weight="400" text-anchor="start">Запись в выгрузку</text>
+  <text x="36" y="4390" fill="#ffffff" font-size="24" font-weight="400" text-anchor="start">и обновление базы 1С —</text>
+  <text x="36" y="4422" fill="#ffffff" font-size="24" font-weight="400" text-anchor="start">отдельные операции.</text>
+  </g>
+</svg>
