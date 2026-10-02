@@ -1,123 +1,139 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1300" viewBox="0 0 1000 1300" role="img" aria-labelledby="steps-title steps-desc">
-  <title id="steps-title">Как работает Рентген: шесть шагов от исходников до решения</title>
-  <desc id="steps-desc">Читайте карточки слева направо и сверху вниз. 1: выберите папку выгрузки 1С. 2: сохраните снимок файлов. 3: найдите и прочитайте модуль сохранённой версии. 4: создайте отдельный черновик сами или с AI. 5: сравните изменения и запустите настроенные проверки. 6: примите решение; применение требует отдельного действия. Сохранение черновика не применяет его к исходникам.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="2020" viewBox="0 0 1000 2020" role="img" aria-labelledby="workflow-title workflow-desc">
+  <title id="workflow-title">Рентген: путь одной правки от исходников до решения</title>
+  <desc id="workflow-desc">Шесть шагов. Подготовленная выгрузка 1С становится сохранённым снимком. Первый результат — снимок и список модулей; модель и установленная 1С для него не нужны, если выгрузка уже есть. Найдите модуль снимка. Первый ручной черновик создают командами ядра через CLI; затем существующий черновик можно дорабатывать в рабочей копии редактора. Другой маршрут создаёт черновик с AI. Сравните и проверьте выбранную ревизию. При замечаниях создайте новую ревизию и проверьте её. Человек решает доработать, оставить предложение в истории или отдельно применить поддержанную правку. Запись в выгрузку и обновление базы 1С — самостоятельные операции.</desc>
   <defs>
-    <marker id="step-arrow" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M2 2L10 6L2 10" fill="none" stroke="#637791" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <marker id="flow-arrow" markerWidth="15" markerHeight="15" refX="11" refY="7.5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M3 2L12 7.5L3 13" fill="none" stroke="#62788e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </marker>
-    <g id="folder-icon" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M5 22H28L38 32H75V69H5Z M5 32H75 M20 48H58 M20 59H49"/>
+    <marker id="return-arrow" markerWidth="15" markerHeight="15" refX="11" refY="7.5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M3 2L12 7.5L3 13" fill="none" stroke="#7852a9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <g id="read-icon" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="0" y="0" width="49" height="59" rx="6"/>
+      <path d="M10 14H33M10 25H27"/>
+      <circle cx="38" cy="38" r="13"/>
+      <path d="M48 49L62 63"/>
     </g>
-    <g id="snapshot-icon" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="8" y="23" width="60" height="47" rx="5"/>
-      <path d="M17 15H72V59 M26 7H77V49 M21 38H53 M21 51H59 M21 61H45"/>
-    </g>
-    <g id="search-icon" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="4" y="8" width="54" height="62" rx="6"/>
-      <path d="M17 24H40 M17 35H33"/>
-      <circle cx="48" cy="49" r="17" fill="currentColor" fill-opacity="0.08"/>
-      <path d="M60 61L76 76"/>
-    </g>
-    <g id="draft-icon" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M8 70L13 51L57 7L72 22L28 66Z M47 17L62 32 M7 77H74"/>
-    </g>
-    <g id="check-icon" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="10" y="7" width="59" height="69" rx="6"/>
-      <path d="M23 29L29 35L41 21 M48 29H58 M23 56L29 62L41 48 M48 56H58"/>
-    </g>
-    <g id="decision-icon" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="40" cy="24" r="12"/>
-      <path d="M13 74V65C13 50 25 43 40 43C55 43 67 50 67 65V74 M27 63L36 72L52 54"/>
+    <g id="write-icon" fill="none" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 56L7 43L44 6L57 19L20 56ZM35 15L48 28M2 67H58"/>
     </g>
   </defs>
 
-  <rect width="1000" height="1300" rx="28" fill="#f4f6fb"/>
+  <rect width="1000" height="2020" rx="28" fill="#f5f7fc"/>
   <g font-family="Segoe UI,Arial,sans-serif">
-    <text x="44" y="84" fill="#172d48" font-size="54" font-weight="800">От исходников до решения</text>
-    <text x="46" y="133" fill="#4a5d76" font-size="31">Шесть шагов. Применение — отдельное действие.</text>
+    <text x="44" y="79" fill="#17314c" font-size="46" font-weight="800">Рентген: путь одной правки</text>
+    <text x="46" y="127" fill="#475d76" font-size="29">Читайте сверху вниз. Начните со снимка.</text>
+    <rect x="44" y="158" width="292" height="39" rx="19" fill="#17314c"/>
+    <text x="190" y="185" text-anchor="middle" fill="#ffffff" font-size="22" font-weight="700" letter-spacing="1">НАЧНИТЕ ЗДЕСЬ</text>
   </g>
 
-  <!-- The numbering and arrows give the same reading order without relying on colour. -->
-  <g fill="none" stroke="#637791" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#step-arrow)">
-    <path d="M489 330H507"/>
-    <path d="M738 481V501H263V512"/>
-    <path d="M489 672H507"/>
-    <path d="M738 823V843H263V854"/>
-    <path d="M489 1014H507"/>
-  </g>
-
-  <!-- 1. A source directory is the input, not a running information base. -->
-  <rect x="44" y="180" width="438" height="300" rx="23" fill="#fff0dc" stroke="#dfb47c" stroke-width="2"/>
-  <circle cx="95" cy="234" r="30" fill="#bd5b16"/>
-  <text x="95" y="245" text-anchor="middle" fill="#ffffff" font-family="Segoe UI,Arial,sans-serif" font-size="31" font-weight="800">1</text>
-  <use href="#folder-icon" x="383" y="197" stroke="#ad5317"/>
+  <!-- 1 → 2: files enter the workflow through a retained snapshot. -->
+  <rect x="44" y="211" width="430" height="218" rx="22" fill="#fff1dd" stroke="#ddaf74" stroke-width="2"/>
+  <rect x="526" y="211" width="430" height="218" rx="22" fill="#e1f4eb" stroke="#93c8b2" stroke-width="2"/>
+  <circle cx="95" cy="260" r="29" fill="#a45114"/>
+  <circle cx="577" cy="260" r="29" fill="#176b53"/>
   <g font-family="Segoe UI,Arial,sans-serif">
-    <text x="72" y="306" fill="#562d15" font-size="42" font-weight="800">Выберите</text>
-    <text x="72" y="356" fill="#562d15" font-size="42" font-weight="800">выгрузку 1С</text>
-    <text x="74" y="416" fill="#69452d" font-size="32">Папка исходников</text>
-    <text x="74" y="458" fill="#69452d" font-size="32">вашей конфигурации.</text>
+    <text x="95" y="271" text-anchor="middle" fill="#ffffff" font-size="31" font-weight="800">1</text>
+    <text x="577" y="271" text-anchor="middle" fill="#ffffff" font-size="31" font-weight="800">2</text>
+    <text x="138" y="272" fill="#5a3215" font-size="34" font-weight="800">Выгрузка 1С</text>
+    <text x="620" y="272" fill="#174d3c" font-size="34" font-weight="800">Снимок файлов</text>
+    <text x="73" y="329" fill="#67462a" font-size="30">Папка с XML</text>
+    <text x="73" y="370" fill="#67462a" font-size="30">и модулями 1С.</text>
+    <text x="73" y="409" fill="#67462a" font-size="26">Подготовлена заранее.</text>
+    <text x="555" y="329" fill="#315f4e" font-size="30">Копия выбранной версии.</text>
+    <text x="555" y="370" fill="#315f4e" font-size="28">ID для чтения и сравнения.</text>
+    <text x="555" y="409" fill="#315f4e" font-size="26">Файлы остаются в истории.</text>
   </g>
+  <path d="M481 317H518" fill="none" stroke="#62788e" stroke-width="3" marker-end="url(#flow-arrow)"/>
+  <path d="M741 430V453" fill="none" stroke="#62788e" stroke-width="3" marker-end="url(#flow-arrow)"/>
 
-  <!-- 2. Retained source files make the version explicit. -->
-  <rect x="518" y="180" width="438" height="300" rx="23" fill="#e3f5ef" stroke="#9ecfbd" stroke-width="2"/>
-  <circle cx="569" cy="234" r="30" fill="#176d5a"/>
-  <text x="569" y="245" text-anchor="middle" fill="#ffffff" font-family="Segoe UI,Arial,sans-serif" font-size="31" font-weight="800">2</text>
-  <use href="#snapshot-icon" x="857" y="197" stroke="#176d5a"/>
+  <rect x="44" y="461" width="912" height="111" rx="20" fill="#cceade"/>
   <g font-family="Segoe UI,Arial,sans-serif">
-    <text x="546" y="306" fill="#174d40" font-size="42" font-weight="800">Сохраните</text>
-    <text x="546" y="356" fill="#174d40" font-size="42" font-weight="800">снимок</text>
-    <text x="548" y="416" fill="#355f54" font-size="32">Файлы закреплены</text>
-    <text x="548" y="458" fill="#355f54" font-size="32">за своей версией.</text>
+    <text x="73" y="505" fill="#174d3c" font-size="30" font-weight="800">Первый результат: снимок + список модулей</text>
+    <text x="73" y="550" fill="#315f4e" font-size="27">Без AI и установленной 1С, если выгрузка уже есть.</text>
   </g>
+  <path d="M500 574V629" fill="none" stroke="#62788e" stroke-width="3" marker-end="url(#flow-arrow)"/>
 
-  <!-- 3. The editor shows a retained module. Graph analysis is a separate core interface. -->
-  <rect x="44" y="522" width="438" height="300" rx="23" fill="#e9eeff" stroke="#b0bce3" stroke-width="2"/>
-  <circle cx="95" cy="576" r="30" fill="#4553ac"/>
-  <text x="95" y="587" text-anchor="middle" fill="#ffffff" font-family="Segoe UI,Arial,sans-serif" font-size="31" font-weight="800">3</text>
-  <use href="#search-icon" x="383" y="539" stroke="#4553ac" color="#4553ac"/>
+  <!-- 3: source viewing is bound to the selected snapshot. -->
+  <rect x="44" y="638" width="912" height="163" rx="22" fill="#e8efff" stroke="#a8bce4" stroke-width="2"/>
+  <circle cx="95" cy="687" r="29" fill="#3e5b9c"/>
+  <use href="#read-icon" x="870" y="660" stroke="#3e5b9c"/>
   <g font-family="Segoe UI,Arial,sans-serif">
-    <text x="72" y="648" fill="#28396d" font-size="42" font-weight="800">Найдите</text>
-    <text x="72" y="698" fill="#28396d" font-size="42" font-weight="800">модуль</text>
-    <text x="74" y="758" fill="#455582" font-size="32">Откройте код</text>
-    <text x="74" y="800" fill="#455582" font-size="32">сохранённой версии.</text>
+    <text x="95" y="698" text-anchor="middle" fill="#ffffff" font-size="31" font-weight="800">3</text>
+    <text x="138" y="698" fill="#263e6f" font-size="35" font-weight="800">Найдите и прочитайте модуль</text>
+    <text x="138" y="747" fill="#435b81" font-size="30">Откройте код выбранного снимка в редакторе.</text>
+    <text x="138" y="785" fill="#435b81" font-size="27">Поиск работает по части пути.</text>
   </g>
+  <path d="M500 803V857" fill="none" stroke="#62788e" stroke-width="3" marker-end="url(#flow-arrow)"/>
 
-  <!-- 4. A draft is separate from source files; manual and model routes both exist. -->
-  <rect x="518" y="522" width="438" height="300" rx="23" fill="#f2eafd" stroke="#cab5e7" stroke-width="2"/>
-  <circle cx="569" cy="576" r="30" fill="#7651aa"/>
-  <text x="569" y="587" text-anchor="middle" fill="#ffffff" font-family="Segoe UI,Arial,sans-serif" font-size="31" font-weight="800">4</text>
-  <use href="#draft-icon" x="857" y="539" stroke="#7651aa"/>
+  <!-- 4: both routes create a proposal with its own revision history. -->
+  <rect x="44" y="866" width="912" height="298" rx="22" fill="#f1eafb" stroke="#c4afe0" stroke-width="2"/>
+  <circle cx="95" cy="915" r="29" fill="#74509f"/>
+  <use href="#write-icon" x="870" y="889" stroke="#74509f"/>
+  <rect x="73" y="953" width="412" height="143" rx="17" fill="#ffffff" stroke="#d5c5e8" stroke-width="1.5"/>
+  <rect x="515" y="953" width="412" height="143" rx="17" fill="#ffffff" stroke="#d5c5e8" stroke-width="1.5"/>
   <g font-family="Segoe UI,Arial,sans-serif">
-    <text x="546" y="648" fill="#533773" font-size="42" font-weight="800">Создайте</text>
-    <text x="546" y="698" fill="#533773" font-size="42" font-weight="800">черновик</text>
-    <text x="548" y="758" fill="#664d7f" font-size="32">Сами или с AI.</text>
-    <text x="548" y="800" fill="#664d7f" font-size="32">Отдельно от исходника.</text>
+    <text x="95" y="926" text-anchor="middle" fill="#ffffff" font-size="31" font-weight="800">4</text>
+    <text x="138" y="926" fill="#4f3470" font-size="34" font-weight="800">Подготовьте отдельный черновик</text>
+    <text x="102" y="998" fill="#4f3470" font-size="29" font-weight="700">Вручную</text>
+    <text x="544" y="998" fill="#4f3470" font-size="29" font-weight="700">С помощью AI</text>
+    <text x="102" y="1041" fill="#614b7b" font-size="28">Первый — через CLI.</text>
+    <text x="102" y="1080" fill="#614b7b" font-size="28">Дальше — в редакторе.</text>
+    <text x="544" y="1041" fill="#614b7b" font-size="28">Модель предложит правку.</text>
+    <text x="544" y="1080" fill="#614b7b" font-size="28">Вы изучите результат.</text>
+    <text x="73" y="1142" fill="#614b7b" font-size="26">Версии черновика связаны с исходным снимком.</text>
   </g>
+  <path d="M500 1166V1219" fill="none" stroke="#62788e" stroke-width="3" marker-end="url(#flow-arrow)"/>
 
-  <!-- 5. Native and test checks require their own installed and trusted profiles. -->
-  <rect x="44" y="864" width="438" height="300" rx="23" fill="#e2f2ff" stroke="#a8cce5" stroke-width="2"/>
-  <circle cx="95" cy="918" r="30" fill="#23678f"/>
-  <text x="95" y="929" text-anchor="middle" fill="#ffffff" font-family="Segoe UI,Arial,sans-serif" font-size="31" font-weight="800">5</text>
-  <use href="#check-icon" x="383" y="881" stroke="#23678f"/>
+  <!-- 5: each installed check reports about a saved revision. -->
+  <rect x="44" y="1228" width="912" height="294" rx="22" fill="#e3f1ff" stroke="#a2c4e0" stroke-width="2"/>
+  <circle cx="95" cy="1277" r="29" fill="#23648e"/>
+  <rect x="73" y="1320" width="265" height="122" rx="17" fill="#ffffff" stroke="#bfd6e9" stroke-width="1.5"/>
+  <rect x="368" y="1320" width="265" height="122" rx="17" fill="#ffffff" stroke="#bfd6e9" stroke-width="1.5"/>
+  <rect x="663" y="1320" width="264" height="122" rx="17" fill="#ffffff" stroke="#bfd6e9" stroke-width="1.5"/>
   <g font-family="Segoe UI,Arial,sans-serif">
-    <text x="72" y="994" fill="#214969" font-size="40" font-weight="800">Проверьте версию</text>
-    <text x="74" y="1048" fill="#365d79" font-size="32">Сравнение и BSL.</text>
-    <text x="74" y="1090" fill="#365d79" font-size="32">1С и тесты —</text>
-    <text x="74" y="1132" fill="#365d79" font-size="32">после настройки.</text>
+    <text x="95" y="1288" text-anchor="middle" fill="#ffffff" font-size="31" font-weight="800">5</text>
+    <text x="138" y="1288" fill="#1e4b6c" font-size="34" font-weight="800">Сравните и проверьте эту версию</text>
+    <text x="95" y="1361" fill="#1e4b6c" font-size="30" font-weight="700">Сравнение</text>
+    <text x="390" y="1361" fill="#1e4b6c" font-size="30" font-weight="700">BSL</text>
+    <text x="685" y="1361" fill="#1e4b6c" font-size="30" font-weight="700">1С и тесты</text>
+    <text x="95" y="1398" fill="#365e7d" font-size="28">Изменённые</text>
+    <text x="95" y="1431" fill="#365e7d" font-size="28">строки</text>
+    <text x="390" y="1398" fill="#365e7d" font-size="28">Java +</text>
+    <text x="390" y="1431" fill="#365e7d" font-size="28">BSL-LS</text>
+    <text x="685" y="1398" fill="#365e7d" font-size="28">Платформа +</text>
+    <text x="685" y="1431" fill="#365e7d" font-size="27">профиль YAxUnit</text>
+    <text x="73" y="1488" fill="#365e7d" font-size="27">Для BSL, платформы и тестов нужна настройка.</text>
   </g>
 
-  <!-- 6. Checks and saving never replace the user's separate decision. -->
-  <rect x="518" y="864" width="438" height="300" rx="23" fill="#e9f4dd" stroke="#b4cf97" stroke-width="2"/>
-  <circle cx="569" cy="918" r="30" fill="#4d752b"/>
-  <text x="569" y="929" text-anchor="middle" fill="#ffffff" font-family="Segoe UI,Arial,sans-serif" font-size="31" font-weight="800">6</text>
-  <use href="#decision-icon" x="857" y="881" stroke="#4d752b"/>
+  <!-- A visible feedback loop; it is not an automatic model retry. -->
+  <path d="M958 1380H975V932H960" fill="none" stroke="#7852a9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#return-arrow)"/>
+  <rect x="664" y="1181" width="291" height="36" rx="18" fill="#e7dbf6"/>
+  <text x="809.5" y="1206" text-anchor="middle" fill="#5a3a7e" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="700">Замечания? Доработайте</text>
+  <path d="M500 1524V1579" fill="none" stroke="#62788e" stroke-width="3" marker-end="url(#flow-arrow)"/>
+
+  <!-- 6: saving and checks do not trigger live application. -->
+  <rect x="44" y="1588" width="912" height="275" rx="22" fill="#edf1f8" stroke="#b4c3d6" stroke-width="2"/>
+  <circle cx="95" cy="1637" r="29" fill="#324e6e"/>
+  <rect x="73" y="1678" width="265" height="96" rx="17" fill="#ffffff" stroke="#c4d0df" stroke-width="1.5"/>
+  <rect x="368" y="1678" width="265" height="96" rx="17" fill="#ffffff" stroke="#c4d0df" stroke-width="1.5"/>
+  <rect x="663" y="1678" width="264" height="96" rx="17" fill="#fff0d6" stroke="#d8b27b" stroke-width="1.5"/>
   <g font-family="Segoe UI,Arial,sans-serif">
-    <text x="546" y="990" fill="#355121" font-size="42" font-weight="800">Решение —</text>
-    <text x="546" y="1040" fill="#355121" font-size="42" font-weight="800">за вами</text>
-    <text x="548" y="1100" fill="#4b643a" font-size="32">Отдельный шаг</text>
-    <text x="548" y="1142" fill="#4b643a" font-size="32">для применения.</text>
+    <text x="95" y="1648" text-anchor="middle" fill="#ffffff" font-size="31" font-weight="800">6</text>
+    <text x="138" y="1648" fill="#243f5d" font-size="34" font-weight="800">Решение принимает человек</text>
+    <text x="95" y="1714" fill="#243f5d" font-size="27" font-weight="700">Доработать</text>
+    <text x="95" y="1751" fill="#4a607a" font-size="27">новой ревизией</text>
+    <text x="390" y="1714" fill="#243f5d" font-size="27" font-weight="700">Оставить</text>
+    <text x="390" y="1751" fill="#4a607a" font-size="27">в истории</text>
+    <text x="685" y="1714" fill="#704613" font-size="27" font-weight="700">Применить</text>
+    <text x="685" y="1751" fill="#704613" font-size="27">отдельно</text>
+    <text x="73" y="1805" fill="#4a607a" font-size="26">Для применения нужен поддержанный сценарий</text>
+    <text x="73" y="1840" fill="#4a607a" font-size="26">и отдельная операция с проверкой её условий.</text>
   </g>
 
-  <rect x="44" y="1202" width="912" height="60" rx="18" fill="#e0e7f1"/>
-  <text x="500" y="1243" text-anchor="middle" fill="#29415e" font-family="Segoe UI,Arial,sans-serif" font-size="31" font-weight="700">Черновик ≠ применение к исходникам</text>
+  <rect x="44" y="1899" width="912" height="88" rx="20" fill="#17314c"/>
+  <g font-family="Segoe UI,Arial,sans-serif" fill="#ffffff">
+    <text x="73" y="1935" font-size="26" font-weight="700">Сохранение и успешный отчёт не применяют правку.</text>
+    <text x="73" y="1970" font-size="25">Запись в выгрузку и обновление базы 1С — отдельные операции.</text>
+  </g>
 </svg>
