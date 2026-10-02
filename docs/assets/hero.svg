@@ -1,18 +1,52 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="340" viewBox="0 0 1200 340" role="img" aria-labelledby="title desc">
-  <title id="title">Рентген — открытая среда разработки 1С</title>
-  <desc id="desc">Понимать конфигурацию. Проверять изменения. Сохранять контроль.</desc>
-  <rect width="1200" height="340" rx="24" fill="#101827"/>
-  <g fill="none" stroke="#243c51" stroke-width="1">
-    <path d="M800 0v340M900 0v340M1000 0v340M1100 0v340M720 70h480M720 170h480M720 270h480"/>
-    <circle cx="990" cy="170" r="122"/><circle cx="990" cy="170" r="82"/>
-  </g>
-  <path d="M857 219l68-100 67 67 72-72 71 45" fill="none" stroke="#55dec5" stroke-width="4"/>
-  <g fill="#55dec5"><circle cx="925" cy="119" r="7"/><circle cx="992" cy="186" r="7"/><circle cx="1064" cy="114" r="7"/></g>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="650" viewBox="0 0 1000 650" role="img" aria-labelledby="hero-title hero-desc">
+  <title id="hero-title">Рентген — понять код 1С, подготовить правку, проверить версию</title>
+  <desc id="hero-desc">Открытый проект раннего доступа. Локальное ядро хранит снимки, черновики и результаты проверок. Решение о применении принимает пользователь.</desc>
+  <rect width="1000" height="650" rx="28" fill="#0d1d2e"/>
+  <path d="M0 26Q0 0 28 0H972Q1000 0 1000 28V12H0Z" fill="#5be0c4"/>
   <g font-family="Segoe UI,Arial,sans-serif">
-    <text x="64" y="70" fill="#55dec5" font-size="16" letter-spacing="3">OPEN SOURCE · MIT · EARLY ACCESS</text>
-    <text x="60" y="157" fill="#f2f6fa" font-size="76" font-weight="700">Рентген</text>
-    <text x="64" y="210" fill="#c0cddb" font-size="27">Открытая среда разработки 1С</text>
-    <text x="64" y="272" fill="#91a5b9" font-size="19">Понимать конфигурацию. Проверять изменения.</text>
-    <text x="64" y="300" fill="#91a5b9" font-size="19">Сохранять контроль.</text>
+    <text x="54" y="78" fill="#93e9d9" font-size="27" font-weight="700" letter-spacing="1">РАЗРАБОТКА 1С · ОТКРЫТЫЙ КОД</text>
+    <rect x="736" y="43" width="210" height="48" rx="24" fill="#ffdb94"/>
+    <text x="841" y="75" text-anchor="middle" fill="#4d3518" font-size="25" font-weight="700">Ранний доступ</text>
+    <text x="50" y="218" fill="#ffffff" font-size="112" font-weight="800">Рентген</text>
+    <text x="54" y="298" fill="#f0f5fc" font-size="47" font-weight="600">Понять код.</text>
+    <text x="54" y="357" fill="#f0f5fc" font-size="47" font-weight="600">Подготовить правку.</text>
+    <text x="54" y="416" fill="#f0f5fc" font-size="47" font-weight="600">Проверить версию.</text>
   </g>
+
+  <!-- Source pages and a separate proposal: an illustration, not a product screenshot. -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="771" y="162" width="155" height="196" rx="18" fill="#203954" stroke="#47617c" stroke-width="3"/>
+    <rect x="738" y="187" width="155" height="196" rx="18" fill="#294760" stroke="#637e95" stroke-width="3"/>
+    <rect x="704" y="214" width="155" height="196" rx="18" fill="#f1f8fc" stroke="#93e9d9" stroke-width="3"/>
+    <path d="M729 248H815M729 268H800M729 288H822" stroke="#627e95" stroke-width="7"/>
+    <rect x="722" y="309" width="119" height="71" rx="10" fill="#e0f4ec" stroke="#b4dacc" stroke-width="2"/>
+    <path d="M739 331H767" stroke="#cf5a55" stroke-width="5"/>
+    <path d="M739 357H767M753 343V371" stroke="#19715d" stroke-width="5"/>
+    <path d="M787 331H825M787 356H819" stroke="#577d76" stroke-width="5"/>
+    <circle cx="869" cy="401" r="44" fill="#7358d4" stroke="#b7a4f5" stroke-width="3"/>
+    <path d="M849 401L864 416L888 386" stroke="#ffffff" stroke-width="7"/>
+  </g>
+
+  <rect x="54" y="476" width="282" height="101" rx="20" fill="#183e42" stroke="#2f716b" stroke-width="2"/>
+  <rect x="358" y="476" width="284" height="101" rx="20" fill="#302848" stroke="#68588e" stroke-width="2"/>
+  <rect x="664" y="476" width="282" height="101" rx="20" fill="#20334b" stroke="#4d7195" stroke-width="2"/>
+  <g fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke="#79e3cf">
+      <rect x="77" y="504" width="38" height="38" rx="5"/>
+      <path d="M84 496H122V534M85 516H106M85 529H101"/>
+    </g>
+    <g stroke="#c4b3fb">
+      <path d="M385 543L389 528L416 501L427 512L400 539Z M408 509L419 520"/>
+    </g>
+    <g stroke="#a1cffb">
+      <rect x="688" y="499" width="37" height="48" rx="5"/>
+      <path d="M696 514L701 520L712 507M697 534H715"/>
+    </g>
+  </g>
+  <g font-family="Segoe UI,Arial,sans-serif" font-size="34" font-weight="700" fill="#f3f7fb">
+    <text x="136" y="539">Снимки</text>
+    <text x="441" y="539">Черновики</text>
+    <text x="745" y="539">Проверки</text>
+  </g>
+  <text x="54" y="621" fill="#b8c9dc" font-family="Segoe UI,Arial,sans-serif" font-size="25">Локальное ядро · История правок · Решение пользователя</text>
 </svg>
