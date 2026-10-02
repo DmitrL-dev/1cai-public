@@ -69,6 +69,12 @@ def _read_daily_profile(root):
 
 
 def run(args):
+    if args.mode not in ("attempt", "recovery", "ready-intent-only"):
+        raise ValueError("DAILY_MODE_INVALID")
+    # This slice has no qualified Root process owner or authoritative IPC backend.
+    # Refuse before frozen-input reads, extraction, activation and legacy Popen.
+    if args.mode == "ready-intent-only":
+        raise ValueError("DAILY_ROOT_EDITOR_OWNER_REQUIRED")
     if (args.mode == "recovery") != (args.prior is not None):
         raise ValueError("Recovery requires --prior; attempt does not accept --prior")
     binding, checked = verify_frozen(args.frozen_inputs)
@@ -102,8 +108,8 @@ def run(args):
     if manifest.get("version") != binding["companion_version"] or manifest.get("publisher") != "rentgen" or manifest.get("name") != "project-companion":
         raise ValueError("INPUT_BINDING_MISMATCH")
     host = Path(__file__).with_name("companion_host")
-    script = host / ("daily.cjs" if args.mode == "attempt" else "daily_semantic_recovery.cjs")
-    checked.update(mode=args.mode, context_tokens=context_tokens, daily_profile_files=daily_before, core_version=binding["core_version"], companion_version=binding["companion_version"], validator=file_record(extension / "lib/tests-result.cjs"), source_validator=file_record(extension / "lib/core.cjs"), harness={name: file_record(host / name) for name in ("daily.cjs", "daily_semantic.cjs", "daily_semantic_recovery.cjs")})
+    script = host / {"attempt": "daily.cjs", "recovery": "daily_semantic_recovery.cjs", "ready-intent-only": "daily_ready_only.cjs"}[args.mode]
+    checked.update(mode=args.mode, context_tokens=context_tokens, daily_profile_files=daily_before, core_version=binding["core_version"], companion_version=binding["companion_version"], validator=file_record(extension / "lib/tests-result.cjs"), source_validator=file_record(extension / "lib/core.cjs"), harness={name: file_record(host / name) for name in ("daily.cjs", "daily_semantic.cjs", "daily_semantic_recovery.cjs", "daily_ready_intent.cjs", "daily_ready_only.cjs")})
     inputs = output / "inputs.json"
     inputs.write_text(json.dumps(checked, ensure_ascii=False, indent=2), "utf-8")
     env = os.environ.copy()
@@ -151,7 +157,7 @@ def run(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=("attempt", "recovery"), required=True)
+    parser.add_argument("--mode", choices=("attempt", "recovery", "ready-intent-only"), required=True)
     for name in ("profile", "output", "vsix", "editor", "frozen-inputs"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--prior", type=Path)
