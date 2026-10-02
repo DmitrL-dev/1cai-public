@@ -1,7 +1,9 @@
 'use strict';
+const {createOwnerBridge, bridgeBootstrapOptions}=require('./owner_bridge.cjs');
 // A0 constructed ordering seam. This module has no native/process/transport API
 // and cannot attest a kernel peer, authorize a real READY or issue a grant.
-function createOwnerBootstrap({generation = null, bootstrap = null} = {}) {
+function createOwnerBootstrap(options = bridgeBootstrapOptions(createOwnerBridge())) {
+  const {generation = null, bootstrap = null} = options;
   if (bootstrap !== null && typeof bootstrap !== 'function') throw new Error('OWNER_BACKEND_INVALID');
   if (bootstrap && (!Number.isSafeInteger(generation) || generation < 1)) throw new Error('OWNER_GENERATION_INVALID');
   let state = bootstrap ? 'OWNER_ENDPOINT_AVAILABLE' : 'OWNER_ENDPOINT_UNAVAILABLE';
@@ -56,4 +58,7 @@ function createOwnerBootstrap({generation = null, bootstrap = null} = {}) {
       kernel_authority: false, runtime_verified: false, ready: false, model_loading_allowed: false, native_allowed: false});}
   });
 }
-module.exports = {createOwnerBootstrap};
+function createOwnerBootstrapForBridge(bridge = createOwnerBridge()) {
+  return createOwnerBootstrap(bridgeBootstrapOptions(bridge));
+}
+module.exports = {createOwnerBootstrap, createOwnerBootstrapForBridge};
