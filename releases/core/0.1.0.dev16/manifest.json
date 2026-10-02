@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0.dev16",
+  "tag": "core-v0.1.0-dev16",
+  "prerelease": true,
+  "asset": "rentgen-core-0.1.0.dev16-windows-py311.zip",
+  "size_bytes": 20474513,
+  "sha256": "5ce8e3b3320ddd0d0a18274e207fac5b1753cba5077b02e709efaa30ac1e9f9b",
+  "wheel_sha256": "cac3cb17fbf0758f49ef7f9957dc4e211ae83af2a5a227cc60c320e89636eb52",
+  "sdist_sha256": "7ce94ee79704233ceb030d5c6a661aa750748cba6bf46a94697cf2247d14d4f0",
+  "source_commit": "cf76dd82f7b3a727640c0e47117f86f1b62aafc8",
+  "ci_run": 37067716555,
+  "pr_ci_run": 37062406864,
+  "python_tests": 3164,
+  "platform": "Windows x64 / CPython 3.11",
+  "tested_1c_version": null,
+  "native_1c_smoke_accepted": false,
+  "native_editor_source_commit": null,
+  "native_1c_scope": "Проверены свежая офлайн установка Core105 и официальный MCP SDK32/scoped3; установка Companion017 и обычная активация отдельного VSCode1.139.1/Cline4.1.17 профиля. Новый actual OwnerIPC/cold Editor/model, editor1C сценарий и типовые конфигурации не приняты. Исторические dev15/M49 сохраняют собственную область.",
+  "platform_1c_acceptance": false,
+  "full_product_ready": false,
+  "python_tests_basis": "3164 unique passing cases in both original PR54 Source push/PR reports (3158 baseline+6), protected38 included, exact entire Source tree equals Main54. Fresh Main54 original all4jobs55steps green; fresh Main54 JUnit/TAP counts were not reread.",
+  "source_ci_runs": {
+    "push": 37062103813,
+    "pull_request": 37062406864,
+    "attempt": 1
+  }
+}

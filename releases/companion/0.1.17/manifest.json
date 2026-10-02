@@ -1,0 +1,12 @@
+{
+  "version": "0.1.17",
+  "sha256": "83bdcea289b2d8195bbb7e6157ac4e166254da9d87ed2dc2d9182fd475ebc44a",
+  "size_bytes": 263885,
+  "required_core": "0.1.0.dev16",
+  "stage": "prerelease",
+  "platform_1c_tested": false,
+  "tested_1c_version": null,
+  "native_editor_source_commit": null,
+  "test_scope": "Оба оригинальных Source54 CI:3164Python/332Node/protected38 без пропусков. Финальный VSIX44 равен двум Source53 сборкам; actual isolated installed41 exact+package metadata only, CLI0.1.17/4.1.17 и no-prompt legacyactivation Coredev16/project accepted Root. Private codec transcript только controlled fixture; realOwnerIPC/ABI/model/native/editor-result-recovery/disabled-profile сценарий не квалифицирован.",
+  "spectorn_integrated": false
+}
