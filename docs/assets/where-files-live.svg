@@ -1,48 +1,74 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="920" viewBox="0 0 1000 920" role="img" aria-labelledby="storage-title storage-desc">
-  <title id="storage-title">Что где хранится: три папки для работы с Рентгеном</title>
-  <desc id="storage-desc">Папка выгрузки содержит исходные файлы конфигурации 1С. Состояние Рентгена содержит снимки, версии черновиков и результаты. Профиль редактора содержит настройки, рабочие копии и журналы. Сохранение рабочей копии, публикация ревизии и применение к исходникам — отдельные действия.</desc>
-  <rect width="1000" height="920" rx="28" fill="#f4f6fb"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1210" viewBox="0 0 1000 1210" role="img" aria-labelledby="storage-title storage-desc">
+  <title id="storage-title">Файлы Рентгена: исходники, состояние и профиль редактора</title>
+  <desc id="storage-desc">Выгрузка содержит исходные файлы конфигурации. Состояние Рентгена хранит реестр, снимки, черновики и результаты операций. Профиль редактора содержит настройки, рабочие копии и журналы. Пути C:\MyConfiguration и C:\RentgenState приведены как примеры. При ручном редактировании Ctrl+S сохраняет рабочую копию, команда Рентгена добавляет ревизию, а применение к исходному файлу выполняется отдельно. История не заменяет резервную копию информационной базы.</desc>
+  <defs>
+    <marker id="save-arrow" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M2 2L10 6L2 10" fill="none" stroke="#62788e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <rect width="1000" height="1210" rx="28" fill="#f5f7fc"/>
   <g font-family="Segoe UI,Arial,sans-serif">
-    <text x="44" y="84" fill="#172d48" font-size="54" font-weight="800">Что где хранится</text>
-    <text x="46" y="137" fill="#4a5d76" font-size="31">Три отдельные папки на вашем компьютере</text>
+    <text x="44" y="81" fill="#17314c" font-size="48" font-weight="800">Где находятся ваши файлы</text>
+    <text x="46" y="131" fill="#475d76" font-size="29">Основные папки проекта на вашем компьютере</text>
   </g>
 
-  <!-- The folders represent responsibilities, not a literal directory tree. -->
-  <rect x="44" y="196" width="912" height="171" rx="23" fill="#fff0dc" stroke="#dfb47c" stroke-width="2"/>
-  <rect x="69" y="220" width="128" height="123" rx="18" fill="#ffe2b5"/>
-  <g fill="none" stroke="#ad5317" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M91 263H116L126 275H174V318H91Z M91 275H174 M108 290H156 M108 304H146"/>
+  <rect x="44" y="170" width="912" height="210" rx="22" fill="#fff1dd" stroke="#ddaf74" stroke-width="2"/>
+  <rect x="69" y="211" width="128" height="128" rx="21" fill="#ffe1b2"/>
+  <g fill="none" stroke="#a45114" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M89 253H116L127 265H175V311H89ZM89 265H175M106 284H156M106 298H147"/>
   </g>
   <g font-family="Segoe UI,Arial,sans-serif">
-    <text x="232" y="258" fill="#562d15" font-size="42" font-weight="800">Выгрузка 1С</text>
-    <text x="234" y="306" fill="#69452d" font-size="32">Исходные файлы конфигурации.</text>
-    <text x="234" y="348" fill="#69452d" font-size="32">Из этой папки создаётся снимок.</text>
+    <text x="232" y="231" fill="#5a3215" font-size="37" font-weight="800">Выгрузка 1С</text>
+    <text x="234" y="280" fill="#67462a" font-size="31">Исходники конфигурации 1С.</text>
+    <text x="234" y="321" fill="#67462a" font-size="29">Из этой папки создаётся снимок.</text>
   </g>
+  <text x="234" y="359" fill="#67462a" font-family="Consolas,Courier New,monospace" font-size="26">C:\MyConfiguration</text>
 
-  <rect x="44" y="403" width="912" height="171" rx="23" fill="#e3f5ef" stroke="#9ecfbd" stroke-width="2"/>
-  <rect x="69" y="427" width="128" height="123" rx="18" fill="#c7e8dc"/>
-  <g fill="none" stroke="#176d5a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="91" y="465" width="67" height="61" rx="6"/>
-    <path d="M104 455H173V513 M117 445H183V502 M105 483H146 M105 499H137 M105 513H144"/>
+  <rect x="44" y="408" width="912" height="210" rx="22" fill="#e1f4eb" stroke="#93c8b2" stroke-width="2"/>
+  <rect x="69" y="449" width="128" height="128" rx="21" fill="#c5e6d7"/>
+  <g fill="none" stroke="#176b53" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="89" y="485" width="66" height="62" rx="6"/>
+    <path d="M102 475H170V534M115 465H182V523M103 503H142M103 520H134M103 534H144"/>
   </g>
   <g font-family="Segoe UI,Arial,sans-serif">
-    <text x="232" y="465" fill="#174d40" font-size="42" font-weight="800">Состояние Рентгена</text>
-    <text x="234" y="513" fill="#355f54" font-size="32">Снимки, черновики и результаты.</text>
-    <text x="234" y="555" fill="#355f54" font-size="32">История хранится в ядре.</text>
+    <text x="232" y="469" fill="#174d3c" font-size="37" font-weight="800">Состояние Рентгена</text>
+    <text x="234" y="518" fill="#315f4e" font-size="31">Снимки, черновики, результаты.</text>
+    <text x="234" y="559" fill="#315f4e" font-size="29">Реестр проектов и история ядра.</text>
   </g>
+  <text x="234" y="597" fill="#315f4e" font-family="Consolas,Courier New,monospace" font-size="26">C:\RentgenState</text>
 
-  <rect x="44" y="610" width="912" height="171" rx="23" fill="#f2eafd" stroke="#cab5e7" stroke-width="2"/>
-  <rect x="69" y="634" width="128" height="123" rx="18" fill="#e2d2f5"/>
-  <g fill="none" stroke="#7651aa" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="90" y="654" width="86" height="62" rx="6"/>
-    <path d="M133 716V738 M112 738H154 M102 680L113 690L102 700 M129 700H158"/>
+  <rect x="44" y="646" width="912" height="210" rx="22" fill="#f1eafb" stroke="#c4afe0" stroke-width="2"/>
+  <rect x="69" y="687" width="128" height="128" rx="21" fill="#e1d2f1"/>
+  <g fill="none" stroke="#74509f" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="89" y="708" width="87" height="65" rx="6"/>
+    <path d="M132 774V795M111 795H154M103 727L115 739L103 751M130 751H158"/>
   </g>
   <g font-family="Segoe UI,Arial,sans-serif">
-    <text x="232" y="672" fill="#533773" font-size="42" font-weight="800">Профиль редактора</text>
-    <text x="234" y="720" fill="#664d7f" font-size="32">Настройки и рабочие копии.</text>
-    <text x="234" y="762" fill="#664d7f" font-size="32">Журналы работы редактора.</text>
+    <text x="232" y="707" fill="#4f3470" font-size="37" font-weight="800">Профиль редактора</text>
+    <text x="234" y="756" fill="#614b7b" font-size="31">Настройки, копии для правки, журналы.</text>
+    <text x="234" y="797" fill="#614b7b" font-size="29">Своя отдельная папка.</text>
+    <text x="234" y="835" fill="#614b7b" font-size="26">Путь выбирается при подготовке профиля.</text>
   </g>
 
-  <rect x="44" y="817" width="912" height="69" rx="18" fill="#e0e7f1"/>
-  <text x="500" y="862" text-anchor="middle" fill="#29415e" font-family="Segoe UI,Arial,sans-serif" font-size="29" font-weight="700">Рабочая копия → ревизия → отдельное применение</text>
+  <text x="44" y="919" fill="#17314c" font-family="Segoe UI,Arial,sans-serif" font-size="34" font-weight="800">Ручная правка: три действия</text>
+  <rect x="44" y="953" width="264" height="125" rx="18" fill="#f1eafb" stroke="#c4afe0" stroke-width="2"/>
+  <rect x="368" y="953" width="264" height="125" rx="18" fill="#e1f4eb" stroke="#93c8b2" stroke-width="2"/>
+  <rect x="692" y="953" width="264" height="125" rx="18" fill="#fff1dd" stroke="#ddaf74" stroke-width="2"/>
+  <g font-family="Segoe UI,Arial,sans-serif">
+    <text x="69" y="993" fill="#4f3470" font-size="29" font-weight="700">Ctrl+S</text>
+    <text x="393" y="993" fill="#174d3c" font-size="25" font-weight="700">Команда Рентгена</text>
+    <text x="717" y="993" fill="#5a3215" font-size="27" font-weight="700">Применение</text>
+    <text x="69" y="1035" fill="#614b7b" font-size="27">Рабочая</text>
+    <text x="69" y="1067" fill="#614b7b" font-size="27">копия</text>
+    <text x="393" y="1035" fill="#315f4e" font-size="27">Новая ревизия</text>
+    <text x="393" y="1067" fill="#315f4e" font-size="27">в истории ядра</text>
+    <text x="717" y="1035" fill="#67462a" font-size="27">Исходный файл</text>
+    <text x="717" y="1067" fill="#67462a" font-size="27">после решения</text>
+  </g>
+  <g fill="none" stroke="#62788e" stroke-width="3" marker-end="url(#save-arrow)">
+    <path d="M317 1017H359"/>
+    <path d="M641 1017H683"/>
+  </g>
+  <rect x="44" y="1112" width="912" height="66" rx="19" fill="#17314c"/>
+  <text x="500" y="1155" text-anchor="middle" fill="#ffffff" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700">История не заменяет резервную копию базы 1С.</text>
 </svg>

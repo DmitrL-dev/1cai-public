@@ -1,110 +1,150 @@
 # Документация Рентгена
 
-[Главная](../README.md) · [Скачать опубликованный выпуск](https://github.com/DmitrL-dev/1cai-public/releases)
+[Главная](../README.md) · [Первое знакомство](START_HERE.md) · [Скачать выпуск](https://github.com/DmitrL-dev/1cai-public/releases)
 
-Выберите задачу. Для первого знакомства достаточно первых трёх документов;
-точные контракты нужны при настройке, автоматизации и применении изменений.
+Выберите ближайшую задачу. Этот каталог ведёт от понятного обзора к пошаговым
+инструкциям, затем к точным условиям настройки и применения.
 
-## Начать и освоиться
+## Если открыли репозиторий впервые
 
-| Документ | Что узнаете |
+| По порядку | Документ | Зачем его читать |
+| :--- | :--- | :--- |
+| **1. Понять** | [Первое знакомство](START_HERE.md) | Как устроен Рентген, что подготовить и какие слова понадобятся |
+| **2. Попробовать** | [Первый запуск](../GETTING_STARTED.md) | Установить ядро, сохранить снимок и получить список модулей |
+| **3. Освоиться** | [Как пользоваться](USER_GUIDE.md) | Найти код, работать с черновиками и читать результаты проверок |
+
+Для оценки инструмента командой начните с
+[возможностей и ограничений](CAPABILITIES.md), [состояния поставки](product/READINESS.md)
+и [совместимости конфигураций](product/CONFIGURATION-COMPATIBILITY.md).
+Последняя опубликованная пара — Core dev15 / Companion 0.1.15;
+Core dev16 / Companion 0.1.17 в текущих исходниках остаются кандидатами.
+
+## Быстро найти нужный раздел
+
+[Окружение и доступ](#настроить-окружение-и-доступ) ·
+[Чтение исходников](#читать-исходники-и-сравнивать-снимки) ·
+[Черновики и AI](#готовить-черновики-и-правки-с-ai) ·
+[Проверки](#проверить-сохранённую-версию) ·
+[Применение](#применить-поддержанную-правку) ·
+[Наблюдение и отчёты](#наблюдать-за-проектом-и-получать-отчёты) ·
+[Обновления и EDT](#изучить-обновления-и-edt) ·
+[Основания и участие](#проверить-основания-и-участвовать)
+
+## Настроить окружение и доступ
+
+Эти инструкции предназначены для человека, который устанавливает и подключает
+инструменты. Для первого результата достаточно Core со scanner и папки выгрузки.
+
+| Ваша задача | Инструкция |
 | :--- | :--- |
-| [Первый запуск](../GETTING_STARTED.md) | Что подготовить, как установить Core, сохранить снимок и открыть модуль |
-| [Как пользоваться](USER_GUIDE.md) | Термины, действия в редакторе, черновики, проверки и восстановление результата |
-| [Возможности и ограничения](CAPABILITIES.md) | Какие маршруты реализованы, где есть частичное покрытие и что подтверждено опытами |
-| [Состояние поставки](product/READINESS.md) | Версии, ссылки на CI, публикацию и нативные проверки |
-| [Совместимость конфигураций](product/CONFIGURATION-COMPATIBILITY.md) | Какие доказательства есть для форматов и какие не подтверждают типовые конфигурации |
+| Собрать выбранный Core и зарегистрировать проект | [Установка ядра и первый проект](product/CORE-INSTALLATION.md) |
+| Подготовить воспроизводимый комплект с зависимостями | [Офлайн-комплект Core](product/CORE-OFFLINE-KIT.md) |
+| Создать отдельный профиль VSCodium / Cline | [Подготовка редактора](../integrations/open-editor/README.md) |
+| Настроить панели модулей и черновиков | [Companion: расширение редактора](../integrations/vscode-rentgen/README.md) |
+| Подключить AI-клиент к ядру | [Инструменты MCP](product/CORE-MCP.md) |
+| Назначить или отозвать права | [Доступ к проекту](product/PROJECT-ACCESS.md) |
+| Обновить старое состояние проекта | [Миграция состояния](product/STATE-MIGRATION.md) и [переход на schema4](product/CORE-INSTALLATION.md#переход-существующего-проекта-на-schema4) |
 
-## Установить и подключить инструменты
+## Читать исходники и сравнивать снимки
 
-| Задача | Инструкция |
+| Ваша задача | Инструкция |
 | :--- | :--- |
-| Собрать выбранный Core и зарегистрировать проект | [Core installation](product/CORE-INSTALLATION.md) |
-| Собрать воспроизводимый комплект с зависимостями | [Offline kit](product/CORE-OFFLINE-KIT.md) |
-| Подготовить отдельный профиль VSCodium / Cline | [Open editor](../integrations/open-editor/README.md) |
-| Настроить Companion и узнать его ограничения | [Расширение редактора](../integrations/vscode-rentgen/README.md) |
-| Подключить локальный AI-клиент через MCP | [Core MCP](product/CORE-MCP.md) |
-| Назначить или отозвать права проекта | [Project access](product/PROJECT-ACCESS.md) |
-| Обновить старое состояние проекта | [State migration](product/STATE-MIGRATION.md) и [schema4](product/CORE-INSTALLATION.md#переход-существующего-проекта-на-schema4) |
+| Найти модули по части пути | [Поиск исходников](product/SOURCE-DISCOVERY.md) |
+| Понять метаданные сохранённой версии | [Метаданные снимка](product/SNAPSHOT-METADATA.md) |
+| Читать сохранённые файлы в согласованной сессии | [Сессии чтения снимка](product/SNAPSHOT-READ-SESSIONS.md) |
+| Узнать, что изменилось между двумя версиями выгрузки | [Сравнение снимков](product/SNAPSHOT-DIFF.md) |
 
-## Читать исходники и работать с черновиками
+## Готовить черновики и правки с AI
 
-| Задача | Инструкция |
+| Ваша задача | Инструкция |
 | :--- | :--- |
-| Найти модули по пути | [Source discovery](product/SOURCE-DISCOVERY.md) |
-| Понять сохранённые метаданные | [Snapshot metadata](product/SNAPSHOT-METADATA.md) и [read sessions](product/SNAPSHOT-READ-SESSIONS.md) |
-| Сравнить два снимка | [Snapshot diff](product/SNAPSHOT-DIFF.md) |
-| Сохранять и открывать версии через CLI | [Draft history](product/DRAFT-HISTORY.md) |
-| Управлять черновиками через MCP | [Draft MCP](product/DRAFT-MCP.md) и [большие модули](product/LARGE-DRAFT-MCP.md) |
-| Исправить черновик вручную | [Manual draft edit](product/MANUAL-DRAFT-EDIT.md) |
-| Подготовить управляемую локальную правку | [Local repair](product/LOCAL-REPAIR.md) |
+| Создать первый ручной черновик и работать с версиями через CLI | [История черновиков и CLI](product/DRAFT-HISTORY.md) |
+| Работать с черновиками через AI-клиент | [Черновики через MCP](product/DRAFT-MCP.md) |
+| Читать и изменять большие модули через MCP | [Ограниченный маршрут больших черновиков](product/LARGE-DRAFT-MCP.md) |
+| Доработать сохранённое предложение вручную | [Ручное редактирование черновика](product/MANUAL-DRAFT-EDIT.md) |
+| Подготовить предложение локальной модели | [Управляемая локальная правка](product/LOCAL-REPAIR.md) |
+
+Сохранение версии, проверка и применение — отдельные действия.
+В редакторе их порядок объясняет [пользовательское руководство](USER_GUIDE.md).
 
 ## Проверить сохранённую версию
 
-| Задача | Инструкция |
+Сначала выберите нужную ревизию. Отчёт старой версии не подтверждает новый текст.
+BSL, платформа и тесты требуют своей подготовки.
+
+| Ваша задача | Инструкция |
 | :--- | :--- |
-| Установить runtime и выполнить BSL-проверку из CLI | [Proposal check](product/PROPOSAL-CHECK.md) |
-| Запустить BSL-проверку в редакторе | [Editor BSL check](product/EDITOR-BSL-CHECK.md) |
-| Проверить предложение установленной платформой | [Proposal platform check](product/PROPOSAL-PLATFORM-CHECK.md) |
-| Запустить платформенную проверку в редакторе | [Editor platform check](product/EDITOR-PLATFORM-CHECK.md) |
-| Подготовить доверенный профиль тестов | [Test profiles](product/TEST-PROFILES.md) и [YAxUnit](product/YAXUNIT-PLATFORM-PROFILE.md) |
-| Выполнить тесты версии из редактора | [Editor tests](product/EDITOR-TESTS.md) |
+| Установить BSL runtime и выполнить диагностику через CLI | [BSL-проверка предложения](product/PROPOSAL-CHECK.md) |
+| Получить BSL-диагностику в редакторе | [BSL-проверка из Companion](product/EDITOR-BSL-CHECK.md) |
+| Проверить предложение установленной платформой | [Проверка компилятором 1С](product/PROPOSAL-PLATFORM-CHECK.md) |
+| Запустить платформенную проверку в редакторе | [Проверка 1С из Companion](product/EDITOR-PLATFORM-CHECK.md) |
+| Зарегистрировать доверенный тестовый профиль | [Тестовые профили](product/TEST-PROFILES.md) и [профиль YAxUnit](product/YAXUNIT-PLATFORM-PROFILE.md) |
+| Выполнить тесты выбранной ревизии в редакторе | [Тесты из Companion](product/EDITOR-TESTS.md) |
 
 ## Применить поддержанную правку
 
-Применение — отдельная операция. Сначала проверьте поддержанный формат,
-операцию, права, ожидаемую версию и сценарий восстановления.
+Применение требует отдельной операции. Прочитайте условия выбранного
+маршрута: формат, объём изменения, права, ожидаемую версию и восстановление.
+Запись в выгрузку и обновление информационной базы 1С имеют свои требования.
 
-| Задача | Инструкция |
+| Ваша задача | Инструкция |
 | :--- | :--- |
-| Изменить один существующий BSL-файл | [Direct BSL apply](product/PROPOSAL-LIVE-APPLY.md) |
-| Переименовать реквизит Catalog в Designer XML | [Metadata live apply](product/METADATA-LIVE-APPLY.md) |
-| Работать с отдельной принадлежащей копией | [Metadata workspace](product/METADATA-WORKSPACE.md) |
-| Посмотреть preview переименования | [Metadata preview](product/METADATA-PREVIEW.md) |
-| Подготовить apply и квалифицировать candidate | [Metadata apply](product/METADATA-APPLY.md) и [apply gate](product/METADATA-APPLY-GATE.md) |
-| Настроить ограниченный native EDT маршрут | [EDT execution](product/EDT-EXECUTION.md) и [профили](product/EDT-PROFILES.md) |
-
-## Изучить обновления и EDT
-
-| Задача | Инструкция |
-| :--- | :--- |
-| Сравнить base / current / upstream | [Three-way updates](product/THREE-WAY-UPDATES.md) |
-| Сопоставить Designer XML по UUID | [Metadata three-way](product/METADATA-THREE-WAY.md) |
-| Узнать семантические границы BSL, форм и СКД | [Three-way semantics](product/METADATA-THREE-WAY-SEMANTICS.md) |
-| Получить EDT inventory | [EDT identity inventory](product/EDT-INVENTORY-IDENTITY.md#local-cli) |
-| Сравнить три EDT inventory | [EDT identity three-way](product/EDT-IDENTITY-THREE-WAY.md) |
-| Разобрать вложенные реквизиты EDT Catalog | [EDT attribute three-way](product/EDT-ATTRIBUTE-THREE-WAY.md) |
-| Изучить ограниченный ibcmd цикл | [EDT fixture executor](product/EDT-FIXTURE-EXECUTOR.md) |
-
-Plan или candidate не означают, что обновление типовой конфигурации принято.
-Границы покрытий приведены в [матрице совместимости](product/CONFIGURATION-COMPATIBILITY.md).
+| Изменить один существующий BSL-файл | [Прямое применение BSL](product/PROPOSAL-LIVE-APPLY.md) |
+| Переименовать реквизит каталога в Designer XML | [Применение изменения метаданных](product/METADATA-LIVE-APPLY.md) |
+| Работать с отдельной принадлежащей копией | [Рабочая копия метаданных](product/METADATA-WORKSPACE.md) |
+| Предварительно посмотреть переименование | [Предпросмотр метаданных](product/METADATA-PREVIEW.md) |
+| Подготовить применение и квалифицировать кандидат | [Подготовка применения](product/METADATA-APPLY.md) и [проверка допуска](product/METADATA-APPLY-GATE.md) |
+| Настроить ограниченный нативный маршрут EDT | [Выполнение EDT](product/EDT-EXECUTION.md) и [профили EDT](product/EDT-PROFILES.md) |
 
 ## Наблюдать за проектом и получать отчёты
 
-| Задача | Инструкция |
+Это дополнительные маршруты для технического специалиста и владельца.
+Источники показателей и службы требуют отдельной настройки.
+
+| Ваша задача | Инструкция |
 | :--- | :--- |
-| Следить за изменениями папки выгрузки | [Observer](product/OBSERVER.md) |
-| Разбирать Git-находки | [Git watcher](product/GIT-WATCHER.md), [findings](product/GIT-FINDINGS.md), [BSL analyzer](product/GIT-BSL-ANALYZER.md) |
-| Привязать Git и снимок к доказательствам | [Git/snapshot evidence](product/GIT-SNAPSHOT-EVIDENCE.md) |
-| Собрать отчёт владельца | [Owner report](product/OWNER-REPORT.md) |
-| Сохранить и прочитать отчёт через CLI/MCP | [Owner report store](product/OWNER-REPORT-STORE.md) |
-| Подключить подтверждённые показатели | [Runtime metrics](product/RUNTIME-METRICS.md) и [экспорт регистра 1С/ERP](product/RUNTIME-SOURCE.md) |
-| Отправить и принять уведомление | [Delivery](product/NOTIFICATION-DELIVERY.md) и [receiver](product/NOTIFICATION-RECEIVER.md) |
-| Изучить lifecycle Windows-службы | [Service host](product/SERVICE-HOST.md), [installer](product/SERVICE-INSTALLER.md), [process inventory qualification](product/STOCK-PROCESS-INVENTORY-QUALIFICATION.md) |
+| Следить за изменением папки выгрузки | [Наблюдатель исходников](product/OBSERVER.md) |
+| Разбирать изменения и находки Git | [Наблюдатель Git](product/GIT-WATCHER.md), [находки](product/GIT-FINDINGS.md), [BSL-анализатор](product/GIT-BSL-ANALYZER.md) |
+| Связать Git и снимок с подтверждениями | [Привязка Git к снимку](product/GIT-SNAPSHOT-EVIDENCE.md) |
+| Собрать отчёт владельца проекта | [Состав отчёта](product/OWNER-REPORT.md) |
+| Сохранить и прочитать отчёт через CLI/MCP | [Хранение отчётов](product/OWNER-REPORT-STORE.md) |
+| Подключить подтверждённые показатели | [Показатели исполнения](product/RUNTIME-METRICS.md) и [экспорт регистра 1С/ERP](product/RUNTIME-SOURCE.md) |
+| Отправить и принять уведомление | [Доставка](product/NOTIFICATION-DELIVERY.md) и [приём](product/NOTIFICATION-RECEIVER.md) |
+| Изучить запуск и установку Windows-службы | [Хост службы](product/SERVICE-HOST.md), [установка](product/SERVICE-INSTALLER.md), [квалификация состава процессов](product/STOCK-PROCESS-INVENTORY-QUALIFICATION.md) |
+
+## Изучить обновления и EDT
+
+Для этих маршрутов понадобятся три исходных состояния: база сравнения
+(base), ваша текущая версия (current) и входящее обновление (upstream).
+EDT — среда разработки 1С:Enterprise Development Tools.
+
+| Ваша задача | Инструкция |
+| :--- | :--- |
+| Сравнить три состояния проекта | [Трёхстороннее сравнение обновлений](product/THREE-WAY-UPDATES.md) |
+| Сопоставить Designer XML по идентификаторам UUID | [Трёхстороннее сравнение метаданных](product/METADATA-THREE-WAY.md) |
+| Узнать границы анализа BSL, форм и СКД | [Семантика трёхстороннего сравнения](product/METADATA-THREE-WAY-SEMANTICS.md) |
+| Получить перечень объектов EDT | [Состав и идентичность EDT](product/EDT-INVENTORY-IDENTITY.md#local-cli) |
+| Сравнить три перечня объектов EDT | [Трёхстороннее сопоставление EDT](product/EDT-IDENTITY-THREE-WAY.md) |
+| Разобрать вложенные реквизиты каталога EDT | [Сопоставление реквизитов EDT](product/EDT-ATTRIBUTE-THREE-WAY.md) |
+| Изучить ограниченный цикл ibcmd | [Исполнение искусственного сценария EDT](product/EDT-FIXTURE-EXECUTOR.md) |
+
+План сравнения или подготовленный кандидат описывают свой результат.
+Приёмка обновления типовой конфигурации требует отдельных подтверждений,
+указанных в [матрице совместимости](product/CONFIGURATION-COMPATIBILITY.md).
 
 ## Проверить основания и участвовать
 
-- [Архитектура](../ARCHITECTURE.md): границы компонентов и источник истины.
-- [План развития](../ROADMAP.md): цели и критерии, которые ещё предстоит выполнить.
-- [Daily acceptance](product/DAILY-DEVELOPMENT-ACCEPTANCE.md) и
-  [platform acceptance](product/PLATFORM-ACCEPTANCE.md): отдельные критерии приёмки.
-- [Аудит](product/AUDIT-20260912.md): выявленные слабые места и приоритеты.
-- [Рынок и позиционирование](product/COMPETITOR-MATRIX.md): выбранное направление проекта.
-- [Квалификация dev15](product/DEV15-RELEASE-QUALIFICATION-20260928.md):
-  связь опубликованной поставки с нативным опытом.
-- [Правила участия](../CONTRIBUTING.md): сборка, тесты и подготовка изменений.
-- [Issues](https://github.com/DmitrL-dev/1cai-public/issues): вопросы и воспроизводимые проблемы.
+| Что хотите узнать | Документ |
+| :--- | :--- |
+| Границы компонентов и источник истины | [Архитектура](../ARCHITECTURE.md) |
+| Цели и незавершённые критерии | [План развития](../ROADMAP.md) |
+| Критерии приёмки ежедневной работы и платформы | [Ежедневная разработка](product/DAILY-DEVELOPMENT-ACCEPTANCE.md) и [платформа](product/PLATFORM-ACCEPTANCE.md) |
+| Выявленные слабые места и приоритеты | [Аудит 12 сентября 2026](product/AUDIT-20260912.md) |
+| Выбранное направление проекта | [Рынок и позиционирование](product/COMPETITOR-MATRIX.md) |
+| Связь опубликованного dev15 с нативным опытом | [Квалификация выпуска dev15](product/DEV15-RELEASE-QUALIFICATION-20260928.md) |
+| Правила сборки, тестов и внесения изменений | [Участие в разработке](../CONTRIBUTING.md) |
+| Где задать вопрос или описать проблему | [GitHub Issues](https://github.com/DmitrL-dev/1cai-public/issues) |
 
 Датированные документы и отчёты описывают свой фактический запуск.
-Их версии и результаты не становятся подтверждением новой поставки
-только потому, что появились более новые исходники.
+Их результаты относятся к указанным версиям; более новые исходники
+требуют собственных проверок.
