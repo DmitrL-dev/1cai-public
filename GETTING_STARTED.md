@@ -103,10 +103,10 @@ PowerShell. Для установки из исходников использу
 для повторного создания существующего реестра.
 
 ```powershell
-New-Item -ItemType Directory -Path C:\RentgenState -ErrorAction Stop
+New-Item -ItemType Directory -Path 'C:\RentgenState' -ErrorAction Stop
 $rentgenCommand = (Resolve-Path .\.venv\Scripts\rentgen.exe -ErrorAction Stop).Path
-& $rentgenCommand registry-init --registry C:\RentgenState\registry.sqlite3
-& $rentgenCommand project-register --registry C:\RentgenState\registry.sqlite3 --source-root C:\MyConfiguration --state-root C:\RentgenState\project --name 'Мой проект'
+& $rentgenCommand registry-init --registry 'C:\RentgenState\registry.sqlite3'
+& $rentgenCommand project-register --registry 'C:\RentgenState\registry.sqlite3' --source-root 'C:\MyConfiguration' --state-root 'C:\RentgenState\project' --name 'Мой проект'
 ```
 
 **Признак успеха:** регистрация возвращает JSON-ответ с `project_id`.
@@ -124,7 +124,7 @@ JSON — текстовый ответ программы с именованн�
 
 ```powershell
 $projectId = 'ВАШ-PROJECT-ID-ИЗ-ОТВЕТА'
-& $rentgenCommand capture --registry C:\RentgenState\registry.sqlite3 --project $projectId --scanner .\bsl-scan.exe
+& $rentgenCommand capture --registry 'C:\RentgenState\registry.sqlite3' --project $projectId --scanner .\bsl-scan.exe
 ```
 
 **Признак успеха:** команда возвращает объект `snapshot` с `snapshot_id`.
@@ -133,7 +133,7 @@ $projectId = 'ВАШ-PROJECT-ID-ИЗ-ОТВЕТА'
 
 ```powershell
 $snapshotId = 'ВАШ-SNAPSHOT-ID-ИЗ-ОТВЕТА'
-& $rentgenCommand source-list --registry C:\RentgenState\registry.sqlite3 --project $projectId --snapshot $snapshotId --kind module --limit 20
+& $rentgenCommand source-list --registry 'C:\RentgenState\registry.sqlite3' --project $projectId --snapshot $snapshotId --kind module --limit 20
 ```
 
 **Первый результат получен, если в ответе есть пути ваших BSL-модулей.**
