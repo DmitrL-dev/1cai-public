@@ -15,6 +15,10 @@ const {createBslService}=require('./lib/bsl.cjs');
 const {createBslUI}=require('./lib/bsl-ui.cjs');
 const {createTestService}=require('./lib/testing.cjs');
 const {createTestsUI}=require('./lib/tests-ui.cjs');
+const {createOwnerBootstrap}=require('./lib/owner-bootstrap.cjs');
+// Captured at module load: an explicit D10 selection cannot downgrade to local spawn.
+const selectedOwnerMode=process.env.RENTGEN_D10_OWNER_MODE;
+const coldOwnerBootstrap=selectedOwnerMode===undefined?null:createOwnerBootstrap();
 
 exports.activate = async context => {
   const initialSubscriptions = context.subscriptions.length;
@@ -26,6 +30,17 @@ exports.activate = async context => {
   await vscode.commands.executeCommand('setContext', 'rentgen.editAvailable', false);
   await vscode.commands.executeCommand('setContext', 'rentgen.bslAvailable', false);
   await vscode.commands.executeCommand('setContext', 'rentgen.bslRunning', false);
+  if (coldOwnerBootstrap) {
+    await vscode.commands.executeCommand('setContext', 'rentgen.testsAvailable', false);
+    const refusal = error => Object.freeze({ready:false, error, owner:coldOwnerBootstrap.snapshot()});
+    if (selectedOwnerMode !== 'cold-ready') return refusal('OWNER_MODE_INVALID');
+    try {
+      // No real owner transport has been admitted. The initializer remains
+      // denied even if a constructed binding were substituted into this seam.
+      await coldOwnerBootstrap.activate(context, () => {throw new Error('OWNER_TRANSPORT_NOT_ADMITTED');});
+    } catch (error) {return refusal(error.message);}
+    return refusal('OWNER_RUNTIME_ADMISSION_REQUIRED');
+  }
   if (!vscode.workspace.isTrusted) return Object.freeze({ready: false, error: 'TRUST_REQUIRED'});
   const root = process.env.RENTGEN_EDITOR_PROFILE;
   if (!root) return Object.freeze({ready: false, error: 'EDITOR_PROFILE_REQUIRED'});
