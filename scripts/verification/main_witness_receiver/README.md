@@ -11,7 +11,13 @@
 ```text
 scripts/verification/main_witness_receiver/
   README.md
+  REPRODUCING.md
   source_provenance.json
+  reproduce.py
+  compile_data_abis.py
+  admit_two_cases.py
+  launch_two_cases.py
+  verify_case.py
   root_main_receiver.c
   root_main_receiver.h
   root_live_debug_birth.h
@@ -28,6 +34,9 @@ scripts/verification/main_witness_receiver/
 | `fixtures/parent.cjs` | Сначала создаёт child, затем один раз подключается и отправляет канонический HELLO |
 | `fixtures/child.cjs` | Ограниченный экспериментом живой child; его окончание наблюдает native worker |
 | `source_provenance.json` | Размеры/SHA исходных принятых файлов, две точные замены include и размеры/SHA публичных файлов |
+| `reproduce.py` | Измеряет входы, проверяет реальные записи Source-ревью и по явному допуску оператора вызывает сборку и два controls |
+| `compile_data_abis.py` | Собирает новую DLL и читает два data ABI без запуска fixtures |
+| `admit_two_cases.py`, `launch_two_cases.py`, `verify_case.py` | Проверяют допуск, запускают два свежих hosts и сохраняют результаты lifecycle/IO/cleanup checks |
 
 Соседний `../root_debug_birth.c` образует другой, самостоятельный EXE. Его header не является ABI этой DLL. Оригинальный live header размещён здесь под отдельным именем; существующий collector продолжает иметь свои контракт и доказательства.
 
@@ -37,6 +46,7 @@ scripts/verification/main_witness_receiver/
 
 ```powershell
 $gcc = 'C:\mingw64\bin\gcc.exe'
+$env:PATH = (Split-Path -Parent $gcc) + ';' + $env:PATH
 $receiverSource = Join-Path (Get-Location).Path 'scripts\verification\main_witness_receiver\root_main_receiver.c'
 $receiverOut = Join-Path ([IO.Path]::GetTempPath()) ('rentgen-main-receiver-build-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $receiverOut -ErrorAction Stop | Out-Null
@@ -63,9 +73,9 @@ Get-FileHash -LiteralPath $receiverDll -Algorithm SHA256
 
 ## Как повторить controls
 
-Пяти native/fixture файлов достаточно для Source-проверки и сборки. Для управляемого повторения controls нужен принятый трёхчастный harness: outer admission helper, launcher двух свежих hosts и verifier одного case. Готового переносимого публичного CLI в этом Source-срезе пока нет. Fixtures отдельно не запускаются как проверка receiver.
+Публичный сценарий теперь размещён в этом каталоге: [инструкция воспроизведения](REPRODUCING.md). Он использует принятый трёхчастный harness, отдельный compiler helper и реальные записи независимого Source-ревью. Fixtures отдельно не запускаются как проверка receiver.
 
-Для переноса harness следует использовать существующие проверенные исходники, сохранив всю логику. Их исходные имена, размеры и SHA256 перечислены в [source_provenance.json](source_provenance.json). Требуются новая привязка публичных C/H/DLL, явный каталог собственных результатов вместо частного пути автора и свежие measured Node/Python/compiler pins. Ослабление checks для обхода новых хешей не является переносом.
+3 октября 2026 года Root исполнил публичный CLI с новой сборкой и двумя свежими hosts: positive HELLO/ACK и negative wrong-peer105/5 прошли, все 45 внешних freeze handles проверенно закрыты. Это новый запуск публичных исходников; исторические частные controls с 38 handles сохранены отдельно. Исходные имена, размеры и SHA256 перечислены в [source_provenance.json](source_provenance.json). При другой раскладке файлов требуется независимое ревью точного переноса путей; ослабление checks для обхода новых хешей не является переносом.
 
 Каждый case получает новый host, контексты, pipe, generation/cookie/instance/nonce/run и каталоги. SID берётся из фактического собственного TokenUser; native повторно проверяет его. Входы и предки каталогов удерживаются до effects. `sourceCopyPin` — измеренный SHA именно parent fixture. Собранные DLL и JSON receipts хранятся в собственном каталоге результатов вне репозитория; их имена не переиспользуются.
 
