@@ -1,0 +1,122 @@
+{
+  "schema": "rentgen-experimental-main-witness-receiver-public-source/1",
+  "experimental": true,
+  "source_files": [
+    {
+      "original_filename": "Root-Main-receiver-preserve-retired-terminal-phase-v4-20261003.c",
+      "original_size_bytes": 75955,
+      "original_sha256": "d7d992e293b93777d7c8d506e0107a8c9587f1c112ef435d7d1428c58b27d0b9",
+      "repo_path": "scripts/verification/main_witness_receiver/root_main_receiver.c",
+      "public_size_bytes": 75900,
+      "public_sha256": "fe81974981d4ab20156814d1dfae6f90610cabb8f5a0fff0cebcbd49c3a8e16e",
+      "exact_include_edits": [
+        {
+          "old": "#include \"D10-Main-witness-receiver-final-status-v3-Source-proposal-20261003-b285c4.h\"",
+          "new": "#include \"root_main_receiver.h\"",
+          "occurrences": 1
+        }
+      ],
+      "all_other_bytes_unchanged": true
+    },
+    {
+      "original_filename": "D10-Main-witness-receiver-final-status-v3-Source-proposal-20261003-b285c4.h",
+      "original_size_bytes": 5701,
+      "original_sha256": "dbc5bceb30ea49b6c6e45253f530ac1499d3625648655ef3253250d12feee48e",
+      "repo_path": "scripts/verification/main_witness_receiver/root_main_receiver.h",
+      "public_size_bytes": 5622,
+      "public_sha256": "92869b7a616198fbf8f6beb83f074e9e82df3a3cf000bbd454e0868248bef280",
+      "exact_include_edits": [
+        {
+          "old": "#include \"D10-root-live-debug-birth-synthetic-Source-proposal-20261003-ef04733d6dc74d9fbad239e842cf1c56-a37d8e.h\"",
+          "new": "#include \"root_live_debug_birth.h\"",
+          "occurrences": 1
+        }
+      ],
+      "all_other_bytes_unchanged": true
+    },
+    {
+      "original_filename": "D10-root-live-debug-birth-synthetic-Source-proposal-20261003-ef04733d6dc74d9fbad239e842cf1c56-a37d8e.h",
+      "original_size_bytes": 6141,
+      "original_sha256": "b14f94f5674ec55b2f8fc15900bb63e5b466ce21406042c6c204bdefae84328c",
+      "repo_path": "scripts/verification/main_witness_receiver/root_live_debug_birth.h",
+      "public_size_bytes": 6141,
+      "public_sha256": "b14f94f5674ec55b2f8fc15900bb63e5b466ce21406042c6c204bdefae84328c",
+      "exact_include_edits": [],
+      "all_other_bytes_unchanged": true
+    },
+    {
+      "original_filename": "D10-Main-witness-receiver-real-code-Source-proposal-20261003-d7a9e3-parent.cjs",
+      "original_size_bytes": 5294,
+      "original_sha256": "11015fc699e645f927f286b55db743cfaedf020eff60a39426b2b3ff6527118f",
+      "repo_path": "scripts/verification/main_witness_receiver/fixtures/parent.cjs",
+      "public_size_bytes": 5294,
+      "public_sha256": "11015fc699e645f927f286b55db743cfaedf020eff60a39426b2b3ff6527118f",
+      "exact_include_edits": [],
+      "all_other_bytes_unchanged": true
+    },
+    {
+      "original_filename": "D10-root-live-debug-birth-synthetic-Source-proposal-20261003-ef04733d6dc74d9fbad239e842cf1c56-a37d8e-child.cjs",
+      "original_size_bytes": 43,
+      "original_sha256": "5748b8d4f8bc52c6871ccf135e0fda61670a8e69c0567ff9419afcfac3476411",
+      "repo_path": "scripts/verification/main_witness_receiver/fixtures/child.cjs",
+      "public_size_bytes": 43,
+      "public_sha256": "5748b8d4f8bc52c6871ccf135e0fda61670a8e69c0567ff9419afcfac3476411",
+      "exact_include_edits": [],
+      "all_other_bytes_unchanged": true
+    }
+  ],
+  "historical_private_controls": {
+    "recorded_date": "2026-10-03",
+    "Root_IQ_size_bytes": 9742,
+    "Root_IQ_sha256": "5e81adb9de2a39eecfc13832bac4cbd060e103729a48cc0150b655cb5c65166a",
+    "original_DLL_size_bytes": 93371,
+    "original_DLL_sha256": "29ef433000f796f9c757ca75215cb6d9c4e7a7e427f35b680250731eadaf4e71",
+    "observations": {
+      "freeze_handles_closed": 38,
+      "negative_events": 92,
+      "positive_ack": 311,
+      "negative_ack": 0,
+      "negative_win32_error": 5,
+      "negative_hello": 0,
+      "positive_hello": 294,
+      "positive_events": 112,
+      "negative_primary_stage": 105
+    },
+    "publication_url": "https://github.com/DmitrL-dev/1cai-public/pull/59#issuecomment-5967283002",
+    "not_new_public_runtime_execution": true
+  },
+  "harness_sources_pending_public_port": [
+    {
+      "original_filename": "Root-admit-reviewed-Main-receiver-normalized-Windows-refs-v2-20261003.py",
+      "size_bytes": 6458,
+      "sha256": "b4a4ee86bba75a726700d3287f734386ab65d79c93b9809a08f87cc0468699dc",
+      "proposed_repo_path": "scripts/verification/main_witness_receiver/admit_two_cases.py",
+      "required_port": "Explicit operator-owned evidence root instead of fixed B; preserve path confinement, actual-SID checks, exact pins and all admission requirements."
+    },
+    {
+      "original_filename": "D10_Main_receiver_two_fresh_hosts_launcher_preserve_terminal_v4_Source_20261003_04fd3ae4597048b4b78a8c50f1a33255.py.txt",
+      "size_bytes": 25149,
+      "sha256": "c57c9d1a68515a7a9b2b7b9f3982d05816f18894f7d075016c7b3a9bf506f7d5",
+      "proposed_repo_path": "scripts/verification/main_witness_receiver/launch_two_cases.py",
+      "required_port": "Replace fixed B with the same explicit owned evidence-root contract; update only reviewed public C/header pins in APPROVED_SOURCE and fresh exact host/input admission bindings."
+    },
+    {
+      "original_filename": "D10_Main_receiver_verifier_preserve_terminal_v4_Source_20261003_04fd3ae4597048b4b78a8c50f1a33255.py.txt",
+      "size_bytes": 46765,
+      "sha256": "ebaa5d187e878fada3b9f57b6baf0104ef4416b7367bdbad82c63be9e6275bd8",
+      "proposed_repo_path": "scripts/verification/main_witness_receiver/verify_case.py",
+      "required_port": "Update only exact reviewed public C/header EXPECTED pins; retain all lifecycle/IO/peer/negative predicates. Pin the new compiled DLL in each fresh admission; no generation of a replacement verifier."
+    }
+  ],
+  "limits": {
+    "runtime_qualified": false,
+    "EditorRole": false,
+    "OwnerIPC": false,
+    "daily_model_task_accepted": false,
+    "new_tag_release_admitted": false,
+    "full_product_ready": false,
+    "production_deployment": false,
+    "D8": "OPEN"
+  },
+  "compile_command_scope": "GCC compile only; each new DLL size/SHA and data ABI must be measured. Historical private DLL is separate evidence."
+}
