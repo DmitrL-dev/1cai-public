@@ -144,6 +144,7 @@ EDT — среда разработки 1С:Enterprise Development Tools.
 | Выбранное направление проекта | [Рынок и позиционирование](product/COMPETITOR-MATRIX.md) |
 | Связь опубликованного dev15 с нативным опытом | [Квалификация выпуска dev15](product/DEV15-RELEASE-QUALIFICATION-20260928.md) |
 | Как проверены отказ через Windows pipe и получение входов CI | [Техническая заметка о проверке отказа и CI](verification/owner-pipe-refusal.md) |
+| Как устроен экспериментальный приёмник Main witness | [Исходники, сборка и результаты](../scripts/verification/main_witness_receiver/README.md) |
 | Правила сборки, тестов и внесения изменений | [Участие в разработке](../CONTRIBUTING.md) |
 | Где задать вопрос или описать проблему | [GitHub Issues](https://github.com/DmitrL-dev/1cai-public/issues) |
 
