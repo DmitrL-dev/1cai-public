@@ -142,6 +142,7 @@ EDT — среда разработки 1С:Enterprise Development Tools.
 | Выявленные слабые места и приоритеты | [Аудит 12 сентября 2026](product/AUDIT-20260912.md) |
 | Выбранное направление проекта | [Рынок и позиционирование](product/COMPETITOR-MATRIX.md) |
 | Связь опубликованного dev15 с нативным опытом | [Квалификация выпуска dev15](product/DEV15-RELEASE-QUALIFICATION-20260928.md) |
+| Как проверены отказ через Windows pipe и получение входов CI | [Техническая заметка о проверке отказа и CI](verification/owner-pipe-refusal.md) |
 | Правила сборки, тестов и внесения изменений | [Участие в разработке](../CONTRIBUTING.md) |
 | Где задать вопрос или описать проблему | [GitHub Issues](https://github.com/DmitrL-dev/1cai-public/issues) |
 
