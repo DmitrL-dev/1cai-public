@@ -118,5 +118,72 @@
     "production_deployment": false,
     "D8": "OPEN"
   },
-  "compile_command_scope": "GCC compile only; each new DLL size/SHA and data ABI must be measured. Historical private DLL is separate evidence."
+  "compile_command_scope": "GCC compile only; each new DLL size/SHA and data ABI must be measured. Historical private DLL is separate evidence.",
+  "public_reproduction": {
+    "source_files": [
+      {
+        "repo_path": "scripts/verification/main_witness_receiver/reproduce.py",
+        "size_bytes": 14828,
+        "sha256": "ad123d13d1367d717a2e4424f8c7b578edab42dc0dc3d9978d8ac18e910b5b97"
+      },
+      {
+        "repo_path": "scripts/verification/main_witness_receiver/compile_data_abis.py",
+        "size_bytes": 4931,
+        "sha256": "8d7129e4c990fd66fcdf16448a33394d6ca5f7643bed016e73a6f828e6358668"
+      },
+      {
+        "repo_path": "scripts/verification/main_witness_receiver/admit_two_cases.py",
+        "size_bytes": 8238,
+        "sha256": "ab5ad443b3415936538b7598c05ab6c62018f167b2f60a453e683bbd958f78d3"
+      },
+      {
+        "repo_path": "scripts/verification/main_witness_receiver/launch_two_cases.py",
+        "size_bytes": 25644,
+        "sha256": "227c62a10907888df5141eb390a8a62fef0ff3e562ae385f61fc542f049927f0"
+      },
+      {
+        "repo_path": "scripts/verification/main_witness_receiver/verify_case.py",
+        "size_bytes": 47234,
+        "sha256": "aea7cba7480578f6cae8a2268a24562445058e14e7bbdc5030de4ec5a07616e1"
+      }
+    ],
+    "harness_port_status": "actual public Source materialized; prior pending-public-port list retained as historical input provenance",
+    "explicit_existing_operator_evidence_root": true,
+    "independent_Source_review_required": true,
+    "Root_one_fresh_CLI_compile_and_two_controls_executed": "2026-10-03",
+    "actual_DLL": {
+      "size_bytes": 93327,
+      "sha256": "4da7a7aecb99a1d4f9a109745f475ad10f3f8682ae473b7917bc503efda521f4"
+    },
+    "actual_data_ABI_words": [
+      12,
+      13
+    ],
+    "actual_controls": {
+      "positive_events": 112,
+      "positive_HELLO_bytes": 294,
+      "positive_ACK_bytes": 311,
+      "negative_events": 92,
+      "negative_first_P_stage": 105,
+      "negative_Win32_error": 5,
+      "negative_HELLO_bytes": 0,
+      "negative_ACK_bytes": 0,
+      "both_original_live_peer_brackets": true,
+      "both_terminal_receiver_retired_revoked_IO_producers_handles_closed": true,
+      "actual_Root_freeze_handles_checked_closed": 45,
+      "freeze_files": 24,
+      "freeze_directories": 21
+    },
+    "runtime_data_qualification_record": "Retained privately by Root; scope two synthetic controls only",
+    "instructions": "REPRODUCING.md",
+    "actual_Editor_launch": false,
+    "runtime_qualified": false,
+    "EditorRole": false,
+    "OwnerIPC": false,
+    "daily_model_task_accepted": false,
+    "new_tag_release_admitted": false,
+    "full_product_ready": false,
+    "production_deployment": false,
+    "D8": "OPEN"
+  }
 }
