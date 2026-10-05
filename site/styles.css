@@ -671,7 +671,7 @@ h1>span {
 .demo-step:hover {
   color:#fff;
 }
-.demo-step:focus-visible,.demo-panel:focus-visible,.demo-section a:focus-visible {
+.demo-step:focus-visible,.demo-panel:focus-visible,.demo-code:focus-visible,.demo-diff:focus-visible,.demo-section a:focus-visible {
   outline-color:var(--lime);
 }
 .demo-stage {
@@ -1307,7 +1307,7 @@ h1>span {
     min-height:498px;
   }
   .demo-code {
-    font-size:10px;
+    font-size:12px;
   }
   .panel-top {
     font-size:9px;
@@ -1897,7 +1897,8 @@ h1>span {
   }
   .demo-toolbar {
     padding:13px 14px;
-    font-size:8px;
+    font-size:12px;
+    flex-wrap:wrap;
     letter-spacing:0;
   }
   .demo-panel {
@@ -1905,14 +1906,14 @@ h1>span {
     min-height:470px;
   }
   .panel-top {
-    font-size:8px;
+    font-size:12px;
     gap:6px;
     align-items:flex-start;
     flex-direction:column;
     margin-bottom:20px;
   }
   .token {
-    font-size:9px;
+    font-size:12px;
   }
   .demo-panel h3 {
     font-size:25px;
@@ -1921,7 +1922,7 @@ h1>span {
     font-size:13px;
   }
   .demo-code {
-    font-size:9px;
+    font-size:12px;
     margin-top:21px;
   }
   .demo-code>div {
@@ -1938,10 +1939,10 @@ h1>span {
     font-size:12px;
   }
   .mini-label {
-    font-size:9px;
+    font-size:12px;
   }
   .demo-disclosure {
-    font-size:11px;
+    font-size:12px;
     line-height:1.7;
   }
   .demo-disclosure a {
@@ -1949,6 +1950,8 @@ h1>span {
   }
   .evidence-path {
     margin-top:22px;
+    flex-direction:column;
+    align-items:stretch;
   }
   .evidence-path>div {
     padding:11px 9px;
@@ -1957,22 +1960,24 @@ h1>span {
     font-size:12px;
   }
   .evidence-path small {
-    font-size:8px;
+    font-size:12px;
   }
   .evidence-path div>span {
-    font-size:8px;
+    font-size:12px;
   }
   .path-connector {
-    width:18px;
+    width:1px;
+    height:18px;
+    align-self:center;
   }
   .evidence-note>span {
-    font-size:8px;
+    font-size:12px;
   }
   .evidence-note p {
     font-size:12px;
   }
   .demo-diff {
-    font-size:10px;
+    font-size:12px;
     margin-top:22px;
   }
   .demo-diff>div {
@@ -1980,14 +1985,15 @@ h1>span {
     gap:9px;
   }
   .check-list {
-    font-size:10px;
+    font-size:12px;
     margin-top:17px;
   }
   .check-list strong {
-    font-size:9px;
+    font-size:12px;
   }
   .check-list>div {
-    gap:12px;
+    gap:5px;
+    flex-direction:column;
   }
   .section-description {
     font-size:16px;

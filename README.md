@@ -4,6 +4,7 @@
 </picture>
 
 <p align="center">
+  <a href="https://dmitrl-dev.github.io/1cai-public/"><b>Сайт проекта</b></a> ·
   <a href="GETTING_STARTED.md"><b>Попробовать на своём проекте</b></a> ·
   <a href="docs/START_HERE.md">Как это работает</a> ·
   <a href="https://github.com/DmitrL-dev/1cai-public/releases">Скачать</a> ·
