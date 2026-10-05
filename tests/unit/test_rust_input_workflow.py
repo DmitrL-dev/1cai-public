@@ -319,31 +319,108 @@ if mode=="exit_failure":sys.exit(1)
     assert session.process is not None and session.process.poll() is not None
 
 
-def test_parent_death_kills_sidecar_during_owned_session(binary, tmp_path):
-    # An isolated subreaper observes the orphaned child's actual exit; this does
-    # not change pytest's or the host's process-supervision configuration.
+def _parent_death_probe(binary, tmp_path, *, close_owner_pipe=False, watchdog=5):
+    import signal
+
+    # The isolated subreaper retains a writer via SCM_RIGHTS. Closing the dying
+    # owner's descriptors must not let EOF win the race with its PDEATHSIG.
+    parent_code = """from rentgen_core.rust_input import RustInputSession
+import socket,sys,time
+channel=socket.socket(fileno=int(sys.argv[3]))
+session=RustInputSession(sys.argv[1],sys.argv[2],authorize=lambda:None)
+session.__enter__()
+socket.send_fds(channel,[str(session.process.pid).encode()], [session.process.stdin.fileno()])
+if channel.recv(1)==b'C':
+ session.process.stdin.close()
+channel.send(b'R')
+time.sleep(60)
+"""
     driver = tmp_path / "parent_death.py"
-    driver.write_text('''import ctypes,hashlib,json,os,signal,subprocess,sys,time
-from pathlib import Path
+    driver.write_text('''import ctypes,json,os,signal,socket,subprocess,sys,time
 libc=ctypes.CDLL(None,use_errno=True)
 assert libc.prctl(36,1,0,0,0)==0
-code="from rentgen_core.rust_input import RustInputSession;import sys,time;session=RustInputSession(sys.argv[1],sys.argv[2],authorize=lambda:None);session.__enter__();print(session.process.pid,flush=True);time.sleep(60)"
-parent=subprocess.Popen([sys.executable,"-c",code,sys.argv[1],sys.argv[2]],stdout=subprocess.PIPE,text=True)
-child=int(parent.stdout.readline())
-parent.kill();parent.wait(timeout=5)
-end=time.monotonic()+5
-while time.monotonic()<end:
- observed,status=os.waitpid(child,os.WNOHANG)
- if observed:
-  assert os.WIFSIGNALED(status) and os.WTERMSIG(status)==signal.SIGKILL
-  print(json.dumps({"parent_reaped":True,"sidecar_reaped":True,"signal":"SIGKILL"}));break
- time.sleep(.01)
-else:
- os.kill(child,signal.SIGKILL);os.waitpid(child,0);raise RuntimeError("Parent-death signal failed")
-''')
-    result = subprocess.run([sys.executable, str(driver), str(binary[0]), binary[1]], cwd=ROOT, env={**os.environ, "PYTHONPATH": str(ROOT)}, capture_output=True, text=True, timeout=15)
+channel,peer=socket.socketpair(socket.AF_UNIX,socket.SOCK_DGRAM)
+channel.settimeout(5)
+parent=subprocess.Popen([sys.executable,"-c",PARENT_CODE,sys.argv[1],sys.argv[2],str(peer.fileno())],pass_fds=(peer.fileno(),),stdout=subprocess.DEVNULL)
+peer.close()
+held=[];child=None;reaped=False
+try:
+ data,held,flags,address=socket.recv_fds(channel,128,1)
+ assert len(held)==1 and not flags
+ child=int(data)
+ channel.send(b'C' if sys.argv[3]=='1' else b'W')
+ assert channel.recv(1)==b'R'
+ parent.kill();parent.wait(timeout=5)
+ end=time.monotonic()+float(sys.argv[4])
+ while time.monotonic()<end:
+  observed,status=os.waitpid(child,os.WNOHANG)
+  if observed:
+   reaped=True
+   assert os.WIFSIGNALED(status) and os.WTERMSIG(status)==signal.SIGKILL, (observed,status,os.waitstatus_to_exitcode(status))
+   print(json.dumps({"parent_reaped":True,"sidecar_reaped":True,"signal":"SIGKILL","stdin_writer_retained":True}));break
+  time.sleep(.01)
+ else:
+  raise RuntimeError("Parent-death signal failed")
+finally:
+ if parent.poll() is None:parent.kill()
+ parent.wait(timeout=5)
+ if child is not None and not reaped:
+  try:
+   observed,status=os.waitpid(child,os.WNOHANG)
+   if not observed:
+    os.kill(child,signal.SIGKILL);os.waitpid(child,0)
+  except ChildProcessError:pass
+ for fd in held:os.close(fd)
+ channel.close()
+'''.replace("PARENT_CODE", repr(parent_code)))
+    argv = [sys.executable, str(driver), str(binary[0]), binary[1],
+            "1" if close_owner_pipe else "0", str(watchdog)]
+    process = subprocess.Popen(
+        argv,
+        cwd=ROOT, env={**os.environ, "PYTHONPATH": str(ROOT)},
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        start_new_session=True,
+    )
+    try:
+        stdout, stderr = process.communicate(timeout=20)
+    except BaseException:
+        # The fixture owns this new process group, including the negative
+        # control without PDEATHSIG. Do not leave it running on cancellation.
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        process.communicate(timeout=5)
+        raise
+    return subprocess.CompletedProcess(argv, process.returncode, stdout, stderr)
+
+
+@pytest.mark.parametrize("close_owner_pipe", [False, True])
+def test_parent_death_kills_sidecar_during_owned_session(binary, tmp_path, close_owner_pipe):
+    result = _parent_death_probe(binary, tmp_path, close_owner_pipe=close_owner_pipe)
     assert result.returncode == 0, (result.stdout, result.stderr)
-    assert json.loads(result.stdout)["sidecar_reaped"] is True
+    assert json.loads(result.stdout) == {
+        "parent_reaped": True, "sidecar_reaped": True,
+        "signal": "SIGKILL", "stdin_writer_retained": True,
+    }
+
+
+def test_parent_death_probe_catches_missing_signal_even_after_pipe_close(tmp_path):
+    # Negative control: a protocol-compatible fixture without PDEATHSIG would
+    # otherwise exit on EOF and mask the missing parent-death mechanism.
+    fake = tmp_path / "no-parent-death-signal"
+    fake.write_text('''#!/usr/bin/python3
+import json,struct,sys
+hello={"protocol":1,"kind":"hello","implementation":"rentgen-input-core","contract":"submitted-zip-v1"}
+raw=json.dumps(hello,separators=(",",":")).encode()
+sys.stdout.buffer.write(struct.pack("<I",len(raw))+raw);sys.stdout.buffer.flush()
+sys.stdin.buffer.read()
+''')
+    fake.chmod(0o700)
+    pinned = (fake, hashlib.sha256(fake.read_bytes()).hexdigest())
+    result = _parent_death_probe(pinned, tmp_path, close_owner_pipe=True, watchdog=.25)
+    assert result.returncode != 0 and not result.stdout
+    assert "Parent-death signal failed" in result.stderr
 
 
 def test_verified_executable_copy_is_sealed_against_later_original_changes(tmp_path):
