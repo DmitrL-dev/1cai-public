@@ -64,10 +64,12 @@ Git-контур связывает результаты с проверенны
 Текущие Windows sharing flags нельзя без доказательства заменить обычным
 POSIX-дескриптором или advisory lock с тем же обещанием безопасности.
 
-Выборочный Rust-слой рассматривается для владения файлами и процессами.
-До интеграции нужны ограниченный prototype, сравнение контрактов и измерения.
-Python-ядро и Go scanner сохраняются; язык реализации сам по себе не делает
-продукт быстрее или платформонезависимым. [Порядок работ](ROADMAP.md).
+Первый [Rust input core](docs/product/RUST-INPUT-CORE.md) реализован как
+экспериментальный Linux sidecar: no-follow acquisition, bounded ZIP import,
+хэши и собственная immutable byte session. Он не создаёт published SnapshotRef
+и не заменяет Windows retained reader. Python сохраняет authorization/CLI/XML,
+Go scanner — прежнюю роль. Следующие части принимаются по контрактам и замерам,
+без обещания полной платформонезависимости. [Порядок работ](ROADMAP.md).
 
 ## Граница доверия
 

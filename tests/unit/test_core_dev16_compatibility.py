@@ -16,11 +16,12 @@ def adapter(name):
     return module
 
 
-def test_editor_probe_accepts_dev16_with_exact_mcp_python_and_project(monkeypatch):
+@pytest.mark.parametrize("version", ["0.1.0.dev16", "0.1.0.dev17"])
+def test_editor_probe_accepts_dev16_with_exact_mcp_python_and_project(monkeypatch, version):
     module = adapter("prepare.py")
     project = "6e461c4d-e19c-4e37-85b3-3aa0961580b7"
     identity = {
-        "core": "0.1.0.dev16",
+        "core": version,
         "mcp": "1.30.0",
         "platform": "win32",
         "python": [3, 11],
@@ -34,16 +35,16 @@ def test_editor_probe_accepts_dev16_with_exact_mcp_python_and_project(monkeypatc
         return SimpleNamespace(returncode=0, stdout=json.dumps(replies.pop(0)))
 
     monkeypatch.setattr(module.subprocess, "run", execute)
-    head, version = module.probe(
+    head, actual_version = module.probe(
         Path(sys.executable), Path("owned-registry.sqlite3"), project
     )
-    assert (head, version) == ({"project_id": project}, "0.1.0.dev16")
+    assert (head, actual_version) == ({"project_id": project}, version)
     assert len(commands)==2 and not replies
     assert all(argv[1] == "-I" for argv in commands)
     assert commands[1][2:5] == ["-m", "rentgen_core", "project-head"]
 
 
-@pytest.mark.parametrize("version", ["0.1.0.dev16", "0.1.0.dev999"])
+@pytest.mark.parametrize("version", ["0.1.0.dev16", "0.1.0.dev17", "0.1.0.dev999"])
 def test_runtime_installer_dev16_admission_keeps_unknown_versions_refused(
     monkeypatch, version
 ):
@@ -61,6 +62,11 @@ def test_runtime_installer_dev16_admission_keeps_unknown_versions_refused(
         "__file__",
         str(Path(sys.prefix) / "Lib/site-packages/rentgen_core/__init__.py"),
     )
+    monkeypatch.setattr(
+        module,
+        "sys",
+        SimpleNamespace(platform="win32", version_info=(3, 11), prefix=sys.prefix),
+    )
     if version == "0.1.0.dev999":
         with pytest.raises(ValueError, match="supported installed core"):
             module.contract()
@@ -71,3 +77,19 @@ def test_runtime_installer_dev16_admission_keeps_unknown_versions_refused(
             == "bsl-ls-1.0.5-temurin21.0.12.1-win64-bmp-default-v1"
         )
         assert len(expected) == 490 and pins.__name__ == "RuntimePins"
+
+
+@pytest.mark.parametrize(
+    "platform,version", [("linux", (3, 11)), ("win32", (3, 12))]
+)
+def test_runtime_installer_keeps_os_and_python_admission_explicit(
+    monkeypatch, platform, version
+):
+    module = adapter("install_bsl_runtime.py")
+    monkeypatch.setattr(
+        module,
+        "sys",
+        SimpleNamespace(platform=platform, version_info=version, prefix=sys.prefix),
+    )
+    with pytest.raises(ValueError, match="Windows Python 3.11"):
+        module.contract()

@@ -47,7 +47,7 @@ def command(project, monkeypatch, capsys):
     runtime = LocalRuntime(
         resolver.registry.path, resolver.graph_reader_factory, builder
     )
-    monkeypatch.setattr(cli, "current_windows_principal", lambda: ctx.principal)
+    monkeypatch.setattr(cli, "current_local_principal", lambda: ctx.principal)
     monkeypatch.setattr(cli, "_runtime", lambda args: runtime)
 
     def call(name, *args, success=True):

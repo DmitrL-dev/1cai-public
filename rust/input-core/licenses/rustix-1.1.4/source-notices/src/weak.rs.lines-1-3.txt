@@ -1,0 +1,3 @@
+// Implementation derived from `weak` in Rust's
+// library/std/src/sys/unix/weak.rs at revision
+// fd0cb0cdc21dd9c06025277d772108f8d42cb25f.

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rentgen-core"
-version = "0.1.0.dev16"
+version = "0.1.0.dev17"
 description = "Local 1C source snapshots and reviewable drafts; early-access core"
 readme = "packaging/core/README.md"
 requires-python = ">=3.11"
@@ -60,6 +60,20 @@ only-include = [
   "scripts/verification/kit_inputs.py",
   "docs/product/CORE-INSTALLATION.md",
   "docs/product/PLATFORM-SUPPORT.md",
+  "docs/product/PORTABLE-CORE.md",
+  "docs/product/RUST-INPUT-CORE.md",
+  "docs/product/evidence/linux-baseline-classification-20261005.json",
+  "rust/input-core/Cargo.toml",
+  "rust/input-core/Cargo.lock",
+  "rust/input-core/DEPENDENCY_PROVENANCE.json",
+  "rust/input-core/README.md",
+  "rust/input-core/PROTOCOL.md",
+  "rust/input-core/THIRD_PARTY_NOTICES.md",
+  "rust/input-core/licenses",
+  "rust/input-core/src",
+  "rust/input-core/tests",
+  "scripts/verification/benchmark_portable_input.py",
+  "scripts/verification/verify_portable_delivery.py",
   "docs/product/CORE-OFFLINE-KIT.md",
   "docs/product/CORE-MCP.md",
   "docs/product/DRAFT-HISTORY.md",

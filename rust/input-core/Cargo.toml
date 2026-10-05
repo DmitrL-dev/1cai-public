@@ -1,0 +1,28 @@
+[package]
+name = "rentgen-input-core"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT"
+publish = false
+
+[dependencies]
+base64 = "=0.22.1"
+caseless = "=0.2.2"
+flate2 = { version = "=1.1.9", default-features = false, features = ["rust_backend"] }
+libc = "=0.2.186"
+rustix = { version = "=1.1.4", features = ["fs", "process"] }
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.149"
+sha2 = "=0.10.9"
+unicode-normalization = "=0.1.25"
+zip = { version = "=7.2.0", default-features = false, features = ["deflate-flate2"] }
+
+[profile.dev]
+debug = 0
+
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 1
+panic = "abort"

@@ -2,6 +2,8 @@
 
 from types import SimpleNamespace
 
+import pytest
+
 from rentgen_core import stdio_mcp
 from test_stdio_native_archive import OPERATION, PROJECT, SNAPSHOT, _Runtime
 
@@ -124,3 +126,10 @@ def test_mcp_dispatches_direct_bsl_apply_with_source_edit_scope(monkeypatch):
     assert calls[0][1] == OPERATION
     assert calls[0][2] == "validated-proposal"
     assert calls[0][3].project_id == PROJECT
+
+
+@pytest.fixture(autouse=True)
+def windows_dispatch_contract(monkeypatch):
+    """These tests inject Windows-native operations; not Linux capability acceptance."""
+    from rentgen_core import capabilities
+    monkeypatch.setattr(capabilities, "_platform", "win32")

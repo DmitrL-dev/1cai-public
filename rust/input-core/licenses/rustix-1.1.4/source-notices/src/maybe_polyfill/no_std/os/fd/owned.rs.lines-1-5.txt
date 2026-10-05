@@ -1,0 +1,5 @@
+//! The following is derived from Rust's
+//! library/std/src/os/fd/owned.rs at revision
+//! 334a54cd83191f38ad8046ed94c45de735c86c65.
+//!
+//! All code in this file is licensed MIT or Apache 2.0 at your option.

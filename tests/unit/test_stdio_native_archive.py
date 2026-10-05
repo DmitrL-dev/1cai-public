@@ -343,3 +343,10 @@ def test_owner_report_tools_reject_unknown_fields_and_bad_ids():
             "rentgen_owner_report_list",
             {"project_id": PROJECT, "snapshot_id": SNAPSHOT, "limit": 0},
         )
+
+
+@pytest.fixture(autouse=True)
+def windows_dispatch_contract(monkeypatch):
+    """These tests inject Windows-native operations; not Linux capability acceptance."""
+    from rentgen_core import capabilities
+    monkeypatch.setattr(capabilities, "_platform", "win32")

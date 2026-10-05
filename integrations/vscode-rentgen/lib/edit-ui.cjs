@@ -27,7 +27,9 @@ function createEditUI(vscode,service,views,context,enabled){
  async function inspect(id){
   check();if(busy||service.running)throw new Error('EDIT_RUNNING');
   if(!id){const selected=await vscode.window.showQuickPick((await service.list()).map(s=>({label:`v${s.receipt.revision} · ${s.receipt.source_ref.relative_path}`,description:s.created_at,detail:s.id,id:s.id})),{title:'Редактирование: продолжить или получить результат'});if(!selected)return null;id=selected.id;}
-  return show(await service.inspect(id));
+  const result=await show(await service.inspect(id));
+  if(result.status!=='editing')await openFile(result);
+  return result;
  }
  for(const [name,fn]of [['rentgen.editDraft',open],['rentgen.saveDraftEdit',save],['rentgen.editResult',inspect]])context.subscriptions.push(vscode.commands.registerCommand(name,async(...args)=>{
   try{return await fn(...args);}catch(error){void vscode.window.showErrorMessage('Рентген: '+error.message);throw error;}

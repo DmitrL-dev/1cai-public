@@ -11,7 +11,56 @@ const project = '00000000-0000-4000-8000-000000000001';
 const ref = {snapshot: {project_id: project, snapshot_id: 'a'.repeat(64), manifest_hash: 'a'.repeat(64)}, layer_id:'base', relative_path:'Module.bsl', raw_sha256:'b'.repeat(64)};
 const config = {schema:1, core_version:'0.1.0.dev7', project_id:project, python:'C:\\installed\\python.exe', registry:'C:\\registry.sqlite3'};
 
-for (const core_version of ['0.1.0.dev7','0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16']) {
+test('interrupted preparation does not block recovery or the next repair', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rentgen-repair-interrupted-'));
+  t.after(() => fs.rm(root, {recursive:true, force:true}));
+  await fs.mkdir(path.join(root, 'repair-runs', randomUUID()), {recursive:true});
+  let executions = 0;
+  const service = createRepairService({root, extensionRoot:root, config, client:{},
+    runnerFactory:() => ({dispose(){}, async execute(){executions++; return {code:1};}})});
+  t.after(() => service.dispose());
+  assert.deepEqual(await service.list(), []);
+  const run = await service.start(ref, {model:'qwen3.5:9b', instruction:'Fix'});
+  assert.equal(run.status, 'unresolved');
+  assert.equal((await service.list()).length, 1);
+  assert.equal(executions, 1);
+});
+
+test('unfinished repair directories still count toward the storage limit', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rentgen-repair-limit-'));
+  t.after(() => fs.rm(root, {recursive:true, force:true}));
+  const home = path.join(root, 'repair-runs');
+  await fs.mkdir(home);
+  for (let i = 0; i < 200; i++) await fs.mkdir(path.join(home, randomUUID()));
+  const service = createRepairService({root, extensionRoot:root, config, client:{},
+    runnerFactory:() => {throw new Error('Unexpected process');}});
+  t.after(() => service.dispose());
+  assert.deepEqual(await service.list(), []);
+  await assert.rejects(service.start(ref, {model:'qwen3.5:9b', instruction:'Fix'}), /REPAIR_RUN_LIMIT/);
+  assert.equal((await fs.readdir(home)).length, 200);
+});
+
+test('a failed repair retains its bounded error code without changing recovery status or replaying', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rentgen-repair-error-'));
+  t.after(() => fs.rm(root, {recursive:true, force:true}));
+  let output, executions = 0;
+  const service = createRepairService({root, extensionRoot:root, config, client:{},
+    runnerFactory:() => ({dispose(){}, async execute(_, args){
+      executions++;
+      output = args[args.indexOf('--output') + 1]; await fs.mkdir(output);
+      await fs.writeFile(path.join(output, 'result.json'), JSON.stringify({status:'failed', error:'MODEL_SOURCE_LIMIT'}));
+      return {code:1};
+    }})});
+  t.after(() => service.dispose());
+  const run = await service.start(ref, {model:'qwen3.5:9b', instruction:'Fix'});
+  assert.equal(run.status, 'unresolved'); assert.equal(run.error, 'MODEL_SOURCE_LIMIT');
+  assert.equal((await service.reconcile(run.id)).error, 'MODEL_SOURCE_LIMIT');
+  await fs.writeFile(path.join(output, 'result.json'), JSON.stringify({status:'failed', error:'Private code\n'.repeat(100)}));
+  assert.equal((await service.reconcile(run.id)).error, undefined);
+  assert.equal(executions, 1);
+});
+
+for (const core_version of ['0.1.0.dev7','0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16','0.1.0.dev17']) {
 test(`${core_version}: lost process reply is reconciled from receipts with no second execution`, async () => {
   const selectedConfig = {...config,core_version};
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rentgen-repair-'));

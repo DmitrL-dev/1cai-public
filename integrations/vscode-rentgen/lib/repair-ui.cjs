@@ -10,7 +10,7 @@ function createRepairUI(vscode, service, views, context, enabled) {
       result.status === 'diagnostics_present' ? 'Черновик сохранён, диагностика BSL обнаружила замечания. Тесты 1С не запускались, исходник не изменён.' :
       result.status === 'saved_unverified' ? 'Найдена сохранённая ревизия. Завершённая проверка BSL не подтверждена; исходник не изменён.' :
       'Результат последней операции не установлен. Автоматического повторения нет. Проверьте результат позднее.';
-    void vscode.window.showInformationMessage('Рентген: ' + message);
+    void vscode.window.showInformationMessage('Рентген: ' + message + (result.error ? ` Причина сбоя: ${result.error}.` : ''));
     return result;
   }
   async function start(selection, supplied) {

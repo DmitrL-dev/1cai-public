@@ -25,3 +25,15 @@ test('publish follows buffer save; inspecting a session never publishes',async()
  await f.commands.get('rentgen.saveDraftEdit')();assert.ok(f.calls.indexOf('save-buffer')<f.calls.indexOf('publish'));
  await f.commands.get('rentgen.editResult')('session');assert.equal(f.calls.filter(c=>c==='publish').length,1);
 });
+
+for(const status of ['saved','unresolved'])test(`recovering a ${status} session reopens the editable working copy without publishing`,async()=>{
+ const f=fixture(),session=await f.service.open();
+ f.service.inspect=async()=>({...session,status});
+ const shown=[];
+ f.vscode.window.showTextDocument=async document=>shown.push(document.uri.fsPath);
+ const result=await f.commands.get('rentgen.editResult')(session.id);
+ assert.equal(result.status,status);
+ assert.deepEqual(shown,[session.file]);
+ assert.equal(f.calls.includes('publish'),false);
+ assert.equal(f.calls.includes('save-buffer'),false);
+});

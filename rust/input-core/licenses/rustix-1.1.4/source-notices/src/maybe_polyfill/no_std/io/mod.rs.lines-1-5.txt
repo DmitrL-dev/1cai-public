@@ -1,0 +1,5 @@
+//! The following is derived from Rust's
+//! library/std/src/sys/unix/io.rs
+//! dca3f1b786efd27be3b325ed1e01e247aa589c3b.
+//!
+//! All code in this file is licensed MIT or Apache 2.0 at your option.

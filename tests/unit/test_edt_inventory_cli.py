@@ -112,7 +112,7 @@ def local(project, monkeypatch, capsys):
     )
     fixtures.publish(project)
     selected = resolver.resolve_context(ctx.principal, api.Explicit(ctx.project_id))
-    monkeypatch.setattr(cli, "current_windows_principal", lambda: ctx.principal)
+    monkeypatch.setattr(cli, "current_local_principal", lambda: ctx.principal)
     args = [
         "edt-inventory",
         "--registry",

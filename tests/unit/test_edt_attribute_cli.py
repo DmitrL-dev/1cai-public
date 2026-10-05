@@ -133,8 +133,6 @@ def test_parser_help_lists_command_and_arguments(capsys):
 
 @pytest.fixture
 def local(tmp_path, monkeypatch, capsys):
-    if os.name != "nt":
-        pytest.skip("Windows registry contract")
     principal = api.Principal("owner", "local_os")
     source = tmp_path / "source"
     source.mkdir()
@@ -146,7 +144,7 @@ def local(tmp_path, monkeypatch, capsys):
         display_name="EDT CLI",
     )
     ctx = LocalRuntime(registry.path).state_context(principal, project.project_id)
-    monkeypatch.setattr(cli, "current_windows_principal", lambda: principal)
+    monkeypatch.setattr(cli, "current_local_principal", lambda: principal)
     paths = [tmp_path / (label + ".json") for label in ("base", "current", "upstream")]
 
     def write(*trees):
