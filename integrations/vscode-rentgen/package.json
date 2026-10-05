@@ -3,7 +3,7 @@
   "displayName": "Рентген: проект и черновики",
   "description": "Снимки кода 1С, отдельные черновики и проверки версий через локальное ядро. Windows-профиль раннего доступа.",
   "publisher": "rentgen",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "license": "MIT",
   "engines": {"vscode": "^1.101.0"},
   "main": "./extension.cjs",

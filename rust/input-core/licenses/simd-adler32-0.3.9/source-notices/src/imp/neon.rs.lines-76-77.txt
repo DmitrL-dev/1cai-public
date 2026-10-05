@@ -1,0 +1,2 @@
+    // Conversion of the code from Chromium zlib:
+    // https://chromium.googlesource.com/chromium/src/third_party/+/main/zlib/adler32_simd.c

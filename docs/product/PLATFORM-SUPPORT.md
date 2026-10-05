@@ -19,6 +19,19 @@
 [Companion 0.1.15](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.15).
 [Состояние и история проверок](https://github.com/DmitrL-dev/1cai-public/blob/main/docs/product/READINESS.md) сохраняют связь с фактическим выпуском.
 
+## Ограниченный source candidate dev17 / Companion 0.1.18
+
+Linux уже имеет отдельный [CLI/state/history режим](PORTABLE-CORE.md) и
+[экспериментальный Rust ZIP import](RUST-INPUT-CORE.md). Последний анализирует
+переданные immutable bytes, не создаёт published snapshot и не открывает live apply.
+macOS пока получает только capability report; его identity/IO adapters не приняты.
+Companion по-прежнему использует Windows-профиль. Новый candidate требует своего
+CI и installed-package проверки; опубликованная пара dev15/0.1.15 не меняется.
+
+Полный Linux regression не является зелёным: прежние retained-Windows и
+platform-fixture отказы учтены отдельно от целевых portable tests. Старые Windows
+результаты на другом candidate не переносятся на эту сборку.
+
 ## Как станет проще работать на разных ОС
 
 1. Отделить доверенную локальную идентичность и доступные операции от Windows.
@@ -43,10 +56,10 @@
 
 ## Rust и производительность
 
-Планируется оценить выборочный Rust-слой для сложного владения файлами и
-процессами. Полная перепись не выбрана; опубликованного Rust Core и доказанного
-ускорения нет. Сначала нужны ограниченный опыт, сравнение поведения и измерения.
-Текущие Python-компоненты и Go scanner сохраняют свои роли.
+Первый source Rust input core уже выполняет bounded import и владеет byte session
+в отдельном Linux процессе. Это экспериментальный компонент, не опубликованный
+полный Rust Core. Измерения synthetic corpus и parity tests не являются обещанием
+универсального ускорения. Python-компоненты и Go scanner сохраняют свои роли.
 
 [Порядок работ и приёмка](https://github.com/DmitrL-dev/1cai-public/blob/main/ROADMAP.md) ·
 [Архитектура](https://github.com/DmitrL-dev/1cai-public/blob/main/ARCHITECTURE.md)

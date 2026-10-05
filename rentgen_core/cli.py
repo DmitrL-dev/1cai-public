@@ -1,7 +1,8 @@
-"""Local Windows CLI. Console entry point: rentgen_core.cli:main.
+"""Local OS CLI. Console entry point: rentgen_core.cli:main.
 
-Normal stdout is one JSON envelope; --help is human-readable. Identity is never
-a command argument. This adapter is not suitable for serving remote requests.
+Normal stdout is one JSON envelope; --help is human-readable. Principal IDs are
+never command arguments; identity-profile is trusted local startup configuration.
+This adapter is not suitable for serving remote requests.
 """
 import argparse
 from dataclasses import asdict, dataclass, is_dataclass, replace
@@ -14,7 +15,8 @@ from uuid import uuid4
 
 from .errors import CoreError
 from .local import LocalRuntime
-from .local_identity import current_windows_principal
+from .local_identity import current_local_principal, initialize_local_identity
+from .capabilities import capability_report, require_operation
 from .registry import ProjectRegistry, ProjectSummary
 from .source_configuration import SourceLayerSpec, configure_source_layers
 from .context import Principal, SnapshotRef
@@ -75,10 +77,15 @@ class _Once(argparse.Action):
 
 def _parser():
     parser = _Parser(
-        prog="rentgen", description="Explicit local project snapshots (Windows)."
+        prog="rentgen", description="Explicit local projects; use capabilities for OS support."
     )
     commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("capabilities", allow_abbrev=False)
+    for name in ("identity", "identity-init"):
+        command = commands.add_parser(name, allow_abbrev=False)
+        command.add_argument("--identity-profile", type=Path, action=_Once)
     for name in (
+        "export-analyze",
         "registry-init",
         "project-register",
         "project-list",
@@ -148,9 +155,17 @@ def _parser():
     ):
         command = commands.add_parser(name, allow_abbrev=False)
         command.add_argument("--registry", required=True, type=Path, action=_Once)
+        command.add_argument("--identity-profile", type=Path, action=_Once)
         if name not in ("registry-init", "project-register", "project-list"):
             command.add_argument("--project", required=True, action=_Once)
-        if name == "metadata-materialize":
+        if name == "export-analyze":
+            command.add_argument("--archive", type=Path, required=True, action=_Once)
+            command.add_argument("--archive-sha256", required=True, action=_Once)
+            command.add_argument("--input-core", type=Path, required=True, action=_Once)
+            command.add_argument("--input-core-sha256", required=True, action=_Once)
+            command.add_argument("--query", default="", action=_Once)
+            command.add_argument("--limit", type=int, default=50, action=_Once)
+        elif name == "metadata-materialize":
             for label in ("base", "current", "upstream"):
                 command.add_argument(
                     "--" + label + "-json", type=Path, required=True, action=_Once
@@ -1148,7 +1163,17 @@ def _proposal_live_command(args, runtime, state_ctx):
 
 
 def _execute(args, *, proposal_scope=None):
-    principal = current_windows_principal()
+    require_operation(args.command)
+    if args.command == "capabilities":
+        return capability_report()
+    if args.command == "identity-init":
+        return initialize_local_identity(args.identity_profile)
+    principal = (
+        current_local_principal() if args.identity_profile is None
+        else current_local_principal(identity_profile=args.identity_profile)
+    )
+    if args.command == "identity":
+        return principal
     if args.command == "registry-init":
         ProjectRegistry.create(args.registry)
         return {"created": True}
@@ -1168,7 +1193,7 @@ def _execute(args, *, proposal_scope=None):
     permissions = (
         {"project:read", "analysis:run"}
         if args.command
-        in {"metadata-materialize", "owner-report-build", "owner-report-save"}
+        in {"metadata-materialize", "owner-report-build", "owner-report-save", "export-analyze"}
         else {"project:read"}
         if args.command
         in {
@@ -1239,6 +1264,18 @@ def _execute(args, *, proposal_scope=None):
         else set()
     )
     ctx = runtime.state_context(principal, args.project, permissions=permissions)
+    if args.command == "export-analyze":
+        from .submitted_export import analyze_export
+
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        value = analyze_export(
+            ctx, archive=args.archive, archive_sha256=args.archive_sha256,
+            input_core=args.input_core, input_core_sha256=args.input_core_sha256,
+            query=args.query, limit=args.limit,
+        )
+        return _ProposalCommandResult(value, ctx, frozenset(permissions))
     if args.command == "edt-inventory-plan":
         if proposal_scope is not None:
             proposal_scope.context = ctx

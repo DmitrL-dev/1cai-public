@@ -52,7 +52,7 @@ function createRepairService({root, extensionRoot, config, client, trusted = () 
     }
     return {folder, value};
   }
-  async function list() {
+  async function listRuns(reserve = 0) {
     trust();
     let entries;
     try {
@@ -60,9 +60,13 @@ function createRepairService({root, extensionRoot, config, client, trusted = () 
       requireValue(stat.isDirectory() && !stat.isSymbolicLink(), 'INVALID_REPAIR_DIRECTORY');
       entries = await fs.readdir(directory, {withFileTypes:true});
     } catch (error) { if (error.code === 'ENOENT') return []; throw error; }
-    requireValue(entries.length <= 200, 'REPAIR_RUN_LIMIT');
+    requireValue(entries.length <= 200 - reserve, 'REPAIR_RUN_LIMIT');
     const rows = [];
-    for (const entry of entries) if (uuid.test(entry.name)) rows.push((await request(entry.name)).value);
+    for (const entry of entries) if (uuid.test(entry.name)) {
+      try { rows.push((await request(entry.name)).value); }
+      catch (error) { if (error.code !== 'ENOENT') throw error; }
+      // Preparation can stop before request.json exists; no operation was submitted.
+    }
     trust();
     return rows.sort((a,b) => b.created_at.localeCompare(a.created_at));
   }
@@ -107,10 +111,12 @@ function createRepairService({root, extensionRoot, config, client, trusted = () 
         status = analysis.diagnostics.length ? 'diagnostics_present' : 'analysis_clean';
       }
     }
-    return {id, status, receipt, truncated, resultPath:path.join(folder,'result/result.json')};
+    const failure = result?.status === 'failed' && typeof result.error === 'string' && /^[A-Z][A-Z0-9_]{1,80}$/.test(result.error)
+      ? {error:result.error} : {};
+    return {id, status, receipt, truncated, ...failure, resultPath:path.join(folder,'result/result.json')};
   }
   async function start(ref, options) {
-    trust(); requireValue(['0.1.0.dev7','0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16'].includes(config.core_version), 'REPAIR_REQUIRES_DEV7_OR_DEV8');
+    trust(); requireValue(['0.1.0.dev7','0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16','0.1.0.dev17'].includes(config.core_version), 'REPAIR_REQUIRES_DEV7_OR_DEV8');
     requireValue(!busy, 'REPAIR_RUNNING');
     ref = sourceRef(ref, config.project_id);
     requireValue(options && typeof options.model === 'string' && /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$/.test(options.model), 'INVALID_MODEL_NAME');
@@ -118,7 +124,7 @@ function createRepairService({root, extensionRoot, config, client, trusted = () 
     busy = true; cancelled = false;
     let id;
     try {
-      requireValue((await list()).length < 200, 'REPAIR_RUN_LIMIT'); trust();
+      await listRuns(1); trust();
       await fs.mkdir(directory, {recursive:true});
       const stat = await fs.lstat(directory); requireValue(stat.isDirectory() && !stat.isSymbolicLink(), 'INVALID_REPAIR_DIRECTORY');
       id = randomUUID(); const folder = path.join(directory,id); await fs.mkdir(folder);
@@ -135,6 +141,6 @@ function createRepairService({root, extensionRoot, config, client, trusted = () 
       trust(); return await reconcile(id);
     } finally { busy = false; }
   }
-  return {start,reconcile,list,cancel(){cancelled=true;active?.dispose();},get running(){return busy;},dispose(){disposed=true;active?.dispose();}};
+  return {start,reconcile,list:()=>listRuns(),cancel(){cancelled=true;active?.dispose();},get running(){return busy;},dispose(){disposed=true;active?.dispose();}};
 }
 module.exports = {createRepairService};

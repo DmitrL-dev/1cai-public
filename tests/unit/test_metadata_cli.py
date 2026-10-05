@@ -16,7 +16,7 @@ def test_cli_resolves_retained_adapter_and_checks_rights_before_payload(
     captured, monkeypatch, capsys
 ):
     ctx, request = captured
-    monkeypatch.setattr(cli, "current_windows_principal", lambda: ctx.principal)
+    monkeypatch.setattr(cli, "current_local_principal", lambda: ctx.principal)
     payload = ctx.source_root.parent / "metadata-request.json"
     payload.write_text(json.dumps(request), "utf-8")
     argv = [

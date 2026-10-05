@@ -1,0 +1,18 @@
+# Copyright 2011-2018 The Rust Project Developers. See the COPYRIGHT
+# file at the top-level directory of this distribution and at
+# http://rust-lang.org/COPYRIGHT.
+#
+# Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+# http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+# <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+# option. This file may not be copied, modified, or distributed
+# except according to those terms.
+
+# This script uses the following Unicode tables:
+# - DerivedNormalizationProps.txt
+# - NormalizationTest.txt
+# - UnicodeData.txt
+# - StandardizedVariants.txt
+#
+# Since this should not require frequent updates, we just store this
+# out-of-line and check the tables.rs and normalization_tests.rs files into git.

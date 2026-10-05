@@ -1,0 +1,2 @@
+        // This algorithm is derived from
+        // https://graphics.stanford.edu/~seander/bithacks.html##ValueInWord

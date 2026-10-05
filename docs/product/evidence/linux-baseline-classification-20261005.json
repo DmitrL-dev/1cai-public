@@ -1,0 +1,524 @@
+{
+  "schema": 1,
+  "baseline_commit": "fb759eb655da6005feacaa7672bb57ca98a04910",
+  "portable_checkpoint": "3c00d264f24c9c4fd11d17f0f0f6ef2e502d87d3",
+  "baseline_counts": {
+    "passed": 2059,
+    "failed": 90,
+    "errors": 2,
+    "skipped": 1079
+  },
+  "portable_checkpoint_counts": {
+    "passed": 2210,
+    "failed": 90,
+    "errors": 2,
+    "skipped": 954
+  },
+  "same_failure_and_error_ids": true,
+  "classification_counts": {
+    "tooling_prerequisite": 2,
+    "windows_retained_io_contract": 75,
+    "test_fixture_assumption": 15
+  },
+  "demonstrated_portable_domain_defects": 0,
+  "qualification": "This classification does not prove downstream unexecuted logic correct. Negative CoreError-only tests can pass before their intended boundary on an unsupported platform. Rust submitted input is a distinct experimental byte contract, not a blanket replacement of retained Windows readers.",
+  "tests": [
+    {
+      "test": "tests.unit.test_native_archive_cli::test_native_archive_cli_archives_metadata_run_before_any_new_evidence",
+      "category": "tooling_prerequisite",
+      "reason": "PATH resolves go to a Go board-game application instead of Go1.25.5 compiler; Windows capture fixture also lacks platform mark"
+    },
+    {
+      "test": "tests.unit.test_native_archive_cli::test_native_archive_cli_redacts_snapshot_error_after_access_revoke",
+      "category": "tooling_prerequisite",
+      "reason": "PATH resolves go to a Go board-game application instead of Go1.25.5 compiler; Windows capture fixture also lacks platform mark"
+    },
+    {
+      "test": "tests.unit.test_owner_report_store::test_owner_report_store_enforces_report_limit",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_owner_report_store::test_owner_report_store_get_fails_closed_on_corrupt_sibling",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_owner_report_store::test_owner_report_store_is_idempotent_for_same_id_and_rejects_conflict",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_owner_report_store::test_owner_report_store_preserves_complete_numeric_runtime_evidence",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_owner_report_store::test_owner_report_store_rejects_context_and_requires_authorization",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_owner_report_store::test_owner_report_store_rejects_foreign_files_and_tampering",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_owner_report_store::test_owner_report_store_rejects_inconsistent_incomplete_or_nested_context",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_owner_report_store::test_owner_report_store_saves_reads_and_lists_context_bound_receipt",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_assessment_rechecks_age_and_exact_boundary_without_values",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_equivalent_timezone_period_is_accepted",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_expected_period_requires_exact_instants[2026-09-01T00:00:00Z-2026-09-07T23:59:58Z]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_expected_period_requires_exact_instants[2026-09-02T00:00:00Z-2026-09-07T23:59:59Z]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_export_cannot_override_consumer_policy",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_fresh_generation_cannot_resurrect_old_observations",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_freshness_clock_is_sampled_after_final_authorization",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_incomplete_runtime_never_reaches_owner_report_as_available[declared_incomplete]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_incomplete_runtime_never_reaches_owner_report_as_available[empty]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_incomplete_runtime_never_reaches_owner_report_as_available[partial]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_load_runtime_report_binds_context_and_reauthorizes",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_load_runtime_report_keeps_incomplete_status_without_inventing_values",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_load_runtime_report_rejects_context_mismatch[commit-dddddddddddddddddddddddddddddddddddddddd]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_load_runtime_report_rejects_context_mismatch[project_id-87654321-4321-8765-4321-876543218765]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_load_runtime_report_rejects_context_mismatch[snapshot_id-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_load_runtime_report_rejects_context_mismatch[source_digest-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_loaded_report_is_accepted_by_owner_report",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_loader_keeps_retained_locator_unresolved",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_policy_bounds_report_duration",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_runtime_read_revoked_before_return_fails_closed",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_stale_loader_fails_closed_instead_of_returning_available_evidence",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_metrics::test_stricter_consumer_policy_blocks_older_evidence",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_authorization_revocation_never_returns_a_receipt[1]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_authorization_revocation_never_returns_a_receipt[2]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_authorization_revocation_never_returns_a_receipt[3]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_authorization_revocation_never_returns_a_receipt[4]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_authorization_revocation_never_returns_a_receipt[5]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_authorization_revocation_never_returns_a_receipt[6]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_every_trusted_context_pin_is_enforced[commit-dddddddddddddddddddddddddddddddddddddddd]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_every_trusted_context_pin_is_enforced[project_id-87654321-4321-8765-4321-876543218765]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_every_trusted_context_pin_is_enforced[register_id-InformationRegister.Other]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_every_trusted_context_pin_is_enforced[snapshot_id-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_every_trusted_context_pin_is_enforced[source_ref-exports/other.json]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_export_with_different_complete_period_is_rejected",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_freshness_is_rechecked_after_delayed_consumer_authorization[4]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_freshness_is_rechecked_after_delayed_consumer_authorization[5]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_incomplete_or_wrong_indicator_inventory_never_creates_receipt[declared]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_incomplete_or_wrong_indicator_inventory_never_creates_receipt[empty]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_incomplete_or_wrong_indicator_inventory_never_creates_receipt[extra]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_incomplete_or_wrong_indicator_inventory_never_creates_receipt[missing]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_incomplete_or_wrong_indicator_inventory_never_creates_receipt[partial]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_missing_or_mutable_expected_inventory_and_period_are_rejected[overrides0]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_missing_or_mutable_expected_inventory_and_period_are_rejected[overrides1]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_missing_or_mutable_expected_inventory_and_period_are_rejected[overrides2]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_missing_or_mutable_expected_inventory_and_period_are_rejected[overrides3]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_missing_or_mutable_expected_inventory_and_period_are_rejected[overrides4]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_only_preconfigured_source_can_be_selected[../export.json]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_only_preconfigured_source_can_be_selected[https://invalid/export]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_only_preconfigured_source_can_be_selected[other]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_only_preconfigured_source_can_be_selected[owned-owner-indicators/x]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_owned_fixture_produces_canonical_immutable_owner_receipt",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_tampered_rows_fail_even_if_export_is_self_consistent[False]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_producer::test_tampered_rows_fail_even_if_export_is_self_consistent[True]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_source::test_authorization_exception_and_cause_are_preserved[2]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_source::test_authorization_exception_and_cause_are_preserved[3]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_source::test_authorization_revocation_fails_closed[2]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_source::test_authorization_revocation_fails_closed[3]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_source::test_canonical_rows_ignore_export_order_and_preserve_numeric_types",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_source::test_digest_is_recomputed_even_when_declared_and_expected_agree",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_source::test_freshness_clock_is_sampled_after_third_authorization",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_source::test_freshness_clock_traceback_does_not_disclose_invalid_input",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_source::test_incomplete_does_not_become_available[declared]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_source::test_incomplete_does_not_become_available[empty]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_source::test_incomplete_does_not_become_available[partial]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_source::test_links_are_rejected_without_resolving_them[junction]",
+      "category": "test_fixture_assumption",
+      "reason": "Unguarded Windows-only API, attribute or incomplete Windows native mock"
+    },
+    {
+      "test": "tests.unit.test_runtime_source::test_stale_and_period_policy_are_delegated",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_source::test_valid_register_export_is_typed_and_authorized_three_times",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_runtime_source::test_validation_core_error_cause_is_suppressed[OWNER_RUNTIME_SOURCE_DIGEST]",
+      "category": "windows_retained_io_contract",
+      "reason": "Fails at Windows retained read or pinned store before downstream domain checks"
+    },
+    {
+      "test": "tests.unit.test_scm_git_probe::test_capture_overflow_is_bounded_and_never_owner_evidence",
+      "category": "test_fixture_assumption",
+      "reason": "Noncanonical sys.executable containing .. is correctly rejected before the intended child test"
+    },
+    {
+      "test": "tests.unit.test_scm_git_probe::test_capture_retains_raw_bytes_and_checks_exclusive_evidence_paths",
+      "category": "test_fixture_assumption",
+      "reason": "Noncanonical sys.executable containing .. is correctly rejected before the intended child test"
+    },
+    {
+      "test": "tests.unit.test_scm_git_probe::test_capture_timeout_terminates_and_reaps_the_same_child",
+      "category": "test_fixture_assumption",
+      "reason": "Noncanonical sys.executable containing .. is correctly rejected before the intended child test"
+    },
+    {
+      "test": "tests.unit.test_service_scm_delivery::test_backup_privilege_refuses_success_bool_with_not_all_assigned",
+      "category": "test_fixture_assumption",
+      "reason": "Unguarded Windows-only API, attribute or incomplete Windows native mock"
+    },
+    {
+      "test": "tests.unit.test_service_scm_delivery::test_backup_privilege_restores_previous_state_after_body_failure[False]",
+      "category": "test_fixture_assumption",
+      "reason": "Unguarded Windows-only API, attribute or incomplete Windows native mock"
+    },
+    {
+      "test": "tests.unit.test_service_scm_delivery::test_backup_privilege_restores_previous_state_after_body_failure[True]",
+      "category": "test_fixture_assumption",
+      "reason": "Unguarded Windows-only API, attribute or incomplete Windows native mock"
+    },
+    {
+      "test": "tests.unit.test_service_scm_delivery::test_cleanup_restores_acl_before_attempting_config_write[False]",
+      "category": "test_fixture_assumption",
+      "reason": "Unguarded Windows-only API, attribute or incomplete Windows native mock"
+    },
+    {
+      "test": "tests.unit.test_service_scm_delivery::test_cleanup_restores_acl_before_attempting_config_write[True]",
+      "category": "test_fixture_assumption",
+      "reason": "Unguarded Windows-only API, attribute or incomplete Windows native mock"
+    },
+    {
+      "test": "tests.unit.test_service_scm_delivery::test_cleanup_structural_inventory_does_not_read_locked_file_bytes",
+      "category": "test_fixture_assumption",
+      "reason": "Unguarded Windows-only API, attribute or incomplete Windows native mock"
+    },
+    {
+      "test": "tests.unit.test_service_scm_delivery::test_exact_acl_restore_validates_all_entries_before_native_calls[descriptor]",
+      "category": "test_fixture_assumption",
+      "reason": "Unguarded Windows-only API, attribute or incomplete Windows native mock"
+    },
+    {
+      "test": "tests.unit.test_service_scm_delivery::test_exact_acl_restore_validates_all_entries_before_native_calls[missing-root]",
+      "category": "test_fixture_assumption",
+      "reason": "Unguarded Windows-only API, attribute or incomplete Windows native mock"
+    },
+    {
+      "test": "tests.unit.test_service_scm_delivery::test_exact_acl_restore_validates_all_entries_before_native_calls[outside]",
+      "category": "test_fixture_assumption",
+      "reason": "Unguarded Windows-only API, attribute or incomplete Windows native mock"
+    },
+    {
+      "test": "tests.unit.test_service_scm_delivery::test_structural_inventory_rejects_real_hardlink",
+      "category": "test_fixture_assumption",
+      "reason": "Unguarded Windows-only API, attribute or incomplete Windows native mock"
+    },
+    {
+      "test": "tests.unit.test_stock_git_scm_measurement::test_native_java_proof_requires_fixed_argv_parent_and_localservice",
+      "category": "test_fixture_assumption",
+      "reason": "Unguarded Windows-only API, attribute or incomplete Windows native mock"
+    }
+  ],
+  "toolchain_qualified_follow_up": {
+    "date": "2026-10-05",
+    "candidate_versions": {
+      "core": "0.1.0.dev17",
+      "companion": "0.1.18"
+    },
+    "python": "3.12.14",
+    "go": "1.25.5 with writable build cache",
+    "counts": {
+      "passed": 2273,
+      "failed": 90,
+      "skipped": 954,
+      "errors": 2
+    },
+    "same_failure_and_error_ids": true,
+    "cause_equivalence_claimed": false,
+    "observations": [
+      {
+        "tests": [
+          "tests.unit.test_native_archive_cli::test_native_archive_cli_archives_metadata_run_before_any_new_evidence",
+          "tests.unit.test_native_archive_cli::test_native_archive_cli_redacts_snapshot_error_after_access_revoke"
+        ],
+        "current_category": "windows_capture_fixture",
+        "reason": "With the correct Go compiler and writable cache, scanner compilation succeeds; both fixtures now fail at Capture requires Windows local filesystem handles. The historical tooling classification above describes the earlier baseline only."
+      },
+      {
+        "tests": [
+          "tests.unit.test_scm_git_probe::test_capture_overflow_is_bounded_and_never_owner_evidence",
+          "tests.unit.test_scm_git_probe::test_capture_retains_raw_bytes_and_checks_exclusive_evidence_paths",
+          "tests.unit.test_scm_git_probe::test_capture_timeout_terminates_and_reaps_the_same_child"
+        ],
+        "current_category": "test_fixture_assumption",
+        "reason": "The virtual-environment sys.executable is a symlink and fails the canonical diagnostic path policy before child execution; the earlier invocation also contained noncanonical .. components."
+      }
+    ],
+    "qualification": "Matching failure IDs is a regression signal, not proof of identical causes or correctness behind a platform refusal. Strict portable acceptance and current logs are evaluated separately."
+  }
+}

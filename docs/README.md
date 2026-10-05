@@ -17,10 +17,13 @@
 [возможностей и ограничений](CAPABILITIES.md), [состояния поставки](product/READINESS.md)
 и [совместимости конфигураций](product/CONFIGURATION-COMPATIBILITY.md).
 Последняя опубликованная пара — Core dev15 / Companion 0.1.15;
-Core dev16 / Companion 0.1.17 в текущих исходниках остаются кандидатами.
+Core dev17 / Companion 0.1.18 в текущих исходниках остаются кандидатами.
 Опубликованный маршрут требует Windows x64 / CPython 3.11. Linux/macOS и
 выборочный Rust-слой развиваются по [новому плану](../ROADMAP.md),
-с явной [матрицей поддержки](product/PLATFORM-SUPPORT.md).
+с явной [матрицей поддержки](product/PLATFORM-SUPPORT.md). Текущий source candidate
+содержит [Linux state/history](product/PORTABLE-CORE.md) и
+[экспериментальный Rust import](product/RUST-INPUT-CORE.md), без обещания полного
+Linux/macOS product route.
 
 ## Быстро найти нужный раздел
 

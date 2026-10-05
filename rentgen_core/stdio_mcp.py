@@ -18,7 +18,8 @@ from uuid import uuid4
 from .context import SnapshotRef
 from .errors import CoreError
 from .local import LocalRuntime
-from .local_identity import current_windows_principal
+from .local_identity import current_local_principal
+from .capabilities import capability_report, operation_supported, require_operation
 from .publication import capture_and_publish
 from .snapshots import ProjectHead
 from .source_paths import validate_source_path
@@ -130,7 +131,11 @@ _METADATA_LIVE_TOOLS = frozenset(
         "rentgen_metadata_live_recover",
     }
 )
+_LIVE_SOURCE_WRITES = (
+    _PROPOSAL_LIVE_TOOLS - {"rentgen_proposal_live_status"}
+) | (_METADATA_LIVE_TOOLS - {"rentgen_metadata_live_status"})
 TOOL_SCHEMAS = {
+    "rentgen_capabilities": _object({}),
     "rentgen_proposal_check": _object(
         {
             **_PIN,
@@ -264,6 +269,7 @@ _DESCRIPTIONS = {
     "rentgen_proposal_live_undo": "Undo a confirmed direct BSL proposal only while the source tree still matches its after inventory.",
     "rentgen_proposal_live_status": "Read the sealed status of one direct BSL proposal operation without replaying it.",
     "rentgen_proposal_live_recover": "Recover an interrupted direct BSL proposal operation to its sealed original source using explicit recovery.",
+    "rentgen_capabilities": "Report OS adapter support only; this does not grant project permissions or assert installed native dependencies.",
     "rentgen_project_list": "List authorized project IDs and labels; no source reads.",
     "rentgen_project_head": "Read the current project head without opening a generation.",
     "rentgen_publication_receipt": "Reconcile one capture operation using its durable receipt.",
@@ -307,7 +313,7 @@ class McpScope:
         if tools is None:
             tools = frozenset(TOOL_SCHEMAS)
             if self.project_id is not None:
-                tools -= {"rentgen_project_list"}
+                tools -= {"rentgen_project_list", "rentgen_capabilities"}
         elif (
             type(tools) not in {list, tuple, set, frozenset}
             or not 1 <= len(tools) <= len(TOOL_SCHEMAS)
@@ -812,6 +818,8 @@ def _proposal_reply(result, request_id, protocol_request_id):
 def _dispatch(runtime, principal, name, args):
     if name in _PROPOSAL_TOOLS:
         return _proposal_dispatch(runtime, principal, name, args)
+    if name == "rentgen_capabilities":
+        return capability_report()
     if name == "rentgen_project_list":
         return runtime.registry.list_for(principal)
     project = args["project_id"]
@@ -897,6 +905,7 @@ def _execute(
     family = "proposal"
     try:
         prepared = validate_arguments(name, arguments, scope=scope)
+        require_operation(name)
         if name in mcp_drafts.TOOLS:
             family = "draft"
             permissions = mcp_drafts.permissions(name)
@@ -1221,13 +1230,13 @@ def create_server(runtime, principal, *, cancellations=None, scope=None):
                     readOnlyHint=name
                     not in mcp_drafts.WRITES
                     | {"rentgen_capture", _NATIVE_ARCHIVE_TOOL}
-                    | (_METADATA_LIVE_TOOLS - {"rentgen_metadata_live_status"}),
-                    destructiveHint=False,
+                    | _LIVE_SOURCE_WRITES,
+                    destructiveHint=name in _LIVE_SOURCE_WRITES,
                     openWorldHint=False,
                 ),
             )
             for name, schema in TOOL_SCHEMAS.items()
-            if name in scope.allowed_tools
+            if name in scope.allowed_tools and operation_supported(name)
         ]
 
     @server.call_tool(validate_input=False)
@@ -1481,9 +1490,10 @@ async def serve(runtime, principal, scope=None):
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
-        description="Local Windows Rentgen MCP over stdio only", allow_abbrev=False
+        description="Local Rentgen MCP over stdio; tools reflect OS capabilities", allow_abbrev=False
     )
     parser.add_argument("--registry", type=Path, required=True)
+    parser.add_argument("--identity-profile", type=Path)
     parser.add_argument("--scanner", type=Path)
     parser.add_argument("--project", action="append", metavar="PROJECT_UUID")
     parser.add_argument("--allow-tool", action="append", metavar="TOOL")
@@ -1500,7 +1510,7 @@ def main(argv=None) -> int:
     try:
         import anyio
 
-        principal = current_windows_principal()
+        principal = current_local_principal(identity_profile=args.identity_profile)
         try:
             from rentgen_diagnostics.installed import InstalledDiagnostics
 

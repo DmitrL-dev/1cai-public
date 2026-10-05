@@ -45,3 +45,13 @@ test('progress cancellation targets the running service and refuses a concurrent
   complete({status:'unresolved'});await pending;
   assert.equal(f.calls.filter(c=>c[0]==='diff').length,0);
 });
+
+test('recovery explains the adapter failure without presenting it as a successful repair',async()=>{
+  const f=fixture();
+  f.service.reconcile=async()=>({status:'unresolved',error:'MODEL_SOURCE_LIMIT'});
+  await f.commands.get('rentgen.repairResult')('run');
+  const message=f.calls.find(c=>c[0]==='info')[1];
+  assert.match(message,/MODEL_SOURCE_LIMIT/);
+  assert.match(message,/Автоматического повторения нет/);
+  assert.equal(f.calls.some(c=>c[0]==='start'||c[0]==='diff'),false);
+});

@@ -151,7 +151,7 @@ def test_cli_register_list_disable_and_admin_before_read(
             return ctx
 
     monkeypatch.setattr(cli, "LocalRuntime", Runtime)
-    monkeypatch.setattr(cli, "current_windows_principal", lambda: ctx.principal)
+    monkeypatch.setattr(cli, "current_local_principal", lambda: ctx.principal)
     specification_file = ctx.state.path.parent / "edt-specification.json"
     specification_file.write_text(json.dumps(specification), "utf-8")
 

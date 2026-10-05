@@ -62,8 +62,6 @@ def test_parser_refuses_unsafe_or_repeated_options(option):
 
 @pytest.fixture
 def local(tmp_path, monkeypatch, capsys):
-    if os.name != "nt":
-        pytest.skip("Windows registry contract")
     principal = api.Principal("owner", "local_os")
     source = tmp_path / "source"
     source.mkdir()
@@ -73,7 +71,7 @@ def local(tmp_path, monkeypatch, capsys):
     )
     runtime = LocalRuntime(registry.path)
     ctx = runtime.state_context(principal, project.project_id)
-    monkeypatch.setattr(cli, "current_windows_principal", lambda: principal)
+    monkeypatch.setattr(cli, "current_local_principal", lambda: principal)
     paths = [tmp_path / (label + ".json") for label in ("base", "current", "upstream")]
 
     def write(*trees):

@@ -101,7 +101,12 @@ async def main():
         async with ClientSession(read, write) as session:
             await session.initialize()
             tools = [t.name for t in (await session.list_tools()).tools]
-            assert len(tools) == 32
+            assert len(tools) == 33 and len(set(tools)) == 33
+            assert set(tools) == set(rentgen_core.stdio_mcp.TOOL_SCHEMAS)
+            capabilities = await call(session, "rentgen_capabilities", {})
+            assert capabilities["platform"] == "win32"
+            assert capabilities["capabilities"]["source.live.mutate"]["supported"] is True
+            assert capabilities["capabilities"]["analysis.submitted.zip"]["supported"] is False
             invalid = await session.call_tool(
                 "rentgen_project_head",
                 {

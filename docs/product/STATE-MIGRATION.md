@@ -144,14 +144,27 @@ writers одновременно.
 
 ## Проверки
 
-`tests/integration/test_project_core_state_migration.py` проверяет реальные
-committed WAL bytes, admin/identity-before-IO, size/deadline, read-UOW seam,
-busy writer, no-overwrite/incomplete receipt, junction refusal, corruption и
-sidecars, пять actual process-kill boundaries, same-operation recovery,
-lost acknowledgment, KeyboardInterrupt, retained-handle close failure,
-revocation и реальный CLI с process SID. Existing state/migration/CLI tests
-сохраняют прежний контракт перехода 1→2. Новые проекты совместимого ядра
-создаются со schema 3; этот runner отвергает schema 3 до backup IO. Для
+В текущем дереве нет ранее указанного файла
+`tests/integration/test_project_core_state_migration.py`. Поэтому этот документ
+не подтверждает воспроизводимость проверки runner: перед допуском миграции
+нужно восстановить или добавить тесты committed WAL bytes,
+admin/identity-before-IO, size/deadline, read-UOW seam, busy writer,
+no-overwrite/incomplete receipt, junction refusal, corruption/sidecars,
+process-kill boundaries, same-operation recovery, lost acknowledgment,
+KeyboardInterrupt, retained-handle close failure, revocation и CLI с process SID.
+Наличие реализации `state-migrate` не заменяет результаты этих проверок.
+
+`tests/unit/test_state_migration_contract.py` проверяет переносимую часть на
+реальных временных SQLite-базах: committed WAL backup, сохранность membership и
+пользовательских таблиц, admin-before-backup-IO, отказ от write UOW и превышения
+лимита размера, повторное подтверждение schema после потери ответа, отзыв admin
+до миграции и сохранение первичной ошибки при сбое cleanup. Уже актуальная schema
+не создаёт новый backup; schema 3/4 не проходит в runner 1→2. Эти проверки не
+подменяют Windows path confinement, retained handles, actual process-kill или
+аутентификацию CLI через process SID.
+
+Новые проекты совместимого ядра создаются со schema 4; этот runner выполняет
+только переход 1→2 и отвергает schema 3/4 до backup IO. Для
 отдельного перехода 2→3 используйте `state-upgrade-access`, описанный в
 [PROJECT-ACCESS.md](PROJECT-ACCESS.md). Его атомарная action receipt не меняет
 историческое `migration_attribution=not_proven` у M1.

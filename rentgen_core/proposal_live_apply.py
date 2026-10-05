@@ -846,6 +846,11 @@ def recover_live(ctx, operation_id, *, target):
             )
         current = _source_rows(ctx)
         current_map = _rows_map(current)
+        _require(
+            set(current_map) <= set(before),
+            "PROPOSAL_LIVE_UNDO_CONFLICT",
+            "Live source contains foreign files",
+        )
         for path in before:
             if path not in intent["changed_paths"]:
                 _require(
@@ -882,7 +887,14 @@ def recover_live(ctx, operation_id, *, target):
                 "state_id",
             ),
         )
+        current_expected = current
         for path in intent["changed_paths"]:
+            _check(ctx)
+            _require(
+                _source_rows(ctx) == current_expected,
+                "PROPOSAL_LIVE_UNDO_CONFLICT",
+                "Live source changed during recovery",
+            )
             current_row = current_map.get(path)
             if current_row == before[path]:
                 continue
@@ -890,6 +902,8 @@ def recover_live(ctx, operation_id, *, target):
             if target_path.exists():
                 _safe_target(target_path)
             os.replace(stage / path, target_path)
+            current_map[path] = before[path]
+            current_expected = [current_map[name] for name in sorted(current_map)]
         _require(
             _source_rows(ctx) == list(before.values()),
             RECOVERY,
