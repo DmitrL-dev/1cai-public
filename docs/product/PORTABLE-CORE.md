@@ -1,8 +1,9 @@
 # Переносимое ядро: первый ограниченный срез
 
-Это документация исходников candidate Core dev17 / Companion 0.1.18,
-не объявление нового релиза. Прежние опубликованные пакеты не заменяются. Полный продукт, offline-kit и Companion пока не приняты
-на Linux/macOS. Windows retained-source, live-apply, process ownership и native
+Этот ограниченный срез входит в опубликованный Core dev17. Для Linux x86_64
+доступно [экспериментальное дополнение](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev17)
+с wheel и Rust executable; MCP-зависимости, Go scanner и редактор в него не входят.
+Полный продукт, offline-kit и Companion пока не приняты на Linux/macOS. Windows retained-source, live-apply, process ownership и native
 adapters сохраняют прежние границы. Полная перепись и новый LLM runtime не нужны
 для описанного ниже state/history среза. Уже реализованный экспериментальный
 [Rust ZIP input core](RUST-INPUT-CORE.md) описан отдельно: у него собственные
@@ -82,13 +83,13 @@ Profile должен находиться вне исходников, project s
 
 Если изменился UID или profile утерян, доступ закрывается. Нужны сохранённая
 правильная локальная identity либо отдельный явный процесс административного
-переноса. Candidate не исправляет ownership/permissions и не редактирует старые
+переноса. Core не исправляет ownership/permissions и не редактирует старые
 memberships самостоятельно.
 
 ## Синтетический запуск из исходников
 
 Пример использует новые тестовые directories. Не подставляйте production state
-для bootstrap. Python должен запускаться из checkout или установленного candidate
+для bootstrap. Python должен запускаться из checkout или установленного
 wheel; MCP требует optional dependency `mcp`.
 
 ```sh
@@ -127,6 +128,6 @@ Windows capability contract и не выдаются за Linux live-apply пр�
 
 Полный старый Windows-oriented unit suite на Linux имеет отдельные известные
 platform/runtime failures. Сравнение с неизменённым baseline необходимо: нельзя
-объявлять полный suite зелёным по одному целевому набору. Новая Windows native
+объявлять полный suite зелёным по одному целевому набору. Новая native 1С/редакторная
 приёмка, macOS, portable snapshot import/retained reader, native tools, Companion
-и offline packaging остаются отдельными этапами.
+и полный Linux offline-kit остаются отдельными этапами.
