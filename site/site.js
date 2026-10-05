@@ -17,6 +17,8 @@
   tabs.forEach((tab, index) => {
     tab.addEventListener('click', () => select(tab));
     tab.addEventListener('keydown', event => {
+      // Preserve browser/page shortcuts such as Ctrl+Home and Alt+Left.
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
       let next;
       if (event.key === 'ArrowDown' || event.key === 'ArrowRight') next = (index + 1) % tabs.length;
       if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') next = (index + tabs.length - 1) % tabs.length;
