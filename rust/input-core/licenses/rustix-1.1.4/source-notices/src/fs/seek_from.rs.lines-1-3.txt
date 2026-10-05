@@ -1,0 +1,3 @@
+//! The following is derived from Rust's
+//! library/std/src/io/mod.rs at revision
+//! dca3f1b786efd27be3b325ed1e01e247aa589c3b.

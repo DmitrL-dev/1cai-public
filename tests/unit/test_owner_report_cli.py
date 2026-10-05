@@ -49,7 +49,7 @@ def command(project_fixture, monkeypatch, capsys):
 
     ctx, resolver = project_fixture
     runtime = LocalRuntime(resolver.registry.path)
-    monkeypatch.setattr(cli, "current_windows_principal", lambda: ctx.principal)
+    monkeypatch.setattr(cli, "current_local_principal", lambda: ctx.principal)
     monkeypatch.setattr(cli, "_runtime", lambda args: runtime)
 
     def invoke(name, *args, success=True):

@@ -1,0 +1,203 @@
+{
+  "format_version": 1,
+  "kind": "observed_wire_regression_export",
+  "scope": "Publicly exposable recorded-output regression data; not fresh heldout evidence or a second evaluation.",
+  "source_release_id": "eval-v2-f288-20261005T1702Z",
+  "source_commit": "f28809e8ced10e9ee60e16e9552aff0d4789aa76",
+  "protocol_sha256": "311476568bdb369947ee79bcec38afbbe3a20d6a94f8368f249cd5e34c9b913c",
+  "source_frozen_manifest_sha256": "857d09b32d5c332d205610225132dd08104da5af8d0f3f598a466fbb87772687",
+  "source_journal_sha256": "4ad23df65b996bc181684f377f238b8927595052ff50c518bb635aa24c24fd5a",
+  "source_summary_sha256": "9eb2afd420a4313f9249ce1316779f13f9d244d44dabae8d44d36a30c54677c5",
+  "source_executable_sha256": "fe72906aac9f0bbf30e2a9e09c44b927c4b7b0e5a5618b1703a107d5c0b77c70",
+  "source_input_request_hashes_matched": 249,
+  "source_expected_responses_and_exit_semantics_matched": 249,
+  "all_original_frozen_files_unchanged": true,
+  "new_kernel_calls": 0,
+  "new_evaluation_runs": 0,
+  "new_oracle_calls": 0,
+  "deduplication_conflicts": 0,
+  "reconstruction_uncertainty": null,
+  "counts": {
+    "source_call_occurrences": 249,
+    "covered_call_occurrences": 249,
+    "unique_inputs": 156,
+    "duplicate_occurrences_collapsed": 93,
+    "recorded_observation_events_replayed": 67,
+    "paired_prefixes_reconstructed": 16,
+    "unique_normal_vectors": 132,
+    "unique_error_vectors": 24,
+    "normal_call_occurrences": 225,
+    "error_call_occurrences": 24,
+    "shards": 17,
+    "oversize_single_vector_shards": 4,
+    "origin_cohort_occurrences": {
+      "boundary": 50,
+      "relevant_counterfactual": 20,
+      "invariance": 14,
+      "development": 80,
+      "heldout": 80,
+      "selector_limit": 5
+    }
+  },
+  "chunk_target_bytes": 98304,
+  "shards": [
+    {
+      "path": "wire-vectors-001.json",
+      "bytes": 27366,
+      "sha256": "937a4bb4989a1894ed547ae141909e103a9d22f44e389f318a8a7558a3e432cc",
+      "unique_vectors": 5,
+      "covered_call_occurrences": 5,
+      "exceeds_chunk_target": false,
+      "large_input_boundary_exception": false
+    },
+    {
+      "path": "wire-vectors-002.json",
+      "bytes": 132333,
+      "sha256": "35621b2983a174f0770e132835438dc79754dfefe353bd55821758c3dad40cdf",
+      "unique_vectors": 1,
+      "covered_call_occurrences": 1,
+      "exceeds_chunk_target": true,
+      "large_input_boundary_exception": true
+    },
+    {
+      "path": "wire-vectors-003.json",
+      "bytes": 131704,
+      "sha256": "876187438c55dfe251c98a0669703e0e7c2aa33b10bd59d6c1a41bbca271031c",
+      "unique_vectors": 1,
+      "covered_call_occurrences": 1,
+      "exceeds_chunk_target": true,
+      "large_input_boundary_exception": true
+    },
+    {
+      "path": "wire-vectors-004.json",
+      "bytes": 129923,
+      "sha256": "5d3e3d7d8bd81c72d4b1af435d23c522ad25d3cd21300d87777e3b6741b97d23",
+      "unique_vectors": 1,
+      "covered_call_occurrences": 1,
+      "exceeds_chunk_target": true,
+      "large_input_boundary_exception": true
+    },
+    {
+      "path": "wire-vectors-005.json",
+      "bytes": 126965,
+      "sha256": "da3977076ec65c3651775cc6a1ce47ba058a65ee2c379e57097c111af3a6f715",
+      "unique_vectors": 1,
+      "covered_call_occurrences": 1,
+      "exceeds_chunk_target": true,
+      "large_input_boundary_exception": true
+    },
+    {
+      "path": "wire-vectors-006.json",
+      "bytes": 94962,
+      "sha256": "f65f6e0ab9a84982671803b3bbfa7c58b181b3f2c9b8a55a4649c97fc50e2f02",
+      "unique_vectors": 17,
+      "covered_call_occurrences": 17,
+      "exceeds_chunk_target": false,
+      "large_input_boundary_exception": false
+    },
+    {
+      "path": "wire-vectors-007.json",
+      "bytes": 96369,
+      "sha256": "ebb07af3daf2e228da8c2c99c9f23cd05c4f97e21fa370d1406ed64ebb6492cf",
+      "unique_vectors": 16,
+      "covered_call_occurrences": 21,
+      "exceeds_chunk_target": false,
+      "large_input_boundary_exception": false
+    },
+    {
+      "path": "wire-vectors-008.json",
+      "bytes": 92206,
+      "sha256": "dae751d6405ac1f0c4b40f409bbabdffdb04e008f0ec5eb2806c6e9da01b1d32",
+      "unique_vectors": 14,
+      "covered_call_occurrences": 18,
+      "exceeds_chunk_target": false,
+      "large_input_boundary_exception": false
+    },
+    {
+      "path": "wire-vectors-009.json",
+      "bytes": 97087,
+      "sha256": "a4a1376e9142a524bcefdca5461a06b7337e6fe3caeb5958b9b4a7a4fc183e1f",
+      "unique_vectors": 11,
+      "covered_call_occurrences": 33,
+      "exceeds_chunk_target": false,
+      "large_input_boundary_exception": false
+    },
+    {
+      "path": "wire-vectors-010.json",
+      "bytes": 94031,
+      "sha256": "2a0e4d09a6de732b05b9fec5caac45e99263755974ae028f2a189ad5cb93d2ca",
+      "unique_vectors": 12,
+      "covered_call_occurrences": 16,
+      "exceeds_chunk_target": false,
+      "large_input_boundary_exception": false
+    },
+    {
+      "path": "wire-vectors-011.json",
+      "bytes": 98036,
+      "sha256": "7e6367845ca01fd202ab108ac1aed4e4f8e48eba3e7a7e2d1c54ad2cacc25cf9",
+      "unique_vectors": 15,
+      "covered_call_occurrences": 44,
+      "exceeds_chunk_target": false,
+      "large_input_boundary_exception": false
+    },
+    {
+      "path": "wire-vectors-012.json",
+      "bytes": 91994,
+      "sha256": "14875a0c36ca0c0992c4d3238e4aca6ccc335bfbb061e8672a76d7042fbc9452",
+      "unique_vectors": 12,
+      "covered_call_occurrences": 13,
+      "exceeds_chunk_target": false,
+      "large_input_boundary_exception": false
+    },
+    {
+      "path": "wire-vectors-013.json",
+      "bytes": 95999,
+      "sha256": "fb8269fea2e6d668f27cf32d1b76a0d0097bbeb582c3ba2f3e0a63e9fcf06cc3",
+      "unique_vectors": 10,
+      "covered_call_occurrences": 19,
+      "exceeds_chunk_target": false,
+      "large_input_boundary_exception": false
+    },
+    {
+      "path": "wire-vectors-014.json",
+      "bytes": 91030,
+      "sha256": "b49b6fd2a996e4051eda38dcb0be11cd11bce56a80806308cbe56fac2ffbbc6c",
+      "unique_vectors": 11,
+      "covered_call_occurrences": 16,
+      "exceeds_chunk_target": false,
+      "large_input_boundary_exception": false
+    },
+    {
+      "path": "wire-vectors-015.json",
+      "bytes": 92560,
+      "sha256": "86371f9a61e6957850f5dcf4a185adaf616270c0862567c48972a99b8aea797e",
+      "unique_vectors": 13,
+      "covered_call_occurrences": 27,
+      "exceeds_chunk_target": false,
+      "large_input_boundary_exception": false
+    },
+    {
+      "path": "wire-vectors-016.json",
+      "bytes": 93779,
+      "sha256": "e6d5ba226262e99a57bc149c8be19e535127b9a6a4972ae1c2b3aee2c0aff628",
+      "unique_vectors": 11,
+      "covered_call_occurrences": 11,
+      "exceeds_chunk_target": false,
+      "large_input_boundary_exception": false
+    },
+    {
+      "path": "wire-vectors-017.json",
+      "bytes": 39567,
+      "sha256": "f8050bd92857197851be3e4b1c022d7b185fe34a820b41c2c0f3ae73efa3eb0a",
+      "unique_vectors": 5,
+      "covered_call_occurrences": 5,
+      "exceeds_chunk_target": false,
+      "large_input_boundary_exception": false
+    }
+  ],
+  "scope_note": {
+    "path": "README.md",
+    "bytes": 2069,
+    "sha256": "137739e8b9f8f6fc722d79df787d9908fd0ceb03cd99e973efe73c9fafa3b679"
+  }
+}

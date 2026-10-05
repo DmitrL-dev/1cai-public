@@ -95,8 +95,6 @@ def test_no_write_native_snapshot_or_abbreviated_options(option):
 
 @pytest.fixture
 def local(tmp_path, monkeypatch, capsys):
-    if os.name != "nt":
-        pytest.skip("Windows registry contract")
     principal = api.Principal("owner", "local_os")
     source = tmp_path / "source"
     source.mkdir()
@@ -108,7 +106,7 @@ def local(tmp_path, monkeypatch, capsys):
         display_name="Identity plan",
     )
     ctx = LocalRuntime(registry.path).state_context(principal, registered.project_id)
-    monkeypatch.setattr(cli, "current_windows_principal", lambda: principal)
+    monkeypatch.setattr(cli, "current_local_principal", lambda: principal)
     paths = [tmp_path / (label + ".json") for label in ("base", "current", "upstream")]
     values = [
         json.loads(json.dumps(inventory(version)).replace(PROJECT, ctx.project_id))
@@ -436,7 +434,7 @@ def test_actual_published_inventory_result_is_accepted_unchanged(
     args = arguments()
     args[2], args[4] = str(resolver.registry.path), ctx.project_id
     args[6], args[8], args[10] = map(str, paths)
-    monkeypatch.setattr(cli, "current_windows_principal", lambda: ctx.principal)
+    monkeypatch.setattr(cli, "current_local_principal", lambda: ctx.principal)
     monkeypatch.setattr(
         LocalRuntime, "resolve", lambda *a, **kw: pytest.fail("Plan resolved snapshot")
     )

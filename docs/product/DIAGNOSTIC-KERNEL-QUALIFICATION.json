@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "status": "first_frozen_synthetic_gate_pass_independently_audited",
+  "date": "2026-10-05",
+  "scope": "Owned finite evidence-history fixtures under five known rules; not native 1C, unseen source code, authenticated provenance, user-facing diagnostic acceptance or a release. Public replay is regression, not a second heldout evaluation.",
+  "original_candidate": {
+    "v2_files_verified": 18,
+    "v1_history_files_verified": 17,
+    "v1_original_files_verified": 17,
+    "freeze_delta": [
+      "RUNBOOK.md",
+      "tools/reference_oracle.py",
+      "tools/run_frozen_evaluation.py"
+    ],
+    "persisted_freeze_archive_sha256": "4b1b3d9d3d4cd6df95c475909a01a8cab001afdb39a85e0b7542654218e428f8",
+    "source_commit": "f28809e8ced10e9ee60e16e9552aff0d4789aa76",
+    "source_tree": "f94b325990b8883b40e9e1496bb529e447c61ccf",
+    "binary_sha256": "fe72906aac9f0bbf30e2a9e09c44b927c4b7b0e5a5618b1703a107d5c0b77c70",
+    "binary_bytes": 2490352
+  },
+  "reviewed_protocol_sha256": "311476568bdb369947ee79bcec38afbbe3a20d6a94f8368f249cd5e34c9b913c",
+  "cargo_lock_sha256": "766f5ec38c70f927d10ad6d9e6a7aeaba32977de20544cd88503c459e2c7f273",
+  "preserved_runtime_sha256": {
+    "rust/diagnostic-core/src/catalog.rs": "642180de09f71b044dcaa2599c0b08cc9701ac0e25b5b58438b5b92f56ea2a0c",
+    "rust/diagnostic-core/src/engine.rs": "9020d8f08798cc7774aae982c9df1a7e0b2a9c4934a8947ae0bf157928de30f4",
+    "rust/diagnostic-core/src/lib.rs": "7a9c9ee2f578f251f9c2e214a9157f2fd1e87241513d8eae66b6d657bd752900",
+    "rust/diagnostic-core/src/main.rs": "03d0da984ee59b7fb66a39a81e4dc616231d9528172aba3e14cff9e81f840cb7",
+    "rust/diagnostic-core/src/model.rs": "727f2748f710d1d42e170ba80329cfaf9c029623dea29a9f7c594f92a0783575",
+    "rust/diagnostic-core/src/parse.rs": "8dccb4daf4887a1e0a041113162a1623bc57a67270e85bbcc144f342c27c3d96"
+  },
+  "frozen_manifest_sha256": "857d09b32d5c332d205610225132dd08104da5af8d0f3f598a466fbb87772687",
+  "frozen_criteria_sha256": "59a086fc83dea409d9f3ffe4d26f813347d2cea4488507c4f6b48eef012be3fd",
+  "original_summary_sha256": "9eb2afd420a4313f9249ce1316779f13f9d244d44dabae8d44d36a30c54677c5",
+  "original_events_sha256": "4ad23df65b996bc181684f377f238b8927595052ff50c518bb635aa24c24fd5a",
+  "independent_audit_report_sha256": "5325933202992fd5d15a280e6834b4e73476a3d6cda9d70e8bcb02b231ebede6",
+  "audit_method": "Separate read-only protocol implementation; 249 exact input/stdout hashes and 225 full normal outputs reconstructed, all182 scheduled units accounted for; no evaluator/oracle/kernel rerun. Saved provenance is not externally authenticated attestation.",
+  "initial_development_tests": {
+    "contract": 32,
+    "stdio": 2,
+    "failed": 0
+  },
+  "scheduled_units": 182,
+  "completed_units": 182,
+  "kernel_calls": 249,
+  "normal_outputs": 225,
+  "expected_protocol_errors": 24,
+  "emitted_diagnoses_justified": 51,
+  "false_diagnoses": 0,
+  "unjustified_refutations": 0,
+  "canary_leaks": 0,
+  "ineligible_observations": 0,
+  "full_normal_output_conformance_failures": 0,
+  "splits": {
+    "development": {
+      "bounded_finding_coverage": {
+        "correct": 12,
+        "denominator": 12
+      },
+      "per_class_correct_of_four": {
+        "call": 4,
+        "receiver": 4,
+        "mismatch": 4
+      },
+      "controls_without_diagnosis_of_twelve": 12,
+      "catalogued_finding_recall": {
+        "recalled": 13,
+        "denominator": 13
+      },
+      "paired": {
+        "adaptive_correct": 16,
+        "fixed_agrees_with_adaptive_preference": 12,
+        "fixed_contract_correct": 16,
+        "agreement_descriptive_only": true,
+        "denominator": 16,
+        "win_tie_loss": {
+          "win": 4,
+          "tie": 12
+        }
+      },
+      "utility": {
+        "denominator": 8,
+        "strict_request_wins": 3,
+        "strict_request_losses": 1,
+        "total_capped_request_improvement": 2,
+        "adaptive_sufficient_terminal": 8,
+        "fixed_sufficient_terminal": 8,
+        "adaptive_totals": {
+          "requests": 13,
+          "cost": 21,
+          "disclosure": 21,
+          "capped_requests": 13,
+          "capped_cost": 21,
+          "capped_disclosure": 21
+        },
+        "fixed_totals": {
+          "requests": 15,
+          "cost": 21,
+          "disclosure": 21,
+          "capped_requests": 15,
+          "capped_cost": 21,
+          "capped_disclosure": 21
+        }
+      }
+    },
+    "heldout": {
+      "bounded_finding_coverage": {
+        "correct": 12,
+        "denominator": 12
+      },
+      "per_class_correct_of_four": {
+        "call": 4,
+        "receiver": 4,
+        "mismatch": 4
+      },
+      "controls_without_diagnosis_of_twelve": 12,
+      "catalogued_finding_recall": {
+        "recalled": 14,
+        "denominator": 15
+      },
+      "paired": {
+        "adaptive_correct": 16,
+        "fixed_agrees_with_adaptive_preference": 12,
+        "fixed_contract_correct": 16,
+        "agreement_descriptive_only": true,
+        "denominator": 16,
+        "win_tie_loss": {
+          "win": 4,
+          "tie": 12
+        }
+      },
+      "utility": {
+        "denominator": 8,
+        "strict_request_wins": 3,
+        "strict_request_losses": 1,
+        "total_capped_request_improvement": 2,
+        "adaptive_sufficient_terminal": 8,
+        "fixed_sufficient_terminal": 8,
+        "adaptive_totals": {
+          "requests": 13,
+          "cost": 21,
+          "disclosure": 21,
+          "capped_requests": 13,
+          "capped_cost": 21,
+          "capped_disclosure": 21
+        },
+        "fixed_totals": {
+          "requests": 15,
+          "cost": 21,
+          "disclosure": 21,
+          "capped_requests": 15,
+          "capped_cost": 21,
+          "capped_disclosure": 21
+        }
+      }
+    }
+  },
+  "limits": {
+    "budget_solvable_two_conflict_case": {
+      "solved": 0,
+      "total": 1,
+      "classification": "avoidable heuristic abstention; an admissible two-check continuation exists within budget"
+    },
+    "four_witness_case": {
+      "solved": 0,
+      "total": 1,
+      "classification": "budget-impossible within three observations"
+    }
+  },
+  "independent_audit_hardening": {
+    "affected_this_run": false,
+    "future_evaluator_fixes": [
+      "Validate actual revealed values against compatible catalog outcomes.",
+      "Enforce ready consent for paired-prefix reveals.",
+      "Consume thresholds and enforce complete schedule/mandatory coverage in acceptance."
+    ],
+    "actual_observations_independently_checked": 67,
+    "paired_prefixes_independently_checked": 16,
+    "incompatible_or_ineligible": 0
+  },
+  "historical_eval_resources": {
+    "wall_seconds": 1.004584,
+    "aggregate_cpu_seconds": 0.824177,
+    "sampled_peak_process_group_rss_bytes": 21893120,
+    "rss_sample_interval_seconds": 0.2,
+    "remaining_owned_processes": 0,
+    "qualification": "Includes harness/process overhead; sampled peak, not exact peak; no native latency or speedup comparison."
+  },
+  "public_replay": {
+    "manifest_path": "../../rust/diagnostic-core/tests/observed-wire/manifest.json",
+    "manifest_sha256": "caa015d7a9b39aeedf3cadb8856b4f3a6529e757fb565e0eb58ac4201855490a",
+    "unique_vectors": 156,
+    "source_call_occurrences": 249,
+    "export_added_kernel_calls": 0,
+    "future_use": "Public regression only"
+  }
+}

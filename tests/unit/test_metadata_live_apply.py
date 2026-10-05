@@ -550,7 +550,7 @@ def test_cli_exposes_live_apply_with_explicit_snapshot_and_operation(
     captured, monkeypatch, capsys
 ):
     ctx, request, _, _ = _request(captured)
-    monkeypatch.setattr(cli, "current_windows_principal", lambda: ctx.principal)
+    monkeypatch.setattr(cli, "current_local_principal", lambda: ctx.principal)
     argv = [
         "metadata-live-apply",
         "--registry",

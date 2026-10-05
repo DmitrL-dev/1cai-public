@@ -1,0 +1,2 @@
+// These functions are derived from Rust's library/std/src/sys/unix/fd.rs at
+// revision 326ef470a8b379a180d6dc4bbef08990698a737a.

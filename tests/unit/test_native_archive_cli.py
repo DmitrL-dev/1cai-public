@@ -41,7 +41,7 @@ def test_native_archive_cli_archives_metadata_run_before_any_new_evidence(
     captured, monkeypatch, capsys
 ):
     ctx, operation, run, preview = metadata_fixtures._finished_run(captured)
-    monkeypatch.setattr(cli, "current_windows_principal", lambda: ctx.principal)
+    monkeypatch.setattr(cli, "current_local_principal", lambda: ctx.principal)
     argv = [
         "native-archive",
         "--registry",
@@ -71,7 +71,7 @@ def test_native_archive_cli_redacts_snapshot_error_after_access_revoke(
     captured, monkeypatch, capsys
 ):
     ctx, operation, run, _ = metadata_fixtures._finished_run(captured)
-    monkeypatch.setattr(cli, "current_windows_principal", lambda: ctx.principal)
+    monkeypatch.setattr(cli, "current_local_principal", lambda: ctx.principal)
 
     def revoked_resolve(self, principal, project_id, snapshot_id=None):
         with ctx.state.transaction(ctx.principal, write=True) as tx:

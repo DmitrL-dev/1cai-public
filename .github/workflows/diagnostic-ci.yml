@@ -1,0 +1,36 @@
+name: Experimental diagnostic kernel contracts
+
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: diagnostic-contracts-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Synthetic Rust contracts (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    env:
+      CARGO_BUILD_JOBS: '1'
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: rustup toolchain install 1.92.0 --profile minimal
+      - name: Locked synthetic contracts and public wire regression
+        shell: bash
+        run: cargo +1.92.0 test --locked -j 1 --manifest-path rust/diagnostic-core/Cargo.toml -- --test-threads=1

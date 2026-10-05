@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="1245" viewBox="0 0 640 1245" role="img" aria-labelledby="title desc">
+  <title id="title">Пять шагов от исходников к решению</title>
+  <desc id="desc">Крупная вертикальная схема для узкого экрана. Применение отдельной операцией.</desc>
+  <rect width="640" height="1245" rx="28" fill="#0c1524" />
+  <g font-family="DejaVu Sans,Segoe UI,Arial,sans-serif">
+    <text x="33" y="53" font-size="32" fill="#f4f7fc" font-weight="700">От исходников к решению</text>
+    <rect x="28" y="88" width="584" height="188" rx="21" fill="#123d39" />
+    <text x="54" y="127" font-size="22" fill="#8befcf" font-weight="700">01</text>
+    <text x="109" y="141" font-size="30" fill="#8befcf" font-weight="700">Сохранить снимок</text>
+    <text x="109" y="193" font-size="25" fill="#d5e0ee" font-weight="400">Готовая выгрузка</text>
+    <text x="109" y="227" font-size="25" fill="#d5e0ee" font-weight="400">и точные файлы</text>
+    <rect x="28" y="299" width="584" height="188" rx="21" fill="#193854" />
+    <text x="54" y="338" font-size="22" fill="#9ed8ff" font-weight="700">02</text>
+    <text x="109" y="352" font-size="30" fill="#9ed8ff" font-weight="700">Найти модуль</text>
+    <text x="109" y="404" font-size="25" fill="#d5e0ee" font-weight="400">Путь, код</text>
+    <text x="109" y="438" font-size="25" fill="#d5e0ee" font-weight="400">и связи</text>
+    <rect x="28" y="510" width="584" height="188" rx="21" fill="#352b51" />
+    <text x="54" y="549" font-size="22" fill="#ccb7ff" font-weight="700">03</text>
+    <text x="109" y="563" font-size="30" fill="#ccb7ff" font-weight="700">Создать черновик</text>
+    <text x="109" y="615" font-size="25" fill="#d5e0ee" font-weight="400">Вручную или с AI;</text>
+    <text x="109" y="649" font-size="25" fill="#d5e0ee" font-weight="400">отдельная история</text>
+    <rect x="28" y="721" width="584" height="188" rx="21" fill="#483b25" />
+    <text x="54" y="760" font-size="22" fill="#f3d497" font-weight="700">04</text>
+    <text x="109" y="774" font-size="30" fill="#f3d497" font-weight="700">Проверить ревизию</text>
+    <text x="109" y="826" font-size="25" fill="#d5e0ee" font-weight="400">Настроенные</text>
+    <text x="109" y="860" font-size="25" fill="#d5e0ee" font-weight="400">инструменты</text>
+    <rect x="28" y="932" width="584" height="188" rx="21" fill="#273a4c" />
+    <text x="54" y="971" font-size="22" fill="#cbdeef" font-weight="700">05</text>
+    <text x="109" y="985" font-size="30" fill="#cbdeef" font-weight="700">Решить, что дальше</text>
+    <text x="109" y="1037" font-size="25" fill="#d5e0ee" font-weight="400">Доработать или</text>
+    <text x="109" y="1071" font-size="25" fill="#d5e0ee" font-weight="400">отдельно применить</text>
+    <text x="32" y="1178" font-size="24" fill="#b7c7dd" font-weight="400">Сохранение и проверка не применяют</text>
+    <text x="32" y="1214" font-size="24" fill="#b7c7dd" font-weight="400">правку к рабочей базе.</text>
+  </g>
+</svg>

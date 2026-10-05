@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Рентген: понять код 1С, подготовить отдельный черновик и проверить выбранную ревизию перед решением. Открытое локальное ядро раннего доступа.">
+  <meta name="theme-color" content="#f5f5f0">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:title" content="Рентген — увидеть код. Решить самому.">
+  <meta property="og:description" content="От сохранённого кода 1С к проверяемой правке. Открытый проект раннего доступа.">
+  <meta property="og:url" content="https://dmitrl-dev.github.io/1cai-public/">
+  <link rel="canonical" href="https://dmitrl-dev.github.io/1cai-public/">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="site.js" defer></script>
+  <title>Рентген — увидеть код. Решить самому.</title>
+</head>
+<body>
+<a class="skip" href="#main">Перейти к содержанию</a>
+<header class="header shell">
+  <a class="brand" href="#" aria-label="Рентген, начало страницы"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M4 4h13v13H4zM23 4h13v13H23zM4 23h13v13H4zM23 23h13v13H23z"/><path class="brand-scan" d="M0 20h40"/></svg>рентген<span class="brand-tag">для 1С</span></a>
+  <nav aria-label="Главная навигация"><a href="#how">Как работает</a><a href="#status">Что готово</a><a class="nav-github" href="https://github.com/DmitrL-dev/1cai-public">GitHub</a></nav>
+</header>
+<main id="main">
+<section class="hero shell" aria-labelledby="hero-title">
+  <div class="hero-copy">
+    <p class="eyebrow"><span class="edition">01 / EARLY ACCESS</span> Открытое локальное ядро</p>
+    <h1 id="hero-title">Увидеть код.<br><span>Решить</span><br>самому.</h1>
+    <p class="hero-description">Разберитесь в исходниках 1С.<br>Подготовьте черновик. Проверьте правку.<br>Сохраните контроль над изменениями.</p>
+    <div class="hero-actions"><a class="button primary" href="#start">Начать с проекта</a><a class="text-link" href="#demo">Разобрать пример <span class="play-icon" aria-hidden="true">▷</span></a></div>
+    <p class="hero-qualifier">Windows x64 · CPython 3.11 · Ранний доступ</p>
+  </div>
+  <div class="hero-visual" role="img" aria-label="Иллюстрация: сохранённый модуль, его связи и отдельный черновик. Не интерфейс продукта.">
+    <div class="visual-topline"><span>ВНУТРИ КОНФИГУРАЦИИ</span><span class="crosshair" aria-hidden="true">+</span></div>
+    <div class="blueprint" aria-hidden="true">
+      <div class="coordinate co-a">X: 014</div><div class="coordinate co-b">Y: 026</div>
+      <svg class="module-map" viewBox="0 0 520 450"><defs><pattern id="grid" width="26" height="26" patternUnits="userSpaceOnUse"><path d="M26 0H0V26" fill="none" stroke="currentColor" stroke-width=".6"/></pattern></defs><rect width="520" height="450" fill="url(#grid)" opacity=".16"/><g fill="none" stroke="currentColor" stroke-width="1.5"><path class="map-line" d="M72 120h114v88h132v100h128M186 208v134H72M318 208V76h128"/><circle cx="186" cy="208" r="98" stroke-dasharray="3 8" opacity=".4"/><circle cx="186" cy="208" r="159" opacity=".15"/></g><g fill="currentColor"><circle cx="72" cy="120" r="5"/><circle cx="72" cy="342" r="5"/><circle cx="446" cy="76" r="5"/><circle cx="446" cy="308" r="5"/></g></svg>
+      <div class="map-label label-one">Документ.Заказ</div><div class="map-label label-two">ОбщиеМодули</div>
+      <div class="source-window"><div class="source-title"><span class="file-mark">BSL</span> РасчётСуммы.bsl <span>СНИМОК</span></div><div class="code-sample"><div><i>01</i> <b>Функция</b> СуммаЗаказа(Строки)</div><div><i>02</i> &nbsp;Итого = 0;</div><div><i>03</i> &nbsp;<b>Для Каждого</b> Строка <b>Из</b> Строки <b>Цикл</b></div><div class="scan-target"><i>04</i> &nbsp;&nbsp;Итого = Итого + Строка.Сумма;</div><div><i>05</i> &nbsp;<b>КонецЦикла;</b></div><div><i>06</i> &nbsp;<b>Возврат</b> Итого;</div><div><i>07</i> <b>КонецФункции</b></div></div><div class="source-bottom"><span>Файл · связи · сохранённая версия</span><span>01:07</span></div></div>
+      <div class="scan-rule"><span>КОНТЕКСТ ВИДЕН</span></div>
+      <div class="draft-slip"><span class="draft-symbol">±</span><div><strong>Правка отдельно</strong><span>Черновик / ревизия 02</span></div><svg width="46" height="24" viewBox="0 0 46 24"><path d="M2 12h12l6-9 8 18 6-9h10" fill="none" stroke="currentColor" stroke-width="2"/></svg></div>
+    </div>
+    <div class="visual-caption"><span>Иллюстрация сценария</span><span>Не скриншот продукта</span></div>
+  </div>
+</section>
+<div class="principles shell" aria-label="Принципы продукта"><span><span class="principle-icon" aria-hidden="true">⌘</span> Ваши исходники</span><span><span class="principle-icon" aria-hidden="true">◫</span> Отдельный черновик</span><span><span class="principle-icon" aria-hidden="true">✓</span> Проверяемая ревизия</span><span class="principle-last">Ваше решение<span aria-hidden="true">✳</span></span></div>
+<section class="intro shell section" id="how" aria-labelledby="how-title">
+  <div class="section-label"><span>01 / ВИДИМЫЙ ПУТЬ</span><span>ОТ ИСХОДНИКОВ ДО РЕШЕНИЯ</span></div>
+  <div class="intro-heading"><h2 id="how-title">У каждой правки<br>есть <em>основание.</em></h2><p>Сложную конфигурацию проще разбирать по шагам. Рентген связывает сохранённый код, отдельное предложение и результаты проверок.</p></div>
+  <ol class="workflow">
+    <li><span class="step-count">01</span><div class="flow-drawing snapshot-drawing" aria-hidden="true"><span></span><span></span><span><b>BSL</b><i>XML</i></span></div><h3>Сохранить</h3><p>Зафиксируйте исходное состояние. Снимок связывает точные файлы и граф проекта.</p><a href="https://github.com/DmitrL-dev/1cai-public/blob/main/GETTING_STARTED.md#3-сохраните-первый-снимок">Первый снимок</a></li>
+    <li><span class="step-count">02</span><div class="flow-drawing relation-drawing" aria-hidden="true"><svg viewBox="0 0 200 98"><path d="M28 24h65v50h79M93 49h79"/><circle cx="28" cy="24" r="9"/><circle cx="93" cy="49" r="15"/><circle cx="172" cy="49" r="9"/><circle cx="172" cy="74" r="9"/></svg></div><h3>Разобраться</h3><p>Найдите модуль, прочитайте сохранённый код, изучите связи и сравните изменения.</p><a href="https://github.com/DmitrL-dev/1cai-public/blob/main/docs/USER_GUIDE.md">Работа с кодом</a></li>
+    <li><span class="step-count">03</span><div class="flow-drawing diff-drawing" aria-hidden="true"><span>− <i></i></span><span>+ <i></i></span><span>+ <i></i></span></div><h3>Подготовить</h3><p>Сохраните предложение отдельным черновиком, вручную или с моделью. Версии остаются в истории.</p><a href="https://github.com/DmitrL-dev/1cai-public/blob/main/GETTING_STARTED.md#5-подготовьте-первый-черновик-и-проверки">Первый черновик</a></li>
+    <li><span class="step-count">04</span><div class="flow-drawing check-drawing" aria-hidden="true"><span>r02</span><svg viewBox="0 0 70 70"><circle cx="35" cy="35" r="26"/><path d="m22 35 9 9 17-18"/></svg></div><h3>Проверить</h3><p>Прочитайте diff и результаты для выбранной ревизии. Решите, доработать или отдельно применить.</p><a href="https://github.com/DmitrL-dev/1cai-public/blob/main/docs/USER_GUIDE.md#проверить-выбранную-версию">Границы проверок</a></li>
+  </ol>
+  <p class="workflow-note"><span aria-hidden="true">↳</span> Сохранённый черновик и успешная проверка сами по себе не меняют рабочую базу.</p>
+</section>
+<section class="demo-section" id="demo" aria-labelledby="demo-title">
+  <div class="shell section">
+    <div class="section-label"><span>02 / РАЗБЕРЁМ НА ПРИМЕРЕ</span><span class="demo-badge">ИНТЕРАКТИВНАЯ ИЛЛЮСТРАЦИЯ</span></div>
+    <div class="demo-heading"><h2 id="demo-title">Меньше догадок.<br><span>Больше контекста.</span></h2><p>Заказ стал считать сумму иначе. Где искать причину и что проверить перед правкой?</p></div>
+    <div class="demo-layout">
+      <div class="demo-steps" role="tablist" aria-label="Этапы демонстрационного разбора" aria-orientation="vertical">
+        <button class="demo-step active" id="tab-source" role="tab" aria-selected="true" aria-controls="panel-source" data-step="source"><span>01</span><div><strong>Найти точку входа</strong><small>Сохранённый модуль и его версия</small></div><span class="step-indicator" aria-hidden="true">+</span></button>
+        <button class="demo-step" id="tab-evidence" role="tab" aria-selected="false" aria-controls="panel-evidence" tabindex="-1" data-step="evidence"><span>02</span><div><strong>Увидеть основание</strong><small>Связи, строки и контекст</small></div><span class="step-indicator" aria-hidden="true">+</span></button>
+        <button class="demo-step" id="tab-draft" role="tab" aria-selected="false" aria-controls="panel-draft" tabindex="-1" data-step="draft"><span>03</span><div><strong>Проверить предложение</strong><small>Отдельный diff и явные ограничения</small></div><span class="step-indicator" aria-hidden="true">+</span></button>
+      </div>
+      <div class="demo-stage">
+        <div class="demo-toolbar"><span class="demo-project">УЧЕБНЫЙ ПРОЕКТ / ЗАКАЗ</span><span class="demo-readonly">Только демонстрация</span></div>
+        <section class="demo-panel" id="panel-source" role="tabpanel" aria-labelledby="tab-source" tabindex="0">
+          <div class="panel-top"><span class="token">СНИМОК · s01</span><span>ОбщиеМодули / РасчётЗаказа</span></div>
+          <h3>СуммаЗаказа()</h3><p>Начните с точного кода, который сохранён в выбранном снимке.</p>
+          <div class="demo-code" role="region" tabindex="0" aria-label="Учебный пример исходного кода"><div><span>01</span><code><b>Функция</b> СуммаЗаказа(Строки)</code></div><div><span>02</span><code>    Итого = 0;</code></div><div><span>03</span><code>    <b>Для Каждого</b> Строка <b>Из</b> Строки <b>Цикл</b></code></div><div class="code-highlight"><span>04</span><code>        Итого = Итого + Строка.Сумма;</code></div><div><span>05</span><code>    <b>КонецЦикла;</b></code></div><div><span>06</span><code>    <b>Возврат</b> Итого;</code></div><div><span>07</span><code><b>КонецФункции</b></code></div></div>
+          <div class="panel-foot"><span class="mini-label">ЧТО ВИДНО</span><p>Путь к модулю, сохранённая версия и конкретная строка. Живые исходники не изменяются.</p></div>
+        </section>
+        <section class="demo-panel" id="panel-evidence" role="tabpanel" aria-labelledby="tab-evidence" tabindex="0" hidden>
+          <div class="panel-top"><span class="token">КОНТЕКСТ · s01</span><span>Связи и объяснение</span></div>
+          <h3>Откуда приходит сумма?</h3><p>Связь помогает выбрать место для чтения. Причину ещё нужно подтвердить.</p>
+          <div class="evidence-path" aria-label="Учебная связь: Заказ вызывает РасчётЗаказа.СуммаЗаказа"><div><small>ДОКУМЕНТ</small><strong>Заказ</strong><span>ОбработкаПроведения()</span></div><span class="path-connector" aria-hidden="true"></span><div><small>ОБЩИЙ МОДУЛЬ</small><strong>РасчётЗаказа</strong><span>СуммаЗаказа() · строка 04</span></div></div>
+          <div class="evidence-note"><span>ГИПОТЕЗА ДЛЯ ПРОВЕРКИ</span><p>Здесь складывается поле «Сумма». Если правила расчёта изменились, проверьте, где заполняется это поле и какое поведение ожидается.</p></div>
+          <div class="panel-foot"><span class="mini-label">ЧТО ВАЖНО</span><p>Это учебное объяснение. Граф вызовов не доказывает бизнес-причину, а ответ модели требует проверки.</p></div>
+        </section>
+        <section class="demo-panel" id="panel-draft" role="tabpanel" aria-labelledby="tab-draft" tabindex="0" hidden>
+          <div class="panel-top"><span class="token token-lime">ЧЕРНОВИК · r02</span><span>Предложение, ещё не применено</span></div>
+          <h3>Сначала сравнение.</h3><p>Допустим, подтверждено требование считать сумму из количества и цены.</p>
+          <div class="demo-diff" role="region" tabindex="0" aria-label="Учебное сравнение ревизии r02"><div class="removed"><span>−</span><code>Итого = Итого + Строка.Сумма;</code></div><div class="added"><span>+</span><code>Итого = Итого +<br>    Строка.Количество * Строка.Цена;</code></div></div>
+          <div class="check-list"><div><span>Diff ревизии r02</span><strong>Доступен для просмотра</strong></div><div><span>BSL / компилятор / тесты</span><strong class="not-run">Не запускались в демо</strong></div></div>
+          <div class="panel-foot"><span class="mini-label">РЕШЕНИЕ ЗА ВАМИ</span><p>Проверить скидки, округление и тестовые случаи. Новая правка требует новой проверки. Применение — отдельная операция.</p></div>
+        </section>
+      </div>
+    </div>
+    <p class="demo-disclosure">Синтетический пример для объяснения сценария. Это не интерфейс Рентгена, не запуск анализатора и не совет для вашей конфигурации. <a href="https://github.com/DmitrL-dev/1cai-public/blob/main/docs/CAPABILITIES.md">Реальные возможности</a></p>
+    <noscript><p class="noscript-note">JavaScript отключён: показан первый этап. Полный сценарий и ограничения доступны в <a href="https://github.com/DmitrL-dev/1cai-public/blob/main/docs/USER_GUIDE.md">руководстве</a>.</p></noscript>
+  </div>
+</section>
+<section class="control-section shell section" aria-labelledby="control-title">
+  <div class="section-label"><span>03 / КОНТРОЛЬ ОСТАЁТСЯ У ВАС</span><span>ПРОЗРАЧНОСТЬ ПО ШАГАМ</span></div>
+  <div class="control-grid"><div><h2 id="control-title">Модель предлагает.<br><em>Вы проверяете.</em></h2><p class="section-description">Подключайте инструменты по задаче. Для первого снимка и списка модулей AI не нужен, если папка выгрузки уже подготовлена.</p><a class="text-link" href="https://github.com/DmitrL-dev/1cai-public/blob/main/docs/START_HERE.md">Как устроен Рентген</a></div><dl class="control-list"><div><dt><span>01</span> Исходное состояние</dt><dd>Снимок, пути и идентификаторы файлов помогают понять, какой именно код вы читаете.</dd></div><div><dt><span>02</span> История предложения</dt><dd>У черновика свои ревизии. Проверка связана с конкретной версией, а не с любым будущим изменением.</dd></div><div><dt><span>03</span> Отдельное право на запись</dt><dd>Ответ модели не разрешает применение. Действуют права проекта и условия выбранной операции.</dd></div></dl></div>
+  <aside class="boundary"><span class="boundary-mark" aria-hidden="true">!</span><p>Проверки дают основания для решения. Они не доказывают всю бизнес-логику и не заменяют резервные копии базы и проверку специалистом по 1С.</p></aside>
+</section>
+<section class="status-section" id="status" aria-labelledby="status-title"><div class="shell section">
+  <div class="section-label"><span>04 / БЕЗ МЕЛКОГО ШРИФТА</span><span>СОСТОЯНИЕ НА 05.10.2026</span></div>
+  <div class="status-heading"><h2 id="status-title">Что можно<br>попробовать сейчас.</h2><p>Ранний доступ с ограниченными проверенными сценариями. Публикация пакета и готовность повседневной работы — разные этапы.</p></div>
+  <div class="release-grid"><article class="current-release"><span class="release-label">ОПУБЛИКОВАННАЯ ПАРА</span><h3>Windows<span>x64 / CPython 3.11</span></h3><div class="release-links"><a href="https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev17"><span>Локальное ядро</span><strong>Core dev17</strong><span class="release-link-label">Открыть выпуск</span></a><a href="https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.18"><span>Работа в редакторе</span><strong>Companion 0.1.18</strong><span class="release-link-label">Открыть выпуск</span></a></div><p>Сначала небольшая копия выгрузки. Произвольные конфигурации, качество AI и полный ежедневный цикл ещё требуют приёмки.</p></article><div class="future-release"><article><span class="release-label">ЭКСПЕРИМЕНТАЛЬНОЕ ДОПОЛНЕНИЕ</span><h3>Linux x86_64</h3><p>В Core dev17 отдельно опубликованы локальное состояние, чтение истории и ограниченный Rust ZIP import. Без capture, live apply, native 1С и Companion. Полный Linux/macOS-продукт пока не принят.</p></article><article><span class="release-label">ЭКСПЕРИМЕНТ В ИСХОДНИКАХ</span><h3>Узкая диагностика.</h3><p>Отдельный Rust-компонент проверяет синтетические факты и выбирает следующую проверку. В опубликованные пакеты он не входит; пользовательская диагностика, чтение реальной базы и native adapters остаются следующими этапами.</p></article></div></div>
+  <div class="status-bottom"><p>Editor / Main witness — эксперименты. Live apply и native-инструменты имеют отдельные ограничения.</p><div><a href="https://github.com/DmitrL-dev/1cai-public/blob/main/docs/product/READINESS.md">Состояние проверок</a><a href="https://github.com/DmitrL-dev/1cai-public/blob/main/docs/product/PLATFORM-SUPPORT.md">Поддержка платформ</a><a href="https://github.com/DmitrL-dev/1cai-public/blob/main/ROADMAP.md">План развития</a></div></div>
+</div></section>
+<section class="start-section shell section" id="start" aria-labelledby="start-title"><div class="section-label"><span>05 / ПЕРВЫЙ ПОЛЕЗНЫЙ РЕЗУЛЬТАТ</span><span>НАЧНИТЕ С МАЛОГО</span></div><div class="start-grid"><div><h2 id="start-title">Ваш проект.<br><em>Первый снимок.</em></h2><p class="section-description">Подготовьте Windows x64, Python 3.11 и копию небольшой папки выгрузки с XML и BSL. Один файл .cf или .dt вместо неё не подойдёт.</p><a class="button primary" href="https://github.com/DmitrL-dev/1cai-public/blob/main/GETTING_STARTED.md">Открыть первый запуск</a><p class="start-note">Команды, ожидаемые ответы и помощь при ошибках.</p></div><ol class="start-steps"><li><span>1</span><div><h3>Установите Core</h3><p>Проверьте контрольную сумму готового выпуска и создайте отдельное окружение.</p></div></li><li><span>2</span><div><h3>Подключите выгрузку</h3><p>Зарегистрируйте проект. Храните локальное состояние отдельно от исходников.</p></div></li><li><span>3</span><div><h3>Увидьте свои модули</h3><p>Сохраните снимок и получите список. Редактор, модель и проверки добавите после.</p></div></li></ol></div></section>
+<section class="questions shell" aria-label="Коротко о важном"><details><summary>Нужны ли модель и установленная 1С для начала?</summary><p>Если папка выгрузки уже есть, для первого снимка и списка модулей они не нужны. Для получения самой выгрузки и проверок платформой действуют отдельные требования. AI, BSL Language Server, 1С и YAxUnit подключаются по задаче.</p></details><details><summary>Может ли модель сама менять рабочую базу?</summary><p>Отчёт модели не даёт права на запись. Сохранение черновика и успешная проверка не меняют рабочую базу. Применение поддержанной правки к выгрузке и обновление информационной базы 1С — отдельные операции со своими правами и условиями.</p></details><details><summary>Что означает «открытый проект»?</summary><p>Собственный код Рентгена опубликован под MIT. Обязательной подписки на сервис Рентгена нет. Лицензии и условия 1С, редактора, моделей и зависимостей действуют отдельно. <a href="https://github.com/DmitrL-dev/1cai-public/blob/main/LICENSE">Лицензия MIT</a>.</p></details></section>
+</main>
+<footer class="footer shell"><div class="footer-top"><a class="brand" href="#">рентген<span class="brand-tag">для 1С</span></a><p>Понять код. Проверить правку.<br>Решить самому.</p><nav aria-label="Ссылки в подвале"><a href="https://github.com/DmitrL-dev/1cai-public/blob/main/docs/README.md">Документация</a><a href="https://github.com/DmitrL-dev/1cai-public/issues">Сообщить о проблеме</a><a href="https://github.com/DmitrL-dev/1cai-public/blob/main/CONTRIBUTING.md">Участвовать</a></nav></div><div class="footer-bottom"><span>Открытый проект · MIT · Ранний доступ</span><span>Без внешних шрифтов, аналитики и трекеров.</span><a href="#">В начало</a></div></footer>
+</body>
+</html>

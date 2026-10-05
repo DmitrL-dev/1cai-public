@@ -40,6 +40,14 @@ interrupted journal replacement. It checks the operation binding, receipt ID,
 and expected source inventory before promoting the record. Malformed or
 conflicting temporary records remain blocked for operator inspection.
 
+Stop external editors and writers before recovery. Recover checks the full
+allowed inventory before staging and again before each source replacement;
+an added file or a change during staging causes `PROPOSAL_LIVE_UNDO_CONFLICT`.
+If an earlier replacement already completed, status remains `OUTCOME_UNKNOWN`
+until an explicit recovery succeeds. The inventory check and replacement are
+separate operations, not an atomic filesystem compare-and-swap against arbitrary
+external writers. The project writer lock does not control those writers.
+
 Python API aliases are exported as `apply_proposal_live`,
 `undo_proposal_live`, `get_proposal_live_status`, and
 `recover_proposal_live`. The local CLI exposes:

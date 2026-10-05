@@ -17,7 +17,9 @@ module never downloads a scanner or discovers an executable through PATH.
 `--scanner` can be omitted for reads and replay of a committed operation. A new
 capture without a configured scanner returns `GRAPH_ADAPTER_UNAVAILABLE`.
 
-The server authenticates its Windows **process token SID** once at startup.
+On Windows, the server authenticates its **process token SID** once at startup.
+The experimental Linux subset instead uses the explicit local-account
+profile described in [PORTABLE-CORE.md](PORTABLE-CORE.md).
 Registry and scanner paths are trusted process arguments. Tool arguments cannot
 set actor, permissions, source root, registry, executable, environment or an
 output file. Project memberships are checked again on each operation. This SID
@@ -40,10 +42,10 @@ a different project returns `MCP_PROJECT_FORBIDDEN`. Checks precede dispatch and
 registry/source access. Unknown names still return `UNKNOWN_TOOL`. Requests cannot
 set or widen startup scope. Current membership/permission checks remain in force.
 
-Without either option the server exposes all 32 registered tools. Project-only
-startup exposes the 31 tools with explicit project selectors, excluding
-`rentgen_project_list`. Explicitly combining project scope with that registry-wide
-tool is a startup error. Tool-only scope may access the SID's authorized projects.
+Without either option the Windows dev17 server exposes all 33 registered tools.
+Project-only startup exposes the 31 tools with explicit project selectors,
+excluding `rentgen_project_list` and `rentgen_capabilities`. Explicitly combining
+project scope with either registry-wide tool is a startup error. Tool-only scope may access the SID's authorized projects.
 Unknown/duplicate tool names, invalid/repeated project selectors and incompatible
 combinations exit with code 2 before runtime initialization. Scope is immutable
 for the connection; changing it requires restarting with trusted arguments.
@@ -54,7 +56,10 @@ output permission checks. State schema 4 is unchanged.
 
 ## Tool contract
 
-Unrestricted startup exposes thirty-two tools; the previous dev2 artifacts expose ten. All tools return MCP text content containing JSON and equivalent
+Published dev17 exposes thirty-three tools on Windows, including the
+read-only `rentgen_capabilities` report. Historical dev15 exposes thirty-two; the
+previous dev2 artifacts expose ten. Linux exposes only its supported subset,
+documented in [PORTABLE-CORE.md](PORTABLE-CORE.md). All tools return MCP text content containing JSON and equivalent
 `structuredContent`. Success uses `{result, request_id}`; operational errors use
 the core `{error: {code, message, request_id, details}}` envelope and `isError=true`.
 Unknown tools return `UNKNOWN_TOOL`. Schemas reject unknown fields, null or blank
@@ -73,6 +78,7 @@ Semantic failures after schema validation keep their existing core error codes.
 
 | Tool | Required arguments | Optional arguments |
 |---|---|---|
+| `rentgen_capabilities` (dev17) | none | none |
 | `rentgen_project_list` | none | none |
 | `rentgen_project_head` | `project_id` | none |
 | `rentgen_publication_receipt` | `project_id`, `operation_id` | none |

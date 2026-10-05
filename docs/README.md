@@ -16,8 +16,13 @@
 Для оценки инструмента командой начните с
 [возможностей и ограничений](CAPABILITIES.md), [состояния поставки](product/READINESS.md)
 и [совместимости конфигураций](product/CONFIGURATION-COMPATIBILITY.md).
-Последняя опубликованная пара — Core dev15 / Companion 0.1.15;
-Core dev16 / Companion 0.1.17 в текущих исходниках остаются кандидатами.
+Последняя опубликованная пара — Core dev17 / Companion 0.1.18. Основной маршрут
+требует Windows x64 / CPython 3.11; отдельно опубликовано экспериментальное
+Linux x86_64 дополнение: [state/history](product/PORTABLE-CORE.md) и
+[Rust ZIP import](product/RUST-INPUT-CORE.md), без обещания полного Linux/macOS
+product route. Текущие исходники содержат и более поздние эксперименты, которые
+не входят в принятые пакеты. Границы задают [состояние поставки](product/READINESS.md),
+[матрица поддержки](product/PLATFORM-SUPPORT.md) и [план](../ROADMAP.md).
 
 ## Быстро найти нужный раздел
 
@@ -37,7 +42,7 @@ Core dev16 / Companion 0.1.17 в текущих исходниках остаю�
 
 | Ваша задача | Инструкция |
 | :--- | :--- |
-| Установить опубликованный Core dev15 | [Готовый выпуск и первый запуск](../GETTING_STARTED.md#готовый-core-dev15) |
+| Установить опубликованный Core dev17 | [Готовый выпуск и первый запуск](../GETTING_STARTED.md#готовый-core-dev17) |
 | Собрать Core из выбранных исходников и зарегистрировать проект | [Сборка ядра и первый проект](product/CORE-INSTALLATION.md) |
 | Подготовить воспроизводимый комплект с зависимостями | [Офлайн-комплект Core](product/CORE-OFFLINE-KIT.md) |
 | Создать отдельный профиль VSCodium / Cline | [Подготовка редактора](../integrations/open-editor/README.md) |
@@ -139,6 +144,7 @@ EDT — среда разработки 1С:Enterprise Development Tools.
 | :--- | :--- |
 | Границы компонентов и источник истины | [Архитектура](../ARCHITECTURE.md) |
 | Цели и незавершённые критерии | [План развития](../ROADMAP.md) |
+| Что принято на Windows и что переносится на Linux/macOS | [Поддержка платформ](product/PLATFORM-SUPPORT.md) |
 | Критерии приёмки ежедневной работы и платформы | [Ежедневная разработка](product/DAILY-DEVELOPMENT-ACCEPTANCE.md) и [платформа](product/PLATFORM-ACCEPTANCE.md) |
 | Выявленные слабые места и приоритеты | [Аудит 12 сентября 2026](product/AUDIT-20260912.md) |
 | Выбранное направление проекта | [Рынок и позиционирование](product/COMPETITOR-MATRIX.md) |

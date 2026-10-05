@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1060" height="780" viewBox="0 0 1060 780" role="img" aria-labelledby="title desc">
+  <title id="title">Дорожная карта: понятный старт и переносимое ядро</title>
+  <desc id="desc">Порядок работ, не список выпущенных функций. Понятный старт, переносимые операции, измерения, системные адаптеры.</desc>
+  <rect width="1060" height="780" rx="28" fill="#0c1524" />
+  <g font-family="DejaVu Sans,Segoe UI,Arial,sans-serif">
+    <text x="38" y="60" font-size="37" fill="#f4f7fc" font-weight="800">Ближе к полезному результату</text>
+    <text x="40" y="101" font-size="21" fill="#bacbe0" font-weight="400">Порядок работ. Каждый этап проходит свою приёмку.</text>
+    <rect x="33" y="132" width="994" height="126" rx="19" fill="#143d39" />
+    <text x="59" y="184" font-size="31" fill="#92efd2" font-weight="800">1</text>
+    <text x="116" y="173" font-size="26" fill="#92efd2" font-weight="700">Понятный старт</text>
+    <text x="116" y="209" font-size="22" fill="#e1eaf5" font-weight="400">Выгрузка → снимок → список модулей</text>
+    <text x="116" y="238" font-size="18" fill="#bccbdd" font-weight="400">Без обязательной настройки AI и редактора</text>
+    <rect x="33" y="277" width="994" height="126" rx="19" fill="#193953" />
+    <text x="59" y="329" font-size="31" fill="#9bd7fe" font-weight="800">2</text>
+    <text x="116" y="318" font-size="26" fill="#9bd7fe" font-weight="700">Переносимые операции</text>
+    <text x="116" y="354" font-size="22" fill="#e1eaf5" font-weight="400">Локальное состояние и чтение истории</text>
+    <text x="116" y="383" font-size="18" fill="#bccbdd" font-weight="400">Потом — безопасное чтение снимков по ОС</text>
+    <rect x="33" y="422" width="994" height="126" rx="19" fill="#332c51" />
+    <text x="59" y="474" font-size="31" fill="#d0beff" font-weight="800">3</text>
+    <text x="116" y="463" font-size="26" fill="#d0beff" font-weight="700">Скорость по измерениям</text>
+    <text x="116" y="499" font-size="22" fill="#e1eaf5" font-weight="400">Время, память, проверка результата</text>
+    <text x="116" y="528" font-size="18" fill="#bccbdd" font-weight="400">Rust — ограниченный опыт, затем решение</text>
+    <rect x="33" y="567" width="994" height="126" rx="19" fill="#483a25" />
+    <text x="59" y="619" font-size="31" fill="#f2d49b" font-weight="800">4</text>
+    <text x="116" y="608" font-size="26" fill="#f2d49b" font-weight="700">Платформенные адаптеры</text>
+    <text x="116" y="644" font-size="22" fill="#e1eaf5" font-weight="400">Захват, процессы, поставка и проверки</text>
+    <text x="116" y="673" font-size="18" fill="#bccbdd" font-weight="400">Live apply — после отдельной квалификации</text>
+    <text x="40" y="748" font-size="21" fill="#bdcce0" font-weight="400">Windows — ранний выпуск. Linux / macOS — отдельные этапы.</text>
+  </g>
+</svg>

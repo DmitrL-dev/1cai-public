@@ -1,0 +1,95 @@
+name: Experimental portable contracts
+
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: portable-contracts-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    name: Linux experimental contracts (Python ${{ matrix.python }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.12']
+    env:
+      PYTHONUTF8: '1'
+      CARGO_BUILD_JOBS: '1'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.15.0'
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.25.5'
+          cache: false
+      - name: Install exact Rust toolchain and Python test tools
+        run: |
+          rustup toolchain install 1.92.0 --profile minimal
+          python -m pip install -r requirements-test.txt -r requirements-product-build.txt
+          mkdir -p output
+          python --version
+          cargo +1.92.0 --version
+      - name: Locked Rust native and process contracts
+        run: |
+          cargo +1.92.0 test --locked --manifest-path rust/input-core/Cargo.toml
+          cargo +1.92.0 build --locked --release --manifest-path rust/input-core/Cargo.toml
+          cargo +1.92.0 test --locked --release --manifest-path rust/input-core/Cargo.toml --test sidecar
+          cargo +1.92.0 test --locked --release --manifest-path rust/input-core/Cargo.toml --test sidecar absolute_session_deadline_terminates_partial_frame -- --ignored --exact
+          echo "RENTGEN_INPUT_CORE_TEST_BINARY=$GITHUB_WORKSPACE/rust/input-core/target/release/rentgen-input-core" >> "$GITHUB_ENV"
+      - name: Portable CLI MCP planners and real Rust acceptance
+        run: |
+          python -m pytest -q --tb=short tests/unit/test_portable_local_workflow.py tests/unit/test_rust_input_workflow.py tests/unit/test_metadata_materialize_cli.py tests/unit/test_edt_attribute_cli.py tests/unit/test_edt_identity_three_way_cli.py tests/unit/test_mcp_tool_annotations.py tests/unit/test_state_migration_contract.py tests/unit/test_core_dev16_compatibility.py tests/unit/test_linux_baseline_gate.py --junitxml=output/portable-contracts.xml
+      - name: Diagnostic full Linux suite with known Windows baseline
+        shell: bash
+        run: |
+          set +e
+          python -m pytest -q --tb=short --junitxml=output/linux-diagnostic.xml > output/linux-diagnostic.log 2>&1
+          status=$?
+          set -e
+          python scripts/verification/check_linux_baseline.py --junit output/linux-diagnostic.xml --baseline docs/product/evidence/linux-baseline-classification-20261005.json --pytest-exit "$status" --output output/linux-baseline-comparison.json
+      - name: Build candidate Python artifacts and verify installed Rust CLI
+        run: |
+          python -m build --no-isolation --wheel --outdir output/direct-wheel
+          python -m build --no-isolation
+          version=$(python -c 'import pathlib,tomllib;print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')
+          cmp "output/direct-wheel/rentgen_core-$version-py3-none-any.whl" "dist/rentgen_core-$version-py3-none-any.whl"
+          sha256sum "dist/rentgen_core-$version-py3-none-any.whl" > output/wheel-reproducibility.sha256
+          python scripts/verification/verify_portable_delivery.py --wheel "dist/rentgen_core-$version-py3-none-any.whl" --binary "$RENTGEN_INPUT_CORE_TEST_BINARY" --output output/installed-portable --expected-version "$version"
+          mkdir -p output/experimental-linux
+          cp "$RENTGEN_INPUT_CORE_TEST_BINARY" output/experimental-linux/rentgen-input-core
+          cp LICENSE rust/input-core/README.md rust/input-core/PROTOCOL.md rust/input-core/THIRD_PARTY_NOTICES.md rust/input-core/DEPENDENCY_PROVENANCE.json output/experimental-linux/
+          cp -r rust/input-core/licenses output/experimental-linux/licenses
+          sha256sum output/experimental-linux/rentgen-input-core > output/experimental-linux/SHA256SUMS
+      - name: Upload scoped evidence and development artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: experimental-linux-python-${{ matrix.python }}
+          path: |
+            output/portable-contracts.xml
+            output/linux-diagnostic.xml
+            output/linux-diagnostic.log
+            output/linux-baseline-comparison.json
+            output/installed-portable/acceptance.json
+            output/wheel-reproducibility.sha256
+            output/experimental-linux/
+            dist/*.whl
+            dist/*.tar.gz
+          if-no-files-found: error
+          retention-days: 14

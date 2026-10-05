@@ -923,7 +923,19 @@ def recover_live(ctx, operation_id, *, target):
                 "Live backup is incomplete",
             )
         current = _source_rows(ctx)
-        current_map = {row["path"]: row for row in current}
+        current_map = _rows_map(current)
+        _require(
+            set(current_map) <= set(before),
+            "METADATA_LIVE_UNDO_CONFLICT",
+            "Live source contains foreign files",
+        )
+        for path in before:
+            if path not in intent["changed_paths"]:
+                _require(
+                    current_map.get(path) == before[path],
+                    "METADATA_LIVE_UNDO_CONFLICT",
+                    "Live source contains foreign bytes",
+                )
         for path in intent["changed_paths"]:
             row = current_map.get(path)
             _require(
@@ -948,8 +960,14 @@ def recover_live(ctx, operation_id, *, target):
             journal / "state.json",
             _state(journal, "undoing", operation_id=operation_id),
         )
+        current_expected = current
         for path in intent["changed_paths"]:
             _check(ctx)
+            _require(
+                _source_rows(ctx) == current_expected,
+                "METADATA_LIVE_UNDO_CONFLICT",
+                "Live source changed during recovery",
+            )
             target_path = ctx.source_root / path
             current_row = current_map.get(path)
             if current_row == before[path]:
@@ -962,6 +980,8 @@ def recover_live(ctx, operation_id, *, target):
             if target_path.exists():
                 _safe_target(target_path)
             os.replace(stage / path, target_path)
+            current_map[path] = before[path]
+            current_expected = [current_map[name] for name in sorted(current_map)]
         _require(
             _source_rows(ctx) == list(before.values()),
             RECOVERY,

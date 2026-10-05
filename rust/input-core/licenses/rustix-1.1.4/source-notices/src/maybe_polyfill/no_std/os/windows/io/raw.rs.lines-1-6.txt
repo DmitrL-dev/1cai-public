@@ -1,0 +1,6 @@
+//! The following is derived from Rust's
+//! library/std/src/os/windows/io/raw.rs
+//! at revision
+//! 4f9b394c8a24803e57ba892fa00e539742ebafc0.
+//!
+//! All code in this file is licensed MIT or Apache 2.0 at your option.
