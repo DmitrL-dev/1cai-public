@@ -1,0 +1,120 @@
+{
+  "schema": 1,
+  "verified_at": "2026-10-05T22:40:21Z",
+  "scope": "Publication of the accepted Core dev17 / Companion 0.1.18 bytes; no new runtime, editor, AI or native 1C acceptance.",
+  "full_product_ready": false,
+  "historical_acceptance_not_inherited": true,
+  "release_records_unchanged": true,
+  "public_asset_hash_matches": 10,
+  "releases": {
+    "core": {
+      "id": 404141406,
+      "url": "https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev17",
+      "tag": "core-v0.1.0-dev17",
+      "tag_commit": "25743f7066a139e0f197746c70b713953966294d",
+      "published_at": "2026-10-05T22:34:14Z",
+      "draft": false,
+      "prerelease": true,
+      "assets": [
+        {
+          "name": "experimental-linux-manifest.json",
+          "id": 613772240,
+          "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/core-v0.1.0-dev17/experimental-linux-manifest.json",
+          "size_bytes": 31096,
+          "sha256": "5d89bb1f3f6529ae2e4a846a039c1d2c3942706200991761ebef16ec1b16cad6",
+          "public_download_hash_verified": true
+        },
+        {
+          "name": "experimental-linux-SHA256SUMS",
+          "id": 613772258,
+          "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/core-v0.1.0-dev17/experimental-linux-SHA256SUMS",
+          "size_bytes": 124,
+          "sha256": "98905133c55112acc7cfa3f261740f8db15ec4a2b75cacaca351927a51b942f1",
+          "public_download_hash_verified": true
+        },
+        {
+          "name": "manifest.json",
+          "id": 613772187,
+          "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/core-v0.1.0-dev17/manifest.json",
+          "size_bytes": 1467,
+          "sha256": "312bdd76bbacb58b0f771fb37cb80bee255abf5ff9af84cf420e126c0702e8ae",
+          "public_download_hash_verified": true
+        },
+        {
+          "name": "RELEASE_NOTES.md",
+          "id": 613772202,
+          "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/core-v0.1.0-dev17/RELEASE_NOTES.md",
+          "size_bytes": 9282,
+          "sha256": "0988816bdac2ef5d6890589c52e8cd9222068e657e9d81e82ac10b5162a12ba8",
+          "public_download_hash_verified": true
+        },
+        {
+          "name": "rentgen-core-0.1.0.dev17-experimental-linux-x86_64.tar.gz",
+          "id": 613772219,
+          "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/core-v0.1.0-dev17/rentgen-core-0.1.0.dev17-experimental-linux-x86_64.tar.gz",
+          "size_bytes": 888538,
+          "sha256": "2b04459fed956bf7bc75f552ef47377508f79089c3b1575320ef6764c2eacf0f",
+          "public_download_hash_verified": true
+        },
+        {
+          "name": "rentgen-core-0.1.0.dev17-windows-py311.zip",
+          "id": 613772130,
+          "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/core-v0.1.0-dev17/rentgen-core-0.1.0.dev17-windows-py311.zip",
+          "size_bytes": 20599972,
+          "sha256": "c933fe4c33abe53033b765913b752aacb7fe897219641446d1709b125cc6f254",
+          "public_download_hash_verified": true
+        },
+        {
+          "name": "SHA256SUMS",
+          "id": 613772191,
+          "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/core-v0.1.0-dev17/SHA256SUMS",
+          "size_bytes": 109,
+          "sha256": "b8d88152136ca86d117d2d5af0147c8a45e8792e5f881ad412bab2ddfeb3515e",
+          "public_download_hash_verified": true
+        }
+      ]
+    },
+    "companion": {
+      "id": 404144686,
+      "url": "https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.18",
+      "tag": "companion-v0.1.18",
+      "tag_commit": "a4d850414dcc3f6f8561e0fdccf3fb4def5fc63a",
+      "published_at": "2026-10-05T22:37:54Z",
+      "draft": false,
+      "prerelease": true,
+      "assets": [
+        {
+          "name": "release.json",
+          "id": 613783762,
+          "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/companion-v0.1.18/release.json",
+          "size_bytes": 837,
+          "sha256": "d40d188974ac00518a803bb0a0dc35e803a705ebf126e642421814102a9fa971",
+          "public_download_hash_verified": true
+        },
+        {
+          "name": "rentgen-companion-0.1.18.vsix",
+          "id": 613783738,
+          "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/companion-v0.1.18/rentgen-companion-0.1.18.vsix",
+          "size_bytes": 274730,
+          "sha256": "7e3c6ade123390ad608fd3173061c4f040d46fd446eabaef6a29d9bfcf0dcd8e",
+          "public_download_hash_verified": true
+        },
+        {
+          "name": "SHA256SUMS",
+          "id": 613783778,
+          "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/companion-v0.1.18/SHA256SUMS",
+          "size_bytes": 96,
+          "sha256": "35c6bb590e205f41a4c7414622de196e29873771f8536dcaf74a4351488f39e3",
+          "public_download_hash_verified": true
+        }
+      ]
+    }
+  },
+  "companion_tag_workflow": {
+    "id": 37383702264,
+    "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/37383702264",
+    "conclusion": "success",
+    "asset_ids_sizes_digests_unchanged": true,
+    "release_body_change": "Line-ending normalization only; no asset bytes changed."
+  }
+}

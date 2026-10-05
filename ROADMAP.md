@@ -64,8 +64,8 @@ Python wheel или переносимого Go scanner не подтвержд�
 
 ### Сначала: локальное состояние и чтение истории
 
-Ограниченная реализация уже находится в candidate dev17: Linux identity profile,
-project/state reads, draft history/receipt и byte/JSON planners. Подробный
+В экспериментальном Linux-дополнении dev17 уже опубликованы local identity
+profile, project/state reads, draft history/receipt и byte/JSON planners. Подробный
 контракт и ограничения — [PORTABLE-CORE](docs/product/PORTABLE-CORE.md). Это не
 приёмка всех команд Linux и не автоматический импорт Windows identity/state.
 
@@ -116,16 +116,18 @@ project/state reads, draft history/receipt и byte/JSON planners. Подробн
 **Первый Rust-срез реализован:** [ограниченный Linux ZIP import](docs/product/RUST-INPUT-CORE.md)
 с owned process/immutable bytes, без извлечения файлов на диск и без live apply.
 Есть adversarial/parity/lifecycle тесты и synthetic latency/RSS observations;
-они не доказывают универсальное ускорение. Следующий шаг — CI и установка
-точного candidate, затем новые read-only adapters с отдельной Windows/macOS
-квалификацией. Python orchestration и отдельный Go scanner пока сохраняются.
+они не доказывают универсальное ускорение. Для опубликованного dev17 приняты
+целевые CI и установка экспериментального дополнения. Далее — новые read-only
+adapters с отдельной Windows/macOS квалификацией. Python orchestration
+и отдельный Go scanner пока сохраняются.
 
 ## 5. Надёжный выпуск и проверяемая правка
 
-До следующего пакета подтвердить восстановление после прерывания и потери
-ответа, сохранение сторонних изменений, резервирование/миграцию SQLite с WAL
-и точное описание операций записи в MCP. Изменения исходников и локальные
-тесты относятся к кандидату; они не обновляют опубликованный dev15.
+В Core dev17 приняты компонентные проверки восстановления после прерывания и
+потери ответа, сохранения сторонних изменений, миграции SQLite с WAL и описаний
+операций MCP. Следующие пакеты требуют повторной квалификации точных bytes.
+Изменения исходников и локальные тесты относятся к выбранному candidate;
+они не обновляют опубликованные пакеты dev17.
 
 Для выбранного commit нужны актуальные CI, установка готовых артефактов,
 проверка совместимости Core/Companion и повторение заявленных Windows-сценариев.

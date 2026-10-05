@@ -78,7 +78,7 @@ def validate() -> None:
             assert 'не скриншот продукта' in markup.lower(), 'Missing illustration disclosure'
             assert 'Синтетический пример' in markup, 'Missing demo disclosure'
             assert 'Не запускались в демо' in markup, 'Demo must not fabricate checks'
-            assert 'core-v0.1.0-dev15' in markup and 'companion-v0.1.15' in markup
+            assert 'core-v0.1.0-dev17' in markup and 'companion-v0.1.18' in markup
     js = (SITE / 'site.js').read_text()
     assert not re.search(r'\b(fetch|XMLHttpRequest|localStorage|sessionStorage|eval)\s*[.(]', js), 'Unexpected network/storage/dynamic code'
     css = (SITE / 'styles.css').read_text()

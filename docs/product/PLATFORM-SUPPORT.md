@@ -8,25 +8,30 @@
 
 | Уровень | Windows | Linux / macOS |
 | --- | --- | --- |
-| Опубликованные Core dev15 / Companion 0.1.15 | Ранний доступ, Windows x64 / CPython 3.11, ограниченные проверенные сценарии | Готовый продуктовый маршрут не принят |
-| Текущие исходники | Кандидат с дополнительными изменениями; нужны собственные проверки и выпуск | Переносимый режим развивается отдельными этапами; наличие исходников не означает поддержку полного маршрута |
+| Опубликованные Core dev17 / Companion 0.1.18 | Ранний доступ, Windows x64 / CPython 3.11, ограниченные проверенные сценарии | Linux x86_64: отдельное экспериментальное дополнение для state/history/planners и Rust ZIP import. Полный Linux/macOS-маршрут не принят |
+| Текущие исходники | Более поздние эксперименты при прежних номерах версий; не тождественны принятым пакетам | Дополнительные операции требуют собственной квалификации; наличие исходников не означает поддержку полного маршрута |
 | Захват, снимки и граф в опубликованном Core | Windows retained-file sessions и доверенный scanner | Безопасные адаптеры чтения/захвата ещё нужно принять |
 | BSL/1С/EDT, live apply, Observer-служба | Свои runtime, права и ограничения; не универсальное применение | Не включаются автоматически вместе с переносимым CLI |
 | VSCodium / Cline / Companion | Текущий профиль требует Windows и доверенную рабочую папку | Наличие самого редактора на ОС не переносит интеграцию Рентгена |
 
 Подтверждённая опубликованная пара:
-[Core dev15](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev15) /
-[Companion 0.1.15](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.15).
+[Core dev17](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev17) /
+[Companion 0.1.18](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.18).
 [Состояние и история проверок](https://github.com/DmitrL-dev/1cai-public/blob/main/docs/product/READINESS.md) сохраняют связь с фактическим выпуском.
 
-## Ограниченный source candidate dev17 / Companion 0.1.18
+## Экспериментальное Linux-дополнение Core dev17
 
 Linux уже имеет отдельный [CLI/state/history режим](PORTABLE-CORE.md) и
 [экспериментальный Rust ZIP import](RUST-INPUT-CORE.md). Последний анализирует
 переданные immutable bytes, не создаёт published snapshot и не открывает live apply.
 macOS пока получает только capability report; его identity/IO adapters не приняты.
-Companion по-прежнему использует Windows-профиль. Новый candidate требует своего
-CI и installed-package проверки; опубликованная пара dev15/0.1.15 не меняется.
+Companion по-прежнему использует Windows-профиль. Дополнение опубликовано в
+[Core dev17](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev17)
+с отдельными manifest и SHA256SUMS. Оно содержит Python wheel и Rust executable,
+но не MCP-зависимости, Go scanner или редактор; это не полный офлайн-комплект.
+Нужны GNU/Linux x86_64, glibc 2.34+, `libgcc_s.so.1`, kernel 5.9+, memfd sealing
+и `/proc/self/fd`. [Проверка компонентов](../../releases/core/0.1.0.dev17/qualification.json)
+не означает новую native 1С/редакторную приёмку.
 
 Полный Linux regression не является зелёным: прежние retained-Windows и
 platform-fixture отказы учтены отдельно от целевых portable tests. Старые Windows
@@ -56,9 +61,9 @@ platform-fixture отказы учтены отдельно от целевых 
 
 ## Rust и производительность
 
-Первый source Rust input core уже выполняет bounded import и владеет byte session
-в отдельном Linux процессе. Это экспериментальный компонент, не опубликованный
-полный Rust Core. Измерения synthetic corpus и parity tests не являются обещанием
+Первый Rust input core уже выполняет bounded import и владеет byte session
+в отдельном Linux процессе. Он поставляется в экспериментальном дополнении
+Core dev17; это не полный Rust Core. Измерения synthetic corpus и parity tests не являются обещанием
 универсального ускорения. Python-компоненты и Go scanner сохраняют свои роли.
 
 [Порядок работ и приёмка](https://github.com/DmitrL-dev/1cai-public/blob/main/ROADMAP.md) ·

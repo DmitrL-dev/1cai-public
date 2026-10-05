@@ -4,7 +4,8 @@
 проверку структуры архива, ограниченную декомпрессию и SHA-256. Rust удерживает
 собственную immutable session. Python сохраняет local identity, membership,
 CLI/IPC orchestration и существующий bounded XML analyzer. Go scanner не меняется.
-Это source candidate, не новый cross-platform release и не замена Windows
+Компонент опубликован в [экспериментальном Linux x86_64 дополнении Core dev17](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev17).
+Это не полный cross-platform release и не замена Windows
 retained-source/live-apply/native contracts.
 
 ## Полезный результат
@@ -25,8 +26,11 @@ Designer roots отклоняется. Корень не угадывается,
 
 ## Запуск
 
-Нужен Linux kernel с `close_range` (>=5.9), memfd sealing, `/proc/self/fd` и local
-filesystem. Sidecar отдельный executable с известным SHA-256; он не ищется в PATH.
+Для опубликованного binary нужны GNU/Linux x86_64, glibc 2.34+, `libgcc_s.so.1`,
+Linux kernel с `close_range` (>=5.9), memfd sealing, `/proc/self/fd` и local
+filesystem. Дополнение содержит wheel, binary, лицензии и инструкцию;
+MCP-зависимости, Go scanner и редактор в него не входят. Linux capture и Companion
+не приняты. Sidecar — отдельный executable с известным SHA-256; он не ищется в PATH.
 CLI требует уже созданных registry/project/local-account profile из
 [PORTABLE-CORE.md](PORTABLE-CORE.md).
 
