@@ -1,0 +1,18 @@
+[package]
+name = "rentgen-diagnostic-core"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT"
+publish = false
+
+[dependencies]
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "=1.0.149"
+
+[profile.dev]
+debug = 0
+
+[profile.release]
+strip = true
+panic = "abort"
