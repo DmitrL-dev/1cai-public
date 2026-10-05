@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "rentgen-core"
 version = "0.1.0.dev16"
-description = "Local 1C snapshots, shared draft history and pinned BSL diagnostics"
+description = "Local 1C source snapshots and reviewable drafts; early-access core"
 readme = "packaging/core/README.md"
 requires-python = ">=3.11"
 license = "MIT"
@@ -59,6 +59,7 @@ only-include = [
   "scripts/verification/core_kit_client.py",
   "scripts/verification/kit_inputs.py",
   "docs/product/CORE-INSTALLATION.md",
+  "docs/product/PLATFORM-SUPPORT.md",
   "docs/product/CORE-OFFLINE-KIT.md",
   "docs/product/CORE-MCP.md",
   "docs/product/DRAFT-HISTORY.md",
