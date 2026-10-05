@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="365" viewBox="0 0 1280 365" role="img" aria-labelledby="title desc">
+  <title id="title">Пять шагов от исходников к решению</title>
+  <desc id="desc">Снимок, модуль, черновик, проверка выбранной ревизии, решение. Применение отдельно.</desc>
+  <rect width="1280" height="365" rx="28" fill="#0c1524" />
+  <g font-family="DejaVu Sans,Segoe UI,Arial,sans-serif">
+    <text x="34" y="47" font-size="16" fill="#91efd5" font-weight="700">ПЕРВЫЙ РЕЗУЛЬТАТ</text>
+    <text x="501" y="47" font-size="16" fill="#bbc9df" font-weight="700">ПОДКЛЮЧАЙТЕ ПО МЕРЕ ЗАДАЧИ</text>
+    <rect x="25" y="72" width="235" height="218" rx="19" fill="#123d39" />
+    <text x="45" y="108" font-size="18" fill="#8befcf" font-weight="700">01</text>
+    <text x="45" y="150" font-size="25" fill="#8befcf" font-weight="700">Сохранить</text>
+    <text x="45" y="183" font-size="25" fill="#8befcf" font-weight="700">снимок</text>
+    <text x="45" y="228" font-size="17" fill="#d5e0ee" font-weight="400">Готовая выгрузка</text>
+    <text x="45" y="252" font-size="17" fill="#d5e0ee" font-weight="400">и точные файлы</text>
+    <rect x="273" y="72" width="235" height="218" rx="19" fill="#193854" />
+    <text x="293" y="108" font-size="18" fill="#9ed8ff" font-weight="700">02</text>
+    <text x="293" y="150" font-size="25" fill="#9ed8ff" font-weight="700">Найти</text>
+    <text x="293" y="183" font-size="25" fill="#9ed8ff" font-weight="700">модуль</text>
+    <text x="293" y="228" font-size="17" fill="#d5e0ee" font-weight="400">Путь, код</text>
+    <text x="293" y="252" font-size="17" fill="#d5e0ee" font-weight="400">и связи</text>
+    <rect x="521" y="72" width="235" height="218" rx="19" fill="#352b51" />
+    <text x="541" y="108" font-size="18" fill="#ccb7ff" font-weight="700">03</text>
+    <text x="541" y="150" font-size="25" fill="#ccb7ff" font-weight="700">Создать</text>
+    <text x="541" y="183" font-size="25" fill="#ccb7ff" font-weight="700">черновик</text>
+    <text x="541" y="228" font-size="17" fill="#d5e0ee" font-weight="400">Вручную или с AI;</text>
+    <text x="541" y="252" font-size="17" fill="#d5e0ee" font-weight="400">отдельная история</text>
+    <rect x="769" y="72" width="235" height="218" rx="19" fill="#483b25" />
+    <text x="789" y="108" font-size="18" fill="#f3d497" font-weight="700">04</text>
+    <text x="789" y="150" font-size="25" fill="#f3d497" font-weight="700">Проверить</text>
+    <text x="789" y="183" font-size="25" fill="#f3d497" font-weight="700">ревизию</text>
+    <text x="789" y="228" font-size="17" fill="#d5e0ee" font-weight="400">Настроенные</text>
+    <text x="789" y="252" font-size="17" fill="#d5e0ee" font-weight="400">инструменты</text>
+    <rect x="1017" y="72" width="235" height="218" rx="19" fill="#273a4c" />
+    <text x="1037" y="108" font-size="18" fill="#cbdeef" font-weight="700">05</text>
+    <text x="1037" y="150" font-size="25" fill="#cbdeef" font-weight="700">Решить,</text>
+    <text x="1037" y="183" font-size="25" fill="#cbdeef" font-weight="700">что дальше</text>
+    <text x="1037" y="228" font-size="17" fill="#d5e0ee" font-weight="400">Доработать или</text>
+    <text x="1037" y="252" font-size="17" fill="#d5e0ee" font-weight="400">отдельно применить</text>
+    <text x="34" y="332" font-size="20" fill="#b7c7dd" font-weight="400">Сохранение и проверка черновика не применяют правку к рабочей базе.</text>
+  </g>
+</svg>

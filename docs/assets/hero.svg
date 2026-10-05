@@ -1,47 +1,44 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="430" viewBox="0 0 1200 430" role="img" aria-labelledby="hero-title hero-desc">
-  <title id="hero-title">Рентген — от кода 1С к проверяемой правке</title>
-  <desc id="hero-desc">Открытый проект раннего доступа. Читать сохранённый код, готовить отдельные черновики и проверять выбранную версию. Локальное ядро хранит историю; решение о применении принимает человек.</desc>
-  <defs>
-    <g id="hero-page" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="0" y="0" width="67" height="84" rx="10"/>
-      <path d="M14 23H51M14 39H44M14 55H51M14 69H35"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="590" viewBox="0 0 1280 590" role="img" aria-labelledby="title desc">
+  <title id="title">Рентген — понять код 1С, проверить правку, решить самому</title>
+  <desc id="desc">Локальное открытое ядро раннего доступа. Снимок, отдельный черновик, результат выбранной версии. Схема, не снимок интерфейса.</desc>
+  <rect width="1280" height="590" rx="28" fill="#0c1524" />
+  <g font-family="DejaVu Sans,Segoe UI,Arial,sans-serif">
+    <defs>
+      <linearGradient id="accent" x1="0" x2="1" y1="0" y2="1">
+        <stop stop-color="#85f6d6" />
+        <stop offset="1" stop-color="#8f98ff" />
+      </linearGradient>
+    </defs>
+    <rect x="40" y="42" width="66" height="66" rx="18" fill="url(#accent)" />
+    <g fill="none" stroke="#102238" stroke-width="5" stroke-linecap="round">
+      <path d="M58 65L73 51L89 65M58 85L73 99L89 85" />
+      <path d="M65 73H81" />
     </g>
-    <marker id="hero-arrow" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="userSpaceOnUse">
-      <path d="M2 2L10 6L2 10" fill="none" stroke="#88a3bd" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </marker>
-  </defs>
-
-  <rect width="1200" height="430" rx="28" fill="#10263e"/>
-  <rect x="30" y="32" width="6" height="363" rx="3" fill="#6ae0c3"/>
-  <g font-family="Segoe UI,Arial,sans-serif">
-    <text x="61" y="76" fill="#a1ead9" font-size="25" font-weight="700" letter-spacing="1">ИСХОДНИКИ 1С · ОТКРЫТЫЙ КОД</text>
-    <rect x="928" y="40" width="220" height="46" rx="23" fill="#ffe0a5"/>
-    <text x="1038" y="72" text-anchor="middle" fill="#5e3b13" font-size="25" font-weight="700">Ранний доступ</text>
-    <text x="56" y="199" fill="#ffffff" font-size="102" font-weight="800">Рентген</text>
-    <text x="61" y="265" fill="#edf4fd" font-size="37" font-weight="600">Понять код 1С.</text>
-    <text x="61" y="313" fill="#edf4fd" font-size="37" font-weight="600">Подготовить и проверить правку.</text>
-    <text x="61" y="388" fill="#becfe2" font-size="26">Локальное ядро · Отдельные черновики · Ваша история</text>
-  </g>
-
-  <!-- A simple document flow, not a screenshot or an assurance of acceptance. -->
-  <g fill="none" stroke="#88a3bd" stroke-width="3" marker-end="url(#hero-arrow)">
-    <path d="M824 181H848"/>
-    <path d="M975 181H999"/>
-  </g>
-  <rect x="705" y="124" width="114" height="114" rx="23" fill="#173f42" stroke="#457d74" stroke-width="2"/>
-  <rect x="856" y="124" width="114" height="114" rx="23" fill="#38345b" stroke="#8572b2" stroke-width="2"/>
-  <rect x="1007" y="124" width="114" height="114" rx="23" fill="#234466" stroke="#688ead" stroke-width="2"/>
-  <use href="#hero-page" x="729" y="139" stroke="#8de8ce"/>
-  <g transform="translate(879 146)" fill="none" stroke="#d3c0fb" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M6 63L10 48L52 6L65 19L23 61ZM41 17L54 30M5 75H65"/>
-  </g>
-  <g transform="translate(1034 145)" fill="none" stroke="#b2d9ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-    <rect width="58" height="76" rx="8"/>
-    <path d="M13 24L20 31L34 16M39 26H47M14 50H44M14 62H35"/>
-  </g>
-  <g font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="700" text-anchor="middle">
-    <text x="762" y="281" fill="#a1ead9">Снимок</text>
-    <text x="913" y="281" fill="#d3c0fb">Черновик</text>
-    <text x="1064" y="281" fill="#b2d9ff">Проверка</text>
+    <text x="128" y="71" font-size="29" fill="#f4f7fc" font-weight="800">РЕНТГЕН</text>
+    <text x="128" y="97" font-size="15" fill="#a8b9d3" font-weight="600">ИСХОДНИКИ 1С · MIT</text>
+    <rect x="1010" y="49" width="222" height="44" rx="22" fill="#253128" stroke="#62714c" stroke-width="1.5" />
+    <text x="1121" y="78" font-size="16" fill="#d9efad" font-weight="700" text-anchor="middle">РАННИЙ ДОСТУП</text>
+    <text x="44" y="202" font-size="57" fill="#f4f7fc" font-weight="800">Понять код 1С.</text>
+    <text x="44" y="278" font-size="52" fill="#f4f7fc" font-weight="800">Проверить правку.</text>
+    <text x="44" y="352" font-size="57" fill="#90f4d6" font-weight="800">Решить самому.</text>
+    <text x="48" y="420" font-size="24" fill="#b8c7dd" font-weight="400">Снимки. Отдельные черновики.</text>
+    <text x="48" y="455" font-size="24" fill="#b8c7dd" font-weight="400">Результаты для выбранной версии.</text>
+    <rect x="46" y="500" width="290" height="45" rx="22" fill="#172a3b" stroke="#29445b" stroke-width="1.5" />
+    <text x="191" y="530" font-size="17" fill="#cbddf4" font-weight="700" text-anchor="middle">ЛОКАЛЬНОЕ ЯДРО</text>
+    <rect x="743" y="147" width="489" height="390" rx="24" fill="#152237" stroke="#36445e" stroke-width="1.5" />
+    <text x="768" y="180" font-size="14" fill="#a9b9d1" font-weight="700">СХЕМА СЦЕНАРИЯ</text>
+    <rect x="766" y="204" width="441" height="84" rx="14" fill="#1b3043" />
+    <rect x="766" y="204" width="5" height="84" rx="2" fill="#75e5c1" />
+    <rect x="766" y="308" width="441" height="84" rx="14" fill="#1b3043" />
+    <rect x="766" y="308" width="5" height="84" rx="2" fill="#b8a0ff" />
+    <rect x="766" y="412" width="441" height="84" rx="14" fill="#1b3043" />
+    <rect x="766" y="412" width="5" height="84" rx="2" fill="#eec475" />
+    <text x="790" y="235" font-size="23" fill="#92f1d2" font-weight="700">01  Снимок исходников</text>
+    <text x="790" y="265" font-size="18" fill="#bbcce2" font-weight="400">Одна сохранённая версия</text>
+    <text x="790" y="339" font-size="23" fill="#cebfff" font-weight="700">02  Предложение правки</text>
+    <text x="790" y="369" font-size="18" fill="#bbcce2" font-weight="400">Своя история и сравнение</text>
+    <text x="790" y="443" font-size="23" fill="#f4d69e" font-weight="700">03  Проверка ревизии</text>
+    <text x="790" y="473" font-size="18" fill="#bbcce2" font-weight="400">Результат виден до решения</text>
+    <text x="47" y="575" font-size="17" fill="#aebed5" font-weight="400">Windows — опубликованный профиль. Linux / macOS — поэтапная разработка.</text>
   </g>
 </svg>

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="1005" viewBox="0 0 640 1005" role="img" aria-labelledby="title desc">
+  <title id="title">Рентген — понять код 1С, проверить правку, решить самому</title>
+  <desc id="desc">Мобильная схема. Локальное открытое ядро раннего доступа. Windows опубликован; Linux/macOS разрабатываются по этапам.</desc>
+  <rect width="640" height="1005" rx="28" fill="#0c1524" />
+  <g font-family="DejaVu Sans,Segoe UI,Arial,sans-serif">
+    <rect x="30" y="30" width="54" height="54" rx="14" fill="#91f1d7" />
+    <g fill="none" stroke="#132336" stroke-width="4" stroke-linecap="round">
+      <path d="M44 49L57 38L70 49M44 65L57 77L70 65" />
+    </g>
+    <text x="101" y="55" font-size="27" fill="#f4f7fc" font-weight="800">РЕНТГЕН</text>
+    <text x="102" y="80" font-size="15" fill="#a8b9d3" font-weight="600">ИСХОДНИКИ 1С · MIT</text>
+    <rect x="372" y="36" width="239" height="40" rx="20" fill="#253128" stroke="#62714c" stroke-width="1.5" />
+    <text x="491" y="63" font-size="16" fill="#d9efad" font-weight="700" text-anchor="middle">РАННИЙ ДОСТУП</text>
+    <text x="30" y="173" font-size="49" fill="#f4f7fc" font-weight="800">Понять код 1С.</text>
+    <text x="30" y="242" font-size="48" fill="#f4f7fc" font-weight="800">Проверить правку.</text>
+    <text x="30" y="311" font-size="49" fill="#90f4d6" font-weight="800">Решить самому.</text>
+    <text x="33" y="374" font-size="25" fill="#b8c7dd" font-weight="400">Снимки. Отдельные черновики.</text>
+    <text x="33" y="412" font-size="25" fill="#b8c7dd" font-weight="400">Результаты выбранной версии.</text>
+    <rect x="28" y="452" width="584" height="385" rx="24" fill="#152237" stroke="#36445e" stroke-width="1.5" />
+    <text x="54" y="491" font-size="17" fill="#a9b9d1" font-weight="700">СХЕМА СЦЕНАРИЯ</text>
+    <rect x="49" y="514" width="542" height="86" rx="13" fill="#1b3043" />
+    <rect x="49" y="514" width="5" height="86" rx="2" fill="#92f1d2" />
+    <text x="73" y="548" font-size="25" fill="#92f1d2" font-weight="700">01  Снимок исходников</text>
+    <text x="73" y="580" font-size="21" fill="#bbcce2" font-weight="400">Одна сохранённая версия</text>
+    <rect x="49" y="614" width="542" height="86" rx="13" fill="#1b3043" />
+    <rect x="49" y="614" width="5" height="86" rx="2" fill="#cebfff" />
+    <text x="73" y="648" font-size="25" fill="#cebfff" font-weight="700">02  Предложение правки</text>
+    <text x="73" y="680" font-size="21" fill="#bbcce2" font-weight="400">Своя история и сравнение</text>
+    <rect x="49" y="714" width="542" height="86" rx="13" fill="#1b3043" />
+    <rect x="49" y="714" width="5" height="86" rx="2" fill="#f4d69e" />
+    <text x="73" y="748" font-size="25" fill="#f4d69e" font-weight="700">03  Проверка ревизии</text>
+    <text x="73" y="780" font-size="21" fill="#bbcce2" font-weight="400">Результат виден до решения</text>
+    <text x="31" y="891" font-size="24" fill="#b8c7dd" font-weight="400">Windows — опубликованный профиль.</text>
+    <text x="31" y="930" font-size="24" fill="#b8c7dd" font-weight="400">Linux / macOS — поэтапная</text>
+    <text x="31" y="969" font-size="24" fill="#b8c7dd" font-weight="400">разработка.</text>
+  </g>
+</svg>

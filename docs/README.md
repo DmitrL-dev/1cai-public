@@ -18,6 +18,9 @@
 и [совместимости конфигураций](product/CONFIGURATION-COMPATIBILITY.md).
 Последняя опубликованная пара — Core dev15 / Companion 0.1.15;
 Core dev16 / Companion 0.1.17 в текущих исходниках остаются кандидатами.
+Опубликованный маршрут требует Windows x64 / CPython 3.11. Linux/macOS и
+выборочный Rust-слой развиваются по [новому плану](../ROADMAP.md),
+с явной [матрицей поддержки](product/PLATFORM-SUPPORT.md).
 
 ## Быстро найти нужный раздел
 
@@ -139,6 +142,7 @@ EDT — среда разработки 1С:Enterprise Development Tools.
 | :--- | :--- |
 | Границы компонентов и источник истины | [Архитектура](../ARCHITECTURE.md) |
 | Цели и незавершённые критерии | [План развития](../ROADMAP.md) |
+| Что принято на Windows и что переносится на Linux/macOS | [Поддержка платформ](product/PLATFORM-SUPPORT.md) |
 | Критерии приёмки ежедневной работы и платформы | [Ежедневная разработка](product/DAILY-DEVELOPMENT-ACCEPTANCE.md) и [платформа](product/PLATFORM-ACCEPTANCE.md) |
 | Выявленные слабые места и приоритеты | [Аудит 12 сентября 2026](product/AUDIT-20260912.md) |
 | Выбранное направление проекта | [Рынок и позиционирование](product/COMPETITOR-MATRIX.md) |
