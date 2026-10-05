@@ -1,0 +1,14 @@
+{
+  "version": "0.1.18",
+  "sha256": "7e3c6ade123390ad608fd3173061c4f040d46fd446eabaef6a29d9bfcf0dcd8e",
+  "size_bytes": 274730,
+  "required_core": "0.1.0.dev17",
+  "stage": "prerelease",
+  "platform_1c_tested": false,
+  "tested_1c_version": null,
+  "native_editor_source_commit": null,
+  "test_scope": "Main25743f7 CI:343 Node passed/0 skipped;3253 Python passed/68 Linux-only skips. Exact VSIX matches local build. New actual installed editor/model/1C/cold OwnerIPC acceptance is not claimed. Companion tag workflow must independently match these bytes.",
+  "spectorn_integrated": false,
+  "source_qualification_commit": "25743f7066a139e0f197746c70b713953966294d",
+  "source_ci_run": 37318560292
+}

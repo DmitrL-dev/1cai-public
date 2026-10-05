@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "scope": "experimental Linux installed CLI import; not Windows/macOS or full Linux qualification",
+  "version": "0.1.0.dev17",
+  "wheel_sha256": "549e832ef2807ca5b483a0814c3b06e0be963813034edf9e73812717b6949fdc",
+  "binary_sha256": "8a374c45b52ae9f66e73d64fa1aedd4e30acac15ca2709a00927b6b297581a04",
+  "checks": [
+    {
+      "command": "identity-init",
+      "exit": 0
+    },
+    {
+      "command": "registry-init",
+      "exit": 0
+    },
+    {
+      "command": "project-register",
+      "exit": 0
+    },
+    {
+      "command": "export-analyze",
+      "exit": 0
+    },
+    {
+      "command": "export-analyze",
+      "exit": 0
+    },
+    {
+      "command": "project-head",
+      "exit": 0
+    },
+    {
+      "command": "capture",
+      "exit": 2
+    }
+  ],
+  "counts": {
+    "files": 2,
+    "metadata_candidates": 1,
+    "metadata_objects": 1,
+    "unsupported_metadata_roots": 0,
+    "modules": 1,
+    "other_files": 0
+  },
+  "source_unchanged": true,
+  "project_head_unchanged": true
+}

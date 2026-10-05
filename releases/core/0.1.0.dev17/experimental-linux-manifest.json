@@ -1,0 +1,763 @@
+{
+  "asset": "rentgen-core-0.1.0.dev17-experimental-linux-x86_64.tar.gz",
+  "files": {
+    "INSTALL.md": {
+      "mode": 420,
+      "sha256": "795f4000f44e1d5650643a495d4fca5fb19f0d27a954b9577ab53e14516431eb",
+      "size_bytes": 2832
+    },
+    "LICENSE": {
+      "mode": 420,
+      "sha256": "17ea2aa99a9f65047131e6a4b8981bc9f186e9b564568350ac49678675bab5d0",
+      "size_bytes": 1104
+    },
+    "bin/rentgen-input-core": {
+      "mode": 493,
+      "sha256": "8a374c45b52ae9f66e73d64fa1aedd4e30acac15ca2709a00927b6b297581a04",
+      "size_bytes": 835560
+    },
+    "build-inputs.json": {
+      "mode": 420,
+      "sha256": "7e00f7b0da645fccea82c51cd431f3f63beefc4088e245e0f778230191eab1d2",
+      "size_bytes": 1121
+    },
+    "rentgen_core-0.1.0.dev17-py3-none-any.whl": {
+      "mode": 420,
+      "sha256": "549e832ef2807ca5b483a0814c3b06e0be963813034edf9e73812717b6949fdc",
+      "size_bytes": 409203
+    },
+    "rust/input-core/Cargo.lock": {
+      "mode": 420,
+      "sha256": "efd4f39a444413df5091a0409831e5e63f3ce0b618e4865faf84adf80a1e549c",
+      "size_bytes": 9591
+    },
+    "rust/input-core/DEPENDENCY_PROVENANCE.json": {
+      "mode": 420,
+      "sha256": "3b4f19b7f126c8cfc4f9f98f7e2e0f496947a3106adea706bb64f7b821b5ffab",
+      "size_bytes": 45771
+    },
+    "rust/input-core/PROTOCOL.md": {
+      "mode": 420,
+      "sha256": "7876a2918b0d61ef19f90a1749b1c0c84b70fbf87bb84f85938d54856d673dfd",
+      "size_bytes": 4559
+    },
+    "rust/input-core/THIRD_PARTY_NOTICES.md": {
+      "mode": 420,
+      "sha256": "8334b8cbb007fea0c8af574ecf06ac113c9a36925bef241c5f4fbcd105148dbd",
+      "size_bytes": 13439
+    },
+    "rust/input-core/licenses/ADDED_FILES.txt": {
+      "mode": 420,
+      "sha256": "8e0ab8384e27f9d93118f8f619b690dded182e8da774ed1b936c41da3bd0a21f",
+      "size_bytes": 6610
+    },
+    "rust/input-core/licenses/SHA256SUMS": {
+      "mode": 420,
+      "sha256": "8c624261259ba4c0d2f3d868e52468fee21644b8e5abe9e7bb0910cc0629db4f",
+      "size_bytes": 15302
+    },
+    "rust/input-core/licenses/adler2-2.0.1/LICENSE-0BSD": {
+      "mode": 420,
+      "sha256": "861399f8c21c042b110517e76dc6b63a2b334276c8cf17412fc3c8908ca8dc17",
+      "size_bytes": 665
+    },
+    "rust/input-core/licenses/adler2-2.0.1/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "8ada45cd9f843acf64e4722ae262c622a2b3b3007c7310ef36ac1061a30f6adb",
+      "size_bytes": 10860
+    },
+    "rust/input-core/licenses/adler2-2.0.1/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "size_bytes": 1023
+    },
+    "rust/input-core/licenses/base64-0.22.1/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "size_bytes": 10847
+    },
+    "rust/input-core/licenses/base64-0.22.1/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "0dd882e53de11566d50f8e8e2d5a651bcf3fabee4987d70f306233cf39094ba7",
+      "size_bytes": 1076
+    },
+    "rust/input-core/licenses/bitflags-2.11.1/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "size_bytes": 10847
+    },
+    "rust/input-core/licenses/bitflags-2.11.1/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb",
+      "size_bytes": 1071
+    },
+    "rust/input-core/licenses/bitflags-2.11.1/source-notices/src/lib.rs.lines-1-9.txt": {
+      "mode": 420,
+      "sha256": "3b7df402160fc95c1ec4d256f720da6b75b1c5c69ad6826acfa5f096e349a42c",
+      "size_bytes": 466
+    },
+    "rust/input-core/licenses/block-buffer-0.10.4/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "size_bytes": 10849
+    },
+    "rust/input-core/licenses/block-buffer-0.10.4/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "d5c22aa3118d240e877ad41c5d9fa232f9c77d757d4aac0c2f943afc0a95e0ef",
+      "size_bytes": 1082
+    },
+    "rust/input-core/licenses/caseless-0.2.2/LICENSE": {
+      "mode": 420,
+      "sha256": "9a1284e016a7770f3c033a108662a94490419796001b422f5c6738c9ebf486d7",
+      "size_bytes": 1068
+    },
+    "rust/input-core/licenses/caseless-0.2.2/source-notices/CaseFolding.txt.lines-1-8.txt": {
+      "mode": 420,
+      "sha256": "87d0c642dc7c61c5b1e7236048d01edf26856e05dbefb17050ba6a17e5e5298e",
+      "size_bytes": 365
+    },
+    "rust/input-core/licenses/cfg-if-1.0.4/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "size_bytes": 10847
+    },
+    "rust/input-core/licenses/cfg-if-1.0.4/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397",
+      "size_bytes": 1057
+    },
+    "rust/input-core/licenses/cpufeatures-0.2.17/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "size_bytes": 10849
+    },
+    "rust/input-core/licenses/cpufeatures-0.2.17/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "ae9baa7beea910273c2f384c2a6b721fb7bd02bda3436074a1072e4ee689f985",
+      "size_bytes": 1082
+    },
+    "rust/input-core/licenses/crc32fast-1.5.0/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+      "size_bytes": 11358
+    },
+    "rust/input-core/licenses/crc32fast-1.5.0/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "61d383b05b87d78f94d2937e2580cce47226d17823c0430fbcad09596537efcf",
+      "size_bytes": 1097
+    },
+    "rust/input-core/licenses/crypto-common-0.1.7/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "size_bytes": 10849
+    },
+    "rust/input-core/licenses/crypto-common-0.1.7/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "3521672491a3479422d5fe1aca6645dd2984090f85da6e5205abfb18fb7a6897",
+      "size_bytes": 1065
+    },
+    "rust/input-core/licenses/digest-0.10.7/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "size_bytes": 10849
+    },
+    "rust/input-core/licenses/digest-0.10.7/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "9e0dfd2dd4173a530e238cb6adb37aa78c34c6bc7444e0e10c1ab5d8881f63ba",
+      "size_bytes": 1057
+    },
+    "rust/input-core/licenses/equivalent-1.0.2/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "size_bytes": 10847
+    },
+    "rust/input-core/licenses/equivalent-1.0.2/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "7365cc8878a1d7ce155a58c4ca09c3d7a6be413efa5334a80ea842912b669349",
+      "size_bytes": 1049
+    },
+    "rust/input-core/licenses/errno-0.3.14/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "size_bytes": 10847
+    },
+    "rust/input-core/licenses/errno-0.3.14/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "8764a597675778ddfd4e25f81b08a05dbcf089ac05662df7613fe67f150e3aa2",
+      "size_bytes": 1054
+    },
+    "rust/input-core/licenses/errno-0.3.14/source-notices/src/hermit.rs.lines-7-15.txt": {
+      "mode": 420,
+      "sha256": "5d392ff1ac69a18c9beb41720ecbfd56f7792a1ec4321428e73757d4283f5a61",
+      "size_bytes": 466
+    },
+    "rust/input-core/licenses/errno-0.3.14/source-notices/src/unix.rs.lines-1-13.txt": {
+      "mode": 420,
+      "sha256": "13005416a669c7cd96ef8501bfd202d3e6faa7953354c94915c43d0808a2dc7a",
+      "size_bytes": 604
+    },
+    "rust/input-core/licenses/errno-0.3.14/source-notices/src/wasi.rs.lines-1-13.txt": {
+      "mode": 420,
+      "sha256": "32cc710e31f555a2c596b18fb5d7f8da009a60225417613d2007166feb802941",
+      "size_bytes": 553
+    },
+    "rust/input-core/licenses/errno-0.3.14/source-notices/src/windows.rs.lines-1-13.txt": {
+      "mode": 420,
+      "sha256": "51de09826fd47c91cd1ddcf4186e62274276a2097f8d9e4f80780122cfbbb616",
+      "size_bytes": 602
+    },
+    "rust/input-core/licenses/files.tsv": {
+      "mode": 420,
+      "sha256": "e0a787906650ae5d3869d54cb22e16e059e12bbca758de305215ae5df93863a9",
+      "size_bytes": 28897
+    },
+    "rust/input-core/licenses/flate2-1.1.9/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "size_bytes": 10847
+    },
+    "rust/input-core/licenses/flate2-1.1.9/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "025436edff4cfcdde17a5811fdea78892d8482efd1abdec5a17872d07a4f2112",
+      "size_bytes": 1062
+    },
+    "rust/input-core/licenses/flate2-1.1.9/source-notices/src/bufreader.rs.lines-1-9.txt": {
+      "mode": 420,
+      "sha256": "163fbee5116a2725fdba8faa47a9fbf8006e0a7cbdb14ae5ecf62c8f9ccc00af",
+      "size_bytes": 493
+    },
+    "rust/input-core/licenses/generic-array-0.14.7/LICENSE": {
+      "mode": 420,
+      "sha256": "c09aae9d3c77b531f56351a9947bc7446511d6b025b3255312d3e3442a9a7583",
+      "size_bytes": 1107
+    },
+    "rust/input-core/licenses/hashbrown-0.17.1/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "size_bytes": 10847
+    },
+    "rust/input-core/licenses/hashbrown-0.17.1/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "ff8f68cb076caf8cefe7a6430d4ac086ce6af2ca8ce2c4e5a2004d4552ef52a2",
+      "size_bytes": 1060
+    },
+    "rust/input-core/licenses/hashbrown-0.17.1/source-notices/src/control/group/generic.rs.lines-106-107.txt": {
+      "mode": 420,
+      "sha256": "4e681f8e68ab1582b80af9fd30964b626f4eefa1bc1b172c0272f6c4bfd0c7ba",
+      "size_bytes": 119
+    },
+    "rust/input-core/licenses/indexmap-2.14.0/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "size_bytes": 10847
+    },
+    "rust/input-core/licenses/indexmap-2.14.0/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "ecc269ef87fd38a1d98e30bfac9ba964a9dbd9315c3770fed98d4d7cb5882055",
+      "size_bytes": 1049
+    },
+    "rust/input-core/licenses/itoa-1.0.18/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "size_bytes": 9723
+    },
+    "rust/input-core/licenses/itoa-1.0.18/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "size_bytes": 1023
+    },
+    "rust/input-core/licenses/libc-0.2.186/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "size_bytes": 9723
+    },
+    "rust/input-core/licenses/libc-0.2.186/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "123a331b5dbf04c30097fa43b8f858bc85df671fe776de498d01f3d6b7c1f69e",
+      "size_bytes": 1066
+    },
+    "rust/input-core/licenses/libc-0.2.186/source-notices/src/fuchsia/aarch64.rs.lines-67-67.txt": {
+      "mode": 420,
+      "sha256": "993f4e3160143fb90c55bfeca3977620362b79fc479992894d601f69e8d105ab",
+      "size_bytes": 164
+    },
+    "rust/input-core/licenses/libc-0.2.186/source-notices/src/unix/linux_like/mod.rs.lines-1694-1694.txt": {
+      "mode": 420,
+      "sha256": "8d3ff9f1b2bc4627af9868b9f5132af89cb3e32e5f0fe44549c0b5bd385286e1",
+      "size_bytes": 125
+    },
+    "rust/input-core/licenses/linux-raw-sys-0.12.1/COPYRIGHT": {
+      "mode": 420,
+      "sha256": "3290ae0fbc9ddb77d2239121d710f0bb9d31b3b4744e6d97fe01e652b4c1870b",
+      "size_bytes": 881
+    },
+    "rust/input-core/licenses/linux-raw-sys-0.12.1/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "size_bytes": 10847
+    },
+    "rust/input-core/licenses/linux-raw-sys-0.12.1/LICENSE-Apache-2.0_WITH_LLVM-exception": {
+      "mode": 420,
+      "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5",
+      "size_bytes": 12243
+    },
+    "rust/input-core/licenses/linux-raw-sys-0.12.1/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "size_bytes": 1023
+    },
+    "rust/input-core/licenses/memchr-2.8.0/COPYING": {
+      "mode": 420,
+      "sha256": "01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f",
+      "size_bytes": 126
+    },
+    "rust/input-core/licenses/memchr-2.8.0/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f",
+      "size_bytes": 1081
+    },
+    "rust/input-core/licenses/memchr-2.8.0/UNLICENSE": {
+      "mode": 420,
+      "sha256": "7e12e5df4bae12cb21581ba157ced20e1986a0508dd10d0e8a4ab9a4cf94e85c",
+      "size_bytes": 1211
+    },
+    "rust/input-core/licenses/miniz_oxide-0.8.9/LICENSE": {
+      "mode": 420,
+      "sha256": "4108245a1f2df9d4e94df8abed5b4ba0759bb2f9b40a6b939f1be141077ae50b",
+      "size_bytes": 1213
+    },
+    "rust/input-core/licenses/miniz_oxide-0.8.9/LICENSE-APACHE.md": {
+      "mode": 420,
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "size_bytes": 10174
+    },
+    "rust/input-core/licenses/miniz_oxide-0.8.9/LICENSE-MIT.md": {
+      "mode": 420,
+      "sha256": "799e9ca9d179295ef372f25d3769cdda7d25bb2668add6a6a1e22d1e4c678b8d",
+      "size_bytes": 1212
+    },
+    "rust/input-core/licenses/miniz_oxide-0.8.9/LICENSE-ZLIB.md": {
+      "mode": 420,
+      "sha256": "0a54e647fe54104658b5e563c04c6f9edf251710e47bce692e0bd990a4ddaa39",
+      "size_bytes": 984
+    },
+    "rust/input-core/licenses/packages.tsv": {
+      "mode": 420,
+      "sha256": "24c89d7b18c4daf9c4c87f42012ae53a042a88cfdb5731f3f6ab392ee5bd9e66",
+      "size_bytes": 13385
+    },
+    "rust/input-core/licenses/proc-macro2-1.0.106/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "size_bytes": 9723
+    },
+    "rust/input-core/licenses/proc-macro2-1.0.106/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "size_bytes": 1023
+    },
+    "rust/input-core/licenses/quote-1.0.45/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "size_bytes": 9723
+    },
+    "rust/input-core/licenses/quote-1.0.45/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "size_bytes": 1023
+    },
+    "rust/input-core/licenses/rust-standard-library-1.92.0/COPYRIGHT-library.html": {
+      "mode": 420,
+      "sha256": "c90d52b09be83ce6e930d00f4b26559611eadcee806b2307184e04f2c78ad522",
+      "size_bytes": 411104
+    },
+    "rust/input-core/licenses/rustix-1.1.4/COPYRIGHT": {
+      "mode": 420,
+      "sha256": "377c2e7c53250cc5905c0b0532d35973392af16ffb9596a41d99d202cf3617c9",
+      "size_bytes": 853
+    },
+    "rust/input-core/licenses/rustix-1.1.4/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "size_bytes": 10847
+    },
+    "rust/input-core/licenses/rustix-1.1.4/LICENSE-Apache-2.0_WITH_LLVM-exception": {
+      "mode": 420,
+      "sha256": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5",
+      "size_bytes": 12243
+    },
+    "rust/input-core/licenses/rustix-1.1.4/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "size_bytes": 1023
+    },
+    "rust/input-core/licenses/rustix-1.1.4/source-notices/src/backend/libc/io/syscalls.rs.lines-193-194.txt": {
+      "mode": 420,
+      "sha256": "fcda1d67d2411dfbe88890742aef237441ded7a670e8ba3df89277915bb5b3b3",
+      "size_bytes": 131
+    },
+    "rust/input-core/licenses/rustix-1.1.4/source-notices/src/fs/seek_from.rs.lines-1-3.txt": {
+      "mode": 420,
+      "sha256": "ac624b1382a0f97797820b8bb696f1cc5acacdab567b0e301559b97e31426050",
+      "size_bytes": 129
+    },
+    "rust/input-core/licenses/rustix-1.1.4/source-notices/src/maybe_polyfill/no_std/io/mod.rs.lines-1-5.txt": {
+      "mode": 420,
+      "sha256": "678f36c167b8cb7efbaa622a264a726f1bd7793190da591df2d66422cde7ff57",
+      "size_bytes": 198
+    },
+    "rust/input-core/licenses/rustix-1.1.4/source-notices/src/maybe_polyfill/no_std/mod.rs.lines-1-9.txt": {
+      "mode": 420,
+      "sha256": "d488a4cf38476affc54b60dd3ac96b31eb512d84202321e4098680ad2964e120",
+      "size_bytes": 483
+    },
+    "rust/input-core/licenses/rustix-1.1.4/source-notices/src/maybe_polyfill/no_std/os/fd/mod.rs.lines-1-5.txt": {
+      "mode": 420,
+      "sha256": "fcebfb3b5245a5fb99cceb79dd67474bf885c518bcdca6c4fc85f3bcd5516834",
+      "size_bytes": 208
+    },
+    "rust/input-core/licenses/rustix-1.1.4/source-notices/src/maybe_polyfill/no_std/os/fd/owned.rs.lines-1-5.txt": {
+      "mode": 420,
+      "sha256": "bc04817e0f026efb3352acf7c7754ef38f7f6dcde7815715eed55e9b9b616bc3",
+      "size_bytes": 210
+    },
+    "rust/input-core/licenses/rustix-1.1.4/source-notices/src/maybe_polyfill/no_std/os/fd/raw.rs.lines-1-5.txt": {
+      "mode": 420,
+      "sha256": "3980da8aaded729272f8995f86a40ecec6a704bf2957daea86f5ed7c00842cf4",
+      "size_bytes": 208
+    },
+    "rust/input-core/licenses/rustix-1.1.4/source-notices/src/maybe_polyfill/no_std/os/windows/io/raw.rs.lines-1-6.txt": {
+      "mode": 420,
+      "sha256": "a886f5db2cf9df1c14ca7a7659e82eaeeb2f3cf0cf8bdb258750ab6b8b5cce85",
+      "size_bytes": 220
+    },
+    "rust/input-core/licenses/rustix-1.1.4/source-notices/src/maybe_polyfill/no_std/os/windows/io/socket.rs.lines-1-6.txt": {
+      "mode": 420,
+      "sha256": "046ec2d2519736349fcf1a272d9377b84fe6e3c016610958ef15d45db23a1dc0",
+      "size_bytes": 223
+    },
+    "rust/input-core/licenses/rustix-1.1.4/source-notices/src/maybe_polyfill/no_std/os/windows/mod.rs.lines-1-8.txt": {
+      "mode": 420,
+      "sha256": "ebd20725b375a3d6e047b417e6629b26d6bd1bdd804a0b8f0f61e5dbb4a2d810",
+      "size_bytes": 307
+    },
+    "rust/input-core/licenses/rustix-1.1.4/source-notices/src/weak.rs.lines-1-3.txt": {
+      "mode": 420,
+      "sha256": "bbcfa21cdd1b1fce7449923c3274889832621cab042846c1e43de140bea45a20",
+      "size_bytes": 141
+    },
+    "rust/input-core/licenses/serde-1.0.228/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "size_bytes": 9723
+    },
+    "rust/input-core/licenses/serde-1.0.228/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "size_bytes": 1023
+    },
+    "rust/input-core/licenses/serde_core-1.0.228/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "size_bytes": 9723
+    },
+    "rust/input-core/licenses/serde_core-1.0.228/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "size_bytes": 1023
+    },
+    "rust/input-core/licenses/serde_derive-1.0.228/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "size_bytes": 9723
+    },
+    "rust/input-core/licenses/serde_derive-1.0.228/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "size_bytes": 1023
+    },
+    "rust/input-core/licenses/serde_json-1.0.149/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "size_bytes": 9723
+    },
+    "rust/input-core/licenses/serde_json-1.0.149/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "size_bytes": 1023
+    },
+    "rust/input-core/licenses/serde_json-1.0.149/source-notices/src/lexical/mod.rs.lines-1-9.txt": {
+      "mode": 420,
+      "sha256": "5822e59f88392b4a35965134c4c974e475959ebc625f140e42b1f39ba2495cc7",
+      "size_bytes": 537
+    },
+    "rust/input-core/licenses/sha2-0.10.9/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "size_bytes": 10849
+    },
+    "rust/input-core/licenses/sha2-0.10.9/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "b4eb00df6e2a4d22518fcaa6a2b4646f249b3a3c9814509b22bd2091f1392ff1",
+      "size_bytes": 1138
+    },
+    "rust/input-core/licenses/sha2-0.10.9/source-notices/src/sha256/aarch64.rs.lines-3-3.txt": {
+      "mode": 420,
+      "sha256": "9a86c7edf5338b7e771de9aca9e5aba2686e12bd1f94a56032601d855c20a3d4",
+      "size_bytes": 40
+    },
+    "rust/input-core/licenses/sha2-0.10.9/source-notices/src/sha512/aarch64.rs.lines-1-1.txt": {
+      "mode": 420,
+      "sha256": "9a86c7edf5338b7e771de9aca9e5aba2686e12bd1f94a56032601d855c20a3d4",
+      "size_bytes": 40
+    },
+    "rust/input-core/licenses/simd-adler32-0.3.9/LICENSE.md": {
+      "mode": 420,
+      "sha256": "42a35170233e83e18856792e748de4c1ce4a63b2afce9a370c89ef3fe23f9f2d",
+      "size_bytes": 1078
+    },
+    "rust/input-core/licenses/simd-adler32-0.3.9/source-notices/src/imp/neon.rs.lines-76-77.txt": {
+      "mode": 420,
+      "sha256": "adbeebebf1120692017116e9c60b65670cfbbc2181a2e07425e4bb482d0129cb",
+      "size_bytes": 143
+    },
+    "rust/input-core/licenses/syn-2.0.117/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "size_bytes": 9723
+    },
+    "rust/input-core/licenses/syn-2.0.117/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "size_bytes": 1023
+    },
+    "rust/input-core/licenses/tinyvec-1.11.0/LICENSE-APACHE.md": {
+      "mode": 420,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "size_bytes": 11358
+    },
+    "rust/input-core/licenses/tinyvec-1.11.0/LICENSE-MIT.md": {
+      "mode": 420,
+      "sha256": "fd80a26fbb3f644af1fa994134446702932968519797227e07a1368dea80f0bc",
+      "size_bytes": 1023
+    },
+    "rust/input-core/licenses/tinyvec-1.11.0/LICENSE-ZLIB.md": {
+      "mode": 420,
+      "sha256": "84b34dd7608f7fb9b17bd588a6bf392bf7de504e2716f024a77d89f1b145a151",
+      "size_bytes": 851
+    },
+    "rust/input-core/licenses/tinyvec_macros-0.1.1/LICENSE-APACHE.md": {
+      "mode": 420,
+      "sha256": "4f44572785f35152c1fd2eadf565b7e079c0f300b4324f0af653419f9d76b735",
+      "size_bytes": 11350
+    },
+    "rust/input-core/licenses/tinyvec_macros-0.1.1/LICENSE-MIT.md": {
+      "mode": 420,
+      "sha256": "1dd8eca0f83669e75fa119e34fb9e1be9d16e3e9b6368962b8019db6e8ae5f7b",
+      "size_bytes": 1062
+    },
+    "rust/input-core/licenses/tinyvec_macros-0.1.1/LICENSE-ZLIB.md": {
+      "mode": 420,
+      "sha256": "41ace205715d9f19a3214218cc1c01d57c533e02cd0fef7c8e51a49a7fce5ac5",
+      "size_bytes": 864
+    },
+    "rust/input-core/licenses/typed-path-0.12.3/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "size_bytes": 9723
+    },
+    "rust/input-core/licenses/typed-path-0.12.3/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "size_bytes": 1023
+    },
+    "rust/input-core/licenses/typenum-1.20.0/LICENSE": {
+      "mode": 420,
+      "sha256": "db11fec9946737df39ca3898d9cd8c10ec6f6c3a884a6802b0ad0b81b4e8f23a",
+      "size_bytes": 17
+    },
+    "rust/input-core/licenses/typenum-1.20.0/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "516b24e051bf5630880ebbd55c40a25ce9552ebaf8970a53e8976eb70e522406",
+      "size_bytes": 10835
+    },
+    "rust/input-core/licenses/typenum-1.20.0/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "a825bd853ab71619a4923d7b4311221427848070ff44d990da39b0b274c1683f",
+      "size_bytes": 1083
+    },
+    "rust/input-core/licenses/unicode-ident-1.0.24/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "size_bytes": 9723
+    },
+    "rust/input-core/licenses/unicode-ident-1.0.24/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "size_bytes": 1023
+    },
+    "rust/input-core/licenses/unicode-ident-1.0.24/LICENSE-UNICODE": {
+      "mode": 420,
+      "sha256": "f7db81051789b729fea528a63ec4c938fdcb93d9d61d97dc8cc2e9df6d47f2a1",
+      "size_bytes": 1995
+    },
+    "rust/input-core/licenses/unicode-normalization-0.1.25/COPYRIGHT": {
+      "mode": 420,
+      "sha256": "23860c2a7b5d96b21569afedf033469bab9fe14a1b24a35068b8641c578ce24d",
+      "size_bytes": 321
+    },
+    "rust/input-core/licenses/unicode-normalization-0.1.25/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "size_bytes": 10847
+    },
+    "rust/input-core/licenses/unicode-normalization-0.1.25/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "7b63ecd5f1902af1b63729947373683c32745c16a10e8e6292e2e2dcd7e90ae0",
+      "size_bytes": 1071
+    },
+    "rust/input-core/licenses/unicode-normalization-0.1.25/source-notices/scripts/unicode.py.lines-3-20.txt": {
+      "mode": 420,
+      "sha256": "4e6424e9ea12213528cf16ea6e05929b8a85f4c708144c3a83d30f13bc7ba135",
+      "size_bytes": 773
+    },
+    "rust/input-core/licenses/unicode-normalization-0.1.25/source-notices/src/decompose.rs.lines-1-9.txt": {
+      "mode": 420,
+      "sha256": "b6adbd1aa47e52ff23227e30ec16807c5a5b8b8bd416394051ca11e776b611ca",
+      "size_bytes": 471
+    },
+    "rust/input-core/licenses/unicode-normalization-0.1.25/source-notices/src/lib.rs.lines-1-9.txt": {
+      "mode": 420,
+      "sha256": "b6adbd1aa47e52ff23227e30ec16807c5a5b8b8bd416394051ca11e776b611ca",
+      "size_bytes": 471
+    },
+    "rust/input-core/licenses/unicode-normalization-0.1.25/source-notices/src/lookups.rs.lines-1-9.txt": {
+      "mode": 420,
+      "sha256": "971959106478e79569bf22111ed4454a05ca9c97f29b7ff37785909377d49183",
+      "size_bytes": 466
+    },
+    "rust/input-core/licenses/unicode-normalization-0.1.25/source-notices/src/normalize.rs.lines-1-9.txt": {
+      "mode": 420,
+      "sha256": "b6adbd1aa47e52ff23227e30ec16807c5a5b8b8bd416394051ca11e776b611ca",
+      "size_bytes": 471
+    },
+    "rust/input-core/licenses/unicode-normalization-0.1.25/source-notices/src/perfect_hash.rs.lines-1-9.txt": {
+      "mode": 420,
+      "sha256": "971959106478e79569bf22111ed4454a05ca9c97f29b7ff37785909377d49183",
+      "size_bytes": 466
+    },
+    "rust/input-core/licenses/unicode-normalization-0.1.25/source-notices/src/recompose.rs.lines-1-9.txt": {
+      "mode": 420,
+      "sha256": "b6adbd1aa47e52ff23227e30ec16807c5a5b8b8bd416394051ca11e776b611ca",
+      "size_bytes": 471
+    },
+    "rust/input-core/licenses/unicode-normalization-0.1.25/source-notices/src/replace.rs.lines-1-9.txt": {
+      "mode": 420,
+      "sha256": "b6adbd1aa47e52ff23227e30ec16807c5a5b8b8bd416394051ca11e776b611ca",
+      "size_bytes": 471
+    },
+    "rust/input-core/licenses/unicode-normalization-0.1.25/source-notices/src/tables.rs.lines-1-9.txt": {
+      "mode": 420,
+      "sha256": "ec69a93290dc42c3f177906f27e8665533c60ebb1cae9260316776d09934dd67",
+      "size_bytes": 471
+    },
+    "rust/input-core/licenses/unicode-normalization-0.1.25/source-notices/src/test.rs.lines-1-9.txt": {
+      "mode": 420,
+      "sha256": "b6adbd1aa47e52ff23227e30ec16807c5a5b8b8bd416394051ca11e776b611ca",
+      "size_bytes": 471
+    },
+    "rust/input-core/licenses/version_check-0.9.5/LICENSE-APACHE": {
+      "mode": 420,
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "size_bytes": 10847
+    },
+    "rust/input-core/licenses/version_check-0.9.5/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "b7e650f3fce5c53249d1cdc608b54df156a97edd636cf9d23498d0cfe7aec63e",
+      "size_bytes": 1085
+    },
+    "rust/input-core/licenses/windows-link-0.2.1/license-apache-2.0": {
+      "mode": 420,
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "size_bytes": 11351
+    },
+    "rust/input-core/licenses/windows-link-0.2.1/license-mit": {
+      "mode": 420,
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "size_bytes": 1141
+    },
+    "rust/input-core/licenses/windows-sys-0.61.2/license-apache-2.0": {
+      "mode": 420,
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "size_bytes": 11351
+    },
+    "rust/input-core/licenses/windows-sys-0.61.2/license-mit": {
+      "mode": 420,
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "size_bytes": 1141
+    },
+    "rust/input-core/licenses/zip-7.2.0/LICENSE": {
+      "mode": 420,
+      "sha256": "04dc52136d82400b11df5f474949863a70a5d05d2278dec45b99c479494450a6",
+      "size_bytes": 1217
+    },
+    "rust/input-core/licenses/zmij-1.0.21/LICENSE-MIT": {
+      "mode": 420,
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "size_bytes": 1023
+    }
+  },
+  "full_product_ready": false,
+  "inputs": {
+    "binary": {
+      "asset": "rentgen-input-core",
+      "sha256": "8a374c45b52ae9f66e73d64fa1aedd4e30acac15ca2709a00927b6b297581a04",
+      "size_bytes": 835560
+    },
+    "linux_ci": {
+      "artifact_id": 11348952984,
+      "artifact_sha256": "081cc251e40818180bdca2f104e8218de70ce16766a475aae9224bd7af8c94ec",
+      "artifact_size_bytes": 2027504,
+      "ci_run": 37318560162,
+      "python": "3.12"
+    },
+    "rust_component_version": "0.1.0",
+    "schema": 1,
+    "source_commit": "25743f7066a139e0f197746c70b713953966294d",
+    "source_tree": "621aa0c0ac3d604d76ee5d40d96e58b4bad96b16",
+    "version": "0.1.0.dev17",
+    "wheel": {
+      "asset": "rentgen_core-0.1.0.dev17-py3-none-any.whl",
+      "sha256": "549e832ef2807ca5b483a0814c3b06e0be963813034edf9e73812717b6949fdc",
+      "size_bytes": 409203
+    },
+    "windows_kit": {
+      "artifact_id": 11349997738,
+      "artifact_sha256": "0a18a332f51b2f1b8784322c0c620368486bbdcaf04fa0bac739f3798770f451",
+      "asset": "rentgen-core-0.1.0.dev17-windows-py311.zip",
+      "ci_run": 37318560292,
+      "sha256": "c933fe4c33abe53033b765913b752aacb7fe897219641446d1709b125cc6f254",
+      "size_bytes": 20599972
+    }
+  },
+  "kind": "experimental-linux-supplement",
+  "platform": {
+    "architecture": "x86_64",
+    "full_linux_suite_green": false,
+    "glibc_minimum": "2.34",
+    "kernel_minimum": "5.9",
+    "known_full_linux_errors": 2,
+    "known_full_linux_failures": 90,
+    "os": "GNU/Linux",
+    "requires": [
+      "libgcc_s.so.1",
+      "memfd seals",
+      "/proc/self/fd"
+    ],
+    "status": "experimental"
+  },
+  "prerelease": true,
+  "schema": 1,
+  "sha256": "2b04459fed956bf7bc75f552ef47377508f79089c3b1575320ef6764c2eacf0f",
+  "size_bytes": 888538
+}
