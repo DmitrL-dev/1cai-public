@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "source_commit": "25743f7066a139e0f197746c70b713953966294d",
+  "source_tree": "621aa0c0ac3d604d76ee5d40d96e58b4bad96b16",
+  "scope": "Core dev17 / Companion0.1.18 component prerelease source and exact CI asset qualification; not complete product or native 1C business acceptance",
+  "main_runs": {
+    "product": {
+      "id": 37318560292,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/37318560292",
+      "conclusion": "success",
+      "jobs": {
+        "windows": 111791448949,
+        "native-scm": 111804003427,
+        "native-stock-git": 111804003439,
+        "native-git-diagnostic": 111804003454
+      }
+    },
+    "linux": {
+      "id": 37318560162,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/37318560162",
+      "conclusion": "success",
+      "python": [
+        "3.11",
+        "3.12"
+      ]
+    },
+    "pages": {
+      "id": 37318560127,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/37318560127",
+      "conclusion": "success"
+    }
+  },
+  "windows": {
+    "python": {
+      "passed": 3253,
+      "skipped": 68,
+      "failed": 0,
+      "errors": 0,
+      "preflight_included": 95
+    },
+    "node": {
+      "passed": 343,
+      "skipped": 0,
+      "failed": 0
+    },
+    "go": "passed",
+    "kit_builds_identical": true,
+    "kit_payload_files_verified": 40,
+    "dependency_wheels": 30,
+    "offline_hash_locked_install": true,
+    "mcp_tools": 33,
+    "scoped_mcp_tools": 3,
+    "installed_snapshot_comparison": true,
+    "installed_observer_separate_processes": true,
+    "native_scm_lifecycle": true,
+    "native_stock_git_bsl_lifecycle": true,
+    "native_git_ownership_diagnostic": true,
+    "actual_editor_acceptance": false,
+    "native_1c_business_acceptance": false
+  },
+  "linux": {
+    "strict_portable_each_lane": {
+      "passed": 302,
+      "skipped": 1,
+      "failed": 0,
+      "errors": 0
+    },
+    "diagnostic_full_each_lane": {
+      "passed": 2286,
+      "failed": 90,
+      "errors": 2,
+      "skipped": 943,
+      "new_failure_ids": [],
+      "missing_baseline_cases": [],
+      "full_suite_green": false
+    },
+    "installed_cli": true,
+    "source_and_project_head_unchanged": true,
+    "capture_refused": true,
+    "canonical_windows_wheel_members_equal": 113,
+    "wheel_container_hashes_equal": false,
+    "scope": "Experimental local state/history/planners and bounded ZIP input CLI, not Linux capture/live apply/Observer/Companion/native 1C or macOS",
+    "supplement": {
+      "asset": "rentgen-core-0.1.0.dev17-experimental-linux-x86_64.tar.gz",
+      "sha256": "2b04459fed956bf7bc75f552ef47377508f79089c3b1575320ef6764c2eacf0f",
+      "size_bytes": 888538,
+      "regular_members": 141,
+      "independent_repeated_packaging_identical": true,
+      "committed_manifest_verification": true,
+      "fresh_extracted_installed_smoke": true,
+      "local_smoke_python": "3.12.14",
+      "receipt": "experimental-linux-installation.json",
+      "receipt_sha256": "4d2acbeab885a4b70ee643d28d7a996ee2aae472a0485d72b79ccb187eb483f1",
+      "canonical_wheel_preserved": true,
+      "ci_binary_preserved": true,
+      "same_environment_gzip_reproducibility_only": true
+    }
+  },
+  "assets": {
+    "windows_artifact": {
+      "id": 11349997738,
+      "sha256": "0a18a332f51b2f1b8784322c0c620368486bbdcaf04fa0bac739f3798770f451",
+      "size_bytes": 18709507
+    },
+    "python_report_artifact": {
+      "id": 11350686730,
+      "sha256": "7738de5d07612f3ff58b503f899ea440177d1bc05d98a7522d69d1f080da2551",
+      "size_bytes": 59332
+    },
+    "linux312_artifact": {
+      "id": 11348952984,
+      "sha256": "081cc251e40818180bdca2f104e8218de70ce16766a475aae9224bd7af8c94ec",
+      "size_bytes": 2027504
+    },
+    "windows_kit": {
+      "asset": "rentgen-core-0.1.0.dev17-windows-py311.zip",
+      "size_bytes": 20599972,
+      "sha256": "c933fe4c33abe53033b765913b752aacb7fe897219641446d1709b125cc6f254"
+    },
+    "canonical_wheel": {
+      "sha256": "549e832ef2807ca5b483a0814c3b06e0be963813034edf9e73812717b6949fdc",
+      "size_bytes": 409203
+    },
+    "sdist": {
+      "sha256": "b858fe88073c4a89d4a68617e7623abd40fa355149f561dcdb5d26cd7e0b6013",
+      "size_bytes": 858380
+    },
+    "rust_input_binary": {
+      "sha256": "8a374c45b52ae9f66e73d64fa1aedd4e30acac15ca2709a00927b6b297581a04",
+      "size_bytes": 835560
+    },
+    "companion_vsix": {
+      "sha256": "7e3c6ade123390ad608fd3173061c4f040d46fd446eabaef6a29d9bfcf0dcd8e",
+      "size_bytes": 274730
+    },
+    "linux311_artifact": {
+      "id": 11348294989,
+      "sha256": "973e6418c4bc99453cb9ed6136e2ce34af8cc91c8852c62302eeb58e172d28b3",
+      "size_bytes": 2027233
+    },
+    "native_artifacts": [
+      {
+        "name": "native-scm-evidence",
+        "id": 11351096504,
+        "sha256": "a8080f19bc8265da64de026bb23ca44ff935b6d7cae49a7170319641b892b64a",
+        "size_bytes": 613388
+      },
+      {
+        "name": "native-stock-git-evidence",
+        "id": 11350237987,
+        "sha256": "8e8f33c6c5c72301f8677d86ff9f68086bc0326592b44a7ceee2807055b1484b",
+        "size_bytes": 674920
+      },
+      {
+        "name": "native-git-diagnostic-evidence",
+        "id": 11350062406,
+        "sha256": "7a37c9ff3b350f6a38415d47fceea9cbaa4c181b8627c77eed1c6df6f3a641fe",
+        "size_bytes": 506619
+      }
+    ]
+  },
+  "full_product_ready": false,
+  "historical_acceptance_not_inherited": true,
+  "release_publication_verified": false
+}
