@@ -5,6 +5,7 @@ const { randomUUID, createHash } = require('node:crypto');
 const { isDeepStrictEqual: same } = require('node:util');
 const { sourceRef, profileConfig } = require('./core.cjs');
 const { createRunner } = require('./process.cjs');
+const { dependenciesMatch } = require('./bsl-result.cjs');
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const decode = raw => new TextDecoder('utf-8', {fatal:true}).decode(raw);
 const requireValue = (condition, code) => { if (!condition) throw new Error(code); };
@@ -105,7 +106,7 @@ function createRepairService({root, extensionRoot, config, client, trusted = () 
       const digest = createHash('sha256').update(Buffer.from(saved.text,'utf8')).digest('hex');
       const after = result.after, diagnostic = after?.diagnostic, analysis = diagnostic?.analysis;
       if (same(after?.receipt, receipt) && same(diagnostic?.source_ref, receipt.source_ref) && diagnostic?.proposal_content_id === receipt.proposal_content_id &&
-        result.candidate_sha256 === digest && analysis?.candidate_sha256 === digest && analysis.status === 'completed' && analysis.exit_code === 0 &&
+        result.candidate_sha256 === digest && analysis?.candidate_sha256 === digest && dependenciesMatch(analysis, Buffer.byteLength(saved.text,'utf8')) && analysis.status === 'completed' && analysis.exit_code === 0 &&
         analysis.runtime_verified === true && analysis.diagnostics_complete === true && analysis.coverage === 'exact_one' && Array.isArray(analysis.diagnostics) &&
         diagnostic.evidence === 'ephemeral_unattested' && result.tests?.status === 'not_run' && result.apply?.status === 'unavailable') {
         status = analysis.diagnostics.length ? 'diagnostics_present' : 'analysis_clean';
