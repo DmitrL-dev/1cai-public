@@ -1,27 +1,38 @@
 'use strict';
+const {isDeepStrictEqual}=require('node:util');
 function createBslUI(vscode,service,views,context,enabled){
  let busy=false;
  const check=()=>{if(!vscode.workspace.isTrusted)throw new Error('TRUST_REQUIRED');if(!enabled)throw new Error('BSL_REQUIRES_DEV8');};
- async function show(result){
-  check();const status=result.report?.diagnostic?.diagnostics_status;
+ async function show(result,current=()=>true){
+  check();if(!current())return result;
+  const status=result.report?.diagnostic?.diagnostics_status;
   const message=result.status!=='completed'?'Результат не сохранён. Завершение проверки не подтверждено; автоматического повторения нет.':
    status==='clean'?'BSL: замечаний в выбранной версии не найдено.':
    status==='diagnostics_present'?'BSL: в выбранной версии есть замечания.':
    status==='unsupported'?'BSL: этот модуль не поддерживается профилем проверки.':'BSL: анализ завершился технической ошибкой.';
   const document=await vscode.workspace.openTextDocument({language:'json',content:JSON.stringify(result,null,2)});
-  check();await vscode.window.showTextDocument(document,{preview:false});
+  check();if(!current())return result;
+  await vscode.window.showTextDocument(document,{preview:false});
+  check();if(!current())return result;
   void vscode.window.showInformationMessage(`Рентген: ${message} Функциональные тесты не запускались.`);return result;
  }
  async function start(selection){
   check();if(busy||service.running)throw new Error('BSL_RUNNING');
-  const receipt=views.selectedDraft(typeof selection==='string'?selection:selection?.token);busy=true;
+  const token=typeof selection==='string'?selection:selection?.token;
+  const receipt=views.selectedDraft(token);busy=true;
+  // Refresh/new-save invalidation only controls automatic presentation. The
+  // exact historical check remains stored and may be opened explicitly.
+  const current=()=>{
+   try{return isDeepStrictEqual(views.selectedDraft(token),receipt);}
+   catch(error){if(error?.message==='UNKNOWN_VIEW_HANDLE')return false;throw error;}
+  };
   try{
    await vscode.commands.executeCommand('setContext','rentgen.bslRunning',true);
    const result=await vscode.window.withProgress({location:vscode.ProgressLocation.Notification,title:`Рентген: BSL-проверка версии ${receipt.revision}`,cancellable:true},async(_,token)=>{
     if(token.isCancellationRequested)throw new Error('BSL_CANCELLED');
     const subscription=token.onCancellationRequested(()=>service.cancel());
     try{return await service.start(receipt);}finally{subscription.dispose();}
-   });return await show(result);
+   });return await show(result,current);
   }finally{busy=false;await vscode.commands.executeCommand('setContext','rentgen.bslRunning',false);}
  }
  async function inspect(id){
