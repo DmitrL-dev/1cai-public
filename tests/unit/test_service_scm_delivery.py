@@ -2,6 +2,7 @@
 import importlib.util
 import json
 import os
+import shlex
 from pathlib import Path
 import subprocess
 import sys
@@ -140,7 +141,19 @@ def test_workflow_keeps_scm_separate_and_retains_failure_evidence():
     assert len(commands) == 2
     assert "tests/unit/test_service_scm_delivery.py" in commands[0]
     assert "if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }" in contracts
-    assert "tests/unit/" not in commands[1]
+    # Exactly these Linux-only modules move to the mandatory supervised lane.
+    # A positional path, -k/-m subset or another exclusion must still fail here.
+    full = shlex.split(commands[1])
+    ignored = [arg.removeprefix("--ignore=") for arg in full if arg.startswith("--ignore=")]
+    assert len(ignored) == 3 and set(ignored) == {
+        "tests/unit/test_source_fact_runtime_boundaries.py",
+        "tests/unit/test_source_fact_lifecycle_completion.py",
+        "tests/unit/test_source_fact_wire_receipt_gaps.py",
+    }
+    assert [arg for arg in full if not arg.startswith("--ignore=")] == [
+        "python", "-m", "pytest", "-q", "--tb=short", "-n", "3", "--dist=loadfile",
+        "--max-worker-restart=0", "--junitxml=output/python-contracts.xml",
+    ]
 
 
 @pytest.mark.parametrize("name", ["verify_service_scm_delivery", "scm_acceptance_worker",

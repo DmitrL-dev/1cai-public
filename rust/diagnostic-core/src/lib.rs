@@ -22,3 +22,5 @@ pub fn evaluate(input: &[u8]) -> Result<model::DiagnosticResult, Error> {
     let envelope = parse::parse(input)?;
     Ok(engine::evaluate(&envelope))
 }
+
+pub mod source_facts;

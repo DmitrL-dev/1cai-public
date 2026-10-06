@@ -48,7 +48,7 @@ def test_ambiguous_editor_cli_is_not_guessed(inputs):
 
 
 @pytest.mark.parametrize(
-    "version", ["0.1.0.dev8", "0.1.0.dev9", "0.1.0.dev10", "0.1.0.dev11", "0.1.0.dev12", "0.1.0.dev13", "0.1.0.dev14", "0.1.0.dev15", "0.1.0.dev16"]
+    "version", ["0.1.0.dev8", "0.1.0.dev9", "0.1.0.dev10", "0.1.0.dev11", "0.1.0.dev12", "0.1.0.dev13", "0.1.0.dev14", "0.1.0.dev15", "0.1.0.dev16", "0.1.0.dev17", "0.1.0.dev18"]
 )
 def test_profile_records_actual_core_version(inputs, monkeypatch, version):
     monkeypatch.setattr(

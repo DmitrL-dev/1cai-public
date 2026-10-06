@@ -9,7 +9,7 @@
 | Уровень | Windows | Linux / macOS |
 | --- | --- | --- |
 | Опубликованные Core dev17 / Companion 0.1.18 | Ранний доступ, Windows x64 / CPython 3.11, ограниченные проверенные сценарии | Linux x86_64: отдельное экспериментальное дополнение для state/history/planners и Rust ZIP import. Полный Linux/macOS-маршрут не принят |
-| Текущие исходники | Более поздние эксперименты при прежних номерах версий; не тождественны принятым пакетам | Дополнительные операции требуют собственной квалификации; наличие исходников не означает поддержку полного маршрута |
+| Текущие исходники Core dev18 / Companion 0.1.19 | Более поздние кандидаты; не тождественны принятым пакетам | Дополнительные операции требуют собственной квалификации; наличие исходников не означает поддержку полного маршрута |
 | Захват, снимки и граф в опубликованном Core | Windows retained-file sessions и доверенный scanner | Безопасные адаптеры чтения/захвата ещё нужно принять |
 | BSL/1С/EDT, live apply, Observer-служба | Свои runtime, права и ограничения; не универсальное применение | Не включаются автоматически вместе с переносимым CLI |
 | VSCodium / Cline / Companion | Текущий профиль требует Windows и доверенную рабочую папку | Наличие самого редактора на ОС не переносит интеграцию Рентгена |
@@ -30,12 +30,24 @@ Companion по-прежнему использует Windows-профиль. Д�
 с отдельными manifest и SHA256SUMS. Оно содержит Python wheel и Rust executable,
 но не MCP-зависимости, Go scanner или редактор; это не полный офлайн-комплект.
 Нужны GNU/Linux x86_64, glibc 2.34+, `libgcc_s.so.1`, kernel 5.9+, memfd sealing
-и `/proc/self/fd`. [Проверка компонентов](../../releases/core/0.1.0.dev17/qualification.json)
+и `/proc/self/fd`. [Проверка компонентов](https://github.com/DmitrL-dev/1cai-public/blob/companion-v0.1.18/releases/core/0.1.0.dev17/qualification.json)
 не означает новую native 1С/редакторную приёмку.
 
 Полный Linux regression не является зелёным: прежние retained-Windows и
 platform-fixture отказы учтены отдельно от целевых portable tests. Старые Windows
 результаты на другом candidate не переносятся на эту сборку.
+
+## Ограниченный source candidate dev18 / Companion 0.1.19
+
+Отдельный [source-facts CLI](SOURCE-FACTS.md) доступен только как Linux source
+experiment и не входит в опубликованное дополнение dev17. Он возвращает три
+source-only наблюдения из ограниченных BSL/handwritten XML inputs;
+binding/runtime остаются unknown. Его итоговая приёмка ещё не завершена,
+MCP endpoint и интерфейс Companion отсутствуют. Новый candidate требует своего
+[отдельного CI](https://github.com/DmitrL-dev/1cai-public/actions) с обязательными
+176 проверками и installed-wheel smoke. Workflow `Experimental source-fact
+qualification` подготовлен, но ещё не выполнен для кандидата. Прежняя
+квалификация пакетов не переносится на новые исходники.
 
 ## Как станет проще работать на разных ОС
 

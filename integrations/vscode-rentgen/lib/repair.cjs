@@ -116,7 +116,7 @@ function createRepairService({root, extensionRoot, config, client, trusted = () 
     return {id, status, receipt, truncated, ...failure, resultPath:path.join(folder,'result/result.json')};
   }
   async function start(ref, options) {
-    trust(); requireValue(['0.1.0.dev7','0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16','0.1.0.dev17'].includes(config.core_version), 'REPAIR_REQUIRES_DEV7_OR_DEV8');
+    trust(); requireValue(['0.1.0.dev7','0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16','0.1.0.dev17','0.1.0.dev18'].includes(config.core_version), 'REPAIR_REQUIRES_DEV7_OR_DEV8');
     requireValue(!busy, 'REPAIR_RUNNING');
     ref = sourceRef(ref, config.project_id);
     requireValue(options && typeof options.model === 'string' && /^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$/.test(options.model), 'INVALID_MODEL_NAME');

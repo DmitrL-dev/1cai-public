@@ -30,6 +30,15 @@ _CODES = frozenset({
 })
 
 
+def _poll_wait_timeout(deadline, iteration_started):
+    """Budget checkpoint/work time and reserve half the 100 ms poll interval.
+
+    A 50 ms iteration target leaves scheduling headroom; it is not a hard
+    real-time guarantee for an arbitrarily stalled callback or operating system.
+    """
+    return max(0, min(deadline, iteration_started + 0.05) - time.monotonic())
+
+
 def _error(code="INPUT_CORE_PROTOCOL_INVALID"):
     return CoreError(code, "Experimental input core could not complete a verified read")
 
@@ -61,17 +70,21 @@ def _fields(value, names):
     return value
 
 
-def _executable(path, expected_hash, stack):
+def _executable(path, expected_hash, stack, *, checkpoint=None):
     """Exec a sealed owned image of the verified bytes, never a mutable locator."""
     import fcntl
 
     _hash(expected_hash)
+    if checkpoint is not None:
+        checkpoint()
     path = Path(path)
     if not path.is_absolute() or ".." in path.parts or len(path.parts) > 128:
         raise _error("INPUT_CORE_INVALID_ARGUMENT")
     parent = os.open(path.anchor, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
     stack.callback(os.close, parent)
     for part in path.parts[1:-1]:
+        if checkpoint is not None:
+            checkpoint()
         parent = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent)
         stack.callback(os.close, parent)
     fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
@@ -88,6 +101,8 @@ def _executable(path, expected_hash, stack):
     os.fchmod(image, 0o500)
     digest, size = hashlib.sha256(), 0
     while chunk := os.read(fd, 65536):
+        if checkpoint is not None:
+            checkpoint()
         size += len(chunk)
         if size > 32 * 1024**2:
             raise _error("INPUT_CORE_EXECUTABLE_INVALID")
@@ -96,6 +111,8 @@ def _executable(path, expected_hash, stack):
         while offset < len(chunk):
             offset += os.write(image, chunk[offset:])
     after = os.fstat(fd)
+    if checkpoint is not None:
+        checkpoint()
     stamp = lambda info: (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns, info.st_mode, info.st_nlink)
     if stamp(before) != stamp(after) or size != before.st_size or digest.hexdigest() != expected_hash:
         raise _error("INPUT_CORE_EXECUTABLE_INVALID")
@@ -112,10 +129,11 @@ def _executable(path, expected_hash, stack):
 class RustInputSession:
     """One sequential framed connection; all returned archive bytes are owned."""
 
-    def __init__(self, executable, executable_sha256, *, authorize):
+    def __init__(self, executable, executable_sha256, *, authorize, checkpoint=None):
         self.executable = executable
         self.executable_sha256 = executable_sha256
         self.authorize = authorize
+        self.checkpoint = checkpoint
         self.process = None
         self.selector = None
         self.sequence = 0
@@ -131,7 +149,11 @@ class RustInputSession:
         self.deadline = time.monotonic() + 60
         try:
             with ExitStack() as files:
-                fd = _executable(self.executable, self.executable_sha256, files)
+                if self.checkpoint is None:
+                    fd = _executable(self.executable, self.executable_sha256, files)
+                else:
+                    fd = _executable(self.executable, self.executable_sha256, files,
+                                     checkpoint=self.checkpoint)
                 self.authorize()
                 self.process = subprocess.Popen(
                     [f"/proc/self/fd/{fd}", "--parent-pid", str(os.getpid())],
@@ -164,6 +186,9 @@ class RustInputSession:
             self.selector.register(self.process.stdin, selectors.EVENT_WRITE, "stdin")
         try:
             while True:
+                iteration_started = time.monotonic()
+                if self.checkpoint is not None:
+                    self.checkpoint()
                 if len(self.buffer) >= 4:
                     size = struct.unpack("<I", self.buffer[:4])[0]
                     if not 1 <= size <= MAX_FRAME:
@@ -179,7 +204,9 @@ class RustInputSession:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     raise _error("INPUT_CORE_TIMEOUT")
-                for key, _ in self.selector.select(min(remaining, 0.1)):
+                wait = (_poll_wait_timeout(deadline, iteration_started)
+                        if self.checkpoint is not None else min(remaining, 0.1))
+                for key, _ in self.selector.select(wait):
                     if key.data == "stdin":
                         try:
                             count = os.write(key.fileobj.fileno(), output[sent:])
@@ -309,10 +336,15 @@ class RustInputSession:
         """Require EOF after the close ACK; late output cannot bypass framing."""
         deadline = min(self.deadline, time.monotonic() + 2)
         while self.selector.get_map():
+            iteration_started = time.monotonic()
+            if self.checkpoint is not None:
+                self.checkpoint()
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise _error("INPUT_CORE_CLEANUP_UNCONFIRMED")
-            for key, _ in self.selector.select(min(remaining, 0.1)):
+            wait = (_poll_wait_timeout(deadline, iteration_started)
+                    if self.checkpoint is not None else min(remaining, 0.1))
+            for key, _ in self.selector.select(wait):
                 try:
                     data = os.read(key.fileobj.fileno(), 65536)
                 except BlockingIOError:
@@ -327,7 +359,20 @@ class RustInputSession:
                     if self.stderr_bytes > 65536 or self.transport > MAX_TRANSPORT:
                         raise _error("INPUT_CORE_OUTPUT_LIMIT")
         try:
-            status = self.process.wait(timeout=max(0.001, deadline - time.monotonic()))
+            if self.checkpoint is None:
+                status = self.process.wait(timeout=max(0.001, deadline - time.monotonic()))
+            else:
+                while True:
+                    iteration_started = time.monotonic()
+                    self.checkpoint()
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        raise _error("INPUT_CORE_CLEANUP_UNCONFIRMED")
+                    try:
+                        status = self.process.wait(timeout=_poll_wait_timeout(deadline, iteration_started))
+                        break
+                    except subprocess.TimeoutExpired:
+                        pass
         except subprocess.TimeoutExpired as error:
             raise _error("INPUT_CORE_CLEANUP_UNCONFIRMED") from error
         if status != 0:

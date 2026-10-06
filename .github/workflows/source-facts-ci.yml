@@ -1,0 +1,220 @@
+name: Experimental source-fact qualification
+
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-facts-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-source-facts:
+    name: Linux source facts (176 + installed wheel)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PYTHONUTF8: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+      CARGO_BUILD_JOBS: '1'
+      CARGO_INCREMENTAL: '0'
+      GOTOOLCHAIN: local
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11.9'
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.25.5'
+          cache: false
+      - name: Prepare isolated exact-commit source and build directories
+        run: |
+          work=$(mktemp -d "$RUNNER_TEMP/rentgen-source-facts.XXXXXX")
+          git clone --no-local --no-checkout "$GITHUB_WORKSPACE" "$work/source"
+          git -C "$work/source" checkout --detach "$GITHUB_SHA"
+          test "$(git -C "$work/source" rev-parse HEAD)" = "$GITHUB_SHA"
+          mkdir -p "$work/build/images" "$work/evidence" "$work/cache/go" "$work/cache/tmp"
+          echo "SOURCE_ROOT=$work/source" >> "$GITHUB_ENV"
+          echo "BUILD_ROOT=$work/build" >> "$GITHUB_ENV"
+          echo "EVIDENCE=$work/evidence" >> "$GITHUB_ENV"
+          echo "GOCACHE=$work/cache/go" >> "$GITHUB_ENV"
+          echo "GOTMPDIR=$work/cache/tmp" >> "$GITHUB_ENV"
+          echo "SOURCE_DATE_EPOCH=$(git -C "$work/source" show -s --format=%ct HEAD)" >> "$GITHUB_ENV"
+      - name: Install pinned tools without changing trace permissions
+        run: |
+          rustup toolchain install 1.92.0 --profile minimal
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends strace=6.8-0ubuntu2
+          test "$(dpkg-query -W -f='${Version}' strace)" = '6.8-0ubuntu2'
+          python -I -B -m venv "$BUILD_ROOT/tools"
+          "$BUILD_ROOT/tools/bin/python" -I -B -m pip install --require-hashes --only-binary=:all: -r "$SOURCE_ROOT/requirements/locks/product-build-py311-windows.txt"
+          "$BUILD_ROOT/tools/bin/python" -I -B -m pip install -r "$SOURCE_ROOT/requirements-test.txt"
+          python --version > "$EVIDENCE/python-version.txt"
+          go version > "$EVIDENCE/go-version.txt"
+          echo "GO_NOTICE_ROOT=$(go env GOROOT)" >> "$GITHUB_ENV"
+          rustc +1.92.0 --version --verbose > "$EVIDENCE/rust-version.txt"
+          cc --version > "$EVIDENCE/cc-version.txt"
+          /usr/bin/strace --version > "$EVIDENCE/strace-version.txt"
+          "$BUILD_ROOT/tools/bin/python" -I -B -m pip freeze --all > "$EVIDENCE/python-tools.txt"
+      - name: Required Linux Go contracts including owned-process boundaries
+        timeout-minutes: 10
+        run: |
+          go -C "$SOURCE_ROOT/go" test -count=1 -p 1 -timeout 120s -json ./... | tee "$EVIDENCE/go-contracts.jsonl"
+      - name: Build only the three fixed images and reviewed C transport probe
+        run: |
+          (cd "$SOURCE_ROOT/go/licenses/go1.25.5" && sha256sum -c SHA256SUMS)
+          (cd "$SOURCE_ROOT/rust/input-core" && sha256sum -c licenses/SHA256SUMS)
+          (cd "$SOURCE_ROOT/rust/diagnostic-core" && sha256sum -c licenses/SHA256SUMS)
+          cargo +1.92.0 build --locked --release --manifest-path "$SOURCE_ROOT/rust/input-core/Cargo.toml" --target-dir "$BUILD_ROOT/input" --bin rentgen-input-core
+          cargo +1.92.0 build --locked --release --manifest-path "$SOURCE_ROOT/rust/diagnostic-core/Cargo.toml" --target-dir "$BUILD_ROOT/diagnostic" --bin rentgen-source-facts
+          go -C "$SOURCE_ROOT/go" build -mod=readonly -trimpath -o "$BUILD_ROOT/images/bsl-source-facts" ./cmd/bsl-source-facts
+          cc -std=c11 -O2 -Wall -Wextra -Werror "$SOURCE_ROOT/tests/fixtures/source_facts/owned_transport_probe.c" -o "$BUILD_ROOT/images/owned-transport-probe"
+          install -m 0700 "$BUILD_ROOT/input/release/rentgen-input-core" "$BUILD_ROOT/images/rentgen-input-core"
+          install -m 0700 "$BUILD_ROOT/diagnostic/release/rentgen-source-facts" "$BUILD_ROOT/images/rentgen-source-facts"
+          chmod 0700 "$BUILD_ROOT/images/bsl-source-facts" "$BUILD_ROOT/images/owned-transport-probe"
+      - name: Pin exact same-job source, images, probe and trace tool
+        run: |
+          "$BUILD_ROOT/tools/bin/python" -I -B - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          root, build, evidence = (pathlib.Path(os.environ[k]) for k in ('SOURCE_ROOT', 'BUILD_ROOT', 'EVIDENCE'))
+          def digest(path):
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+          def image(name, command, compiler):
+              path = build / 'images' / name
+              return {'path': str(path), 'sha256': digest(path), 'build_command': command,
+                      'compiler_identity': (evidence / (compiler + '-version.txt')).read_text().strip()}
+          go_notices = root / 'go/licenses/go1.25.5'
+          notice_inventory = json.loads((go_notices / 'PROVENANCE.json').read_text())
+          installed_go = pathlib.Path(os.environ['GO_NOTICE_ROOT'])
+          if (installed_go / 'VERSION').read_text().splitlines()[0] != 'go1.25.5':
+              raise RuntimeError('Go notice toolchain version differs')
+          for notice in notice_inventory['files']:
+              original = (installed_go / notice['source_path']).read_bytes()
+              copied = (go_notices / notice['artifact_path']).read_bytes()
+              excerpt = original if notice['first_line'] is None else b''.join(
+                  original.splitlines(keepends=True)[notice['first_line'] - 1:notice['last_line']])
+              if (hashlib.sha256(original).hexdigest() != notice['source_sha256']
+                      or hashlib.sha256(copied).hexdigest() != notice['artifact_sha256'] or copied != excerpt):
+                  raise RuntimeError('Go notice provenance differs: ' + notice['source_path'])
+          harness = [
+              'tests/fixtures/source_facts/boundary_supervisor.py',
+              'tests/fixtures/source_facts/owned_transport_probe.c',
+              'tests/unit/test_source_fact_runtime_boundaries.py',
+              'tests/unit/test_source_fact_lifecycle_completion.py',
+              'tests/unit/test_source_fact_wire_receipt_gaps.py',
+          ]
+          images = {}
+          for role, crate, target, name in [
+              ('input_core', 'input-core', 'input', 'rentgen-input-core'),
+              ('source_kernel', 'diagnostic-core', 'diagnostic', 'rentgen-source-facts'),
+          ]:
+              images[role] = image(name, ['cargo', '+1.92.0', 'build', '--locked', '--release', '--manifest-path',
+                  str(root / 'rust' / crate / 'Cargo.toml'), '--target-dir', str(build / target), '--bin', name], 'rust')
+          images['source_scanner'] = image('bsl-source-facts', ['go', '-C', str(root / 'go'), 'build',
+              '-mod=readonly', '-trimpath', '-o', str(build / 'images/bsl-source-facts'), './cmd/bsl-source-facts'], 'go')
+          probe_source = root / 'tests/fixtures/source_facts/owned_transport_probe.c'
+          probe = image('owned-transport-probe', ['cc', '-std=c11', '-O2', '-Wall', '-Wextra', '-Werror',
+              str(probe_source), '-o', str(build / 'images/owned-transport-probe')], 'cc')
+          probe['source_sha256'] = digest(probe_source)
+          pins = {'schema': 1, 'source_commit': os.environ['GITHUB_SHA'],
+              'protocol_sha256': digest(root / 'docs/product/SOURCE-FACTS-PROTOCOL.md'),
+              'expected_variants': 176, 'harness_sha256': {name: digest(root / name) for name in harness},
+              'images': images, 'probe': probe,
+              'strace': {'path': '/usr/bin/strace', 'sha256': digest(pathlib.Path('/usr/bin/strace'))}}
+          path = evidence / 'pins.json'
+          path.write_text(json.dumps(pins, indent=2) + '\n')
+          (evidence / 'pins.sha256').write_text(digest(path) + '\n')
+          tracked = subprocess.check_output(['git', '-C', str(root), 'ls-files', '-z']).decode().split('\0')
+          (evidence / 'source-sha256.json').write_text(json.dumps(
+              {name: digest(root / name) for name in tracked if name}, indent=2) + '\n')
+          PY
+      - name: Pure host and delivery-verifier regressions
+        run: |
+          cd "$SOURCE_ROOT"
+          "$BUILD_ROOT/tools/bin/python" -B -m pytest -q -p no:cacheprovider tests/unit/test_source_fact_host.py tests/unit/test_source_fact_delivery_smoke.py --basetemp="$EVIDENCE/pure-tmp" --junitxml="$EVIDENCE/pure.xml"
+      - name: Required default supervised 176-variant qualification
+        run: |
+          "$BUILD_ROOT/tools/bin/python" -I -B "$SOURCE_ROOT/tests/fixtures/source_facts/boundary_supervisor.py" --root "$SOURCE_ROOT" --pins "$EVIDENCE/pins.json" --pins-sha256 "$(cat "$EVIDENCE/pins.sha256")" --output "$EVIDENCE/full176"
+      - name: Build reproducible wheel and sdist outside checkout
+        run: |
+          "$BUILD_ROOT/tools/bin/python" -I -B -m build --no-isolation --wheel --outdir "$BUILD_ROOT/direct-wheel" "$SOURCE_ROOT"
+          "$BUILD_ROOT/tools/bin/python" -I -B -m build --no-isolation --outdir "$BUILD_ROOT/dist" "$SOURCE_ROOT"
+          version=$("$BUILD_ROOT/tools/bin/python" -I -B -c 'import os,pathlib,tomllib;print(tomllib.loads((pathlib.Path(os.environ["SOURCE_ROOT"])/"pyproject.toml").read_text())["project"]["version"])')
+          wheel="$BUILD_ROOT/dist/rentgen_core-$version-py3-none-any.whl"
+          cmp "$BUILD_ROOT/direct-wheel/rentgen_core-$version-py3-none-any.whl" "$wheel"
+          sha256sum "$BUILD_ROOT/dist/"* > "$EVIDENCE/distributions.sha256"
+          echo "CANDIDATE_VERSION=$version" >> "$GITHUB_ENV"
+          echo "CANDIDATE_WHEEL=$wheel" >> "$GITHUB_ENV"
+          echo "CANDIDATE_WHEEL_SHA256=$(sha256sum "$wheel" | cut -d ' ' -f 1)" >> "$GITHUB_ENV"
+      - name: Required installed-wheel source-fact smoke
+        run: |
+          read_pin() { "$BUILD_ROOT/tools/bin/python" -I -B -c 'import json,sys;print(json.load(open(sys.argv[1]))["images"][sys.argv[2]]["sha256"])' "$EVIDENCE/pins.json" "$1"; }
+          cd "$BUILD_ROOT"
+          "$BUILD_ROOT/tools/bin/python" -I -B "$SOURCE_ROOT/scripts/verification/verify_source_fact_delivery.py" \
+            --wheel "$CANDIDATE_WHEEL" --wheel-sha256 "$CANDIDATE_WHEEL_SHA256" --expected-version "$CANDIDATE_VERSION" \
+            --input-core "$BUILD_ROOT/images/rentgen-input-core" --input-core-sha256 "$(read_pin input_core)" \
+            --source-scanner "$BUILD_ROOT/images/bsl-source-facts" --source-scanner-sha256 "$(read_pin source_scanner)" \
+            --source-kernel "$BUILD_ROOT/images/rentgen-source-facts" --source-kernel-sha256 "$(read_pin source_kernel)" \
+            --output "$EVIDENCE/installed-wheel"
+          test -z "$(git -C "$SOURCE_ROOT" status --porcelain=v1 --untracked-files=all --ignored=matching)"
+      - name: Stage experimental native images with preserved notices
+        run: |
+          mkdir -p "$BUILD_ROOT/native/docs/product"
+          cp "$SOURCE_ROOT/LICENSE" "$BUILD_ROOT/native/"
+          cp "$SOURCE_ROOT/docs/product/"{SOURCE-FACTS.md,SOURCE-FACTS-DELIVERY.md,SOURCE-FACTS-PROTOCOL.md,PLATFORM-SUPPORT.md,PORTABLE-CORE.md} "$BUILD_ROOT/native/docs/product/"
+          mkdir -p "$BUILD_ROOT/native/go"
+          cp "$SOURCE_ROOT/go/"{go.mod,THIRD_PARTY_NOTICES.md} "$BUILD_ROOT/native/go/"
+          cp -r "$SOURCE_ROOT/go/licenses" "$BUILD_ROOT/native/go/licenses"
+          cp "$BUILD_ROOT/images/rentgen-input-core" "$BUILD_ROOT/images/bsl-source-facts" "$BUILD_ROOT/images/rentgen-source-facts" "$BUILD_ROOT/native/"
+          for crate in input-core diagnostic-core; do
+            mkdir -p "$BUILD_ROOT/native/rust/$crate"
+            cp "$SOURCE_ROOT/rust/$crate/"{Cargo.toml,Cargo.lock,README.md,PROTOCOL.md,THIRD_PARTY_NOTICES.md,DEPENDENCY_PROVENANCE.json} "$BUILD_ROOT/native/rust/$crate/"
+            cp -r "$SOURCE_ROOT/rust/$crate/licenses" "$BUILD_ROOT/native/rust/$crate/licenses"
+          done
+          (cd "$BUILD_ROOT/native" && sha256sum rentgen-input-core bsl-source-facts rentgen-source-facts > SHA256SUMS)
+          tar -C "$BUILD_ROOT" -czf "$BUILD_ROOT/experimental-source-facts-linux-amd64.tar.gz" native
+          sha256sum "$BUILD_ROOT/experimental-source-facts-linux-amd64.tar.gz" > "$EVIDENCE/native-bundle.sha256"
+      - name: Retain scoped qualification evidence and candidate distributions
+        if: always() && env.EVIDENCE != '' && env.BUILD_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: experimental-source-facts-${{ github.sha }}
+          path: |
+            ${{ env.EVIDENCE }}/*.json
+            ${{ env.EVIDENCE }}/go-contracts.jsonl
+            ${{ env.EVIDENCE }}/*.sha256
+            ${{ env.EVIDENCE }}/*.txt
+            ${{ env.EVIDENCE }}/pure.xml
+            ${{ env.EVIDENCE }}/full176/summary.json
+            ${{ env.EVIDENCE }}/full176/results.xml
+            ${{ env.EVIDENCE }}/full176/stdout.log
+            ${{ env.EVIDENCE }}/full176/stderr.log
+            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/observed-polls.json
+            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/whole-operation.json
+            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/cleanup-timeout.json
+            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/canary-boundaries.json
+            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/authority-audit.json
+            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/gate.stdout
+            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/gate.stderr
+            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/strace.log*
+            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/controller.stdout
+            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/controller.stderr
+            ${{ env.EVIDENCE }}/installed-wheel/receipt.json
+            ${{ env.EVIDENCE }}/installed-wheel/before.json
+            ${{ env.EVIDENCE }}/installed-wheel/after.json
+            ${{ env.EVIDENCE }}/installed-wheel/commands/
+            ${{ env.BUILD_ROOT }}/dist/*.whl
+            ${{ env.BUILD_ROOT }}/dist/*.tar.gz
+            ${{ env.BUILD_ROOT }}/experimental-source-facts-linux-amd64.tar.gz
+          if-no-files-found: error
+          retention-days: 14

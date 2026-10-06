@@ -48,6 +48,10 @@ SNAPSHOT-METADATA, SNAPSHOT-READ-SESSIONS и SNAPSHOT-PUBLICATION-ADR.
 исходников и проектных HTTP/редакторских интерфейсов. Описание этих интерфейсов
 не устанавливает сам портал. Старый HTTP-портал не входит в текущую поставку.
 JSON входов YAxUnit — справочный манифест, без runtime/CFE или запуска 1С.
+Sdist также включает оба Rust crates (source, locks, provenance, лицензии и
+crate tests), отдельный Go observer и [source-facts guide](SOURCE-FACTS.md)
+с frozen protocol. Это Linux-only эксперимент с pending acceptance; его три
+executable не встроены в wheel или прежний Windows offline-kit.
 
 ## Установка готового wheel
 
@@ -123,7 +127,8 @@ wheelhouse. Для offline добавьте `--no-index --find-links PATH` к к
 Registry и scanner — доверенные startup-параметры. Все source/graph tools требуют
 явные project_id и snapshot_id; identity берётся из SID процесса Windows. Setup,
 слои и административная миграция остаются в CLI. У опубликованного Windows Core dev17
-33 инструмента с `rentgen_capabilities`; у исторического dev15 — 32. Ограничения,
+и текущего source candidate dev18 — 33 инструмента с `rentgen_capabilities`;
+у исторического dev15 — 32. Ограничения,
 отмена и восстановление по receipt описаны в [CORE-MCP.md](CORE-MCP.md).
 
 ## Диагностика предложенной правки
@@ -322,8 +327,8 @@ RENTGEN_PREVIOUS_CORE_WHEEL указывает на сохранённый на�
 Они ограничивают обнаружение и исполнение инструментов, включая вложенные ссылки
 на другой проект, до доступа к состоянию. Проверки membership сохраняются.
 В dev6 без параметров сохранялся тогдашний набор из 21 инструмента. В опубликованном
-Windows Core dev17 без ограничений доступно 33 инструмента;
-в историческом dev15 — 32. См. [контракт MCP](CORE-MCP.md).
+Windows Core dev17 и текущем source candidate dev18 без ограничений доступно
+33 инструмента; в историческом dev15 — 32. См. [контракт MCP](CORE-MCP.md).
 Схема 4 не меняется; миграция с dev5 не нужна. Профили редактора нового
 генератора требуют dev6, чтобы ограничения исполнялись сервером.
 

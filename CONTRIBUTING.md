@@ -16,10 +16,16 @@ Go 1.25.5 в PATH и Node 24.15.0. Отдельные переносимые п�
 ```powershell
 py -3.11 -m venv .venv-test
 .\.venv-test\Scripts\python.exe -m pip install -r requirements-test.txt
-.\.venv-test\Scripts\python.exe -m pytest -q
+.\.venv-test\Scripts\python.exe -m pytest -q --ignore=tests/unit/test_source_fact_runtime_boundaries.py --ignore=tests/unit/test_source_fact_lifecycle_completion.py --ignore=tests/unit/test_source_fact_wire_receipt_gaps.py
 node --test integrations/vscode-rentgen/test/*.test.cjs
 go -C go test ./...
 ```
+
+Три перечисленных Linux source-fact модуля требуют отдельного supervisor,
+проверенных native images и trace permissions. Они обязательны в отдельной
+[176-variant CI проверке](docs/product/SOURCE-FACTS-DELIVERY.md#separate-ci-gates);
+исключения выше не превращают их в skips или успешную приёмку. Обычный запуск
+всех pytest без этих prerequisites по-прежнему честно завершается ошибкой.
 
 Сборка ядра описана в [CORE-INSTALLATION.md](docs/product/CORE-INSTALLATION.md).
 Сборка расширения: `python integrations/vscode-rentgen/build.py --output NEW.vsix`.

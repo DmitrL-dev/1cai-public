@@ -111,7 +111,7 @@ test('native result lookup is a read without snapshot or executable and rejects 
   await assert.rejects(client.platformResult(id),/PLATFORM_RESULT_MISMATCH/);
 });
 
-for (const core_version of ['0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16','0.1.0.dev17']) test(`${core_version} profile can use native result lookup and test profile listing`,async()=>{
+for (const core_version of ['0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16','0.1.0.dev17','0.1.0.dev18']) test(`${core_version} profile can use native result lookup and test profile listing`,async()=>{
   const id='00000000-0000-4000-8000-000000000003';
   const commands=[];
   const client=createClient({...config,core_version},{execute:async(_,args)=>{
@@ -123,12 +123,12 @@ for (const core_version of ['0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev1
   assert.deepEqual(commands,['proposal-platform-result','test-profile-list']);
 });
 
-test('native check binds selected snapshot, proposal and executable; old profiles cannot launch it',async()=>{
+for (const core_version of ['0.1.0.dev8', '0.1.0.dev18']) test(`${core_version}: native check binds selected snapshot, proposal and executable; old profiles cannot launch it`,async()=>{
   const options={id:draft,ref,contentId:'b'.repeat(64),proposal:'C:\\путь $()\\proposal.json',platform:'C:\\1cv8.exe',platformHash:'c'.repeat(64)};
   let seen,reply={run_id:draft,source_ref:ref,proposal_content_id:options.contentId,platform_executable_sha256:options.platformHash};
   const execute=async(_,args)=>{seen=args;return output(reply);};
   await assert.rejects(createClient(config,{execute}).platformCheck(options),/PLATFORM_REQUIRES_DEV8/);assert.equal(seen,undefined);
-  const client=createClient({...config,core_version:'0.1.0.dev8'},{execute});
+  const client=createClient({...config,core_version},{execute});
   assert.deepEqual(await client.platformCheck(options),reply);
   assert.equal(seen[3],'proposal-platform-check');assert.equal(seen[seen.indexOf('--snapshot')+1],ref.snapshot.snapshot_id);
   reply={...reply,proposal_content_id:'d'.repeat(64)};
@@ -144,4 +144,14 @@ test('manual publication binds expected revision and operation; foreign receipt 
   assert.equal(args[3],'draft-save');assert.equal(args[args.indexOf('--expected-revision')+1],'2');
   assert.equal(args[args.indexOf('--operation-id')+1],operation);
   reply={...reply,revision:4};await assert.rejects(client.saveDraft(base,'C:\\owned\\proposal.json','c'.repeat(64),operation),/DRAFT_REVISION_MISMATCH/);
+});
+
+for (const core_version of ['0.1.0.dev8', '0.1.0.dev17', '0.1.0.dev18']) test(`${core_version}: saved test result lookup retains exact operation binding`, async () => {
+  const id='00000000-0000-4000-8000-000000000003';
+  let args, reply={run_id:id,status:'incomplete',request:null};
+  const client=createClient({...config,core_version},{execute:async(_,argv)=>{args=argv;return output(reply);}});
+  assert.deepEqual(await client.testResult(id),reply);
+  assert.deepEqual(args.slice(3),['proposal-test-result','--registry',config.registry,'--project',project,'--operation-id',id]);
+  reply={...reply,run_id:draft};
+  await assert.rejects(client.testResult(id),/TEST_RESULT_MISMATCH/);
 });

@@ -45,9 +45,9 @@ test('recovery refuses a different stored run binding',async t=>{
  const f=await fixture(t),completed=await f.service.start(receipt,profile.profile_id);
  f.reports.get(completed.run_id).profile_id='a'.repeat(64);await assert.rejects(f.service.inspect(completed.run_id),/TEST_RESULT_MISMATCH/);
 });
-test('CLI uses a registered profile and literal proposal path, without executable options',async()=>{
+for (const core_version of ['0.1.0.dev16', '0.1.0.dev18']) test(`${core_version}: CLI uses a registered profile and literal proposal path, without executable options`,async()=>{
  const {createClient}=require('../lib/core.cjs');let args;const id='00000000-0000-4000-8000-000000000003';
- const client=createClient({schema:1,core_version:'0.1.0.dev16',python:'C:\\python.exe',registry:'C:\\state.sqlite3',project_id:project},{execute:async(_,argv)=>{args=argv;return {code:0,stdout:Buffer.from(JSON.stringify({result:argv[3]==='test-profile-list'?[profile]:result(id)}))};}});
+ const client=createClient({schema:1,core_version,python:'C:\\python.exe',registry:'C:\\state.sqlite3',project_id:project},{execute:async(_,argv)=>{args=argv;return {code:0,stdout:Buffer.from(JSON.stringify({result:argv[3]==='test-profile-list'?[profile]:result(id)}))};}});
  assert.deepEqual(await client.testProfiles(),[profile]);const file='C:\\owned $()\\proposal.json';
  assert.deepEqual(await client.testCheck({id,receipt,proposal,file,profile}),result(id));
  assert.deepEqual(args.slice(3),['proposal-test','--registry','C:\\state.sqlite3','--project',project,'--snapshot',receipt.source_ref.snapshot.snapshot_id,'--proposal-json',file,'--test-profile',profile.profile_id,'--operation-id',id]);

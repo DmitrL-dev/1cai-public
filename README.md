@@ -100,14 +100,15 @@
 
 [План с критериями завершения](ROADMAP.md) ·
 [Поддержка платформ](docs/product/PLATFORM-SUPPORT.md) · [Архитектура](ARCHITECTURE.md) ·
-[Linux CLI/state](docs/product/PORTABLE-CORE.md) · [Rust ZIP import](docs/product/RUST-INPUT-CORE.md)
+[Linux CLI/state](docs/product/PORTABLE-CORE.md) · [Rust ZIP import](docs/product/RUST-INPUT-CORE.md) ·
+[Source-facts CLI: приёмка pending](docs/product/SOURCE-FACTS.md)
 
 ## Выпуск, исходники и эксперименты
 
 | Уровень | Что это значит |
 | :--- | :--- |
 | **Опубликованная пара** | Core dev17 / Companion 0.1.18. Последняя подтверждённая на 5 октября 2026; устанавливайте по инструкции её версии |
-| **Текущие исходники** | Метаданные также указывают Core dev17 / Companion 0.1.18, но checkout содержит более поздние эксперименты. Они не входят автоматически в принятые пакеты; [точные теги и границы](docs/product/READINESS.md) указаны отдельно |
+| **Текущие исходники** | Core dev18 / Companion 0.1.19 в метаданных. Дополнительные изменения проходят приёмку; checkout не обновляет выпущенные пакеты |
 | **Эксперимент Linux** | Дополнение Core dev17: локальное состояние/история и ограниченный Rust ZIP import. Без capture, live apply, native 1С и Companion; полный продукт на Linux не принят |
 | **Следующие этапы** | Переносимость и оптимизация принимаются по операциям и ОС, без обещания одинаковых возможностей уже сейчас |
 | **Editor / Main witness** | Ограниченные [эксперименты](scripts/verification/main_witness_receiver/README.md); не доказательство готовности ежедневной AI-разработки |

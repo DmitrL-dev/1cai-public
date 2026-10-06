@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "toolchain_version": "go1.25.5",
+  "scope": "Preserved Go distribution notices and selected standard-library source notices; not a linked-code or legal audit",
+  "archive": {
+    "filename": "go1.25.5.linux-amd64.tar.gz",
+    "os": "linux",
+    "arch": "amd64",
+    "version": "go1.25.5",
+    "sha256": "9e9b755d63b36acf30c12a9a3fc379243714c1c6d3dd72861da637f336ebb35b",
+    "size": 59768009,
+    "kind": "archive",
+    "url": "https://go.dev/dl/go1.25.5.linux-amd64.tar.gz"
+  },
+  "verification": "Original files match exact members of the SHA-256-verified official toolchain archive; excerpts preserve inclusive source line bytes.",
+  "files": [
+    {
+      "source_path": "LICENSE",
+      "source_sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "first_line": null,
+      "last_line": null,
+      "artifact_path": "LICENSE",
+      "artifact_sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+      "size_bytes": 1453
+    },
+    {
+      "source_path": "PATENTS",
+      "source_sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc",
+      "first_line": null,
+      "last_line": null,
+      "artifact_path": "PATENTS",
+      "artifact_sha256": "96f408bfae65bf137fc2525d3ecb030271c50c1e90799f87abf8846d8dd505cc",
+      "size_bytes": 1303
+    },
+    {
+      "source_path": "VERSION",
+      "source_sha256": "856874a1c5fe22092cdae23360dc4b6b50ffc8813115701e2a7e14d7ef73dcc9",
+      "first_line": null,
+      "last_line": null,
+      "artifact_path": "VERSION",
+      "artifact_sha256": "856874a1c5fe22092cdae23360dc4b6b50ffc8813115701e2a7e14d7ef73dcc9",
+      "size_bytes": 35
+    },
+    {
+      "source_path": "src/runtime/memmove_amd64.s",
+      "source_sha256": "1d239c1a965baf43cbdfb82a5144d33aadd95d20ff95becf8347a93ddf08985d",
+      "first_line": 1,
+      "last_line": 24,
+      "artifact_path": "source-notices/runtime-memmove_amd64.s.lines-1-24.txt",
+      "artifact_sha256": "115b35d4c33d49499560fed05811e006e92db5c1416c6ac0f417753b416d5449",
+      "size_bytes": 1494
+    },
+    {
+      "source_path": "src/math/acosh.go",
+      "source_sha256": "e1b20885bef3ccb7763ae868d23120194cf38faef70f1af45d2870ccb1a00140",
+      "first_line": 7,
+      "last_line": 19,
+      "artifact_path": "source-notices/math-acosh.go.lines-7-19.txt",
+      "artifact_sha256": "3920a5752fad075a9a1e44c69fa0204918bfc2c3ad6c3ed0a285273befd879e0",
+      "size_bytes": 584
+    },
+    {
+      "source_path": "src/math/exp.go",
+      "source_sha256": "f746de225d111ad5b7e3596f62f37a5cc77f1e20c86d50fa43b64a2432d60e76",
+      "first_line": 23,
+      "last_line": 35,
+      "artifact_path": "source-notices/math-exp.go.lines-23-35.txt",
+      "artifact_sha256": "672e4a07329648b48478bcf14d26df9d9bfc924daf74e46cf820b679e6bfb560",
+      "size_bytes": 526
+    },
+    {
+      "source_path": "src/math/atan.go",
+      "source_sha256": "777b61ebf72d42b754004fe6a5e9a4ac7fb85fb95cd5e6fef396540ce6c42ee1",
+      "first_line": 11,
+      "last_line": 52,
+      "artifact_path": "source-notices/math-atan.go.lines-11-52.txt",
+      "artifact_sha256": "463e2061abd03c3292bd47abf45a6861fc5658750e90b2fd779dcd7a783d0aa6",
+      "size_bytes": 1570
+    }
+  ]
+}
