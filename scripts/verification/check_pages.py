@@ -32,9 +32,15 @@ def validate() -> None:
     files = sorted(path for path in SITE.rglob('*') if path.is_file())
     assert (SITE / '.nojekyll').is_file(), 'Missing .nojekyll'
     assert (SITE / '404.html').is_file(), 'Missing 404 page'
-    assert all(path.suffix.lower() in {'.html', '.css', '.js', '.svg', ''} for path in files), 'Unexpected site artifact'
+    concept_images = {SITE / 'assets' / 'ide-concept' / f'{name}.png'
+                      for name in ('editor', 'review', 'assistant')}
+    assert all(path.suffix.lower() in {'.html', '.css', '.js', '.svg', ''}
+               or path in concept_images for path in files), 'Unexpected site artifact'
+    assert all(path.is_file() and path.read_bytes().startswith(b'\x89PNG\r\n\x1a\n')
+               for path in concept_images), 'Missing or invalid concept PNG'
+    assert all(path.stat().st_size < 350_000 for path in concept_images), 'Concept image unexpectedly large'
     size = sum(path.stat().st_size for path in files)
-    assert size < 180_000, f'Static artifact unexpectedly large: {size} bytes'
+    assert size < 1_100_000, f'Static artifact unexpectedly large: {size} bytes'
     for page in SITE.glob('*.html'):
         markup = page.read_text(encoding='utf-8')
         assert '<html lang="ru"' in markup, f'{page.name}: missing language'
@@ -79,6 +85,11 @@ def validate() -> None:
             assert 'Синтетический пример' in markup, 'Missing demo disclosure'
             assert 'Не запускались в демо' in markup, 'Demo must not fabricate checks'
             assert 'core-v0.1.0-dev17' in markup and 'companion-v0.1.18' in markup
+            assert 'id="nextgen"' in markup and 'IDE-DEVELOPMENT-PLAN.md' in markup
+            assert 'Статические макеты' in markup and 'не снимки работающей IDE' in markup
+            assert 'Новая среда ещё не входит' in markup
+            assert all(f'assets/ide-concept/{name}.png' in markup
+                       for name in ('editor', 'review', 'assistant'))
     js = (SITE / 'site.js').read_text()
     assert not re.search(r'\b(fetch|XMLHttpRequest|localStorage|sessionStorage|eval)\s*[.(]', js), 'Unexpected network/storage/dynamic code'
     css = (SITE / 'styles.css').read_text()
