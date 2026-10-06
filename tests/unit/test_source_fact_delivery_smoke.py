@@ -1,7 +1,7 @@
 """Pure verifier checks; these do not invoke installed Core or native helpers."""
 import importlib.util
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from types import SimpleNamespace
 from uuid import uuid4
 import zipfile
@@ -88,7 +88,7 @@ def test_success_requires_closed_envelope(tmp_path, extra):
 def test_success_rejects_disclosure_canaries(source):
     value = {"result": {"unexpected": source}, "request_id": str(uuid4())}
     with pytest.raises(RuntimeError):
-        smoke.validate_success(value, (json.dumps(value) + "\n").encode(), Path("/owned/private/output"))
+        smoke.validate_success(value, (json.dumps(value) + "\n").encode(), PurePosixPath("/owned/private/output"))
 
 
 @pytest.mark.parametrize("raw", [
@@ -111,7 +111,7 @@ def test_strict_parser_rejects_nonstandard_constants(constant):
 @pytest.mark.parametrize("kind", ["success", "error"])
 @pytest.mark.parametrize("canary", [b"SYNTH_PRIVATE", b"/owned/private/output"])
 def test_raw_disclosure_check_does_not_trust_collapsed_parsed_value(kind, canary):
-    output = Path("/owned/private/output")
+    output = PurePosixPath("/owned/private/output")
     value = {"result": {}, "request_id": str(uuid4())} if kind == "success" else fixed_error()
     raw = (json.dumps(value) + "\n").encode().replace(b"{", b'{"discarded":"' + canary + b'",', 1)
     validator = smoke.validate_success if kind == "success" else smoke.validate_error
@@ -123,14 +123,30 @@ def test_raw_disclosure_check_does_not_trust_collapsed_parsed_value(kind, canary
 def test_decoded_disclosure_check_catches_json_escapes(escaped):
     raw = b'{"value":"' + escaped + b'"}'
     with pytest.raises(RuntimeError, match="escaped into output"):
-        smoke.check_disclosure(smoke.parse_json(raw), raw, Path("/owned/private/output"))
+        smoke.check_disclosure(smoke.parse_json(raw), raw, PurePosixPath("/owned/private/output"))
 
 
 def test_bad_pin_precedes_output_creation_or_process_launch(tmp_path, monkeypatch):
+    # Exercise only the Linux pin-preflight branch, without changing shared sys
+    # state or running Linux-only process code on another host.
+    monkeypatch.setattr(smoke, "sys", SimpleNamespace(platform="linux"))
     wheel = tmp_path / "owned.whl"
     wheel.write_bytes(b"owned bytes")
     output = tmp_path / "new-output"
     monkeypatch.setattr(smoke.subprocess, "Popen", lambda *a, **kw: pytest.fail("No process may start"))
     with pytest.raises(RuntimeError, match="SHA-256"):
         smoke.verify(SimpleNamespace(wheel=wheel, wheel_sha256="0" * 64, output=output))
+    assert not output.exists()
+
+
+@pytest.mark.parametrize("platform", ["win32", "darwin"])
+def test_unsupported_platform_precedes_input_read_output_or_launch(tmp_path, monkeypatch, platform):
+    output = tmp_path / "new-output"
+    monkeypatch.setattr(smoke, "sys", SimpleNamespace(platform=platform))
+    monkeypatch.setattr(smoke, "pinned_bytes",
+                        lambda *args: pytest.fail("No artifact may be read"))
+    monkeypatch.setattr(smoke.subprocess, "Popen",
+                        lambda *args, **kwargs: pytest.fail("No process may start"))
+    with pytest.raises(RuntimeError, match="This smoke is Linux-only"):
+        smoke.verify(SimpleNamespace(output=output))
     assert not output.exists()

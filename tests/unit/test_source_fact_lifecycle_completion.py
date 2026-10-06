@@ -707,30 +707,37 @@ def trace_calls(raw):
         match = re.match(r"^(\d+)\s+([0-9]+\.[0-9]+)\s+(.*)$", line)
         assert match is not None, (number, line[:200])
         pid, stamp, body = int(match[1]), float(match[2]), match[3]
+        start_line = number
         if body.startswith(("--- ", "+++ ")): continue
+        # strace 6.8 uses ??? when it cannot decode the syscall registers.
+        # A sibling exit_group can explain that loss, but cannot recover the
+        # missing observation. Never reinterpret it as a harmless syscall.
+        assert not body.startswith(("???(", "<... ??? resumed>")), ("Unresolved syscall observation", number, line)
         if body.endswith(" <unfinished ...>"):
-            assert pid not in pending
+            assert pid not in pending, ("Duplicate unfinished syscall", number, line)
+            assert re.match(r"^[a-zA-Z0-9_]+\(", body), ("Malformed syscall entry", number, line)
             pending[pid] = (number, stamp, body[:-len(" <unfinished ...>")]); continue
         if body.startswith("<... "):
             resumed = re.match(r"^<\.\.\. ([a-zA-Z0-9_]+) resumed>(.*)$", body)
             assert resumed is not None and pid in pending, line
-            first, began, head = pending.pop(pid)
+            start_line, began, head = pending.pop(pid)
             assert head.startswith(resumed[1] + "(")
             body = head + resumed[2]; stamp = began
+        else:
+            assert pid not in pending, ("Missing syscall resume", number, line)
         parsed = re.match(r"^([a-zA-Z0-9_]+)\((.*)\)\s+=\s+(.*)$", body)
         if parsed is None:
             raise AssertionError((number, body[:300]))
-        calls.append({"line": number, "pid": pid, "stamp": stamp,
+        calls.append({"line": number, "start_line": start_line, "pid": pid, "stamp": stamp,
                       "name": parsed[1], "args": parsed[2], "result": parsed[3]})
-    # An unfinished exit_group can be terminated by +++ exited. No other missing
-    # syscall completion is accepted as complete audit evidence.
+    # A death banner alone cannot complete an unfinished syscall observation.
     assert not pending, pending
     return calls
 
 
 def traced_path(call):
     args = call["args"]; strings = C_STRING.findall(args)
-    assert strings, call
+    assert strings, ("Missing decoded pathname", call)
     path = ast.literal_eval(strings[0])
     assert isinstance(path, str) and "\x00" not in path
     if not path:  # AT_EMPTY_PATH queries use the retained descriptor annotation.
@@ -751,9 +758,40 @@ def fd_path(args):
     return match[1]
 
 
+def absent_loader_probe(call):
+    """One failed metadata lookup, never authority to read a preload file."""
+    return (call["name"] == "access"
+            and call["args"] == '"/etc/ld.so.preload", R_OK'
+            and call["result"] == "-1 ENOENT (No such file or directory)")
+
+
+def trace_marker(call):
+    if call["name"] == "write" and '"RENTGEN_P_TRACE:' in call["args"]:
+        value = ast.literal_eval(C_STRING.findall(call["args"])[0])
+        return value.strip().split(":", 1)[1]
+    return None
+
+
+def check_trace_boundaries(calls):
+    """Never assign a straddling observation to one side of an authority marker."""
+    boundaries = [(call, trace_marker(call)) for call in calls if trace_marker(call) is not None]
+    for call in calls:
+        for boundary, marker in boundaries:
+            if call is boundary: continue
+            # S/E delimit all observations. L/A change locator-open authority;
+            # ordinary pipe reads may span these internal admission markers.
+            sensitive = marker in {"S", "E"} or (
+                call["name"] in {"open", "openat", "openat2"}
+                and (marker == "A" or marker.startswith("L:")))
+            if sensitive:
+                disjoint = call["line"] < boundary["start_line"] or call["start_line"] > boundary["line"]
+                assert disjoint, ("Ambiguous trace boundary", marker, call, boundary)
+
+
 def inspect_trace(trace, config):
     calls = trace_calls(trace); markers = []; active = False; finished = False
-    facts = {"opens": [], "execs": [], "memfds": [], "process_creates": [], "threads": [], "sidecar_mutations": [], "runtime_reads": []}
+    check_trace_boundaries(calls)
+    facts = {"opens": [], "execs": [], "memfds": [], "process_creates": [], "threads": [], "sidecar_mutations": [], "runtime_reads": [], "absent_loader_probes": []}
     accepted = set(); source_paths = {config["case"]["archive"]: "archive"}
     source_paths.update({value: key for key, value in config["images"].items() if not key.endswith("_sha256")})
     state = config["state"]; sidecars = {state + suffix for suffix in ("-wal", "-shm", "-journal")}
@@ -767,6 +805,7 @@ def inspect_trace(trace, config):
         target = Path(path)
         return any(target.is_relative_to(root) and (target.suffix in {".py", ".pyc", ".so"} or ".so." in target.name) for root in runtime_roots)
     def allowed_path(path, call):
+        if absent_loader_probe(call): facts["absent_loader_probes"].append(call); return True
         if path in authorized: return True
         if runtime(path): facts["runtime_reads"].append(path); return True
         # Directory traversals/metadata are not file-content authority. A root
@@ -778,8 +817,8 @@ def inspect_trace(trace, config):
         return False
     for call in calls:
         name, args, result = call["name"], call["args"], call["result"]
-        if name == "write" and '"RENTGEN_P_TRACE:' in args:
-            value = ast.literal_eval(C_STRING.findall(args)[0]); marker = value.strip().split(":", 1)[1]
+        marker = trace_marker(call)
+        if marker is not None:
             markers.append(marker)
             if marker == "S": assert not active and not finished; active = True
             elif marker == "E": assert active; active = False; finished = True

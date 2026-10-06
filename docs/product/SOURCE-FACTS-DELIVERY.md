@@ -173,6 +173,12 @@ platform qualification proposal, not a retry to defeat local restrictions or a
 claim that the prior local run passed. No local ptrace retry/security change is
 authorized by these instructions.
 
+The later hosted push run at `215d1c99` and PR merge run at `72541361` for that
+head both completed 174 passed / 2 failed. Their syscall audits remain unqualified: the narrow absent-loader
+metadata correction does not recover opaque Rust path/descriptor observations,
+authorize Go cgroup reads or explain away an unknown syscall. See the
+[audit interpretation contract and blockers](../../tests/fixtures/source_facts/SYSCALL-AUDIT.md).
+
 ### Ordinary tests and the mandatory supervised lane
 
 Only these three new Linux-only modules are excluded from the existing ordinary
@@ -235,7 +241,8 @@ Upload is scoped and runs on failure as well, with 14-day retention: tool
 identities, exact source/image/probe pins, distribution hashes, Linux Go JSON
 events, pure-test JUnit,
 full176 summary/JUnit/streams, its bounded `progress.jsonl`, named lifecycle
-measurement files and synthetic trace streams, and the installed smoke's receipt, command records/streams and
+measurement files, synthetic trace streams and their scoped `syscall-evidence/config.json`,
+and the installed smoke's receipt, command records/streams and
 before/after fingerprints. Failed runs retain their failure evidence; absent
 later stages remain unrun. Candidate wheel/sdist are development artifacts.
 The progress journal flushes each item and setup/call/teardown start and result,
