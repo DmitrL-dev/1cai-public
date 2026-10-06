@@ -4,7 +4,11 @@ import re
 from uuid import uuid4
 
 from rentgen_core import draft_editing, proposals
-from rentgen_core.diagnostics import BSL_PROFILE_ID, BSL_RUNTIME_MANIFEST_SHA256
+from rentgen_core.diagnostics import (
+    BSL_CONFIG_SHA256,
+    BSL_PROFILE_ID,
+    BSL_RUNTIME_MANIFEST_SHA256,
+)
 from rentgen_core.stdio_mcp import validate_arguments
 
 
@@ -14,27 +18,41 @@ def require(condition, code):
 
 
 def checked(body, receipt, raw):
+    require(type(body) is dict, "ANALYSIS_NOT_VERIFIED")
     require(body.get("receipt") == receipt, "CHECK_RECEIPT_MISMATCH")
-    diagnostic = body["diagnostic"]
-    analysis = diagnostic["analysis"]
+    diagnostic = body.get("diagnostic")
+    require(type(diagnostic) is dict, "ANALYSIS_NOT_VERIFIED")
+    analysis = diagnostic.get("analysis")
+    require(type(analysis) is dict, "ANALYSIS_NOT_VERIFIED")
     require(
-        diagnostic["source_ref"] == receipt["source_ref"]
-        and diagnostic["proposal_content_id"] == receipt["proposal_content_id"]
-        and diagnostic["evidence"] == "ephemeral_unattested"
-        and analysis["status"] == "completed"
+        diagnostic.get("source_ref") == receipt["source_ref"]
+        and diagnostic.get("proposal_content_id") == receipt["proposal_content_id"]
+        and diagnostic.get("evidence") == "ephemeral_unattested"
+        and analysis.get("status") == "completed"
+        and type(analysis.get("exit_code")) is int
         and analysis["exit_code"] == 0
-        and analysis["runtime_verified"] is True
-        and analysis["coverage"] == "exact_one"
-        and analysis["diagnostics_complete"] is True
+        and analysis.get("runtime_verified") is True
+        and analysis.get("coverage") == "exact_one"
+        and analysis.get("diagnostics_complete") is True
+        and type(analysis.get("profile_id")) is str
+        and analysis["profile_id"] == BSL_PROFILE_ID
+        and type(analysis.get("config_sha256")) is str
+        and analysis["config_sha256"] == BSL_CONFIG_SHA256
+        and type(analysis.get("scope")) is str
+        and analysis["scope"] == "single_module_isolated"
+        and type(analysis.get("runtime_manifest_sha256")) is str
         and analysis["runtime_manifest_sha256"] == BSL_RUNTIME_MANIFEST_SHA256
+        and type(analysis.get("candidate_sha256")) is str
         and analysis["candidate_sha256"] == hashlib.sha256(raw).hexdigest()
-        and type(analysis["report_sha256"]) is str
+        and type(analysis.get("candidate_size_bytes")) is int
+        and analysis["candidate_size_bytes"] == len(raw)
+        and type(analysis.get("report_sha256")) is str
         and re.fullmatch(r"[0-9a-f]{64}", analysis["report_sha256"])
-        and type(analysis["diagnostics"]) is list
-        and diagnostic["diagnostics_status"]
+        and type(analysis.get("diagnostics")) is list
+        and diagnostic.get("diagnostics_status")
         == ("diagnostics_present" if analysis["diagnostics"] else "clean")
-        and body["tests"] == {"status": "not_run"}
-        and body["apply"] == {"status": "unavailable"},
+        and body.get("tests") == {"status": "not_run"}
+        and body.get("apply") == {"status": "unavailable"},
         "ANALYSIS_NOT_VERIFIED",
     )
     return body
