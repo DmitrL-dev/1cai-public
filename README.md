@@ -4,12 +4,19 @@
 </picture>
 
 <p align="center">
+  <a href="https://boosty.to/1crentgen">
+    <img src="docs/assets/boosty-support.svg" alt="Поддержать Рентген на Boosty" width="400">
+  </a>
+  <br>
+  Ваша поддержка помогает развивать открытый проект.
+</p>
+
+<p align="center">
   <a href="https://dmitrl-dev.github.io/1cai-public/"><b>Сайт проекта</b></a> ·
   <a href="GETTING_STARTED.md"><b>Попробовать на своём проекте</b></a> ·
   <a href="docs/START_HERE.md">Как это работает</a> ·
   <a href="https://github.com/DmitrL-dev/1cai-public/releases">Скачать</a> ·
-  <a href="ROADMAP.md">Куда движемся</a> ·
-  <a href="https://boosty.to/1crentgen">Поддержать разработку</a>
+  <a href="ROADMAP.md">Куда движемся</a>
 </p>
 
 # Рентген — от кода 1С к проверяемой правке

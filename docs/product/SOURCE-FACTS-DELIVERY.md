@@ -177,7 +177,7 @@ The later hosted push run at `215d1c99` and PR merge run at `72541361` for that
 head both completed 174 passed / 2 failed. Their syscall audits remain unqualified: the narrow absent-loader
 metadata correction does not recover opaque Rust path/descriptor observations,
 authorize Go cgroup reads or explain away an unknown syscall. See the
-[audit interpretation contract and blockers](../../tests/fixtures/source_facts/SYSCALL-AUDIT.md).
+[audit interpretation contract and blockers](https://github.com/DmitrL-dev/1cai-public/blob/b07561e05c70be386edae4e16dd2bbf02d41ebed/tests/fixtures/source_facts/SYSCALL-AUDIT.md).
 
 ### Ordinary tests and the mandatory supervised lane
 

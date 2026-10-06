@@ -14,7 +14,8 @@ import errno
 import hashlib
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+import posixpath
 import re
 import selectors
 import shutil
@@ -736,6 +737,7 @@ def trace_calls(raw):
 
 
 def traced_path(call):
+    # Trace data describes Linux paths, regardless of the interpreter's host OS.
     args = call["args"]; strings = C_STRING.findall(args)
     assert strings, ("Missing decoded pathname", call)
     path = ast.literal_eval(strings[0])
@@ -743,12 +745,12 @@ def traced_path(call):
     if not path:  # AT_EMPTY_PATH queries use the retained descriptor annotation.
         match = re.match(r"\d+<([^>]+)>,\s*\"\"", args)
         return match[1] if match else ""
-    if path.startswith("/"): return os.path.normpath(path)
+    if path.startswith("/"): return posixpath.normpath(path)
     # dirfd annotations are supplied by strace -yy, not guessed from a basename.
     match = re.match(r"(?:\d+|AT_FDCWD)<([^>]+)>,", args)
-    if match: return os.path.normpath(os.path.join(match[1], path))
+    if match: return posixpath.normpath(posixpath.join(match[1], path))
     if call["name"] in {"open", "access", "stat", "lstat", "readlink", "execve", "chdir"} or args.startswith("AT_FDCWD,"):
-        return os.path.normpath(str(ROOT / path))
+        return posixpath.normpath(posixpath.join(ROOT.as_posix(), path))
     raise AssertionError(("Unresolved trace pathname", call))
 
 
@@ -796,13 +798,13 @@ def inspect_trace(trace, config):
     source_paths.update({value: key for key, value in config["images"].items() if not key.endswith("_sha256")})
     state = config["state"]; sidecars = {state + suffix for suffix in ("-wal", "-shm", "-journal")}
     authorized = set(source_paths) | {state} | sidecars
-    directory_ancestors = {str(parent) for item in authorized for parent in Path(item).parents}
-    runtime_roots = {Path(value) for value in config["runtime_roots"]}
+    directory_ancestors = {str(parent) for item in authorized for parent in PurePosixPath(item).parents}
+    runtime_roots = {PurePosixPath(value) for value in config["runtime_roots"]}
     runtime_dirs = {str(parent) for root in runtime_roots for parent in (root, *root.parents)}
     runtime_files = set(TRUSTED_SYSTEM_FILES)
     def runtime(path):
         if path in runtime_files: return True
-        target = Path(path)
+        target = PurePosixPath(path)
         return any(target.is_relative_to(root) and (target.suffix in {".py", ".pyc", ".so"} or ".so." in target.name) for root in runtime_roots)
     def allowed_path(path, call):
         if absent_loader_probe(call): facts["absent_loader_probes"].append(call); return True

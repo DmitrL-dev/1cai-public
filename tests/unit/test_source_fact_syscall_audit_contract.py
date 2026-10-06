@@ -1,6 +1,9 @@
 """Pure synthetic interpretation regressions; no native or tracing execution."""
 import json
-from pathlib import Path
+import ntpath
+from pathlib import Path, PurePosixPath, PureWindowsPath
+import posixpath
+from types import FunctionType, SimpleNamespace
 
 import pytest
 import yaml
@@ -42,6 +45,61 @@ def synthetic_pipeline(*extra):
     events.extend(extra)
     marker("E")
     return trace(*events), config
+
+
+@pytest.fixture(params=["posix", "windows"])
+def path_auditor(request):
+    """Exercise host path flavors without changing os or pathlib globally."""
+    path_type = PureWindowsPath if request.param == "windows" else PurePosixPath
+    path_module = ntpath if request.param == "windows" else posixpath
+    namespace = dict(vars(audit), Path=path_type, ROOT=path_type("/synthetic/checkout"),
+                     os=SimpleNamespace(path=path_module))
+    for name in ("traced_path", "inspect_trace"):
+        namespace[name] = FunctionType(getattr(audit, name).__code__, namespace, name)
+    return SimpleNamespace(**namespace)
+
+
+@pytest.mark.parametrize("name,args,expected", [
+    ("open", '"/synthetic/../synthetic/input_core", O_RDONLY', "/synthetic/input_core"),
+    ("openat", '3</synthetic/nested>, "../input_core", O_RDONLY', "/synthetic/input_core"),
+    ("openat", 'AT_FDCWD</synthetic>, "input_core", O_RDONLY', "/synthetic/input_core"),
+    ("open", '"../input_core", O_RDONLY', "/synthetic/input_core"),
+    ("openat", 'AT_FDCWD, "../input_core", O_RDONLY', "/synthetic/input_core"),
+    ("statx", '3</synthetic/input_core>, "", AT_EMPTY_PATH, STATX_ALL, 0x123', "/synthetic/input_core"),
+    ("open", json.dumps("/synthetic/runtime\\outside.py") + ", O_RDONLY", "/synthetic/runtime\\outside.py"),
+    ("openat", '3</synthetic>, ' + json.dumps("nested\\input_core") + ", O_RDONLY", "/synthetic/nested\\input_core"),
+    ("openat", '3</synthetic>, "C:input_core", O_RDONLY', "/synthetic/C:input_core"),
+])
+def test_traced_paths_use_linux_semantics_on_either_host(path_auditor, name, args, expected):
+    assert path_auditor.traced_path({"name": name, "args": args}) == expected
+
+
+@pytest.mark.parametrize("path,flags,allowed", [
+    ("/synthetic", "O_RDONLY|O_DIRECTORY", True),
+    ("/synthetic/runtime", "O_RDONLY|O_DIRECTORY", True),
+    ("/synthetic/runtime/module.py", "O_RDONLY", True),
+    ("/synthetic/runtime/module.pyc", "O_RDONLY", True),
+    ("/synthetic/runtime/module.so", "O_RDONLY", True),
+    ("/synthetic/runtime/lib.so.6", "O_RDONLY", True),
+    ("/lib/x86_64-linux-gnu/libc.so.6", "O_RDONLY", True),
+    ("/synthetic", "O_RDONLY", False),
+    ("/synthetic/runtime", "O_RDONLY", False),
+    ("/synthetic/runtime/module.txt", "O_RDONLY", False),
+    ("/synthetic/runtime_other/module.py", "O_RDONLY", False),
+    ("/synthetic/RUNTIME/module.py", "O_RDONLY", False),
+    ("/synthetic/runtime\\outside.py", "O_RDONLY", False),
+])
+def test_linux_path_authority_is_host_independent(path_auditor, path, flags, allowed):
+    raw, config = synthetic_pipeline((2, f"open({json.dumps(path)}, {flags}) = 9<{path}>"))
+    if not allowed:
+        with pytest.raises(AssertionError, match="Outside explicit authority") as error:
+            path_auditor.inspect_trace(raw, config)
+        assert str(error.value).startswith(f"('Outside explicit authority', {path!r}, ")
+        return
+    facts = path_auditor.inspect_trace(raw, config)
+    assert facts["opens"][-1]["path"] == path
+    assert facts["execs"] == [{"pid": pid, "path": "/proc/self/fd/6"} for pid in (2, 3, 4)]
+    assert facts["runtime_reads"] == ([] if "O_DIRECTORY" in flags else [path])
 
 
 def test_absent_loader_probe_is_metadata_only_in_complete_interpretation():
