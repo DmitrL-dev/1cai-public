@@ -30,12 +30,26 @@ if sys.flags.optimize != 0:
 PROTOCOL_HASH = "ae22acd2df04bfedb4070e3709ee1c0cd14cb80c2abb7da3084493977dad94dc"
 ROLES = {"input_core", "source_scanner", "source_kernel"}
 HARNESS = {"tests/fixtures/source_facts/boundary_supervisor.py",
+           "tests/fixtures/source_facts/qualification_journal.py",
            "tests/fixtures/source_facts/owned_transport_probe.c",
            "tests/unit/test_source_fact_runtime_boundaries.py",
            "tests/unit/test_source_fact_lifecycle_completion.py",
            "tests/unit/test_source_fact_wire_receipt_gaps.py"}
 SOURCE = Path(__file__).with_name("owned_transport_probe.c")
 _CLEANUP_OWNER = None
+
+# A reviewed harness wall allowance, never a product operation deadline. The
+# former 240-second hosted attempts remain incomplete first-run evidence.
+FULL_BUDGET_VERSION = "source-facts-176-v2"
+FULL_WALL_SECONDS = 600
+POLLING_BUDGET_VERSION = "source-facts-polling-v1"
+POLLING_WALL_SECONDS = 240
+FULL_COST_INVENTORY = {
+    "deliberate_wait_seconds": {"transport_timeouts": 70, "whole_operation": 60,
+                               "cleanup_confirmation": 9},
+    "fresh_cli_bootstrap_processes": 171,
+    "syscall_audit_controls": {"count": 2, "outer_seconds_each": 34},
+}
 
 
 def sha(path):
@@ -355,6 +369,8 @@ def parent_death(binary, protocol):
 def qualify(root, pins_path, pins_hash, output, cancelled, *, polling_correction_only=False):
     """Own a fresh process group until all cleanup is complete, including success."""
     required_run_variants = 4 if polling_correction_only else 176
+    wall_budget = POLLING_WALL_SECONDS if polling_correction_only else FULL_WALL_SECONDS
+    budget_version = POLLING_BUDGET_VERSION if polling_correction_only else FULL_BUDGET_VERSION
     if not sys.flags.isolated or not sys.dont_write_bytecode:
         raise RuntimeError("Start qualification with the venv Python -I -B")
     root = root.absolute(); output = output.absolute(); pins_path = pins_path.absolute()
@@ -383,7 +399,10 @@ def qualify(root, pins_path, pins_hash, output, cancelled, *, polling_correction
         if cancelled(): raise RuntimeError("Interrupted before qualification launch")
         # -I keeps the intended venv but excludes user-site/environment imports.
         # Only the exact clean reviewed checkout is deliberately added to sys.path.
-        bootstrap = "import runpy,sys;sys.path.insert(0,sys.argv.pop(1));runpy.run_module('pytest',run_name='__main__')"
+        bootstrap = ("import sys;root=sys.argv.pop(1);"
+                     "sys.path[:0]=[root,root+'/tests/fixtures/source_facts'];"
+                     "from qualification_journal import run_pytest;"
+                     "raise SystemExit(run_pytest(sys.argv.pop(1),sys.argv[1:]))")
         # A single fixed regression scope, not a caller-supplied test selector.
         # It never executes the locally denied ptrace/strace gate cases.
         test_paths = (["tests/unit/test_source_fact_lifecycle_completion.py::test_completion_observed_authorization_poll_intervals"]
@@ -392,6 +411,7 @@ def qualify(root, pins_path, pins_hash, output, cancelled, *, polling_correction
                           "tests/unit/test_source_fact_lifecycle_completion.py",
                           "tests/unit/test_source_fact_wire_receipt_gaps.py"])
         child = subprocess.Popen([sys.executable, "-I", "-B", "-c", bootstrap, str(root),
+                                  str(output / "progress.jsonl"),
                                   "-q", "-ra", "-p", "no:cacheprovider", "-c", str(root / "pyproject.toml"),
                                   "--confcutdir=" + str(root),
                                   "--basetemp=" + str(output / "tmp/pytest"),
@@ -405,7 +425,7 @@ def qualify(root, pins_path, pins_hash, output, cancelled, *, polling_correction
         for name in counts:
             stream = getattr(child, name); os.set_blocking(stream.fileno(), False)
             selector.register(stream, selectors.EVENT_READ, name)
-        end = began + 240
+        end = began + wall_budget
         while True:
             if cancelled(): break
             if time.monotonic() >= end:
@@ -492,6 +512,8 @@ def qualify(root, pins_path, pins_hash, output, cancelled, *, polling_correction
                "full_required_variants": 176, "full176_qualified": passed and not polling_correction_only,
                "counts": full_counts, "run_counts": counts,
                "pytest_exit": returncode, "wall_seconds": time.monotonic() - began,
+               "harness_budget_version": budget_version, "harness_wall_seconds": wall_budget,
+               "predeclared_cost_inventory": None if polling_correction_only else FULL_COST_INVENTORY,
                "timeout": timed_out, "interrupted": cancelled(), "cleanup_unconfirmed": errors,
                "residual_owned_descendants": sorted(leftover), "pins_sha256": pins_hash}
     (output / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")

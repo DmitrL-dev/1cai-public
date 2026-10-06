@@ -108,6 +108,7 @@ jobs:
                   raise RuntimeError('Go notice provenance differs: ' + notice['source_path'])
           harness = [
               'tests/fixtures/source_facts/boundary_supervisor.py',
+              'tests/fixtures/source_facts/qualification_journal.py',
               'tests/fixtures/source_facts/owned_transport_probe.c',
               'tests/unit/test_source_fact_runtime_boundaries.py',
               'tests/unit/test_source_fact_lifecycle_completion.py',
@@ -141,7 +142,7 @@ jobs:
       - name: Pure host and delivery-verifier regressions
         run: |
           cd "$SOURCE_ROOT"
-          "$BUILD_ROOT/tools/bin/python" -B -m pytest -q -p no:cacheprovider tests/unit/test_source_fact_host.py tests/unit/test_source_fact_delivery_smoke.py --basetemp="$EVIDENCE/pure-tmp" --junitxml="$EVIDENCE/pure.xml"
+          "$BUILD_ROOT/tools/bin/python" -B -m pytest -q -p no:cacheprovider tests/unit/test_source_fact_host.py tests/unit/test_source_fact_delivery_smoke.py tests/unit/test_source_fact_journal_contract.py tests/unit/test_source_fact_ci_contract.py --basetemp="$EVIDENCE/pure-tmp" --junitxml="$EVIDENCE/pure.xml"
       - name: Required default supervised 176-variant qualification
         run: |
           "$BUILD_ROOT/tools/bin/python" -I -B "$SOURCE_ROOT/tests/fixtures/source_facts/boundary_supervisor.py" --root "$SOURCE_ROOT" --pins "$EVIDENCE/pins.json" --pins-sha256 "$(cat "$EVIDENCE/pins.sha256")" --output "$EVIDENCE/full176"
@@ -199,6 +200,7 @@ jobs:
             ${{ env.EVIDENCE }}/full176/results.xml
             ${{ env.EVIDENCE }}/full176/stdout.log
             ${{ env.EVIDENCE }}/full176/stderr.log
+            ${{ env.EVIDENCE }}/full176/progress.jsonl
             ${{ env.EVIDENCE }}/full176/tmp/pytest/**/observed-polls.json
             ${{ env.EVIDENCE }}/full176/tmp/pytest/**/whole-operation.json
             ${{ env.EVIDENCE }}/full176/tmp/pytest/**/cleanup-timeout.json

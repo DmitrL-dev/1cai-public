@@ -118,7 +118,7 @@ build outputs and evidence in sibling directories. No test cache or bytecode may
 appear in the reviewed checkout: the supervisor rejects ignored files too.
 The fixed same-job builds produce exactly three product images and one C fault
 probe. The pins record their exact hashes, build commands and compiler identities,
-the five fixed harness source hashes, probe source hash, frozen protocol hash,
+the six fixed harness source hashes, probe source hash, frozen protocol hash,
 source commit, strace hash and required denominator 176. `source-sha256.json`
 records the complete tracked file inventory at that same commit.
 
@@ -145,6 +145,25 @@ does the installed-wheel smoke run with the exact same three image pins and the
 new wheel hash. Its 11 recorded commands must pass too. Downloaded artifacts alone
 are not acceptance: inspect the job conclusion, full176 summary/JUnit and the
 installed receipt for the same source commit.
+
+The full run's fixed outer harness budget is version `source-facts-176-v2`,
+600 seconds, recorded in each summary with its predeclared cost inventory.
+The inventory includes approximately 139 seconds of deliberate timeout waits
+(70 transport, 60 whole-operation and 9 cleanup), 171 fresh CLI bootstrap
+processes across 57 isolated project fixtures, and two audit controls with
+34-second outer bounds each. Bootstrap/import and fixture overhead must fit in
+the remaining allowance. The polling-only diagnostic keeps its prior 240-second
+budget. None of this changes the product's 60-second operation, 10/5-second
+helper, 2-second cleanup or 100 ms polling criteria, or any of the 176 variants.
+
+The first hosted runs at the former 240-second harness cap remain failed and
+incomplete. They stopped after 127 and 120 progress dots, before syscall-audit
+variants 133–134; both retained successful pre-hello gate records and measured
+60-second timeout evidence. Cumulative fixture/bootstrap overhead is a supported
+explanation for the exhausted aggregate allowance, not a measured attribution
+of every missing second or proof that the unrun audit cases would pass. The
+phase journal supports attribution on a newly reviewed run; neither the larger
+harness allowance nor this diagnosis qualifies the candidate by itself.
 
 The historical first local full run was **168 passed / 8 failed**: four polling
 failures, two pre-hello ptrace gate timeouts and two strace EPERM failures. The
@@ -215,10 +234,16 @@ Designer/runtime or whole-product Linux acceptance.
 Upload is scoped and runs on failure as well, with 14-day retention: tool
 identities, exact source/image/probe pins, distribution hashes, Linux Go JSON
 events, pure-test JUnit,
-full176 summary/JUnit/streams, named lifecycle measurement files and synthetic
-trace streams, and the installed smoke's receipt, command records/streams and
+full176 summary/JUnit/streams, its bounded `progress.jsonl`, named lifecycle
+measurement files and synthetic trace streams, and the installed smoke's receipt, command records/streams and
 before/after fingerprints. Failed runs retain their failure evidence; absent
 later stages remain unrun. Candidate wheel/sdist are development artifacts.
+The progress journal flushes each item and setup/call/teardown start and result,
+including monotonic timestamps, measured phase durations and outcomes. It is
+limited to 1 MiB and records no captured output, fixture data or assertion text.
+It survives an outer timeout before JUnit finalization; any journal write error
+fails the invocation. It is diagnostic evidence only: partial events never count
+as accepted variants or replace the required complete 176-case JUnit report.
 Only after both required gates succeed are the three native images staged with
 the root MIT license, the Go 1.25.5 notice/provenance inventory and both complete
 Rust notice/provenance/lock bundles.
