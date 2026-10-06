@@ -15,7 +15,6 @@
 
 static int events;
 static int input_seen;
-static void emit(char event) { (void)write(events, &event, 1); }
 static void pause_ms(long ms) {
     struct timespec delay = {ms / 1000, (ms % 1000) * 1000000};
     while (nanosleep(&delay, &delay) && errno == EINTR) {}
@@ -29,6 +28,9 @@ static int write_all(int fd, const void *data, size_t size) {
         p += n; size -= (size_t)n;
     }
     return 1;
+}
+static void emit(char event) {
+    if (!write_all(events, &event, 1)) _exit(3);
 }
 static void length(uint32_t n) {
     unsigned char h[4] = {n & 255, (n >> 8) & 255, (n >> 16) & 255, (n >> 24) & 255};
