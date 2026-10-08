@@ -125,7 +125,7 @@ function createViews(vscode, client, context) {
   subscribe(vscode.workspace.onDidCloseTextDocument(doc => {
     if (doc.uri.scheme === 'rentgen-view') documents.delete(doc.uri.authority);
   }));
-  async function openSelection(token) {
+  async function openSelection(token, isCurrent = () => true) {
     let record;
     try { record = sourceHandles.get(token); } catch { record = draftHandles.get(token); }
     if (record.kind === 'source') {
@@ -136,22 +136,29 @@ function createViews(vscode, client, context) {
       return [uri];
     }
     if (!['draft', 'version'].includes(record.kind)) throw new Error('UNKNOWN_VIEW_HANDLE');
+    if (!isCurrent()) return null;
     const saved = record.receipt, name = posix.basename(saved.source_ref.relative_path);
     const originalName = `[${saved.source_ref.snapshot.snapshot_id.slice(0, 12)}] ${name}`;
     const basename = `[v${saved.revision}] ${name}`;
     const original = document({kind: 'source', ref: saved.source_ref, basename: originalName}, originalName);
-    let candidate;
+    let candidate, displayed = false;
     try {
       candidate = document({kind: 'draft', receipt: saved, basename}, basename);
       // Validate both documents before displaying the comparison.
+      if (!isCurrent()) return null;
       await vscode.workspace.openTextDocument(original);
+      if (!isCurrent()) return null;
       await vscode.workspace.openTextDocument(candidate);
+      if (!isCurrent()) return null;
       await vscode.commands.executeCommand('vscode.diff', original, candidate,
         `${saved.title} · v${saved.revision} · ${saved.source_ref.snapshot.snapshot_id.slice(0, 12)}`, {preview: false});
-    } catch (error) {
-      documents.delete(original.authority);
-      if (candidate) documents.delete(candidate.authority);
-      throw error;
+      // A submitted display cannot be revoked when the caller later changes.
+      displayed = true;
+    } finally {
+      if (!displayed) {
+        documents.delete(original.authority);
+        if (candidate) documents.delete(candidate.authority);
+      }
     }
     return [original, candidate];
   }
@@ -161,7 +168,7 @@ function createViews(vscode, client, context) {
       catch (error) { void vscode.window.showErrorMessage('Рентген: ' + error.message); throw error; }
     }));
   }
-  register('rentgen.openSelection', openSelection);
+  register('rentgen.openSelection', token => openSelection(token));
   register('rentgen.refreshSources', refreshSources);
   register('rentgen.refreshDrafts', () => refreshDrafts());
   register('rentgen.moreSources', async () => { await loadSources(true); sourceEvents.fire(); });
@@ -182,7 +189,11 @@ function createViews(vscode, client, context) {
   return Object.freeze({refreshSources, refreshDrafts, search, sources: loadSources, drafts: loadDrafts, history: loadHistory,
     selectedSource(token) { const record = sourceHandles.get(token); if (record.kind !== 'source') throw new Error('UNKNOWN_VIEW_HANDLE'); return record.ref; },
     selectedDraft(token) { const record = draftHandles.get(token); if (!['draft','version'].includes(record.kind)) throw new Error('UNKNOWN_VIEW_HANDLE'); return record.receipt; },
-    openDraft(receipt) { return openSelection(row('version', {receipt}, draftHandles).token); },
+    async openDraft(receipt, isCurrent = () => true) {
+      const token = row('version', {receipt}, draftHandles).token;
+      try { return await openSelection(token, isCurrent); }
+      finally { draftHandles.delete(token); }
+    },
   });
 }
 module.exports = { createViews };
