@@ -142,6 +142,8 @@ def _parser():
         "proposal-test",
         "proposal-test-result",
         "draft-save",
+        "draft-start",
+        "draft-edit",
         "draft-get",
         "draft-list",
         "draft-history",
@@ -360,21 +362,33 @@ def _parser():
                 command.add_argument("--draft-id", required=True, action=_Once)
             if name in {
                 "draft-save",
+                "draft-start",
+                "draft-edit",
                 "draft-archive",
                 "draft-restore",
                 "draft-receipt",
             }:
                 command.add_argument("--operation-id", required=True, action=_Once)
-            if name in {"draft-save", "draft-archive", "draft-restore"}:
+            if name in {"draft-save", "draft-edit", "draft-archive", "draft-restore"}:
                 command.add_argument(
                     "--expected-revision", type=int, required=True, action=_Once
                 )
-            if name == "draft-save":
+            if name in {"draft-save", "draft-start", "draft-edit"}:
                 command.add_argument("--snapshot", required=True, action=_Once)
+            if name == "draft-save":
                 command.add_argument(
                     "--proposal-json", type=Path, required=True, action=_Once
                 )
+            if name in {"draft-save", "draft-start"}:
                 command.add_argument("--title", required=True, action=_Once)
+            if name == "draft-start":
+                command.add_argument(
+                    "--source-ref-json", type=Path, required=True, action=_Once
+                )
+            if name == "draft-edit":
+                command.add_argument(
+                    "--edits-json", type=Path, required=True, action=_Once
+                )
             if name == "draft-get":
                 command.add_argument("--revision", type=int, action=_Once)
             if name in {"draft-list", "draft-history"}:
@@ -1254,6 +1268,8 @@ def _execute(args, *, proposal_scope=None):
             "proposal-create",
             "proposal-diff",
             "draft-save",
+            "draft-start",
+            "draft-edit",
             "draft-archive",
             "draft-restore",
         }
@@ -1563,12 +1579,54 @@ def _target_principal(path):
 
 
 def _draft_command(args, runtime, ctx):
-    from . import drafts
+    from . import draft_editing, drafts
 
     # Reject unsupported schema before reading any caller-selected local file.
     with ctx.state.transaction(ctx.principal) as tx:
         drafts._require(
-            tx, write=args.command in {"draft-save", "draft-archive", "draft-restore"}
+            tx,
+            write=args.command in {
+                "draft-save", "draft-start", "draft-edit", "draft-archive", "draft-restore"
+            },
+        )
+    if args.command in {"draft-start", "draft-edit"}:
+        drafts._uuid(args.draft_id)
+        drafts._uuid(args.operation_id)
+        selected = SnapshotRef(args.project, args.snapshot, args.snapshot)
+        if args.command == "draft-start":
+            drafts._title(args.title)
+            value = dict(
+                _fields(
+                    _json_file(args.source_ref_json),
+                    ("snapshot", "layer_id", "relative_path", "raw_sha256"),
+                )
+            )
+            value["snapshot"] = _snapshot_ref(value["snapshot"])
+            ref = SourceRef(**value)
+        else:
+            drafts._revision(args.expected_revision, minimum=1)
+            edits = _json_file(args.edits_json)
+            draft_editing.validate_edits(edits)
+            _, saved = draft_editing._stored(ctx, args.draft_id, args.expected_revision)
+            ref = saved.source_ref
+        if ref.snapshot != selected:
+            raise CoreError(
+                "SOURCE_REF_MISMATCH",
+                "SourceRef does not match selected project/snapshot",
+            )
+        runtime = replace(
+            runtime,
+            graph_reader_factory=runtime.graph_reader_factory or _graph_factory(),
+        )
+        pinned = runtime.resolve(ctx.principal, args.project, args.snapshot)
+        if args.command == "draft-start":
+            return draft_editing.start_draft(
+                pinned, ref, draft_id=args.draft_id, title=args.title,
+                operation_id=args.operation_id,
+            )
+        return draft_editing.edit_draft(
+            pinned, args.draft_id, expected_revision=args.expected_revision,
+            operation_id=args.operation_id, edits=edits,
         )
     if args.command == "draft-save":
         raw = _proposal_input(ctx, args.proposal_json, 1536 * 1024)
