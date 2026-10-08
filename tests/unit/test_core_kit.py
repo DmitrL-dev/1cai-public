@@ -1,10 +1,13 @@
 """Delivery guards are checked before installing any kit content."""
 import hashlib
+import re
 import importlib.util
 from pathlib import Path
 import zipfile
 
 import pytest
+from packaging.requirements import Requirement
+from packaging.utils import canonicalize_name
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -74,12 +77,41 @@ def test_selected_mcp_lock_is_pinned_in_public_runtime_lock(modules):
     assert all(key in full and hashes <= full[key] for key, hashes in selected.items())
 
 
-def test_runtime_lock_source_manifest_is_published():
+def test_runtime_lock_source_manifest_is_published(modules):
     source = ROOT / "requirements-rentgen.txt"
     lock = ROOT / "requirements/locks/product-py311-windows.txt"
     assert source.is_file()
     first_line = lock.read_text(encoding="utf-8").splitlines()[1]
     assert "requirements-rentgen.txt" in first_line
+    # Check the declared source/lock relationship without resolving or installing
+    # the full profile. Core/MCP/test profiles remain separate installation paths.
+    requirements = {}
+    for line in source.read_text(encoding="utf-8").splitlines():
+        value = line.split("#", 1)[0].strip()
+        if not value:
+            continue
+        requirement = Requirement(value)
+        assert requirement.url is None and requirement.marker is None
+        name = canonicalize_name(requirement.name)
+        assert name not in requirements
+        requirements[name] = requirement
+    locked = modules["kit_inputs"].lock_entries(lock)
+    problems = []
+    for name, requirement in requirements.items():
+        versions = [version for package, version in locked if package == name]
+        if len(versions) != 1 or not requirement.specifier.contains(versions[0]):
+            problems.append(f"{requirement}: locked versions {versions}")
+    direct_roots, package = set(), None
+    for line in lock.read_text(encoding="utf-8").splitlines():
+        match = re.match(r"^([A-Za-z0-9_.-]+)==", line)
+        if match:
+            package = canonicalize_name(match[1])
+        if line.lstrip().startswith("#") and "-r requirements-rentgen.txt" in line:
+            assert package is not None
+            direct_roots.add(package)
+    if direct_roots != set(requirements):
+        problems.append(f"Direct-root difference: {sorted(direct_roots ^ set(requirements))}")
+    assert not problems, "\n".join(problems)
 
 
 @pytest.mark.parametrize(
