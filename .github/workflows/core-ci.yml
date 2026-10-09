@@ -97,6 +97,28 @@ jobs:
           python -m pip download --require-hashes --only-binary=:all: -r requirements/locks/product-build-py311-windows.txt --dest output/build-wheels
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python scripts/release/build_core_kit.py --output output/core-kit --runtime-wheelhouse output/mcp-wheels --build-wheelhouse output/build-wheels
+      - name: Verify installed cross-client draft editing
+        timeout-minutes: 4
+        env:
+          CI_CHECKOUT_SHA: ${{ github.sha }}
+          CI_TRIGGER_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          PYTHONUTF8: '1'
+        shell: pwsh
+        run: |
+          python scripts/verification/draft_companion/verify.py --python output/core-kit/offline-install/environment/Scripts/python.exe --scanner output/core-kit/rentgen-core-0.1.0.dev17-windows-py311/bsl-scan.exe --checkout . --expected-checkout $env:CI_CHECKOUT_SHA --trigger-head $env:CI_TRIGGER_HEAD --output output/draft-companion-evidence
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Upload cross-client draft evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: draft-companion-evidence
+          path: |
+            output/draft-companion-evidence/acceptance.json
+            output/draft-companion-evidence/source-binding.json
+            output/draft-companion-evidence/scenario.json
+            output/draft-companion-evidence/node.log
+          if-no-files-found: warn
+          retention-days: 14
       - name: Verify installed snapshot comparison
         run: python scripts/verification/verify_snapshot_diff_delivery.py --python output/core-kit/offline-install/environment/Scripts/python.exe --scanner output/core-kit/rentgen-core-0.1.0.dev17-windows-py311/bsl-scan.exe --output output/verification
       - name: Verify installed observer across processes
