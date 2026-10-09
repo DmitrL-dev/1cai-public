@@ -59,6 +59,11 @@ function receipt(value, project) {
   sourceRef(value.source_ref, project);
   return value;
 }
+function draftTitle(value) {
+  requireValue(typeof value === 'string' && value.trim() && [...value].length <= 240 &&
+    Buffer.byteLength(value, 'utf8') <= 960 && !controls.test(value), 'INVALID_DRAFT_TITLE');
+  return value;
+}
 function draftText(value, project, id, revision) {
   const saved = receipt(value?.receipt, project);
   const proposal = value.proposal;
@@ -115,7 +120,7 @@ function createClient(config, { execute, trusted = () => true }) {
       selected = snapshot(selected, config.project_id);
       requireValue(typeof query === 'string' && [...query].length <= 256 && Buffer.byteLength(query) <= 1024 && !controls.test(query), 'INVALID_SEARCH');
       const args = ['--snapshot', selected.snapshot_id, '--kind', 'module', '--limit', '100'];
-      if (query) args.push('--query', query);
+      if (query) args.push('--query='+query);
       if (cursor !== null) { requireValue(typeof cursor === 'string' && cursor.length <= 16384); args.push('--cursor', cursor); }
       const value = await call('source-list', args);
       requireValue(Array.isArray(value?.entries) && value.entries.length <= 100 &&
@@ -128,7 +133,7 @@ function createClient(config, { execute, trusted = () => true }) {
     },
     async source(ref) {
       ref = sourceRef(ref, config.project_id);
-      const value = await call('source-read', ['--snapshot', ref.snapshot.snapshot_id, '--layer', ref.layer_id, '--path', ref.relative_path, '--base64']);
+      const value = await call('source-read', ['--snapshot', ref.snapshot.snapshot_id, '--layer='+ref.layer_id, '--path='+ref.relative_path, '--base64']);
       return sourceText(value, ref);
     },
     async drafts({ status = 'active', after = null } = {}) {
@@ -178,9 +183,20 @@ function createClient(config, { execute, trusted = () => true }) {
       receipt(base,config.project_id);requireValue(uuid.test(operation)&&hash.test(contentId));
       requireValue(typeof proposalFile==='string'&&/^[A-Za-z]:\\/.test(proposalFile)&&!controls.test(proposalFile),'INVALID_EDIT_PATH');
       const value=await call('draft-save',['--draft-id',base.draft_id,'--operation-id',operation,'--expected-revision',String(base.revision),
-        '--snapshot',base.source_ref.snapshot.snapshot_id,'--proposal-json',proposalFile,'--title',base.title]);
+        '--snapshot',base.source_ref.snapshot.snapshot_id,'--proposal-json',proposalFile,'--title='+base.title]);
       receipt(value,config.project_id);sameRef(value.source_ref,base.source_ref,config.project_id);
       requireValue(value.draft_id===base.draft_id&&value.revision===base.revision+1&&value.operation_id===operation&&value.proposal_content_id===contentId,'DRAFT_REVISION_MISMATCH');
+      return value;
+    },
+    async createDraft(ref, id, title, proposalFile, contentId, operation) {
+      ref=sourceRef(ref,config.project_id);draftTitle(title);
+      requireValue(uuid.test(id)&&uuid.test(operation)&&hash.test(contentId));
+      requireValue(typeof proposalFile==='string'&&/^[A-Za-z]:\\/.test(proposalFile)&&!controls.test(proposalFile),'INVALID_EDIT_PATH');
+      const value=await call('draft-save',['--draft-id',id,'--operation-id',operation,'--expected-revision','0',
+        '--snapshot',ref.snapshot.snapshot_id,'--proposal-json',proposalFile,'--title='+title]);
+      receipt(value,config.project_id);sameRef(value.source_ref,ref,config.project_id);
+      requireValue(value.draft_id===id&&value.revision===1&&value.operation_id===operation&&value.proposal_content_id===contentId&&
+        value.title===title&&value.outcome==='committed'&&value.action==='draft.saved'&&value.status==='active','DRAFT_REVISION_MISMATCH');
       return value;
     },
     async bslCheck({receipt: saved, proposal, file}) {
@@ -245,4 +261,4 @@ function createClient(config, { execute, trusted = () => true }) {
     },
   });
 }
-module.exports = { createClient, sourceText, draftText, sourceRef, profileConfig, MAX_OUTPUT };
+module.exports = { createClient, sourceText, draftText, sourceRef, draftTitle, profileConfig, MAX_OUTPUT };

@@ -1,4 +1,8 @@
 """Load an owned EDT fixture into a fresh 1C base and verify its round trip."""
+
+if not __debug__:
+    raise RuntimeError("Verification requires assertions; do not use Python -O")
+
 import argparse
 import hashlib
 import json
@@ -12,8 +16,6 @@ sys.path.insert(0, str(ROOT))
 from rentgen_core.native_platform import CONTEXTS, NativePlatform  # noqa: E402
 
 FIXTURE = ROOT / "packaging/fixtures/edt-metadata-v1"
-if not __debug__:
-    raise RuntimeError("Verification requires assertions; do not use Python -O")
 
 
 def digest(path):

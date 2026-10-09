@@ -1,18 +1,30 @@
 'use strict';
+const {isDeepStrictEqual}=require('node:util');
 function createTestsUI(vscode,service,views,context,enabled){
  let busy=false;
  const check=()=>{if(!vscode.workspace.isTrusted)throw new Error('TRUST_REQUIRED');if(!enabled)throw new Error('TEST_REQUIRES_DEV8');};
  const status={passed:'пройдены',failed:'есть ошибки',incomplete:'выполнены не все',not_run:'не запущены из-за ошибок компиляции'};
- async function show(result){
-  check();let message;
+ async function show(result,current=()=>true){
+  check();if(!current())return result;let message;
   if(result.status==='completed')message=`Тесты исходного кода: ${status[result.report.tests.baseline.status]}. Тесты предложенной версии: ${status[result.report.tests.candidate.status]}.`;
   else if(result.status==='failed')message=`Технический сбой проверки: ${result.failure.code}.`;
   else message='Завершённый результат пока не сохранён. Повторного запуска не было.';
-  const document=await vscode.workspace.openTextDocument({language:'json',content:JSON.stringify(result,null,2)});check();await vscode.window.showTextDocument(document,{preview:false});
+  const document=await vscode.workspace.openTextDocument({language:'json',content:JSON.stringify(result,null,2)});
+  check();if(!current())return result;
+  await vscode.window.showTextDocument(document,{preview:false});
+  check();if(!current())return result;
   void vscode.window.showInformationMessage('Рентген: '+message);return result;
  }
  async function start(selection,profileId){
-  check();if(busy||service.running)throw new Error('TEST_RUNNING');const receipt=views.selectedDraft(typeof selection==='string'?selection:selection?.token);busy=true;
+  check();if(busy||service.running)throw new Error('TEST_RUNNING');
+  const token=typeof selection==='string'?selection:selection?.token;
+  const receipt=views.selectedDraft(token);busy=true;
+  // Refresh/new-save invalidation controls presentation only. The exact
+  // historical result remains available without repeating the test run.
+  const current=()=>{
+   try{return isDeepStrictEqual(views.selectedDraft(token),receipt);}
+   catch(error){if(error?.message==='UNKNOWN_VIEW_HANDLE')return false;throw error;}
+  };
   try{
    const profiles=await service.profiles();check();
    if(!profiles.length){void vscode.window.showInformationMessage('Рентген: нет включённых тестовых профилей. Администратор проекта может зарегистрировать профиль командой test-profile-register.');return null;}
@@ -23,7 +35,7 @@ function createTestsUI(vscode,service,views,context,enabled){
    const result=await vscode.window.withProgress({location:vscode.ProgressLocation.Notification,title:`Рентген: тесты версии ${receipt.revision}`,cancellable:true},async(_,token)=>{
     if(token.isCancellationRequested)throw new Error('TEST_CANCELLED');const subscription=token.onCancellationRequested(()=>service.cancel());
     try{return await service.start(receipt,selected.profile_id);}finally{subscription.dispose();}
-   });return await show(result);
+   });return await show(result,current);
   }finally{busy=false;await vscode.commands.executeCommand('setContext','rentgen.testsRunning',false);}
  }
  async function inspect(id){

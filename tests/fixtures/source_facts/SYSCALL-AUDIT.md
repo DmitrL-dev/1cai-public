@@ -49,7 +49,9 @@ All four syscall-audit traces contain the absent loader lookup. Beyond it:
 
 The absent-loader correction alone therefore cannot qualify any of these four
 traces. A different observation design would need separate review and clearly
-stated coverage; privilege changes and local tracing retries are not authorized.
+stated coverage. The original runs did not authorize privilege changes or local
+tracing retries. The separately approved, single-use Actions exception below
+does not change that historical result or grant ongoing tracing privileges.
 
 ## Split-call boundary correction
 
@@ -78,8 +80,9 @@ the remaining audit contract.
 
 ## Evidence retention and pure tests
 
-CI retains only `**/syscall-evidence/config.json` within the synthetic full-run
-fixture tree, alongside the existing raw trace/controller outputs. The config
+Within the synthetic full-run fixture tree, CI retains only
+`**/syscall-evidence/config.json`, `trace-capabilities.json` and
+`python-capabilities.json`, alongside the existing raw trace/controller outputs. The config
 contains synthetic project paths/ID, state/archive/image paths and hashes, case
 selection and runtime roots. It contains no profile bytes or credentials. This
 is not a recursive upload of project configurations or user profiles.
@@ -93,3 +96,28 @@ must remain unchanged.
 and the source-facts CI pure step. It exercises the exact allowance, split-call
 pairing, rejected alternatives, unknown/opaque observations and scoped evidence
 retention without executing native helpers, ptrace or strace.
+
+## One-shot complete-memory observation diagnostic
+
+The next guarded push from `8cd77af` may use the separately pinned, test-only
+`owned_trace_launcher.c` on a disposable Actions runner. It is never installed,
+has no setuid bit or file capabilities, and changes no host sysctl or sudoers
+file. The short sudo setup reduces to the invoking non-root UID/GID with empty
+groups and bounding set, then retains exactly CAP_SYS_PTRACE in the tracer's
+permitted/effective/inheritable/ambient sets. A fixed child clears all capability
+sets before Python and verifies the actual tracer's post-exec state. Both use
+fixed clean environments. No repository token or customer input is passed.
+
+Capability and Python post-exec receipts are retained. The complete raw trace
+still rejects opaque pathnames/descriptors and unidentified calls. Namespace
+creation is rejected; Rust non-dumpability is checked rather than disabled. The
+original 176 cases, time limits, S/E authority assertions and historical failed
+results remain. This diagnostic is not a standing grant to future CI jobs.
+
+The existing authority interpreter covers the source operation between S/E,
+including native loader/runtime startup. Python bootstrap before S and cleanup
+after E are recorded in the raw trace but are not yet fully authority-validated.
+Complete bootstrap authority validation, reviewed exact Go runtime-file policy
+and genuine timeout/cancellation cleanup through the sudo monitor remain required
+before claiming whole-process qualification. Complete decoding is a prerequisite,
+not acceptance of those remaining scopes.

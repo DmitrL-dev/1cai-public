@@ -86,6 +86,13 @@ def checked_pins(path, expected, root):
     for relative, expected_hash in pins["harness_sha256"].items():
         assert sha(root / relative) == expected_hash, "Unreviewed harness source"
     assert pins["expected_variants"] == 176, "Required denominator changed"
+    if "trace_launcher" in pins:
+        launcher = pins["trace_launcher"]
+        assert launcher["contract"] == "owned_trace_cap_sys_ptrace_v1"
+        assert Path(launcher["path"]).is_absolute()
+        assert re.fullmatch(r"[0-9a-f]{64}", launcher["sha256"])
+        assert sha(launcher["path"]) == launcher["sha256"], "Unreviewed trace capability launcher"
+        assert launcher["source_sha256"] == sha(root / "tests/fixtures/source_facts/owned_trace_launcher.c")
     assert pins["strace"]["path"] == "/usr/bin/strace"
     assert re.fullmatch(r"[0-9a-f]{64}", pins["strace"]["sha256"])
     assert sha(pins["strace"]["path"]) == pins["strace"]["sha256"], "Unreviewed trace tool"

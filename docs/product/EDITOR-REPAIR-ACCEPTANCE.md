@@ -45,10 +45,13 @@ VSIX даёт идентичные байты; сборка из изменён�
   исходников, обоих сеансов редактора и неизменного исходного checkout.
 - `rentgen-companion-0.1.4.vsix` — итоговый пакет.
 
-Повторяемые сценарии: `scripts/verification/run_companion_host.py` с режимами
-`repair` и `repair-inspect`, `verify_managed_repair.py`,
-`verify_companion_repair_delivery.py`. Они рассчитаны на отдельный искусственный
-профиль из `prepare_editor_diagnostic.py`, а не на рабочую конфигурацию.
+Исторический прогон использовал `run_companion_host.py` с режимами `repair` и
+`repair-inspect`, а также локальные `prepare_editor_diagnostic.py` и
+`verify_companion_repair_delivery.py`. Последние два файла не опубликованы в
+этом checkout; это запись происхождения опыта, а не доступная команда подготовки.
+Текущий публичный `scripts/verification/verify_managed_repair.py` проверяет
+[отдельный узкий контракт публичной фикстуры](LOCAL-REPAIR.md#публичная-проверка-передачи-исключения).
+Он не подтверждает заново исторический профиль и результат этого отчёта.
 
 Проверки платформы 1С отложены пользователем до установки клиента. Применения
 изменений и интеграции Spectorn в этом адаптере нет. Диагностика неподписанная;

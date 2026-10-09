@@ -5,7 +5,7 @@ const {validateBsl,PROFILE}=require('../lib/bsl-result.cjs');
 const project='00000000-0000-4000-8000-000000000001';
 const receipt={project_id:project,draft_id:'00000000-0000-4000-8000-000000000002',revision:3,proposal_content_id:'b'.repeat(64),source_ref:{snapshot:{project_id:project,snapshot_id:'a'.repeat(64),manifest_hash:'a'.repeat(64)},layer_id:'base',relative_path:'Module.bsl',raw_sha256:'c'.repeat(64)}};
 const proposal={content_id:receipt.proposal_content_id,replacement:{raw_sha256:'d'.repeat(64),size_bytes:12}};
-function report(){return {diagnostic:{source_ref:receipt.source_ref,proposal_content_id:receipt.proposal_content_id,diagnostics_status:'clean',tests_status:'not_run',apply_status:'unavailable',evidence:'ephemeral_unattested',analysis:{candidate_sha256:proposal.replacement.raw_sha256,candidate_size_bytes:12,profile_id:PROFILE,status:'completed',scope:'single_module_isolated',runtime_verified:true,coverage:'exact_one',diagnostics:[],diagnostics_complete:true,total_diagnostics:0}},tests:{status:'not_run'},apply:{status:'unavailable'}};}
+function report(){return {diagnostic:{source_ref:receipt.source_ref,proposal_content_id:receipt.proposal_content_id,diagnostics_status:'clean',tests_status:'not_run',apply_status:'unavailable',evidence:'ephemeral_unattested',analysis:{candidate_sha256:proposal.replacement.raw_sha256,candidate_size_bytes:12,profile_id:PROFILE,config_sha256:'e56b86d4187a301a6e17e7e46906d4e7fcf6e84166d648684b6d5f1bd540af72',runtime_manifest_sha256:'2835e1a268e67be020e99ecd8d2a64c7b390e3752ed99c89d71a5340eb792ca5',status:'completed',scope:'single_module_isolated',runtime_verified:true,coverage:'exact_one',diagnostics:[],diagnostics_complete:true,total_diagnostics:0}},tests:{status:'not_run'},apply:{status:'unavailable'}};}
 async function fixture(t){
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'rentgen-bsl-'));
  t.after(()=>fs.rm(root,{recursive:true,force:true}));
@@ -66,3 +66,20 @@ for (const core_version of ['0.1.0.dev16', '0.1.0.dev18']) test(`${core_version}
  assert.deepEqual(args.slice(3),['proposal-check','--registry','C:\\state.sqlite3','--project',project,'--snapshot',receipt.source_ref.snapshot.snapshot_id,'--proposal-json',file,'--diagnostics-profile',PROFILE]);
  await assert.rejects(client.bslCheck({receipt,proposal,file:'relative.json'}),/INVALID_BSL_PATH/);
 });
+
+for (const field of ['config_sha256','runtime_manifest_sha256']) {
+ for (const change of ['different','missing']) {
+  test(`saved BSL evidence with ${change} ${field} is rejected without replay`,async t=>{
+   const f=await fixture(t),result=await f.service.start(receipt);
+   const file=path.join(f.root,'bsl-runs',result.run_id,'result.json');
+   const altered=structuredClone(result);
+   if(change==='missing')delete altered.report.diagnostic.analysis[field];
+   else altered.report.diagnostic.analysis[field]='e'.repeat(64);
+   const bytes=JSON.stringify(altered);await fs.writeFile(file,bytes);
+   const reopened=createBslService(f);
+   await assert.rejects(reopened.inspect(result.run_id),/BSL_RESULT_MISMATCH/);
+   assert.equal(await fs.readFile(file,'utf8'),bytes);assert.equal(f.calls(),1);
+   assert.deepEqual((await reopened.list()).map(x=>x.id),[result.run_id]);
+  });
+ }
+}

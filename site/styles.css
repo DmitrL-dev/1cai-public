@@ -2121,3 +2121,26 @@ h1>span {
     border:1px solid Highlight;
   }
 }
+
+/* Public roadmap concepts. Static images remain labelled as non-working mockups. */
+.nextgen-section { border-top:1px solid var(--line); }
+.nextgen-disclosure { max-width:850px; margin:28px 0; line-height:1.7; }
+.nextgen-section figure { margin:0; min-width:0; }
+.nextgen-section figure a { display:block; border-radius:10px; overflow:hidden; background:#0b1016; }
+.nextgen-section figure a:focus-visible { outline:3px solid currentColor; outline-offset:5px; }
+.nextgen-section img { display:block; width:100%; height:auto; }
+.nextgen-section figcaption { padding:16px 0 28px; line-height:1.6; font-size:14px; }
+.nextgen-section figcaption span { display:block; margin-bottom:5px; font-weight:700; font-size:12px; letter-spacing:.05em; }
+.concept-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; }
+.nextgen-goals { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:32px; margin:22px 0 38px; }
+.nextgen-goals article { border-top:1px solid var(--line); padding-top:22px; }
+.nextgen-goals h3 { font-size:24px; line-height:1.2; margin:16px 0; }
+.nextgen-goals p,.nextgen-footer p { line-height:1.7; }
+.nextgen-footer { display:flex; gap:36px; align-items:center; justify-content:space-between; }
+.nextgen-footer p { max-width:700px; }
+.nextgen-footer .button { flex-shrink:0; }
+@media(max-width:800px) {
+  .concept-pair,.nextgen-goals { grid-template-columns:1fr; }
+  .nextgen-footer { display:block; }
+  .nextgen-footer .button { margin-top:20px; white-space:normal; }
+}

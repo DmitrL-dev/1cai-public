@@ -332,3 +332,14 @@ def test_complete_same_pid_call_cannot_leapfrog_an_unfinished_call():
 def test_malformed_unfinished_entry_is_rejected_before_pairing():
     with pytest.raises(AssertionError, match="Malformed syscall entry"):
         audit.trace_calls(trace((2, "not a syscall <unfinished ...>")))
+
+
+@pytest.mark.parametrize("name,args", [
+    ("clone", "child_stack=NULL, flags=CLONE_NEWUSER|SIGCHLD"),
+    ("clone3", "{flags=CLONE_NEWUSER|CLONE_VM|CLONE_SIGHAND|CLONE_THREAD}, 88"),
+    ("clone", "child_stack=NULL, flags=CLONE_NEWNET|SIGCHLD"),
+])
+def test_namespace_creation_cannot_reacquire_authority(name, args):
+    raw, config = synthetic_pipeline((2, f"{name}({args}) = 9"))
+    with pytest.raises(AssertionError, match="Namespace-creating clone"):
+        audit.inspect_trace(raw, config)

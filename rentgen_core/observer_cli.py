@@ -92,10 +92,16 @@ def main(argv=None):
             raise CoreError(
                 "INVALID_ARGUMENT", "--snapshot-id is only valid for record-findings"
             )
-        from rentgen_graph.snapshot_adapter import (
-            RentgenCapturedGoBuilder,
-            RentgenGraphReaderFactory,
-        )
+        principal = current_windows_principal()
+        try:
+            from rentgen_graph.snapshot_adapter import (
+                RentgenCapturedGoBuilder,
+                RentgenGraphReaderFactory,
+            )
+        except ImportError as exc:
+            raise CoreError(
+                "GRAPH_ADAPTER_UNAVAILABLE", "Install the supported rentgen_graph package"
+            ) from exc
 
         runtime = LocalRuntime(
             args.registry.resolve(),
@@ -103,7 +109,7 @@ def main(argv=None):
             RentgenCapturedGoBuilder(args.scanner.resolve()) if args.scanner else None,
         )
         observer = Observer(
-            runtime, current_windows_principal(), args.project, args.profile
+            runtime, principal, args.project, args.profile
         )
         if args.action == "init":
             observer.initialize()

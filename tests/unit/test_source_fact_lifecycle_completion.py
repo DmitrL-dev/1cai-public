@@ -631,6 +631,20 @@ clone clone3 fork vfork execve execveat wait4 waitid exit exit_group restart_sys
 def trace_host(config_path, event_fd):
     import rentgen_core.rust_input as rust_input
     config = json.loads(Path(config_path).read_text()); event_fd = int(event_fd)
+    if "trace_launcher" in config:
+        expected = json.loads(Path(config_path).with_name("trace-capabilities.json").read_text())
+        status = dict(line.split(":", 1) for line in Path("/proc/self/status").read_text().splitlines() if ":" in line)
+        assert expected["tracee_pid"] == os.getpid() and expected["tracer_pid"] == os.getppid()
+        assert int(status["TracerPid"]) == os.getppid()
+        assert int(status["NoNewPrivs"]) == 1
+        assert all(int(status[key], 16) == 0 for key in ("CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb"))
+        assert set(map(int, status["Uid"].split())) == {expected["uid"]} == {os.getuid()}
+        assert set(map(int, status["Gid"].split())) == {expected["gid"]} == {os.getgid()}
+        assert not status["Groups"].strip()
+        Path(config_path).with_name("python-capabilities.json").write_text(json.dumps({
+            "pid": os.getpid(), "parent_pid": os.getppid(), "uid": os.getuid(), "gid": os.getgid(),
+            "capabilities": {key: status[key].strip() for key in ("CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb")},
+            "no_new_privs": 1}))
     project = config["project"]
     from rentgen_core.local import LocalRuntime
     from rentgen_core.local_identity import current_local_principal
@@ -675,10 +689,23 @@ def trace_controller(config_path, trace_path):
     subreaper(); child = None; reader = writer = None; errors = []; result = None
     try:
         reader, writer = os.pipe()
-        command = ["/usr/bin/strace", "-f", "-qq", "-ttt", "-yy", "-s", "4096", "-o", str(trace_path),
-                   "--", *driver_argv("trace-host", config_path, writer)]
+        config = json.loads(Path(config_path).read_text())
+        launcher = config.get("trace_launcher")
+        if launcher is None:
+            command = ["/usr/bin/strace", "-f", "-qq", "-ttt", "-yy", "-s", "4096", "-o", str(trace_path),
+                       "--", *driver_argv("trace-host", config_path, writer)]
+            transport = {"pass_fds": (writer,), "stdin": subprocess.DEVNULL}
+        else:
+            assert launcher["contract"] == "owned_trace_cap_sys_ptrace_v1"
+            assert prior.digest(launcher["path"]) == launcher["sha256"]
+            command = ["/usr/bin/sudo", "--non-interactive", "--", launcher["path"],
+                       "--tracer", str(config_path), str(trace_path)]
+            # sudo closes descriptors >=3. The host does not consume stdin;
+            # fd0 is this private writable marker pipe, never terminal input.
+            transport = {"pass_fds": (), "stdin": writer}
+        trace_env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8"}
         def bound_trace_file(): resource.setrlimit(resource.RLIMIT_FSIZE, (32 * 1024 * 1024, 32 * 1024 * 1024))
-        child = subprocess.Popen(command, pass_fds=(writer,), stdin=subprocess.DEVNULL,
+        child = subprocess.Popen(command, **transport, env=trace_env,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                  preexec_fn=bound_trace_file)
         os.close(writer); writer = None
@@ -838,6 +865,7 @@ def inspect_trace(trace, config):
             assert re.fullmatch(r"/proc/self/fd/[0-9]+", path) and result.startswith("0"), call
             facts["execs"].append({"pid": call["pid"], "path": path})
         if name in {"clone", "clone3", "fork", "vfork"} and not result.startswith("-1"):
+            assert "CLONE_NEW" not in args, ("Namespace-creating clone", call)
             if "CLONE_THREAD" in args:
                 assert "CLONE_VM" in args and "CLONE_SIGHAND" in args, call
                 facts["threads"].append(call)
@@ -901,6 +929,8 @@ def test_completion_owned_pipeline_syscall_authority_audit(request, images, sour
               "state": str(ctx.state.path), "case": {key: str(value) if isinstance(value, Path) else value for key, value in case.items()},
               "images": {key: str(value) if isinstance(value, Path) else value for key, value in images.items()},
               "runtime_roots": sorted({sysconfig.get_path("stdlib"), sysconfig.get_path("platstdlib"), str(ROOT / "rentgen_core")})}
+    if "trace_launcher" in qualification_preflight:
+        config["trace_launcher"] = qualification_preflight["trace_launcher"]
     config_path = folder / "config.json"; config_path.write_text(json.dumps(config))
     trace_path = folder / "strace.log"
     before = preserved_files(portable_project, case, images)
@@ -916,7 +946,28 @@ def test_completion_owned_pipeline_syscall_authority_audit(request, images, sour
     result = json.loads(Path(str(trace_path) + ".stdout").read_bytes())
     assert result["kernel"]["observations"]["selector"]["state"] == "observed"
     assert result["kernel"]["receiver_binding"] == result["kernel"]["runtime_relation"] == "unknown"
+    if "trace_launcher" in config:
+        capability = json.loads(config_path.with_name("trace-capabilities.json").read_text())
+        python_capability = json.loads(config_path.with_name("python-capabilities.json").read_text())
+        assert capability["uid"] == python_capability["uid"] == os.getuid() != 0
+        assert capability["gid"] == python_capability["gid"] == os.getgid() != 0
+        assert capability["tracee_pid"] == python_capability["pid"]
+        assert capability["tracer_pid"] == python_capability["parent_pid"]
+        assert capability["tracer_capability"] == "0000000000080000"
+        assert capability["tracer_bounding"] == capability["tracee_capabilities"] == 0
+        assert capability["no_new_privs"] is True and python_capability["no_new_privs"] == 1
+        assert set(python_capability["capabilities"]) == {"CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb"}
+        assert all(int(value, 16) == 0 for value in python_capability["capabilities"].values())
     facts = inspect_trace(raw.decode(), config)
+    if "trace_launcher" in config:
+        calls = trace_calls(raw.decode())
+        marker_pids = {call["pid"] for call in calls if trace_marker(call) in {"S", "E"}}
+        assert marker_pids == {capability["tracee_pid"]}
+        rust_pids = {facts["execs"][index]["pid"] for index in (0, 2)}
+        dump_calls = [call for call in calls if call["name"] == "prctl" and "PR_SET_DUMPABLE" in call["args"]]
+        assert {call["pid"] for call in dump_calls} == rust_pids
+        assert all(call["args"] in {"PR_SET_DUMPABLE, SUID_DUMP_DISABLE", "PR_SET_DUMPABLE, 0"}
+                   and call["result"] == "0" for call in dump_calls)
     facts["trace_sha256"] = hashlib.sha256(raw).hexdigest()
     facts["source_before"] = before; facts["source_after"] = preserved_files(portable_project, case, images)
     record(folder, "authority-audit", facts)

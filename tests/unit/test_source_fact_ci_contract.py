@@ -79,3 +79,20 @@ def test_default_supervisor_owns_all_three_modules_and_176_denominator():
     assert isinstance(count, ast.IfExp) and isinstance(count.test, ast.Name)
     assert count.test.id == "polling_correction_only"
     assert ast.literal_eval(count.orelse) == 176
+
+
+def test_capability_observation_is_one_exact_push_not_a_standing_pr_grant():
+    job = workflow("source-facts-ci.yml")["jobs"]["linux-source-facts"]
+    guard = job["env"]["RENTGEN_ONE_SHOT_TRACE"]
+    for required in ("github.repository == 'DmitrL-dev/1cai-public'", "github.event_name == 'push'",
+                     "github.ref == 'refs/heads/codex/linux-source-facts-qualification-20261006'",
+                     "github.event.before == '8cd77af51518da43560e48e10d08c3ec4f795acd'", "github.run_attempt == 1"):
+        assert required in guard
+    steps = job["steps"]
+    checkout = next(step for step in steps if step.get("uses", "").startswith("actions/checkout@"))
+    assert checkout["with"]["persist-credentials"] is False
+    pin = next(step["run"] for step in steps if step.get("name") == "Pin exact same-job source, images, probe and trace tool")
+    assert "if os.environ.get('RENTGEN_ONE_SHOT_TRACE') == 'true':" in pin
+    assert "pins['trace_launcher'] = launcher" in pin
+    all_runs = "\n".join(step.get("run", "") for step in steps)
+    assert "setcap " not in all_runs and "ptrace_scope" not in all_runs and "sudoers" not in all_runs

@@ -20,13 +20,14 @@
     ]},
     "viewsWelcome": [
       {"view": "rentgen.sources", "contents": "Откройте подготовленный профиль через launch.ps1. Для чтения проекта требуется доверие к рабочей папке.", "when": "!rentgen.ready"},
-      {"view": "rentgen.drafts", "contents": "Сохранённые агентом черновики появятся после подключения профиля Рентгена.", "when": "!rentgen.ready"}
+      {"view": "rentgen.drafts", "contents": "Сохранённые черновики появятся после подключения профиля Рентгена.", "when": "!rentgen.ready"}
     ],
     "commands": [
       {"command":"rentgen.testDraft","title":"Рентген: выполнить тесты версии","icon":"$(testing-run-icon)","enablement":"rentgen.ready && rentgen.testsAvailable && !rentgen.testsRunning"},
       {"command":"rentgen.testResult","title":"Рентген: результат тестов","icon":"$(history)","enablement":"rentgen.ready && rentgen.testsAvailable && !rentgen.testsRunning"},
       {"command":"rentgen.bslCheck","title":"Рентген: проверить версию BSL","icon":"$(checklist)","enablement":"rentgen.ready && rentgen.bslAvailable && !rentgen.bslRunning"},
       {"command":"rentgen.bslResult","title":"Рентген: результат проверки BSL","icon":"$(history)","enablement":"rentgen.ready && rentgen.bslAvailable && !rentgen.bslRunning"},
+      {"command":"rentgen.editSource","title":"Рентген: создать ручной черновик модуля","icon":"$(edit)","enablement":"rentgen.ready && rentgen.editAvailable"},
       {"command":"rentgen.editDraft","title":"Рентген: редактировать версию черновика","icon":"$(edit)","enablement":"rentgen.ready && rentgen.editAvailable"},
       {"command":"rentgen.saveDraftEdit","title":"Рентген: сохранить версию черновика","icon":"$(save)","enablement":"rentgen.ready && rentgen.editAvailable"},
       {"command":"rentgen.editResult","title":"Рентген: продолжить редактирование или получить результат","icon":"$(history)","enablement":"rentgen.ready && rentgen.editAvailable"},
@@ -43,6 +44,7 @@
     "menus": {"commandPalette": [
       {"command":"rentgen.testDraft","when":"false"},
       {"command":"rentgen.bslCheck","when":"false"},
+      {"command":"rentgen.editSource","when":"false"},
       {"command":"rentgen.editDraft","when":"false"},
       {"command": "rentgen.repairSource", "when": "false"},
       {"command": "rentgen.platformCheck", "when": "false"}
@@ -60,6 +62,7 @@
     ], "view/item/context": [
       {"command":"rentgen.testDraft","when":"view == rentgen.drafts && (viewItem == draft || viewItem == version) && rentgen.testsAvailable","group":"inline@4"},
       {"command":"rentgen.bslCheck","when":"view == rentgen.drafts && (viewItem == draft || viewItem == version) && rentgen.bslAvailable","group":"inline@3"},
+      {"command":"rentgen.editSource","when":"view == rentgen.sources && viewItem == rentgen.source && rentgen.editAvailable","group":"inline@2"},
       {"command":"rentgen.editDraft","when":"view == rentgen.drafts && (viewItem == draft || viewItem == version) && rentgen.editAvailable","group":"inline@2"},
       {"command": "rentgen.platformCheck", "when": "view == rentgen.drafts && (viewItem == draft || viewItem == version) && rentgen.platformAvailable", "group": "inline@1"},
       {"command": "rentgen.repairSource", "when": "view == rentgen.sources && viewItem == rentgen.source && rentgen.repairAvailable", "group": "inline@1"}

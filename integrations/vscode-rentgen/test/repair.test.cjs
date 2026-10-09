@@ -188,7 +188,7 @@ test('clean analysis requires matching model context, saved bytes, coverage and 
   const digest=createHash('sha256').update(candidate,'utf8').digest('hex');
   const report={status:'analysis_clean',receipt:saved,candidate_sha256:digest,model:{num_ctx:32768},tests:{status:'not_run'},apply:{status:'unavailable'},
     after:{receipt:saved,diagnostic:{source_ref:ref,proposal_content_id:saved.proposal_content_id,evidence:'ephemeral_unattested',
-      analysis:{candidate_sha256:digest,status:'completed',exit_code:0,runtime_verified:true,diagnostics_complete:true,coverage:'exact_one',diagnostics:[]}}}};
+      analysis:{candidate_sha256:digest,candidate_size_bytes:Buffer.byteLength(candidate,'utf8'),profile_id:'bsl-ls-1.0.5-temurin21.0.12.1-win64-bmp-default-v1',config_sha256:'e56b86d4187a301a6e17e7e46906d4e7fcf6e84166d648684b6d5f1bd540af72',runtime_manifest_sha256:'2835e1a268e67be020e99ecd8d2a64c7b390e3752ed99c89d71a5340eb792ca5',scope:'single_module_isolated',status:'completed',exit_code:0,runtime_verified:true,diagnostics_complete:true,coverage:'exact_one',diagnostics:[]}}}};
   let output, receipt=saved;
   const runner={dispose(){},async execute(_,args){output=args[args.indexOf('--output')+1];await fs.mkdir(output);
     await fs.writeFile(path.join(output,'events.jsonl'),JSON.stringify({phase:'edit_requested',project_id:project,draft_id:draft,operation_id:operation})+'\n');
@@ -213,3 +213,42 @@ test('clean analysis requires matching model context, saved bytes, coverage and 
   receipt={...saved,operation_id:randomUUID()};await assert.rejects(service.reconcile(run.id),/REPAIR_RECEIPT_MISMATCH/);
   service.dispose();
 });
+
+for (const status of ['analysis_clean','diagnostics_present']) {
+for (const field of ['profile_id','config_sha256','runtime_manifest_sha256','scope','candidate_size_bytes']) {
+ for (const change of ['different','missing']) {
+  test(`reopened ${status} repair keeps history unverified with ${change} analyzer dependency ${field}`,async t=>{
+   const root=await fs.mkdtemp(path.join(os.tmpdir(),'rentgen-repair-dependency-'));
+   t.after(()=>fs.rm(root,{recursive:true,force:true}));
+   const id=randomUUID(),operation=randomUUID(),draft=randomUUID(),candidate='Сообщить("Привет");';
+   const saved={project_id:project,draft_id:draft,operation_id:operation,revision:2,source_ref:ref,proposal_content_id:'c'.repeat(64)};
+   const digest=createHash('sha256').update(candidate,'utf8').digest('hex');
+   const analysis={candidate_sha256:digest,candidate_size_bytes:Buffer.byteLength(candidate,'utf8'),
+    profile_id:'bsl-ls-1.0.5-temurin21.0.12.1-win64-bmp-default-v1',scope:'single_module_isolated',
+    config_sha256:'e56b86d4187a301a6e17e7e46906d4e7fcf6e84166d648684b6d5f1bd540af72',
+    runtime_manifest_sha256:'2835e1a268e67be020e99ecd8d2a64c7b390e3752ed99c89d71a5340eb792ca5',
+    status:'completed',exit_code:0,runtime_verified:true,diagnostics_complete:true,coverage:'exact_one',diagnostics:[]};
+   if(status==='diagnostics_present')analysis.diagnostics=[{code:'UnusedLocalVariable',severity:'Warning',message:'fixture',start:{line:0,character:0},end:{line:0,character:1}}];
+   const report={status,receipt:saved,candidate_sha256:digest,model:{num_ctx:32768},
+    tests:{status:'not_run'},apply:{status:'unavailable'},after:{receipt:saved,diagnostic:{source_ref:ref,
+    proposal_content_id:saved.proposal_content_id,evidence:'ephemeral_unattested',analysis}}};
+   const folder=path.join(root,'repair-runs',id),out=path.join(folder,'result');await fs.mkdir(out,{recursive:true});
+   await fs.writeFile(path.join(folder,'request.json'),JSON.stringify({id,project_id:project,source_ref:ref,created_at:new Date().toISOString(),context_tokens:32768}));
+   const journal=JSON.stringify({phase:'edit_requested',project_id:project,draft_id:draft,operation_id:operation})+'\n';
+   await fs.writeFile(path.join(out,'events.jsonl'),journal);
+   const file=path.join(out,'result.json');await fs.writeFile(file,JSON.stringify(report));
+   const client={receipt:async()=>saved,draft:async(id,revision)=>{assert.equal(id,draft);assert.equal(revision,2);return {receipt:saved,text:candidate};},
+    head:async()=>{throw Error('Historical receipt must not depend on current head');}};
+   const options={root,extensionRoot:root,config,client,runnerFactory:()=>{throw Error('Reconciliation must not run analysis');}};
+   const previous=createRepairService(options);assert.equal((await previous.reconcile(id)).status,status);previous.dispose();
+   if(change==='missing')delete analysis[field];else analysis[field]=field==='candidate_size_bytes'?candidate.length:'previous-dependency';
+   const bytes=JSON.stringify(report);await fs.writeFile(file,bytes);
+   const reopened=createRepairService(options);t.after(()=>reopened.dispose());
+   const result=await reopened.reconcile(id);
+   assert.equal(result.status,'saved_unverified');assert.deepEqual(result.receipt,saved);
+   assert.equal(await fs.readFile(file,'utf8'),bytes);assert.equal(await fs.readFile(path.join(out,'events.jsonl'),'utf8'),journal);
+   assert.equal((await reopened.list()).length,1);
+  });
+ }
+}
+}

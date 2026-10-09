@@ -23,6 +23,9 @@ jobs:
       CARGO_BUILD_JOBS: '1'
       CARGO_INCREMENTAL: '0'
       GOTOOLCHAIN: local
+      # One approved disposable-run diagnostic, never inherited by PR/fork jobs.
+      # Its immutable source is reviewed before advancing this exact old head.
+      RENTGEN_ONE_SHOT_TRACE: ${{ github.repository == 'DmitrL-dev/1cai-public' && github.event_name == 'push' && github.ref == 'refs/heads/codex/linux-source-facts-qualification-20261006' && github.event.before == '8cd77af51518da43560e48e10d08c3ec4f795acd' && github.run_attempt == 1 }}
     defaults:
       run:
         shell: bash
@@ -79,6 +82,10 @@ jobs:
           cargo +1.92.0 build --locked --release --manifest-path "$SOURCE_ROOT/rust/diagnostic-core/Cargo.toml" --target-dir "$BUILD_ROOT/diagnostic" --bin rentgen-source-facts
           go -C "$SOURCE_ROOT/go" build -mod=readonly -trimpath -o "$BUILD_ROOT/images/bsl-source-facts" ./cmd/bsl-source-facts
           cc -std=c11 -O2 -Wall -Wextra -Werror "$SOURCE_ROOT/tests/fixtures/source_facts/owned_transport_probe.c" -o "$BUILD_ROOT/images/owned-transport-probe"
+          cc -std=c11 -O2 -Wall -Wextra -Werror -Wformat=2 -D_FORTIFY_SOURCE=3 -fstack-protector-strong \
+            -DRENTGEN_PYTHON=\"$BUILD_ROOT/tools/bin/python\" -DRENTGEN_SOURCE_ROOT=\"$SOURCE_ROOT\" \
+            "$SOURCE_ROOT/tests/fixtures/source_facts/owned_trace_launcher.c" -o "$BUILD_ROOT/images/owned-trace-launcher"
+          chmod 0700 "$BUILD_ROOT/images/owned-trace-launcher"
           install -m 0700 "$BUILD_ROOT/input/release/rentgen-input-core" "$BUILD_ROOT/images/rentgen-input-core"
           install -m 0700 "$BUILD_ROOT/diagnostic/release/rentgen-source-facts" "$BUILD_ROOT/images/rentgen-source-facts"
           chmod 0700 "$BUILD_ROOT/images/bsl-source-facts" "$BUILD_ROOT/images/owned-transport-probe"
@@ -132,6 +139,15 @@ jobs:
               'expected_variants': 176, 'harness_sha256': {name: digest(root / name) for name in harness},
               'images': images, 'probe': probe,
               'strace': {'path': '/usr/bin/strace', 'sha256': digest(pathlib.Path('/usr/bin/strace'))}}
+          if os.environ.get('RENTGEN_ONE_SHOT_TRACE') == 'true':
+              source = root / 'tests/fixtures/source_facts/owned_trace_launcher.c'
+              launcher = image('owned-trace-launcher', ['cc', '-std=c11', '-O2', '-Wall', '-Wextra', '-Werror',
+                  '-Wformat=2', '-D_FORTIFY_SOURCE=3', '-fstack-protector-strong',
+                  '-DRENTGEN_PYTHON="' + str(build / 'tools/bin/python') + '"',
+                  '-DRENTGEN_SOURCE_ROOT="' + str(root) + '"', str(source),
+                  '-o', str(build / 'images/owned-trace-launcher')], 'cc')
+              launcher.update(contract='owned_trace_cap_sys_ptrace_v1', source_sha256=digest(source))
+              pins['trace_launcher'] = launcher
           path = evidence / 'pins.json'
           path.write_text(json.dumps(pins, indent=2) + '\n')
           (evidence / 'pins.sha256').write_text(digest(path) + '\n')
@@ -210,6 +226,8 @@ jobs:
             ${{ env.EVIDENCE }}/full176/tmp/pytest/**/gate.stderr
             ${{ env.EVIDENCE }}/full176/tmp/pytest/**/strace.log*
             ${{ env.EVIDENCE }}/full176/tmp/pytest/**/syscall-evidence/config.json
+            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/syscall-evidence/trace-capabilities.json
+            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/syscall-evidence/python-capabilities.json
             ${{ env.EVIDENCE }}/full176/tmp/pytest/**/controller.stdout
             ${{ env.EVIDENCE }}/full176/tmp/pytest/**/controller.stderr
             ${{ env.EVIDENCE }}/installed-wheel/receipt.json
