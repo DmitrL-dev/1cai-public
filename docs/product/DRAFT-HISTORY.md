@@ -132,6 +132,57 @@ operation ID. При `DRAFT_CONFLICT` изменения другого авто
 прочитайте текущую версию, согласуйте изменения и только затем создайте новое
 намерение сохранения. Нельзя автоматически подменять ожидаемую ревизию.
 
+### Создание и точечная правка без полного proposal JSON
+
+Новые команды `draft-start` и `draft-edit` относятся к проверяемому source
+checkout после dev17; опубликованный Windows-комплект dev17 ими не дополнен.
+Они используют то же ядро, что и [MCP-команды большого черновика](LARGE-DRAFT-MCP.md).
+Нужны Windows, schema4 и права `project:read` + `source:edit`. На неподдерживаемой
+ОС следует `CAPABILITY_UNAVAILABLE` до чтения выбранных файлов и состояния.
+
+`draft-start` принимает полный SourceRef из `source-list`, сохранённый в
+UTF-8 JSON без BOM, и создаёт v1 с точными байтами исходника до 1 MiB. Выберите
+новый draft ID, сохраните его, title, snapshot, SourceRef и operation ID до вызова.
+`--expected-revision` для start не передаётся: ядро всегда ожидает 0.
+
+```powershell
+& $rentgenCommand draft-start --registry $registry --project $projectId --snapshot $snapshotId --source-ref-json $sourceRefFile --draft-id $draftId "--title=$title" --operation-id $startOperation
+if ($LASTEXITCODE -ne 0) { throw 'Проверьте квитанцию исходного startOperation; не создавайте новый ID.' }
+```
+
+`draft-edit` принимает JSON-массив точных замен. Например, `edits.json`:
+
+```json
+[{"old_text":"Возврат СтараяСумма;","new_text":"Возврат НоваяСумма;"}]
+```
+
+Сначала прочитайте выбранную версию и подготовьте JSON без BOM: в PowerShell
+используйте `[Text.UTF8Encoding]::new($false)`, как в примере выше. До команды
+сохраните exact edits JSON, snapshot, draft ID, expected revision и новый
+operation ID. Предыдущий `startOperation` для другой записи не используйте.
+
+```powershell
+& $rentgenCommand draft-edit --registry $registry --project $projectId --snapshot $snapshotId --draft-id $draftId --expected-revision 1 --edits-json $editsFile --operation-id $editOperation
+if ($LASTEXITCODE -ne 0) { throw 'Проверьте квитанцию исходного editOperation; не повторяйте запись с новым ID.' }
+& $rentgenCommand draft-get --registry $registry --project $projectId --draft-id $draftId --revision 2
+```
+
+Все 1–16 замен ищутся в исходной expected revision. Каждое совпадение должно быть
+единственным; пересечения, отсутствие фрагмента и неоднозначность отклоняются.
+Строки ограничены 8192 UTF-8 байтами, входной JSON — 1 MiB, полный кандидат —
+1 MiB. BOM сохраняется ядром отдельно; его не включают в old_text. CRLF/LF и
+Unicode не нормализуются: используйте фактические переводы строк выбранной
+версии. Пустой old_text допустим только для одной вставки в пустой кандидат.
+
+`DRAFT_CONFLICT` требует повторного чтения и согласования изменения; ожидаемую
+ревизию нельзя автоматически повышать. Для потерянного ответа используйте
+`draft-receipt` с исходным operation ID. Повтор идентичного намерения, включая
+исходную expected revision, возвращает прежнюю квитанцию даже после более новой
+версии. Массивы замен с одинаковым каноническим результатом эквивалентны;
+изменённый canonical запрос с тем же ID получает `OPERATION_CONFLICT`.
+Snapshot должен совпадать с SourceRef исходной версии черновика. Ни одна из этих
+команд не применяет правку к исходникам и не объявляет её прошедшей BSL/1С проверку.
+
 ### Если ответ потерян
 
 В новой консоли снова укажите установленный `$rentgenCommand`. Прочитайте
