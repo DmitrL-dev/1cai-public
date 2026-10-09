@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rentgen-core"
-version = "0.1.0.dev17"
+version = "0.1.0.dev18"
 description = "Local 1C source snapshots and reviewable drafts; early-access core"
 readme = "packaging/core/README.md"
 requires-python = ">=3.11"
@@ -45,6 +45,8 @@ only-include = [
   "rentgen_graph",
   "rentgen_diagnostics",
   "go/go.mod",
+  "go/THIRD_PARTY_NOTICES.md",
+  "go/licenses",
   "go/cmd",
   "go/internal",
   "go/pkg",
@@ -62,6 +64,21 @@ only-include = [
   "docs/product/PLATFORM-SUPPORT.md",
   "docs/product/PORTABLE-CORE.md",
   "docs/product/RUST-INPUT-CORE.md",
+  "docs/product/SOURCE-FACTS.md",
+  "docs/product/SOURCE-FACTS-PROTOCOL.md",
+  "docs/product/DIAGNOSTIC-KERNEL.md",
+  "docs/product/DIAGNOSTIC-KERNEL-QUALIFICATION.json",
+  "docs/product/NARROW-DIAGNOSTICS-PLAN.md",
+  "rust/diagnostic-core/Cargo.toml",
+  "rust/diagnostic-core/Cargo.lock",
+  "rust/diagnostic-core/DEPENDENCY_PROVENANCE.json",
+  "rust/diagnostic-core/README.md",
+  "rust/diagnostic-core/PROTOCOL.md",
+  "rust/diagnostic-core/SOURCE_STATUS.md",
+  "rust/diagnostic-core/THIRD_PARTY_NOTICES.md",
+  "rust/diagnostic-core/licenses",
+  "rust/diagnostic-core/src",
+  "rust/diagnostic-core/tests",
   "docs/product/evidence/linux-baseline-classification-20261005.json",
   "rust/input-core/Cargo.toml",
   "rust/input-core/Cargo.lock",
@@ -74,6 +91,8 @@ only-include = [
   "rust/input-core/tests",
   "scripts/verification/benchmark_portable_input.py",
   "scripts/verification/verify_portable_delivery.py",
+  "scripts/verification/verify_source_fact_delivery.py",
+  "docs/product/SOURCE-FACTS-DELIVERY.md",
   "docs/product/CORE-OFFLINE-KIT.md",
   "docs/product/CORE-MCP.md",
   "docs/product/DRAFT-HISTORY.md",

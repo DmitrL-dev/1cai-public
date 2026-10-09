@@ -56,8 +56,9 @@ output permission checks. State schema 4 is unchanged.
 
 ## Tool contract
 
-Published dev17 exposes thirty-three tools on Windows, including the
-read-only `rentgen_capabilities` report. Historical dev15 exposes thirty-two; the
+Published dev17 and the dev18 source candidate expose thirty-three tools on
+Windows, including the read-only `rentgen_capabilities` report. Historical dev15
+exposes thirty-two; the
 previous dev2 artifacts expose ten. Linux exposes only its supported subset,
 documented in [PORTABLE-CORE.md](PORTABLE-CORE.md). All tools return MCP text content containing JSON and equivalent
 `structuredContent`. Success uses `{result, request_id}`; operational errors use
@@ -78,7 +79,7 @@ Semantic failures after schema validation keep their existing core error codes.
 
 | Tool | Required arguments | Optional arguments |
 |---|---|---|
-| `rentgen_capabilities` (dev17) | none | none |
+| `rentgen_capabilities` (introduced in dev17) | none | none |
 | `rentgen_project_list` | none | none |
 | `rentgen_project_head` | `project_id` | none |
 | `rentgen_publication_receipt` | `project_id`, `operation_id` | none |

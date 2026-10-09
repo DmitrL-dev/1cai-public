@@ -59,7 +59,8 @@ jobs:
         shell: bash
         run: |
           set +e
-          python -m pytest -q --tb=short --junitxml=output/linux-diagnostic.xml > output/linux-diagnostic.log 2>&1
+          # Only the three new supervised modules move to their mandatory 176-variant job.
+          python -m pytest -q --tb=short --ignore=tests/unit/test_source_fact_runtime_boundaries.py --ignore=tests/unit/test_source_fact_lifecycle_completion.py --ignore=tests/unit/test_source_fact_wire_receipt_gaps.py --junitxml=output/linux-diagnostic.xml > output/linux-diagnostic.log 2>&1
           status=$?
           set -e
           python scripts/verification/check_linux_baseline.py --junit output/linux-diagnostic.xml --baseline docs/product/evidence/linux-baseline-classification-20261005.json --pytest-exit "$status" --output output/linux-baseline-comparison.json

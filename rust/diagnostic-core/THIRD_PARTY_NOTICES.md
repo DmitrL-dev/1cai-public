@@ -22,3 +22,16 @@ checksums and limits. No new registry packages, services, models or native probe
 are introduced. The later offline Cargo --locked build and synthetic tests passed; see the
 [qualification record](../../docs/product/DIAGNOSTIC-KERNEL-QUALIFICATION.json).
 The inherited provenance record preserves its pre-build snapshot limits. The complete copied-file manifest is [SHA256SUMS](licenses/SHA256SUMS).
+
+## Linux submitted-source executable addition (2026-10-05)
+
+The new, separate executable adds Linux-target-only `libc =0.2.186`, copied from
+the already reviewed input-core lock with SHA-256 checksum
+`68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66`.
+The updated lock has 12 registry packages. Complete Apache-2.0/MIT notices and
+both preserved original source-notice excerpts are included under
+`licenses/libc-0.2.186`, with exact inherited rows in both TSV files and SHA256SUMS.
+This does not change the historical eleven-package synthetic qualification above.
+The additive provenance record preserves the original input-core record and all
+its limitations; no new legal/dependency clearance, source-fact build or test pass
+is asserted by this source change.
