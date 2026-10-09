@@ -1,4 +1,5 @@
 'use strict';
+const {isDeepStrictEqual} = require('node:util');
 function createPlatformUI(vscode, service, views, context, enabled) {
   let busy = false;
   const subscribe = item => {context.subscriptions.push(item); return item;};
@@ -6,8 +7,8 @@ function createPlatformUI(vscode, service, views, context, enabled) {
     if (!vscode.workspace.isTrusted) throw new Error('TRUST_REQUIRED');
     if (!enabled) throw new Error('PLATFORM_REQUIRES_DEV8');
   };
-  async function show(result) {
-    check();
+  async function show(result, current = () => true) {
+    check(); if (!current()) return result;
     const analysis = result.report?.analysis;
     const message = result.status === 'completed' ?
       (analysis?.baseline?.status === 'passed' && analysis?.candidate?.status === 'passed'
@@ -16,14 +17,23 @@ function createPlatformUI(vscode, service, views, context, enabled) {
       result.status === 'failed' ? 'Проверка завершилась технической ошибкой. Подробности — в отчёте.' :
       'Завершение проверки не подтверждено. Состояние процесса неизвестно; автоматического повторения нет.';
     const document = await vscode.workspace.openTextDocument({language:'json',content:JSON.stringify(result,null,2)});
-    check(); await vscode.window.showTextDocument(document,{preview:false});
+    check(); if (!current()) return result;
+    await vscode.window.showTextDocument(document,{preview:false});
+    check(); if (!current()) return result;
     void vscode.window.showInformationMessage('Рентген: '+message);
     return result;
   }
   async function start(selection, suppliedPlatform) {
     check(); if (busy || service.running) throw new Error('PLATFORM_RUNNING');
-    const receipt = views.selectedDraft(typeof selection === 'string' ? selection : selection?.token);
+    const token = typeof selection === 'string' ? selection : selection?.token;
+    const receipt = views.selectedDraft(token);
     busy = true;
+    // Refresh/new-save invalidation suppresses only automatic presentation;
+    // the exact historical result remains available through explicit recovery.
+    const current = () => {
+      try { return isDeepStrictEqual(views.selectedDraft(token), receipt); }
+      catch (error) { if (error?.message === 'UNKNOWN_VIEW_HANDLE') return false; throw error; }
+    };
     try {
       let platform = suppliedPlatform;
       if (platform === undefined) {
@@ -38,7 +48,7 @@ function createPlatformUI(vscode, service, views, context, enabled) {
         const subscription=token.onCancellationRequested(()=>service.cancel());
         try {return await service.start(receipt,platform);} finally {subscription.dispose();}
       });
-      return await show(result);
+      return await show(result, current);
     } finally {busy=false; await vscode.commands.executeCommand('setContext','rentgen.platformRunning',false);}
   }
   async function inspect(id) {

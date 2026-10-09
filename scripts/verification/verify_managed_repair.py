@@ -6,10 +6,42 @@ import json
 import os
 from pathlib import Path
 import subprocess
-import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from verify_editor_diagnostic import repair_variant
+
+def repair_variant(raw, original):
+    """Accept only one bare rethrow insertion in the public synthetic fixture.
+
+    These labels describe this public byte contract, not historical verifier
+    labels or a general BSL semantic analysis. Preserve BOM and LF/CRLF exactly.
+    """
+    if type(raw) is not bytes or type(original) is not bytes:
+        raise ValueError("Expected exact original and candidate bytes")
+    fixture = (
+        Path(__file__).resolve().parents[2]
+        / "packaging/test-profiles/yaxunit-25.12/СохранитьДокумент.bsl"
+    ).read_bytes()
+    if b"\r" in fixture or fixture.startswith(b"\xef\xbb\xbf"):
+        raise ValueError("Expected the public UTF-8/LF fixture without BOM")
+    body = original[3:] if original.startswith(b"\xef\xbb\xbf") else original
+    if body == fixture:
+        newline = b"\n"
+    elif body == fixture.replace(b"\n", b"\r\n"):
+        newline = b"\r\n"
+    else:
+        raise ValueError("Original does not match the public synthetic fixture")
+    marker = "    Исключение".encode("utf-8") + newline
+    if original.count(marker) != 1:
+        raise ValueError("Expected exactly one empty exception handler")
+    for label, statement in (
+        ("rethrow_ru", "ВызватьИсключение;"),
+        ("rethrow_en", "Raise;"),
+    ):
+        expected = original.replace(
+            marker, marker + b"        " + statement.encode("utf-8") + newline
+        )
+        if raw == expected:
+            return label
+    raise ValueError("Candidate is not the single bare rethrow insertion")
 
 
 def verify(profile, run):
@@ -122,7 +154,7 @@ def verify(profile, run):
         for d in result["before"]["diagnostic"]["analysis"]["diagnostics"]
     )
     try:
-        variant = repair_variant(raw)
+        variant = repair_variant(raw, original)
     except ValueError:
         variant = None
     independent = None
