@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light"><meta name="referrer" content="no-referrer">
+  <title>Рентген · Рабочая область</title>
+  <link rel="icon" href="/mark.svg" type="image/svg+xml"><link rel="stylesheet" href="/app.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Перейти к содержимому</a>
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Рабочая область">
+    <a class="brand" href="/" aria-label="Рентген, рабочая область"><img src="/mark.svg" width="32" height="32" alt=""><span>рентген<span class="brand-caption">ИНСТРУМЕНТЫ ДЛЯ 1С</span></span></a>
+    <div class="workspace-label"><span class="workspace-avatar">Л</span><span>Локальный проект<small id="project-label">Рабочая область</small></span><span class="local-dot" aria-label="Локальный режим"></span></div>
+    <p class="nav-caption">ИССЛЕДОВАНИЕ</p>
+    <nav id="primary-nav" aria-label="Разделы">
+      <button class="nav-item active" data-view="objects" aria-current="page"><span data-icon="boxes"></span>Объекты<span id="object-count" class="nav-count">0</span></button>
+      <button class="nav-item" data-view="modules"><span data-icon="code"></span>Модули<span id="module-count" class="nav-count">0</span></button>
+      <button class="nav-item" data-view="provenance"><span data-icon="shield"></span>Источник и границы</button>
+    </nav>
+    <p class="nav-caption second">СЛЕДУЮЩИЕ ЭТАПЫ</p>
+    <div class="unavailable-nav" aria-label="Недоступные функции">
+      <span><span data-icon="network"></span>Связи объектов<span class="soon">Позже</span></span>
+      <span><span data-icon="pulse"></span>Диагностика<span class="soon">Позже</span></span>
+      <span><span data-icon="compare"></span>Сравнение<span class="soon">Позже</span></span>
+    </div>
+    <div class="sidebar-note"><span data-icon="lock"></span><div>Ваш код остаётся здесь<small>Без облака и без LLM</small></div></div>
+    <div class="sidebar-bottom"><span class="avatar">R</span><span>Рентген Workspace<small>Экспериментальный GUI</small></span></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><div class="breadcrumb"><span data-icon="folder"></span><span>Рабочая область</span><span class="crumb-divider">/</span><strong id="breadcrumb-current">Объекты</strong></div><span class="platform-badge"><i></i>Локальный запуск</span></header>
+    <main id="main" tabindex="-1">
+      <div class="page-heading"><div><div class="eyebrow">ИССЛЕДОВАТЕЛЬ КОНФИГУРАЦИИ</div><h1 id="page-title">Объекты конфигурации</h1><p id="page-subtitle">Начните с ZIP-выгрузки из Конфигуратора 1С</p></div><button id="import-button" class="button primary"><span data-icon="plus"></span>Открыть выгрузку</button></div>
+      <div id="connection-warning" class="notice danger" role="alert" hidden></div>
+      <section id="empty-state" class="empty-state" aria-labelledby="empty-title">
+        <div class="empty-art" aria-hidden="true"><span class="art-grid"></span><div class="file-back"></div><div class="file-front"><span data-icon="boxes"></span><span class="file-line"></span><span class="file-line short"></span><span class="zip-label">.ZIP</span></div><span class="art-check" data-icon="shield"></span></div>
+        <span class="eyebrow">ОТ ФАЙЛОВ К СТРУКТУРЕ</span><h2 id="empty-title">Увидеть конфигурацию целиком</h2><p>Откройте выгрузку, найдите нужный объект<br class="desktop-break"> и посмотрите, из каких файлов он состоит.</p>
+        <button id="empty-import" class="button primary large"><span data-icon="upload"></span>Выбрать ZIP-выгрузку</button><p class="drop-hint">или перетащите архив в это окно</p>
+        <div class="empty-features"><span><span data-icon="boxes"></span>Структура объектов</span><span><span data-icon="search"></span>Поиск по именам</span><span><span data-icon="fingerprint"></span>Проверяемый источник</span></div>
+        <div class="empty-limits"><span data-icon="info"></span><p>Designer XML в корне ZIP · до 16 МиБ<br><span>Первый срез: инвентарь объектов и модулей. Диагностика и граф связей пока недоступны.</span></p></div>
+      </section>
+      <section id="analysis-state" hidden aria-label="Результат анализа">
+        <div id="coverage-notice" class="notice"><span data-icon="info"></span><p>Анализ структуры выгрузки. Код модулей не проверялся, связь с живой базой не подтверждена.</p><button id="show-limits" class="text-button">Подробнее<span aria-hidden="true">↗</span></button></div>
+        <div class="metrics" aria-label="Сводка выгрузки"><div><strong id="metric-objects">0</strong><span>объектов</span></div><div><strong id="metric-modules">0</strong><span>модулей</span></div><div><strong id="metric-types">0</strong><span>типов объектов</span></div><div><strong id="metric-files">0</strong><span>файлов в архиве</span></div><div class="analysis-stamp"><span data-icon="check"></span><span>Структура прочитана<small id="analysis-time"></small></span></div></div>
+        <div id="inventory-view">
+          <div class="inventory-toolbar"><div class="search-field"><span data-icon="search"></span><input id="search" type="search" aria-label="Поиск по имени или пути" placeholder="Найти по имени или пути…" maxlength="256" autocomplete="off" spellcheck="false"><kbd aria-hidden="true">Ctrl K</kbd></div><label class="type-filter"><span class="sr-only">Тип объекта</span><select id="type-filter"><option value="">Все типы</option></select></label><span class="result-count" id="result-count"></span></div>
+          <div id="truncation-warning" class="notice caution" hidden></div>
+          <div class="explorer"><section class="inventory-list" aria-label="Список объектов"><div class="list-heading"><span id="list-title">ОБЪЕКТ</span><span>ТИП</span></div><div id="item-list"></div><div id="no-results" class="no-results" hidden><span data-icon="search"></span><strong>Ничего не найдено</strong><p>Попробуйте другое имя или сбросьте фильтры.</p><button id="reset-search" class="button subtle">Сбросить фильтры</button></div></section><section class="detail-panel" id="detail-panel" aria-label="Сведения об объекте"></section></div>
+        </div>
+        <section id="provenance-view" hidden></section>
+      </section>
+    </main>
+    <footer class="statusbar"><span><i class="status-dot"></i><span id="runtime-status">Подключение к локальному ядру…</span></span><span id="footer-scope">Только чтение выгрузки</span></footer>
+  </div>
+</div>
+<dialog id="import-dialog" aria-labelledby="import-title"><form method="dialog"><button class="icon-button dialog-close" aria-label="Закрыть"><span data-icon="close"></span></button></form><div class="dialog-icon"><span data-icon="upload"></span></div><h2 id="import-title">Открыть выгрузку</h2><p>Выберите ZIP с исходниками из Конфигуратора 1С.<br>Обработка выполняется на этом компьютере.</p><label id="dropzone" class="dropzone"><input id="file-input" type="file" accept=".zip,application/zip" aria-label="Выберите ZIP-выгрузку"><span data-icon="folder"></span><strong>Выбрать файл или перетащить сюда</strong><span>ZIP · до 16 МиБ</span></label><div class="format-example"><span data-icon="info"></span><p>В корне архива должны быть папки Catalogs, Documents или CommonModules. Внешняя папка-обёртка не поддерживается.</p></div><div id="upload-error" class="notice danger" role="alert" hidden></div></dialog>
+<dialog id="progress-dialog" aria-labelledby="progress-title"><div class="progress-orbit" aria-hidden="true"><span data-icon="boxes"></span></div><h2 id="progress-title">Читаем выгрузку</h2><p id="progress-file"></p><ol class="progress-steps"><li id="step-upload">Передача локальному ядру</li><li id="step-analyze">Проверка ZIP и чтение структуры</li><li id="step-ready">Подготовка рабочей области</li></ol><progress id="progress-bar" aria-label="Анализ выгрузки"></progress><p class="muted">Исходные файлы и база 1С не изменяются.</p><button id="cancel-analysis" class="button subtle">Отменить</button></dialog>
+<div id="toast" class="toast" role="status" hidden></div>
+<div id="drag-overlay" class="drag-overlay" hidden><span data-icon="upload"></span><strong>Откройте ZIP-выгрузку</strong><span>Отпустите файл, чтобы начать анализ</span></div>
+</body></html>

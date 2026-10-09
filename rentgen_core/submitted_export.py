@@ -24,19 +24,24 @@ def _short(value):
     return value
 
 
-def analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha256, query="", limit=50):
+def analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha256, query="", limit=50, cancelled=None):
     """Analyze immutable accepted bytes with reauthorization before any release."""
-    _authorize(ctx)
+    def authorize():
+        _authorize(ctx)
+        if cancelled is not None and cancelled():
+            raise CoreError("CANCELLED", "Submitted export analysis was cancelled")
+
+    authorize()
     if type(query) is not str or len(query.encode("utf-8")) > 256 or type(limit) is not int or not 1 <= limit <= 200:
         raise CoreError("INVALID_QUERY_OPTIONS", "Export query and page limit must be bounded")
     try:
-        with RustInputSession(input_core, input_core_sha256, authorize=lambda: _authorize(ctx)) as session:
+        with RustInputSession(input_core, input_core_sha256, authorize=authorize) as session:
             manifest = session.open_import(archive, archive_sha256)
             entries = session.entries(manifest)
             objects, modules, types = [], [], Counter()
             candidates = matches = unsupported = module_count = 0
             for entry in sorted(entries, key=lambda item: item["path"].encode("utf-8")):
-                _authorize(ctx)
+                authorize()
                 reference = {"input_sha256": archive_sha256, "relative_path": entry["path"], "raw_sha256": entry["raw_sha256"]}
                 if entry["path"].lower().endswith((".bsl", ".os", ".bsp")):
                     module_count += 1
@@ -94,7 +99,7 @@ def analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha25
                 "objects_truncated": matches > len(objects),
                 "modules": modules, "modules_truncated": module_count > len(modules),
             }
-        _authorize(ctx)
+        authorize()
         return result
     finally:
         _authorize(ctx)
