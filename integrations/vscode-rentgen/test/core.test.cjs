@@ -66,7 +66,7 @@ test('literal argv uses explicit snapshot and never a shell/output file', async 
   const client = createClient(config, {execute: async (command, args) => { seen = {command, args}; return output({ref, raw_sha256: hash, size_bytes: bytes.length, encoding: 'base64', data: bytes.toString('base64')}); }});
   assert.equal(await client.source(ref), bytes.toString('utf8'));
   assert.equal(seen.command, config.python);
-  assert.deepEqual(seen.args, ['-I', '-m', 'rentgen_core', 'source-read', '--registry', config.registry, '--project', project, '--snapshot', ref.snapshot.snapshot_id, '--layer', 'base', '--path', ref.relative_path, '--base64']);
+  assert.deepEqual(seen.args, ['-I', '-m', 'rentgen_core', 'source-read', '--registry', config.registry, '--project', project, '--snapshot', ref.snapshot.snapshot_id, '--layer=base', '--path='+ref.relative_path, '--base64']);
 });
 
 test('queued read rechecks trust after earlier process and after output', async () => {
@@ -144,4 +144,58 @@ test('manual publication binds expected revision and operation; foreign receipt 
   assert.equal(args[3],'draft-save');assert.equal(args[args.indexOf('--expected-revision')+1],'2');
   assert.equal(args[args.indexOf('--operation-id')+1],operation);
   reply={...reply,revision:4};await assert.rejects(client.saveDraft(base,'C:\\owned\\proposal.json','c'.repeat(64),operation),/DRAFT_REVISION_MISMATCH/);
+});
+
+test('first manual draft uses explicit source, draft and operation with revision zero',async()=>{
+ const operation='00000000-0000-4000-8000-000000000003',title='Первая ручная правка',content='c'.repeat(64);let seen;
+ let reply={project_id:project,draft_id:draft,revision:1,title,source_ref:ref,proposal_content_id:content,operation_id:operation,
+  outcome:'committed',action:'draft.saved',status:'active'};
+ const client=createClient({...config,core_version:'0.1.0.dev17'},{execute:async(_,args)=>{seen=args;return output(reply);}});
+ assert.deepEqual(await client.createDraft(ref,draft,title,'C:\\owned\\proposal.json',content,operation),reply);
+ assert.deepEqual(seen.slice(3),['draft-save','--registry',config.registry,'--project',project,'--draft-id',draft,'--operation-id',operation,
+  '--expected-revision','0','--snapshot',ref.snapshot.snapshot_id,'--proposal-json','C:\\owned\\proposal.json','--title='+title]);
+ const good=reply;
+ for(const changed of [{revision:0},{revision:2},{operation_id:draft},{draft_id:operation},{proposal_content_id:'d'.repeat(64)},
+  {title:'other'},{outcome:'unknown'},{action:'draft.archived'},{status:'archived'},{source_ref:{...ref,relative_path:'other.bsl'}}]){
+  reply={...good,...changed};await assert.rejects(client.createDraft(ref,draft,title,'C:\\owned\\proposal.json',content,operation));
+ }
+});
+
+test('first manual draft rejects invalid titles, paths and selectors before starting CLI',async()=>{
+ let calls=0;const client=createClient({...config,core_version:'0.1.0.dev17'},{execute:async()=>{calls++;return output({});}});
+ const operation='00000000-0000-4000-8000-000000000003',content='c'.repeat(64);
+ for(const title of ['', ' ', '\n', '\u202eunsafe', 'x'.repeat(241), '\ud800']){
+  await assert.rejects(client.createDraft(ref,draft,title,'C:\\owned\\proposal.json',content,operation),/INVALID_DRAFT_TITLE/);
+ }
+ await assert.rejects(client.createDraft(ref,draft,'Title','relative.json',content,operation),/INVALID_EDIT_PATH/);
+ await assert.rejects(client.createDraft(ref,'not-a-uuid','Title','C:\\owned\\proposal.json',content,operation));
+ await assert.rejects(client.createDraft({...ref,snapshot:{...ref.snapshot,project_id:draft}},draft,'Title','C:\\owned\\proposal.json',content,operation),/PROJECT_MISMATCH/);
+ assert.equal(calls,0);
+});
+
+test('option-like module locators and draft titles stay literal CLI values',async()=>{
+ const source={...ref,layer_id:'--help',relative_path:'--Module.bsl'},operation='00000000-0000-4000-8000-000000000003',content='c'.repeat(64);
+ let seen,reply={ref:source,raw_sha256:hash,size_bytes:bytes.length,encoding:'base64',data:bytes.toString('base64')};
+ const client=createClient({...config,core_version:'0.1.0.dev17'},{execute:async(_,args)=>{seen=args;return output(reply);}});
+ assert.equal(await client.source(source),bytes.toString('utf8'));
+ assert.ok(seen.includes('--layer=--help'));assert.ok(seen.includes('--path=--Module.bsl'));assert.equal(seen.includes('--help'),false);
+ for(const title of ['--help','--snapshot','-Правка',' title with spaces ']){
+  reply={project_id:project,draft_id:draft,revision:1,title,source_ref:ref,proposal_content_id:content,operation_id:operation,
+   outcome:'committed',action:'draft.saved',status:'active'};
+  await client.createDraft(ref,draft,title,'C:\\owned\\proposal.json',content,operation);
+  assert.ok(seen.includes('--title='+title));assert.equal(seen.includes('--title'),false);
+  const base=reply;reply={...base,revision:2};
+  await client.saveDraft(base,'C:\\owned\\proposal.json',content,operation);
+  assert.ok(seen.includes('--title='+title));assert.equal(seen.includes('--title'),false);
+ }
+});
+
+test('leading-dash module searches remain literal query values',async()=>{
+ let seen;const client=createClient(config,{execute:async(_,args)=>{seen=args;return output({entries:[],next_cursor:null});}});
+ for(const query of ['--help','--kind','-Module.bsl','name with spaces']){
+  assert.deepEqual(await client.sources(ref.snapshot,{query}),{entries:[],next_cursor:null});
+  assert.ok(seen.includes('--query='+query));assert.equal(seen.includes('--query'),false);
+  assert.equal(seen[seen.indexOf('--kind')+1],'module');assert.equal(seen[seen.indexOf('--limit')+1],'100');
+ }
+ await client.sources(ref.snapshot,{query:''});assert.equal(seen.some(value=>value.startsWith('--query')),false);
 });

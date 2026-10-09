@@ -11,10 +11,18 @@ const config={schema:1,core_version:'0.1.0.dev16',python:'C:\\python.exe',regist
 async function fixture(t){
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'rentgen-edit-'));t.after(()=>fs.rm(root,{recursive:true,force:true}));
  const replies=new Map();let mutations=0, fail=null;
- const client={proposal:async()=>({receipt,proposal:{replacement:{base64:bytes.toString('base64')}}}),
+ const client={source:async()=>bytes.toString('utf8'),proposal:async()=>({receipt,proposal:{replacement:{base64:bytes.toString('base64')}}}),
   createProposal:async(_,__,file)=>{const b=await fs.readFile(file);return {source_ref:ref,content_id:hash(b),replacement:{raw_sha256:hash(b)}};},
   saveDraft:async(base,_,contentId,operation)=>{mutations++;if(fail==='conflict')throw new Error('DRAFT_CONFLICT');
     const r={...base,revision:base.revision+1,proposal_content_id:contentId,operation_id:operation};replies.set(operation,r);
+    if(fail==='lost')throw new Error('CLI_TIMEOUT');return r;},
+  createDraft:async(source,id,title,file,contentId,operation)=>{mutations++;
+    const intent=JSON.parse(await fs.readFile(path.join(path.dirname(file),'intent.json'),'utf8'));
+    assert.equal(intent.operation_id,operation);assert.equal(intent.base.draft_id,id);assert.equal(intent.base.revision,0);
+    assert.equal(intent.content_id,contentId);assert.deepEqual(intent.base.source_ref,source);
+    if(fail==='conflict')throw new Error('DRAFT_CONFLICT');
+    const r={project_id:project,draft_id:id,revision:1,title,source_ref:source,proposal_content_id:contentId,operation_id:operation,
+      outcome:'committed',action:'draft.saved',status:'active'};replies.set(operation,r);
     if(fail==='lost')throw new Error('CLI_TIMEOUT');return r;},receipt:async id=>replies.get(id)??null};
  const service=createEditService({root,config,client});
  return {root,client,service,replies,count:()=>mutations,fail:value=>{fail=value;}};
@@ -60,4 +68,66 @@ test('revoked trust and concurrent save cannot publish another mutation',async t
  await assert.rejects(f.service.save(edit.id),/EDIT_RUNNING/);release();await pending;assert.equal(f.count(),1);
  const denied=createEditService({root:f.root,config,client:f.client,trusted:()=>false});
  await assert.rejects(denied.open(receipt),/TRUST_REQUIRED/);await assert.rejects(denied.save(edit.id),/TRUST_REQUIRED/);
+});
+
+test('a source can be edited before any draft exists and reopened without a mutation',async t=>{
+ const f=await fixture(t),edit=await f.service.start(ref,'Ручная правка');
+ assert.equal(edit.kind,'source');assert.equal(edit.receipt,undefined);assert.deepEqual(await fs.readFile(edit.file),bytes);
+ assert.equal(f.count(),0);assert.equal((await f.service.forFile(edit.file)).id,edit.id);
+ const reopened=createEditService({root:f.root,config,client:f.client});
+ const state=await reopened.inspect(edit.id);assert.equal(state.status,'editing');assert.equal(state.receipt,undefined);assert.equal(state.base,undefined);
+ assert.equal((await reopened.list())[0].draft_id,edit.draft_id);assert.equal(f.count(),0);
+});
+
+test('first explicit save creates revision one even with unchanged captured bytes',async t=>{
+ const f=await fixture(t),edit=await f.service.start(ref,'Начальная версия');
+ const saved=await f.service.save(edit.id);assert.equal(saved.status,'saved');assert.equal(saved.receipt.revision,1);
+ assert.equal(saved.receipt.draft_id,edit.draft_id);assert.equal(saved.receipt.title,'Начальная версия');assert.equal(f.count(),1);
+ assert.equal((await f.service.save(edit.id)).status,'unchanged');assert.equal(f.count(),1);
+});
+
+test('lost first-save response reopens the committed draft and continues at revision two',async t=>{
+ const f=await fixture(t),edit=await f.service.start(ref,'Без модели');f.fail('lost');
+ await fs.writeFile(edit.file,Buffer.from('\uFEFFReturn 43;\r\n'));
+ const saved=await f.service.save(edit.id);assert.equal(saved.status,'saved');assert.equal(saved.receipt.revision,1);assert.equal(f.count(),1);
+ const reopened=createEditService({root:f.root,config,client:f.client});
+ assert.deepEqual((await reopened.inspect(edit.id)).receipt,saved.receipt);assert.equal(f.count(),1);
+ assert.equal((await reopened.save(edit.id)).status,'unchanged');assert.equal(f.count(),1);
+ f.fail(null);await fs.writeFile(edit.file,Buffer.from('\uFEFFReturn 44;\r\n'));
+ assert.equal((await reopened.save(edit.id)).receipt.revision,2);assert.equal(f.count(),2);
+});
+
+test('rejected preparation of a first draft can be corrected without replaying a mutation',async t=>{
+ const f=await fixture(t),edit=await f.service.start(ref,'Проверка');
+ const real=f.client.createProposal;f.client.createProposal=async()=>{throw new Error('PROPOSAL_POLICY');};
+ await assert.rejects(f.service.save(edit.id),/PROPOSAL_POLICY/);assert.equal(f.count(),0);
+ const reopened=createEditService({root:f.root,config,client:f.client});
+ assert.equal((await reopened.inspect(edit.id)).status,'editing');f.client.createProposal=real;
+ await fs.writeFile(edit.file,'corrected');assert.equal((await reopened.save(edit.id)).receipt.revision,1);assert.equal(f.count(),1);
+});
+
+test('an unresolved first draft keeps its operation identity and never resubmits',async t=>{
+ const f=await fixture(t),edit=await f.service.start(ref,'Неопределённый результат');f.fail('conflict');
+ const pending=await f.service.save(edit.id);assert.equal(pending.status,'unresolved');assert.equal(pending.error,'DRAFT_CONFLICT');
+ const reopened=createEditService({root:f.root,config,client:f.client});
+ assert.equal((await reopened.inspect(edit.id)).operation_id,pending.operation_id);
+ await fs.writeFile(edit.file,'local work after missing receipt');
+ assert.equal((await reopened.save(edit.id)).status,'unresolved');assert.equal(f.count(),1);
+ assert.equal(await fs.readFile(edit.file,'utf8'),'local work after missing receipt');
+});
+
+test('invalid title, foreign source and changed source bytes cannot start an edit session',async t=>{
+ const f=await fixture(t);let reads=0;f.client.source=async()=>{reads++;return 'changed bytes';};
+ await assert.rejects(f.service.start(ref,'\n'),/INVALID_DRAFT_TITLE/);
+ await assert.rejects(f.service.start({...ref,snapshot:{...ref.snapshot,project_id:draft}},'Title'),/PROJECT_MISMATCH/);assert.equal(reads,0);
+ await assert.rejects(f.service.start(ref,'Title'),/CONTENT_HASH_MISMATCH/);assert.equal(reads,1);
+ await assert.rejects(fs.stat(path.join(f.root,'edit-sessions')),{code:'ENOENT'});assert.equal(f.count(),0);assert.equal(f.service.running,false);
+});
+
+test('a conflicting first-save receipt is rejected without discarding the local work',async t=>{
+ const f=await fixture(t),edit=await f.service.start(ref,'First');const real=f.client.createDraft;
+ f.client.createDraft=async(...args)=>{const saved=await real(...args);f.replies.set(saved.operation_id,{...saved,title:'Other'});return saved;};
+ await fs.writeFile(edit.file,'local edit');await assert.rejects(f.service.save(edit.id),/EDIT_RESULT_MISMATCH/);
+ await assert.rejects(f.service.save(edit.id),/EDIT_RESULT_MISMATCH/);assert.equal(f.count(),1);
+ assert.equal(await fs.readFile(edit.file,'utf8'),'local edit');
 });

@@ -26,6 +26,57 @@ test('publish follows buffer save; inspecting a session never publishes',async()
  await f.commands.get('rentgen.editResult')('session');assert.equal(f.calls.filter(c=>c==='publish').length,1);
 });
 
+test('a selected source opens a manual working copy without a model or draft mutation',async()=>{
+ const f=fixture(),ref={relative_path:'Catalogs/Товары/Ext/ObjectModule.bsl'};let seen;
+ f.views.selectedSource=token=>{assert.equal(token,'source-token');return ref;};
+ f.vscode.window.showInputBox=async options=>{assert.equal(options.value,'ObjectModule.bsl');assert.equal(options.validateInput('Title'),undefined);return 'Ручная правка';};
+ f.service.start=async(...args)=>{seen=args;return {id:'new-session',file:'C:\\profile\\new.bsl',kind:'source',source_ref:ref};};
+ const value=await f.commands.get('rentgen.editSource')({token:'source-token'});
+ assert.deepEqual(seen,[ref,'Ручная правка']);assert.equal(value.id,'new-session');assert.equal(value.receipt,undefined);
+ assert.equal(f.calls.filter(c=>c==='open').length,1);assert.equal(f.calls.includes('publish'),false);assert.equal(f.calls.includes('diff'),false);
+});
+
+test('cancelled manual-source dialog and revoked trust do not create a session',async()=>{
+ const f=fixture();let starts=0;f.views.selectedSource=()=>({relative_path:'Module.bsl'});f.service.start=async()=>{starts++;};
+ f.vscode.window.showInputBox=async()=>undefined;assert.equal(await f.commands.get('rentgen.editSource')('source'),null);
+ f.vscode.window.showInputBox=async()=>{f.vscode.workspace.isTrusted=false;return 'Title';};
+ await assert.rejects(f.commands.get('rentgen.editSource')('source'),/TRUST_REQUIRED/);assert.equal(starts,0);
+});
+
+test('a new unsaved source session is discoverable through existing edit recovery',async()=>{
+ const f=fixture(),session={id:'new-session',file:'C:\\profile\\new.bsl',kind:'source',source_ref:{relative_path:'Module.bsl'},created_at:'now'};
+ f.service.list=async()=>[session];f.service.inspect=async id=>{assert.equal(id,session.id);return {...session,status:'editing'};};
+ f.vscode.window.showQuickPick=async rows=>{assert.match(rows[0].label,/Из модуля.*Module.bsl/);return rows[0];};
+ assert.equal((await f.commands.get('rentgen.editResult')()).id,session.id);
+ assert.equal(f.calls.filter(c=>c==='open').length,1);assert.equal(f.calls.includes('publish'),false);
+});
+
+test('manual source command is contributed to the source tree without requiring a model',()=>{
+ const manifest=require('../package.json'),command=manifest.contributes.commands.find(c=>c.command==='rentgen.editSource');
+ assert.ok(command);assert.equal(command.enablement,'rentgen.ready && rentgen.editAvailable');
+ const menu=manifest.contributes.menus['view/item/context'].find(c=>c.command==='rentgen.editSource');
+ assert.match(menu.when,/view == rentgen.sources/);assert.match(menu.when,/viewItem == rentgen.source/);
+ assert.equal(menu.when.includes('repair'),false);
+});
+
+test('a source handle invalidated during the title dialog cancels before reading a module',async()=>{
+ const f=fixture(),ref={relative_path:'Module.bsl'};let valid=true,starts=0;
+ f.views.selectedSource=()=>{if(!valid)throw new Error('UNKNOWN_VIEW_HANDLE');return ref;};
+ f.vscode.window.showInputBox=async()=>{valid=false;return 'Title';};f.service.start=async()=>{starts++;};
+ assert.equal(await f.commands.get('rentgen.editSource')('source'),null);assert.equal(starts,0);assert.equal(f.calls.includes('open'),false);
+});
+
+for(const boundary of ['source-read','document-open'])test(`late manual source preparation preserves the session without changing editor after ${boundary}`,async()=>{
+ const f=fixture(),ref={relative_path:'Module.bsl'},gate=deferred(),began=deferred();
+ const session={id:'new-session',file:'C:\\profile\\new.bsl',kind:'source',source_ref:ref};
+ f.views.selectedSource=()=>ref;f.vscode.window.showInputBox=async()=> 'Title';
+ f.service.start=async()=>{if(boundary==='source-read'){began.resolve();await gate.promise;}return session;};
+ f.vscode.workspace.openTextDocument=async uri=>{if(boundary==='document-open'){began.resolve();await gate.promise;}return {uri};};
+ const pending=f.commands.get('rentgen.editSource')('source');await began.promise;
+ f.vscode.window.activeTextEditor={document:{uri:{scheme:'file',fsPath:'C:\\other.bsl'},version:1}};gate.resolve();
+ assert.equal((await pending).id,session.id);assert.equal(f.calls.includes('open'),false);assert.equal(f.calls.includes('publish'),false);
+});
+
 for(const status of ['saved','unresolved'])test(`recovering a ${status} session reopens the editable working copy without publishing`,async()=>{
  const f=fixture(),session=await f.service.open();
  f.service.inspect=async()=>({...session,status});
