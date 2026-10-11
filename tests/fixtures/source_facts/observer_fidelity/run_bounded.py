@@ -4,7 +4,6 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import resource
 import signal
 import subprocess
 import sys
@@ -63,6 +62,11 @@ def cleanup_owned(child):
 
 
 def main():
+    if sys.platform != 'linux':
+        raise RuntimeError('observer execution requires Linux')
+    # Pure parsing/cleanup contracts import this module on Windows too. Keep
+    # the Unix-only resource module inside the guarded Linux execution path.
+    import resource
     if len(sys.argv)!=2:raise SystemExit('one disposable evidence directory required')
     root=Path(sys.argv[1]).resolve()
     if not root.is_dir():raise RuntimeError('missing prepared directory')

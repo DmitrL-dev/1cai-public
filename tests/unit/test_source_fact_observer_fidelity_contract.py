@@ -75,17 +75,21 @@ def no_children(*args):raise ChildProcessError()
 
 
 def test_cleanup_handles_group_exit_race(monkeypatch):
+ from types import SimpleNamespace
  child=Child();seen=[]
  def gone(pid,sig):seen.append((pid,sig));raise ProcessLookupError()
- monkeypatch.setattr(runner.os,'killpg',gone);monkeypatch.setattr(runner.os,'waitpid',no_children)
+ monkeypatch.setattr(runner,'os',SimpleNamespace(killpg=gone,waitpid=no_children,WNOHANG=1))
+ monkeypatch.setattr(runner,'signal',SimpleNamespace(SIGKILL=9))
  result=runner.cleanup_owned(child)
  assert result=={'cleanup_empty':True,'adopted_reaped':[],'cleanup_errors':[]}
  assert seen==[(123,runner.signal.SIGKILL)] and child.waits==1
 
 
 def test_cleanup_records_wait_failure_and_reaps(monkeypatch):
+ from types import SimpleNamespace
  child=Child(fail_wait=True)
- monkeypatch.setattr(runner.os,'killpg',lambda *args:None);monkeypatch.setattr(runner.os,'waitpid',no_children)
+ monkeypatch.setattr(runner,'os',SimpleNamespace(killpg=lambda *args:None,waitpid=no_children,WNOHANG=1))
+ monkeypatch.setattr(runner,'signal',SimpleNamespace(SIGKILL=9))
  result=runner.cleanup_owned(child)
  assert child.killed and child.waits==2 and result['cleanup_empty']
  assert result['cleanup_errors']==['TimeoutExpired']
@@ -113,3 +117,38 @@ def test_runner_parent_death_and_exception_cleanup_contract():
  assert 'cleanup=cleanup_owned(child)' in source and 'write_results(root,results)' in source
  assert "for sig in (signal.SIGTERM,signal.SIGINT)" in source
  assert "resource.RLIMIT_FSIZE,(32*1024*1024,32*1024*1024)" in source
+
+
+def test_pure_runner_import_does_not_require_unix_resource(monkeypatch):
+ import builtins
+ original=builtins.__import__
+ def guarded(name,*args,**kwargs):
+  if name=='resource':raise AssertionError('Unix-only resource imported during pure collection')
+  return original(name,*args,**kwargs)
+ monkeypatch.setattr(builtins,'__import__',guarded)
+ spec=importlib.util.spec_from_file_location('rentgen_observer_import_only',ROOT/'tests/fixtures/source_facts/observer_fidelity/run_bounded.py')
+ module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+ assert callable(module.cleanup_owned)
+
+
+@pytest.mark.parametrize('platform',['win32','darwin'])
+def test_nonlinux_execution_refuses_before_paths_or_resource(monkeypatch,platform):
+ from types import SimpleNamespace
+ monkeypatch.setattr(runner,'sys',SimpleNamespace(platform=platform,argv=['runner','nonexistent']))
+ def unexpected(*args,**kwargs):raise AssertionError('path touched before platform refusal')
+ monkeypatch.setattr(runner,'Path',unexpected)
+ with pytest.raises(RuntimeError,match='requires Linux'):runner.main()
+
+
+def test_linux_without_resource_refuses_before_side_effects(monkeypatch):
+ import builtins
+ from types import SimpleNamespace
+ original=builtins.__import__
+ def guarded(name,*args,**kwargs):
+  if name=='resource':raise ImportError('resource unavailable')
+  return original(name,*args,**kwargs)
+ monkeypatch.setattr(builtins,'__import__',guarded)
+ monkeypatch.setattr(runner,'sys',SimpleNamespace(platform='linux',argv=['runner','nonexistent']))
+ def unexpected(*args,**kwargs):raise AssertionError('side effect before resource refusal')
+ monkeypatch.setattr(runner,'Path',unexpected)
+ with pytest.raises(ImportError):runner.main()
