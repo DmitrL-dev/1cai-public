@@ -217,13 +217,15 @@ def test_prior_owned_pipe_does_not_excuse_missing_write_descriptor():
         audit.inspect_trace(raw, config)
 
 
-def test_ci_retains_only_scoped_synthetic_audit_config():
+@pytest.mark.parametrize("workflow_name,scope_dir", [("source-facts-ci.yml", "ordinary174"),
+                                                     ("source-facts-qualification.yml", "full176")])
+def test_ci_retains_only_scoped_synthetic_audit_config(workflow_name, scope_dir):
     root = Path(__file__).resolve().parents[2]
-    workflow = yaml.safe_load((root / ".github/workflows/source-facts-ci.yml").read_text())
+    workflow = yaml.safe_load((root / ".github/workflows" / workflow_name).read_text())
     paths = [step["with"]["path"] for job in workflow["jobs"].values()
              for step in job["steps"] if step.get("uses", "").startswith("actions/upload-artifact@")]
     config_paths = [line.strip() for block in paths for line in block.splitlines() if "config.json" in line]
-    assert config_paths == ["${{ env.EVIDENCE }}/full176/tmp/pytest/**/syscall-evidence/config.json"]
+    assert config_paths == ["${{ env.EVIDENCE }}/" + scope_dir + "/tmp/pytest/**/syscall-evidence/config.json"]
     pure, = [step["run"] for job in workflow["jobs"].values() for step in job["steps"]
              if step.get("name") == "Pure host and delivery-verifier regressions"]
     assert "tests/unit/test_source_fact_syscall_audit_contract.py" in pure

@@ -121,3 +121,15 @@ Complete bootstrap authority validation, reviewed exact Go runtime-file policy
 and genuine timeout/cancellation cleanup through the sudo monitor remain required
 before claiming whole-process qualification. Complete decoding is a prerequisite,
 not acceptance of those remaining scopes.
+
+## Ordinary CI versus full qualification
+
+The automatic PR/push workflow now runs the fixed 174 non-syscall variants
+with the same supervision, failure and cleanup checks. Its receipt explicitly
+leaves the two syscall variants unrun and never sets `full176_qualified`.
+The strict default remains all 176; `source-facts-qualification.yml` exposes it
+as a separate manual workflow, followed by the installed-wheel gate. The old
+single-push tracing exception is not part of either workflow. No privilege
+expansion, dumpability change or opaque-descriptor allowance is introduced.
+A manual run in an ordinary environment can still fail for incomplete observation;
+it must not be reported as full acceptance or replaced by the ordinary result.

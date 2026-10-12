@@ -246,15 +246,17 @@ def test_supervisor_bootstrap_passes_exact_args_and_exclusive_journal(journal, m
     assert sys.path[:2] == ["/reviewed/root", "/reviewed/root/tests/fixtures/source_facts"]
 
 
-def test_journal_is_pinned_and_only_scoped_artifact_is_retained():
+@pytest.mark.parametrize("workflow_name,scope_dir", [("source-facts-ci.yml", "ordinary174"),
+                                                     ("source-facts-qualification.yml", "full176")])
+def test_journal_is_pinned_and_only_scoped_artifact_is_retained(workflow_name, scope_dir):
     harness = next(n.value for n in supervisor_tree().body if isinstance(n, ast.Assign)
                    and any(isinstance(t, ast.Name) and t.id == "HARNESS" for t in n.targets))
     assert JOURNAL in ast.literal_eval(harness) and len(ast.literal_eval(harness)) == 6
-    job = yaml.safe_load((ROOT / ".github/workflows/source-facts-ci.yml").read_text())["jobs"]["linux-source-facts"]
+    job = yaml.safe_load((ROOT / ".github/workflows" / workflow_name).read_text())["jobs"]["linux-source-facts"]
     pin = next(s for s in job["steps"] if s.get("name") == "Pin exact same-job source, images, probe and trace tool")
     assert repr(JOURNAL) in pin["run"]
     upload = next(s for s in job["steps"] if s.get("name") == "Retain scoped qualification evidence and candidate distributions")
-    assert "${{ env.EVIDENCE }}/full176/progress.jsonl" in upload["with"]["path"].splitlines()
+    assert "${{ env.EVIDENCE }}/" + scope_dir + "/progress.jsonl" in upload["with"]["path"].splitlines()
     pure = next(s for s in job["steps"] if s.get("name") == "Pure host and delivery-verifier regressions")
     assert "tests/unit/test_source_fact_journal_contract.py" in pure["run"]
     assert "tests/unit/test_source_fact_ci_contract.py" in pure["run"]

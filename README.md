@@ -224,3 +224,21 @@ Windows acceptance. Существующие артефакты задним ч�
 Их прежние заявления о готовности не относятся к текущей поставке.
 
 </details>
+
+### CI source facts: ordinary checks and special qualification
+
+PR/push workflow `source-facts-ci.yml` checks the fixed 174 ordinary variants
+under the existing supervisor, plus the installed-wheel smoke. The two syscall
+authority-audit variants are reserved for `source-facts-qualification.yml`, an
+explicit manual workflow that retains all 176 requirements and the wheel gate.
+The ordinary receipt reports `ordinary_passed`, two full-scope variants `unrun`,
+and `full176_qualified: false`. A green ordinary check is **not** full qualification
+or release approval. Both workflows preserve failure propagation and process cleanup.
+
+The special workflow grants no extra tracing privileges. It can remain red where
+Rust `PR_SET_DUMPABLE=0` prevents complete syscall observation; neither the Rust
+protection nor missing-descriptor assertions are relaxed. Establishing an approved
+observation environment remains a separate prerequisite for full qualification.
+The obsolete single-push privilege exception is removed; manual dispatch does not
+reactivate it. CI evidence uses distinct `ordinary-source-facts-*` and
+`special-source-facts-*` artifacts. No merge or deployment is performed by this change.

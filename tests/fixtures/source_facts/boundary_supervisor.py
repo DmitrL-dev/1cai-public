@@ -373,9 +373,11 @@ def parent_death(binary, protocol):
     print(json.dumps(result), flush=True)
 
 
-def qualify(root, pins_path, pins_hash, output, cancelled, *, polling_correction_only=False):
+def qualify(root, pins_path, pins_hash, output, cancelled, *, polling_correction_only=False, ordinary_only=False):
     """Own a fresh process group until all cleanup is complete, including success."""
-    required_run_variants = 4 if polling_correction_only else 176
+    if polling_correction_only and ordinary_only:
+        raise ValueError("Qualification scopes are mutually exclusive")
+    required_run_variants = 4 if polling_correction_only else 174 if ordinary_only else 176
     wall_budget = POLLING_WALL_SECONDS if polling_correction_only else FULL_WALL_SECONDS
     budget_version = POLLING_BUDGET_VERSION if polling_correction_only else FULL_BUDGET_VERSION
     if not sys.flags.isolated or not sys.dont_write_bytecode:
@@ -417,12 +419,14 @@ def qualify(root, pins_path, pins_hash, output, cancelled, *, polling_correction
                           "tests/unit/test_source_fact_runtime_boundaries.py",
                           "tests/unit/test_source_fact_lifecycle_completion.py",
                           "tests/unit/test_source_fact_wire_receipt_gaps.py"])
+        excluded = (["--deselect=tests/unit/test_source_fact_lifecycle_completion.py::"
+                     "test_completion_owned_pipeline_syscall_authority_audit"] if ordinary_only else [])
         child = subprocess.Popen([sys.executable, "-I", "-B", "-c", bootstrap, str(root),
                                   str(output / "progress.jsonl"),
                                   "-q", "-ra", "-p", "no:cacheprovider", "-c", str(root / "pyproject.toml"),
                                   "--confcutdir=" + str(root),
                                   "--basetemp=" + str(output / "tmp/pytest"),
-                                  *test_paths,
+                                  *test_paths, *excluded,
                                   "--junitxml=" + str(output / "results.xml")],
                                  cwd=root, env=env, stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE, stdin=subprocess.DEVNULL, start_new_session=True)
@@ -494,6 +498,8 @@ def qualify(root, pins_path, pins_hash, output, cancelled, *, polling_correction
             names = ({"test_completion_observed_authorization_poll_intervals"} if polling_correction_only else
                      {n.name for n in [*tree.body, *completion_tree.body, *wire_tree.body]
                       if isinstance(n, ast.FunctionDef) and n.name.startswith("test_")})
+            if ordinary_only:
+                names.discard("test_completion_owned_pipeline_syscall_authority_audit")
             all_cases = ET.parse(report).findall(".//testcase")
             cases = [c for c in all_cases if c.get("name", "").split("[", 1)[0] in names]
             if len(cases) != len(all_cases): errors.append("non-variant-junit-error")
@@ -513,10 +519,11 @@ def qualify(root, pins_path, pins_hash, output, cancelled, *, polling_correction
     passed = returncode == 0 and not cancelled() and not timed_out and not errors and not leftover and counts == {"passed": required_run_variants, "failed": 0, "skipped": 0, "unrun": 0}
     full_counts = dict(counts)
     if polling_correction_only: full_counts["unrun"] += 172
-    summary = {"status": ("polling_correction_passed" if polling_correction_only else "passed") if passed else "not_passed",
-               "scope": "polling_correction" if polling_correction_only else "full_source_boundaries",
+    if ordinary_only: full_counts["unrun"] += 2
+    summary = {"status": ("polling_correction_passed" if polling_correction_only else "ordinary_passed" if ordinary_only else "passed") if passed else "not_passed",
+               "scope": "polling_correction" if polling_correction_only else "ordinary_source_boundaries" if ordinary_only else "full_source_boundaries",
                "required_run_variants": required_run_variants,
-               "full_required_variants": 176, "full176_qualified": passed and not polling_correction_only,
+               "full_required_variants": 176, "full176_qualified": passed and not polling_correction_only and not ordinary_only,
                "counts": full_counts, "run_counts": counts,
                "pytest_exit": returncode, "wall_seconds": time.monotonic() - began,
                "harness_budget_version": budget_version, "harness_wall_seconds": wall_budget,
@@ -546,10 +553,12 @@ def main():
         parser.add_argument("--pins", type=Path, required=True)
         parser.add_argument("--pins-sha256", required=True)
         parser.add_argument("--output", type=Path, required=True)
-        parser.add_argument("--polling-correction-only", action="store_true")
+        scopes = parser.add_mutually_exclusive_group()
+        scopes.add_argument("--polling-correction-only", action="store_true")
+        scopes.add_argument("--ordinary-only", action="store_true")
         args = parser.parse_args()
         status = qualify(args.root, args.pins, args.pins_sha256, args.output, lambda: interrupted,
-                         polling_correction_only=args.polling_correction_only)
+                         polling_correction_only=args.polling_correction_only, ordinary_only=args.ordinary_only)
         return 2 if interrupted else status
     finally:
         # Restore only after the kernel confirms no retained/adopted child remains.

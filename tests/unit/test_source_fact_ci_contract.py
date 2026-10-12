@@ -39,28 +39,38 @@ def test_linux_diagnostic_excludes_only_the_three_supervised_modules():
     )
 
 
-def test_source_fact_job_requires_default_full_supervisor_before_installed_smoke():
-    job = workflow("source-facts-ci.yml")["jobs"]["linux-source-facts"]
-    assert job["name"] == "Linux source facts (176 + installed wheel)"
-    assert job["runs-on"] == "ubuntu-24.04"
-    assert job["defaults"]["run"]["shell"] == "bash"
-    assert "if" not in job and "continue-on-error" not in job
-    assert all("continue-on-error" not in step for step in job["steps"])
-    full = next(s for s in job["steps"] if s.get("name") ==
-                "Required default supervised 176-variant qualification")
-    smoke = next(s for s in job["steps"] if s.get("name") ==
-                 "Required installed-wheel source-fact smoke")
-    assert "if" not in full and "if" not in smoke
-    assert job["steps"].index(full) < job["steps"].index(smoke)
-    # Exact argv excludes subset flags, shell success coercion and alternate runners.
-    assert shlex.split(full["run"]) == [
-        "$BUILD_ROOT/tools/bin/python", "-I", "-B",
-        "$SOURCE_ROOT/tests/fixtures/source_facts/boundary_supervisor.py",
-        "--root", "$SOURCE_ROOT", "--pins", "$EVIDENCE/pins.json",
-        "--pins-sha256", "$(cat $EVIDENCE/pins.sha256)",
-        "--output", "$EVIDENCE/full176",
-    ]
-    assert "--polling-correction-only" not in "\n".join(step.get("run", "") for step in job["steps"])
+def test_ordinary_and_special_workflows_have_distinct_truthful_contracts():
+    for name, label, step_name, output, flag in [
+        ("source-facts-ci.yml", "Linux source facts (174 ordinary + installed wheel)",
+         "Required supervised 174 ordinary variants", "ordinary174", ["--ordinary-only"]),
+        ("source-facts-qualification.yml", "Special qualification (176 + installed wheel)",
+         "Required default supervised 176-variant qualification", "full176", []),
+    ]:
+        doc = workflow(name)
+        # PyYAML's YAML 1.1 loader maps the GitHub Actions key `on` to True.
+        events = doc.get("on", doc.get(True))
+        assert set(events) == ({"push", "pull_request"} if flag else {"workflow_dispatch"})
+        job = doc["jobs"]["linux-source-facts"]
+        assert job["name"] == label
+        assert job["runs-on"] == "ubuntu-24.04"
+        assert job["defaults"]["run"]["shell"] == "bash"
+        assert "if" not in job and "continue-on-error" not in job
+        assert all("continue-on-error" not in step for step in job["steps"])
+        full = next(s for s in job["steps"] if s.get("name") == step_name)
+        smoke = next(s for s in job["steps"] if s.get("name") == "Required installed-wheel source-fact smoke")
+        assert "if" not in full and "if" not in smoke
+        assert job["steps"].index(full) < job["steps"].index(smoke)
+        assert shlex.split(full["run"]) == [
+            "$BUILD_ROOT/tools/bin/python", "-I", "-B",
+            "$SOURCE_ROOT/tests/fixtures/source_facts/boundary_supervisor.py",
+            "--root", "$SOURCE_ROOT", "--pins", "$EVIDENCE/pins.json",
+            "--pins-sha256", "$(cat $EVIDENCE/pins.sha256)",
+            "--output", "$EVIDENCE/" + output, *flag,
+        ]
+        runs = "\n".join(s.get("run", "") for s in job["steps"])
+        assert "--polling-correction-only" not in runs
+        assert "trace_launcher" not in runs
+        assert "setcap " not in runs and "ptrace_scope" not in runs and "sudoers" not in runs
 
 
 def test_default_supervisor_owns_all_three_modules_and_176_denominator():
@@ -78,21 +88,29 @@ def test_default_supervisor_owns_all_three_modules_and_176_denominator():
     count = assignments["required_run_variants"]
     assert isinstance(count, ast.IfExp) and isinstance(count.test, ast.Name)
     assert count.test.id == "polling_correction_only"
-    assert ast.literal_eval(count.orelse) == 176
+    assert count.orelse.test.id == "ordinary_only"
+    assert ast.literal_eval(count.orelse.body) == 174
+    assert ast.literal_eval(count.orelse.orelse) == 176
+    assert ast.literal_eval(defaults["ordinary_only"]) is False
 
 
-def test_capability_observation_is_one_exact_push_not_a_standing_pr_grant():
-    job = workflow("source-facts-ci.yml")["jobs"]["linux-source-facts"]
-    guard = job["env"]["RENTGEN_ONE_SHOT_TRACE"]
-    for required in ("github.repository == 'DmitrL-dev/1cai-public'", "github.event_name == 'push'",
-                     "github.ref == 'refs/heads/codex/linux-source-facts-qualification-20261006'",
-                     "github.event.before == '8cd77af51518da43560e48e10d08c3ec4f795acd'", "github.run_attempt == 1"):
-        assert required in guard
-    steps = job["steps"]
-    checkout = next(step for step in steps if step.get("uses", "").startswith("actions/checkout@"))
-    assert checkout["with"]["persist-credentials"] is False
-    pin = next(step["run"] for step in steps if step.get("name") == "Pin exact same-job source, images, probe and trace tool")
-    assert "if os.environ.get('RENTGEN_ONE_SHOT_TRACE') == 'true':" in pin
-    assert "pins['trace_launcher'] = launcher" in pin
-    all_runs = "\n".join(step.get("run", "") for step in steps)
-    assert "setcap " not in all_runs and "ptrace_scope" not in all_runs and "sudoers" not in all_runs
+def test_ordinary_scope_excludes_only_exact_syscall_audit_and_cannot_claim_full_pass():
+    source = (ROOT / "tests/fixtures/source_facts/boundary_supervisor.py").read_text()
+    tree = ast.parse(source)
+    qualify = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "qualify")
+    assignments = {t.id: n.value for n in ast.walk(qualify) if isinstance(n, ast.Assign)
+                   for t in n.targets if isinstance(t, ast.Name)}
+    expression = compile(ast.Expression(assignments["excluded"]), "<scope>", "eval")
+    assert eval(expression, {"ordinary_only": False}) == []
+    assert eval(expression, {"ordinary_only": True}) == [
+        "--deselect=tests/unit/test_source_fact_lifecycle_completion.py::test_completion_owned_pipeline_syscall_authority_audit"]
+    summary = assignments["summary"]
+    keys = dict(zip((ast.literal_eval(k) for k in summary.keys), summary.values))
+    full = compile(ast.Expression(keys["full176_qualified"]), "<qualified>", "eval")
+    for passed in (False, True):
+        for polling in (False, True):
+            for ordinary in (False, True):
+                assert eval(full, {"passed": passed, "polling_correction_only": polling,
+                                   "ordinary_only": ordinary}) == (passed and not polling and not ordinary)
+    assert 'if ordinary_only: full_counts["unrun"] += 2' in source
+    assert 'names.discard("test_completion_owned_pipeline_syscall_authority_audit")' in source

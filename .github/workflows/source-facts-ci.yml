@@ -1,4 +1,4 @@
-name: Experimental source-fact qualification
+name: Source-fact ordinary contracts
 
 on:
   push:
@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   linux-source-facts:
-    name: Linux source facts (176 + installed wheel)
+    name: Linux source facts (174 ordinary + installed wheel)
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -23,9 +23,6 @@ jobs:
       CARGO_BUILD_JOBS: '1'
       CARGO_INCREMENTAL: '0'
       GOTOOLCHAIN: local
-      # One approved disposable-run diagnostic, never inherited by PR/fork jobs.
-      # Its immutable source is reviewed before advancing this exact old head.
-      RENTGEN_ONE_SHOT_TRACE: ${{ github.repository == 'DmitrL-dev/1cai-public' && github.event_name == 'push' && github.ref == 'refs/heads/codex/linux-source-facts-qualification-20261006' && github.event.before == '8cd77af51518da43560e48e10d08c3ec4f795acd' && github.run_attempt == 1 }}
     defaults:
       run:
         shell: bash
@@ -82,10 +79,6 @@ jobs:
           cargo +1.92.0 build --locked --release --manifest-path "$SOURCE_ROOT/rust/diagnostic-core/Cargo.toml" --target-dir "$BUILD_ROOT/diagnostic" --bin rentgen-source-facts
           go -C "$SOURCE_ROOT/go" build -mod=readonly -trimpath -o "$BUILD_ROOT/images/bsl-source-facts" ./cmd/bsl-source-facts
           cc -std=c11 -O2 -Wall -Wextra -Werror "$SOURCE_ROOT/tests/fixtures/source_facts/owned_transport_probe.c" -o "$BUILD_ROOT/images/owned-transport-probe"
-          cc -std=c11 -O2 -Wall -Wextra -Werror -Wformat=2 -D_FORTIFY_SOURCE=3 -fstack-protector-strong \
-            -DRENTGEN_PYTHON=\"$BUILD_ROOT/tools/bin/python\" -DRENTGEN_SOURCE_ROOT=\"$SOURCE_ROOT\" \
-            "$SOURCE_ROOT/tests/fixtures/source_facts/owned_trace_launcher.c" -o "$BUILD_ROOT/images/owned-trace-launcher"
-          chmod 0700 "$BUILD_ROOT/images/owned-trace-launcher"
           install -m 0700 "$BUILD_ROOT/input/release/rentgen-input-core" "$BUILD_ROOT/images/rentgen-input-core"
           install -m 0700 "$BUILD_ROOT/diagnostic/release/rentgen-source-facts" "$BUILD_ROOT/images/rentgen-source-facts"
           chmod 0700 "$BUILD_ROOT/images/bsl-source-facts" "$BUILD_ROOT/images/owned-transport-probe"
@@ -139,15 +132,6 @@ jobs:
               'expected_variants': 176, 'harness_sha256': {name: digest(root / name) for name in harness},
               'images': images, 'probe': probe,
               'strace': {'path': '/usr/bin/strace', 'sha256': digest(pathlib.Path('/usr/bin/strace'))}}
-          if os.environ.get('RENTGEN_ONE_SHOT_TRACE') == 'true':
-              source = root / 'tests/fixtures/source_facts/owned_trace_launcher.c'
-              launcher = image('owned-trace-launcher', ['cc', '-std=c11', '-O2', '-Wall', '-Wextra', '-Werror',
-                  '-Wformat=2', '-D_FORTIFY_SOURCE=3', '-fstack-protector-strong',
-                  '-DRENTGEN_PYTHON="' + str(build / 'tools/bin/python') + '"',
-                  '-DRENTGEN_SOURCE_ROOT="' + str(root) + '"', str(source),
-                  '-o', str(build / 'images/owned-trace-launcher')], 'cc')
-              launcher.update(contract='owned_trace_cap_sys_ptrace_v1', source_sha256=digest(source))
-              pins['trace_launcher'] = launcher
           path = evidence / 'pins.json'
           path.write_text(json.dumps(pins, indent=2) + '\n')
           (evidence / 'pins.sha256').write_text(digest(path) + '\n')
@@ -159,9 +143,9 @@ jobs:
         run: |
           cd "$SOURCE_ROOT"
           "$BUILD_ROOT/tools/bin/python" -B -m pytest -q -p no:cacheprovider tests/unit/test_source_fact_host.py tests/unit/test_source_fact_delivery_smoke.py tests/unit/test_source_fact_journal_contract.py tests/unit/test_source_fact_syscall_audit_contract.py tests/unit/test_source_fact_ci_contract.py --basetemp="$EVIDENCE/pure-tmp" --junitxml="$EVIDENCE/pure.xml"
-      - name: Required default supervised 176-variant qualification
+      - name: Required supervised 174 ordinary variants
         run: |
-          "$BUILD_ROOT/tools/bin/python" -I -B "$SOURCE_ROOT/tests/fixtures/source_facts/boundary_supervisor.py" --root "$SOURCE_ROOT" --pins "$EVIDENCE/pins.json" --pins-sha256 "$(cat "$EVIDENCE/pins.sha256")" --output "$EVIDENCE/full176"
+          "$BUILD_ROOT/tools/bin/python" -I -B "$SOURCE_ROOT/tests/fixtures/source_facts/boundary_supervisor.py" --root "$SOURCE_ROOT" --pins "$EVIDENCE/pins.json" --pins-sha256 "$(cat "$EVIDENCE/pins.sha256")" --output "$EVIDENCE/ordinary174" --ordinary-only
       - name: Build reproducible wheel and sdist outside checkout
         run: |
           "$BUILD_ROOT/tools/bin/python" -I -B -m build --no-isolation --wheel --outdir "$BUILD_ROOT/direct-wheel" "$SOURCE_ROOT"
@@ -205,31 +189,31 @@ jobs:
         if: always() && env.EVIDENCE != '' && env.BUILD_ROOT != ''
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: experimental-source-facts-${{ github.sha }}
+          name: ordinary-source-facts-${{ github.sha }}
           path: |
             ${{ env.EVIDENCE }}/*.json
             ${{ env.EVIDENCE }}/go-contracts.jsonl
             ${{ env.EVIDENCE }}/*.sha256
             ${{ env.EVIDENCE }}/*.txt
             ${{ env.EVIDENCE }}/pure.xml
-            ${{ env.EVIDENCE }}/full176/summary.json
-            ${{ env.EVIDENCE }}/full176/results.xml
-            ${{ env.EVIDENCE }}/full176/stdout.log
-            ${{ env.EVIDENCE }}/full176/stderr.log
-            ${{ env.EVIDENCE }}/full176/progress.jsonl
-            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/observed-polls.json
-            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/whole-operation.json
-            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/cleanup-timeout.json
-            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/canary-boundaries.json
-            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/authority-audit.json
-            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/gate.stdout
-            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/gate.stderr
-            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/strace.log*
-            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/syscall-evidence/config.json
-            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/syscall-evidence/trace-capabilities.json
-            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/syscall-evidence/python-capabilities.json
-            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/controller.stdout
-            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/controller.stderr
+            ${{ env.EVIDENCE }}/ordinary174/summary.json
+            ${{ env.EVIDENCE }}/ordinary174/results.xml
+            ${{ env.EVIDENCE }}/ordinary174/stdout.log
+            ${{ env.EVIDENCE }}/ordinary174/stderr.log
+            ${{ env.EVIDENCE }}/ordinary174/progress.jsonl
+            ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/observed-polls.json
+            ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/whole-operation.json
+            ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/cleanup-timeout.json
+            ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/canary-boundaries.json
+            ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/authority-audit.json
+            ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/gate.stdout
+            ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/gate.stderr
+            ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/strace.log*
+            ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/syscall-evidence/config.json
+            ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/syscall-evidence/trace-capabilities.json
+            ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/syscall-evidence/python-capabilities.json
+            ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/controller.stdout
+            ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/controller.stderr
             ${{ env.EVIDENCE }}/installed-wheel/receipt.json
             ${{ env.EVIDENCE }}/installed-wheel/before.json
             ${{ env.EVIDENCE }}/installed-wheel/after.json
