@@ -10,6 +10,7 @@ import pytest
 import rentgen_core as api
 from rentgen_core import CoreError, cli
 from rentgen_core.local import LocalRuntime
+from platform_support_test_support import requires_bytes_plan
 from project_access_test_support import force_legacy_membership
 
 
@@ -177,6 +178,7 @@ def local(tmp_path, monkeypatch, capsys):
     return ctx, paths, tree, write, call
 
 
+@requires_bytes_plan
 def test_execution_matches_library_once_without_source_or_native_operations(
     local, monkeypatch
 ):
@@ -235,6 +237,7 @@ def test_execution_matches_library_once_without_source_or_native_operations(
 
 
 @pytest.mark.parametrize("permission", sorted(PERMISSIONS))
+@requires_bytes_plan
 def test_execution_checks_every_permission_before_any_payload_read(
     local, monkeypatch, permission
 ):
@@ -264,6 +267,7 @@ def test_execution_checks_every_permission_before_any_payload_read(
         ("--max-children", "20001"),
     ],
 )
+@requires_bytes_plan
 def test_execution_checks_limits_before_input_read(local, monkeypatch, option, value):
     _, _, _, _, call = local
     monkeypatch.setattr(
@@ -293,6 +297,7 @@ def test_execution_checks_limits_before_input_read(local, monkeypatch, option, v
         b"\xffPRIVATE_PAYLOAD",
     ],
 )
+@requires_bytes_plan
 def test_execution_rejects_invalid_envelopes_without_payload(local, raw):
     _, paths, _, _, call = local
     paths[0].write_bytes(raw)
@@ -304,6 +309,7 @@ def test_execution_rejects_invalid_envelopes_without_payload(local, raw):
     assert "result" not in output
 
 
+@requires_bytes_plan
 def test_execution_json_byte_cap_precedes_decode(local, monkeypatch):
     _, paths, _, _, call = local
     paths[0].write_bytes(b" " * (1024 * 1024 + 1))
@@ -316,6 +322,7 @@ def test_execution_json_byte_cap_precedes_decode(local, monkeypatch):
     assert output["error"]["message"] == "Proposal input exceeds its byte limit"
 
 
+@requires_bytes_plan
 def test_execution_encoded_byte_limit_precedes_base64_decode(local, monkeypatch):
     _, paths, _, _, call = local
     paths[0].write_text(
@@ -333,6 +340,7 @@ def test_execution_encoded_byte_limit_precedes_base64_decode(local, monkeypatch)
 @pytest.mark.parametrize(
     "option", ["--max-file-bytes", "--max-total-bytes", "--max-files"]
 )
+@requires_bytes_plan
 def test_execution_lower_tree_limits_apply(local, option):
     _, _, tree, write, call = local
     if option == "--max-files":
@@ -343,6 +351,7 @@ def test_execution_lower_tree_limits_apply(local, option):
     assert output["error"]["code"] == "THREE_WAY_LIMIT"
 
 
+@requires_bytes_plan
 def test_execution_lower_child_union_limit_reaches_planner(local):
     _, _, tree, write, call = local
     changed = {
@@ -359,6 +368,7 @@ def test_execution_lower_child_union_limit_reaches_planner(local):
 
 
 @pytest.mark.parametrize("case", ["owner", "xml", "path"])
+@requires_bytes_plan
 def test_execution_planner_errors_are_payload_free(local, case):
     _, _, tree, write, call = local
     if case == "owner":
@@ -382,6 +392,7 @@ def test_execution_planner_errors_are_payload_free(local, case):
     assert "result" not in output
 
 
+@requires_bytes_plan
 def test_execution_engine_error_message_and_details_are_not_a_payload_surface(
     local, monkeypatch
 ):
@@ -403,6 +414,7 @@ def test_execution_engine_error_message_and_details_are_not_a_payload_surface(
 
 
 @pytest.mark.parametrize("after", [1, 2])
+@requires_bytes_plan
 def test_execution_revocation_prevents_the_next_input_read(local, monkeypatch, after):
     ctx, paths, _, _, call = local
     original = cli._metadata_tree
@@ -425,6 +437,7 @@ def test_execution_revocation_prevents_the_next_input_read(local, monkeypatch, a
 
 
 @pytest.mark.parametrize("failure", [False, True])
+@requires_bytes_plan
 def test_execution_rechecks_rights_after_planner_success_or_error(
     local, monkeypatch, failure
 ):
@@ -447,6 +460,7 @@ def test_execution_rechecks_rights_after_planner_success_or_error(
     assert "result" not in output
 
 
+@requires_bytes_plan
 def test_execution_final_permission_check_follows_result_serialization(
     local, monkeypatch
 ):
@@ -470,6 +484,7 @@ def test_execution_final_permission_check_follows_result_serialization(
     assert "result" not in output
 
 
+@requires_bytes_plan
 def test_execution_output_limit_is_preserved_without_partial_result(local, monkeypatch):
     _, _, _, _, call = local
     monkeypatch.setattr(
