@@ -37,8 +37,15 @@ def test_workflow_does_not_grant_privileges_or_rearm_original_trace():
  assert '0f018fbee472e14e30584c9d03cfa0817e7c8081' in workflow
  assert 'github.run_attempt == 1' in workflow and 'persist-credentials: false' in workflow
  assert all(word not in workflow for word in ('sudo ','setcap ','sysctl ','CAP_SYS_PTRACE','pull_request_target'))
- original=(ROOT/'.github/workflows/source-facts-ci.yml').read_text()
- assert "github.event.before == '8cd77af51518da43560e48e10d08c3ec4f795acd'" in original
+ # The obsolete one-shot exception was removed, not rearmed. Neither the
+ # ordinary nor manual qualification workflow may restore its privileges.
+ for name in ('source-facts-ci.yml', 'source-facts-qualification.yml'):
+  source=(ROOT/'.github/workflows'/name).read_text()
+  assert all(word not in source for word in (
+   'RENTGEN_ONE_SHOT_TRACE', 'trace_launcher', 'setcap ', 'sysctl ',
+   'CAP_SYS_PTRACE', 'cap_sys_ptrace', 'sudoers', 'pull_request_target',
+   "github.event.before == '8cd77af51518da43560e48e10d08c3ec4f795acd'",
+  )), name
 
 
 @pytest.mark.parametrize('prior',[info(op=0,ret=24),info(op=2,ret=33),info(op=1,ret=-1),info(op=1,ret=24),info(op=3,ret=80)])

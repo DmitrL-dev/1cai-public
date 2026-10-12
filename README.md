@@ -249,3 +249,8 @@ parser checks run on every platform, while only CLI execution tests use the
 actual capability matrix to select supported hosts. Unsupported-platform
 refusal-before-IO checks remain mandatory. Local verification must use a clean
 tracked-source copy so an untracked helper cannot hide a CI collection failure.
+
+Observer workflow regression tests also enforce removal of the obsolete one-shot
+trace exception from both source-fact workflows, rather than requiring its old
+commit guard to remain. They reject restoration of the privileged launcher,
+ptrace capability grants, and sudoers overrides. The Linux baseline is unchanged.
