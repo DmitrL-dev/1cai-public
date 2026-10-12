@@ -59,7 +59,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          # Only the three new supervised modules move to their mandatory 176-variant job.
+          # The three supervised modules run separately: 174 ordinary variants on PRs; full176 in manual qualification.
           python -m pytest -q --tb=short --ignore=tests/unit/test_source_fact_runtime_boundaries.py --ignore=tests/unit/test_source_fact_lifecycle_completion.py --ignore=tests/unit/test_source_fact_wire_receipt_gaps.py --junitxml=output/linux-diagnostic.xml > output/linux-diagnostic.log 2>&1
           status=$?
           set -e

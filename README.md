@@ -242,3 +242,10 @@ observation environment remains a separate prerequisite for full qualification.
 The obsolete single-push privilege exception is removed; manual dispatch does not
 reactivate it. CI evidence uses distinct `ordinary-source-facts-*` and
 `special-source-facts-*` artifacts. No merge or deployment is performed by this change.
+
+Linux portable CI runs on Python 3.11 and 3.12. The shared test helper
+`tests/unit/platform_support_test_support.py` is included in the repository:
+parser checks run on every platform, while only CLI execution tests use the
+actual capability matrix to select supported hosts. Unsupported-platform
+refusal-before-IO checks remain mandatory. Local verification must use a clean
+tracked-source copy so an untracked helper cannot hide a CI collection failure.
