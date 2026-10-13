@@ -5,3 +5,15 @@
 #search-status-text{min-width:0;overflow-wrap:anywhere}
 
 .pagination{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px 0}.pagination p{min-width:0;overflow-wrap:anywhere;font-size:12px}.pagination .button{white-space:normal;max-width:100%}
+
+/* Bounded two-export comparison: long untrusted paths must not widen the viewport. */
+.comparison-binding,.comparison-list button,.comparison-source-ref{overflow-wrap:anywhere;word-break:break-word;min-width:0}
+#compare-notice{flex-wrap:wrap}#compare-message{min-width:0;overflow-wrap:anywhere}
+#compare-file{display:block;max-width:100%;margin:12px 0}#compare-filter{max-width:100%;padding:8px}
+.comparison-list{display:grid;gap:6px;margin:14px 0}.comparison-list button{text-align:left;white-space:normal;padding:10px;border:1px solid var(--line);border-radius:8px;background:white;color:var(--ink)}
+.comparison-list button[aria-pressed="true"]{outline:2px solid var(--focus)}
+.comparison-sides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.comparison-side{min-width:0}.comparison-side pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:32rem;overflow:auto;background:var(--canvas);padding:12px;border-radius:8px}
+@media(max-width:800px){.comparison-sides{grid-template-columns:minmax(0,1fr)}}
+#compare-source h3{overflow-wrap:anywhere;min-width:0}
+
+.comparison-list{max-height:28rem;overflow:auto}.comparison-list button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}

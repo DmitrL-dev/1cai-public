@@ -95,6 +95,20 @@ def main():
         archives['paged'] = {'path': str(archive), 'sha256': sha(archive)}
         corrupt = root / 'corrupt.zip'
         corrupt.write_bytes(b'Owned deliberately invalid ZIP')
+        compare_code = {}
+        for side in ('before', 'after'):
+            archive = root / f'compare-{side}.zip'
+            with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as output:
+                output.writestr('Catalogs/Products.xml', xml)
+                for index in range(401):
+                    text = f'// {side} {index} Кириллица 😀 <img src=x onerror=alert(1)>\nПроцедура Тест()\nКонецПроцедуры\n'
+                    output.writestr(f'CommonModules/Compare{index:03d}.bsl', text)
+                    if index == 400:
+                        compare_code[side] = text
+                output.writestr(f'Only-{side}.os', side)
+                output.writestr('Binary.bin', b'\xff' + side.encode())
+                output.writestr('Large.bsp', side.encode() * 60000)
+            archives[f'compare_{side}'] = {'path': str(archive), 'sha256': sha(archive)}
         before = snapshot(root)
         app = gui.Workspace(gui.Config(registry.path, identity, project.project_id, binary, sha(binary)))
         server = gui.Server(app)
@@ -103,7 +117,8 @@ def main():
         try:
             # Private pipe only: callers must never log this session bootstrap.
             print(json.dumps({'origin': server.origin, 'token': app.token, 'archives': archives,
-                              'corrupt': str(corrupt), 'module': module,
+                              'corrupt': str(corrupt), 'module': module, 'compare_code': compare_code,
+                              'compare_hashes': {side: hashlib.sha256(code.encode()).hexdigest() for side, code in compare_code.items()},
                               'many_name': many_name, 'many_synonym': many_synonym, 'many_path': many_path,
                               'many_xml': many_xml, 'many_xml_sha256': hashlib.sha256(many_xml.encode()).hexdigest(),
                               'page_xml': page_xml, 'page_module': page_module,

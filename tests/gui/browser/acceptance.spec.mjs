@@ -1,3 +1,4 @@
+import {exerciseComparison} from './comparison-helpers.mjs';
 import {writeFile} from 'node:fs/promises';
 import {test, expect, importZip, ready, noHorizontalOverflow, keyboardReach} from './fixtures.mjs';
 
@@ -114,6 +115,8 @@ test('narrow viewport reflow preserves import, source and provenance controls', 
   await page.screenshot({path:testInfo.outputPath('narrow-related-long-path.png'),fullPage:true});
   await exerciseBoundedPagination(page,app);
   await page.screenshot({path:testInfo.outputPath('narrow-pagination.png'),fullPage:true});
+  await exerciseComparison(page,app);
+  await page.screenshot({path:testInfo.outputPath('narrow-comparison.png'),fullPage:true});
 });
 
 // Avoid Playwright fullPage viewport/clip overrides at native browser zoom.
@@ -182,6 +185,20 @@ test('genuine Chromium 200 percent zoom reflows and keeps controls operable', as
   await page.locator('#pagination').scrollIntoViewIfNeeded();
   const pageCapture=await captureNativeViewport(page,context,testInfo,'browser-zoom-200-pagination.png');
   await writeFile(testInfo.outputPath('pagination-zoom-measurement.json'),JSON.stringify({factor:2,pageCapture},null,2)+'\n');
+  await exerciseComparison(page,app);
+  expect(await worker.evaluate(async()=>chrome.tabs.getZoom((await chrome.tabs.query({active:true,lastFocusedWindow:true}))[0].id))).toBe(2);
+  const comparisonCaptures={};
+  for(const [side,label] of [['before','Код до'],['after','Код после']]){
+    const code=page.getByLabel(label,{exact:true});await code.scrollIntoViewIfNeeded();
+    await expect(code).toBeInViewport({ratio:1});
+    const capture=await captureNativeViewport(page,context,testInfo,`browser-zoom-200-comparison-${side}.png`);
+    const bounds=await code.boundingBox();
+    expect(bounds.x).toBeGreaterThanOrEqual(0);expect(bounds.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.x+bounds.width).toBeLessThanOrEqual(capture.viewport.width+1);
+    expect(bounds.y+bounds.height).toBeLessThanOrEqual(capture.viewport.height+1);
+    comparisonCaptures[side]={...capture,bounds};
+  }
+  await writeFile(testInfo.outputPath('comparison-zoom-measurement.json'),JSON.stringify({factor:2,comparisonCaptures},null,2)+'\n');
 });
 
 function observeImportWrites(page, origin) {

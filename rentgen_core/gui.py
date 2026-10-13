@@ -24,6 +24,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 import webbrowser
 
 from .errors import CoreError
+from .gui_comparison import ComparisonWorkspace, dispatch_comparison, validate_filename
 from .local import LocalRuntime
 from .local_identity import current_local_principal
 from .rust_input import RustInputSession
@@ -37,6 +38,7 @@ SEARCH_LIMIT = GUI_PAGE_LIMIT
 ASSETS = Path(__file__).with_name("gui_assets")
 STATIC = {"/": ("index.html", "text/html; charset=utf-8"),
           "/app.js": ("app.js", "text/javascript; charset=utf-8"),
+          "/comparison.js": ("comparison.js", "text/javascript; charset=utf-8"),
           "/model.js": ("model.js", "text/javascript; charset=utf-8"),
           "/app.css": ("app.css", "text/css; charset=utf-8"),
           "/mark.svg": ("mark.svg", "image/svg+xml")}
@@ -94,7 +96,7 @@ class Search:
     cancel: threading.Event = field(default_factory=threading.Event)
 
 
-class Workspace:
+class Workspace(ComparisonWorkspace):
     def __init__(self, config):
         self.config = config
         config.authorize()
@@ -108,9 +110,11 @@ class Workspace:
         self.search = None
         self.search_worker = None
         self.closed = False
+        self._init_comparison()
 
     def reserve(self, filename):
         self.config.authorize()
+        validate_filename(filename)
         with self.lock:
             if self.closed:
                 fail("SESSION_CLOSED")
@@ -118,6 +122,9 @@ class Workspace:
                 self.abandon(self.pending, "UPLOAD_TIMEOUT")
             if self.pending and self.pending.status in {"awaiting_upload", "uploading", "analyzing"}:
                 fail("BUSY")
+            if self._comparison_busy() or (self.worker and self.worker.is_alive()):
+                fail("BUSY")
+            self._invalidate_comparison_page()
             self._invalidate_search()
             if self.pending and self.pending is not self.current:
                 self.pending.path.unlink(missing_ok=True)
@@ -142,23 +149,30 @@ class Workspace:
 
     def _analyze(self, job):
         try:
-            ctx = self.config.context()
-            result = analyze_export(ctx, archive=job.path, archive_sha256=job.sha256,
-                input_core=self.config.input_core, input_core_sha256=self.config.input_core_sha256,
-                limit=SEARCH_LIMIT, cancelled=job.cancel.is_set)
-            self.config.authorize()
-            with self.io_lock, self.lock:
-                if job.cancel.is_set() or self.closed:
-                    fail("CANCELLED")
-                previous = self.current
-                self._invalidate_search()
-                job.result = result
-                job.completed_at = datetime.now(timezone.utc).isoformat()
-                job.status = "ready"
-                self.current = job
-                if previous and previous is not job:
-                    previous.result = None
-                    previous.path.unlink(missing_ok=True)
+            # Every Rust child lifetime shares this gate, not just commit/unlink.
+            # Acquire IO before lock consistently; never nest the IO gate.
+            with self.io_lock:
+                with self.lock:
+                    if job.cancel.is_set() or self.closed:
+                        fail("CANCELLED")
+                ctx = self.config.context()
+                result = analyze_export(ctx, archive=job.path, archive_sha256=job.sha256,
+                    input_core=self.config.input_core, input_core_sha256=self.config.input_core_sha256,
+                    limit=SEARCH_LIMIT, cancelled=job.cancel.is_set)
+                self.config.authorize()
+                with self.lock:
+                    if job.cancel.is_set() or self.closed:
+                        fail("CANCELLED")
+                    previous = self.current
+                    self._invalidate_search()
+                    self._clear_comparison()
+                    job.result = result
+                    job.completed_at = datetime.now(timezone.utc).isoformat()
+                    job.status = "ready"
+                    self.current = job
+                    if previous and previous is not job:
+                        previous.result = None
+                        previous.path.unlink(missing_ok=True)
         except CoreError as error:
             self.abandon(job, error.code)
         except Exception:
@@ -409,16 +423,22 @@ class Workspace:
             if self.pending:
                 self.pending.cancel.set()
             self._invalidate_search()
+            self._invalidate_comparison_page()
+            if self.comparison_pending:
+                self.comparison_pending.cancel.set()
 
     def close(self):
         self.begin_close()
         with self.lock:
             worker = self.worker
             search_worker = self.search_worker
+            comparison_worker = self.comparison_worker
         if worker:
             worker.join()  # Rust session has its own deadline and confirmed reap.
         if search_worker:
             search_worker.join()
+        if comparison_worker:
+            comparison_worker.join()
         with self.io_lock:
             self.temp.cleanup()
 
@@ -557,8 +577,53 @@ class Handler(BaseHTTPRequestHandler):
             remaining -= len(chunk)
         return b"".join(chunks)
 
+    def _upload_bytes(self, job, length, start, abandon):
+        app = self.server.workspace
+        try:
+            digest = hashlib.sha256()
+            deadline = time.monotonic() + 30
+            with job.path.open("xb") as output:
+                job.path.chmod(0o600)
+                remaining = length
+                while remaining:
+                    if job.cancel.is_set() or app.closed:
+                        fail("CANCELLED")
+                    budget = deadline - time.monotonic()
+                    if budget <= 0:
+                        fail("UPLOAD_TIMEOUT")
+                    self.connection.settimeout(min(5, budget))
+                    chunk = self.rfile.read1(min(65536, remaining))
+                    if not chunk:
+                        fail("INVALID_UPLOAD")
+                    output.write(chunk)
+                    digest.update(chunk)
+                    remaining -= len(chunk)
+                    app.config.authorize()
+            job.sha256 = digest.hexdigest()
+            start(job)
+        except BaseException as error:
+            abandon(job, "CANCELLED" if job.cancel.is_set() or app.closed else error.code if isinstance(error, CoreError) else "INVALID_UPLOAD")
+            raise
+
+    def _upload_comparison(self, comparison):
+        app = self.server.workspace
+        if self.headers.get_all("Content-Type") != ["application/zip"]:
+            fail("INVALID_UPLOAD")
+        length = self._length(MAX_UPLOAD)
+        with app.lock:
+            item = app._get_comparison(comparison)
+            if item.status == "awaiting_upload" and time.monotonic() - item.created_at >= 30:
+                app.abandon_comparison(item, "UPLOAD_TIMEOUT")
+                fail("UPLOAD_TIMEOUT")
+            if item is not app.comparison_pending or item.status != "awaiting_upload" or item.cancel.is_set() or app.closed:
+                fail("CANCELLED")
+            item.status = "uploading"
+        self._upload_bytes(item, length, app.start_comparison, app.abandon_comparison)
+        with app.lock:
+            self._json({"comparison": item.id}, status=202, validate=lambda: app._get_comparison(item.id))
+
     def _query(self, allowed):
-        value = parse_qs(urlsplit(self.path).query, keep_blank_values=True, max_num_fields=3)
+        value = parse_qs(urlsplit(self.path).query, keep_blank_values=True, max_num_fields=len(allowed))
         if set(value) != set(allowed) or any(len(items) != 1 for items in value.values()):
             fail("INVALID_REQUEST")
         return {key: items[0] for key, items in value.items()}
@@ -567,6 +632,8 @@ class Handler(BaseHTTPRequestHandler):
         path = urlsplit(self.path).path
         self._check(api=path.startswith("/api/"))
         app = self.server.workspace
+        if path.startswith("/api/comparison") and dispatch_comparison(self, path):
+            return
         if self.command == "GET" and path in STATIC and not urlsplit(self.path).query:
             filename, mime = STATIC[path]
             raw = (ASSETS / filename).read_bytes()
@@ -637,31 +704,7 @@ class Handler(BaseHTTPRequestHandler):
                 if job is not app.pending or job.status != "awaiting_upload" or job.cancel.is_set() or app.closed:
                     fail("CANCELLED")
                 job.status = "uploading"
-            try:
-                digest = hashlib.sha256()
-                deadline = time.monotonic() + 30
-                with job.path.open("xb") as output:
-                    job.path.chmod(0o600)
-                    remaining = length
-                    while remaining:
-                        if job.cancel.is_set() or app.closed:
-                            fail("CANCELLED")
-                        budget = deadline - time.monotonic()
-                        if budget <= 0:
-                            fail("UPLOAD_TIMEOUT")
-                        self.connection.settimeout(min(5, budget))
-                        chunk = self.rfile.read1(min(65536, remaining))
-                        if not chunk:
-                            fail("INVALID_UPLOAD")
-                        output.write(chunk)
-                        digest.update(chunk)
-                        remaining -= len(chunk)
-                        app.config.authorize()
-                job.sha256 = digest.hexdigest()
-                app.start(job)
-            except BaseException as error:
-                app.abandon(job, "CANCELLED" if job.cancel.is_set() or app.closed else error.code if isinstance(error, CoreError) else "INVALID_UPLOAD")
-                raise
+            self._upload_bytes(job, length, app.start, app.abandon)
             self._json({"job": job.id}, status=202)
         elif self.command == "POST" and path == "/api/cancel":
             if self.headers.get_all("Content-Type") != ["application/json"]:

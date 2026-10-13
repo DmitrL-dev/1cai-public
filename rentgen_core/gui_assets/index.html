@@ -17,13 +17,13 @@
     <nav id="primary-nav" aria-label="Разделы">
       <button class="nav-item active" data-view="objects" aria-current="page"><span data-icon="boxes"></span>Объекты<span id="object-count" class="nav-count">0</span></button>
       <button class="nav-item" data-view="modules"><span data-icon="code"></span>Модули<span id="module-count" class="nav-count">0</span></button>
+      <button class="nav-item" data-view="comparison"><span data-icon="compare"></span>Сравнение ZIP</button>
       <button class="nav-item" data-view="provenance"><span data-icon="shield"></span>Источник и границы</button>
     </nav>
     <p class="nav-caption second">СЛЕДУЮЩИЕ ЭТАПЫ</p>
     <div class="unavailable-nav" aria-label="Недоступные функции">
       <span><span data-icon="network"></span>Связи объектов<span class="soon">Позже</span></span>
       <span><span data-icon="pulse"></span>Диагностика<span class="soon">Позже</span></span>
-      <span><span data-icon="compare"></span>Сравнение<span class="soon">Позже</span></span>
     </div>
     <div class="sidebar-note"><span data-icon="lock"></span><div>Ваш код остаётся здесь<small>Без облака и без LLM</small></div></div>
     <div class="sidebar-bottom"><span class="avatar">R</span><span>Рентген Workspace<small>Экспериментальный GUI</small></span></div>
@@ -51,6 +51,20 @@
           <div id="truncation-warning" class="notice caution" hidden></div>
           <div class="explorer"><section class="inventory-list" aria-label="Список объектов"><div class="list-heading"><span id="list-title">ОБЪЕКТ</span><span>ТИП</span></div><div id="item-list"></div><div id="no-results" class="no-results" hidden><span data-icon="search"></span><strong>Ничего не найдено</strong><p>Попробуйте другое имя или сбросьте фильтры.</p><button id="reset-search" class="button subtle">Сбросить фильтры</button></div></section><section class="detail-panel" id="detail-panel" aria-label="Сведения об объекте"></section></div>
         </div>
+        <section id="comparison-view" hidden aria-label="Сравнение двух ZIP">
+          <div class="notice"><p>Сопоставление файлов по точному пути и SHA-256 байтов. Переименование показано как удаление и добавление. Это две предоставленные ZIP-выгрузки, а не снимки проекта или живая база. Построчное выравнивание, семантический анализ и применение изменений не выполняются.</p></div>
+          <h2>До: текущая открытая выгрузка</h2><p id="compare-before" class="comparison-binding"></p>
+          <label class="button secondary" for="compare-file">Выбрать ZIP «После»</label><input id="compare-file" type="file" accept=".zip,application/zip" aria-label="ZIP после изменения">
+          <p class="muted">Выбор «После» сравнит его с указанной выше выгрузкой «До». Новый обычный импорт станет новым «До» и сбросит принятую пару только после успешной проверки.</p>
+          <div id="compare-notice" class="notice" role="status"><p id="compare-message">Выберите вторую выгрузку для сравнения.</p><button id="compare-check" class="button subtle">Проверить результат</button><button id="compare-cancel" class="button subtle" hidden>Отменить сравнение</button></div>
+          <div id="compare-result" hidden>
+            <p id="compare-after" class="comparison-binding"></p><p id="compare-counts" role="status"></p>
+            <label for="compare-filter">Показать файлы</label><select id="compare-filter"><option value="changes">Изменения</option><option value="all">Все файлы</option><option value="added">Добавленные</option><option value="removed">Удалённые</option><option value="modified">Изменённые байты</option><option value="unchanged">Без изменений</option></select>
+            <nav class="pagination" aria-label="Страницы сравнения"><button id="compare-previous" class="button subtle" disabled>Предыдущая страница</button><p id="compare-range" role="status"></p><button id="compare-next" class="button subtle" disabled>Следующая страница</button></nav>
+            <div id="compare-list" class="comparison-list" aria-label="Файлы сравнения"></div>
+            <section id="compare-source" aria-label="Проверенные исходники до и после"></section>
+          </div>
+        </section>
         <section id="provenance-view" hidden></section>
       </section>
     </main>
