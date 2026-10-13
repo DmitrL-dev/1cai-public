@@ -2,11 +2,14 @@
 
 import json
 import os
+import sys
 from pathlib import Path
 from threading import Event, Thread
 from types import SimpleNamespace
 
 import pytest
+
+from composition_wait_support import wait_diagnostic
 
 from rentgen_core import service_entry
 from rentgen_core.errors import CoreError
@@ -291,6 +294,7 @@ def test_git_worker_stop_finishes_active_cycle_and_prevents_later_ticks(
     configured, workspace, monkeypatch, scanner, capture, max_cycles
 ):
     entered, release, stop = Event(), Event(), Event()
+    started, finished = Event(), Event()
 
     class BlockingAdapter(FakeAdapter):
         def analyze(self, *args, **kwargs):
@@ -311,22 +315,31 @@ def test_git_worker_stop_finishes_active_cycle_and_prevents_later_ticks(
     document.update(max_cycles=max_cycles, interval_seconds=86400)
     configured.path.write_text(json.dumps(document), encoding="utf-8")
     results = []
-    thread = Thread(
-        target=lambda: results.append(
-            service_entry.run_console(configured.path, stop_event=stop)
-        )
-    )
+    def run():
+        started.set()
+        try:
+            results.append(service_entry.run_console(configured.path, stop_event=stop))
+        finally:
+            finished.set()
+
+    thread = Thread(target=run)
+
+    def diagnostic():
+        return wait_diagnostic(thread, started, entered, finished, results)
     thread.start()
     try:
-        assert entered.wait(10)
+        assert entered.wait(10), diagnostic()
         stop.set()
         release.set()
         thread.join(10)
-        assert not thread.is_alive()
+        assert not thread.is_alive(), diagnostic()
     finally:
         stop.set()
         release.set()
         thread.join(10)
+        error = sys.exception()
+        if error is not None:
+            error.add_note("Service composition after cleanup: " + diagnostic())
     assert (results[0].exit_code, results[0].cycles) == (0, 1)
     assert len(adapter.calls) == 1
     with observer.locked():
