@@ -4,9 +4,9 @@ import json
 import os
 from pathlib import Path
 import shutil
-import subprocess
 
 import pytest
+from powershell_projection_support import run_after_ready
 
 
 PRELUDE = r"""$script:itemCalls=0
@@ -105,6 +105,7 @@ def project(pwsh, tmp_path, count, *, fault="", missing=""):
     if missing:
         expected[0][missing] = None
     rows_path, calls_path = tmp_path / "rows.json", tmp_path / "calls.json"
+    ready_path = tmp_path / "projection.ready"
     rows_path.write_text(json.dumps(expected), "utf-8")
     script = source_script()
     query = "SELECT ProcessId,ParentProcessId,ExecutablePath,CommandLine FROM Win32_Process WHERE " \
@@ -119,11 +120,13 @@ def project(pwsh, tmp_path, count, *, fault="", missing=""):
         $service.ExpectedQuery={quote(query)}; $service.Fault=${str(fault == 'query').lower()}
         $script:locator=[ProjectionLocator]::new(); $script:locator.Service=$service
         $projection=[scriptblock]::Create({quote(script)})
+        Set-Content -LiteralPath {quote(ready_path)} -Value 'ready' -Encoding ascii
+        if([Console]::ReadLine() -cne 'RUN'){{throw 'Projection start handshake differs'}}
         try{{ & $projection }}
         finally{{ @{{item_calls=$script:itemCalls;flags=$script:queryFlags}} | ConvertTo-Json -Compress | Set-Content -LiteralPath {quote(calls_path)} -Encoding utf8 }}
     """
-    result = subprocess.run([pwsh, "-NoProfile", "-NonInteractive", "-Command", PRELUDE + setup],
-                            capture_output=True, timeout=10)
+    result = run_after_ready([pwsh, "-NoProfile", "-NonInteractive", "-Command",
+                              "$ErrorActionPreference='Stop';\n" + PRELUDE + setup], ready_path)
     assert len(result.stdout) <= 32768 and len(result.stderr) <= 32768
     assert calls_path.exists(), result.stderr.decode("utf-8", errors="replace")
     calls = json.loads(calls_path.read_text("utf-8-sig"))
