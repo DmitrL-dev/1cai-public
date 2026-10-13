@@ -23,6 +23,7 @@ rentgen = "rentgen_core.cli:main"
 rentgen-mcp = "rentgen_core.stdio_mcp:main"
 rentgen-observer = "rentgen_core.observer_cli:main"
 rentgen-service = "rentgen_core.service_entry:main"
+rentgen-gui = "rentgen_core.gui:main"
 
 [project.optional-dependencies]
 mcp = ["mcp==1.30.0"]
@@ -61,6 +62,7 @@ only-include = [
   "docs/product/CORE-INSTALLATION.md",
   "docs/product/PLATFORM-SUPPORT.md",
   "docs/product/PORTABLE-CORE.md",
+  "docs/product/LOCAL-GUI.md",
   "docs/product/RUST-INPUT-CORE.md",
   "docs/product/evidence/linux-baseline-classification-20261005.json",
   "rust/input-core/Cargo.toml",

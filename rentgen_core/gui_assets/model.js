@@ -1,0 +1,8 @@
+export function escapeHTML(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+const labels={Catalog:'Справочник',Document:'Документ',CommonModule:'Общий модуль',InformationRegister:'Регистр сведений',AccumulationRegister:'Регистр накопления',Report:'Отчёт',DataProcessor:'Обработка',Enum:'Перечисление',Constant:'Константа',Subsystem:'Подсистема'};
+export function typeLabel(type){return labels[type]||type||'Модуль';}
+export function typeClass(type,module=false){return module||type==='CommonModule'?'module':type==='Catalog'?'catalog':type==='Document'?'document':'register';}
+export function displayName(row,module=false){if(!module)return row.name||row.input_ref.relative_path;const parts=row.input_ref.relative_path.split('/');const ext=parts.indexOf('Ext');return ext>0?parts[ext-1]:parts.at(-1);}
+export function filterRows(rows,query,type,module=false){const term=query.trim().toLocaleLowerCase('ru');return rows.filter(row=>(module||!type||row.type===type)&&(!term||[row.name,row.synonym,row.type,typeLabel(row.type),row.input_ref.relative_path].some(value=>String(value||'').toLocaleLowerCase('ru').includes(term))));}
+export function relatedModules(row,modules){const path=row.input_ref.relative_path;if(!path.toLowerCase().endsWith('.xml'))return [];const prefix=path.slice(0,-4)+'/';return modules.filter(item=>item.input_ref.relative_path.startsWith(prefix));}
+export function formatBytes(bytes){if(bytes<1024)return `${bytes} Б`;if(bytes<1048576)return `${(bytes/1024).toLocaleString('ru-RU',{maximumFractionDigits:1})} КиБ`;return `${(bytes/1048576).toLocaleString('ru-RU',{maximumFractionDigits:1})} МиБ`;}
