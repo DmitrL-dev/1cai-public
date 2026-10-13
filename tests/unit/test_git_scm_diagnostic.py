@@ -361,6 +361,45 @@ def test_auxiliary_accepts_actual_preflight_json_config(tmp_path, monkeypatch):
     assert coordinator.auxiliary_context(worker, prep, actual)[3]['document']['service_name'] == worker.NAME
 
 
+def test_preparation_disables_detached_maintenance_without_persisting_config(tmp_path, monkeypatch):
+    coordinator, worker, prep, context = preparation_fixture(tmp_path, monkeypatch)
+    load_script = coordinator.load_script
+    commands = []
+
+    def load(name, **kwargs):
+        module = load_script(name, **kwargs)
+        if name == 'scm_git_probe_service' and not kwargs:
+            capture = module.capture
+
+            def observe(command, *args, **bounds):
+                commands.append(command)
+                return capture(command, *args, **bounds)
+
+            monkeypatch.setattr(module, 'capture', observe)
+        return module
+
+    monkeypatch.setattr(coordinator, 'load_script', load)
+    coordinator.prepare_diagnostic(worker, prep)
+    assert len(commands) == 8
+    assert all(command[1:3] == ('-c', 'maintenance.auto=false') for command in commands)
+    _, probe, _, inputs, _ = coordinator.auxiliary_context(worker, prep, context)
+    for name in ('selected', 'other'):
+        root = inputs[name]
+        assert 'maintenance' not in (root / '.git/config').read_text('utf-8')
+        assert not (root / '.git/objects/maintenance.lock').exists()
+        assert probe.inventory_repository(root) == inputs['document']['repositories'][name]['files']
+
+
+def test_auxiliary_still_rejects_unexpected_maintenance_file(tmp_path, monkeypatch):
+    coordinator, worker, prep, context = preparation_fixture(tmp_path, monkeypatch)
+    coordinator.prepare_diagnostic(worker, prep)
+    lock = worker.ROOT / 'git-probe/source/selected/.git/objects/maintenance.lock'
+    lock.write_bytes(b'')
+    with pytest.raises(ValueError, match='Prepared diagnostic repository changed'):
+        coordinator.auxiliary_context(worker, prep, context)
+    context[3].query.assert_not_called()
+
+
 def exercise_fixture(tmp_path, monkeypatch, *, ready=True, existing=False, changed=None):
     coordinator, probe, inputs, report, process = measurement_fixture(tmp_path, monkeypatch)
     config = inputs['workdir'] / 'fixture/localservice/service.json'
