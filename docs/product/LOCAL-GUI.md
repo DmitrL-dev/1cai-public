@@ -127,3 +127,48 @@ python scripts/verification/build_gui_visual_fixture.py \
 Дизайн учитывает [WCAG 2.2](https://www.w3.org/TR/WCAG22/): focus-visible, клавиатуру,
 адаптивный reflow и reduced motion. Это не заявление о сертификации полного соответствия.
 Защита запросов следует семантике [Fetch Metadata](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Fetch_metadata).
+
+### Настоящая браузерная приёмка Linux
+
+Отдельный обязательный для квалификации GUI workflow `Linux GUI browser acceptance`
+собирает Rust helper из того же checkout и запускает пять Playwright-проверок настоящей
+страницы через `127.0.0.1`. Настройка required check в branch protection выполняется
+отдельно; наличие workflow само по себе не изменяет правила слияния.
+
+```sh
+cargo +1.92.0 build --locked --release --manifest-path rust/input-core/Cargo.toml -j 2
+npm ci --prefix tests/gui/browser --ignore-scripts
+(cd tests/gui/browser && npx --no-install playwright install chromium)
+RENTGEN_INPUT_CORE_TEST_BINARY="$PWD/rust/input-core/target/release/rentgen-input-core" \
+  npm --prefix tests/gui/browser test
+```
+
+Playwright зафиксирован в отдельном test-only `package-lock.json`; runtime Python package
+по-прежнему не требует npm. Нужен обычный непривилегированный Linux account с поддержкой
+Chromium sandbox и системными библиотеками браузера. Команды не устанавливают системные
+пакеты и не меняют sandbox/sysctl/права. Если среда запрещает loopback или sandbox,
+проверка завершается ошибкой: это **не пройденная браузерная приёмка**. Не используйте
+`--no-sandbox`, внешний backend или расширение listen address как обход.
+
+Каждый тест создаёт собственные синтетические ZIP, identity, registry и проект,
+запускает неизменённый HTTP server/Rust helper и после завершения проверяет неизменность
+входных файлов и project state. Покрыты импорт, объекты, модули, UTF-8 исходник и SHA-256,
+повторный импорт, ошибочный ZIP с сохранением предыдущего результата, клавиатурный путь,
+Escape/возврат фокуса, поиск, tablist, узкое окно 390 px и настоящий browser zoom 200%.
+Для детерминированной отмены задерживается только исходящий upload в браузере после
+настоящего резервирования job; `/api/cancel` обслуживает настоящий backend. Отмена уже
+запущенного Rust child и reap проверяются дополнительным существующим HTTP/Rust suite.
+
+200% устанавливается через официальный `chrome.tabs.setZoom` в одноразовом test profile.
+Минимальное собственное test-only расширение не имеет permissions, host permissions,
+content scripts или сетевых запросов. Проверяются `getZoom() == 2`, удвоение DPR и
+уменьшение CSS viewport вдвое. CSS zoom и deviceScaleFactor не подменяют этот gate.
+Недоступность расширения не приводит к skip. Профиль удаляется после теста.
+Все запросы страницы, кроме точного origin запущенного loopback server, запрещены тестом;
+правила Host/Origin/token/CSP приложения не изменяются.
+
+CI сохраняет JUnit, синтетические скриншоты и receipt с commit checkout и хешем helper.
+Успешный receipt создаётся только после пяти выполненных тестов без skips/errors.
+Трассы запросов, профиль, identity, registry и ссылка с token не публикуются. На PR явно checkout-ится точный head SHA; receipt проверяет его совпадение с ожидаемым
+HEAD и отдельно записывает workflow SHA. Зелёный запуск не доказывает другой HEAD. Это Linux Chromium gate, не Windows/macOS GUI-приёмка,
+не полная WCAG-сертификация и не GUI-релиз.
