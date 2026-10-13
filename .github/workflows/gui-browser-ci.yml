@@ -52,13 +52,13 @@ jobs:
           node --test tests/gui/*.test.mjs > output/gui-browser/model.log
       - name: Run real sandboxed browser acceptance
         run: npm --prefix tests/gui/browser test
-      - name: Verify all five browser gates ran and record exact checkout
+      - name: Verify all nine browser gates ran and record exact checkout
         run: |
           python - <<'PY'
           import hashlib, json, os, pathlib, subprocess, xml.etree.ElementTree as ET
           output = pathlib.Path('output/gui-browser')
           cases = ET.parse(output / 'junit.xml').findall('.//testcase')
-          assert len(cases) == 5, 'All five browser acceptance cases must run'
+          assert len(cases) == 9, 'All nine browser acceptance cases must run'
           assert all(not any(c.find(tag) is not None for tag in ('failure', 'error', 'skipped')) for c in cases)
           assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == os.environ['EXPECTED_HEAD']
           binary = pathlib.Path(os.environ['RENTGEN_INPUT_CORE_TEST_BINARY'])

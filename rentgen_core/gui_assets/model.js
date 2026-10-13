@@ -6,3 +6,22 @@ export function displayName(row,module=false){if(!module)return row.name||row.in
 export function filterRows(rows,query,type,module=false){const term=query.trim().toLocaleLowerCase('ru');return rows.filter(row=>(module||!type||row.type===type)&&(!term||[row.name,row.synonym,row.type,typeLabel(row.type),row.input_ref.relative_path].some(value=>String(value||'').toLocaleLowerCase('ru').includes(term))));}
 export function relatedModules(row,modules){const path=row.input_ref.relative_path;if(!path.toLowerCase().endsWith('.xml'))return [];const prefix=path.slice(0,-4)+'/';return modules.filter(item=>item.input_ref.relative_path.startsWith(prefix));}
 export function formatBytes(bytes){if(bytes<1024)return `${bytes} Б`;if(bytes<1048576)return `${(bytes/1024).toLocaleString('ru-RU',{maximumFractionDigits:1})} КиБ`;return `${(bytes/1048576).toLocaleString('ru-RU',{maximumFractionDigits:1})} МиБ`;}
+export function transientImportError(error){return ['CONNECTION_LOST','PROTOCOL_ERROR'].includes(error?.code);}
+// Three read-only attempts per reconciliation, never an upload/analysis replay.
+export function reconcileImport(read,isCurrent,pause=()=>new Promise(resolve=>setTimeout(resolve,250))){
+  return (async()=>{
+    for(let attempt=0;attempt<3;attempt++){
+      if(!isCurrent())throw {code:'STALE_IMPORT'};
+      try{
+        const status=await read();
+        if(!isCurrent())throw {code:'STALE_IMPORT'};
+        if(['ready','error','cancelled'].includes(status.status))return status;
+      }catch(error){
+        if(!isCurrent())throw {code:'STALE_IMPORT'};
+        if(!transientImportError(error))throw error;
+      }
+      if(attempt<2)await pause();
+    }
+    throw {code:'IMPORT_OUTCOME_UNCERTAIN'};
+  })();
+}

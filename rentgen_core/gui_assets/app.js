@@ -1,9 +1,9 @@
-import {escapeHTML as esc, typeLabel, typeClass, displayName, filterRows, relatedModules, formatBytes} from './model.js';
+import {escapeHTML as esc, typeLabel, typeClass, displayName, filterRows, relatedModules, formatBytes,transientImportError,reconcileImport} from './model.js';
 const icons={boxes:'<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.2l8 4.5"/>',code:'<path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-13-2 16"/>',shield:'<path d="M12 3 4.5 6v6c0 4.2 3 7.2 7.5 9 4.5-1.8 7.5-4.8 7.5-9V6L12 3Z"/><path d="m8 12 2.5 2.5L16 9"/>',network:'<rect x="9" y="3" width="6" height="5" rx="1"/><rect x="3" y="16" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M12 8v4M6 16v-4h12v4"/>',pulse:'<path d="M3 12h4l3-7 4 14 3-7h4"/>',compare:'<path d="M8 3v15m0 0-4-4m4 4 4-4M16 21V6m0 0-4 4m4-4 4 4"/>',lock:'<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/>',folder:'<path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>',plus:'<path d="M12 5v14M5 12h14"/>',upload:'<path d="M12 16V3m0 0L7 8m5-5 5 5M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>',search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',fingerprint:'<path d="M7 7a7 7 0 0 1 12 5c0 3-1 6-2 8M4 10c0-5 3-8 8-8m0 6a4 4 0 0 1 4 4c0 3-.5 5-2 9M8 19c2-3 2-5 2-7a2 2 0 0 1 4 0m-8 4 1-4m-3 0c0 3-1 5-1 5"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.5"/>',check:'<path d="m5 12 4 4L19 6"/>',close:'<path d="m6 6 12 12M6 18 18 6"/>',file:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6Zm0 0v6h6M8 13h8m-8 4h5"/>',database:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5M4 12c0 4 16 4 16 0"/>'};
 const svg=name=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]||icons.file}</svg>`;
 function paintIcons(root=document){root.querySelectorAll('[data-icon]').forEach(node=>node.innerHTML=svg(node.dataset.icon));}
 paintIcons();
-const $=id=>document.getElementById(id), state={view:'objects',result:null,selected:null,tab:'info',job:null,busy:false,connected:false,token:location.hash.slice(1),filename:'',sourceGeneration:0};
+const $=id=>document.getElementById(id), state={view:'objects',result:null,selected:null,tab:'info',job:null,busy:false,connected:false,token:location.hash.slice(1),filename:'',sourceGeneration:0,importGeneration:0,uncertainImport:null};
 if(state.token) history.replaceState(null,'',location.pathname);
 const errors={IMPORT_INVALID_ARCHIVE:'Файл не является поддерживаемым ZIP. Проверьте архив и попробуйте ещё раз.',IMPORT_UNSUPPORTED_ARCHIVE:'Этот формат ZIP не поддерживается. Используйте обычный ZIP со сжатием Deflate или без сжатия, без пароля.',IMPORT_INVALID_PATH:'В архиве обнаружены небезопасные или конфликтующие пути. Выгрузите исходники заново.',IMPORT_LIMIT_EXCEEDED:'Архив превышает ограничения: 16 МиБ ZIP, 32 МиБ после распаковки, 4096 записей, 4 МиБ на файл.',IMPORTED_EXPORT_UNSUPPORTED:'Не найдены объекты Designer XML в корне архива. Уберите внешнюю папку-обёртку. EDT-выгрузка пока не поддерживается.',CANCELLED:'Анализ отменён.',BUSY:'Другой анализ ещё выполняется. Дождитесь завершения или отмените его.',UNAUTHORIZED:'Сеанс недоступен. Откройте адрес запуска, показанный Рентгеном в терминале.',FORBIDDEN:'Доступ к проекту больше не разрешён.',SOURCE_TOO_LARGE:'Этот файл слишком велик для просмотра. Лимит просмотра: 256 КиБ.',SOURCE_ENCODING_UNSUPPORTED:'Файл не является UTF-8. Просмотр в этой кодировке пока не поддерживается.',SOURCE_NOT_AVAILABLE:'Файл недоступен в текущем результате. Повторите импорт.',UPLOAD_TIMEOUT:'Передача не завершилась вовремя. Выберите архив ещё раз.',INVALID_UPLOAD:'Нужен ZIP-файл размером не более 16 МиБ.',INTERNAL_ERROR:'Не удалось завершить операцию. Повторите импорт; исходные файлы не изменены.'};
 function errorText(error){return errors[error.code]||'Не удалось прочитать выгрузку. '+(error.code ? `Код: ${error.code}.`:'Проверьте, что локальный Рентген запущен.');}
@@ -30,7 +30,97 @@ async function renderSource(row){const generation=state.sourceGeneration;$('deta
 function renderProvenance(){const r=state.result;$('provenance-view').innerHTML=`<div class="provenance-card"><h2>Откуда получены данные</h2><dl class="properties">${pair('Архив',state.filename)}${pair('SHA-256 архива',r.input.input_sha256,'mono')}${pair('Принятые файлы',`${r.input.files_count} · ${formatBytes(r.input.total_bytes)} после распаковки`)}${pair('Парсер','Designer XML · корневые свойства')}${pair('Распознавание',r.format_status==='partial'?'Частичное. Некоторые корни не поддерживаются.':'Обнаружены поддерживаемые корни Designer XML')}${pair('Неизвестные корни',r.counts.unsupported_metadata_roots)}${pair('Публикация снимка','Не выполнялась')}</dl></div><div class="provenance-card"><h2>Границы этого результата</h2><div class="scope-grid"><div><h3>Доступно сейчас</h3><ul><li>Проверка ZIP и SHA-256</li><li>Имена и типы объектов из XML</li><li>Инвентарь модулей и просмотр UTF-8</li><li>Поиск в загруженной части инвентаря</li></ul></div><div class="unavailable"><h3>Пока не проверяется</h3><ul><li>Актуальность и полнота относительно базы 1С</li><li>Диагностика и качество кода</li><li>Граф вызовов и зависимости</li><li>Выполнение, изменение базы и командная работа</li></ul></div></div></div><div class="provenance-card"><h2>Локальная обработка</h2><p>Архив обрабатывается на этом компьютере. Нет отправки кода в облако, телеметрии или обращения к LLM. Временная копия нужна только до следующего импорта или завершения приложения. Исходный ZIP и файлы базы 1С не изменяются.</p><p>Ограничения: ZIP до 16 МиБ, 4096 записей, 32 МиБ после распаковки, 4 МиБ на файл. Инвентарь показывает до 200 объектов и 200 модулей. Просмотр текста: до 256 КиБ, UTF-8.</p><p>Этот backend пока экспериментальный, для GNU/Linux x86_64. Приёмка Windows и macOS для этого GUI ещё не выполнена.</p></div>`;}
 $('file-input').addEventListener('change',()=>{if($('file-input').files[0])startImport($('file-input').files[0]);});
 let dragDepth=0;document.addEventListener('dragenter',event=>{if([...event.dataTransfer.types].includes('Files')){event.preventDefault();dragDepth++;if(!state.busy&&state.connected)$('drag-overlay').hidden=false;}});document.addEventListener('dragover',event=>{if([...event.dataTransfer.types].includes('Files'))event.preventDefault();});document.addEventListener('dragleave',()=>{if(--dragDepth<=0){dragDepth=0;$('drag-overlay').hidden=true;}});document.addEventListener('drop',event=>{event.preventDefault();dragDepth=0;$('drag-overlay').hidden=true;if(!state.busy&&state.connected&&event.dataTransfer.files.length){if(event.dataTransfer.files.length!==1){toast('Выберите один ZIP-архив.');return;}startImport(event.dataTransfer.files[0]);}});
-async function startImport(file){if(state.busy)return;if(!/\.zip$/i.test(file.name)||file.size===0||file.size>16*1024*1024){$('upload-error').textContent=errors.INVALID_UPLOAD;$('upload-error').hidden=false;if(!$('import-dialog').open)$('import-dialog').showModal();return;}state.busy=true;$('import-dialog').close();$('progress-file').textContent=file.name;$('progress-title').textContent='Читаем выгрузку';$('step-upload').className='current';$('step-analyze').className='';$('step-ready').className='';$('cancel-analysis').disabled=false;$('cancel-analysis').textContent='Отменить';$('progress-dialog').showModal();state.uploadController=new AbortController();state.cancelRequested=false;let job;try{const prepared=await api('/api/import-start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:file.name.slice(0,240)})});job=prepared.job;state.pendingJob=job;if(state.cancelRequested){await api('/api/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job})});throw {code:'CANCELLED'};}await api(`/api/import?job=${encodeURIComponent(job)}`,{method:'PUT',headers:{'Content-Type':'application/zip'},body:file,signal:state.uploadController.signal});$('step-upload').className='complete';$('step-analyze').className='current';if(state.cancelRequested)await api('/api/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job})});while(true){const status=await api(`/api/job?job=${encodeURIComponent(job)}`);if(status.status==='ready'){state.result=status.result;state.job=job;state.filename=status.filename;state.completedAt=status.completed_at;state.selected=null;state.tab='info';state.view='objects';$('step-analyze').className='complete';$('step-ready').className='complete';$('search').value='';$('type-filter').value='';render();toast('Выгрузка прочитана. Исходные файлы не изменены.');break;}if(status.status==='error'||status.status==='cancelled')throw {code:status.error||'CANCELLED'};await new Promise(resolve=>setTimeout(resolve,250));}}catch(error){if(error.code==='CANCELLED'||state.cancelRequested)toast('Анализ отменён.');else{$('file-input').value='';$('upload-error').textContent=errorText(error);$('upload-error').hidden=false;$('progress-dialog').close();$('import-dialog').showModal();}}finally{state.busy=false;state.pendingJob=null;state.uploadController=null;$('progress-dialog').close();}}
-async function cancel(){if(!state.busy||state.cancelRequested)return;state.cancelRequested=true;const job=state.pendingJob,controller=state.uploadController;$('cancel-analysis').disabled=true;$('cancel-analysis').textContent='Отменяем…';$('progress-title').textContent='Отменяем анализ';if(job){try{const reply=await api('/api/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job})});if(reply.cancel_requested&&controller)controller.abort();else if(reply.status==='ready'&&state.pendingJob===job){state.cancelRequested=false;$('progress-title').textContent='Выгрузка уже прочитана';}}catch(error){if(state.pendingJob===job){state.cancelRequested=false;$('cancel-analysis').disabled=false;toast(errorText(error));}}}}
+function ownsImport(generation,job){return state.busy&&state.importGeneration===generation&&(job===undefined||state.pendingJob===job);}
+function clearUncertainImport(){state.uncertainImport=null;$('import-uncertain').hidden=true;}
+function showImportError(error){
+  $('file-input').value='';$('upload-error').textContent=errorText(error);$('upload-error').hidden=false;
+  $('progress-dialog').close();if(!$('import-dialog').open)$('import-dialog').showModal();
+}
+function showUncertainImport(job,filename){
+  state.uncertainImport={job,filename};state.result=null;state.job=null;state.selected=null;state.filename='';state.sourceGeneration++;
+  $('detail-panel').replaceChildren();$('item-list').replaceChildren();$('provenance-view').replaceChildren();
+  $('object-count').textContent='0';$('module-count').textContent='0';render();
+  $('page-subtitle').textContent=`${filename} · результат импорта пока неизвестен`;
+  $('runtime-status').textContent='Результат импорта не подтверждён';
+  $('import-uncertain').hidden=false;$('import-dialog').close();
+}
+function presentImportOutcome(status,job,generation){
+  if(!ownsImport(generation,job))return;
+  if(status.status==='ready'){
+    clearUncertainImport();
+    state.result=status.result;state.job=job;state.filename=status.filename;state.completedAt=status.completed_at;
+    state.selected=null;state.tab='info';state.view='objects';state.sourceGeneration++;
+    $('step-analyze').className='complete';$('step-ready').className='complete';
+    $('search').value='';$('type-filter').value='';render();toast('Выгрузка прочитана. Исходные файлы не изменены.');
+  }else{
+    // A rejected replacement does not discard an older job still awaiting read-back.
+    if(state.uncertainImport?.job===job)clearUncertainImport();
+    if(!state.result&&!state.uncertainImport){$('page-subtitle').textContent='Начните с ZIP-выгрузки из Конфигуратора 1С';$('runtime-status').textContent='Локальный сервис подключён';}
+    if(status.status==='cancelled')toast('Анализ отменён.');
+    else showImportError({code:status.error||'INTERNAL_ERROR'});
+  }
+}
+async function reconcileKnownImport(job,filename,generation){
+  $('progress-title').textContent='Проверяем результат импорта';
+  let status;
+  try{
+    status=await reconcileImport(
+      ()=>api(`/api/job?job=${encodeURIComponent(job)}`,{signal:AbortSignal.timeout(3000)}),
+      ()=>ownsImport(generation,job));
+  }catch{
+    if(ownsImport(generation,job))showUncertainImport(job,filename);
+    return;
+  }
+  presentImportOutcome(status,job,generation);
+}
+async function startImport(file){
+  if(state.busy)return;
+  if(!/\.zip$/i.test(file.name)||file.size===0||file.size>16*1024*1024){$('upload-error').textContent=errors.INVALID_UPLOAD;$('upload-error').hidden=false;if(!$('import-dialog').open)$('import-dialog').showModal();return;}
+  state.busy=true;const generation=++state.importGeneration;state.pendingJob=null;
+  $('import-dialog').close();$('progress-file').textContent=file.name;$('progress-title').textContent='Читаем выгрузку';
+  $('step-upload').className='current';$('step-analyze').className='';$('step-ready').className='';
+  $('cancel-analysis').disabled=false;$('cancel-analysis').textContent='Отменить';$('progress-dialog').showModal();
+  state.uploadController=new AbortController();state.cancelRequested=false;let job;
+  try{
+    const prepared=await api('/api/import-start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:file.name.slice(0,240)})});
+    if(!ownsImport(generation))return;
+    job=prepared.job;state.pendingJob=job;
+    if(state.cancelRequested)await api('/api/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job})});
+    else await api(`/api/import?job=${encodeURIComponent(job)}`,{method:'PUT',headers:{'Content-Type':'application/zip'},body:file,signal:state.uploadController.signal});
+    if(!ownsImport(generation,job))return;
+    $('step-upload').className='complete';$('step-analyze').className='current';
+    while(ownsImport(generation,job)){
+      const status=await api(`/api/job?job=${encodeURIComponent(job)}`);
+      if(['ready','error','cancelled'].includes(status.status)){presentImportOutcome(status,job,generation);break;}
+      await new Promise(resolve=>setTimeout(resolve,250));
+    }
+  }catch(error){
+    if(!ownsImport(generation))return;
+    if(job&&transientImportError(error))await reconcileKnownImport(job,file.name,generation);
+    else showImportError(error);
+  }finally{
+    if(state.importGeneration===generation){state.busy=false;state.pendingJob=null;state.uploadController=null;$('progress-dialog').close();}
+  }
+}
+async function checkUncertainImport(){
+  if(state.busy||!state.uncertainImport)return;
+  const {job,filename}=state.uncertainImport,generation=++state.importGeneration;
+  state.busy=true;state.pendingJob=job;state.cancelRequested=false;state.uploadController=null;
+  $('check-import-result').disabled=true;$('check-import-result').textContent='Проверяем…';
+  try{await reconcileKnownImport(job,filename,generation);}
+  finally{if(state.importGeneration===generation){state.busy=false;state.pendingJob=null;$('check-import-result').disabled=false;$('check-import-result').textContent='Проверить результат';}}
+}
+async function cancel(){
+  if(!state.busy||state.cancelRequested)return;
+  state.cancelRequested=true;const job=state.pendingJob,controller=state.uploadController,generation=state.importGeneration;
+  $('cancel-analysis').disabled=true;$('cancel-analysis').textContent='Отменяем…';$('progress-title').textContent='Отменяем анализ';
+  if(job){try{
+    const reply=await api('/api/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job})});
+    if(!ownsImport(generation,job))return;
+    if(reply.cancel_requested&&controller)controller.abort();
+    else if(reply.status==='ready'){state.cancelRequested=false;$('progress-title').textContent='Выгрузка уже прочитана';}
+  }catch(error){if(ownsImport(generation,job)){state.cancelRequested=false;$('cancel-analysis').disabled=false;toast(errorText(error));}}}
+}
+$('check-import-result').addEventListener('click',checkUncertainImport);
 $('cancel-analysis').addEventListener('click',cancel);$('progress-dialog').addEventListener('cancel',event=>{event.preventDefault();cancel();});
 try{const session=await api('/api/session');$('project-label').textContent=session.project_name;setConnection(true);}catch(error){setConnection(false);$('connection-warning').textContent=errorText(error);$('connection-warning').hidden=false;}

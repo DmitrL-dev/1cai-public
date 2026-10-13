@@ -165,3 +165,149 @@ test('genuine Chromium 200 percent zoom reflows and keeps controls operable', as
   await writeFile(measurement, JSON.stringify({factor, before, after, workspaceCapture, sourceCapture, sourceBounds}, null, 2) + '\n');
   await testInfo.attach('browser-zoom-measurement', {path: measurement, contentType: 'application/json'});
 });
+
+function observeImportWrites(page, origin) {
+  const writes = [];
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.origin === origin && ['POST', 'PUT'].includes(request.method()) && ['/api/import-start', '/api/import'].includes(url.pathname)) writes.push([request.method(), url.pathname]);
+  });
+  return writes;
+}
+
+test('lost real ready response reconciles the same second job without upload replay', async ({page, app}) => {
+  await importZip(page, app.archives.first.path);
+  await ready(page, 'first.zip');
+  const writes = observeImportWrites(page, app.origin);
+  let dropped = false;
+  await page.route(`${app.origin}/api/job?*`, async route => {
+    const response = await route.fetch();
+    const status = await response.json();
+    if (!dropped && status.status === 'ready') {dropped = true; await route.abort('failed');}
+    else await route.fulfill({response});
+  });
+  await importZip(page, app.archives.second.path);
+  await ready(page, 'second.zip');
+  expect(dropped).toBe(true);
+  expect(writes).toEqual([['POST', '/api/import-start'], ['PUT', '/api/import']]);
+  await expect(page.locator('#import-uncertain')).not.toBeVisible();
+  await page.locator('.module-link').click();
+  await expect(page.getByLabel('Исходный код', {exact: true})).toHaveText(app.module);
+  await page.getByRole('tab', {name: 'Происхождение', exact: true}).click();
+  await expect(page.locator('#detail-content')).toContainText(app.archives.second.sha256);
+  await expect(page.locator('#detail-content')).not.toContainText(app.archives.first.sha256);
+});
+
+test('continued reply loss is explicitly uncertain and manual check only reads the known job', async ({page, app}) => {
+  await importZip(page, app.archives.first.path);
+  await ready(page, 'first.zip');
+  const writes = observeImportWrites(page, app.origin);
+  let committed = false, outage = true, lostReads = 0;
+  await page.route(`${app.origin}/api/job?*`, async route => {
+    if (committed && outage) {lostReads++; await route.abort('failed'); return;}
+    const response = await route.fetch();
+    if (!committed && (await response.json()).status === 'ready') {
+      committed = true; await route.abort('failed');
+    } else await route.fulfill({response});
+  });
+  await importZip(page, app.archives.second.path);
+  await expect(page.locator('#import-uncertain')).toBeVisible();
+  await expect(page.locator('#import-uncertain')).toContainText('Результат импорта неизвестен');
+  await expect(page.locator('#analysis-state')).not.toBeVisible();
+  await expect(page.locator('#page-subtitle')).not.toContainText('first.zip');
+  expect(lostReads).toBe(3);
+  await page.locator('#check-import-result').click();
+  await expect(page.locator('#check-import-result')).toBeEnabled();
+  expect(lostReads).toBe(6);
+  await expect(page.locator('#import-uncertain')).toBeVisible();
+  outage = false;
+  await page.locator('#check-import-result').click();
+  await ready(page, 'second.zip');
+  await expect(page.locator('#import-uncertain')).not.toBeVisible();
+  expect(writes).toEqual([['POST', '/api/import-start'], ['PUT', '/api/import']]);
+  await page.locator('.module-link').click();
+  await expect(page.getByLabel('Исходный код', {exact: true})).toHaveText(app.module);
+});
+
+test('late cancellation acknowledgement cannot alter a newer import after uncertain outcome', async ({page, app}) => {
+  await importZip(page, app.archives.first.path);
+  await ready(page, 'first.zip');
+  let oldJob, signalReady, releaseCancel;
+  const serverReady = new Promise(resolve => {signalReady = resolve;});
+  const heldCancel = new Promise(resolve => {releaseCancel = resolve;});
+  await page.route(`${app.origin}/api/job?*`, async route => {
+    const job = new URL(route.request().url()).searchParams.get('job');
+    if (oldJob === job) {await route.abort('failed'); return;}
+    const response = await route.fetch();
+    if (!oldJob && (await response.json()).status === 'ready') {
+      oldJob = job; signalReady();
+      // Leave a deterministic opportunity for a real cancel request after commit.
+      await actualCancel;
+      await route.abort('failed');
+    } else await route.fulfill({response});
+  });
+  let cancelFetched;
+  const actualCancel = new Promise(resolve => {cancelFetched = resolve;});
+  await page.route(`${app.origin}/api/cancel`, async route => {
+    const response = await route.fetch();
+    expect((await response.json()).status).toBe('ready');
+    cancelFetched();
+    await heldCancel;
+    await route.fulfill({response});
+  });
+  try {
+    await importZip(page, app.archives.second.path);
+    await serverReady;
+    await page.locator('#cancel-analysis').click();
+    await actualCancel;
+    // The backend acknowledgement is real but intentionally withheld from the UI.
+    await expect(page.locator('#import-uncertain')).toBeVisible();
+    await importZip(page, app.archives.first.path);
+    await ready(page, 'first.zip');
+    releaseCancel();
+    await page.unrouteAll({behavior: 'wait'});
+    await expect(page.locator('#import-uncertain')).not.toBeVisible();
+    await expect(page.locator('#progress-dialog')).not.toBeVisible();
+    await page.locator('[data-view="provenance"]').click();
+    await expect(page.locator('#provenance-view')).toContainText(app.archives.first.sha256);
+    await expect(page.locator('#provenance-view')).not.toContainText(app.archives.second.sha256);
+  } finally {releaseCancel();}
+});
+
+test('failed replacement reservation retains the uncertain known job through transport loss and real BUSY', async ({page, app}) => {
+  await importZip(page, app.archives.first.path);
+  await ready(page, 'first.zip');
+  const writes = observeImportWrites(page, app.origin);
+  let committed = false;
+  await page.route(`${app.origin}/api/job?*`, async route => {
+    if (committed) {await route.abort('failed'); return;}
+    const response = await route.fetch();
+    if ((await response.json()).status === 'ready') {committed = true; await route.abort('failed');}
+    else await route.fulfill({response});
+  });
+  await importZip(page, app.archives.second.path);
+  await expect(page.locator('#import-uncertain')).toBeVisible();
+  await page.unrouteAll({behavior: 'wait'});
+  // Reserve a real replacement, then lose its ID reply before any bytes are sent.
+  await page.route(`${app.origin}/api/import-start`, async route => {
+    const response = await route.fetch();
+    expect(response.status()).toBe(201);
+    await route.abort('failed');
+  });
+  await importZip(page, app.archives.first.path);
+  await expect(page.locator('#upload-error')).toBeVisible();
+  await page.getByRole('button', {name: 'Закрыть', exact: true}).click();
+  await expect(page.locator('#import-uncertain')).toBeVisible();
+  await page.unrouteAll({behavior: 'wait'});
+  // The unuploaded real reservation is still live, so the backend itself returns BUSY.
+  await importZip(page, app.archives.first.path);
+  await expect(page.locator('#upload-error')).toHaveText('Другой анализ ещё выполняется. Дождитесь завершения или отмените его.');
+  await page.getByRole('button', {name: 'Закрыть', exact: true}).click();
+  await expect(page.locator('#import-uncertain')).toBeVisible();
+  await page.locator('#check-import-result').click();
+  await ready(page, 'second.zip');
+  await expect(page.locator('#import-uncertain')).not.toBeVisible();
+  expect(writes).toEqual([['POST', '/api/import-start'], ['PUT', '/api/import'], ['POST', '/api/import-start'], ['POST', '/api/import-start']]);
+  await page.locator('[data-view="provenance"]').click();
+  await expect(page.locator('#provenance-view')).toContainText(app.archives.second.sha256);
+});
