@@ -55,6 +55,10 @@ jobs:
       - name: Portable CLI MCP planners and real Rust acceptance
         run: |
           python -m pytest -q --tb=short tests/unit/test_portable_local_workflow.py tests/unit/test_rust_input_workflow.py tests/unit/test_metadata_materialize_cli.py tests/unit/test_edt_attribute_cli.py tests/unit/test_edt_identity_three_way_cli.py tests/unit/test_mcp_tool_annotations.py tests/unit/test_state_migration_contract.py tests/unit/test_core_dev16_compatibility.py tests/unit/test_linux_baseline_gate.py --junitxml=output/portable-contracts.xml
+      - name: Local graphical workspace HTTP Rust and frontend contracts
+        run: |
+          python -m pytest -q --tb=short tests/unit/test_local_gui.py --junitxml=output/gui-contracts.xml
+          node --test tests/gui/*.test.mjs > output/gui-js-tests.log
       - name: Diagnostic full Linux suite with known Windows baseline
         shell: bash
         run: |
@@ -83,6 +87,8 @@ jobs:
           name: experimental-linux-python-${{ matrix.python }}
           path: |
             output/portable-contracts.xml
+            output/gui-contracts.xml
+            output/gui-js-tests.log
             output/linux-diagnostic.xml
             output/linux-diagnostic.log
             output/linux-baseline-comparison.json
