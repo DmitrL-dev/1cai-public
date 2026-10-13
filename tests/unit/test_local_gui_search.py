@@ -41,7 +41,9 @@ def payload(job, outcome, query="", *, kind=None):
 def start(server, args):
     status, result = post(server, "/api/search-start", args)
     assert status == 201, result
-    assert set(result) == {"search", "job", "input_sha256", "kind", "object_path", "prefix"}
+    assert set(result) == {"search", "job", "input_sha256", "query", "kind", "object_path", "prefix", "offset"}
+    assert result["query"] == args["query"]
+    assert result["offset"] == args.get("offset", 0)
     assert result["kind"] == args.get("kind", "metadata")
     assert result["object_path"] == args.get("object_path")
     assert result["prefix"] == (args["object_path"][:-4] + "/" if args.get("object_path") else None)

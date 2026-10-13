@@ -11,6 +11,16 @@ from .metadata_xml import parse_xml
 from .rust_input import RustInputSession
 
 PERMISSIONS = frozenset({"project:read", "analysis:run"})
+GUI_PAGE_LIMIT = 200
+# The accepted Rust archive manifest has at most 4096 entries, so no later
+# aligned page can contain a match. Offsets are selectors, never capabilities.
+GUI_MAX_OFFSET = 4000
+_NO_PAGE = object()
+
+
+def validate_gui_offset(offset):
+    if type(offset) is not int or not 0 <= offset <= GUI_MAX_OFFSET or offset % GUI_PAGE_LIMIT:
+        raise CoreError("INVALID_QUERY_OPTIONS", "Export page offset must be bounded and aligned")
 
 
 def _authorize(ctx):
@@ -31,8 +41,16 @@ def analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha25
         query=query, limit=limit, cancelled=cancelled)
 
 
+def search_export_metadata(ctx, *, archive, archive_sha256, input_core, input_core_sha256,
+                           query="", offset=0, limit=GUI_PAGE_LIMIT, cancelled=None):
+    """GUI-only metadata pages; the CLI/MCP analysis contract is unchanged."""
+    return _analyze_export(ctx, archive=archive, archive_sha256=archive_sha256,
+        input_core=input_core, input_core_sha256=input_core_sha256,
+        query=query, limit=limit, cancelled=cancelled, page_offset=offset)
+
+
 def search_export_modules(ctx, *, archive, archive_sha256, input_core, input_core_sha256,
-                          query="", prefix=None, limit=200, cancelled=None):
+                          query="", prefix=None, offset=0, limit=GUI_PAGE_LIMIT, cancelled=None):
     """Opt-in module discovery; prefix is a server-resolved directory selector.
 
     The CLI/MCP analyze_export query continues to filter metadata only. This
@@ -42,11 +60,11 @@ def search_export_modules(ctx, *, archive, archive_sha256, input_core, input_cor
     return _analyze_export(ctx, archive=archive, archive_sha256=archive_sha256,
         input_core=input_core, input_core_sha256=input_core_sha256,
         query=query, limit=limit, cancelled=cancelled,
-        module_search=True, module_prefix=prefix)
+        module_search=True, module_prefix=prefix, page_offset=offset)
 
 
 def _analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha256,
-                    query, limit, cancelled, module_search=False, module_prefix=None):
+                    query, limit, cancelled, module_search=False, module_prefix=None, page_offset=_NO_PAGE):
     def authorize():
         _authorize(ctx)
         if cancelled is not None and cancelled():
@@ -55,6 +73,10 @@ def _analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha2
     authorize()
     if type(query) is not str or len(query.encode("utf-8")) > 256 or type(limit) is not int or not 1 <= limit <= 200:
         raise CoreError("INVALID_QUERY_OPTIONS", "Export query and page limit must be bounded")
+    if page_offset is not _NO_PAGE:
+        validate_gui_offset(page_offset)
+    object_offset = page_offset if page_offset is not _NO_PAGE and not module_search else 0
+    module_offset = page_offset if page_offset is not _NO_PAGE and module_search else 0
     if module_prefix is not None and (type(module_prefix) is not str or not module_prefix.endswith("/")
             or module_prefix.startswith("/") or any(part in {"", ".", ".."} for part in module_prefix[:-1].split("/"))):
         raise CoreError("INVALID_QUERY_OPTIONS", "Module scope must be an exact directory prefix")
@@ -73,7 +95,7 @@ def _analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha2
                     if (not module_search or ((module_prefix is None or entry["path"].startswith(module_prefix))
                             and (not term or term in entry["path"].casefold()))):
                         module_matches += 1
-                        if len(modules) < limit:
+                        if module_matches > module_offset and len(modules) < limit:
                             modules.append({"input_ref": reference, "size_bytes": entry["size_bytes"], "analysis": "inventory_only"})
                 kind = _candidate(entry["path"])
                 if kind is None or entry["path"].lower().endswith(".mdo"):
@@ -102,7 +124,7 @@ def _analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha2
                 text = " ".join(value or "" for value in (row["name"], row["synonym"], kind, entry["path"]))
                 if module_search or not term or term in text.casefold():
                     matches += 1
-                    if len(objects) < limit:
+                    if matches > object_offset and len(objects) < limit:
                         objects.append(row)
             if not sum(types.values()):
                 raise CoreError("IMPORTED_EXPORT_UNSUPPORTED", "No supported Designer metadata roots were found at the explicit archive root")
@@ -129,6 +151,15 @@ def _analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha2
             }
             if module_search:
                 result["matching_modules"] = module_matches
+            if page_offset is not _NO_PAGE:
+                total = module_matches if module_search else matches
+                returned = len(modules if module_search else objects)
+                if page_offset and page_offset >= total:
+                    raise CoreError("INVALID_QUERY_OPTIONS", "Export page offset is outside the matching inventory")
+                result["page"] = {
+                    "offset": page_offset, "limit": limit, "total": total, "returned": returned,
+                    "has_previous": page_offset > 0, "has_next": page_offset + returned < total,
+                }
         authorize()
         return result
     finally:
