@@ -27,6 +27,10 @@ export function reconcileImport(read,isCurrent,pause=()=>new Promise(resolve=>se
 }
 export function boundedMetadataQuery(value){const query=value.trim();return {query,valid:new TextEncoder().encode(query).length<=256};}
 export function searchReplyMatches(binding,search,query,reply){
-  return reply?.search===search&&reply.job===binding.job&&reply.input_sha256===binding.input_sha256&&reply.query===query&&reply.kind===binding.kind&&reply.object_path===binding.object_path&&reply.prefix===(binding.object_path?binding.object_path.slice(0,-4)+'/':null)&&
-    (reply.status!=='ready'||(reply.result?.input?.input_sha256===binding.input_sha256&&Array.isArray(reply.result[binding.kind==='modules'?'modules':'objects'])&&reply.result[binding.kind==='modules'?'modules':'objects'].length<=200));
+  if(reply?.search!==search||reply.job!==binding.job||reply.input_sha256!==binding.input_sha256||reply.query!==query||reply.offset!==binding.offset||reply.kind!==binding.kind||reply.object_path!==binding.object_path||reply.prefix!==(binding.object_path?binding.object_path.slice(0,-4)+'/':null))return false;
+  if(reply.status!=='ready')return true;
+  const result=reply.result,rows=result?.[binding.kind==='modules'?'modules':'objects'],page=result?.page;
+  if(result?.input?.input_sha256!==binding.input_sha256||!Array.isArray(rows)||rows.length>200||!page)return false;
+  const total=binding.kind==='modules'?result.matching_modules:result.matching_objects;
+  return Number.isInteger(binding.offset)&&binding.offset>=0&&binding.offset<=4000&&binding.offset%200===0&&Number.isInteger(total)&&total>=0&&total<=4096&&(binding.offset===0||binding.offset<total)&&page.offset===binding.offset&&page.limit===200&&page.total===total&&page.returned===rows.length&&rows.length===Math.min(200,Math.max(0,total-binding.offset))&&page.has_previous===(binding.offset>0)&&page.has_next===(binding.offset+rows.length<total);
 }

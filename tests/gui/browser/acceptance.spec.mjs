@@ -112,6 +112,8 @@ test('narrow viewport reflow preserves import, source and provenance controls', 
   await noHorizontalOverflow(page);
   await expect(page.locator('#toast')).not.toBeVisible();
   await page.screenshot({path:testInfo.outputPath('narrow-related-long-path.png'),fullPage:true});
+  await exerciseBoundedPagination(page,app);
+  await page.screenshot({path:testInfo.outputPath('narrow-pagination.png'),fullPage:true});
 });
 
 // Avoid Playwright fullPage viewport/clip overrides at native browser zoom.
@@ -175,6 +177,11 @@ test('genuine Chromium 200 percent zoom reflows and keeps controls operable', as
   await page.locator('#search-status').scrollIntoViewIfNeeded();
   const relatedCapture=await captureNativeViewport(page,context,testInfo,'browser-zoom-200-related-long-path.png');
   await writeFile(testInfo.outputPath('related-zoom-measurement.json'),JSON.stringify({factor:2,relatedCapture},null,2)+'\n');
+  await exerciseBoundedPagination(page,app);
+  expect(await worker.evaluate(async()=>chrome.tabs.getZoom((await chrome.tabs.query({active:true,lastFocusedWindow:true}))[0].id))).toBe(2);
+  await page.locator('#pagination').scrollIntoViewIfNeeded();
+  const pageCapture=await captureNativeViewport(page,context,testInfo,'browser-zoom-200-pagination.png');
+  await writeFile(testInfo.outputPath('pagination-zoom-measurement.json'),JSON.stringify({factor:2,pageCapture},null,2)+'\n');
 });
 
 function observeImportWrites(page, origin) {
@@ -539,4 +546,18 @@ async function discoverLongRelatedFolder(page,app){
   await expect(page.locator('#search-status-text')).toContainText('Найдено 3 по всему ZIP');
   await expect(page.locator('#search-status-text')).toContainText(app.many_path);
   await expect(page.locator('#cancel-search')).toBeVisible();
+}
+
+async function exerciseBoundedPagination(page,app){
+  await importZip(page,app.archives.paged.path);
+  await expect(page.locator('#page-range')).toHaveText('Строки 1–200 из 401');
+  await noHorizontalOverflow(page);
+  await page.locator('#next-page').click();
+  await expect(page.locator('#page-range')).toHaveText('Строки 201–400 из 401');
+  await noHorizontalOverflow(page);
+  await page.locator('#previous-page').click();
+  await expect(page.locator('#page-range')).toHaveText('Строки 1–200 из 401');
+  await expect(page.locator('#next-page')).toBeEnabled();
+  await expect(page.locator('#toast')).not.toBeVisible();
+  await noHorizontalOverflow(page);
 }
