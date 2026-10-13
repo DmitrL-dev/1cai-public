@@ -31,6 +31,8 @@ from .submitted_export import PERMISSIONS, analyze_export
 
 MAX_UPLOAD = 16 * 1024**2
 MAX_SOURCE = 256 * 1024
+MAX_SEARCH_QUERY = 256
+SEARCH_LIMIT = 200
 ASSETS = Path(__file__).with_name("gui_assets")
 STATIC = {"/": ("index.html", "text/html; charset=utf-8"),
           "/app.js": ("app.js", "text/javascript; charset=utf-8"),
@@ -73,6 +75,19 @@ class Job:
     cancel: threading.Event = field(default_factory=threading.Event)
 
 
+@dataclass
+class Search:
+    id: str
+    job: Job
+    sha256: str
+    query: str
+    status: str = "searching"
+    result: dict | None = None
+    error: str | None = None
+    valid: bool = True
+    cancel: threading.Event = field(default_factory=threading.Event)
+
+
 class Workspace:
     def __init__(self, config):
         self.config = config
@@ -84,6 +99,8 @@ class Workspace:
         self.pending = None
         self.current = None
         self.worker = None
+        self.search = None
+        self.search_worker = None
         self.closed = False
 
     def reserve(self, filename):
@@ -95,6 +112,7 @@ class Workspace:
                 self.abandon(self.pending, "UPLOAD_TIMEOUT")
             if self.pending and self.pending.status in {"awaiting_upload", "uploading", "analyzing"}:
                 fail("BUSY")
+            self._invalidate_search()
             if self.pending and self.pending is not self.current:
                 self.pending.path.unlink(missing_ok=True)
             job = Job(secrets.token_hex(16), filename, Path(self.temp.name) / (secrets.token_hex(16) + ".zip"))
@@ -121,12 +139,13 @@ class Workspace:
             ctx = self.config.context()
             result = analyze_export(ctx, archive=job.path, archive_sha256=job.sha256,
                 input_core=self.config.input_core, input_core_sha256=self.config.input_core_sha256,
-                limit=200, cancelled=job.cancel.is_set)
+                limit=SEARCH_LIMIT, cancelled=job.cancel.is_set)
             self.config.authorize()
             with self.io_lock, self.lock:
                 if job.cancel.is_set() or self.closed:
                     fail("CANCELLED")
                 previous = self.current
+                self._invalidate_search()
                 job.result = result
                 job.completed_at = datetime.now(timezone.utc).isoformat()
                 job.status = "ready"
@@ -172,6 +191,130 @@ class Workspace:
                     self.abandon(job, "CANCELLED")
             return {"status": job.status, "cancel_requested": job.cancel.is_set()}
 
+    def _invalidate_search(self):
+        """Called with lock held; never discard an unreaped worker reference."""
+        if self.search:
+            self.search.valid = False
+            self.search.cancel.set()
+            self.search.result = None
+            if self.search.status == "ready":
+                self.search.status = "cancelled"
+                self.search.error = "CANCELLED"
+
+    def _search_job(self, job_id, sha256):
+        if type(sha256) is not str or re.fullmatch(r"[0-9a-f]{64}", sha256) is None:
+            fail("SEARCH_NOT_AVAILABLE")
+        job = self.get_job(job_id)
+        if self.closed or job is not self.current or job.status != "ready" or not secrets.compare_digest(job.sha256, sha256):
+            fail("SEARCH_NOT_AVAILABLE")
+        return job
+
+    def _get_search(self, job_id, search_id, sha256, *, valid=True):
+        job = self._search_job(job_id, sha256)
+        search = self.search
+        if (type(search_id) is not str or re.fullmatch(r"[0-9a-f]{32}", search_id) is None
+                or search is None or not secrets.compare_digest(search.id, search_id)
+                or search.job is not job or search.sha256 != sha256 or (valid and not search.valid)):
+            fail("SEARCH_NOT_AVAILABLE")
+        return search
+
+    def start_search(self, job_id, sha256, query):
+        self.config.authorize()
+        if type(query) is not str:
+            fail("INVALID_QUERY_OPTIONS")
+        try:
+            if len(query.encode("utf-8")) > MAX_SEARCH_QUERY:
+                fail("INVALID_QUERY_OPTIONS")
+        except UnicodeError:
+            fail("INVALID_QUERY_OPTIONS")
+        with self.lock:
+            job = self._search_job(job_id, sha256)
+            if self.pending and self.pending.status == "awaiting_upload" and time.monotonic() - self.pending.created_at >= 30:
+                self.abandon(self.pending, "UPLOAD_TIMEOUT")
+            if self.pending and self.pending.status in {"awaiting_upload", "uploading", "analyzing"}:
+                fail("BUSY")
+            self._invalidate_search()
+            # Supersession cancels the current child. A retry is accepted only
+            # after its Rust context and non-daemon worker have both exited.
+            if self.search_worker and self.search_worker.is_alive():
+                fail("BUSY")
+            search = Search(secrets.token_hex(16), job, job.sha256, query)
+            self.search = search
+            self.search_worker = threading.Thread(target=self._search, args=(search,), name="rentgen-gui-search", daemon=False)
+            self.search_worker.start()
+            return {"search": search.id, "job": job.id, "input_sha256": job.sha256}
+
+    def _search(self, search):
+        try:
+            # The immutable Rust reader and archive replacement/unlink share
+            # one IO gate. No Python ZIP fallback or live source is involved.
+            with self.io_lock:
+                with self.lock:
+                    if self.closed or search.cancel.is_set() or not search.valid:
+                        fail("CANCELLED")
+                    self._get_search(search.job.id, search.id, search.sha256)
+                result = analyze_export(self.config.context(), archive=search.job.path,
+                    archive_sha256=search.sha256, input_core=self.config.input_core,
+                    input_core_sha256=self.config.input_core_sha256, query=search.query,
+                    limit=SEARCH_LIMIT, cancelled=search.cancel.is_set)
+                self.config.authorize()
+                with self.lock:
+                    if self.closed or search.cancel.is_set() or not search.valid:
+                        fail("CANCELLED")
+                    self._get_search(search.job.id, search.id, search.sha256)
+                    search.result = result
+                    search.status = "ready"
+        except Exception as error:
+            with self.lock:
+                code = error.code if isinstance(error, CoreError) else "INTERNAL_ERROR"
+                search.error = "CANCELLED" if search.cancel.is_set() or self.closed else code
+                search.status = "cancelled" if search.error == "CANCELLED" else "error"
+                search.result = None
+
+    def search_status(self, job_id, search_id, sha256):
+        self.config.authorize()
+        with self.lock:
+            search = self._get_search(job_id, search_id, sha256)
+            data = {"search": search.id, "job": search.job.id, "input_sha256": search.sha256,
+                    "query": search.query, "status": search.status, "error": search.error}
+            if search.status == "ready":
+                data["result"] = search.result
+            return data
+
+    def cancel_search(self, job_id, search_id, sha256):
+        self.config.authorize()
+        with self.lock:
+            job = self._search_job(job_id, sha256)
+            # A lost start response can leave the client without the ID. This
+            # bounded recovery selector can cancel only this current ZIP/job.
+            if search_id is None:
+                search = self.search
+                if search is None or search.job is not job or search.sha256 != sha256:
+                    return {"status": "cancelled", "cancel_requested": False}
+            else:
+                search = self._get_search(job_id, search_id, sha256, valid=False)
+            if search.status == "searching":
+                search.cancel.set()
+            return {"status": search.status, "cancel_requested": search.cancel.is_set()}
+
+    def _source_reference(self, job_id, path):
+        job = self.get_job(job_id)
+        if self.closed or job is not self.current or job.status != "ready":
+            fail("SOURCE_NOT_AVAILABLE")
+        rows = job.result["objects"] + job.result["modules"]
+        search = self.search
+        if (search and search.valid and search.job is job and search.sha256 == job.sha256
+                and search.status == "ready" and not search.cancel.is_set()):
+            rows += search.result["objects"]
+        row = next((r for r in rows if r["input_ref"]["relative_path"] == path), None)
+        if row is None or row["input_ref"]["input_sha256"] != job.sha256:
+            fail("SOURCE_NOT_AVAILABLE")
+        return job, row["input_ref"]
+
+    def validate_source(self, job_id, path, reference):
+        if self._source_reference(job_id, path)[1] != reference:
+            fail("SOURCE_NOT_AVAILABLE")
+
     def source(self, job_id, path):
         self.config.authorize()
         # Serializes bounded source read against result replacement/unlink.
@@ -179,14 +322,7 @@ class Workspace:
             fail("BUSY")
         try:
             with self.lock:
-                job = self.get_job(job_id)
-                if job is not self.current or job.status != "ready":
-                    fail("SOURCE_NOT_AVAILABLE")
-                rows = job.result["objects"] + job.result["modules"]
-                row = next((r for r in rows if r["input_ref"]["relative_path"] == path), None)
-                if row is None:
-                    fail("SOURCE_NOT_AVAILABLE")
-                reference = row["input_ref"]
+                job, reference = self._source_reference(job_id, path)
             # Never use a supplied path as an OS locator or extract an archive.
             with RustInputSession(self.config.input_core, self.config.input_core_sha256,
                                   authorize=self.config.authorize) as session:
@@ -215,13 +351,17 @@ class Workspace:
             self.closed = True
             if self.pending:
                 self.pending.cancel.set()
+            self._invalidate_search()
 
     def close(self):
         self.begin_close()
         with self.lock:
             worker = self.worker
+            search_worker = self.search_worker
         if worker:
             worker.join()  # Rust session has its own deadline and confirmed reap.
+        if search_worker:
+            search_worker.join()
         with self.io_lock:
             self.temp.cleanup()
 
@@ -300,7 +440,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Security-Policy", "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'")
         self.end_headers()
 
-    def _json(self, value, status=200, authorize=True, error=False):
+    def _json(self, value, status=200, authorize=True, error=False, validate=None):
         raw = json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")
         if len(raw) > 4 * 1024**2:
             fail("OUTPUT_LIMIT")
@@ -312,6 +452,8 @@ class Handler(BaseHTTPRequestHandler):
                     raise
                 raw = b'{"error":"FORBIDDEN"}'
                 status = 403
+        if validate is not None:
+            validate()
         self._headers(status, "application/json; charset=utf-8", len(raw))
         self.wfile.write(raw)
 
@@ -382,7 +524,35 @@ class Handler(BaseHTTPRequestHandler):
             self._json(app.status(query["job"]))
         elif self.command == "GET" and path == "/api/source":
             query = self._query({"job", "path"})
-            self._json(app.source(query["job"], query["path"]))
+            result = app.source(query["job"], query["path"])
+            # Keep replacement/supersession serialized through disclosure and
+            # check again after JSON construction, just like authorization.
+            with app.lock:
+                validate = lambda: app.validate_source(query["job"], query["path"], result["input_ref"])
+                validate()
+                self._json(result, validate=validate)
+        elif self.command == "GET" and path == "/api/search":
+            query = self._query({"job", "search", "input_sha256"})
+            with app.lock:
+                validate = lambda: app._get_search(query["job"], query["search"], query["input_sha256"])
+                result = app.search_status(query["job"], query["search"], query["input_sha256"])
+                self._json(result, validate=validate)
+        elif self.command == "POST" and path in {"/api/search-start", "/api/search-cancel"}:
+            if self.headers.get_all("Content-Type") != ["application/json"]:
+                fail("INVALID_REQUEST")
+            payload = json.loads(self._body(2048))
+            selector = "query" if path == "/api/search-start" else "search"
+            if type(payload) is not dict or set(payload) != {"job", "input_sha256", selector}:
+                fail("INVALID_REQUEST")
+            with app.lock:
+                if selector == "query":
+                    result = app.start_search(payload["job"], payload["input_sha256"], payload["query"])
+                    validate = lambda: app._get_search(result["job"], result["search"], result["input_sha256"])
+                    self._json(result, status=201, validate=validate)
+                else:
+                    result = app.cancel_search(payload["job"], payload["search"], payload["input_sha256"])
+                    validate = lambda: app._search_job(payload["job"], payload["input_sha256"])
+                    self._json(result, validate=validate)
         elif self.command == "POST" and path == "/api/import-start":
             if self.headers.get_all("Content-Type") != ["application/json"]:
                 fail("INVALID_REQUEST")

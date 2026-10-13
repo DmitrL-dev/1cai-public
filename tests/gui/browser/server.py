@@ -53,6 +53,26 @@ def main():
                 output.writestr('Catalogs/Products/Ext/ObjectModule.bsl', module)
                 output.writestr('owned-marker.txt', label)
             archives[label] = {'path': str(archive), 'sha256': sha(archive)}
+        many_name = 'ПоследнийОбъект201'
+        many_synonym = 'УникальныйСиноним201'
+        many_path = 'Catalogs/Object200.xml'
+        many_xml = None
+        archive = root / 'many.zip'
+        with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as output:
+            for index in range(201):
+                name = many_name if index == 200 else f'Object{index:03d}'
+                properties = f'<Name>{name}</Name>'
+                if index == 200:
+                    properties += f'<Synonym><item><lang>ru</lang><content>{many_synonym}</content></item></Synonym>'
+                content = ('<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses">'
+                           '<Catalog uuid="11111111-1111-4111-8111-111111111111">'
+                           f'<Properties>{properties}</Properties><ChildObjects/>'
+                           '</Catalog></MetaDataObject>')
+                output.writestr(f'Catalogs/Object{index:03d}.xml', content)
+                if index == 200:
+                    many_xml = content
+            output.writestr('Catalogs/Object200/Ext/ObjectModule.bsl', module)
+        archives['many'] = {'path': str(archive), 'sha256': sha(archive)}
         corrupt = root / 'corrupt.zip'
         corrupt.write_bytes(b'Owned deliberately invalid ZIP')
         before = snapshot(root)
@@ -64,6 +84,8 @@ def main():
             # Private pipe only: callers must never log this session bootstrap.
             print(json.dumps({'origin': server.origin, 'token': app.token, 'archives': archives,
                               'corrupt': str(corrupt), 'module': module,
+                              'many_name': many_name, 'many_synonym': many_synonym, 'many_path': many_path,
+                              'many_xml': many_xml, 'many_xml_sha256': hashlib.sha256(many_xml.encode()).hexdigest(),
                               'module_sha256': hashlib.sha256(module.encode()).hexdigest()}), flush=True)
             sys.stdin.readline()
         finally:
