@@ -1,0 +1,1 @@
+{"name":"rentgen-anatomy-browser-qualification","private":true,"type":"module","scripts":{"test":"playwright test","list":"playwright test --list","receipt":"node receipt.mjs"},"devDependencies":{"@playwright/test":"1.56.1"}}

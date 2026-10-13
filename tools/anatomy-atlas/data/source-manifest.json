@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "repository": "DmitrL-dev/1cai-public",
+  "sourceCommit": "6c8feb291dd251826eebb99e145f4a39f56cda47",
+  "sourceTree": "7dcb248efdf33ca3ef93ce0f5d12b569ec02fe46",
+  "sourceUrl": "https://github.com/DmitrL-dev/1cai-public/tree/6c8feb291dd251826eebb99e145f4a39f56cda47",
+  "editorialSeed": "editorial-seed.json",
+  "editorialSeedSha256": "45b4013f435ce3bb0262e762c85d607c82ecb8f845a2da23ad527afb896420a9",
+  "generator": "tools/extract_anatomy.py",
+  "pythonVersionVerified": "3.12.14",
+  "recoveryNote": "Fresh post-reset verification; prior local hash proofs not reused. Original published annotations recovered; extraction implementation recreated.",
+  "expectedCounts": {
+    "files": 1031,
+    "symbols": 5465,
+    "nodes": 6496,
+    "staticImports": 1334,
+    "sourceTextFiles": 1028
+  },
+  "expectedArtifacts": {
+    "architecture.json": {
+      "bytes": 9225743,
+      "sha256": "be445386d383da55b499c2d2bd33ae77bfc19bd11b5f23b98a4aa588e584afdc"
+    },
+    "source-texts.json": {
+      "bytes": 11700667,
+      "sha256": "5ab99d26a65e47491127557f79dc25b1ef22fc9f6482e9d4db3478c192eb3c19"
+    },
+    "validation.json": {
+      "bytes": 1100,
+      "sha256": "ed55979eebc6a38b3746f26c42621a55c0aaf6d6aadce428da187d87467df6e8"
+    },
+    "inventory.json": {
+      "bytes": 396351,
+      "sha256": "dc0658342313e359054d70799d1362f838435c934c65fdf2fb0331828bfcabf7"
+    },
+    "coverage.json": {
+      "bytes": 1642,
+      "sha256": "fd55dcd77ddd22fd9ae874bef7539749436b410b3c97252b911c11de1b15d59a"
+    },
+    "sections.json": {
+      "bytes": 125983,
+      "sha256": "8e9fc0ac44160f2685a996b5daf308db8d03d2fde07b76ada3c0a16a52bbf0ac"
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "rentgen-anatomy-atlas",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Source-grounded Rentgen semantic 3D explorer",
+  "scripts": {
+    "build": "node build-scene.mjs && node build-explorer-scene.mjs && node build-detail-scene.mjs && node build.mjs",
+    "test": "node qa/explorer-dom.cjs",
+    "verify:data": "python3 tools/verify_generated.py --output .",
+    "qa:geometry": "node build-explorer-scene.mjs --audit --quick",
+    "qa:regression": "node qa/explorer-free-pair-regression.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "26.1.0",
+    "@resvg/resvg-js": "2.6.2"
+  }
+}
