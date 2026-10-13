@@ -55,3 +55,21 @@ test('source result requires honest coverage and bounded first-match text',()=>{
   assert.ok(searchReplyMatches(binding,'search','needle',reply));
   for(const update of [{source_coverage:{...coverage,complete:true}},{source_coverage:{...coverage,searched:2}},{modules:[{...row,first_match:{...row.first_match,line:0}}]},{modules:[{...row,first_match:{...row.first_match,excerpt:'x'.repeat(513)}}]}])assert.equal(searchReplyMatches(binding,'search','needle',{...reply,result:{...result,...update}}),false);
 });
+
+
+test('module search mode has an explicit stable label separate from option text',async()=>{
+  const {readFile}=await import('node:fs/promises');
+  const html=await readFile(new URL('../../rentgen_core/gui_assets/index.html',import.meta.url),'utf8');
+  const select=html.match(/<select\b[^>]*\bid="module-search-mode"[^>]*>/)?.[0];
+  assert.ok(select,'module mode selector exists');
+  assert.match(select,/\baria-labelledby="module-search-mode-label"/);
+  const labels=[...html.matchAll(/<span\b[^>]*\bid="module-search-mode-label"[^>]*>([^<]*)<\/span>/g)];
+  assert.equal(labels.length,1,'exactly one dedicated text-only label');
+  assert.equal(labels[0][1],'Режим поиска модулей');
+  // Keep the browser's exact-label locator contract tied to the shipped label.
+  for(const path of ['browser/source-search.spec.mjs','browser/acceptance.spec.mjs']){
+    const spec=await readFile(new URL(path,import.meta.url),'utf8');
+    assert.ok(spec.includes(`getByLabel('${labels[0][1]}',{exact:true}).selectOption('source')`));
+    assert.ok(spec.includes(`toHaveAccessibleName('${labels[0][1]}')`));
+  }
+});

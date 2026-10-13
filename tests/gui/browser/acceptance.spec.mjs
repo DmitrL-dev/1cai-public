@@ -573,7 +573,9 @@ async function exerciseLiteralSearch(page,app){
   await importZip(page,app.archives.source.path);
   await expect(page.locator('#metric-modules')).toHaveText('204');
   await page.locator('[data-view="modules"]').click();
+  await expect(page.locator('#module-search-mode')).toHaveAccessibleName('Режим поиска модулей');
   await page.getByLabel('Режим поиска модулей',{exact:true}).selectOption('source');
+  await expect(page.locator('#module-search-mode')).toHaveAccessibleName('Режим поиска модулей');
   await page.getByRole('searchbox',{name:'Поиск точного фрагмента кода',exact:true}).fill(app.source_query);
   await expect(page.locator('#source-coverage')).toContainText('Частичное покрытие');
   await noHorizontalOverflow(page);

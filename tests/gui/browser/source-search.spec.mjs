@@ -2,7 +2,9 @@ import {test,expect,importZip,ready} from './fixtures.mjs';
 
 async function sourceMode(page){
   await page.locator('[data-view="modules"]').click();
+  await expect(page.locator('#module-search-mode')).toHaveAccessibleName('Режим поиска модулей');
   await page.getByLabel('Режим поиска модулей',{exact:true}).selectOption('source');
+  await expect(page.locator('#module-search-mode')).toHaveAccessibleName('Режим поиска модулей');
   await expect(page.locator('#source-search-help')).toBeVisible();
   await expect(page.getByRole('searchbox',{name:'Поиск точного фрагмента кода',exact:true})).toBeVisible();
   await expect(page.locator('#item-list button')).toHaveCount(0);
@@ -44,7 +46,9 @@ test('literal source search pages first hits and opens rehashed line with explic
   await expect(page.locator('#detail-panel h2')).toHaveText('SourceOwner');
   await page.locator('#discover-related-modules').click();
   await expect(page.locator('#search-status-text')).toContainText('Catalogs/SourceOwner.xml');
+  await expect(page.locator('#module-search-mode')).toHaveAccessibleName('Режим поиска модулей');
   await page.getByLabel('Режим поиска модулей',{exact:true}).selectOption('source');
+  await expect(page.locator('#module-search-mode')).toHaveAccessibleName('Режим поиска модулей');
   await page.locator('#search').fill(app.source_query);
   await expect(page.locator('#search-status-text')).toContainText('201 файлов с фрагментом');
   await expect(page.locator('#search-status-text')).toContainText('Catalogs/SourceOwner.xml');
@@ -74,13 +78,17 @@ test('late real source search cannot overwrite new query, mode, cancellation or 
     releasePreview();await previewDelivered;await page.unroute(`${app.origin}/api/source?*`);
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     await expect(page.locator('.source-hit')).not.toBeVisible();
+    await expect(page.locator('#module-search-mode')).toHaveAccessibleName('Режим поиска модулей');
     await page.getByLabel('Режим поиска модулей',{exact:true}).selectOption('source');
+    await expect(page.locator('#module-search-mode')).toHaveAccessibleName('Режим поиска модулей');
     await page.locator('#search').fill('');
     const mode=holdNext();await page.locator('#search').fill(app.source_query);await mode.ready;
     await page.getByLabel('Режим поиска модулей',{exact:true}).selectOption('modules');mode.release();
     await page.locator('#search').fill('Code200');await expect(page.locator('#item-list button')).toHaveCount(1);
     await expect(page.locator('#source-coverage')).not.toBeVisible();
+    await expect(page.locator('#module-search-mode')).toHaveAccessibleName('Режим поиска модулей');
     await page.getByLabel('Режим поиска модулей',{exact:true}).selectOption('source');
+    await expect(page.locator('#module-search-mode')).toHaveAccessibleName('Режим поиска модулей');
     const cancelled=holdNext();await page.locator('#search').fill(app.source_query);await cancelled.ready;
     await page.locator('#cancel-search').click();cancelled.release();
     await expect(page.locator('#item-list button')).toHaveCount(0);await expect(page.locator('#source-coverage')).not.toBeVisible();
