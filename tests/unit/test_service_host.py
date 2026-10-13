@@ -1,6 +1,11 @@
 """Foreground service lifetime contracts, independent of SCM and native 1C."""
 
+import json
+from pathlib import Path
+import re
+import sys
 from threading import Event, Thread
+import traceback
 
 import pytest
 
@@ -46,6 +51,34 @@ def host_class():
     from rentgen_core.service_host import WindowsServiceHost
 
     return WindowsServiceHost
+
+
+def wait_diagnostic(thread, started, entered_wait, watcher, delays, cleanup, errors):
+    """Bounded test evidence; never exception text, locals or absolute paths."""
+    frame = sys._current_frames().get(thread.ident)
+    stack = [] if frame is None else [
+        {"file": Path(item.filename).name[:80], "function": item.name[:80], "line": item.lineno}
+        for item in traceback.extract_stack(frame, limit=8)
+    ]
+    del frame
+    failures = []
+    for error in errors[:3]:
+        item = {"type": type(error).__name__[:80]}
+        code = getattr(error, "code", None)
+        if isinstance(code, str) and re.fullmatch(r"[A-Z][A-Z0-9_]{0,79}", code):
+            item["code"] = code
+        cause = error.__cause__
+        if cause is not None:
+            item["cause_type"] = type(cause).__name__[:80]
+        for key in ("errno", "winerror"):
+            value = getattr(cause if cause is not None else error, key, None)
+            if type(value) is int:
+                item[key] = value
+        failures.append(item)
+    return json.dumps({"worker_started": started.is_set(), "entered_wait": entered_wait.is_set(),
+        "worker_alive": thread.is_alive(), "watcher_calls": watcher.calls,
+        "delays": delays[:3], "cleanup_calls": len(cleanup), "errors": failures,
+        "worker_stack": stack}, sort_keys=True)
 
 
 def test_stop_before_start_cleans_up_without_tick(tmp_path):
@@ -115,8 +148,10 @@ def test_stop_interrupts_backoff_and_keeps_scheduler_configuration(tmp_path):
 
     host._stop_event.wait = observed_wait
     results, errors = [], []
+    started = Event()
 
     def run():
+        started.set()
         try:
             results.append(host.run())
         except BaseException as error:
@@ -133,9 +168,17 @@ def test_stop_interrupts_backoff_and_keeps_scheduler_configuration(tmp_path):
         host.cancel()
         thread.join(2)
         assert not thread.is_alive()
+    except BaseException as error:
+        error.add_note("Service-host before stop: " + wait_diagnostic(
+            thread, started, entered_wait, watcher, delays, cleanup, errors))
+        raise
     finally:
         host.stop()
         thread.join(2)
+        error = sys.exception()
+        if error is not None:
+            error.add_note("Service-host after stop: " + wait_diagnostic(
+                thread, started, entered_wait, watcher, delays, cleanup, errors))
     assert errors == []
     assert results == [[{"status": "error", "code": "GIT_PROBE_FAILED", "attempt": 1}]]
     assert delays == [10]
@@ -145,6 +188,46 @@ def test_stop_interrupts_backoff_and_keeps_scheduler_configuration(tmp_path):
     assert scheduler.sleep is original_sleep
     assert scheduler.should_stop is original_stop
     assert scheduler.max_cycles == 2
+
+
+def test_backoff_wait_failure_reports_early_journal_error_and_confirmed_cleanup(tmp_path, monkeypatch):
+    secret = "PRIVATE_EXCEPTION_AND_PATH_CONTENT"
+
+    def broken_begin(self):
+        try:
+            raise OSError(5, secret, "/private/" + secret)
+        except OSError as cause:
+            raise CoreError("GIT_WATCHER_RECOVERY_REQUIRED", secret) from cause
+
+    monkeypatch.setattr(SchedulerJournal, "begin", broken_begin)
+    with pytest.raises(AssertionError) as caught:
+        test_stop_interrupts_backoff_and_keeps_scheduler_configuration(tmp_path)
+    notes = caught.value.__notes__
+    assert len(notes) == 2
+    assert secret not in " ".join(notes) and "/private/" not in " ".join(notes)
+    before, after = [json.loads(note.split(": ", 1)[1]) for note in notes]
+    for value in (before, after):
+        assert value["worker_started"] is True and value["entered_wait"] is False
+        assert value["worker_alive"] is False and value["watcher_calls"] == 0
+        assert value["delays"] == [] and value["cleanup_calls"] == 1
+        assert value["errors"] == [{"type": "CoreError", "code": "GIT_WATCHER_RECOVERY_REQUIRED",
+                                    "cause_type": "OSError", "errno": 5}]
+        assert value["worker_stack"] == []
+
+
+def test_wait_diagnostic_bounds_live_stack_without_source_or_absolute_paths():
+    from threading import current_thread
+
+    started = Event()
+    started.set()
+    value = json.loads(wait_diagnostic(current_thread(), started, Event(), Watcher([]), [], [], []))
+    assert 1 <= len(value["worker_stack"]) <= 8
+    assert value["worker_alive"] is True
+    for frame in value["worker_stack"]:
+        assert set(frame) == {"file", "function", "line"}
+        assert "/" not in frame["file"] and "\\" not in frame["file"]
+        assert len(frame["file"]) <= 80 and len(frame["function"]) <= 80
+        assert type(frame["line"]) is int
 
 
 @pytest.mark.parametrize(
