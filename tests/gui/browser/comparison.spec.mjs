@@ -3,6 +3,7 @@ import {openComparison,lastComparisonSource,comparisonBeforeReady} from './compa
 
 test('two explicit ZIPs yield complete paged byte counts and verified before/after sources',async({page,app},testInfo)=>{
   await openComparison(page,app);await lastComparisonSource(page,app);
+  await expect(page.locator('#toast')).not.toBeVisible();
   await page.screenshot({path:testInfo.outputPath('comparison-two-sources.png'),fullPage:true});
   await keyboardReach(page,page.locator('#compare-previous'));await page.keyboard.press('Enter');
   await expect(page.locator('#compare-range')).toHaveText('Файлы 201–400 из 405');

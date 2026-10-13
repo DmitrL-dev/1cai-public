@@ -93,6 +93,23 @@ def main():
                 if index == 400:
                     page_xml, page_module = content, code
         archives['paged'] = {'path': str(archive), 'sha256': sha(archive)}
+        source_query = 'Фрагмент😀'
+        source_html = '<img src=x onerror=globalThis.ownedSourceInjected=true>'
+        source_module = None
+        archive = root / 'source-text.zip'
+        with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as output:
+            output.writestr('Catalogs/SourceOwner.xml', xml.replace('Products', 'SourceOwner'))
+            for index in range(201):
+                code = f'// first\r\n// {source_query} {index:03d} {source_html}\r// {source_query} repeated\n'
+                if index == 0:
+                    code = '\ufeff' + code
+                output.writestr(f'Catalogs/SourceOwner/Ext/Code{index:03d}.bsl', code)
+                if index == 200:
+                    source_module = code
+            output.writestr('Catalogs/SourceOwner/Ext/Zlarge.bsl', b'x' * (256 * 1024 + 1))
+            output.writestr('Catalogs/SourceOwner/Ext/Zinvalid.os', b'\xff')
+            output.writestr('Catalogs/SourceOwner/Ext/Zcontrol.bsp', b'bad\x00')
+        archives['source'] = {'path': str(archive), 'sha256': sha(archive)}
         corrupt = root / 'corrupt.zip'
         corrupt.write_bytes(b'Owned deliberately invalid ZIP')
         compare_code = {}
@@ -121,6 +138,8 @@ def main():
                               'compare_hashes': {side: hashlib.sha256(code.encode()).hexdigest() for side, code in compare_code.items()},
                               'many_name': many_name, 'many_synonym': many_synonym, 'many_path': many_path,
                               'many_xml': many_xml, 'many_xml_sha256': hashlib.sha256(many_xml.encode()).hexdigest(),
+                              'source_query': source_query, 'source_html': source_html, 'source_module': source_module,
+                              'source_module_sha256': hashlib.sha256(source_module.encode()).hexdigest(),
                               'page_xml': page_xml, 'page_module': page_module,
                               'page_xml_sha256': hashlib.sha256(page_xml.encode()).hexdigest(),
                               'page_module_sha256': hashlib.sha256(page_module.encode()).hexdigest(),

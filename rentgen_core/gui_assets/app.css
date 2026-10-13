@@ -17,3 +17,4 @@
 #compare-source h3{overflow-wrap:anywhere;min-width:0}
 
 .comparison-list{max-height:28rem;overflow:auto}.comparison-list button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+#source-search-help,#source-coverage,.source-hit{overflow-wrap:anywhere;min-width:0}.source-hit p{font-size:11px;line-height:1.6}.inventory-toolbar{flex-wrap:wrap}
