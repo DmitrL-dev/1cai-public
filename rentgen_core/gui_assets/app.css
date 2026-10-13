@@ -5,3 +5,5 @@
 #search-status-text{min-width:0;overflow-wrap:anywhere}
 
 .pagination{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px 0}.pagination p{min-width:0;overflow-wrap:anywhere;font-size:12px}.pagination .button{white-space:normal;max-width:100%}
+
+#source-search-help,#source-coverage,.source-hit{overflow-wrap:anywhere;min-width:0}.source-hit p{font-size:11px;line-height:1.6}.inventory-toolbar{flex-wrap:wrap}

@@ -39,3 +39,19 @@ test('page replies bind offsets, exact range counts and navigation flags',()=>{
   assert.equal(searchReplyMatches(binding,'search','',{...reply,result:{...result,objects:[]}}),false);
   assert.equal(searchReplyMatches(binding,'search','',{...reply,result:{...result,matching_objects:400}}),false);
 });
+
+test('source literals preserve spaces and reject multiline/control/overflow values',async()=>{
+  const {boundedSourceQuery}=await import('../../rentgen_core/gui_assets/model.js');
+  assert.deepEqual(boundedSourceQuery(' needle '),{query:' needle ',valid:true});
+  for(const query of ['', 'a\nb', 'a\rb', '\0', 'я'.repeat(129), '\ud800'])assert.equal(boundedSourceQuery(query).valid,false);
+  assert.equal(boundedSourceQuery('\t'+'я'.repeat(127)).valid,true);
+});
+test('source result requires honest coverage and bounded first-match text',()=>{
+  const binding={job:'job',input_sha256:'a'.repeat(64),kind:'source',object_path:null,offset:0};
+  const row={analysis:'literal_first_match',first_match:{line:2,excerpt:'needle',truncated_before:false,truncated_after:false}};
+  const coverage={in_scope:2,searched:1,skipped_oversized:1,skipped_invalid_utf8:0,skipped_controls:0,complete:false};
+  const result={input:{input_sha256:binding.input_sha256},modules:[row],matching_modules:1,source_coverage:coverage,page:{offset:0,limit:200,total:1,returned:1,has_previous:false,has_next:false}};
+  const reply={...binding,search:'search',prefix:null,query:'needle',status:'ready',result};
+  assert.ok(searchReplyMatches(binding,'search','needle',reply));
+  for(const update of [{source_coverage:{...coverage,complete:true}},{source_coverage:{...coverage,searched:2}},{modules:[{...row,first_match:{...row.first_match,line:0}}]},{modules:[{...row,first_match:{...row.first_match,excerpt:'x'.repeat(513)}}]}])assert.equal(searchReplyMatches(binding,'search','needle',{...reply,result:{...result,...update}}),false);
+});

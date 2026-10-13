@@ -27,11 +27,12 @@ from .errors import CoreError
 from .local import LocalRuntime
 from .local_identity import current_local_principal
 from .rust_input import RustInputSession
+from .source_search import SOURCE_FILE_LIMIT, search_source_files, validate_source_query
 from .submitted_export import (GUI_PAGE_LIMIT, PERMISSIONS, analyze_export,
                                search_export_metadata, search_export_modules, validate_gui_offset)
 
 MAX_UPLOAD = 16 * 1024**2
-MAX_SOURCE = 256 * 1024
+MAX_SOURCE = SOURCE_FILE_LIMIT
 MAX_SEARCH_QUERY = 256
 SEARCH_LIMIT = GUI_PAGE_LIMIT
 ASSETS = Path(__file__).with_name("gui_assets")
@@ -254,14 +255,16 @@ class Workspace:
     def start_search(self, job_id, sha256, query, kind="metadata", object_path=None, offset=0):
         self.config.authorize()
         validate_gui_offset(offset)
-        if (type(query) is not str or type(kind) is not str or kind not in {"metadata", "modules"}
-                or (object_path is not None and (kind != "modules" or type(object_path) is not str or not object_path))):
+        if (type(query) is not str or type(kind) is not str or kind not in {"metadata", "modules", "source"}
+                or (object_path is not None and (kind not in {"modules", "source"} or type(object_path) is not str or not object_path))):
             fail("INVALID_QUERY_OPTIONS")
         try:
             if len(query.encode("utf-8")) > MAX_SEARCH_QUERY:
                 fail("INVALID_QUERY_OPTIONS")
         except UnicodeError:
             fail("INVALID_QUERY_OPTIONS")
+        if kind == "source":
+            validate_source_query(query)
         with self.lock:
             job = self._search_job(job_id, sha256)
             if self.pending and self.pending.status == "awaiting_upload" and time.monotonic() - self.pending.created_at >= 30:
@@ -305,8 +308,8 @@ class Workspace:
                     if self.closed or search.cancel.is_set() or not search.valid:
                         fail("CANCELLED")
                     self._get_search(search.job.id, search.id, search.sha256)
-                analyze = search_export_modules if search.kind == "modules" else search_export_metadata
-                options = {"prefix": search.prefix} if search.kind == "modules" else {}
+                analyze = {"metadata": search_export_metadata, "modules": search_export_modules, "source": search_source_files}[search.kind]
+                options = {"prefix": search.prefix} if search.kind in {"modules", "source"} else {}
                 result = analyze(self.config.context(), archive=search.job.path,
                     archive_sha256=search.sha256, input_core=self.config.input_core,
                     input_core_sha256=self.config.input_core_sha256, query=search.query,
@@ -360,8 +363,8 @@ class Workspace:
         rows = job.result["objects"] + job.result["modules"]
         search = self._current_search(job)
         if search:
-            rows += search.result["modules" if search.kind == "modules" else "objects"]
-            if search.kind == "modules" and search.object_row:
+            rows += search.result["objects" if search.kind == "metadata" else "modules"]
+            if search.kind in {"modules", "source"} and search.object_row:
                 rows.append(search.object_row)
         row = next((r for r in rows if r["input_ref"]["relative_path"] == path), None)
         if row is None or row["input_ref"]["input_sha256"] != job.sha256:

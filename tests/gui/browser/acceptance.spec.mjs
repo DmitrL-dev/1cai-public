@@ -114,6 +114,8 @@ test('narrow viewport reflow preserves import, source and provenance controls', 
   await page.screenshot({path:testInfo.outputPath('narrow-related-long-path.png'),fullPage:true});
   await exerciseBoundedPagination(page,app);
   await page.screenshot({path:testInfo.outputPath('narrow-pagination.png'),fullPage:true});
+  await exerciseLiteralSearch(page,app);
+  await page.screenshot({path:testInfo.outputPath('narrow-literal-source.png'),fullPage:true});
 });
 
 // Avoid Playwright fullPage viewport/clip overrides at native browser zoom.
@@ -182,6 +184,11 @@ test('genuine Chromium 200 percent zoom reflows and keeps controls operable', as
   await page.locator('#pagination').scrollIntoViewIfNeeded();
   const pageCapture=await captureNativeViewport(page,context,testInfo,'browser-zoom-200-pagination.png');
   await writeFile(testInfo.outputPath('pagination-zoom-measurement.json'),JSON.stringify({factor:2,pageCapture},null,2)+'\n');
+  await exerciseLiteralSearch(page,app);
+  expect(await worker.evaluate(async()=>chrome.tabs.getZoom((await chrome.tabs.query({active:true,lastFocusedWindow:true}))[0].id))).toBe(2);
+  await page.locator('.source-hit').scrollIntoViewIfNeeded();
+  const literalCapture=await captureNativeViewport(page,context,testInfo,'browser-zoom-200-literal-source.png');
+  await writeFile(testInfo.outputPath('literal-source-zoom-measurement.json'),JSON.stringify({factor:2,literalCapture},null,2)+'\n');
 });
 
 function observeImportWrites(page, origin) {
@@ -558,6 +565,23 @@ async function exerciseBoundedPagination(page,app){
   await page.locator('#previous-page').click();
   await expect(page.locator('#page-range')).toHaveText('Строки 1–200 из 401');
   await expect(page.locator('#next-page')).toBeEnabled();
+  await expect(page.locator('#toast')).not.toBeVisible();
+  await noHorizontalOverflow(page);
+}
+
+async function exerciseLiteralSearch(page,app){
+  await importZip(page,app.archives.source.path);
+  await expect(page.locator('#metric-modules')).toHaveText('204');
+  await page.locator('[data-view="modules"]').click();
+  await page.getByLabel('Режим поиска модулей',{exact:true}).selectOption('source');
+  await page.getByRole('searchbox',{name:'Поиск точного фрагмента кода',exact:true}).fill(app.source_query);
+  await expect(page.locator('#source-coverage')).toContainText('Частичное покрытие');
+  await noHorizontalOverflow(page);
+  await page.locator('#next-page').click();
+  await expect(page.locator('#page-range')).toHaveText('Строки 201–201 из 201');
+  await page.getByRole('tab',{name:'Исходный файл',exact:true}).click();
+  await expect(page.getByLabel('Первое совпадение',{exact:true})).toContainText(app.source_query);
+  await expect(page.getByLabel('Исходный код',{exact:true})).toHaveText(app.source_module);
   await expect(page.locator('#toast')).not.toBeVisible();
   await noHorizontalOverflow(page);
 }
