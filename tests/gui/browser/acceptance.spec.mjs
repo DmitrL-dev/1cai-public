@@ -311,3 +311,120 @@ test('failed replacement reservation retains the uncertain known job through tra
   await page.locator('[data-view="provenance"]').click();
   await expect(page.locator('#provenance-view')).toContainText(app.archives.second.sha256);
 });
+
+test('archive-wide metadata search finds the 201st owned object and opens verified source', async ({page, app}, testInfo) => {
+  await importZip(page, app.archives.many.path);
+  await expect(page.locator('#progress-dialog')).not.toBeVisible();
+  await expect(page.locator('#page-subtitle')).toContainText('many.zip');
+  await expect(page.locator('#metric-objects')).toHaveText('201');
+  await expect(page.locator('#item-list button')).toHaveCount(200);
+  await expect(page.locator('#truncation-warning')).toContainText('201');
+  for (const query of [app.many_name, app.many_synonym, app.many_path]) {
+    await page.locator('#search').fill(query);
+    await expect(page.locator('#search-status-text')).toContainText('Найдено 1 по всему ZIP');
+    await expect(page.locator('#item-list button')).toHaveCount(1);
+    await expect(page.locator('#detail-panel h2')).toHaveText(app.many_name);
+  }
+  await page.getByRole('tab', {name: 'Исходный файл', exact: true}).click();
+  await expect(page.getByLabel('Исходный код', {exact: true})).toHaveText(app.many_xml);
+  await page.getByRole('tab', {name: 'Происхождение', exact: true}).click();
+  await expect(page.locator('#detail-content')).toContainText(app.many_xml_sha256);
+  await expect(page.locator('#detail-content')).toContainText(app.archives.many.sha256);
+  await expect(page.locator('#toast')).not.toBeVisible();
+  await page.screenshot({path: testInfo.outputPath('archive-search-201st-provenance.png'), fullPage: true});
+  // A failed replacement invalidates the search allowlist but preserves the ZIP.
+  await importZip(page, app.corrupt);
+  await expect(page.locator('#upload-error')).toBeVisible();
+  await page.getByRole('button', {name: 'Закрыть', exact: true}).click();
+  await expect(page.locator('#page-subtitle')).toContainText('many.zip');
+  await expect(page.locator('#search')).toHaveValue('');
+  await expect(page.locator('#item-list button')).toHaveCount(200);
+  await expect(page.locator('#detail-panel h2')).toHaveText('Object000');
+  await page.locator('#search').fill(app.many_name);
+  await expect(page.locator('#detail-panel h2')).toHaveText(app.many_name);
+  // Cancel another real reservation while its upload is held in the browser.
+  let releaseUpload, observedUpload;
+  const holdUpload = new Promise(resolve => {releaseUpload = resolve;});
+  const uploadStarted = new Promise(resolve => {observedUpload = resolve;});
+  await page.route(`${app.origin}/api/import?*`, async route => {
+    observedUpload(); await holdUpload; await route.abort('aborted');
+  });
+  try {
+    await importZip(page, app.archives.first.path);
+    await uploadStarted;
+    const cancelled = page.waitForResponse(response => response.url() === `${app.origin}/api/cancel`);
+    await page.locator('#cancel-analysis').click();
+    expect((await (await cancelled).json()).cancel_requested).toBe(true);
+  } finally {releaseUpload(); await page.unrouteAll({behavior: 'wait'});}
+  await expect(page.locator('#progress-dialog')).not.toBeVisible();
+  await expect(page.locator('#page-subtitle')).toContainText('many.zip');
+  await expect(page.locator('#search')).toHaveValue('');
+  await expect(page.locator('#item-list button')).toHaveCount(200);
+  await expect(page.locator('#detail-panel h2')).toHaveText('Object000');
+  await page.locator('#search').fill(app.many_name);
+  await expect(page.locator('#detail-panel h2')).toHaveText(app.many_name);
+  await page.getByRole('tab', {name: 'Исходный файл', exact: true}).click();
+  await expect(page.getByLabel('Исходный код', {exact: true})).toHaveText(app.many_xml);
+  await page.locator('#search').fill('Catalog');
+  await expect(page.locator('#search-status-text')).toContainText('Найдено 201 по всему ZIP');
+  await expect(page.locator('#item-list button')).toHaveCount(200);
+  await expect(page.locator('#truncation-warning')).toBeVisible();
+  await page.locator('#search').fill('я'.repeat(129));
+  await expect(page.locator('#search-status-text')).toContainText('256 байт UTF-8');
+  await page.locator('#search').fill('absent-owned-object');
+  await expect(page.locator('#no-results')).toBeVisible();
+  await page.locator('#search').fill('');
+  await expect(page.locator('#item-list button')).toHaveCount(200);
+  await page.locator('[data-view="modules"]').click();
+  await expect(page.locator('#search')).toHaveAttribute('placeholder', 'Поиск в загруженных модулях…');
+  await expect(page.locator('#metric-objects')).toHaveText('201');
+});
+
+test('late metadata search responses cannot overwrite a new query, view or imported archive', async ({page, app}) => {
+  await importZip(page, app.archives.many.path);
+  await expect(page.locator('#metric-objects')).toHaveText('201');
+  let nextGate;
+  const gates = [];
+  function holdNextReady() {
+    let release, reached;
+    const hold = new Promise(resolve => {release = resolve;});
+    const ready = new Promise(resolve => {reached = resolve;});
+    nextGate = {release, reached, hold, ready};
+    gates.push(nextGate);
+    return nextGate;
+  }
+  await page.route(`${app.origin}/api/search?*`, async route => {
+    const response = await route.fetch();
+    if (nextGate && (await response.json()).status === 'ready') {
+      const gate = nextGate; nextGate = null; gate.reached(); await gate.hold;
+    }
+    await route.fulfill({response});
+  });
+  try {
+    const oldQuery = holdNextReady();
+    await page.locator('#search').fill(app.many_name);
+    await oldQuery.ready;
+    await page.locator('#search').fill('absent-owned-object');
+    oldQuery.release();
+    await expect(page.locator('#no-results')).toBeVisible();
+    await expect(page.locator('#item-list button')).toHaveCount(0);
+    const oldView = holdNextReady();
+    await page.locator('#search').fill(app.many_name);
+    await oldView.ready;
+    await page.locator('[data-view="modules"]').click();
+    oldView.release();
+    await expect(page.locator('#page-title')).toHaveText('Модули конфигурации');
+    await expect(page.locator('#search-status')).not.toBeVisible();
+    await page.locator('[data-view="objects"]').click();
+    const oldArchive = holdNextReady();
+    await page.locator('#search').fill(app.many_name);
+    await oldArchive.ready;
+    await importZip(page, app.archives.first.path);
+    await ready(page, 'first.zip');
+    oldArchive.release();
+    await page.unrouteAll({behavior: 'wait'});
+    await expect(page.locator('#item-list button')).toHaveCount(1);
+    await expect(page.locator('#detail-panel h2')).toHaveText('Products');
+    await expect(page.locator('#search-status')).not.toBeVisible();
+  } finally {for (const gate of gates) gate.release(); await page.unrouteAll({behavior: 'wait'});}
+});
