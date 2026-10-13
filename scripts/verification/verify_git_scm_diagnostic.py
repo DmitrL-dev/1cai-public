@@ -53,7 +53,12 @@ def prepare_diagnostic(worker, prep):
                   '-c', 'commit.gpgsign=false', 'commit', '-q', '-m', 'Owned ' + name + ' Git diagnostic fixture'),
                  ('head', 'rev-parse', '--verify', 'HEAD^{commit}'))
         for label, *args in steps:
-            result = probe.capture((str(git), '-C', str(root), *args), env, worker.B, 'prepare-' + name + '-' + label)
+            # A commit may detach automatic maintenance, whose transient lock
+            # can outlive the command and race our exact repository inventory.
+            # Disable it only for these owned preparation commands; do not
+            # persist settings or exempt any file from the later integrity check.
+            result = probe.capture((str(git), '-c', 'maintenance.auto=false', '-C', str(root), *args),
+                                   env, worker.B, 'prepare-' + name + '-' + label)
             worker.save(worker.B / ('prepare-' + name + '-' + label + '.json'), result)
             worker.require(result['exit_code'] == 0 and not result['timed_out'] and not result['output_limit_exceeded']
                            and result['process_error'] is None, 'Owned Git preparation failed')
