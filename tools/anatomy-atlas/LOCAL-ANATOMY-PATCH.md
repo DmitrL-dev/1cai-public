@@ -1,9 +1,9 @@
-# Local Anatomy builder correction
+# Local Anatomy corrections
 
 Upstream: wheresryan22/anatomy, commit `e6600ffc4e8e6620eeb45bf49bcdbd5e4b84163f`.
 Original `kit/turn-build.mjs` Git blob: `3bfe31b9bb87c7d0b7b75f62054149bfa583fb1a`.
 
-## Change
+## Prior same-group pair coverage
 
 In the same-group pair loop, when a group has a free ancestor (`group.loose`), replace the world-space bounding-sphere proximity test with unconditional pair inclusion (`near = true`). This creates a separating plane for every rigid same-group convex pair. Other pair logic, runtime, geometry, source data, audit thresholds and camera ranges are unchanged.
 
@@ -28,3 +28,13 @@ Putting every solid in a separate identity frame removed the missing-pair issue 
 The stock benchmark expects a turn root and does not support this free-root scene; the standard fidelity identity helper also targets turn roots. Their absence is not replaced by a misleading success claim. Real-browser order, interaction, clipping, label placement, accessibility and performance checks remain independent requirements.
 
 The prior atlas already contained a separate exact-transform precision fix in `turn.mjs`. This new correction changes only `turn-build.mjs` and does not relax that earlier fidelity threshold.
+
+## Conservative cycle-refinement overlap (cutaway candidate)
+
+The new source cutaway exposes a separate runtime ordering defect at grazing camera angles. `breakCycle()` could remove a necessary depth edge when a projected overlap was narrower than its 0.1 pixel disjoint allowance. A long thin overlap still has visible area: the 31-solid cutaway reproduced a 20.94 px² base/right-wall pop near pitch 59.514°.
+
+The local change is limited to the cycle-refinement call to `t3Disjoint`: pad 0.1 becomes 0, so it may discard an edge only when the projected hulls are actually disjoint. No audit thresholds, source geometry, camera range or audit failure criteria are weakened. Exact-mode rounding was not the cause. The new cutaway and unchanged overview require fresh qualification against this runtime; old certificates do not establish that result.
+
+The dedicated `node qa/cutaway-sliver-regression.mjs` pins the previously qualified runtime SHA-256 `da729a6de3e437e853bdc420959b34ff67f23b05c1fc4a0445099405239f817d` (upstream cycle-refinement behavior with the existing exact-affine correction retained). Its four-solid fixture proves 20.691027 px² of real overlap at pitch 59.5° and checks the mathematically required frontmost solid: wrong before, correct afterward. The same official order audit reports two swaps before and zero afterward; official audit bytes are unchanged. This is distinct from the earlier missing-same-group-plane regression.
+
+`node qa/cycle-refinement-performance.mjs` compares the same overview and cutaway geometry with only the cycle predicate changed. It samples full yaw, ±85° pitch, independent overview slides, synchronized cover/child opening and four discrete file-compartment positions. Its Node timings are not browser FPS. Full geometry reports and browser receipts remain separate gates.

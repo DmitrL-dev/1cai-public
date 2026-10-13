@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "scope": "After full audit, only source editorial compartment metadata changed. Exact geometry/camera/turn/parts/objects/budget payload and generated architecture input are byte-digest identical.",
+  "changedSources": [
+    "cutaway-model.mjs"
+  ],
+  "geometry": {
+    "detail": "c3dd4bb5fcd5823bd7057edbdee00bd52555fd4eda727515a0a4c2df071bbc41",
+    "overview": "a9f978195bab5d5f027fb04f5ff43acd78db2b461b4bd0ff65c3656c734b37f5"
+  },
+  "auditedManifest": "qualification-audited-import-closure.json",
+  "finalManifest": "qualification-final-import-closure.json"
+}

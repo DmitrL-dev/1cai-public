@@ -1,0 +1,148 @@
+{
+  "scope": "Four-solid actual overlap and painter-order defect; finite official pitch-order regression. No audit thresholds, camera ranges or geometry changed.",
+  "expected": "At a negative local view Z, every shared projection ray reaches the lower base (z <= 3) in front of the separated upper wall (z >= 3.1). The base must therefore be painted after the wall wherever their fill polygons intersect.",
+  "auditSha256": "e118b838c00621eb5d86409552b75b50d02c303eaedefc008146a7c62c2eaefd",
+  "results": [
+    {
+      "name": "before",
+      "runtimeSha256": "da729a6de3e437e853bdc420959b34ff67f23b05c1fc4a0445099405239f817d",
+      "order": [
+        "compartment3.index",
+        "compartment3.tray",
+        "stand.shell.base",
+        "shell.right"
+      ],
+      "correctFrontmost": false,
+      "stats": {
+        "edges": 5,
+        "forced": 0,
+        "refined": 3,
+        "unseparated": 0,
+        "solved": 3
+      },
+      "viewZ": -0.04732907861189739,
+      "gapZ": 0.1,
+      "intersectionArea": 20.69102724562981,
+      "intersection": [
+        [
+          616.9617682948125,
+          545.8317343113957
+        ],
+        [
+          476.3458086616887,
+          390.23255146673495
+        ],
+        [
+          476.29534648180663,
+          390.27958482808987
+        ],
+        [
+          476.30425057243195,
+          390.32091290571856
+        ],
+        [
+          476.53179841970143,
+          390.585772120341
+        ],
+        [
+          616.0949772069241,
+          545.0199958823763
+        ],
+        [
+          616.4083323560525,
+          545.353675158387
+        ],
+        [
+          616.6239540375158,
+          545.5607970202652
+        ]
+      ],
+      "zeroDisjoint": false,
+      "toleranceDisjoint": true,
+      "failures": 2,
+      "swaps": [
+        {
+          "layer": "test",
+          "a": "compartment3.tray",
+          "b": "compartment3.index",
+          "area": 3.0845182563498383,
+          "at": "pitch 0.090"
+        },
+        {
+          "layer": "test",
+          "a": "stand.shell.base",
+          "b": "shell.right",
+          "area": 20.934789557446493,
+          "at": "pitch 0.703"
+        }
+      ],
+      "cycles": 0,
+      "forced": 0,
+      "unseparated": 0,
+      "scope": "Official order checks only, not a complete qualification."
+    },
+    {
+      "name": "after",
+      "runtimeSha256": "f2cacb26e354e7283972ea98e51ccac4a5dd4b8e0e9e3b775130ea7b65bd28dd",
+      "order": [
+        "compartment3.index",
+        "compartment3.tray",
+        "shell.right",
+        "stand.shell.base"
+      ],
+      "correctFrontmost": true,
+      "stats": {
+        "edges": 5,
+        "forced": 0,
+        "refined": 2,
+        "unseparated": 0,
+        "solved": 3
+      },
+      "viewZ": -0.04732907861189739,
+      "gapZ": 0.1,
+      "intersectionArea": 20.69102724562981,
+      "intersection": [
+        [
+          616.9617682948125,
+          545.8317343113957
+        ],
+        [
+          476.3458086616887,
+          390.23255146673495
+        ],
+        [
+          476.29534648180663,
+          390.27958482808987
+        ],
+        [
+          476.30425057243195,
+          390.32091290571856
+        ],
+        [
+          476.53179841970143,
+          390.585772120341
+        ],
+        [
+          616.0949772069241,
+          545.0199958823763
+        ],
+        [
+          616.4083323560525,
+          545.353675158387
+        ],
+        [
+          616.6239540375158,
+          545.5607970202652
+        ]
+      ],
+      "zeroDisjoint": false,
+      "toleranceDisjoint": true,
+      "failures": 0,
+      "swaps": [],
+      "cycles": 0,
+      "forced": 0,
+      "unseparated": 0,
+      "scope": "Official order checks only, not a complete qualification."
+    }
+  ]
+}
