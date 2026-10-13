@@ -108,6 +108,10 @@ test('narrow viewport reflow preserves import, source and provenance controls', 
   await noHorizontalOverflow(page);
   await expect(page.locator('#toast')).not.toBeVisible();
   await page.screenshot({path: testInfo.outputPath('narrow-provenance.png'), fullPage: true});
+  await discoverLongRelatedFolder(page,app);
+  await noHorizontalOverflow(page);
+  await expect(page.locator('#toast')).not.toBeVisible();
+  await page.screenshot({path:testInfo.outputPath('narrow-related-long-path.png'),fullPage:true});
 });
 
 // Avoid Playwright fullPage viewport/clip overrides at native browser zoom.
@@ -164,6 +168,13 @@ test('genuine Chromium 200 percent zoom reflows and keeps controls operable', as
   const measurement = testInfo.outputPath('browser-zoom-measurement.json');
   await writeFile(measurement, JSON.stringify({factor, before, after, workspaceCapture, sourceCapture, sourceBounds}, null, 2) + '\n');
   await testInfo.attach('browser-zoom-measurement', {path: measurement, contentType: 'application/json'});
+  await discoverLongRelatedFolder(page,app);
+  await noHorizontalOverflow(page);
+  expect(await worker.evaluate(async()=>chrome.tabs.getZoom((await chrome.tabs.query({active:true,lastFocusedWindow:true}))[0].id))).toBe(2);
+  await expect(page.locator('#toast')).not.toBeVisible();
+  await page.locator('#search-status').scrollIntoViewIfNeeded();
+  const relatedCapture=await captureNativeViewport(page,context,testInfo,'browser-zoom-200-related-long-path.png');
+  await writeFile(testInfo.outputPath('related-zoom-measurement.json'),JSON.stringify({factor:2,relatedCapture},null,2)+'\n');
 });
 
 function observeImportWrites(page, origin) {
@@ -376,7 +387,7 @@ test('archive-wide metadata search finds the 201st owned object and opens verifi
   await page.locator('#search').fill('');
   await expect(page.locator('#item-list button')).toHaveCount(200);
   await page.locator('[data-view="modules"]').click();
-  await expect(page.locator('#search')).toHaveAttribute('placeholder', 'Поиск в загруженных модулях…');
+  await expect(page.locator('#search')).toHaveAttribute('placeholder', 'Имя или путь модуля по всему ZIP…');
   await expect(page.locator('#metric-objects')).toHaveText('201');
 });
 
@@ -428,3 +439,104 @@ test('late metadata search responses cannot overwrite a new query, view or impor
     await expect(page.locator('#search-status')).not.toBeVisible();
   } finally {for (const gate of gates) gate.release(); await page.unrouteAll({behavior: 'wait'});}
 });
+
+test('archive-wide module paths and related folder reveal later verified sources', async ({page, app}, testInfo) => {
+  await importZip(page, app.archives.many.path);
+  await expect(page.locator('#metric-modules')).toHaveText('204');
+  await page.locator('#search').fill(app.many_name);
+  await expect(page.locator('#detail-panel h2')).toHaveText(app.many_name);
+  await expect(page.locator('[data-module]')).toHaveCount(0);
+  await page.locator('#discover-related-modules').click();
+  await expect(page.locator('#page-title')).toHaveText('Модули конфигурации');
+  await expect(page.locator('#search-status-text')).toContainText('Найдено 3 по всему ZIP');
+  await expect(page.locator('#search-status-text')).toContainText(app.many_path);
+  await expect(page.locator('#item-list button')).toHaveCount(3);
+  await expect(page.locator('#item-list')).not.toContainText('Neighbor');
+  for (const query of ['ПОЗДНИЙМОДУЛЬ.OS', 'другоймодуль.bsp', 'ObjectModule.bsl']) {
+    await page.locator('#search').fill(query);
+    await expect(page.locator('#search-status-text')).toContainText('Найдено 1 по всему ZIP');
+    await expect(page.locator('#item-list button')).toHaveCount(1);
+    await page.getByRole('tab', {name:'Исходный файл', exact:true}).click();
+    await expect(page.getByLabel('Исходный код', {exact:true})).toHaveText(app.module);
+    await page.getByRole('tab', {name:'Происхождение', exact:true}).click();
+    await expect(page.locator('#detail-content')).toContainText(app.module_sha256);
+    await expect(page.locator('#detail-content')).toContainText(app.archives.many.sha256);
+    await expect(page.locator('#detail-content')).toContainText(app.many_path.slice(0,-4)+'/Ext/');
+  }
+  await expect(page.locator('#toast')).not.toBeVisible();
+  await page.screenshot({path:testInfo.outputPath('late-module-verified-provenance.png'),fullPage:true});
+  await page.locator('#search').fill('');
+  await expect(page.locator('#item-list button')).toHaveCount(3);
+  await page.locator('#cancel-search').click();
+  await expect(page.locator('#item-list button')).toHaveCount(200);
+  await expect(page.locator('#result-count')).toHaveText('Показано 200 из 204');
+  await expect(page.locator('#truncation-warning')).toContainText('не содержимое кода');
+  await page.locator('#search').fill('ObjectModule.bsl');
+  await expect(page.locator('#search-status-text')).toContainText('Найдено 201 по всему ZIP');
+  await expect(page.locator('#item-list button')).toHaveCount(200);
+  await page.locator('#search').fill('Synthetic only');
+  await expect(page.locator('#no-results')).toBeVisible();
+  await page.locator('#search').fill('поздниймодуль.os');
+  await expect(page.locator('#item-list button')).toHaveCount(1);
+  await page.getByRole('tab', {name:'Исходный файл', exact:true}).click();
+  await expect(page.getByLabel('Исходный код', {exact:true})).toHaveText(app.module);
+});
+
+test('late module discovery cannot overwrite newer query, cancelled search, view or import', async ({page, app}) => {
+  await importZip(page, app.archives.many.path);
+  await expect(page.locator('#metric-modules')).toHaveText('204');
+  await page.locator('[data-view="modules"]').click();
+  let nextGate;
+  const gates=[];
+  function holdNextReady() {
+    let release,reached;
+    const hold=new Promise(resolve=>{release=resolve;});
+    const ready=new Promise(resolve=>{reached=resolve;});
+    nextGate={release,reached,hold,ready};gates.push(nextGate);return nextGate;
+  }
+  await page.route(`${app.origin}/api/search?*`,async route=>{
+    const response=await route.fetch();
+    const data=await response.json();
+    if(nextGate&&data.status==='ready'&&data.kind==='modules'){
+      const gate=nextGate;nextGate=null;gate.reached();await gate.hold;
+    }
+    await route.fulfill({response});
+  });
+  try {
+    const oldQuery=holdNextReady();
+    await page.locator('#search').fill('поздниймодуль.os');await oldQuery.ready;
+    await page.locator('#search').fill('absent-owned-module');oldQuery.release();
+    await expect(page.locator('#no-results')).toBeVisible();
+    const cancelled=holdNextReady();
+    await page.locator('#search').fill('поздниймодуль.os');await cancelled.ready;
+    await page.locator('#cancel-search').click();cancelled.release();
+    await expect(page.locator('#item-list button')).toHaveCount(200);
+    await expect(page.locator('#search')).toHaveValue('');
+    const oldView=holdNextReady();
+    await page.locator('#search').fill('поздниймодуль.os');await oldView.ready;
+    await page.locator('[data-view="objects"]').click();oldView.release();
+    await page.locator('#search').fill(app.many_name);
+    await expect(page.locator('#detail-panel h2')).toHaveText(app.many_name);
+    await expect(page.locator('#item-list button')).toHaveCount(1);
+    await page.locator('[data-view="modules"]').click();
+    const oldArchive=holdNextReady();
+    await page.locator('#search').fill('поздниймодуль.os');await oldArchive.ready;
+    await importZip(page,app.archives.first.path);await ready(page,'first.zip');
+    oldArchive.release();await page.unrouteAll({behavior:'wait'});
+    await expect(page.locator('#detail-panel h2')).toHaveText('Products');
+    await expect(page.locator('#metric-modules')).toHaveText('1');
+    await expect(page.locator('#search-status')).not.toBeVisible();
+  } finally {for(const gate of gates)gate.release();await page.unrouteAll({behavior:'wait'});}
+});
+
+async function discoverLongRelatedFolder(page,app){
+  await importZip(page,app.archives.many.path);
+  await expect(page.locator('#metric-objects')).toHaveText('201');
+  await page.locator('#search').fill(app.many_name);
+  await expect(page.locator('#detail-panel h2')).toHaveText(app.many_name);
+  await noHorizontalOverflow(page);
+  await page.locator('#discover-related-modules').click();
+  await expect(page.locator('#search-status-text')).toContainText('Найдено 3 по всему ZIP');
+  await expect(page.locator('#search-status-text')).toContainText(app.many_path);
+  await expect(page.locator('#cancel-search')).toBeVisible();
+}

@@ -55,7 +55,8 @@ def main():
             archives[label] = {'path': str(archive), 'sha256': sha(archive)}
         many_name = 'ПоследнийОбъект201'
         many_synonym = 'УникальныйСиноним201'
-        many_path = 'Catalogs/Object200.xml'
+        many_stem = 'Object200' + 'LongOwnedPath' * 12
+        many_path = f'Catalogs/{many_stem}.xml'
         many_xml = None
         archive = root / 'many.zip'
         with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as output:
@@ -68,10 +69,14 @@ def main():
                            '<Catalog uuid="11111111-1111-4111-8111-111111111111">'
                            f'<Properties>{properties}</Properties><ChildObjects/>'
                            '</Catalog></MetaDataObject>')
-                output.writestr(f'Catalogs/Object{index:03d}.xml', content)
+                stem = many_stem if index == 200 else f'Object{index:03d}'
+                output.writestr(f'Catalogs/{stem}.xml', content)
                 if index == 200:
                     many_xml = content
-            output.writestr('Catalogs/Object200/Ext/ObjectModule.bsl', module)
+                output.writestr(f'Catalogs/{stem}/Ext/ObjectModule.bsl', module)
+            output.writestr(f'Catalogs/{many_stem}/Ext/ПозднийМодуль.os', module)
+            output.writestr(f'Catalogs/{many_stem}/Ext/ДругойМодуль.bsp', module)
+            output.writestr(f'Catalogs/{many_stem}Neighbor/Ext/Neighbor.bsl', module)
         archives['many'] = {'path': str(archive), 'sha256': sha(archive)}
         corrupt = root / 'corrupt.zip'
         corrupt.write_bytes(b'Owned deliberately invalid ZIP')

@@ -12,11 +12,18 @@ test('metadata query limit is UTF-8 bytes, with explicit empty/Unicode boundarie
   assert.equal(boundedMetadataQuery('a'.repeat(257)).valid,false);
 });
 test('metadata search reply cannot cross job, archive, query or search generation',()=>{
-  const binding={job:'owned-job',input_sha256:'a'.repeat(64)};
-  const reply={...binding,search:'owned-search',query:'Товар',status:'ready',result:{input:{input_sha256:binding.input_sha256},objects:[]}};
+  const binding={job:'owned-job',input_sha256:'a'.repeat(64),kind:'metadata',object_path:null};
+  const reply={...binding,search:'owned-search',prefix:null,query:'Товар',status:'ready',result:{input:{input_sha256:binding.input_sha256},objects:[]}};
   assert.ok(searchReplyMatches(binding,'owned-search','Товар',reply));
   assert.equal(searchReplyMatches(binding,'owned-search','Товар',{...reply,result:{}}),false);
   for(const [key,value] of [['job','old-job'],['input_sha256','b'.repeat(64)],['search','old-search'],['query','Other']])assert.equal(searchReplyMatches(binding,'owned-search','Товар',{...reply,[key]:value}),false);
   assert.equal(searchReplyMatches(binding,'owned-search','Товар',{...reply,result:{...reply.result,input:{input_sha256:'b'.repeat(64)}}}),false);
   assert.equal(searchReplyMatches(binding,'owned-search','Товар',{...reply,result:{...reply.result,objects:Array(201).fill({})}}),false);
+});
+
+test('module discovery reply binds kind and related object and bounds module hits',()=>{
+  const binding={job:'job',input_sha256:'a'.repeat(64),kind:'modules',object_path:'Catalogs/Late.xml'};
+  const reply={...binding,search:'search',prefix:'Catalogs/Late/',query:'модуль',status:'ready',result:{input:{input_sha256:binding.input_sha256},modules:[]}};
+  assert.ok(searchReplyMatches(binding,'search','модуль',reply));
+  for(const update of [{prefix:'Catalogs/LateNeighbor/'},{kind:'metadata'},{object_path:null},{object_path:'Catalogs/Other.xml'},{result:{...reply.result,modules:Array(201).fill({})}},{result:{...reply.result,objects:[],modules:undefined}}])assert.equal(searchReplyMatches(binding,'search','модуль',{...reply,...update}),false);
 });

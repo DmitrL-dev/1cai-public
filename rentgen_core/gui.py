@@ -27,7 +27,7 @@ from .errors import CoreError
 from .local import LocalRuntime
 from .local_identity import current_local_principal
 from .rust_input import RustInputSession
-from .submitted_export import PERMISSIONS, analyze_export
+from .submitted_export import PERMISSIONS, analyze_export, search_export_modules
 
 MAX_UPLOAD = 16 * 1024**2
 MAX_SOURCE = 256 * 1024
@@ -81,6 +81,10 @@ class Search:
     job: Job
     sha256: str
     query: str
+    kind: str = "metadata"
+    object_path: str | None = None
+    prefix: str | None = None
+    object_row: dict | None = None
     status: str = "searching"
     result: dict | None = None
     error: str | None = None
@@ -218,9 +222,37 @@ class Workspace:
             fail("SEARCH_NOT_AVAILABLE")
         return search
 
-    def start_search(self, job_id, sha256, query):
+    def _current_search(self, job):
+        search = self.search
+        if (search and search.valid and search.job is job and search.sha256 == job.sha256
+                and search.status == "ready" and not search.cancel.is_set()):
+            return search
+        return None
+
+    def _related_object(self, job, path):
+        # Browser paths are exact selectors of server-owned metadata hits, not
+        # arbitrary directory prefixes. Resolve before superseding that search.
+        rows = job.result["objects"][:]
+        search = self._current_search(job)
+        if search:
+            if search.kind == "metadata":
+                rows += search.result["objects"]
+        # A scoped refinement may cancel its worker before the next start.
+        # Retain only that one resolved anchor, never stale result lists, until
+        # another scope/import invalidates the search or replaces it.
+        search = self.search
+        if (search and search.valid and search.job is job and search.sha256 == job.sha256
+                and search.object_row):
+            rows.append(search.object_row)
+        row = next((row for row in rows if row["input_ref"]["relative_path"] == path), None)
+        if row is None or row["input_ref"]["input_sha256"] != job.sha256 or not path.lower().endswith(".xml"):
+            fail("SEARCH_NOT_AVAILABLE")
+        return {**row, "input_ref": dict(row["input_ref"])}
+
+    def start_search(self, job_id, sha256, query, kind="metadata", object_path=None):
         self.config.authorize()
-        if type(query) is not str:
+        if (type(query) is not str or type(kind) is not str or kind not in {"metadata", "modules"}
+                or (object_path is not None and (kind != "modules" or type(object_path) is not str or not object_path))):
             fail("INVALID_QUERY_OPTIONS")
         try:
             if len(query.encode("utf-8")) > MAX_SEARCH_QUERY:
@@ -233,16 +265,32 @@ class Workspace:
                 self.abandon(self.pending, "UPLOAD_TIMEOUT")
             if self.pending and self.pending.status in {"awaiting_upload", "uploading", "analyzing"}:
                 fail("BUSY")
-            self._invalidate_search()
+            object_row = self._related_object(job, object_path) if object_path is not None else None
+            prefix = object_row["input_ref"]["relative_path"][:-4] + "/" if object_row else None
             # Supersession cancels the current child. A retry is accepted only
             # after its Rust context and non-daemon worker have both exited.
             if self.search_worker and self.search_worker.is_alive():
+                if object_row is not None and self.search and self.search.valid:
+                    # The selected row is already server-verified. Preserve its
+                    # bounded anchor across this BUSY retry, including the tiny
+                    # ready-before-thread-exit metadata handoff window.
+                    self.search.object_row = object_row
+                    self.search.cancel.set()
+                    self.search.result = None
+                    if self.search.status == "ready":
+                        self.search.status = "cancelled"
+                        self.search.error = "CANCELLED"
+                else:
+                    self._invalidate_search()
                 fail("BUSY")
-            search = Search(secrets.token_hex(16), job, job.sha256, query)
+            self._invalidate_search()
+            search = Search(secrets.token_hex(16), job, job.sha256, query,
+                            kind=kind, object_path=object_path, prefix=prefix, object_row=object_row)
             self.search = search
             self.search_worker = threading.Thread(target=self._search, args=(search,), name="rentgen-gui-search", daemon=False)
             self.search_worker.start()
-            return {"search": search.id, "job": job.id, "input_sha256": job.sha256}
+            return {"search": search.id, "job": job.id, "input_sha256": job.sha256,
+                    "kind": search.kind, "object_path": search.object_path, "prefix": search.prefix}
 
     def _search(self, search):
         try:
@@ -253,10 +301,12 @@ class Workspace:
                     if self.closed or search.cancel.is_set() or not search.valid:
                         fail("CANCELLED")
                     self._get_search(search.job.id, search.id, search.sha256)
-                result = analyze_export(self.config.context(), archive=search.job.path,
+                analyze = search_export_modules if search.kind == "modules" else analyze_export
+                options = {"prefix": search.prefix} if search.kind == "modules" else {}
+                result = analyze(self.config.context(), archive=search.job.path,
                     archive_sha256=search.sha256, input_core=self.config.input_core,
                     input_core_sha256=self.config.input_core_sha256, query=search.query,
-                    limit=SEARCH_LIMIT, cancelled=search.cancel.is_set)
+                    limit=SEARCH_LIMIT, cancelled=search.cancel.is_set, **options)
                 self.config.authorize()
                 with self.lock:
                     if self.closed or search.cancel.is_set() or not search.valid:
@@ -276,7 +326,9 @@ class Workspace:
         with self.lock:
             search = self._get_search(job_id, search_id, sha256)
             data = {"search": search.id, "job": search.job.id, "input_sha256": search.sha256,
-                    "query": search.query, "status": search.status, "error": search.error}
+                    "query": search.query, "kind": search.kind,
+                    "object_path": search.object_path, "prefix": search.prefix,
+                    "status": search.status, "error": search.error}
             if search.status == "ready":
                 data["result"] = search.result
             return data
@@ -302,10 +354,11 @@ class Workspace:
         if self.closed or job is not self.current or job.status != "ready":
             fail("SOURCE_NOT_AVAILABLE")
         rows = job.result["objects"] + job.result["modules"]
-        search = self.search
-        if (search and search.valid and search.job is job and search.sha256 == job.sha256
-                and search.status == "ready" and not search.cancel.is_set()):
-            rows += search.result["objects"]
+        search = self._current_search(job)
+        if search:
+            rows += search.result["modules" if search.kind == "modules" else "objects"]
+            if search.kind == "modules" and search.object_row:
+                rows.append(search.object_row)
         row = next((r for r in rows if r["input_ref"]["relative_path"] == path), None)
         if row is None or row["input_ref"]["input_sha256"] != job.sha256:
             fail("SOURCE_NOT_AVAILABLE")
@@ -542,11 +595,14 @@ class Handler(BaseHTTPRequestHandler):
                 fail("INVALID_REQUEST")
             payload = json.loads(self._body(2048))
             selector = "query" if path == "/api/search-start" else "search"
-            if type(payload) is not dict or set(payload) != {"job", "input_sha256", selector}:
+            required = {"job", "input_sha256", selector}
+            optional = {"kind", "object_path"} if selector == "query" else set()
+            if type(payload) is not dict or not required <= set(payload) or set(payload) - required - optional:
                 fail("INVALID_REQUEST")
             with app.lock:
                 if selector == "query":
-                    result = app.start_search(payload["job"], payload["input_sha256"], payload["query"])
+                    result = app.start_search(payload["job"], payload["input_sha256"], payload["query"],
+                                              payload.get("kind", "metadata"), payload.get("object_path"))
                     validate = lambda: app._get_search(result["job"], result["search"], result["input_sha256"])
                     self._json(result, status=201, validate=validate)
                 else:

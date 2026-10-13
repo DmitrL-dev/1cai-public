@@ -27,6 +27,6 @@ export function reconcileImport(read,isCurrent,pause=()=>new Promise(resolve=>se
 }
 export function boundedMetadataQuery(value){const query=value.trim();return {query,valid:new TextEncoder().encode(query).length<=256};}
 export function searchReplyMatches(binding,search,query,reply){
-  return reply?.search===search&&reply.job===binding.job&&reply.input_sha256===binding.input_sha256&&reply.query===query&&
-    (reply.status!=='ready'||(reply.result?.input?.input_sha256===binding.input_sha256&&Array.isArray(reply.result.objects)&&reply.result.objects.length<=200));
+  return reply?.search===search&&reply.job===binding.job&&reply.input_sha256===binding.input_sha256&&reply.query===query&&reply.kind===binding.kind&&reply.object_path===binding.object_path&&reply.prefix===(binding.object_path?binding.object_path.slice(0,-4)+'/':null)&&
+    (reply.status!=='ready'||(reply.result?.input?.input_sha256===binding.input_sha256&&Array.isArray(reply.result[binding.kind==='modules'?'modules':'objects'])&&reply.result[binding.kind==='modules'?'modules':'objects'].length<=200));
 }
