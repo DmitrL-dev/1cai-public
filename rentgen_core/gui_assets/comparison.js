@@ -1,3 +1,4 @@
+import {deliverReport,releaseReportURL} from './report-download.js';
 // Read-only submitted-export comparison. No browser path or hash grants authority.
 const ID=/^[0-9a-f]{32}$/, SHA=/^[0-9a-f]{64}$/;
 const statuses=['added','removed','modified','unchanged'];
@@ -35,14 +36,14 @@ export function comparisonSourceMatches(pair,page,row,side,result){
   const ref=row[side];
   return !!ref&&result?.pair===pair.pair&&result.page===page.id&&result.side===side&&result.before_sha256===pair.before_sha256&&result.after_sha256===pair.after_sha256&&result.input_ref?.input_sha256===pair[side+'_sha256']&&result.input_ref?.relative_path===row.path&&result.input_ref?.raw_sha256===ref.raw_sha256&&result.size_bytes===ref.size_bytes&&result.encoding==='UTF-8'&&typeof result.text==='string'&&new TextEncoder().encode(result.text).length<=256*1024;
 }
-export function createComparison({api,errorText,getBinding}){
+export function createComparison({api,errorText,getBinding,fetchReport}){
   const $=id=>document.getElementById(id);
-  const state={active:false,generation:0,sourceGeneration:0,busy:false,binding:null,pair:null,page:null,offset:0,status:'changes',pending:null,upload:null,notice:''};
+  const state={active:false,generation:0,sourceGeneration:0,busy:false,binding:null,pair:null,page:null,offset:0,status:'changes',pending:null,upload:null,notice:'',reportGeneration:0,reportBusy:false,reportController:null};
   const owns=g=>state.active&&state.generation===g&&getBinding()?.job===state.binding?.job&&getBinding()?.input_sha256===state.binding?.input_sha256;
   const pairBody=()=>({pair:state.pair.pair,before_sha256:state.pair.before_sha256,after_sha256:state.pair.after_sha256});
-  function controls(){ $('compare-file').disabled=state.busy||!!state.pending;$('compare-check').disabled=state.busy;$('compare-cancel').hidden=!state.pending;$('compare-filter').disabled=state.busy||!state.pair;$('compare-previous').disabled=state.busy||!state.page?.has_previous;$('compare-next').disabled=state.busy||!state.page?.has_next; }
+  function controls(){ $('compare-report-html').disabled=$('compare-report-json').disabled=state.busy||state.reportBusy||!!state.pending||!state.pair;$('compare-report-cancel').hidden=!state.reportBusy; $('compare-file').disabled=state.busy||!!state.pending;$('compare-check').disabled=state.busy;$('compare-cancel').hidden=!state.pending;$('compare-filter').disabled=state.busy||!state.pair;$('compare-previous').disabled=state.busy||!state.page?.has_previous;$('compare-next').disabled=state.busy||!state.page?.has_next; }
   function message(text){$('compare-message').textContent=text;}
-  function clearPage(){state.sourceGeneration++;state.page=null;$('compare-list').replaceChildren();$('compare-source').replaceChildren();$('compare-range').textContent='';controls();}
+  function clearPage(){cancelReport();$('compare-report-status').textContent='';state.sourceGeneration++;state.page=null;$('compare-list').replaceChildren();$('compare-source').replaceChildren();$('compare-range').textContent='';controls();}
   function clearResult(){clearPage();state.pair=null;$('compare-result').hidden=true;controls();}
   const post=(path,body,timeout=5000)=>api(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(timeout)});
   async function known(id){return api('/api/comparison?'+new URLSearchParams({comparison:id}),{signal:AbortSignal.timeout(3000)});}
@@ -69,6 +70,22 @@ export function createComparison({api,errorText,getBinding}){
       message(state.notice||'Сравнение только байтов и путей. Выберите файл для просмотра обеих сторон.');
     }catch(error){if(owns(g)){clearPage();message('Страница недоступна. '+errorText(error)+' Нажмите «Проверить результат».');}}
     finally{if(owns(g)){state.busy=false;controls();if(focus){const target=$(focus);const fallback=$(focus==='compare-next'?'compare-previous':'compare-next');(target.disabled?fallback:target).focus();}}}
+  }
+  function cancelReport(){state.reportGeneration++;state.reportController?.abort();state.reportController=null;state.reportBusy=false;controls();}
+  async function downloadReport(format){
+    if(state.busy||state.reportBusy||state.pending||!state.pair)return;
+    releaseReportURL();
+    const pair=state.pair,g=state.generation,report=++state.reportGeneration;
+    const controller=new AbortController();state.reportController=controller;state.reportBusy=true;controls();
+    const current=()=>owns(g)&&state.reportGeneration===report&&state.pair?.pair===pair.pair;
+    $('compare-report-status').textContent='Готовим полный отчёт без исходных текстов…';
+    try{
+      const result=await fetchReport(pair,format,AbortSignal.any([controller.signal,AbortSignal.timeout(65000)]));
+      if(!current())return;
+      deliverReport(result);
+      $('compare-report-status').textContent=`Отчёт передан браузеру: ${result.filename} · ${result.size} байт · SHA-256 отчёта от сервера: ${result.sha256}. Скачанные байты не отзываются при последующей смене прав или пары.`;
+    }catch(error){if(current())$('compare-report-status').textContent=error.code==='CANCELLED'?'Скачивание отменено.':errorText(error);}
+    finally{if(current()){state.reportBusy=false;state.reportController=null;controls();const button=$('compare-report-'+format);if(document.activeElement===document.body||document.activeElement===button)button.focus();}}
   }
   async function openSources(row,button){
     if(state.busy||!state.page)return;
@@ -160,6 +177,9 @@ export function createComparison({api,errorText,getBinding}){
     if(state.active&&state.binding?.job===binding.job&&state.binding?.input_sha256===binding.input_sha256)return;
     state.active=true;state.binding=binding;state.notice='';$('compare-filter').value='changes';void refresh();
   }
+  $('compare-report-html').addEventListener('click',()=>void downloadReport('html'));
+  $('compare-report-json').addEventListener('click',()=>void downloadReport('json'));
+  $('compare-report-cancel').addEventListener('click',()=>{cancelReport();$('compare-report-status').textContent='Скачивание отменено.';$('compare-report-json').focus();});
   $('compare-file').addEventListener('change',()=>{const file=$('compare-file').files[0];$('compare-file').value='';if(file)void submit(file);});
   $('compare-check').addEventListener('click',()=>void refresh());$('compare-cancel').addEventListener('click',()=>void cancel());
   $('compare-filter').addEventListener('change',()=>void loadPage(0,'compare-filter'));

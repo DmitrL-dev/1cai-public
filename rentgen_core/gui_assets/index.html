@@ -61,6 +61,13 @@
           <div id="compare-notice" class="notice" role="status"><p id="compare-message">Выберите вторую выгрузку для сравнения.</p><button id="compare-check" class="button subtle">Проверить результат</button><button id="compare-cancel" class="button subtle" hidden>Отменить сравнение</button></div>
           <div id="compare-result" hidden>
             <p id="compare-after" class="comparison-binding"></p><p id="compare-counts" role="status"></p>
+            <div class="comparison-report-controls" aria-label="Скачать полный отчёт">
+              <button id="compare-report-html" class="button secondary" disabled>Скачать HTML-отчёт</button>
+              <button id="compare-report-json" class="button secondary" disabled>Скачать JSON-отчёт</button>
+              <button id="compare-report-cancel" class="button subtle" hidden>Отменить скачивание</button>
+            </div>
+            <p class="muted">Полный список добавленных, удалённых и изменённых файлов, независимо от страницы и фильтра. Без исходных текстов. Отчёт может содержать внутренние имена файлов: передавайте его только выбранным вами получателям.</p>
+            <p id="compare-report-status" class="comparison-binding" role="status"></p>
             <label for="compare-filter">Показать файлы</label><select id="compare-filter"><option value="changes">Изменения</option><option value="all">Все файлы</option><option value="added">Добавленные</option><option value="removed">Удалённые</option><option value="modified">Изменённые байты</option><option value="unchanged">Без изменений</option></select>
             <nav class="pagination" aria-label="Страницы сравнения"><button id="compare-previous" class="button subtle" disabled>Предыдущая страница</button><p id="compare-range" role="status"></p><button id="compare-next" class="button subtle" disabled>Следующая страница</button></nav>
             <div id="compare-list" class="comparison-list" aria-label="Файлы сравнения"></div>

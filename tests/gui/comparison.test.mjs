@@ -49,13 +49,14 @@ class Element {
  replaceChildren(...nodes){this.children=[];this.textContent='';this.append(...nodes);}
  replaceWith(node){const parent=this.parent;parent.children[parent.children.indexOf(this)]=node;node.parent=parent;}
  setAttribute(k,v){this.attrs[k]=v;}
+ focus(){document.activeElement=this;}
  addEventListener(k,fn){this.listeners[k]=fn;}
  querySelectorAll(tag){return this.children.flatMap(node=>[...(node.tag===tag?[node]:[]),...node.querySelectorAll(tag)]);}
 }
-async function controller(api){
+async function controller(api,fetchReport){
  const {createComparison}=await import('../../rentgen_core/gui_assets/comparison.js');
  const nodes=new Map();globalThis.document={getElementById:id=>{if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(id);},createElement:tag=>new Element(tag)};
- const ui=createComparison({api,errorText:error=>error.code,getBinding:()=>({...binding,filename:'before.zip'})});
+ const ui=createComparison({api,fetchReport,errorText:error=>error.code,getBinding:()=>({...binding,filename:'before.zip'})});
  return {ui,nodes};
 }
 async function until(check){for(let i=0;i<100;i++){if(check())return;await new Promise(resolve=>setTimeout(resolve,5));}assert.ok(check(),'controller did not reach expected state');}
@@ -88,4 +89,23 @@ test('failed replacement restores accepted pair and retains explicit error witho
  nodes.get('compare-file').files=[{name:'corrupt.zip',size:30}];nodes.get('compare-file').listeners.change();
  await until(()=>nodes.get('compare-message').textContent.includes('IMPORT_UNSUPPORTED_ARCHIVE')&&nodes.get('compare-list').children.length===1);
  assert.equal(puts,1);assert.equal(starts,1);assert.equal(nodes.get('compare-result').hidden,false);assert.equal(ui.busy,false);ui.leave();
+});
+
+
+test('late report is discarded after view change or explicit cancellation without creating a download',async()=>{
+ const api=async path=>path.startsWith('/api/comparison-current')?{...binding,current:readyStatus,pending:null}:pageReply;
+ for(const action of ['leave','cancel']){
+  let release,signal;const pending=new Promise(resolve=>release=resolve);
+  const {ui,nodes}=await controller(api,async(pair,format,ownedSignal)=>{signal=ownedSignal;return pending;});
+  ui.enter();await until(()=>nodes.get('compare-list').children.length===1);
+  nodes.get('compare-report-json').listeners.click();await until(()=>!!signal);
+  if(action==='leave')ui.leave();else nodes.get('compare-report-cancel').listeners.click();
+  assert.equal(signal.aborted,true);
+  // An invalid blob would fail visibly if the late result reached deliverReport.
+  release({blob:null,filename:'must-not-download.json',sha256:'0'.repeat(64),size:1});
+  await new Promise(resolve=>setTimeout(resolve,10));
+  assert.ok(!nodes.get('compare-report-status').textContent.includes('передан браузеру'));
+  if(action==='cancel')assert.equal(nodes.get('compare-result').hidden,false);
+  ui.leave();
+ }
 });

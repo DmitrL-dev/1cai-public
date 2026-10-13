@@ -57,7 +57,7 @@ jobs:
           python -m pytest -q --tb=short tests/unit/test_portable_local_workflow.py tests/unit/test_rust_input_workflow.py tests/unit/test_metadata_materialize_cli.py tests/unit/test_edt_attribute_cli.py tests/unit/test_edt_identity_three_way_cli.py tests/unit/test_mcp_tool_annotations.py tests/unit/test_state_migration_contract.py tests/unit/test_core_dev16_compatibility.py tests/unit/test_linux_baseline_gate.py --junitxml=output/portable-contracts.xml
       - name: Local graphical workspace HTTP Rust and frontend contracts
         run: |
-          python -m pytest -q --tb=short tests/unit/test_local_gui.py tests/unit/test_local_gui_search.py tests/unit/test_local_gui_modules.py tests/unit/test_local_gui_pagination.py tests/unit/test_local_gui_comparison.py tests/unit/test_local_gui_source_search.py tests/unit/test_local_gui_search_comparison.py --junitxml=output/gui-contracts.xml
+          python -m pytest -q --tb=short tests/unit/test_local_gui.py tests/unit/test_local_gui_search.py tests/unit/test_local_gui_modules.py tests/unit/test_local_gui_pagination.py tests/unit/test_local_gui_comparison.py tests/unit/test_local_gui_source_search.py tests/unit/test_local_gui_search_comparison.py tests/unit/test_local_gui_report.py --junitxml=output/gui-contracts.xml
           node --test tests/gui/*.test.mjs > output/gui-js-tests.log
       - name: Diagnostic full Linux suite with known Windows baseline
         shell: bash
