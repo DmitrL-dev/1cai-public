@@ -31,15 +31,21 @@ def archive_201():
     return zip_bytes(files), files
 
 
-def payload(job, outcome, query=""):
-    return {"job": job, "input_sha256": outcome["result"]["input"]["input_sha256"], "query": query}
+def payload(job, outcome, query="", *, kind=None):
+    args = {"job": job, "input_sha256": outcome["result"]["input"]["input_sha256"], "query": query}
+    if kind is not None:
+        args["kind"] = kind
+    return args
 
 
 def start(server, args):
     status, result = post(server, "/api/search-start", args)
     assert status == 201, result
-    assert set(result) == {"search", "job", "input_sha256"}
-    return result
+    assert set(result) == {"search", "job", "input_sha256", "kind", "object_path", "prefix"}
+    assert result["kind"] == args.get("kind", "metadata")
+    assert result["object_path"] == args.get("object_path")
+    assert result["prefix"] == (args["object_path"][:-4] + "/" if args.get("object_path") else None)
+    return {key: result[key] for key in ("search", "job", "input_sha256")}
 
 
 def poll(server, selector):
@@ -231,11 +237,12 @@ def test_stale_search_or_source_is_checked_after_serialization(running, monkeypa
 
 
 @pytest.mark.parametrize("unknown_id", [False, True])
-def test_cancel_real_search_child_confirms_reap(running, monkeypatch, unknown_id):
+@pytest.mark.parametrize("kind", ["metadata", "modules"])
+def test_cancel_real_search_child_confirms_reap(running, monkeypatch, unknown_id, kind):
     app, server, _ = running
     job, outcome = upload(server, fixture_zip())
     entered, proceed, children = block_search(monkeypatch)
-    selector = start(server, payload(job, outcome, "Products"))
+    selector = start(server, payload(job, outcome, "Products", kind=kind))
     assert entered.wait(5)
     try:
         assert poll(server, selector)[1]["status"] == "searching"
@@ -251,11 +258,12 @@ def test_cancel_real_search_child_confirms_reap(running, monkeypatch, unknown_id
     assert app.current.id == job and app.current.path.exists()
 
 
-def test_supersession_is_bounded_and_cancels_before_busy(running, monkeypatch):
+@pytest.mark.parametrize("kind", ["metadata", "modules"])
+def test_supersession_is_bounded_and_cancels_before_busy(running, monkeypatch, kind):
     app, server, _ = running
     job, outcome = upload(server, fixture_zip())
     entered, proceed, children = block_search(monkeypatch)
-    selector = start(server, payload(job, outcome, "Products"))
+    selector = start(server, payload(job, outcome, "Products", kind=kind))
     assert entered.wait(5)
     old_search, old_worker = app.search, app.search_worker
     try:
@@ -273,12 +281,13 @@ def test_supersession_is_bounded_and_cancels_before_busy(running, monkeypatch):
     assert len(children) == 2 and all(child.poll() is not None for child in children)
 
 
-def test_new_import_cancels_search_and_keeps_archive_until_reaped(running, monkeypatch):
+@pytest.mark.parametrize("kind", ["metadata", "modules"])
+def test_new_import_cancels_search_and_keeps_archive_until_reaped(running, monkeypatch, kind):
     app, server, _ = running
     job, outcome = upload(server, fixture_zip())
     old_path = app.current.path
     entered, proceed, children = block_search(monkeypatch)
-    selector = start(server, payload(job, outcome, "Products"))
+    selector = start(server, payload(job, outcome, "Products", kind=kind))
     assert entered.wait(5)
     old_search, old_worker = app.search, app.search_worker
     try:
@@ -296,11 +305,12 @@ def test_new_import_cancels_search_and_keeps_archive_until_reaped(running, monke
     assert not old_path.exists() and app.current.id == next_job
 
 
-def test_close_waits_for_search_reap_before_temp_cleanup(running, monkeypatch):
+@pytest.mark.parametrize("kind", ["metadata", "modules"])
+def test_close_waits_for_search_reap_before_temp_cleanup(running, monkeypatch, kind):
     app, server, _ = running
     job, outcome = upload(server, fixture_zip())
     entered, proceed, children = block_search(monkeypatch)
-    start(server, payload(job, outcome, "Products"))
+    start(server, payload(job, outcome, "Products", kind=kind))
     assert entered.wait(5)
     closing = threading.Thread(target=app.close)
     closing.start()
@@ -327,12 +337,13 @@ def test_search_transport_gates_match_existing_api(running, headers, token):
 
 
 @pytest.mark.parametrize("permission", ["project:read", "analysis:run"])
-def test_actual_permission_revocation_cancels_disclosure_and_reaps_child(running, monkeypatch, permission):
+@pytest.mark.parametrize("kind", ["metadata", "modules"])
+def test_actual_permission_revocation_cancels_disclosure_and_reaps_child(running, monkeypatch, permission, kind):
     app, server, _ = running
     job, outcome = upload(server, fixture_zip())
     context = app.config.context()
     entered, proceed, children = block_search(monkeypatch)
-    selector = start(server, payload(job, outcome, "Products"))
+    selector = start(server, payload(job, outcome, "Products", kind=kind))
     assert entered.wait(5)
     try:
         with context.state.transaction(context.principal, write=True) as tx:

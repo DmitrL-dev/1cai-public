@@ -26,6 +26,27 @@ def _short(value):
 
 def analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha256, query="", limit=50, cancelled=None):
     """Analyze immutable accepted bytes with reauthorization before any release."""
+    return _analyze_export(ctx, archive=archive, archive_sha256=archive_sha256,
+        input_core=input_core, input_core_sha256=input_core_sha256,
+        query=query, limit=limit, cancelled=cancelled)
+
+
+def search_export_modules(ctx, *, archive, archive_sha256, input_core, input_core_sha256,
+                          query="", prefix=None, limit=200, cancelled=None):
+    """Opt-in module discovery; prefix is a server-resolved directory selector.
+
+    The CLI/MCP analyze_export query continues to filter metadata only. This
+    GUI-only mode filters the complete accepted manifest before bounding rows.
+    No module content is parsed, and a path relationship implies no ownership.
+    """
+    return _analyze_export(ctx, archive=archive, archive_sha256=archive_sha256,
+        input_core=input_core, input_core_sha256=input_core_sha256,
+        query=query, limit=limit, cancelled=cancelled,
+        module_search=True, module_prefix=prefix)
+
+
+def _analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha256,
+                    query, limit, cancelled, module_search=False, module_prefix=None):
     def authorize():
         _authorize(ctx)
         if cancelled is not None and cancelled():
@@ -34,19 +55,26 @@ def analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha25
     authorize()
     if type(query) is not str or len(query.encode("utf-8")) > 256 or type(limit) is not int or not 1 <= limit <= 200:
         raise CoreError("INVALID_QUERY_OPTIONS", "Export query and page limit must be bounded")
+    if module_prefix is not None and (type(module_prefix) is not str or not module_prefix.endswith("/")
+            or module_prefix.startswith("/") or any(part in {"", ".", ".."} for part in module_prefix[:-1].split("/"))):
+        raise CoreError("INVALID_QUERY_OPTIONS", "Module scope must be an exact directory prefix")
+    term = query.casefold()
     try:
         with RustInputSession(input_core, input_core_sha256, authorize=authorize) as session:
             manifest = session.open_import(archive, archive_sha256)
             entries = session.entries(manifest)
             objects, modules, types = [], [], Counter()
-            candidates = matches = unsupported = module_count = 0
+            candidates = matches = unsupported = module_count = module_matches = 0
             for entry in sorted(entries, key=lambda item: item["path"].encode("utf-8")):
                 authorize()
                 reference = {"input_sha256": archive_sha256, "relative_path": entry["path"], "raw_sha256": entry["raw_sha256"]}
                 if entry["path"].lower().endswith((".bsl", ".os", ".bsp")):
                     module_count += 1
-                    if len(modules) < limit:
-                        modules.append({"input_ref": reference, "size_bytes": entry["size_bytes"], "analysis": "inventory_only"})
+                    if (not module_search or ((module_prefix is None or entry["path"].startswith(module_prefix))
+                            and (not term or term in entry["path"].casefold()))):
+                        module_matches += 1
+                        if len(modules) < limit:
+                            modules.append({"input_ref": reference, "size_bytes": entry["size_bytes"], "analysis": "inventory_only"})
                 kind = _candidate(entry["path"])
                 if kind is None or entry["path"].lower().endswith(".mdo"):
                     continue
@@ -72,7 +100,7 @@ def analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha25
                     "uuid_status": "unverified", "input_ref": reference,
                 }
                 text = " ".join(value or "" for value in (row["name"], row["synonym"], kind, entry["path"]))
-                if not query or query.casefold() in text.casefold():
+                if module_search or not term or term in text.casefold():
                     matches += 1
                     if len(objects) < limit:
                         objects.append(row)
@@ -97,8 +125,10 @@ def analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha25
                 "by_type": dict(sorted(types.items())),
                 "objects": objects, "matching_objects": matches,
                 "objects_truncated": matches > len(objects),
-                "modules": modules, "modules_truncated": module_count > len(modules),
+                "modules": modules, "modules_truncated": module_matches > len(modules),
             }
+            if module_search:
+                result["matching_modules"] = module_matches
         authorize()
         return result
     finally:
