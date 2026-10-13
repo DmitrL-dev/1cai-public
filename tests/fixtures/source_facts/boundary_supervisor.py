@@ -524,6 +524,11 @@ def qualify(root, pins_path, pins_hash, output, cancelled, *, polling_correction
                "scope": "polling_correction" if polling_correction_only else "ordinary_source_boundaries" if ordinary_only else "full_source_boundaries",
                "required_run_variants": required_run_variants,
                "full_required_variants": 176, "full176_qualified": passed and not polling_correction_only and not ordinary_only,
+               # Variant acceptance does not establish whole-process coverage.
+               "whole_process_qualified": False,
+               "whole_process_coverage_gaps": ["bootstrap_authority_not_validated", "cleanup_authority_not_validated",
+                                                "process_lifetime_coverage_not_established",
+                                                "tracer_cancellation_not_qualified"],
                "counts": full_counts, "run_counts": counts,
                "pytest_exit": returncode, "wall_seconds": time.monotonic() - began,
                "harness_budget_version": budget_version, "harness_wall_seconds": wall_budget,

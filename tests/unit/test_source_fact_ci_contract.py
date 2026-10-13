@@ -114,3 +114,15 @@ def test_ordinary_scope_excludes_only_exact_syscall_audit_and_cannot_claim_full_
                                    "ordinary_only": ordinary}) == (passed and not polling and not ordinary)
     assert 'if ordinary_only: full_counts["unrun"] += 2' in source
     assert 'names.discard("test_completion_owned_pipeline_syscall_authority_audit")' in source
+
+
+def test_variant_receipt_never_claims_whole_process_qualification():
+    tree = ast.parse((ROOT / "tests/fixtures/source_facts/boundary_supervisor.py").read_text())
+    qualify = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "qualify")
+    summary = next(n.value for n in ast.walk(qualify) if isinstance(n, ast.Assign)
+                   and any(isinstance(t, ast.Name) and t.id == "summary" for t in n.targets))
+    keys = dict(zip((ast.literal_eval(k) for k in summary.keys), summary.values))
+    assert ast.literal_eval(keys["whole_process_qualified"]) is False
+    assert set(ast.literal_eval(keys["whole_process_coverage_gaps"])) == {
+        "bootstrap_authority_not_validated", "cleanup_authority_not_validated",
+        "process_lifetime_coverage_not_established", "tracer_cancellation_not_qualified"}

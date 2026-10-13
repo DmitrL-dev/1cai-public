@@ -133,3 +133,45 @@ single-push tracing exception is not part of either workflow. No privilege
 expansion, dumpability change or opaque-descriptor allowance is introduced.
 A manual run in an ordinary environment can still fail for incomplete observation;
 it must not be reported as full acceptance or replaced by the ordinary result.
+
+## Explicit phase/process coverage receipt
+
+`coverage-audit.json` is retained at the exact synthetic `syscall-evidence`
+location in both workflow scopes. A denial receipt is initialized immediately
+after creating that directory, before config writes, controller launch or trace
+assertions. Its initial receipt says phase accounting is unavailable and qualification is false; malformed/undecodable input cannot leave
+a success receipt. After parsing and boundary checks, it records syscall counts
+and observed PIDs separately for bootstrap, operation, cleanup and marker writes.
+Counts partition all parsed calls, including non-overlapping calls outside S/E.
+This is syscall accounting, not a complete process-lifetime inventory: signal and
+exit banners are not counted as calls, missing trace records cannot be recovered,
+and no decoded-path claim is inferred from successful parsing.
+
+Successful process/thread creation results are reported separately from observed
+PIDs, including observed PIDs without a recorded creation (apart from the marker
+writer) and creation results without observed calls. A matching PID inventory
+does not authenticate process identity, establish ancestry or prove every thread
+was traced to exit. These remain explicit coverage gaps.
+
+Only the returned `authority-audit.json` marks the operation phase's existing
+authority checks as validated. A coverage receipt alone leaves every phase's
+authority flag false, even when parsing succeeds. Bootstrap and cleanup always
+remain unvalidated, including if the trace contains no calls in those phases.
+Synthetic negatives cover forbidden network/path operations and opaque arguments
+in both excluded phases: they are counted but never promoted to acceptance.
+Unknown syscall identities still fail parsing in every phase.
+
+Marker-shaped writes now require a fully decoded pipe descriptor, exact known
+payload with a terminal newline, matching byte count and successful complete
+write. All six markers must use the same PID, descriptor and pipe identity;
+child-forged or redirected individual markers fail closed. This consistency
+check does not independently authenticate the first marker writer or prevent a
+coherent forged sequence. The receipt explicitly leaves marker identity
+unauthenticated rather than claiming that text markers are a security boundary.
+
+The supervisor receipt adds `whole_process_qualified: false` with unresolved
+bootstrap, cleanup, process-lifetime and tracer-cancellation gaps. Its existing
+`full176_qualified` flag continues to refer only to the fixed variant suite;
+even a future 176-case pass must not be described as whole-process authority
+qualification. This change runs no native qualification and grants no additional
+runtime-file, descriptor, tracing or privilege authority.

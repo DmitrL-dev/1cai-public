@@ -795,10 +795,66 @@ def absent_loader_probe(call):
 
 
 def trace_marker(call):
-    if call["name"] == "write" and '"RENTGEN_P_TRACE:' in call["args"]:
-        value = ast.literal_eval(C_STRING.findall(call["args"])[0])
-        return value.strip().split(":", 1)[1]
-    return None
+    if call["name"] != "write" or '"RENTGEN_P_TRACE:' not in call["args"]:
+        return None
+    # Marker-shaped writes are never exempted from ordinary authority checks
+    # unless their entire envelope is decoded and the complete write succeeded.
+    match = re.fullmatch(r'(\d+)<(pipe:\[\d+\])>,\s*("(?:[^"\\]|\\.)*"),\s*(\d+)', call["args"])
+    assert match is not None, ("Invalid trace marker envelope", call)
+    value = ast.literal_eval(match[3])
+    assert re.fullmatch(r"RENTGEN_P_TRACE:(S|E|A|L:input_core|L:source_scanner|L:source_kernel)\n", value), ("Invalid trace marker payload", call)
+    size = len(value.encode("ascii"))
+    assert int(match[4]) == size and call["result"] == str(size), ("Incomplete trace marker write", call)
+    return value[len("RENTGEN_P_TRACE:"):-1]
+
+
+def trace_coverage(calls):
+    """Account for parsed calls without upgrading observation to qualification."""
+    check_trace_boundaries(calls)
+    markers = [(call, trace_marker(call)) for call in calls if trace_marker(call) is not None]
+    assert [value for _, value in markers] == ["S", "L:input_core", "A", "L:source_scanner", "L:source_kernel", "E"]
+    writers = {(call["pid"], call["args"].split(",", 1)[0]) for call, _ in markers}
+    assert len(writers) == 1, ("Inconsistent trace marker writer/channel", sorted(writers))
+    start, end = markers[0][0], markers[-1][0]
+    marker_lines = {call["line"] for call, _ in markers}
+    phases = {name: {"syscall_count": 0, "pids": [], "authority_validated": False}
+              for name in ("bootstrap", "operation", "cleanup", "markers")}
+    for call in calls:
+        phase = ("markers" if call["line"] in marker_lines else
+                 "bootstrap" if call["line"] < start["start_line"] else
+                 "cleanup" if call["start_line"] > end["line"] else "operation")
+        phases[phase]["syscall_count"] += 1
+        phases[phase]["pids"].append(call["pid"])
+    for phase in phases.values(): phase["pids"] = sorted(set(phase["pids"]))
+    marker_pid, marker_channel = next(iter(writers))
+    observed_pids = sorted({call["pid"] for call in calls})
+    created_pids = sorted({int(call["result"].split()[0]) for call in calls
+                          if call["name"] in {"clone", "clone3", "fork", "vfork"}
+                          and re.fullmatch(r"[1-9][0-9]*", call["result"])})
+    return {"schema": "source_trace_coverage_v1", "phase_accounting": "parsed_syscalls_only",
+            "parsed_syscall_count": len(calls),
+            "phases": phases, "observed_pids": observed_pids,
+            "creation_result_pids": created_pids,
+            "creation_result_pids_without_observations": sorted(set(created_pids) - set(observed_pids)),
+            "pids_without_observed_creation": sorted(set(observed_pids) - set(created_pids) - {marker_pid}),
+            "marker_pid": marker_pid, "marker_channel": marker_channel,
+            "marker_identity_authenticated": False,
+            "whole_process_qualified": False,
+            "coverage_gaps": ["bootstrap_authority_not_validated", "cleanup_authority_not_validated",
+                              "marker_identity_not_independently_authenticated",
+                              "process_lifetime_coverage_not_established",
+                              "tracer_cancellation_not_qualified"]}
+
+
+def record_trace_coverage(folder, trace=None):
+    # A parse failure leaves an explicitly incomplete receipt, never a PASS.
+    record(folder, "coverage-audit", {"schema": "source_trace_coverage_v1",
+           "phase_accounting": "unavailable", "whole_process_qualified": False,
+           "operation_authority_validated": False})
+    if trace is None: return
+    coverage = trace_coverage(trace_calls(trace))
+    record(folder, "coverage-audit", coverage)
+    return coverage
 
 
 def check_trace_boundaries(calls):
@@ -819,7 +875,7 @@ def check_trace_boundaries(calls):
 
 def inspect_trace(trace, config):
     calls = trace_calls(trace); markers = []; active = False; finished = False
-    check_trace_boundaries(calls)
+    coverage = trace_coverage(calls)
     facts = {"opens": [], "execs": [], "memfds": [], "process_creates": [], "threads": [], "sidecar_mutations": [], "runtime_reads": [], "absent_loader_probes": []}
     accepted = set(); source_paths = {config["case"]["archive"]: "archive"}
     source_paths.update({value: key for key, value in config["images"].items() if not key.endswith("_sha256")})
@@ -904,6 +960,8 @@ def inspect_trace(trace, config):
     facts["runtime_reads"] = sorted(set(facts["runtime_reads"]))
     facts["trusted_system_allowances"] = sorted(TRUSTED_SYSTEM_FILES)
     facts["trusted_runtime_roots"] = config["runtime_roots"]
+    coverage["phases"]["operation"]["authority_validated"] = True
+    facts["coverage"] = coverage
     facts["scope"] = "Observed owned synthetic source operation only; trusted Linux/runtime, no sandbox or native Designer guarantee"
     return facts
 
@@ -925,6 +983,7 @@ def test_completion_owned_pipeline_syscall_authority_audit(request, images, sour
     tool = qualification_preflight["strace"]
     assert tool["path"] == "/usr/bin/strace" and prior.digest(tool["path"]) == tool["sha256"]
     folder = tmp_path / "syscall-evidence"; folder.mkdir()
+    record_trace_coverage(folder)  # Denial/timeout/controller failures retain a denial receipt.
     config = {"project": {"profile": str(portable_project[0]), "registry": str(portable_project[1]), "id": portable_project[2]},
               "state": str(ctx.state.path), "case": {key: str(value) if isinstance(value, Path) else value for key, value in case.items()},
               "images": {key: str(value) if isinstance(value, Path) else value for key, value in images.items()},
@@ -958,6 +1017,8 @@ def test_completion_owned_pipeline_syscall_authority_audit(request, images, sour
         assert capability["no_new_privs"] is True and python_capability["no_new_privs"] == 1
         assert set(python_capability["capabilities"]) == {"CapInh", "CapPrm", "CapEff", "CapBnd", "CapAmb"}
         assert all(int(value, 16) == 0 for value in python_capability["capabilities"].values())
+    # Retain honest phase accounting even when operation authority later fails.
+    record_trace_coverage(folder, raw.decode())
     facts = inspect_trace(raw.decode(), config)
     if "trace_launcher" in config:
         calls = trace_calls(raw.decode())

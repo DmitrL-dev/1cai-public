@@ -210,6 +210,7 @@ jobs:
             ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/gate.stderr
             ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/strace.log*
             ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/syscall-evidence/config.json
+            ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/syscall-evidence/coverage-audit.json
             ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/syscall-evidence/trace-capabilities.json
             ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/syscall-evidence/python-capabilities.json
             ${{ env.EVIDENCE }}/ordinary174/tmp/pytest/**/controller.stdout

@@ -1,4 +1,6 @@
 """Pure synthetic interpretation regressions; no native or tracing execution."""
+import ast
+import inspect
 import json
 import ntpath
 from pathlib import Path, PurePosixPath, PureWindowsPath
@@ -226,6 +228,8 @@ def test_ci_retains_only_scoped_synthetic_audit_config(workflow_name, scope_dir)
              for step in job["steps"] if step.get("uses", "").startswith("actions/upload-artifact@")]
     config_paths = [line.strip() for block in paths for line in block.splitlines() if "config.json" in line]
     assert config_paths == ["${{ env.EVIDENCE }}/" + scope_dir + "/tmp/pytest/**/syscall-evidence/config.json"]
+    coverage_paths = [line.strip() for block in paths for line in block.splitlines() if "coverage-audit.json" in line]
+    assert coverage_paths == ["${{ env.EVIDENCE }}/" + scope_dir + "/tmp/pytest/**/syscall-evidence/coverage-audit.json"]
     pure, = [step["run"] for job in workflow["jobs"].values() for step in job["steps"]
              if step.get("name") == "Pure host and delivery-verifier regressions"]
     assert "tests/unit/test_source_fact_syscall_audit_contract.py" in pure
@@ -345,3 +349,163 @@ def test_namespace_creation_cannot_reacquire_authority(name, args):
     raw, config = synthetic_pipeline((2, f"{name}({args}) = 9"))
     with pytest.raises(AssertionError, match="Namespace-creating clone"):
         audit.inspect_trace(raw, config)
+
+
+@pytest.mark.parametrize("body", [
+    'open("/outside/secret", O_RDONLY) = 3</outside/secret>',
+    'socket(AF_INET, SOCK_STREAM, 0) = 3<TCP:[123]>',
+    'openat(3, 0x123, O_RDONLY) = 4',
+    'write(1, 0x123, 12) = 12',
+    'prctl(PR_SET_CHILD_SUBREAPER, 1) = 0',
+])
+@pytest.mark.parametrize("phase", ["bootstrap", "cleanup"])
+def test_outside_phase_calls_are_counted_but_never_qualified(body, phase):
+    raw, config = synthetic_pipeline()
+    events = pipeline_events(raw)
+    events.insert(0 if phase == "bootstrap" else len(events), (99, body))
+    coverage = audit.inspect_trace(trace(*events), config)["coverage"]
+    assert coverage["phases"][phase] == {"syscall_count": 1, "pids": [99], "authority_validated": False}
+    assert coverage["phases"]["operation"]["authority_validated"] is True
+    assert coverage["pids_without_observed_creation"] == [99]
+    assert coverage["whole_process_qualified"] is False
+    assert phase + "_authority_not_validated" in coverage["coverage_gaps"]
+    assert coverage["parsed_syscall_count"] == sum(item["syscall_count"] for item in coverage["phases"].values())
+
+
+def test_zero_outside_calls_do_not_establish_whole_process_or_marker_identity():
+    raw, config = synthetic_pipeline()
+    coverage = audit.inspect_trace(raw, config)["coverage"]
+    assert coverage["phases"]["bootstrap"]["syscall_count"] == coverage["phases"]["cleanup"]["syscall_count"] == 0
+    assert coverage["observed_pids"] == [1, 2, 3, 4]
+    assert coverage["creation_result_pids"] == [2, 3, 4]
+    assert coverage["pids_without_observed_creation"] == []
+    assert coverage["marker_pid"] == 1 and coverage["marker_channel"] == "4<pipe:[1]>"
+    assert coverage["marker_identity_authenticated"] is False
+    assert coverage["whole_process_qualified"] is False
+    assert "process_lifetime_coverage_not_established" in coverage["coverage_gaps"]
+
+
+def test_failed_operation_does_not_turn_phase_accounting_into_authority_validation():
+    raw, config = synthetic_pipeline((2, 'openat(3, 0x123, O_RDONLY) = 4'))
+    coverage = audit.trace_coverage(audit.trace_calls(raw))
+    assert not any(phase["authority_validated"] for phase in coverage["phases"].values())
+    assert coverage["whole_process_qualified"] is False
+    with pytest.raises(AssertionError, match="Missing decoded pathname"):
+        audit.inspect_trace(raw, config)
+
+
+@pytest.mark.parametrize("replacement,reason", [
+    ('write(4</outside/secret>, "RENTGEN_P_TRACE:E\\n", 18) = 18', "envelope"),
+    ('write(4, "RENTGEN_P_TRACE:E\\n", 18) = 18', "envelope"),
+    ('write(4<pipe:[1]>, "RENTGEN_P_TRACE:E\\n", 18) = 17', "Incomplete"),
+    ('write(4<pipe:[1]>, "RENTGEN_P_TRACE:E\\n", 18) = -1 EPIPE (Broken pipe)', "Incomplete"),
+    ('write(4<pipe:[1]>, "RENTGEN_P_TRACE:E\\n", 19) = 19', "Incomplete"),
+    ('write(4<pipe:[1]>, "RENTGEN_P_TRACE:E", 17) = 17', "payload"),
+    ('write(4<pipe:[1]>, "RENTGEN_P_TRACE:E\\nextra", 23) = 23', "payload"),
+    ('write(4<pipe:[1]>, "RENTGEN_P_TRACE:L:unknown\\n", 24) = 24', "payload"),
+    ('write(4<pipe:[1]>, "RENTGEN_P_TRACE:E\\n"..., 18) = 18', "envelope"),
+])
+def test_marker_shaped_write_cannot_bypass_authority_checks(replacement, reason):
+    raw, config = synthetic_pipeline()
+    events = pipeline_events(raw)
+    events[-1] = (1, replacement)
+    with pytest.raises(AssertionError, match=reason):
+        audit.inspect_trace(trace(*events), config)
+
+
+@pytest.mark.parametrize("marker", ["S", "E", "L:input_core", "A", "L:source_scanner", "L:source_kernel"])
+@pytest.mark.parametrize("change", ["pid", "fd", "pipe"])
+def test_marker_sequence_must_keep_one_writer_and_channel(marker, change):
+    raw, config = synthetic_pipeline()
+    events = pipeline_events(raw)
+    index, = [i for i, (_, body) in enumerate(events) if f'"RENTGEN_P_TRACE:{marker}\\n"' in body]
+    pid, body = events[index]
+    if change == "pid": pid = 2
+    elif change == "fd": body = body.replace("4<pipe:[1]>", "5<pipe:[1]>")
+    else: body = body.replace("pipe:[1]", "pipe:[2]")
+    events[index] = (pid, body)
+    with pytest.raises(AssertionError, match="Inconsistent trace marker writer/channel"):
+        audit.inspect_trace(trace(*events), config)
+
+
+@pytest.mark.parametrize("phase", ["bootstrap", "cleanup"])
+def test_unknown_observation_outside_operation_still_fails_parsing(phase):
+    raw, config = synthetic_pipeline()
+    events = pipeline_events(raw)
+    events.insert(0 if phase == "bootstrap" else len(events), (99, "???() = ?"))
+    with pytest.raises(AssertionError, match="Unresolved syscall observation"):
+        audit.inspect_trace(trace(*events), config)
+
+
+def test_created_thread_without_observed_calls_remains_an_explicit_coverage_gap():
+    raw, config = synthetic_pipeline((2, "clone(child_stack=0x1000, flags=CLONE_VM|CLONE_SIGHAND|CLONE_THREAD) = 55"))
+    coverage = audit.inspect_trace(raw, config)["coverage"]
+    assert coverage["creation_result_pids"] == [2, 3, 4, 55]
+    assert coverage["creation_result_pids_without_observations"] == [55]
+    assert coverage["whole_process_qualified"] is False
+
+
+def test_incomplete_observation_retains_only_unqualified_coverage_receipt(tmp_path):
+    raw, _ = synthetic_pipeline((2, '???() = ?'))
+    with pytest.raises(AssertionError, match="Unresolved syscall observation"):
+        audit.record_trace_coverage(tmp_path, raw)
+    receipt = json.loads((tmp_path / "coverage-audit.json").read_text())
+    assert receipt == {"schema": "source_trace_coverage_v1", "phase_accounting": "unavailable",
+                       "whole_process_qualified": False, "operation_authority_validated": False}
+
+
+def test_opaque_operation_failure_retains_counts_without_qualification(tmp_path):
+    raw, config = synthetic_pipeline((2, 'write(1, 0x123, 12) = 12'))
+    audit.record_trace_coverage(tmp_path, raw)
+    with pytest.raises(AssertionError, match="Missing decoded descriptor"):
+        audit.inspect_trace(raw, config)
+    receipt = json.loads((tmp_path / "coverage-audit.json").read_text())
+    assert receipt["phase_accounting"] == "parsed_syscalls_only"
+    assert receipt["whole_process_qualified"] is False
+    assert not any(phase["authority_validated"] for phase in receipt["phases"].values())
+    assert receipt["parsed_syscall_count"] == len(audit.trace_calls(raw))
+
+
+def test_consistent_markers_are_not_independent_process_authentication():
+    raw, config = synthetic_pipeline()
+    events = [(99 if audit.trace_marker(audit.trace_calls(trace((pid, body)))[0]) else pid, body)
+              for pid, body in pipeline_events(raw)]
+    receipt = audit.inspect_trace(trace(*events), config)["coverage"]
+    assert receipt["marker_pid"] == 99
+    assert receipt["marker_identity_authenticated"] is False
+    assert receipt["whole_process_qualified"] is False
+    assert receipt["pids_without_observed_creation"] == [1]
+
+
+def test_denial_receipt_is_initialized_before_any_controller_or_trace_checks(tmp_path):
+    # Verify placement in the actual native test without executing its drivers.
+    function = ast.parse(inspect.getsource(audit.test_completion_owned_pipeline_syscall_authority_audit)).body[0]
+    initialized = next(node.lineno for node in ast.walk(function)
+                       if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                       and node.func.id == "record_trace_coverage" and len(node.args) == 1)
+    config_written = next(node.lineno for node in ast.walk(function)
+                          if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                          and node.func.attr == "write_text")
+    controller_launched = next(node.lineno for node in ast.walk(function)
+                               if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                               and node.func.attr == "own_command")
+    assert initialized < config_written < controller_launched
+    audit.record_trace_coverage(tmp_path)
+    receipt = json.loads((tmp_path / "coverage-audit.json").read_text())
+    assert receipt == {"schema": "source_trace_coverage_v1", "phase_accounting": "unavailable",
+                       "whole_process_qualified": False, "operation_authority_validated": False}
+
+
+@pytest.mark.parametrize("failure", ["invalid_utf8", "malformed_stdout"])
+def test_decode_failure_before_record_call_preserves_seeded_denial(tmp_path, failure):
+    audit.record_trace_coverage(tmp_path)
+    if failure == "invalid_utf8":
+        with pytest.raises(UnicodeDecodeError):
+            audit.record_trace_coverage(tmp_path, b"\xff".decode())
+    else:
+        with pytest.raises(json.JSONDecodeError):
+            json.loads(b"not JSON")
+    receipt = json.loads((tmp_path / "coverage-audit.json").read_text())
+    assert receipt["whole_process_qualified"] is False
+    assert receipt["operation_authority_validated"] is False
+    assert receipt["phase_accounting"] == "unavailable"

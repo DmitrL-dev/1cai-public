@@ -208,6 +208,7 @@ jobs:
             ${{ env.EVIDENCE }}/full176/tmp/pytest/**/gate.stderr
             ${{ env.EVIDENCE }}/full176/tmp/pytest/**/strace.log*
             ${{ env.EVIDENCE }}/full176/tmp/pytest/**/syscall-evidence/config.json
+            ${{ env.EVIDENCE }}/full176/tmp/pytest/**/syscall-evidence/coverage-audit.json
             ${{ env.EVIDENCE }}/full176/tmp/pytest/**/syscall-evidence/trace-capabilities.json
             ${{ env.EVIDENCE }}/full176/tmp/pytest/**/syscall-evidence/python-capabilities.json
             ${{ env.EVIDENCE }}/full176/tmp/pytest/**/controller.stdout
