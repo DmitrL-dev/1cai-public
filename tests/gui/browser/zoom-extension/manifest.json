@@ -1,0 +1,6 @@
+{
+  "manifest_version": 3,
+  "name": "Rentgen owned acceptance zoom control",
+  "version": "1.0.0",
+  "background": { "service_worker": "background.js" }
+}

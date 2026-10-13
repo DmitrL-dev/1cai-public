@@ -131,7 +131,9 @@ def test_export_requires_approved_wheels_and_identical_scanner(tmp_path, modules
         (root / "dist").mkdir(parents=True)
         with zipfile.ZipFile(root / "dist/core.whl", "w") as stream:
             stream.writestr(
-                "rentgen_core.dist-info/METADATA",
+                # Both wheels must be byte-identical even across ZIP's two-
+                # second timestamp boundary. This fixture tests later guards.
+                zipfile.ZipInfo("rentgen_core.dist-info/METADATA"),
                 "Name: rentgen-core\nVersion: 0.1.0.dev8\n",
             )
         (root / "dist/core.tar.gz").write_bytes(b"fixture only")
