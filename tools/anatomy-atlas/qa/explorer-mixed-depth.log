@@ -1,0 +1,28 @@
+{"parts":84,"objects":14,"bytes":38141,"groups":15,"seconds":1.017}
+separation
+rigid
+swept
+posed
+folds, self, crowding, endon
+coverage
+continuity
+depth oracle
+separation: 0
+unseparated: skipped
+cycles: skipped
+forced: skipped
+swaps: skipped
+layers: 0
+rigid: skipped
+swept: skipped
+posed: skipped
+folds: skipped
+self: skipped
+crowding: skipped
+endon: skipped
+coverage: skipped
+depth: 0
+continuity: skipped
+order changes: 0 states with swaps · 0 order states · 504 posed states · 214 planes (tightest margin 0.000) · depth oracle 252 states, 43754 overlapping pairs
+turn audit · 1278.11 s
+MIXED_DEPTH_EXIT=0

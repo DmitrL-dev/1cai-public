@@ -1,0 +1,33 @@
+# Rentgen Anatomy Explorer (review candidate)
+
+The atlas visualizes a fixed accepted source snapshot, commit `6c8feb291dd251826eebb99e145f4a39f56cda47`, tree `7dcb248efdf33ca3ef93ce0f5d12b569ec02fe46`: 14 systems, 1,031 files, 5,465 declarations. No pending PR functionality is treated as accepted. No product code is executed by extraction or the viewer.
+
+## Explore
+
+Semantic 3D shapes organize real source systems into entry, context, analysis, changes and evidence lanes. Click a shape to inspect it, then Open to see actual files and declarations. Role/directory facets, global search, pagination, exact source text, static dependency edges and bounded source routes are supported. The original assembly illustration, 2D graph and source browser remain accessible.
+
+Drag to orbit, Shift-drag to pan, wheel/pinch to zoom. Arrow keys rotate and tilt; Enter opens; Escape goes up; H resets. Back/forward restores camera, route selection and per-system opening. The selected-system opening slider moves only that assembly; it is disabled for file/declaration scenes. The global slider applies to all groups and clears per-system overrides. Reset returns every assembly to its initial pose. On mobile a readable fixed selection card and object list replace tiny projected labels.
+
+Form and size are explanatory, not performance measurements. Detail colors indicate language; declaration/line counts are actual metadata. Python declarations use AST; other languages use lexical declaration locations, not full syntax/body parsing. Imports are not a call graph. The eight reading routes and thirteen architecture relations are clearly distinguished editorial interpretations, not runtime traces. No live telemetry or automatic product execution is present.
+
+## Build from exact Git objects
+
+Requirements: Node24, Python3.12, Git. From this directory:
+
+```
+python3 tools/extract_anatomy.py --repo ../.. --commit 6c8feb291dd251826eebb99e145f4a39f56cda47 --output .
+python3 tools/verify_generated.py --output .
+npm run build
+```
+
+See data/README.md for extraction/hash verification and the compact editorial seed. The extractor refuses a different tree. Generated datasets and viewer artifacts are deliberately excluded from source control.
+
+`dist/index.html` is the hosted viewer. It fetches exact source text from same-origin `source-texts.json` on first inspection. `offline/Rentgen_Anatomy_Explorer.html` is the fully standalone variant. Source is escaped text; it is never executed. The original source payload and hash preserve exact bytes; CRLF/LF/CR line boundaries are normalized only for display. Build-time duration fields remain in geometry reports but are omitted from the distributable payload, so independent builds of the same source have stable hashes. The hosted CSP allows same-origin reads; offline permits no connections.
+
+## Toolkit and checks
+
+Anatomy is vendored under its MIT license, pinned to upstream commit `e6600ffc4e8e6620eeb45bf49bcdbd5e4b84163f`. See LOCAL-ANATOMY-PATCH.md for the preexisting exact-transform precision correction and the narrowly scoped conservative free-rotation pair coverage correction. Audit thresholds are unchanged.
+
+Build, focused regression and full geometry qualification passed for the frozen explorer inputs. The full audit and supplemental 252-pose depth check have zero reported failures; see GEOMETRY-QUALIFICATION.md for source hashes, evidence and finite-sampling limits. `node qa/explorer-free-pair-regression.mjs` reproduces the upstream defect and checks the correction. `npm test` requires `npm install --ignore-scripts` and runs DOM-only checks. It does not replace browser tests.
+
+The separate `tests/anatomy-browser` suite performs real sandboxed Chromium interaction, mobile/desktop screenshots, exact-source verification and a HEAD/hash receipt. Its workflow is read-only, uses no secrets, and does not deploy or release. Browser qualification is pending until that exact candidate completes CI and screenshots are reviewed.

@@ -1,0 +1,106 @@
+{
+  "scope": "Static module-import closure of the audited builder, with generated architecture.json listed separately. Node builtins are not packaged inputs. No dynamic imports occur in this closure. Source hashes originate from the isolated completed full-audit snapshot and match exact Git commit blobs; the generated data hash matches the audited and current generated input, not a committed blob.",
+  "verifiedSourceCommit": "47ff79aabcb1a1311727ed74f15389a120ae7166",
+  "imports": {
+    "build-explorer-scene.mjs": [
+      "node:fs",
+      "./reference/kit/iso-kit.mjs",
+      "./reference/kit/lathe.mjs",
+      "./reference/kit/audit.mjs",
+      "./reference/kit/turn-build.mjs",
+      "./reference/kit/turn.mjs",
+      "./reference/kit/turn-audit.mjs"
+    ],
+    "reference/kit/iso-kit.mjs": [],
+    "reference/kit/lathe.mjs": [
+      "./iso-kit.mjs"
+    ],
+    "reference/kit/audit.mjs": [
+      "./iso-kit.mjs",
+      "./lathe.mjs",
+      "./tube.mjs"
+    ],
+    "reference/kit/tube.mjs": [
+      "./iso-kit.mjs",
+      "./lathe.mjs"
+    ],
+    "reference/kit/turn-build.mjs": [
+      "./turn.mjs",
+      "./iso-kit.mjs",
+      "./lathe.mjs",
+      "./audit.mjs"
+    ],
+    "reference/kit/turn.mjs": [],
+    "reference/kit/turn-audit.mjs": [
+      "./turn.mjs",
+      "./audit.mjs",
+      "./lathe.mjs",
+      "./iso-kit.mjs",
+      "./turn-build.mjs"
+    ]
+  },
+  "inputs": [
+    {
+      "path": "build-explorer-scene.mjs",
+      "kind": "tracked source",
+      "sha256": "5856b44556559a9ae1447c56a22a2c5e18edcc869b6c4813285ce80bb31c0387",
+      "matchesExactCommitBlobAndFrozenAuditInput": true
+    },
+    {
+      "path": "reference/kit/audit.mjs",
+      "kind": "tracked source",
+      "sha256": "90c5bb4a86f108e8a1d3211dbea326bed16acd887c3438810ea29200a2cde28d",
+      "matchesExactCommitBlobAndFrozenAuditInput": true
+    },
+    {
+      "path": "reference/kit/iso-kit.mjs",
+      "kind": "tracked source",
+      "sha256": "6d3ecc725d30c3b0346da309cf61dfa5a65017c23620bbd4093009d4fb104018",
+      "matchesExactCommitBlobAndFrozenAuditInput": true
+    },
+    {
+      "path": "reference/kit/lathe.mjs",
+      "kind": "tracked source",
+      "sha256": "a4e7e974b1a37e603ad2b76363b6f9815cc101dfff0ad277a5d4e8f1dc56fccb",
+      "matchesExactCommitBlobAndFrozenAuditInput": true
+    },
+    {
+      "path": "reference/kit/tube.mjs",
+      "kind": "tracked source",
+      "sha256": "bcb3cc360f6d83e6a5753f4c464b4587ab7965028b05a5d58e285abce58667c9",
+      "matchesExactCommitBlobAndFrozenAuditInput": true
+    },
+    {
+      "path": "reference/kit/turn-audit.mjs",
+      "kind": "tracked source",
+      "sha256": "e118b838c00621eb5d86409552b75b50d02c303eaedefc008146a7c62c2eaefd",
+      "matchesExactCommitBlobAndFrozenAuditInput": true
+    },
+    {
+      "path": "reference/kit/turn-build.mjs",
+      "kind": "tracked source",
+      "sha256": "b4cc085d187a2e56e097980e1fb034a70c9327dcf4d79cf73c2093b80e002673",
+      "matchesExactCommitBlobAndFrozenAuditInput": true
+    },
+    {
+      "path": "reference/kit/turn.mjs",
+      "kind": "tracked source",
+      "sha256": "da729a6de3e437e853bdc420959b34ff67f23b05c1fc4a0445099405239f817d",
+      "matchesExactCommitBlobAndFrozenAuditInput": true
+    },
+    {
+      "path": "architecture.json",
+      "kind": "generated data input",
+      "sha256": "be445386d383da55b499c2d2bd33ae77bfc19bd11b5f23b98a4aa588e584afdc",
+      "matchesFrozenAuditAndCurrentGeneratedData": true,
+      "generator": "tools/extract_anatomy.py",
+      "tracked": false
+    }
+  ],
+  "incidentalUntrackedModulesNotImported": [
+    "reference/kit/canvas-painter.mjs",
+    "reference/kit/gl-shared.mjs",
+    "reference/kit/gl.mjs",
+    "reference/kit/turn-fixed.mjs"
+  ]
+}

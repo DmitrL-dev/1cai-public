@@ -1,0 +1,27 @@
+{
+  "scope": "Node geometry+ordering+finite-path smoke only, not browserFPS. 360mixed actualUI-composition yaw/pitch±85 and independent-slide states;1warmup+5measured rounds pervariant; sequential variants under current host load.",
+  "original": {
+    "medianFrameMs": 1.5492779999999584,
+    "p95FrameMs": 2.4369339999998374,
+    "medianRoundMeanMs": 1.665033483333323,
+    "maxFrameMs": 5.55997699999989,
+    "parts": 84,
+    "planes": 187,
+    "turnBytes": 37853,
+    "forced": 0,
+    "unseparated": 0
+  },
+  "patched": {
+    "medianFrameMs": 1.60396800000035,
+    "p95FrameMs": 2.6610539999992397,
+    "medianRoundMeanMs": 1.7990404083333387,
+    "maxFrameMs": 10.353141999999934,
+    "parts": 84,
+    "planes": 214,
+    "turnBytes": 38141,
+    "forced": 0,
+    "unseparated": 0
+  },
+  "medianRoundCostRatio": 1.080483021117233,
+  "payloadDeltaBytes": 288
+}
