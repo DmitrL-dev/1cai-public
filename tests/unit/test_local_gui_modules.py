@@ -179,7 +179,11 @@ def test_module_source_rechecks_server_owned_raw_and_archive_hash(running):
     assert source(server, job, LATE_MODULES[1]) == (400, {"error": "IMPORT_HASH_MISMATCH"})
 
 
-@pytest.mark.parametrize("raw,error", [(b"x" * (gui.MAX_SOURCE + 1), "SOURCE_TOO_LARGE"), (b"\xff", "SOURCE_ENCODING_UNSUPPORTED"), (b"hidden\x00", "SOURCE_ENCODING_UNSUPPORTED")])
+@pytest.mark.parametrize("raw,error", [
+    (b"x" * (gui.MAX_SOURCE + 1), "SOURCE_TOO_LARGE"),
+    (b"\xff", "SOURCE_ENCODING_UNSUPPORTED"),
+    (b"hidden\x00", "SOURCE_ENCODING_UNSUPPORTED"),
+], ids=["source-over-limit", "invalid-utf8", "embedded-nul"])
 def test_discovered_module_keeps_strict_preview_limits(running, raw, error):
     _, server, _ = running
     _, files = module_archive()
