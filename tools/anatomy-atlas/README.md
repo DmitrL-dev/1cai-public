@@ -1,6 +1,6 @@
 # Rentgen Anatomy Explorer (review candidate)
 
-The atlas visualizes accepted source commit `6c8feb291dd251826eebb99e145f4a39f56cda47`, tree `7dcb248efdf33ca3ef93ce0f5d12b569ec02fe46`: 14 systems, 1,031 files, 5,465 declarations. No pending PR functionality is treated as accepted. No product code is executed by extraction or the viewer.
+The atlas visualizes a fixed accepted source snapshot, commit `6c8feb291dd251826eebb99e145f4a39f56cda47`, tree `7dcb248efdf33ca3ef93ce0f5d12b569ec02fe46`: 14 systems, 1,031 files, 5,465 declarations. No pending PR functionality is treated as accepted. No product code is executed by extraction or the viewer.
 
 ## Explore
 
@@ -28,6 +28,6 @@ See data/README.md for extraction/hash verification and the compact editorial se
 
 Anatomy is vendored under its MIT license, pinned to upstream commit `e6600ffc4e8e6620eeb45bf49bcdbd5e4b84163f`. See LOCAL-ANATOMY-PATCH.md for the preexisting exact-transform precision correction and the narrowly scoped conservative free-rotation pair coverage correction. Audit thresholds are unchanged.
 
-Build and focused regression/quick geometry checks passed in the recovered worktree. The full geometry process was interrupted at depth oracle and is not claimed as passed. `node qa/explorer-free-pair-regression.mjs` reproduces the upstream defect and checks the correction. `npm test` requires `npm install --ignore-scripts` and runs DOM-only checks. It does not replace browser tests.
+Build, focused regression and full geometry qualification passed for the frozen explorer inputs. The full audit and supplemental 252-pose depth check have zero reported failures; see GEOMETRY-QUALIFICATION.md for source hashes, evidence and finite-sampling limits. `node qa/explorer-free-pair-regression.mjs` reproduces the upstream defect and checks the correction. `npm test` requires `npm install --ignore-scripts` and runs DOM-only checks. It does not replace browser tests.
 
 The separate `tests/anatomy-browser` suite performs real sandboxed Chromium interaction, mobile/desktop screenshots, exact-source verification and a HEAD/hash receipt. Its workflow is read-only, uses no secrets, and does not deploy or release. Browser qualification is pending until that exact candidate completes CI and screenshots are reviewed.

@@ -21,7 +21,8 @@ Putting every solid in a separate identity frame removed the missing-pair issue 
 
 - `node qa/explorer-free-pair-regression.mjs`: exact upstream has six depth failures on the repeated failing pose; patched builder has zero. The 50°–65° flush-contact sweep passes both versions with zero swaps. This runs official order/depth checks, not a full audit.
 - `node build-explorer-scene.mjs --audit --quick`: all categories have zero problems for the actual `Rx(pitch) * Rz(yaw)` composition, yaw sweep, pitch ±85°, and explosion. Quick sampling is explicitly not a full proof.
-- `node build-explorer-scene.mjs --audit`: full run status is recorded separately in `qa/explorer-scene-conservative-full.log`; do not infer success while it is pending.
+- `node build-explorer-scene.mjs --audit`: verified full PASS, exit 0, 360.47 s; every category has zero failures. The isolated qualification record is `qa/explorer-full-qualified-20261013.log`, with exact source hashes in `qa/explorer-full-qualified-execution-inputs.sha256`. The older reused log is not the qualification record.
+- `node qa/explorer-mixed-depth.mjs`: supplemental unchanged full-resolution depth oracle PASS, exit 0; 252 mixed yaw/pitch/slide poses and 43,754 overlapping pairs, zero failures. This is depth-only coverage, not another full audit. See `GEOMETRY-QUALIFICATION.md` for the precise sampling contract and remaining limits.
 - `node qa/explorer-scene-performance.mjs`: bounded original/patched comparison over mixed actual-UI poses and independent slides. Its JSON records costs. Node geometry timing is not browser frame rate.
 
 The stock benchmark expects a turn root and does not support this free-root scene; the standard fidelity identity helper also targets turn roots. Their absence is not replaced by a misleading success claim. Real-browser order, interaction, clipping, label placement, accessibility and performance checks remain independent requirements.

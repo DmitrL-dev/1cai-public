@@ -1,0 +1,74 @@
+{
+  "upstreamCommit": "e6600ffc4e8e6620eeb45bf49bcdbd5e4b84163f",
+  "originalBuilderBlob": "3bfe31b9bb87c7d0b7b75f62054149bfa583fb1a",
+  "scope": "Exact upstream-fails/patched-passes depth regression plus flush-contact order sweep; official order/depth checks only, not full audit.",
+  "results": [
+    {
+      "fixture": "distant",
+      "builder": "upstream",
+      "planes": null,
+      "depth": 6,
+      "swaps": 0,
+      "cycles": 0,
+      "forced": 0,
+      "unseparated": 0,
+      "failures": 6,
+      "messages": [
+        {
+          "text": "test at sweep 0.000°: graph.near is in front of graph.far but drawn first (27.50 px²)"
+        },
+        {
+          "text": "test at sweep 0.167°: graph.near is in front of graph.far but drawn first (27.50 px²)"
+        },
+        {
+          "text": "test at sweep 0.333°: graph.near is in front of graph.far but drawn first (27.50 px²)"
+        },
+        {
+          "text": "test at sweep 0.500°: graph.near is in front of graph.far but drawn first (27.50 px²)"
+        },
+        {
+          "text": "test at sweep 0.667°: graph.near is in front of graph.far but drawn first (27.50 px²)"
+        },
+        {
+          "text": "test at sweep 0.833°: graph.near is in front of graph.far but drawn first (27.50 px²)"
+        }
+      ]
+    },
+    {
+      "fixture": "distant",
+      "builder": "patched",
+      "planes": null,
+      "depth": 0,
+      "swaps": 0,
+      "cycles": 0,
+      "forced": 0,
+      "unseparated": 0,
+      "failures": 0,
+      "messages": []
+    },
+    {
+      "fixture": "contact",
+      "builder": "upstream",
+      "planes": null,
+      "depth": 0,
+      "swaps": 0,
+      "cycles": 0,
+      "forced": 0,
+      "unseparated": 0,
+      "failures": 0,
+      "messages": []
+    },
+    {
+      "fixture": "contact",
+      "builder": "patched",
+      "planes": null,
+      "depth": 0,
+      "swaps": 0,
+      "cycles": 0,
+      "forced": 0,
+      "unseparated": 0,
+      "failures": 0,
+      "messages": []
+    }
+  ]
+}

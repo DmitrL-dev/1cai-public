@@ -30,8 +30,8 @@ async function inlineSource(page,id){
   const entry=sources.files[id.replace(/^file:/,'')];expect(entry).toBeTruthy();
   expect(createHash('sha256').update(entry.text).digest('hex')).toBe(entry.sha256);
   const rendered=await code.locator(':scope > span').evaluateAll(rows=>rows.map(row=>({line:Number(row.querySelector('.line-no').textContent),text:[...row.childNodes].filter(n=>!(n.nodeType===1&&n.classList.contains('line-no'))).map(n=>n.textContent).join('')})));
-  const lines=entry.text.split('\n');expect(rendered.length).toBeGreaterThan(20);
-  for(const row of rendered)expect(row.text.replace(/\r$/,''),`Exact source line ${row.line}`).toBe((lines[row.line-1]||' ').replace(/\r$/,''));
+  const lines=entry.text.split(/\r\n|\n|\r/);expect(rendered.length).toBeGreaterThan(20);
+  for(const row of rendered)expect(row.text,`Exact source line ${row.line}`).toBe(lines[row.line-1]);
   await expect(code.locator('script,iframe,img,svg')).toHaveCount(0);
   await expect(page.locator('#exInlineSource a[href*="/blob/"]').first()).toHaveAttribute('href',new RegExp(`/blob/${sources.meta.sourceCommit}/`));
   return code;

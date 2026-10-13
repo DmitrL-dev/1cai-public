@@ -39,3 +39,37 @@ test('page replies bind offsets, exact range counts and navigation flags',()=>{
   assert.equal(searchReplyMatches(binding,'search','',{...reply,result:{...result,objects:[]}}),false);
   assert.equal(searchReplyMatches(binding,'search','',{...reply,result:{...result,matching_objects:400}}),false);
 });
+
+test('source literals preserve spaces and reject multiline/control/overflow values',async()=>{
+  const {boundedSourceQuery}=await import('../../rentgen_core/gui_assets/model.js');
+  assert.deepEqual(boundedSourceQuery(' needle '),{query:' needle ',valid:true});
+  for(const query of ['', 'a\nb', 'a\rb', '\0', 'я'.repeat(129), '\ud800'])assert.equal(boundedSourceQuery(query).valid,false);
+  assert.equal(boundedSourceQuery('\t'+'я'.repeat(127)).valid,true);
+});
+test('source result requires honest coverage and bounded first-match text',()=>{
+  const binding={job:'job',input_sha256:'a'.repeat(64),kind:'source',object_path:null,offset:0};
+  const row={analysis:'literal_first_match',first_match:{line:2,excerpt:'needle',truncated_before:false,truncated_after:false}};
+  const coverage={in_scope:2,searched:1,skipped_oversized:1,skipped_invalid_utf8:0,skipped_controls:0,complete:false};
+  const result={input:{input_sha256:binding.input_sha256},modules:[row],matching_modules:1,source_coverage:coverage,page:{offset:0,limit:200,total:1,returned:1,has_previous:false,has_next:false}};
+  const reply={...binding,search:'search',prefix:null,query:'needle',status:'ready',result};
+  assert.ok(searchReplyMatches(binding,'search','needle',reply));
+  for(const update of [{source_coverage:{...coverage,complete:true}},{source_coverage:{...coverage,searched:2}},{modules:[{...row,first_match:{...row.first_match,line:0}}]},{modules:[{...row,first_match:{...row.first_match,excerpt:'x'.repeat(513)}}]}])assert.equal(searchReplyMatches(binding,'search','needle',{...reply,result:{...result,...update}}),false);
+});
+
+
+test('module search mode has an explicit stable label separate from option text',async()=>{
+  const {readFile}=await import('node:fs/promises');
+  const html=await readFile(new URL('../../rentgen_core/gui_assets/index.html',import.meta.url),'utf8');
+  const select=html.match(/<select\b[^>]*\bid="module-search-mode"[^>]*>/)?.[0];
+  assert.ok(select,'module mode selector exists');
+  assert.match(select,/\baria-labelledby="module-search-mode-label"/);
+  const labels=[...html.matchAll(/<span\b[^>]*\bid="module-search-mode-label"[^>]*>([^<]*)<\/span>/g)];
+  assert.equal(labels.length,1,'exactly one dedicated text-only label');
+  assert.equal(labels[0][1],'Режим поиска модулей');
+  // Keep the browser's exact-label locator contract tied to the shipped label.
+  for(const path of ['browser/source-search.spec.mjs','browser/acceptance.spec.mjs']){
+    const spec=await readFile(new URL(path,import.meta.url),'utf8');
+    assert.ok(spec.includes(`getByLabel('${labels[0][1]}',{exact:true}).selectOption('source')`));
+    assert.ok(spec.includes(`toHaveAccessibleName('${labels[0][1]}')`));
+  }
+});

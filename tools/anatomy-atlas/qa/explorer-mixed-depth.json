@@ -1,0 +1,1331 @@
+{
+  "scope": "Supplemental full-resolution official depth oracle. Finite grid: 12 yaw angles × 7 pitches × 3 slide profiles. Not a continuous proof, not a full audit, and not browser QA.",
+  "sourceSha256": {
+    "build-explorer-scene.mjs": "5856b44556559a9ae1447c56a22a2c5e18edcc869b6c4813285ce80bb31c0387",
+    "reference/kit/turn-build.mjs": "b4cc085d187a2e56e097980e1fb034a70c9327dcf4d79cf73c2093b80e002673",
+    "reference/kit/turn.mjs": "da729a6de3e437e853bdc420959b34ff67f23b05c1fc4a0445099405239f817d",
+    "reference/kit/turn-audit.mjs": "e118b838c00621eb5d86409552b75b50d02c303eaedefc008146a7c62c2eaefd"
+  },
+  "contract": {
+    "yaw": "full turn",
+    "pitchRange": [
+      -85,
+      85
+    ],
+    "independentSlide": [
+      0,
+      22
+    ]
+  },
+  "parts": 84,
+  "systems": 14,
+  "states": [
+    {
+      "pitch": -85,
+      "yaw": 0,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -85,
+      "yaw": 0,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -85,
+      "yaw": 0,
+      "profile": "independent"
+    },
+    {
+      "pitch": -85,
+      "yaw": 30,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -85,
+      "yaw": 30,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -85,
+      "yaw": 30,
+      "profile": "independent"
+    },
+    {
+      "pitch": -85,
+      "yaw": 60,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -85,
+      "yaw": 60,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -85,
+      "yaw": 60,
+      "profile": "independent"
+    },
+    {
+      "pitch": -85,
+      "yaw": 90,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -85,
+      "yaw": 90,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -85,
+      "yaw": 90,
+      "profile": "independent"
+    },
+    {
+      "pitch": -85,
+      "yaw": 120,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -85,
+      "yaw": 120,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -85,
+      "yaw": 120,
+      "profile": "independent"
+    },
+    {
+      "pitch": -85,
+      "yaw": 150,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -85,
+      "yaw": 150,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -85,
+      "yaw": 150,
+      "profile": "independent"
+    },
+    {
+      "pitch": -85,
+      "yaw": 180,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -85,
+      "yaw": 180,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -85,
+      "yaw": 180,
+      "profile": "independent"
+    },
+    {
+      "pitch": -85,
+      "yaw": 210,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -85,
+      "yaw": 210,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -85,
+      "yaw": 210,
+      "profile": "independent"
+    },
+    {
+      "pitch": -85,
+      "yaw": 240,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -85,
+      "yaw": 240,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -85,
+      "yaw": 240,
+      "profile": "independent"
+    },
+    {
+      "pitch": -85,
+      "yaw": 270,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -85,
+      "yaw": 270,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -85,
+      "yaw": 270,
+      "profile": "independent"
+    },
+    {
+      "pitch": -85,
+      "yaw": 300,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -85,
+      "yaw": 300,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -85,
+      "yaw": 300,
+      "profile": "independent"
+    },
+    {
+      "pitch": -85,
+      "yaw": 330,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -85,
+      "yaw": 330,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -85,
+      "yaw": 330,
+      "profile": "independent"
+    },
+    {
+      "pitch": -65,
+      "yaw": 0,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -65,
+      "yaw": 0,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -65,
+      "yaw": 0,
+      "profile": "independent"
+    },
+    {
+      "pitch": -65,
+      "yaw": 30,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -65,
+      "yaw": 30,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -65,
+      "yaw": 30,
+      "profile": "independent"
+    },
+    {
+      "pitch": -65,
+      "yaw": 60,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -65,
+      "yaw": 60,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -65,
+      "yaw": 60,
+      "profile": "independent"
+    },
+    {
+      "pitch": -65,
+      "yaw": 90,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -65,
+      "yaw": 90,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -65,
+      "yaw": 90,
+      "profile": "independent"
+    },
+    {
+      "pitch": -65,
+      "yaw": 120,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -65,
+      "yaw": 120,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -65,
+      "yaw": 120,
+      "profile": "independent"
+    },
+    {
+      "pitch": -65,
+      "yaw": 150,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -65,
+      "yaw": 150,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -65,
+      "yaw": 150,
+      "profile": "independent"
+    },
+    {
+      "pitch": -65,
+      "yaw": 180,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -65,
+      "yaw": 180,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -65,
+      "yaw": 180,
+      "profile": "independent"
+    },
+    {
+      "pitch": -65,
+      "yaw": 210,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -65,
+      "yaw": 210,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -65,
+      "yaw": 210,
+      "profile": "independent"
+    },
+    {
+      "pitch": -65,
+      "yaw": 240,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -65,
+      "yaw": 240,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -65,
+      "yaw": 240,
+      "profile": "independent"
+    },
+    {
+      "pitch": -65,
+      "yaw": 270,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -65,
+      "yaw": 270,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -65,
+      "yaw": 270,
+      "profile": "independent"
+    },
+    {
+      "pitch": -65,
+      "yaw": 300,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -65,
+      "yaw": 300,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -65,
+      "yaw": 300,
+      "profile": "independent"
+    },
+    {
+      "pitch": -65,
+      "yaw": 330,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -65,
+      "yaw": 330,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -65,
+      "yaw": 330,
+      "profile": "independent"
+    },
+    {
+      "pitch": -45,
+      "yaw": 0,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -45,
+      "yaw": 0,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -45,
+      "yaw": 0,
+      "profile": "independent"
+    },
+    {
+      "pitch": -45,
+      "yaw": 30,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -45,
+      "yaw": 30,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -45,
+      "yaw": 30,
+      "profile": "independent"
+    },
+    {
+      "pitch": -45,
+      "yaw": 60,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -45,
+      "yaw": 60,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -45,
+      "yaw": 60,
+      "profile": "independent"
+    },
+    {
+      "pitch": -45,
+      "yaw": 90,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -45,
+      "yaw": 90,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -45,
+      "yaw": 90,
+      "profile": "independent"
+    },
+    {
+      "pitch": -45,
+      "yaw": 120,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -45,
+      "yaw": 120,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -45,
+      "yaw": 120,
+      "profile": "independent"
+    },
+    {
+      "pitch": -45,
+      "yaw": 150,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -45,
+      "yaw": 150,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -45,
+      "yaw": 150,
+      "profile": "independent"
+    },
+    {
+      "pitch": -45,
+      "yaw": 180,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -45,
+      "yaw": 180,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -45,
+      "yaw": 180,
+      "profile": "independent"
+    },
+    {
+      "pitch": -45,
+      "yaw": 210,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -45,
+      "yaw": 210,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -45,
+      "yaw": 210,
+      "profile": "independent"
+    },
+    {
+      "pitch": -45,
+      "yaw": 240,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -45,
+      "yaw": 240,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -45,
+      "yaw": 240,
+      "profile": "independent"
+    },
+    {
+      "pitch": -45,
+      "yaw": 270,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -45,
+      "yaw": 270,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -45,
+      "yaw": 270,
+      "profile": "independent"
+    },
+    {
+      "pitch": -45,
+      "yaw": 300,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -45,
+      "yaw": 300,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -45,
+      "yaw": 300,
+      "profile": "independent"
+    },
+    {
+      "pitch": -45,
+      "yaw": 330,
+      "profile": "assembled"
+    },
+    {
+      "pitch": -45,
+      "yaw": 330,
+      "profile": "exploded"
+    },
+    {
+      "pitch": -45,
+      "yaw": 330,
+      "profile": "independent"
+    },
+    {
+      "pitch": 0,
+      "yaw": 0,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 0,
+      "yaw": 0,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 0,
+      "yaw": 0,
+      "profile": "independent"
+    },
+    {
+      "pitch": 0,
+      "yaw": 30,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 0,
+      "yaw": 30,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 0,
+      "yaw": 30,
+      "profile": "independent"
+    },
+    {
+      "pitch": 0,
+      "yaw": 60,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 0,
+      "yaw": 60,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 0,
+      "yaw": 60,
+      "profile": "independent"
+    },
+    {
+      "pitch": 0,
+      "yaw": 90,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 0,
+      "yaw": 90,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 0,
+      "yaw": 90,
+      "profile": "independent"
+    },
+    {
+      "pitch": 0,
+      "yaw": 120,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 0,
+      "yaw": 120,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 0,
+      "yaw": 120,
+      "profile": "independent"
+    },
+    {
+      "pitch": 0,
+      "yaw": 150,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 0,
+      "yaw": 150,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 0,
+      "yaw": 150,
+      "profile": "independent"
+    },
+    {
+      "pitch": 0,
+      "yaw": 180,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 0,
+      "yaw": 180,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 0,
+      "yaw": 180,
+      "profile": "independent"
+    },
+    {
+      "pitch": 0,
+      "yaw": 210,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 0,
+      "yaw": 210,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 0,
+      "yaw": 210,
+      "profile": "independent"
+    },
+    {
+      "pitch": 0,
+      "yaw": 240,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 0,
+      "yaw": 240,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 0,
+      "yaw": 240,
+      "profile": "independent"
+    },
+    {
+      "pitch": 0,
+      "yaw": 270,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 0,
+      "yaw": 270,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 0,
+      "yaw": 270,
+      "profile": "independent"
+    },
+    {
+      "pitch": 0,
+      "yaw": 300,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 0,
+      "yaw": 300,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 0,
+      "yaw": 300,
+      "profile": "independent"
+    },
+    {
+      "pitch": 0,
+      "yaw": 330,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 0,
+      "yaw": 330,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 0,
+      "yaw": 330,
+      "profile": "independent"
+    },
+    {
+      "pitch": 45,
+      "yaw": 0,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 45,
+      "yaw": 0,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 45,
+      "yaw": 0,
+      "profile": "independent"
+    },
+    {
+      "pitch": 45,
+      "yaw": 30,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 45,
+      "yaw": 30,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 45,
+      "yaw": 30,
+      "profile": "independent"
+    },
+    {
+      "pitch": 45,
+      "yaw": 60,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 45,
+      "yaw": 60,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 45,
+      "yaw": 60,
+      "profile": "independent"
+    },
+    {
+      "pitch": 45,
+      "yaw": 90,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 45,
+      "yaw": 90,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 45,
+      "yaw": 90,
+      "profile": "independent"
+    },
+    {
+      "pitch": 45,
+      "yaw": 120,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 45,
+      "yaw": 120,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 45,
+      "yaw": 120,
+      "profile": "independent"
+    },
+    {
+      "pitch": 45,
+      "yaw": 150,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 45,
+      "yaw": 150,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 45,
+      "yaw": 150,
+      "profile": "independent"
+    },
+    {
+      "pitch": 45,
+      "yaw": 180,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 45,
+      "yaw": 180,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 45,
+      "yaw": 180,
+      "profile": "independent"
+    },
+    {
+      "pitch": 45,
+      "yaw": 210,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 45,
+      "yaw": 210,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 45,
+      "yaw": 210,
+      "profile": "independent"
+    },
+    {
+      "pitch": 45,
+      "yaw": 240,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 45,
+      "yaw": 240,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 45,
+      "yaw": 240,
+      "profile": "independent"
+    },
+    {
+      "pitch": 45,
+      "yaw": 270,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 45,
+      "yaw": 270,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 45,
+      "yaw": 270,
+      "profile": "independent"
+    },
+    {
+      "pitch": 45,
+      "yaw": 300,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 45,
+      "yaw": 300,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 45,
+      "yaw": 300,
+      "profile": "independent"
+    },
+    {
+      "pitch": 45,
+      "yaw": 330,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 45,
+      "yaw": 330,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 45,
+      "yaw": 330,
+      "profile": "independent"
+    },
+    {
+      "pitch": 65,
+      "yaw": 0,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 65,
+      "yaw": 0,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 65,
+      "yaw": 0,
+      "profile": "independent"
+    },
+    {
+      "pitch": 65,
+      "yaw": 30,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 65,
+      "yaw": 30,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 65,
+      "yaw": 30,
+      "profile": "independent"
+    },
+    {
+      "pitch": 65,
+      "yaw": 60,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 65,
+      "yaw": 60,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 65,
+      "yaw": 60,
+      "profile": "independent"
+    },
+    {
+      "pitch": 65,
+      "yaw": 90,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 65,
+      "yaw": 90,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 65,
+      "yaw": 90,
+      "profile": "independent"
+    },
+    {
+      "pitch": 65,
+      "yaw": 120,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 65,
+      "yaw": 120,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 65,
+      "yaw": 120,
+      "profile": "independent"
+    },
+    {
+      "pitch": 65,
+      "yaw": 150,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 65,
+      "yaw": 150,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 65,
+      "yaw": 150,
+      "profile": "independent"
+    },
+    {
+      "pitch": 65,
+      "yaw": 180,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 65,
+      "yaw": 180,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 65,
+      "yaw": 180,
+      "profile": "independent"
+    },
+    {
+      "pitch": 65,
+      "yaw": 210,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 65,
+      "yaw": 210,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 65,
+      "yaw": 210,
+      "profile": "independent"
+    },
+    {
+      "pitch": 65,
+      "yaw": 240,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 65,
+      "yaw": 240,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 65,
+      "yaw": 240,
+      "profile": "independent"
+    },
+    {
+      "pitch": 65,
+      "yaw": 270,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 65,
+      "yaw": 270,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 65,
+      "yaw": 270,
+      "profile": "independent"
+    },
+    {
+      "pitch": 65,
+      "yaw": 300,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 65,
+      "yaw": 300,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 65,
+      "yaw": 300,
+      "profile": "independent"
+    },
+    {
+      "pitch": 65,
+      "yaw": 330,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 65,
+      "yaw": 330,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 65,
+      "yaw": 330,
+      "profile": "independent"
+    },
+    {
+      "pitch": 85,
+      "yaw": 0,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 85,
+      "yaw": 0,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 85,
+      "yaw": 0,
+      "profile": "independent"
+    },
+    {
+      "pitch": 85,
+      "yaw": 30,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 85,
+      "yaw": 30,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 85,
+      "yaw": 30,
+      "profile": "independent"
+    },
+    {
+      "pitch": 85,
+      "yaw": 60,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 85,
+      "yaw": 60,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 85,
+      "yaw": 60,
+      "profile": "independent"
+    },
+    {
+      "pitch": 85,
+      "yaw": 90,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 85,
+      "yaw": 90,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 85,
+      "yaw": 90,
+      "profile": "independent"
+    },
+    {
+      "pitch": 85,
+      "yaw": 120,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 85,
+      "yaw": 120,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 85,
+      "yaw": 120,
+      "profile": "independent"
+    },
+    {
+      "pitch": 85,
+      "yaw": 150,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 85,
+      "yaw": 150,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 85,
+      "yaw": 150,
+      "profile": "independent"
+    },
+    {
+      "pitch": 85,
+      "yaw": 180,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 85,
+      "yaw": 180,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 85,
+      "yaw": 180,
+      "profile": "independent"
+    },
+    {
+      "pitch": 85,
+      "yaw": 210,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 85,
+      "yaw": 210,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 85,
+      "yaw": 210,
+      "profile": "independent"
+    },
+    {
+      "pitch": 85,
+      "yaw": 240,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 85,
+      "yaw": 240,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 85,
+      "yaw": 240,
+      "profile": "independent"
+    },
+    {
+      "pitch": 85,
+      "yaw": 270,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 85,
+      "yaw": 270,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 85,
+      "yaw": 270,
+      "profile": "independent"
+    },
+    {
+      "pitch": 85,
+      "yaw": 300,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 85,
+      "yaw": 300,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 85,
+      "yaw": 300,
+      "profile": "independent"
+    },
+    {
+      "pitch": 85,
+      "yaw": 330,
+      "profile": "assembled"
+    },
+    {
+      "pitch": 85,
+      "yaw": 330,
+      "profile": "exploded"
+    },
+    {
+      "pitch": 85,
+      "yaw": 330,
+      "profile": "independent"
+    }
+  ],
+  "failures": 0,
+  "result": {
+    "separation": [],
+    "unseparated": [],
+    "cycles": [],
+    "forced": [],
+    "swaps": [],
+    "layers": [],
+    "rigid": [],
+    "swept": [],
+    "posed": [],
+    "folds": [],
+    "self": [],
+    "crowding": [],
+    "endon": [],
+    "coverage": [],
+    "depth": [],
+    "continuity": [],
+    "notes": [],
+    "stats": {
+      "planes": 214,
+      "tightest": 0,
+      "orderStates": 0,
+      "changes": 0,
+      "posedStates": 504,
+      "depthStates": 252,
+      "depthPairs": 43754,
+      "seconds": 1278.109
+    },
+    "quick": false,
+    "skipped": [
+      "unseparated",
+      "cycles",
+      "forced",
+      "swaps",
+      "rigid",
+      "swept",
+      "posed",
+      "folds",
+      "self",
+      "crowding",
+      "endon",
+      "coverage",
+      "continuity"
+    ],
+    "changes": []
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "turnSha256": "e133964953a8dee1e31ebd5ad359d79e2ebffc7eb69ae6623a45b292c973385e",
+  "partsSha256": "be0f5ce19e23e58ede42fa5bd38de06ef97ddf1a9ffbdc3b342f9a94fe0ec91b",
+  "objectsSha256": "5cc78fdcc85d528853f46c85a85903d94995ec4763906898f47da6a27e49ca54",
+  "contract": {
+    "yaw": "full turn",
+    "pitchRange": [
+      -85,
+      85
+    ],
+    "independentSlide": [
+      0,
+      22
+    ]
+  }
+}
