@@ -1,4 +1,5 @@
 """Real child-process regressions; no pwsh, account, or network required."""
+import os
 import sys
 
 import pytest
@@ -19,7 +20,8 @@ def child(tmp_path, *, startup=0, execution=0, status=0, ready=True):
 def test_slow_startup_does_not_consume_execution_budget(tmp_path):
     argv, marker = child(tmp_path, startup=1.2)
     result = run_after_ready(argv, marker, startup_timeout=10, execution_timeout=1)
-    assert result.returncode == 0 and result.stdout == b"RESULT\n"
+    assert result.returncode == 0
+    assert result.stdout == b"RESULT" + os.linesep.encode("ascii")
 
 
 def test_execution_remains_bounded_without_retry(tmp_path):
