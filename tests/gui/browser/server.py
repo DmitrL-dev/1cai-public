@@ -78,6 +78,21 @@ def main():
             output.writestr(f'Catalogs/{many_stem}/Ext/ДругойМодуль.bsp', module)
             output.writestr(f'Catalogs/{many_stem}Neighbor/Ext/Neighbor.bsl', module)
         archives['many'] = {'path': str(archive), 'sha256': sha(archive)}
+        archive = root / 'paged.zip'
+        page_xml = None
+        page_module = None
+        with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as output:
+            for index in range(401):
+                content = ('<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses">'
+                           '<Catalog uuid="11111111-1111-4111-8111-111111111111">'
+                           f'<Properties><Name>ОбъектСтраницы{index:03d}</Name></Properties>'
+                           '<ChildObjects/></Catalog></MetaDataObject>')
+                output.writestr(f'Catalogs/Page{index:03d}.xml', content)
+                code = f'// Owned pagination {index:03d}\n' + module
+                output.writestr(f'Catalogs/Page400/Ext/Модуль{index:03d}.bsl', code)
+                if index == 400:
+                    page_xml, page_module = content, code
+        archives['paged'] = {'path': str(archive), 'sha256': sha(archive)}
         corrupt = root / 'corrupt.zip'
         corrupt.write_bytes(b'Owned deliberately invalid ZIP')
         before = snapshot(root)
@@ -91,6 +106,9 @@ def main():
                               'corrupt': str(corrupt), 'module': module,
                               'many_name': many_name, 'many_synonym': many_synonym, 'many_path': many_path,
                               'many_xml': many_xml, 'many_xml_sha256': hashlib.sha256(many_xml.encode()).hexdigest(),
+                              'page_xml': page_xml, 'page_module': page_module,
+                              'page_xml_sha256': hashlib.sha256(page_xml.encode()).hexdigest(),
+                              'page_module_sha256': hashlib.sha256(page_module.encode()).hexdigest(),
                               'module_sha256': hashlib.sha256(module.encode()).hexdigest()}), flush=True)
             sys.stdin.readline()
         finally:

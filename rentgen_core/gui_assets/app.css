@@ -3,3 +3,5 @@
 #discover-related-modules{white-space:normal;max-width:100%;text-align:left}
 
 #search-status-text{min-width:0;overflow-wrap:anywhere}
+
+.pagination{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px 0}.pagination p{min-width:0;overflow-wrap:anywhere;font-size:12px}.pagination .button{white-space:normal;max-width:100%}

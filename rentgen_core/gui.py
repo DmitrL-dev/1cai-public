@@ -27,12 +27,13 @@ from .errors import CoreError
 from .local import LocalRuntime
 from .local_identity import current_local_principal
 from .rust_input import RustInputSession
-from .submitted_export import PERMISSIONS, analyze_export, search_export_modules
+from .submitted_export import (GUI_PAGE_LIMIT, PERMISSIONS, analyze_export,
+                               search_export_metadata, search_export_modules, validate_gui_offset)
 
 MAX_UPLOAD = 16 * 1024**2
 MAX_SOURCE = 256 * 1024
 MAX_SEARCH_QUERY = 256
-SEARCH_LIMIT = 200
+SEARCH_LIMIT = GUI_PAGE_LIMIT
 ASSETS = Path(__file__).with_name("gui_assets")
 STATIC = {"/": ("index.html", "text/html; charset=utf-8"),
           "/app.js": ("app.js", "text/javascript; charset=utf-8"),
@@ -81,6 +82,7 @@ class Search:
     job: Job
     sha256: str
     query: str
+    offset: int = 0
     kind: str = "metadata"
     object_path: str | None = None
     prefix: str | None = None
@@ -249,8 +251,9 @@ class Workspace:
             fail("SEARCH_NOT_AVAILABLE")
         return {**row, "input_ref": dict(row["input_ref"])}
 
-    def start_search(self, job_id, sha256, query, kind="metadata", object_path=None):
+    def start_search(self, job_id, sha256, query, kind="metadata", object_path=None, offset=0):
         self.config.authorize()
+        validate_gui_offset(offset)
         if (type(query) is not str or type(kind) is not str or kind not in {"metadata", "modules"}
                 or (object_path is not None and (kind != "modules" or type(object_path) is not str or not object_path))):
             fail("INVALID_QUERY_OPTIONS")
@@ -285,11 +288,12 @@ class Workspace:
                 fail("BUSY")
             self._invalidate_search()
             search = Search(secrets.token_hex(16), job, job.sha256, query,
-                            kind=kind, object_path=object_path, prefix=prefix, object_row=object_row)
+                            offset=offset, kind=kind, object_path=object_path, prefix=prefix, object_row=object_row)
             self.search = search
             self.search_worker = threading.Thread(target=self._search, args=(search,), name="rentgen-gui-search", daemon=False)
             self.search_worker.start()
             return {"search": search.id, "job": job.id, "input_sha256": job.sha256,
+                    "query": search.query, "offset": search.offset,
                     "kind": search.kind, "object_path": search.object_path, "prefix": search.prefix}
 
     def _search(self, search):
@@ -301,12 +305,12 @@ class Workspace:
                     if self.closed or search.cancel.is_set() or not search.valid:
                         fail("CANCELLED")
                     self._get_search(search.job.id, search.id, search.sha256)
-                analyze = search_export_modules if search.kind == "modules" else analyze_export
+                analyze = search_export_modules if search.kind == "modules" else search_export_metadata
                 options = {"prefix": search.prefix} if search.kind == "modules" else {}
                 result = analyze(self.config.context(), archive=search.job.path,
                     archive_sha256=search.sha256, input_core=self.config.input_core,
                     input_core_sha256=self.config.input_core_sha256, query=search.query,
-                    limit=SEARCH_LIMIT, cancelled=search.cancel.is_set, **options)
+                    offset=search.offset, limit=SEARCH_LIMIT, cancelled=search.cancel.is_set, **options)
                 self.config.authorize()
                 with self.lock:
                     if self.closed or search.cancel.is_set() or not search.valid:
@@ -326,7 +330,7 @@ class Workspace:
         with self.lock:
             search = self._get_search(job_id, search_id, sha256)
             data = {"search": search.id, "job": search.job.id, "input_sha256": search.sha256,
-                    "query": search.query, "kind": search.kind,
+                    "query": search.query, "kind": search.kind, "offset": search.offset,
                     "object_path": search.object_path, "prefix": search.prefix,
                     "status": search.status, "error": search.error}
             if search.status == "ready":
@@ -596,13 +600,13 @@ class Handler(BaseHTTPRequestHandler):
             payload = json.loads(self._body(2048))
             selector = "query" if path == "/api/search-start" else "search"
             required = {"job", "input_sha256", selector}
-            optional = {"kind", "object_path"} if selector == "query" else set()
+            optional = {"kind", "object_path", "offset"} if selector == "query" else set()
             if type(payload) is not dict or not required <= set(payload) or set(payload) - required - optional:
                 fail("INVALID_REQUEST")
             with app.lock:
                 if selector == "query":
                     result = app.start_search(payload["job"], payload["input_sha256"], payload["query"],
-                                              payload.get("kind", "metadata"), payload.get("object_path"))
+                                              payload.get("kind", "metadata"), payload.get("object_path"), payload.get("offset", 0))
                     validate = lambda: app._get_search(result["job"], result["search"], result["input_sha256"])
                     self._json(result, status=201, validate=validate)
                 else:
