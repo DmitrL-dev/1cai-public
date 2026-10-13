@@ -68,7 +68,10 @@ test('Q02 direct scene picking hierarchy and exact source',async({page},info)=>{
   expect(hit,'At least one solid must be directly pointer-pickable').not.toBeNull();await page.mouse.click(hit.x,hit.y);await expect.poll(async()=>(await state(page)).selected).toBe(hit.id);
   await label(page,'interfaces').locator('rect').click();expect((await state(page)).selected).toBe('interfaces');
   await page.locator('#exOpen').click();expect((await state(page)).root).toBe('interfaces');
-  expect((await state(page)).visibleIds.every(id=>id.startsWith('file:'))).toBe(true);await evidence(page,info,'system-files');
+  expect((await state(page)).visibleIds.every(id=>id.startsWith('file:'))).toBe(true);
+  const metadata=await page.locator('#exOverlay .ex-label').evaluateAll(groups=>groups.map(g=>{const text=g.querySelector('.ex-label-sub'),box=text.getBoundingClientRect(),card=g.querySelector('rect').getBoundingClientRect(),ctm=text.getScreenCTM();return{font:parseFloat(getComputedStyle(text).fontSize)*Math.hypot(ctm.a,ctm.b),left:box.left,right:box.right,cardLeft:card.left,cardRight:card.right}}));
+  expect(metadata.length).toBeGreaterThan(0);for(const m of metadata){expect(m.font).toBeGreaterThanOrEqual(11);expect(m.left).toBeGreaterThanOrEqual(m.cardLeft);expect(m.right).toBeLessThanOrEqual(m.cardRight);}
+  await evidence(page,info,'system-files');
   await searchFile(page,'rentgen_core/cli.py');await inlineSource(page,'file:rentgen_core/cli.py');
   await evidence(page,info,'selected-file-readable-source',page.locator('#inspector'));
   await page.locator('#exOpen').click();expect((await state(page)).root).toBe('file:rentgen_core/cli.py');
@@ -104,8 +107,8 @@ test('Q04 navigation history isolation and filtering',async({page},info)=>{
   await page.locator('#exPageNext').click();expect((await state(page)).page).toBe(1);await page.locator('#exPagePrev').click();expect((await state(page)).page).toBe(0);
   await page.locator('#exRole').selectOption('test');const ids=(await state(page)).visibleIds;expect(ids.length).toBeGreaterThan(0);expect(await page.evaluate(ids=>ids.every(id=>window.atlas.data.nodes.find(n=>n.id===id)?.role==='test'),ids)).toBe(true);
   await page.locator('#exHome').click();await label(page,'interfaces').locator('rect').click();await page.locator('#exIsolate').click();expect((await state(page)).visibleIds).toEqual(['interfaces']);
-  await evidence(page,info,'isolated-layer');await page.locator('#exIsolate').click();await page.locator('.ex-list-details summary').click();
-  await page.locator('[data-ex-visible="interfaces"]').uncheck();expect((await state(page)).visibleIds).not.toContain('interfaces');await page.locator('[data-ex-visible="interfaces"]').check();expect((await state(page)).visibleIds).toContain('interfaces');
+  await evidence(page,info,'isolated-layer');await page.locator('#exIsolate').click();const disclosure=page.locator('.ex-list-details');if(!await disclosure.evaluate(el=>el.open))await disclosure.locator('summary').click();await expect(page.locator('[data-ex-visible="interfaces"]')).toBeVisible();
+  await page.locator('[data-ex-visible="interfaces"]').uncheck();expect((await state(page)).visibleIds).not.toContain('interfaces');await page.locator('[data-ex-visible="interfaces"]').check();expect((await state(page)).visibleIds).toContain('interfaces');await disclosure.locator('summary').click();await expect(page.locator('[data-ex-visible="interfaces"]')).toBeHidden();await disclosure.locator('summary').click();await expect(page.locator('[data-ex-visible="interfaces"]')).toBeVisible();
   await page.locator('#exSearch').fill('no-result-qualification-unique');await expect(page.locator('#exEmpty')).toBeVisible();await page.locator('#exClearSearch').click();await expect(page.locator('#exEmpty')).toBeHidden();
 });
 
@@ -143,4 +146,42 @@ test('Q08 bounded browser interaction performance',async({page,browser},info)=>{
   const sorted=[...samples].sort((a,b)=>a-b),p95=sorted[Math.ceil(sorted.length*.95)-1];expect((await state(page)).yaw).toBe(300);expect(p95,'Input and two-frame acknowledgement must finish below 1.5 seconds on CI').toBeLessThan(1500);
   const frameIntervals=await page.evaluate(()=>new Promise(resolve=>{const spans=[];let last;function tick(now){if(last!==undefined)spans.push(now-last);last=now;if(spans.length===60)resolve(spans);else requestAnimationFrame(tick)}requestAnimationFrame(tick)}));
   await writeFile(info.outputPath('browser-performance.json'),JSON.stringify({browserVersion:browser.version(),sampleCount:samples.length,inputAndTwoFramesMs:samples,p95Ms:p95,idleFrameIntervalsMs:frameIntervals,scope:'Current Chromium CI host; not a mobile FPS claim'},null,2));await evidence(page,info,'performance-final-camera',page.locator('#exViewport'));
+});
+
+
+test('Q09 selected-system opening is independent and reversible',async({page},info)=>{
+  await page.locator('#exReset').click();
+  await label(page,'interfaces').locator('rect').click();
+  const capture=()=>page.evaluate(()=>({
+    selectedPose:window.explorer.controller.pose('sys_interfaces'),
+    otherPose:window.explorer.controller.pose('sys_identity'),
+    selectedGeometry:[...document.querySelectorAll('#exStage [data-ex-id="interfaces"]')].map(n=>n.outerHTML),
+    otherGeometry:[...document.querySelectorAll('#exStage [data-ex-id="identity"]')].map(n=>n.outerHTML),
+  }));
+  const closed=await capture();
+  await expect(page.locator('#exNodeExplode')).toBeEnabled();
+  await page.locator('#exNodeExplode').focus();await page.keyboard.press('End');
+  await expect.poll(async()=>(await state(page)).nodeExplosions.interfaces).toBe(100);
+  const opened=await capture();
+  expect(opened.selectedPose.t).not.toEqual(closed.selectedPose.t);
+  expect(opened.selectedGeometry).not.toEqual(closed.selectedGeometry);
+  expect(opened.otherPose).toEqual(closed.otherPose);
+  expect(opened.otherGeometry).toEqual(closed.otherGeometry);
+  await evidence(page,info,'selected-system-opened',page.locator('#exViewport'));
+  await page.locator('#exOpen').click();await expect(page.locator('#exNodeExplode')).toBeDisabled();
+  await page.locator('#exBack').click();
+  expect((await state(page)).nodeExplosions.interfaces).toBe(100);
+  expect((await capture()).selectedPose).toEqual(opened.selectedPose);
+  await page.locator('#exNodeExplode').focus();await page.keyboard.press('Home');
+  const reversed=await capture();expect(reversed.selectedPose).toEqual(closed.selectedPose);expect(reversed.otherPose).toEqual(closed.otherPose);
+  await page.keyboard.press('End');
+  await page.locator('#exExplode').focus();await page.keyboard.press('End');
+  expect((await state(page)).nodeExplosions).toEqual({});
+  const shared=await capture();expect(shared.selectedPose).toEqual(opened.selectedPose);expect(shared.otherPose.t).not.toEqual(closed.otherPose.t);expect(shared.otherGeometry).not.toEqual(closed.otherGeometry);
+  await expect(page.locator('#exNodeExplode')).toHaveValue('100');
+  await page.keyboard.press('Home');const sharedClosed=await capture();expect(sharedClosed.selectedPose).toEqual(closed.selectedPose);expect(sharedClosed.otherPose).toEqual(closed.otherPose);
+  await page.locator('#exNodeExplode').focus();await page.keyboard.press('End');await page.locator('#exReset').click();
+  expect((await state(page)).nodeExplosions).toEqual({});
+  expect((await capture()).selectedPose).toEqual(closed.selectedPose);
+  await evidence(page,info,'selected-system-reset',page.locator('#exViewport'));
 });

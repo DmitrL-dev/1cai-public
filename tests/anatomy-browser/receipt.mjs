@@ -12,6 +12,7 @@ const expected=[
   'Q06 mobile touch navigation and readable detail',
   'Q07 light dark and narrow desktop readability',
   'Q08 bounded browser interaction performance',
+  'Q09 selected-system opening is independent and reversible',
 ];
 const errors=[],specs=[],artifacts=[];
 async function check(name,fn){try{return await fn()}catch(error){errors.push({check:name,message:error.message});return null}}

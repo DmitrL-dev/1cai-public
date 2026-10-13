@@ -19,6 +19,8 @@ Playwright 1.56.1 is locked; its lockfile was recovered directly from accepted R
 5. Keyboard activation/camera controls and stable reduced-motion pixels.
 6. Chromium touch emulation at 390×844: native touch orbit/pinch/tap, accessible object list and selected-object controls, exact source view, no page overflow and 40px minimum tested primary control.
 7. Light/dark desktop and 1024×768 screenshots of real selected source. Font geometry is recorded, but visual readability still needs actual artifact inspection.
+9. Independent selected-system opening: actual geometry and pose change for the selected system while another remains unchanged, disabled detail context, history and reset reversal.
+
 8. Browser input-to-two-frames timing and idle frame samples. This is CI host data, not a user-device/mobile FPS guarantee.
 
 Normal interaction uses real mouse/keyboard/CDP touch. Read-only exposed state and repository data are only assertions, never navigation mutation hooks. Browser network is restricted to the loopback server. No trace, video, browser profile, tokens or external screenshots are retained.

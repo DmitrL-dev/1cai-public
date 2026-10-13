@@ -6,7 +6,7 @@ The atlas visualizes accepted source commit `6c8feb291dd251826eebb99e145f4a39f56
 
 Semantic 3D shapes organize real source systems into entry, context, analysis, changes and evidence lanes. Click a shape to inspect it, then Open to see actual files and declarations. Role/directory facets, global search, pagination, exact source text, static dependency edges and bounded source routes are supported. The original assembly illustration, 2D graph and source browser remain accessible.
 
-Drag to orbit, Shift-drag to pan, wheel/pinch to zoom. Arrow keys rotate and tilt; Enter opens; Escape goes up; H resets. Back/forward restores camera and route selection. On mobile a readable fixed selection card and object list replace tiny projected labels.
+Drag to orbit, Shift-drag to pan, wheel/pinch to zoom. Arrow keys rotate and tilt; Enter opens; Escape goes up; H resets. Back/forward restores camera, route selection and per-system opening. The selected-system opening slider moves only that assembly; it is disabled for file/declaration scenes. The global slider applies to all groups and clears per-system overrides. Reset returns every assembly to its initial pose. On mobile a readable fixed selection card and object list replace tiny projected labels.
 
 Form and size are explanatory, not performance measurements. Detail colors indicate language; declaration/line counts are actual metadata. Python declarations use AST; other languages use lexical declaration locations, not full syntax/body parsing. Imports are not a call graph. The eight reading routes and thirteen architecture relations are clearly distinguished editorial interpretations, not runtime traces. No live telemetry or automatic product execution is present.
 
@@ -22,7 +22,7 @@ npm run build
 
 See data/README.md for extraction/hash verification and the compact editorial seed. The extractor refuses a different tree. Generated datasets and viewer artifacts are deliberately excluded from source control.
 
-`dist/index.html` is the hosted viewer. It fetches exact source text from same-origin `source-texts.json` on first inspection. `offline/Rentgen_Anatomy_Explorer.html` is the fully standalone variant. Source is escaped text; it is never executed. The hosted CSP allows same-origin reads; offline permits no connections.
+`dist/index.html` is the hosted viewer. It fetches exact source text from same-origin `source-texts.json` on first inspection. `offline/Rentgen_Anatomy_Explorer.html` is the fully standalone variant. Source is escaped text; it is never executed. The original source payload and hash preserve exact bytes; CRLF/LF/CR line boundaries are normalized only for display. Build-time duration fields remain in geometry reports but are omitted from the distributable payload, so independent builds of the same source have stable hashes. The hosted CSP allows same-origin reads; offline permits no connections.
 
 ## Toolkit and checks
 
