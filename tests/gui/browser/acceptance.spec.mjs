@@ -189,6 +189,9 @@ test('genuine Chromium 200 percent zoom reflows and keeps controls operable', as
   await writeFile(testInfo.outputPath('pagination-zoom-measurement.json'),JSON.stringify({factor:2,pageCapture},null,2)+'\n');
   await exerciseComparison(page,app);
   expect(await worker.evaluate(async()=>chrome.tabs.getZoom((await chrome.tabs.query({active:true,lastFocusedWindow:true}))[0].id))).toBe(2);
+  await page.locator('.comparison-report-controls').scrollIntoViewIfNeeded();
+  await expect(page.locator('#compare-report-json')).toBeInViewport({ratio:1});
+  const reportCapture=await captureNativeViewport(page,context,testInfo,'browser-zoom-200-report-controls.png');
   const comparisonCaptures={};
   for(const [side,label] of [['before','Код до'],['after','Код после']]){
     const code=page.getByLabel(label,{exact:true});await code.scrollIntoViewIfNeeded();
@@ -200,7 +203,7 @@ test('genuine Chromium 200 percent zoom reflows and keeps controls operable', as
     expect(bounds.y+bounds.height).toBeLessThanOrEqual(capture.viewport.height+1);
     comparisonCaptures[side]={...capture,bounds};
   }
-  await writeFile(testInfo.outputPath('comparison-zoom-measurement.json'),JSON.stringify({factor:2,comparisonCaptures},null,2)+'\n');
+  await writeFile(testInfo.outputPath('comparison-zoom-measurement.json'),JSON.stringify({factor:2,comparisonCaptures,reportCapture},null,2)+'\n');
   await exerciseLiteralSearch(page,app);
   expect(await worker.evaluate(async()=>chrome.tabs.getZoom((await chrome.tabs.query({active:true,lastFocusedWindow:true}))[0].id))).toBe(2);
   await page.locator('.source-hit').scrollIntoViewIfNeeded();

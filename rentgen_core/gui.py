@@ -40,6 +40,7 @@ ASSETS = Path(__file__).with_name("gui_assets")
 STATIC = {"/": ("index.html", "text/html; charset=utf-8"),
           "/app.js": ("app.js", "text/javascript; charset=utf-8"),
           "/comparison.js": ("comparison.js", "text/javascript; charset=utf-8"),
+          "/report-download.js": ("report-download.js", "text/javascript; charset=utf-8"),
           "/model.js": ("model.js", "text/javascript; charset=utf-8"),
           "/app.css": ("app.css", "text/css; charset=utf-8"),
           "/mark.svg": ("mark.svg", "image/svg+xml")}
@@ -442,7 +443,8 @@ class Workspace(ComparisonWorkspace):
             search_worker.join()
         if comparison_worker:
             comparison_worker.join()
-        with self.io_lock:
+        # Never wait for a reader while holding the workspace lock.
+        with self.report_lock, self.io_lock:
             self.temp.cleanup()
 
 
@@ -507,7 +509,7 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
 
-    def _headers(self, status, content_type, length):
+    def _headers(self, status, content_type, length, extra=None):
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(length))
@@ -518,6 +520,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Cross-Origin-Resource-Policy", "same-origin")
         self.send_header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
         self.send_header("Content-Security-Policy", "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'")
+        for name, value in (extra or {}).items():
+            self.send_header(name, value)
         self.end_headers()
 
     def _json(self, value, status=200, authorize=True, error=False, validate=None):
@@ -726,6 +730,9 @@ class Handler(BaseHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError, socket.timeout):
             return
         except Exception as error:
+            if getattr(self, "_report_started", False):
+                self.close_connection = True
+                return
             code = error.code if isinstance(error, CoreError) else "INVALID_REQUEST" if isinstance(error, (ValueError, UnicodeError)) else "INTERNAL_ERROR"
             # A revoked project must not release stale source-specific errors.
             if code != "UNAUTHORIZED":

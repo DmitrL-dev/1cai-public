@@ -1,3 +1,5 @@
+import {readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import {expect,importZip,noHorizontalOverflow} from './fixtures.mjs';
 export async function comparisonBeforeReady(page){
   await expect(page.locator('#progress-dialog')).not.toBeVisible();
@@ -29,4 +31,12 @@ export async function lastComparisonSource(page,app){
   await expect(page.locator('#compare-source img')).toHaveCount(0);
   await noHorizontalOverflow(page);
 }
-export async function exerciseComparison(page,app){await openComparison(page,app);await lastComparisonSource(page,app);await expect(page.locator('#toast')).not.toBeVisible();}
+export async function exerciseComparison(page,app){
+  await openComparison(page,app);await lastComparisonSource(page,app);await expect(page.locator('#toast')).not.toBeVisible();
+  const event=page.waitForEvent('download');await page.getByRole('button',{name:'Скачать JSON-отчёт',exact:true}).click();
+  const download=await event;expect(await download.failure()).toBeNull();
+  const bytes=await readFile(await download.path()),digest=createHash('sha256').update(bytes).digest('hex');
+  expect(JSON.parse(bytes.toString('utf8')).rows).toHaveLength(405);
+  await expect(page.locator('#compare-report-status')).toContainText(digest);
+  await noHorizontalOverflow(page);
+}

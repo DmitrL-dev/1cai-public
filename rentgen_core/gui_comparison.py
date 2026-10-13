@@ -91,8 +91,11 @@ class ComparisonWorkspace:
         self.comparison_pending = None
         self.comparison_current = None
         self.comparison_worker = None
+        self.report_lock = threading.Lock()
+        self._report_generation = 0
 
     def _invalidate_comparison_page(self):
+        self._report_generation += 1
         if self.comparison_current:
             self.comparison_current.page = None
 
@@ -372,11 +375,17 @@ def dispatch_comparison(handler, path):
         "/api/comparison-start": {"job", "input_sha256", "filename"},
         "/api/comparison-cancel": {"comparison"},
         "/api/comparison-page": {"pair", "before_sha256", "after_sha256", "offset", "status"},
+        "/api/comparison-report": {"pair", "before_sha256", "after_sha256", "format"},
     }
     if method != "POST" or path not in fields:
         return False
     if handler.headers.get_all("Content-Type") != ["application/json"]:
         fail("INVALID_REQUEST")
+    if path == "/api/comparison-report":
+        from .gui_report import dispatch_report, parse_request
+        handler._query(set())
+        dispatch_report(handler, parse_request(handler._body(2048)))
+        return True
     payload = json.loads(handler._body(2048))
     if type(payload) is not dict or set(payload) != fields[path]:
         fail("INVALID_REQUEST")
