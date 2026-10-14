@@ -34,7 +34,10 @@ def test_exact_rename_only_and_multi_record(api):
     struct.pack('<III', 0, 5, 3)+b'abc', record()[:-1], record()+b'xxxx',
     struct.pack('<III', 13, 5, 2)+b'ab'+record(),
     struct.pack('<III', 1000, 5, 2)+b'ab', record('x/y'), record('x\\y'),
-    record('x\0y'), record(action=6), struct.pack('<III', 0, 5, 2)+b'\x00\xd8'])
+    record('x\0y'), record(action=6), struct.pack('<III', 0, 5, 2)+b'\x00\xd8'],
+    ids=['empty', 'short-header', 'buffer-overflow', 'odd-name-bytes',
+         'truncated-name', 'trailing-data', 'unaligned-offset', 'offset-overflow',
+         'forward-slash', 'backslash', 'nul-name', 'unknown-action', 'surrogate'])
 def test_malformed_overflow_truncation_rejected(api, data):
     with pytest.raises(RuntimeError):
         api.rename_count(data)
