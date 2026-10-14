@@ -93,21 +93,45 @@ def test_run_refuses_missing_actual_authority_before_constructor_or_permissions(
     with pytest.raises(RuntimeError): module.require_ready(worker,context)
 
 
-def test_quiet_wait_tolerates_valid_running_journal_before_first_event():
-    module=api();rows=iter([None,{'phase':'running','cycle':1,'event':None},
-        {'phase':'running','cycle':1,'event':{'status':'unchanged'}}])
+def test_quiet_wait_uses_original_handle_and_never_reads_live_journal():
+    module=api();calls=[]
     def require(ok,msg):
         if not ok: raise RuntimeError(msg)
-    def wait(check,*args):
-        for _ in range(3):
-            result=check()
-            if result: return result
-        pytest.fail('Quiet state never reached')
-    worker=SimpleNamespace(Acceptance=object,require=require,wait_until=wait)
+    worker=SimpleNamespace(Acceptance=object,require=require,bounded=lambda seconds:seconds)
     cls=module.acceptance_type(worker,None,None,None,None,None,None);test=cls.__new__(cls)
-    test.current=lambda:{'status':{'state':4}}
-    test.journal=SimpleNamespace(read=lambda:next(rows))
-    assert test.quiet()['event']['status']=='unchanged'
+    test.event=lambda *a,**kw:None
+    test.current=lambda:{'status':{'state':4,'pid':17}}
+    test.held=SimpleNamespace(pid=17,require_alive=lambda:calls.append('held_alive'))
+    test.journal=SimpleNamespace(read=lambda:pytest.fail('Live journal must not be opened'))
+    def wait(alive,*,seconds):
+        assert seconds==45;alive();calls.append('directory_hint')
+    test.quiet(SimpleNamespace(wait=wait))
+    assert calls==['held_alive','held_alive','directory_hint','held_alive','held_alive']
+    test.current=lambda:{'status':{'state':4,'pid':18}}
+    with pytest.raises(RuntimeError,match='SCM PID'): test.quiet(SimpleNamespace(wait=wait))
+
+
+@pytest.mark.parametrize('interrupted',[False,True])
+@pytest.mark.parametrize('change',['valid','same_run','bad_run','cycle0','cycle_bool','failures',
+    'failures_bool','phase','event','missing'])
+def test_offline_quiet_journal_requires_fresh_completed_successful_run(interrupted,change):
+    module=api()
+    previous={'run_id':'00000000-0000-0000-0000-000000000001'}
+    doc={'run_id':'00000000-0000-0000-0000-000000000002','cycle':1,'failures':0,
+        'phase':'running' if interrupted else 'idle',
+        'event':{'status':'unchanged' if interrupted else 'stopped'}}
+    if change=='same_run': doc['run_id']=previous['run_id']
+    if change=='bad_run': doc['run_id']='not-a-run'
+    if change=='cycle0': doc['cycle']=0
+    if change=='cycle_bool': doc['cycle']=True
+    if change=='failures': doc['failures']=1
+    if change=='failures_bool': doc['failures']=False
+    if change=='phase': doc['phase']='idle' if interrupted else 'running'
+    if change=='event': doc['event']=None
+    if change=='missing': doc=None
+    if change=='valid': assert module.validate_quiet_journal(previous,doc,interrupted=interrupted)==doc
+    else:
+        with pytest.raises(RuntimeError): module.validate_quiet_journal(previous,doc,interrupted=interrupted)
 
 
 def test_unknown_or_live_stock_children_prevent_sdk_acl_restoration():
@@ -224,3 +248,197 @@ def test_failure_event_reader_requires_fixed_fields_and_observed_scm_pid(change)
     if change=='valid': assert module.validate_failure_events(rows,name,{321})==[doc]
     else:
         with pytest.raises(RuntimeError): module.validate_failure_events(rows,name,{321})
+
+
+def test_publication_includes_outbox_tail_beyond_default_peek_limit():
+    module=api()
+    cls=module.acceptance_type(SimpleNamespace(Acceptance=object),None,None,None,None,None,None)
+    test=cls.__new__(cls)
+    events=[{'id':i,'event':{'status':'error','code':'EXAMPLE'}} for i in range(101)]
+    limits=[]
+    def peek(limit=100):
+        limits.append(limit);return events[:limit]
+    test.outbox=SimpleNamespace(MAX_EVENTS=1000,peek=peek)
+    test.observer=SimpleNamespace(status=lambda:{},findings_status=lambda:{'state':None})
+    assert test.publication()['outbox']==events
+    assert limits==[1000]
+
+
+@pytest.mark.parametrize('status',['unchanged','analyzed','error'])
+def test_stop_overwrite_needs_complete_outbox_to_infer_unchanged(tmp_path,status):
+    from rentgen_core.git_watcher import NotificationOutbox,SchedulerJournal
+    from rentgen_core.service_composition import GitAuditWorker
+    from threading import Event
+    module=api();journal=SchedulerJournal(tmp_path/'journal.json');outbox=NotificationOutbox(tmp_path/'outbox.json')
+    previous_id=journal.begin();journal.stop(previous_id,1,0);previous=journal.read()
+    # Place a distinguishing new event beyond the default peek prefix. None
+    # may be acknowledged/cleared by qualification to make a repeat look quiet.
+    for _ in range(100): outbox.enqueue({'status':'analyzed'})
+    before=outbox.peek(limit=outbox.MAX_EVENTS)
+    stock=GitAuditWorker.__new__(GitAuditWorker)
+    stock._started=False;stock._lease=object()
+    stock.config=SimpleNamespace(interval_seconds=5,max_cycles=1,scanner=tmp_path/'bsl-scan.exe')
+    stock.watcher=SimpleNamespace(tick=lambda:{'status':status,**({'code':'GIT_HEAD_CHANGED'} if status=='error' else {})})
+    stock.journal=journal;stock.outbox=outbox
+    if status=='error':
+        from rentgen_core.errors import CoreError
+        with pytest.raises(CoreError): stock.run(Event())
+    else: assert stock.run(Event())==1
+    proof=module.validate_quiet_journal(previous,journal.read())
+    assert proof['event']=={'status':'stopped'}  # last tick event was overwritten
+    assert outbox.peek()==before  # default prefix would hide a new notification
+    assert (outbox.peek(limit=outbox.MAX_EVENTS)==before)==(status=='unchanged')
+
+
+@pytest.mark.parametrize('change',['valid','cycle0','publication','source','error'])
+def test_repeat_arms_before_start_and_proves_only_after_stop_and_reap(tmp_path,change):
+    from copy import deepcopy
+    module=api();calls=[];live=False
+    previous={'run_id':'00000000-0000-0000-0000-000000000001'}
+    journal={'run_id':'00000000-0000-0000-0000-000000000002','cycle':0 if change=='cycle0' else 1,
+        'failures':0,'phase':'idle','event':{'status':'stopped'}}
+    doc={'outbox':[{'id':1}], 'source':'bound','status':{'error':None}}
+    def require(ok,msg):
+        if not ok: raise RuntimeError(msg)
+    worker=SimpleNamespace(Acceptance=object,require=require,save=lambda *a:calls.append('save'))
+    def validate(doc,**kw):
+        calls.append('validate_publication');require(doc['status'].get('error') is None,'Observer error')
+    measurement=SimpleNamespace(validate_publication=validate)
+    cls=module.acceptance_type(worker,None,None,None,None,None,measurement);test=cls.__new__(cls)
+    test.f={'project_id':'p'};test.source=tmp_path;test.output=tmp_path;test.held=None
+    test.current=lambda:{'status':{'state':4 if live else 1}}
+    def read():
+        assert not live,'Live journal opened';calls.append('journal_read')
+        return journal if 'stop_reap' in calls else previous
+    test.journal=SimpleNamespace(read=read)
+    test.source_before=lambda label:calls.append('source_before') or {'files':'fixed'}
+    def source_after(*args):
+        assert not live;calls.append('source_after')
+        require(change!='source','Source changed')
+    test.unchanged_source=source_after
+    test.stable=lambda value:{**value,'status':{}}
+    def publication():
+        assert not live;calls.append('publication')
+        result=deepcopy(doc)
+        if change=='publication' and 'stop_reap' in calls: result['outbox'].append({'id':2})
+        if change=='error' and 'stop_reap' in calls: result['status']['error']='OBSERVER_FAILED'
+        return result
+    test.publication=publication
+    class Hint:
+        def __enter__(self):
+            assert not live;calls.append('arm');return self
+        def __exit__(self,*args): calls.append('hint_close')
+    test.quiet_hint=Hint
+    def start():
+        nonlocal live
+        assert calls[-1]=='arm';live=True;calls.append('start')
+    test.start=start
+    test.quiet=lambda hint:calls.append('hint')
+    def stop():
+        nonlocal live
+        live=False;calls.append('stop_reap')
+    test.stop=stop;test.event=lambda *a,**kw:calls.append('accepted')
+    if change=='valid': test.unchanged('repeat',['commit']);assert calls[-1]=='accepted'
+    else:
+        with pytest.raises(RuntimeError): test.unchanged('repeat',['commit'])
+        assert 'accepted' not in calls
+    assert calls.index('arm')<calls.index('start')<calls.index('stop_reap')
+    assert calls[calls.index('stop_reap')+1:calls.index('stop_reap')+3]==['hint_close','journal_read']
+
+
+@pytest.mark.parametrize('event',[{'status':'unchanged'},None,{'status':'analyzed'}])
+def test_interruption_reads_after_reaping_and_refuses_nonquiet_recovery(tmp_path,event):
+    from contextlib import nullcontext
+    module=api();calls=[];live=False;children_live=False
+    previous={'run_id':'00000000-0000-0000-0000-000000000001'}
+    journal={'run_id':'00000000-0000-0000-0000-000000000002','phase':'running',
+        'cycle':1,'failures':0,'event':event}
+    (tmp_path/'git-journal.json').write_text('retained offline journal')
+    def require(ok,msg):
+        if not ok: raise RuntimeError(msg)
+    def wait(check,*args):
+        assert check()
+    worker=SimpleNamespace(Acceptance=object,require=require,wait_until=wait,sha=lambda p:'digest')
+    measurement=SimpleNamespace(validate_publication=lambda *a,**kw:None)
+    cls=module.acceptance_type(worker,None,None,None,None,None,measurement);test=cls.__new__(cls)
+    test.f={'project_id':'p'};test.source=tmp_path;test.output=tmp_path;test.held=None
+    test.current=lambda:{'status':{'state':4 if live else 1}}
+    test.state=lambda *a:{'status':{'state':1,'pid':0}}
+    test.observer=SimpleNamespace(profile=tmp_path,locked=nullcontext)
+    def read():
+        assert not live and not children_live,'Journal read before original process/children reaped'
+        calls.append('journal_read');return journal if 'terminate' in calls else previous
+    def recover(*a):
+        calls.append('recover');journal['phase']='recovered'
+    test.journal=SimpleNamespace(read=read,recover=recover)
+    test.source_before=lambda *a:{'fixed':'source'}
+    test.unchanged_source=lambda *a:calls.append('source_checked')
+    test.stable=lambda doc:doc;test.publication=lambda:{'fixed':'publication'}
+    class Hint:
+        def __enter__(self):
+            assert not live;calls.append('arm');return self
+        def __exit__(self,*a):calls.append('hint_close')
+    test.quiet_hint=Hint
+    def reap():
+        nonlocal live
+        calls.append('reap');live=False
+    def start(*,interrupt):
+        assert interrupt is True
+        nonlocal live,children_live
+        assert calls[-1]=='arm';live=True;children_live=True;calls.append('start')
+        test.held=SimpleNamespace(pid=17,require_alive=lambda:calls.append('held_alive'),wait=reap,
+            terminate=lambda:calls.append('terminate'))
+    test.start=start;test.quiet=lambda hint:calls.append('hint')
+    test.terminate_owned_running_process=lambda pid:calls.append('terminate')
+    def children():
+        nonlocal children_live
+        assert not live;children_live=False;calls.append('children_reaped');return []
+    test.children=children;test.failed_start=lambda *a:calls.append('refused_start')
+    test.unchanged=lambda *a:calls.append('recovered_repeat')
+    test.event=lambda *a,**kw:calls.append('event')
+    if event=={'status':'unchanged'}:
+        test.interrupted_recovery(['commit'])
+        assert calls.index('children_reaped')<calls.index('recover')<calls.index('recovered_repeat')
+    else:
+        with pytest.raises(RuntimeError): test.interrupted_recovery(['commit'])
+        assert 'recover' not in calls and 'refused_start' not in calls
+    assert calls.index('arm')<calls.index('start')<calls.index('terminate')<calls.index('reap')<calls.index('children_reaped')
+
+
+@pytest.mark.parametrize('allowed',[True,False])
+def test_termination_uses_original_held_handle_only_for_authorized_lifetime(allowed):
+    module=api();calls=[]
+    def require(ok,msg):
+        if not ok: raise RuntimeError(msg)
+    def terminate(handle,code):
+        calls.append((handle,code));return True
+    kernel=SimpleNamespace(TerminateProcess=terminate,
+        OpenProcess=lambda *a:pytest.fail('Do not reopen service by PID'))
+    native=SimpleNamespace(kernel=kernel,require=lambda ok,msg:require(ok,msg))
+    test=SimpleNamespace(native=native,current=lambda:{'status':{'state':4,'pid':17}},event=lambda *a,**kw:None)
+    held=module.HeldProcess.__new__(module.HeldProcess)
+    held.test=test;held.worker=SimpleNamespace(require=require);held.pid=17
+    held.handle=12345;held.interrupt=allowed;held.require_alive=lambda:calls.append('alive')
+    if allowed:
+        held.terminate();assert calls==['alive','alive',(12345,87)]
+    else:
+        with pytest.raises(RuntimeError,match='observation-only'): held.terminate()
+        assert calls==[]
+
+
+def test_journal_hint_loads_hash_bound_sibling_under_isolated_python():
+    import subprocess,sys
+    path=Path(__file__).resolve().parents[2]/'scripts/verification/scm_stock_git_lifecycle.py'
+    code="""import importlib.util
+from pathlib import Path
+from types import SimpleNamespace
+import sys
+path=Path(sys.argv[1])
+spec=importlib.util.spec_from_file_location('lifecycle',path)
+module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+cls=module.acceptance_type(SimpleNamespace(Acceptance=object),None,None,None,None,None,None)
+test=cls.__new__(cls);test.native=None;test.observer=SimpleNamespace(profile=path.parent)
+assert type(test.quiet_hint()).__name__=='JournalRenameHint'
+"""
+    result=subprocess.run([sys.executable,'-I','-c',code,str(path)],capture_output=True,timeout=10)
+    assert result.returncode==0,result.stderr.decode()

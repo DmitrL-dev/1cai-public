@@ -34,7 +34,8 @@ def test_runtime_inspection_binds_coordinator_hashes_and_never_constructs_native
     monkeypatch.setattr(module,'load_script',load)
     assert module.runtime_stage(tmp_path,'prepare',java_home=tmp_path/'jdk',jar=tmp_path/'jar')==0
     binding=json.loads((evidence/'stock-coordinator.json').read_text('utf-8'))
-    assert set(binding['scripts'])=={'verify_stock_git_scm.py','scm_stock_git_lifecycle.py','scm_stock_git_measurement.py'}
+    assert set(binding['scripts'])=={'verify_stock_git_scm.py','scm_stock_git_lifecycle.py','scm_stock_git_measurement.py',
+        'scm_journal_notifications.py'}
     assert module.runtime_stage(tmp_path,'inspect')==0
     assert [e[0] for e in events]==['prepare']
     binding['source_commit']='f'*40;(evidence/'stock-coordinator.json').write_text(json.dumps(binding),'utf-8')

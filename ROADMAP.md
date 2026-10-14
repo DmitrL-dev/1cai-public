@@ -190,6 +190,12 @@ adapters с отдельной Windows/macOS квалификацией. Python 
 [Designer XML](docs/product/METADATA-LIVE-APPLY.md) writers ограничены своими
 сценариями; исторические native-опыты не подтверждают новый пакет.
 
+В исходниках добавляется отдельный read-only [инвентарь трёх ZIP](docs/product/LOCAL-GUI.md#инвентарь-трёх-zip-base-current-upstream)
+с явно выбранными Base/Current/Upstream: пять состояний изменений по точному
+пути и проверенным digest/размеру, полные счётчики и страницы. Это ограниченный
+слой сценариев 04/05, не доказательство общего предка, семантическое слияние,
+кандидат обновления или native-приёмка. Полные сценарии остаются в плане.
+
 Для обновлений развивать [three-way план](docs/product/THREE-WAY-UPDATES.md),
 [Designer XML по UUID](docs/product/METADATA-THREE-WAY.md) и
 [EDT identity](docs/product/EDT-IDENTITY-THREE-WAY.md). План и кандидат в памяти
