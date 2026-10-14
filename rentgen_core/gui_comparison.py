@@ -17,17 +17,26 @@ import time
 from .errors import CoreError
 from .rust_input import RustInputSession
 from .submitted_export import analyze_export
+from .source_line_diff import bounded_line_diff
 
 PAGE_LIMIT = 200
 MAX_OFFSET = 8000
 MAX_ROWS = 8192
 MAX_SOURCE = 256 * 1024
+LINE_DIFF_WALL_SECONDS = 45
+LINE_DIFF_CPU_SECONDS = 10
 ACTIVE = frozenset({"awaiting_upload", "uploading", "analyzing"})
 FILTERS = frozenset({"all", "changes", "added", "removed", "modified", "unchanged"})
 
 
 def fail(code):
     raise CoreError(code, "Local ZIP comparison could not complete the request")
+
+
+def _line_diff_budget(wall, cpu):
+    if (time.monotonic() - wall > LINE_DIFF_WALL_SECONDS
+            or time.thread_time() - cpu > LINE_DIFF_CPU_SECONDS):
+        fail("LINE_DIFF_TIMEOUT")
 
 
 def _id(value):
@@ -328,6 +337,92 @@ class ComparisonWorkspace:
         finally:
             self.io_lock.release()
 
+    def _comparison_line_references(self, pair, before_sha256, after_sha256, page, path):
+        """Resolve both sides from the one current server-owned inventory page."""
+        try:
+            item = self.validate_comparison_page(pair, before_sha256, after_sha256, page)
+        except CoreError:
+            fail("SOURCE_NOT_AVAILABLE")
+        if type(path) is not str or item.cancel.is_set():
+            fail("SOURCE_NOT_AVAILABLE")
+        row = next((row for row in item.page["rows"] if row["path"] == path), None)
+        if row is None:
+            fail("SOURCE_NOT_AVAILABLE")
+        refs = {}
+        for side in ("before", "after"):
+            refs[side] = None if row[side] is None else {
+                "input_sha256": getattr(item, "before_sha256" if side == "before" else "sha256"),
+                "relative_path": row["path"], **row[side]}
+        return (item.before.path, item.path), refs
+
+    def comparison_line_diff(self, pair, before_sha256, after_sha256, page, path, offset):
+        """Bounded synchronous read; disconnect is not a server cancellation API.
+
+        Every page recomputes the complete alignment. No diff cache or historical
+        capability survives this call. IO and Python work have separate bounds.
+        """
+        self.config.authorize()
+        if type(offset) is not int or not 0 <= offset <= MAX_OFFSET or offset % PAGE_LIMIT:
+            fail("INVALID_QUERY_OPTIONS")
+        selectors = (pair, before_sha256, after_sha256, page, path)
+        wall, cpu = time.monotonic(), time.thread_time()
+        if not self.io_lock.acquire(blocking=False):
+            fail("BUSY")
+        try:
+            with self.lock:
+                archives, refs = self._comparison_line_references(*selectors)
+
+            def authorize():
+                self.config.authorize()
+                with self.lock:
+                    if self._comparison_line_references(*selectors) != (archives, refs):
+                        fail("SOURCE_NOT_AVAILABLE")
+                _line_diff_budget(wall, cpu)
+
+            authorize()
+            if any(ref and ref["size_bytes"] > MAX_SOURCE for ref in refs.values()):
+                result = bounded_line_diff(None, None, check=authorize)
+                result.update(status="unavailable", reason="SOURCE_TOO_LARGE", rows=[])
+                for side, ref in refs.items():
+                    result[side] = {"present": ref is not None,
+                                    "size_bytes": None if ref is None else ref["size_bytes"],
+                                    "bom": None, "line_count": None,
+                                    "newlines": None, "final_newline": None}
+            else:
+                sources = []
+                for archive, ref in zip(archives, refs.values()):
+                    authorize()
+                    if ref is None:
+                        sources.append(None)
+                        continue
+                    with RustInputSession(self.config.input_core, self.config.input_core_sha256,
+                                          authorize=authorize) as session:
+                        manifest = session.open_import(archive, ref["input_sha256"])
+                        entry = next((entry for entry in session.entries(manifest)
+                                      if entry["path"] == ref["relative_path"]), None)
+                        if (entry is None or entry["raw_sha256"] != ref["raw_sha256"]
+                                or entry["size_bytes"] != ref["size_bytes"]):
+                            fail("SOURCE_NOT_AVAILABLE")
+                        if entry["size_bytes"] > MAX_SOURCE:
+                            fail("SOURCE_TOO_LARGE")
+                        sources.append(session.read_entry(entry))
+                    authorize()
+                result = bounded_line_diff(*sources, check=authorize)
+            total = len(result["rows"])
+            if offset and offset >= total:
+                fail("INVALID_QUERY_OPTIONS")
+            result["rows"] = result["rows"][offset:offset + PAGE_LIMIT]
+            result.update(pair=pair, before_sha256=before_sha256, after_sha256=after_sha256,
+                          page=page, path=path, input_refs=refs,
+                          coverage={"alignment": result["status"], "full_scan": result["status"] == "complete"},
+                          pagination={"offset": offset, "limit": PAGE_LIMIT, "total": total,
+                                      "returned": len(result["rows"]), "has_previous": offset > 0,
+                                      "has_next": offset + len(result["rows"]) < total})
+            authorize()
+            return result
+        finally:
+            self.io_lock.release()
+
     def _clear_comparison(self):
         """Caller owns both io_lock and lock. No accepted reader can remain."""
         for item in (self.comparison_pending, self.comparison_current):
@@ -375,6 +470,7 @@ def dispatch_comparison(handler, path):
         "/api/comparison-start": {"job", "input_sha256", "filename"},
         "/api/comparison-cancel": {"comparison"},
         "/api/comparison-page": {"pair", "before_sha256", "after_sha256", "offset", "status"},
+        "/api/comparison-line-diff": {"pair", "before_sha256", "after_sha256", "page", "path", "offset"},
         "/api/comparison-report": {"pair", "before_sha256", "after_sha256", "format"},
     }
     if method != "POST" or path not in fields:
@@ -386,9 +482,26 @@ def dispatch_comparison(handler, path):
         handler._query(set())
         dispatch_report(handler, parse_request(handler._body(2048)))
         return True
-    payload = json.loads(handler._body(2048))
+    payload = json.loads(handler._body(8192 if path == "/api/comparison-line-diff" else 2048))
     if type(payload) is not dict or set(payload) != fields[path]:
         fail("INVALID_REQUEST")
+    if path == "/api/comparison-line-diff":
+        handler._query(set())
+        wall, cpu = time.monotonic(), time.thread_time()
+        result = app.comparison_line_diff(**payload)
+        with app.lock:
+            def validate():
+                app.config.authorize()
+                _, refs = app._comparison_line_references(payload["pair"], payload["before_sha256"],
+                    payload["after_sha256"], payload["page"], payload["path"])
+                if refs != result["input_refs"]:
+                    fail("SOURCE_NOT_AVAILABLE")
+                _line_diff_budget(wall, cpu)
+            validate()
+            # _json has a separate 4 MiB serialized-response cap and invokes
+            # validate after serialization, immediately before disclosure.
+            handler._json(result, validate=validate)
+        return True
     with app.lock:
         if path == "/api/comparison-start":
             result = app.reserve_comparison(payload["job"], payload["input_sha256"], payload["filename"])

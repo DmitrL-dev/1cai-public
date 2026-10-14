@@ -16,6 +16,7 @@ from rentgen_core.local_identity import initialize_local_identity
 from rentgen_core.registry import ProjectRegistry
 from attribute_fixture import build_attribute_archive
 from occurrence_fixture import build_occurrence_archive
+from line_diff_fixture import build_line_diff_archives
 
 
 def sha(path):
@@ -116,6 +117,7 @@ def main():
         archives['attributes'] = attributes.pop('archive')
         occurrences = build_occurrence_archive(root)
         archives['occurrences'] = occurrences.pop('archive')
+        line_diff = build_line_diff_archives(root)
         corrupt = root / 'corrupt.zip'
         corrupt.write_bytes(b'Owned deliberately invalid ZIP')
         compare_code = {}
@@ -141,7 +143,7 @@ def main():
             # Private pipe only: callers must never log this session bootstrap.
             print(json.dumps({'origin': server.origin, 'token': app.token, 'archives': archives,
                               'attributes': attributes,
-                              'occurrences': occurrences,
+                              'occurrences': occurrences, 'line_diff': line_diff,
                               'corrupt': str(corrupt), 'module': module, 'compare_code': compare_code,
                               'compare_hashes': {side: hashlib.sha256(code.encode()).hexdigest() for side, code in compare_code.items()},
                               'many_name': many_name, 'many_synonym': many_synonym, 'many_path': many_path,
