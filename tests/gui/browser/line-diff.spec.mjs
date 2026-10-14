@@ -5,13 +5,51 @@ const region=page=>page.getByRole('region',{name:'Построчное срав�
 const rows=page=>region(page).locator('.comparison-diff-row');
 const next=page=>region(page).getByRole('button',{name:'Следующие строки',exact:true});
 const retry=page=>region(page).getByRole('button',{name:'Повторить сравнение строк',exact:true});
-async function openDiff(page,app){
-  await importZip(page,app.line_diff.archives.before.path);
-  await expect(page.locator('#progress-dialog')).not.toBeVisible();
-  await expect(page.locator('#page-subtitle')).toContainText('line-diff-before.zip');
-  await page.locator('[data-view="comparison"]').click();
-  await page.locator('#compare-file').setInputFiles(app.line_diff.archives.after.path);
-  await expect(page.locator('#compare-list button')).toHaveCount(13);
+async function openDiff(page,app,{holdReadiness=false}={}){
+  const replies=[];let starts=0;
+  const recordStart=request=>{if(request.url()===`${app.origin}/api/comparison-start`)starts++;};
+  const record=async response=>{
+    const path=new URL(response.url()).pathname;
+    if(!['/api/comparison-current','/api/comparison-start','/api/comparison-upload','/api/comparison','/api/comparison-page'].includes(path))return;
+    const item={path,http:response.status()};replies.push(item);if(replies.length>32)replies.shift();
+    try{const body=await response.json();Object.assign(item,{status:body.status,error:body.error,current:body.current?.status??null,pending:body.pending?.status??null,rows:Array.isArray(body.rows)?body.rows.length:undefined});}catch{item.body='unreadable';}
+  };
+  page.on('request',recordStart);page.on('response',record);
+  let release,observed;const held=new Promise(resolve=>release=resolve),seen=new Promise(resolve=>observed=resolve);
+  const pattern=`${app.origin}/api/comparison-current?*`;
+  const gate=async route=>{const response=await route.fetch();expect(response.status()).toBe(200);const data=await response.json();expect(data.current).toBeNull();expect(data.pending).toBeNull();observed();await held;await route.fulfill({response});};
+  try{
+    const imported=page.waitForResponse(async response=>new URL(response.url()).pathname==='/api/job'&&response.status()===200&&(await response.json()).status==='ready');
+    await importZip(page,app.line_diff.archives.before.path);
+    const accepted=await (await imported).json();
+    expect(accepted.result.input.input_sha256).toBe(app.line_diff.archives.before.sha256);
+    await expect(page.locator('#progress-dialog')).not.toBeVisible();
+    await expect(page.locator('#page-subtitle')).toContainText('line-diff-before.zip');
+    await expect(page.locator('#metric-objects')).toHaveText('1');
+    await expect(page.locator('#metric-modules')).toHaveText('11');
+    if(holdReadiness)await page.route(pattern,gate);
+    await page.locator('[data-view="comparison"]').click();
+    if(holdReadiness){
+      // A genuine delayed read-back must keep the input disabled. setInputFiles
+      // does not wait for enabled like a user's file-picker interaction does.
+      await seen;await expect(page.locator('#compare-file')).toBeDisabled();expect(starts).toBe(0);release();
+    }
+    await expect(page.locator('#compare-before')).toContainText(app.line_diff.archives.before.sha256);
+    await expect(page.locator('#compare-file')).toBeEnabled();
+    await expect(page.locator('#compare-message')).toContainText('Принятой пары пока нет');
+    await page.locator('#compare-file').setInputFiles(app.line_diff.archives.after.path);
+    await expect(page.locator('#compare-list button')).toHaveCount(13);
+    expect(starts).toBe(1);
+    await expect(page.locator('#compare-after')).toContainText(app.line_diff.archives.after.sha256);
+  }catch(error){
+    // Only bounded protocol status and UI text: never headers, session URLs,
+    // bootstrap values, ZIP contents or source-bearing response bodies.
+    const message=await page.locator('#compare-message').textContent().catch(()=>'<unavailable>');
+    error.message+=`\nComparison startup: ${JSON.stringify({starts,replies,message})}`;throw error;
+  }finally{
+    release();if(holdReadiness)await page.unroute(pattern,gate);
+    page.off('request',recordStart);page.off('response',record);
+  }
 }
 function reply(page,app,path,offset=0){
   return page.waitForResponse(response=>response.url()===`${app.origin}/api/comparison-line-diff`&&
@@ -43,7 +81,7 @@ const unicodeRows=[
 ];
 
 test('exact Unicode lines, inert markup, endings and BOM retain both byte-bound originals',async({page,app},testInfo)=>{
-  await openDiff(page,app);const {request,result}=await select(page,app,'AUnicode.bsl');
+  await openDiff(page,app,{holdReadiness:true});const {request,result}=await select(page,app,'AUnicode.bsl');
   expect(Object.keys(request).sort()).toEqual(['after_sha256','before_sha256','offset','page','pair','path']);
   expect(request).toMatchObject({before_sha256:app.line_diff.archives.before.sha256,after_sha256:app.line_diff.archives.after.sha256,path:'AUnicode.bsl',offset:0});
   expect(result).toMatchObject({...request,status:'complete',reason:null,coverage:{alignment:'complete',full_scan:true},
