@@ -8,6 +8,7 @@ from collections import Counter
 from .errors import CoreError
 from .metadata import _candidate, _child, _localized, _metadata, _text
 from .metadata_xml import parse_xml
+from .metadata_field_search import FieldSearch
 from .rust_input import RustInputSession
 
 PERMISSIONS = frozenset({"project:read", "analysis:run"})
@@ -81,6 +82,7 @@ def _analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha2
             or module_prefix.startswith("/") or any(part in {"", ".", ".."} for part in module_prefix[:-1].split("/"))):
         raise CoreError("INVALID_QUERY_OPTIONS", "Module scope must be an exact directory prefix")
     term = query.casefold()
+    field_search = FieldSearch(authorize) if page_offset is not _NO_PAGE and not module_search and term else None
     try:
         with RustInputSession(input_core, input_core_sha256, authorize=authorize) as session:
             manifest = session.open_import(archive, archive_sha256)
@@ -89,6 +91,8 @@ def _analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha2
             candidates = matches = unsupported = module_count = module_matches = 0
             for entry in sorted(entries, key=lambda item: item["path"].encode("utf-8")):
                 authorize()
+                if field_search is not None:
+                    field_search.checkpoint()
                 reference = {"input_sha256": archive_sha256, "relative_path": entry["path"], "raw_sha256": entry["raw_sha256"]}
                 if entry["path"].lower().endswith((".bsl", ".os", ".bsp")):
                     module_count += 1
@@ -122,7 +126,13 @@ def _analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha2
                     "uuid_status": "unverified", "input_ref": reference,
                 }
                 text = " ".join(value or "" for value in (row["name"], row["synonym"], kind, entry["path"]))
-                if module_search or not term or term in text.casefold():
+                child_total = 0
+                if field_search is not None:
+                    child_matches, child_total = field_search.match(meta, term)
+                    if child_total:
+                        row.update(child_matches=child_matches, child_matching_total=child_total,
+                                   child_matches_truncated=child_total > len(child_matches))
+                if module_search or not term or term in text.casefold() or child_total:
                     matches += 1
                     if matches > object_offset and len(objects) < limit:
                         objects.append(row)
@@ -149,6 +159,8 @@ def _analyze_export(ctx, *, archive, archive_sha256, input_core, input_core_sha2
                 "objects_truncated": matches > len(objects),
                 "modules": modules, "modules_truncated": module_matches > len(modules),
             }
+            if field_search is not None:
+                result["attribute_search"] = field_search.coverage(unsupported)
             if module_search:
                 result["matching_modules"] = module_matches
             if page_offset is not _NO_PAGE:

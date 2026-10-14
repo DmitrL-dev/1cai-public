@@ -14,6 +14,7 @@ sys.path.insert(0, str(ROOT))
 from rentgen_core import gui
 from rentgen_core.local_identity import initialize_local_identity
 from rentgen_core.registry import ProjectRegistry
+from attribute_fixture import build_attribute_archive
 
 
 def sha(path):
@@ -110,6 +111,8 @@ def main():
             output.writestr('Catalogs/SourceOwner/Ext/Zinvalid.os', b'\xff')
             output.writestr('Catalogs/SourceOwner/Ext/Zcontrol.bsp', b'bad\x00')
         archives['source'] = {'path': str(archive), 'sha256': sha(archive)}
+        attributes = build_attribute_archive(root)
+        archives['attributes'] = attributes.pop('archive')
         corrupt = root / 'corrupt.zip'
         corrupt.write_bytes(b'Owned deliberately invalid ZIP')
         compare_code = {}
@@ -134,6 +137,7 @@ def main():
         try:
             # Private pipe only: callers must never log this session bootstrap.
             print(json.dumps({'origin': server.origin, 'token': app.token, 'archives': archives,
+                              'attributes': attributes,
                               'corrupt': str(corrupt), 'module': module, 'compare_code': compare_code,
                               'compare_hashes': {side: hashlib.sha256(code.encode()).hexdigest() for side, code in compare_code.items()},
                               'many_name': many_name, 'many_synonym': many_synonym, 'many_path': many_path,
