@@ -84,8 +84,9 @@ test('exact Unicode lines, inert markup, endings and BOM retain both byte-bound 
   await openDiff(page,app,{holdReadiness:true});const {request,result}=await select(page,app,'AUnicode.bsl');
   expect(Object.keys(request).sort()).toEqual(['after_sha256','before_sha256','offset','page','pair','path']);
   expect(request).toMatchObject({before_sha256:app.line_diff.archives.before.sha256,after_sha256:app.line_diff.archives.after.sha256,path:'AUnicode.bsl',offset:0});
-  expect(result).toMatchObject({...request,status:'complete',reason:null,coverage:{alignment:'complete',full_scan:true},
-    pagination:{offset:0,limit:200,total:4,returned:4,has_previous:false,has_next:false}});
+  const {offset,...selection}=request;
+  expect(result).toMatchObject({...selection,status:'complete',reason:null,coverage:{alignment:'complete',full_scan:true},
+    pagination:{offset,limit:200,total:4,returned:4,has_previous:false,has_next:false}});
   expect(result.rows).toEqual(unicodeRows);await exactRows(page,unicodeRows);
   for(const side of ['before','after']){
     const source=app.line_diff.files['AUnicode.bsl'][side];
