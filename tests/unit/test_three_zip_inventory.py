@@ -169,14 +169,14 @@ def test_non_dictionary_entry_rejected(bad):
 @pytest.mark.parametrize("path", ["", ".", "..", "../a", "a/../b", "/a", "a/", "a//b", "a/./b",
                                   "a\\b", "C:/a", "a\0b", "a\nb", "CON", "com1.txt", "a/aux.txt",
                                   "a.", "a ", "a/<b", "a/|b", "a/?b", "a/*b", "\ud800", "\udfff",
-                                  "a" * 1025, "Я" * 513])
+                                  "a" * 1025, "Я" * 513], ids=['unsafe-path-1', 'unsafe-path-2', 'unsafe-path-3', 'unsafe-path-4', 'unsafe-path-5', 'unsafe-path-6', 'unsafe-path-7', 'unsafe-path-8', 'unsafe-path-9', 'unsafe-path-10', 'unsafe-path-11', 'unsafe-path-12', 'unsafe-path-13', 'unsafe-path-14', 'unsafe-path-15', 'unsafe-path-16', 'unsafe-path-17', 'unsafe-path-18', 'unsafe-path-19', 'unsafe-path-20', 'unsafe-path-21', 'unsafe-path-22', 'unsafe-path-23', 'unsafe-path-24', 'unsafe-path-25', 'unsafe-path-26'])
 def test_unsafe_or_oversized_paths_rejected(path):
     with pytest.raises(CoreError) as error:
         classify(one(A, path), (), ())
     assert error.value.code == "THREE_ZIP_INVENTORY_INVALID"
 
 
-@pytest.mark.parametrize("path", ["a" * 1024, "Я" * 512])
+@pytest.mark.parametrize("path", ["a" * 1024, "Я" * 512], ids=['limit-path-1', 'limit-path-2'])
 def test_path_byte_limit_is_inclusive(path):
     assert classify(one(A, path), (), ())[0][0]["path"] == path
 

@@ -17,6 +17,7 @@ from rentgen_core.registry import ProjectRegistry
 from attribute_fixture import build_attribute_archive
 from occurrence_fixture import build_occurrence_archive
 from threeway_fixture import build_threeway_archives
+from line_diff_fixture import build_line_diff_archives
 
 
 def sha(path):
@@ -118,6 +119,7 @@ def main():
         occurrences = build_occurrence_archive(root)
         archives['occurrences'] = occurrences.pop('archive')
         threeway = build_threeway_archives(root)
+        line_diff = build_line_diff_archives(root)
         corrupt = root / 'corrupt.zip'
         corrupt.write_bytes(b'Owned deliberately invalid ZIP')
         compare_code = {}
@@ -145,6 +147,7 @@ def main():
                               'attributes': attributes,
                               'occurrences': occurrences,
                               'threeway': threeway,
+                              'line_diff': line_diff,
                               'corrupt': str(corrupt), 'module': module, 'compare_code': compare_code,
                               'compare_hashes': {side: hashlib.sha256(code.encode()).hexdigest() for side, code in compare_code.items()},
                               'many_name': many_name, 'many_synonym': many_synonym, 'many_path': many_path,

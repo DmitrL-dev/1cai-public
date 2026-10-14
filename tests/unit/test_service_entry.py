@@ -151,7 +151,7 @@ def test_rejects_invalid_config_without_echo(configured, updates):
         b"\xff",
         b" " * 16385,
     ],
-)
+ ids=['invalid-config-1', 'invalid-config-2', 'invalid-config-3', 'invalid-config-4', 'invalid-config-5', 'invalid-config-6'])
 def test_rejects_malformed_or_oversized_json(configured, raw):
     configured.path.write_bytes(raw)
     with pytest.raises(CoreError) as raised:

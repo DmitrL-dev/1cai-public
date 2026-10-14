@@ -63,3 +63,13 @@
 #threeway-list h3{font-size:12px;line-height:1.5;margin-bottom:10px}
 #threeway-list p{font:11px/1.6 ui-monospace,monospace;margin-top:6px;overflow-wrap:anywhere}
 @media(max-width:800px){.threeway-inputs{grid-template-columns:minmax(0,1fr)}}
+/* Exact line alignment stays text-only, wraps long source lines and never widens mobile layouts. */
+.comparison-line-diff{min-width:0;margin-top:24px;border-top:1px solid var(--line);padding-top:12px;overflow-wrap:anywhere}
+.comparison-line-diff p{font-size:12px;line-height:1.7;margin-bottom:8px}
+.comparison-diff-evidence{min-width:0;overflow-wrap:anywhere}
+.comparison-diff-rows{list-style:none;padding:0;margin:12px 0;display:grid;gap:4px;min-width:0}
+.comparison-diff-row{min-width:0;padding:10px;border:1px solid var(--line);border-left:4px solid #8c9aaa;border-radius:5px}
+.comparison-diff-row.diff-delete{background:#fff0ef;border-left-color:#a53d35}
+.comparison-diff-row.diff-insert{background:#eaf7ef;border-left-color:#28734e}
+.comparison-diff-location{display:block;font-size:11px;line-height:1.6;overflow-wrap:anywhere}
+.comparison-diff-text{margin:5px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;font:12px/1.7 ui-monospace,monospace;tab-size:4;min-width:0}

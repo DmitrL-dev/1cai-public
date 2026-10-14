@@ -45,6 +45,8 @@ jobs:
           mkdir -p output
           python --version
           cargo +1.92.0 --version
+      - name: Bound all collected pytest IDs before expensive qualification
+        run: python -m pytest --collect-only -q
       - name: Locked Rust native and process contracts
         run: |
           cargo +1.92.0 test --locked --manifest-path rust/input-core/Cargo.toml

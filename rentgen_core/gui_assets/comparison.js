@@ -36,14 +36,80 @@ export function comparisonSourceMatches(pair,page,row,side,result){
   const ref=row[side];
   return !!ref&&result?.pair===pair.pair&&result.page===page.id&&result.side===side&&result.before_sha256===pair.before_sha256&&result.after_sha256===pair.after_sha256&&result.input_ref?.input_sha256===pair[side+'_sha256']&&result.input_ref?.relative_path===row.path&&result.input_ref?.raw_sha256===ref.raw_sha256&&result.size_bytes===ref.size_bytes&&result.encoding==='UTF-8'&&typeof result.text==='string'&&new TextEncoder().encode(result.text).length<=256*1024;
 }
+const diffReasons=['SOURCE_TOO_LARGE','SOURCE_ENCODING_UNSUPPORTED','LINE_LIMIT','WORK_LIMIT'];
+const integer=(value,max)=>Number.isSafeInteger(value)&&value>=0&&value<=max;
+// Validate the selected entry, exact archive/file identities, full alignment and page.
+export function comparisonLineDiffMatches(pair,page,row,offset,result){
+  if(!result||!integer(offset,8000)||offset%200||result.pair!==pair.pair||result.before_sha256!==pair.before_sha256||result.after_sha256!==pair.after_sha256||result.page!==page.id||result.path!==row.path)return false;
+  const complete=result.status==='complete';
+  if(!complete&&result.status!=='unavailable'||(complete?result.reason!==null:!diffReasons.includes(result.reason)))return false;
+  const limits=result.limits;
+  if(!limits||limits.source_bytes!==262144||limits.lines_per_side!==4096||limits.output_rows!==8192||limits.dp_cells!==1000000)return false;
+  if(result.coverage?.alignment!==result.status||result.coverage?.full_scan!==complete)return false;
+  for(const side of ['before','after']){
+    const ref=row[side],input=result.input_refs?.[side],e=result[side];
+    if(!e||e.present!==(ref!==null)||e.size_bytes!==(ref?.size_bytes??null))return false;
+    if(!ref){if(input!==null||['bom','line_count','newlines','final_newline'].some(key=>e[key]!==null))return false;continue;}
+    if(!input||input.input_sha256!==pair[side+'_sha256']||input.relative_path!==row.path||input.raw_sha256!==ref.raw_sha256||input.size_bytes!==ref.size_bytes)return false;
+    if(e.bom!==null&&typeof e.bom!=='boolean'||e.final_newline!==null&&typeof e.final_newline!=='boolean'||e.line_count!==null&&!integer(e.line_count,262144))return false;
+    if(e.newlines!==null&&(!e.newlines||!['LF','CRLF','CR'].every(key=>integer(e.newlines[key],262144))))return false;
+    if(complete&&(ref.size_bytes>262144||typeof e.bom!=='boolean'||typeof e.final_newline!=='boolean'||!integer(e.line_count,4096)||!e.newlines))return false;
+    if(e.line_count===null&&(e.newlines!==null||e.final_newline!==null))return false;
+    if(e.line_count!==null){
+      if(!e.newlines||typeof e.final_newline!=='boolean')return false;
+      const count=e.newlines.LF+e.newlines.CRLF+e.newlines.CR;
+      if(count!==e.line_count-(e.line_count&&!e.final_newline?1:0)||e.final_newline&&e.line_count===0)return false;
+      if(e.line_count===0&&e.size_bytes!==(e.bom?3:0))return false;
+      if(count+e.newlines.CRLF+(e.line_count&&!e.final_newline?1:0)+(e.bom?3:0)>e.size_bytes)return false;
+    }
+  }
+  const p=result.pagination,rows=result.rows;
+  if(!p||p.offset!==offset||p.limit!==200||!integer(p.total,8192)||!Array.isArray(rows)||rows.length>200||p.returned!==rows.length||rows.length!==Math.min(200,Math.max(0,p.total-offset))||p.has_previous!==(offset>0)||p.has_next!==(offset+rows.length<p.total))return false;
+  if(!complete){
+    const present=['before','after'].map(side=>result[side]).filter(e=>e.present);
+    const reasonMatches={
+      SOURCE_TOO_LARGE:present.some(e=>e.size_bytes>262144),
+      SOURCE_ENCODING_UNSUPPORTED:present.some(e=>e.size_bytes<=262144&&typeof e.bom==='boolean'&&e.line_count===null),
+      LINE_LIMIT:present.some(e=>e.line_count>4096),
+      WORK_LIMIT:present.every(e=>integer(e.line_count,4096)&&typeof e.bom==='boolean')
+    };
+    return offset===0&&p.total===0&&rows.length===0&&reasonMatches[result.reason];
+  }
+  const before=result.before.line_count??0,after=result.after.line_count??0;
+  if(p.total<Math.max(before,after)||p.total>before+after||offset>0&&offset>=p.total)return false;
+  let left=null,right=null,bytes=0;
+  const observed={before:{bytes:0,LF:0,CRLF:0,CR:0},after:{bytes:0,LF:0,CRLF:0,CR:0}};
+  for(const item of rows){
+    if(!item||!['equal','delete','insert'].includes(item.kind)||typeof item.text!=='string'||item.text.length>262144||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\r\n]/.test(item.text)||!['LF','CRLF','CR','none'].includes(item.eol))return false;
+    const encoded=new TextEncoder().encode(item.text);if(new TextDecoder('utf-8',{ignoreBOM:true}).decode(encoded)!==item.text)return false;
+    bytes+=encoded.length;if(bytes>524288)return false;
+    for(const [side,count] of [['before',before],['after',after]]){
+      const number=item[side+'_line'],present=item.kind==='equal'||item.kind===(side==='before'?'delete':'insert');
+      if(present?(!integer(number,count)||number<1):number!==null)return false;
+      if(present){
+        if((item.eol==='none')!==(number===count&&!result[side].final_newline))return false;
+        observed[side].bytes+=encoded.length+({none:0,LF:1,CR:1,CRLF:2}[item.eol]);
+        if(item.eol!=='none'&&++observed[side][item.eol]>result[side].newlines[item.eol])return false;
+        if(observed[side].bytes>result[side].size_bytes-(result[side].bom?3:0))return false;
+      }
+    }
+    if(item.before_line!==null){if(left!==null&&item.before_line!==left+1)return false;left=item.before_line;}
+    if(item.after_line!==null){if(right!==null&&item.after_line!==right+1)return false;right=item.after_line;}
+  }
+  if(offset===0&&!p.has_next){for(const side of ['before','after'])if(result[side].present&&observed[side].bytes!==result[side].size_bytes-(result[side].bom?3:0))return false;}
+  if(offset===0){for(const side of ['before','after']){const first=rows.find(item=>item[side+'_line']!==null);if(first&&first[side+'_line']!==1)return false;}}
+  if(!p.has_next&&((left!==null&&left!==before)||(right!==null&&right!==after)))return false;
+  return true;
+}
+
 export function createComparison({api,errorText,getBinding,fetchReport}){
   const $=id=>document.getElementById(id);
-  const state={active:false,generation:0,sourceGeneration:0,busy:false,binding:null,pair:null,page:null,offset:0,status:'changes',pending:null,upload:null,notice:'',reportGeneration:0,reportBusy:false,reportController:null};
+  const state={active:false,generation:0,sourceGeneration:0,busy:false,binding:null,pair:null,page:null,offset:0,status:'changes',pending:null,upload:null,notice:'',reportGeneration:0,reportBusy:false,reportController:null,diffGeneration:0,diffController:null};
   const owns=g=>state.active&&state.generation===g&&getBinding()?.job===state.binding?.job&&getBinding()?.input_sha256===state.binding?.input_sha256;
   const pairBody=()=>({pair:state.pair.pair,before_sha256:state.pair.before_sha256,after_sha256:state.pair.after_sha256});
   function controls(){ $('compare-report-html').disabled=$('compare-report-json').disabled=state.busy||state.reportBusy||!!state.pending||!state.pair;$('compare-report-cancel').hidden=!state.reportBusy; $('compare-file').disabled=state.busy||!!state.pending;$('compare-check').disabled=state.busy;$('compare-cancel').hidden=!state.pending;$('compare-filter').disabled=state.busy||!state.pair;$('compare-previous').disabled=state.busy||!state.page?.has_previous;$('compare-next').disabled=state.busy||!state.page?.has_next; }
   function message(text){$('compare-message').textContent=text;}
-  function clearPage(){cancelReport();$('compare-report-status').textContent='';state.sourceGeneration++;state.page=null;$('compare-list').replaceChildren();$('compare-source').replaceChildren();$('compare-range').textContent='';controls();}
+  function clearPage(){cancelLineDiff();cancelReport();$('compare-report-status').textContent='';state.sourceGeneration++;state.page=null;$('compare-list').replaceChildren();$('compare-source').replaceChildren();$('compare-range').textContent='';controls();}
   function clearResult(){clearPage();state.pair=null;$('compare-result').hidden=true;controls();}
   const post=(path,body,timeout=5000)=>api(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(timeout)});
   async function known(id){return api('/api/comparison?'+new URLSearchParams({comparison:id}),{signal:AbortSignal.timeout(3000)});}
@@ -89,6 +155,7 @@ export function createComparison({api,errorText,getBinding,fetchReport}){
   }
   async function openSources(row,button){
     if(state.busy||!state.page)return;
+    cancelLineDiff();
     const g=state.generation,source=++state.sourceGeneration,pair=state.pair,page=state.page;
     const current=()=>owns(g)&&state.sourceGeneration===source&&state.page?.id===page.id;
     $('compare-list').querySelectorAll('button').forEach(b=>{b.setAttribute('aria-pressed',String(b===button));b.tabIndex=b===button?0:-1;});
@@ -108,6 +175,55 @@ export function createComparison({api,errorText,getBinding,fetchReport}){
         const pre=document.createElement('pre');pre.setAttribute('aria-label',side==='before'?'Код до':'Код после');pre.textContent=result.text;content.replaceWith(pre);
       }catch(error){if(current())content.textContent=errorText(error);}
     }
+    if(current())mountLineDiff(pair,page,row,current);
+  }
+  function cancelLineDiff(){state.diffGeneration++;state.diffController?.abort();state.diffController=null;}
+  function mountLineDiff(pair,page,row,current){
+    const make=(tag,text,cls)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(cls)node.className=cls;return node;};
+    const section=make('section',undefined,'comparison-line-diff');section.setAttribute('aria-label','Построчное сравнение выбранного файла');
+    const heading=make('h4','Построчное сравнение текста');
+    const scope=make('p','Точное сравнение строк и их окончаний; не анализ поведения кода. Исходные тексты обеих сторон сохранены выше. Каждая страница вычисляется заново.');
+    const status=make('p');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+    const evidence=make('div',undefined,'comparison-diff-evidence'),list=make('ol',undefined,'comparison-diff-rows');list.setAttribute('aria-label','Строки сравнения');
+    const navigation=make('div',undefined,'pagination');
+    const previous=make('button','Предыдущие строки','button'),next=make('button','Следующие строки','button'),retry=make('button','Повторить сравнение строк','button'),cancel=make('button','Отменить ожидание строк','button');
+    for(const button of [previous,next,retry,cancel])button.type='button';
+    navigation.append(previous,next,retry,cancel);section.append(heading,scope,status,evidence,navigation,list);$('compare-source').append(section);
+    let offset=0,busy=false,pagination=null;
+    const controls=()=>{previous.disabled=busy||!pagination?.has_previous;next.disabled=busy||!pagination?.has_next;retry.disabled=busy;cancel.hidden=!busy;};
+    async function load(start,focus=null){
+      if(!current()||busy)return;
+      cancelLineDiff();const generation=state.diffGeneration,controller=new AbortController();state.diffController=controller;
+      const owned=()=>current()&&generation===state.diffGeneration;
+      offset=start;busy=true;pagination=null;list.replaceChildren();evidence.replaceChildren();controls();status.textContent='Вычисляем полное выравнивание строк…';
+      try{
+        const result=await api('/api/comparison-line-diff',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pair:pair.pair,before_sha256:pair.before_sha256,after_sha256:pair.after_sha256,page:page.id,path:row.path,offset:start}),signal:AbortSignal.any([controller.signal,AbortSignal.timeout(65000)])});
+        if(!owned())return;if(!comparisonLineDiffMatches(pair,page,row,start,result))protocol();
+        pagination=result.pagination;
+        for(const side of ['before','after']){
+          const e=result[side],ref=row[side],title=side==='before'?'До':'После';
+          let text=`${title}: SHA-256 ZIP ${pair[side+'_sha256']} · `;
+          text+=ref?`SHA-256 файла ${ref.raw_sha256} · ${ref.size_bytes} байт`:'файл отсутствует (это не пустой файл)';
+          if(ref){text+=` · BOM: ${e.bom===null?'не определён':e.bom?'есть':'нет'} · строк: ${e.line_count??'не определено'}`;if(e.newlines)text+=` · LF ${e.newlines.LF}, CRLF ${e.newlines.CRLF}, CR ${e.newlines.CR}`;text+=` · последнее окончание строки: ${e.final_newline===null?'не определено':e.final_newline?'есть':'нет'}`;if(e.line_count===0)text+=' · пустой текст';}
+          evidence.append(make('p',text));
+        }
+        if(result.status==='unavailable'){
+          const reasons={SOURCE_TOO_LARGE:'превышен предел 256 КиБ на сторону',SOURCE_ENCODING_UNSUPPORTED:'неподдерживаемое текстовое кодирование',LINE_LIMIT:'более 4096 строк на стороне',WORK_LIMIT:'превышен предел работы выравнивания'};
+          status.textContent=`Построчное сравнение недоступно: ${reasons[result.reason]}. Неполные строки сравнения не показаны. Используйте исходные панели выше.`;return;
+        }
+        status.textContent=pagination.total?`Полное выравнивание: ${pagination.total} строк. Показаны ${start+1}–${start+result.rows.length} из ${pagination.total}.`:'Полное выравнивание: 0 строк. Сверьте наличие файла и BOM.';
+        for(const item of result.rows){
+          const line=make('li',undefined,'comparison-diff-row diff-'+item.kind);
+          const label={equal:'= Совпадает',delete:'− Удалено',insert:'+ Добавлено'}[item.kind];
+          const location=make('span',`${label} · До ${item.before_line??'—'} · После ${item.after_line??'—'} · ${item.eol==='none'?'без окончания строки':item.eol}`,'comparison-diff-location');
+          const code=make('pre',item.text,'comparison-diff-text');line.append(location,code);list.append(line);
+        }
+      }catch(error){if(owned())status.textContent='Построчное сравнение недоступно. '+errorText(error)+' Используйте исходные панели выше.';}
+      finally{if(owned()){busy=false;state.diffController=null;controls();if(focus)(focus.disabled?retry:focus).focus();}}
+    }
+    previous.addEventListener('click',()=>void load(offset-200,previous));next.addEventListener('click',()=>void load(offset+200,next));retry.addEventListener('click',()=>void load(0,retry));
+    cancel.addEventListener('click',()=>{cancelLineDiff();busy=false;pagination=null;controls();status.textContent='Ожидание строк отменено. Ответ больше не будет показан; вычисление на сервере может продолжаться. Исходные панели выше доступны.';retry.focus();});
+    void load(0);
   }
   async function accept(result,g){
     if(!owns(g))return;if(!comparisonMatches(state.binding,result))protocol();

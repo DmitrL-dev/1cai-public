@@ -84,7 +84,7 @@ def test_fixture_plan_creates_owned_infobase_before_file_roundtrip(profile, inte
         "C:\\" + "x" * 1024,
         None,
     ],
-)
+ ids=['invalid-root-1', 'invalid-root-2', 'invalid-root-3', 'invalid-root-4', 'invalid-root-5', 'invalid-root-6', 'invalid-root-7', 'invalid-root-8', 'invalid-root-9', 'invalid-root-10', 'invalid-root-11', 'invalid-root-12', 'invalid-root-13', 'invalid-root-14', 'invalid-root-15', 'invalid-root-16'])
 def test_rejects_ambiguous_or_unbounded_windows_roots(profile, intent, root):
     with pytest.raises(CoreError, match="Invalid ibcmd fixture"):
         api.plan_fixture_commands(profile, intent, fixture_root=root)

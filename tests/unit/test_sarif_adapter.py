@@ -195,7 +195,7 @@ def test_duplicate_identity_across_runs_is_rejected(observation):
         b'{"version":NaN}',
         b"[" * 2000 + b"]" * 2000,
     ],
-)
+ ids=['malformed-json-1', 'malformed-json-2', 'malformed-json-3', 'malformed-json-4', 'malformed-json-5', 'malformed-json-6', 'malformed-json-7'])
 def test_malformed_json_is_typed(observation, raw):
     assert_error(raw, observation)
 
