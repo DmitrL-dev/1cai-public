@@ -22,12 +22,12 @@ test('combined browser gate retains all distinct scenarios and both reflow featu
  const files=(await readdir(new URL('browser/',import.meta.url))).filter(name=>name.endsWith('.spec.mjs'));
  const titles=[];
  for(const file of files){const spec=await read('browser/'+file);titles.push(...[...spec.matchAll(/^test\('([^']+)'/gm)].map(match=>match[1]));}
- assert.equal(titles.length,24);assert.equal(new Set(titles).size,24);
- for(const file of ['source-search.spec.mjs','comparison.spec.mjs','search-comparison.spec.mjs','report.spec.mjs'])assert.ok(files.includes(file));
+ assert.equal(titles.length,27);assert.equal(new Set(titles).size,27);
+ for(const file of ['source-search.spec.mjs','comparison.spec.mjs','search-comparison.spec.mjs','report.spec.mjs','attribute-search.spec.mjs'])assert.ok(files.includes(file));
  const acceptance=await read('browser/acceptance.spec.mjs');
  assert.equal(acceptance.match(/await exerciseLiteralSearch\(page,app\)/g).length,2);
  assert.equal(acceptance.match(/await exerciseComparison\(page,app\)/g).length,2);
  const workflow=await read('../../.github/workflows/gui-browser-ci.yml');
- assert.ok(workflow.includes('assert len(cases) == 24'));
+ assert.ok(workflow.includes('assert len(cases) == 27'));
  for(const name of ['test_local_gui_source_search.py','test_local_gui_comparison.py','test_local_gui_search_comparison.py','test_local_gui_report.py'])assert.ok(workflow.includes(name));
 });

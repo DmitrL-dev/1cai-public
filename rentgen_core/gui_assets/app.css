@@ -20,3 +20,14 @@
 #source-search-help,#source-coverage,.source-hit{overflow-wrap:anywhere;min-width:0}.source-hit p{font-size:11px;line-height:1.6}.inventory-toolbar{flex-wrap:wrap}
 
 .comparison-report-controls{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.comparison-report-controls .button{max-width:100%;white-space:normal}
+
+/* Field hits stay read-only and point to the owner XML, including duplicate names. */
+#attribute-search-help,#attribute-coverage,.attribute-matches{min-width:0;overflow-wrap:anywhere}
+#attribute-search-help,#attribute-coverage{margin-bottom:12px}
+.attribute-match-list{list-style:none;margin:0 0 20px;padding:0;display:grid;gap:10px}
+.attribute-match{min-width:0;border:1px solid var(--line);border-radius:7px;padding:12px}
+.attribute-match>strong{display:block;font-size:12px;font-weight:600;overflow-wrap:anywhere}
+.attribute-match p{font-size:11px;line-height:1.6;color:var(--muted);margin-top:6px}
+.attribute-match .source-meta{margin-bottom:0}
+.attribute-match .tag{margin-top:6px}
+.attribute-provenance{margin-bottom:14px}
