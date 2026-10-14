@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from ctypes import wintypes as W
 from datetime import datetime,timezone
 import json
+import importlib.util
 import os
 from pathlib import Path
 import shutil
@@ -52,6 +53,37 @@ def validate_failure_events(rows,service_name,pids):
             require(doc['pid'] in pids);matches.append(doc)
     require(0<len(matches)<=4)
     return matches
+
+
+def validate_quiet_journal(previous,journal,*,interrupted=False):
+    """Offline evidence only; directory notifications never prove a cycle.
+
+    Graceful STOP replaces the last event with stopped. With the stock scanner
+    composition, only unchanged events suppress outbox publication. Thus a fresh
+    successful completed cycle AND an unchanged complete outbox/publication and
+    source prove repeat-without-publication. The caller must check all three.
+    Forced termination cannot use that inference: its retained event must itself
+    say unchanged, never just a running phase or an incremented cycle.
+    """
+    from uuid import UUID
+    def require(ok):
+        if not ok: raise RuntimeError('Offline quiet journal proof differs')
+    require(type(previous) is dict and type(journal) is dict)
+    for document in (previous,journal):
+        value=document.get('run_id')
+        try: canonical=str(UUID(value)) if type(value) is str else None
+        except ValueError: canonical=None
+        require(canonical is not None and value==canonical)
+    require(journal['run_id']!=previous['run_id']
+        and type(journal.get('cycle')) is int and journal['cycle']>=1
+        and type(journal.get('failures')) is int and journal['failures']==0)
+    if interrupted:
+        require(journal.get('phase')=='running' and type(journal.get('event')) is dict
+            and journal['event'].get('status')=='unchanged')
+    else:
+        require(journal.get('phase')=='idle' and journal.get('event')=={'status':'stopped'})
+    return journal
+
 
 def require_ready(worker,context):
     worker.require(context[5].get('exists') is False and all(context[6].get(key) is True
@@ -119,10 +151,11 @@ def run_lifecycle(test,worker,metadata):
 
 class HeldProcess:
     """Wait on the same verified native object, never a later process with its PID."""
-    def __init__(self,test,worker,pid):
+    def __init__(self,test,worker,pid,*,interrupt=False):
         self.test,self.worker,self.pid=test,worker,pid;self.handle=None
+        self.interrupt=interrupt
         kernel=test.native.kernel
-        self.handle=test.native.require(kernel.OpenProcess(0x1000|0x100000,False,pid),'OpenHeldStockService')
+        self.handle=test.native.require(kernel.OpenProcess(0x1000|0x100000|(1 if interrupt else 0),False,pid),'OpenHeldStockService')
         try:
             size=W.DWORD(32768);image=ctypes.create_unicode_buffer(size.value)
             test.native.require(kernel.QueryFullProcessImageNameW(self.handle,0,image,ctypes.byref(size)),'ReadHeldStockImage')
@@ -139,6 +172,24 @@ class HeldProcess:
             test.event('stock_process_held',pid=pid,image=str(worker.PYTHON),token_user_sid=worker.SID)
         except BaseException:
             self.close();raise
+
+    def require_alive(self):
+        self.worker.require(self.handle is not None,'Original stock process handle is closed')
+        wait=self.test.native.kernel.WaitForSingleObject
+        wait.argtypes,wait.restype=[W.HANDLE,W.DWORD],W.DWORD
+        self.worker.require(wait(self.handle,0)==258,'Original stock process is no longer running')
+
+    def terminate(self):
+        self.worker.require(self.interrupt,'Held lifetime is observation-only')
+        self.require_alive()
+        row=self.test.current()
+        self.worker.require(row['status']['state']==4 and row['status']['pid']==self.pid,
+            'SCM binding changed before held interruption')
+        self.require_alive()
+        terminate=self.test.native.kernel.TerminateProcess
+        terminate.argtypes,terminate.restype=[W.HANDLE,W.UINT],W.BOOL
+        self.test.native.require(terminate(self.handle,87),'TerminateHeldStockProcess')
+        self.test.event('owned_process_interrupted',pid=self.pid,exit_code=87,same_held_handle=True)
 
     def wait(self):
         # https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitforsingleobject
@@ -369,11 +420,12 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
             path=self.output/('source-'+label+'-after.json');worker.save(path,after)
             self.event('stock_source_unchanged',label=label,manifest_sha256=worker.sha(path),entries=len(after['files']))
 
-        def start(self):
+        def start(self,*,interrupt=False):
             worker.require(self.held is None,'Previous held process not closed')
             with self.inspection_privilege():
                 row=super().start();pid=row['status']['pid']
-                self.held=HeldProcess(self,worker,pid);self.service_pids.add(pid)
+                self.held=HeldProcess(self,worker,pid,interrupt=True) if interrupt else HeldProcess(self,worker,pid)
+                self.service_pids.add(pid)
             return row
 
         def stop(self):
@@ -389,7 +441,9 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
 
         def publication(self):
             from rentgen_core.owner_report_store import OwnerReportStore
-            status=self.observer.status();findings=self.observer.findings_status();events=self.outbox.peek()
+            status=self.observer.status();findings=self.observer.findings_status()
+            # Compare every retained notification, never only peek()'s first 100.
+            events=self.outbox.peek(limit=self.outbox.MAX_EVENTS)
             bindings={};owners={}
             if findings['state'] is not None:
                 with sqlite3.connect(self.observer.database.as_uri()+'?mode=ro',uri=True) as db:
@@ -476,21 +530,50 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
             self.event('stock_operator_commit',before=self.metadata['fixture_commit'],after=commit,scm_state=1)
             return commit
 
-        def quiet(self):
-            def check():
-                worker.require(self.current()['status']['state']==4,'Stock quiet lifetime stopped')
-                journal=self.journal.read()
-                event=None if journal is None else journal.get('event')
-                return journal if journal and journal['phase']=='running' and journal['cycle']>=1 \
-                    and type(event) is dict and event.get('status')=='unchanged' else None
-            return worker.wait_until(check,45,'stock quiet unchanged tick')
+        def quiet_hint(self):
+            # The coordinator runs with -I: load the hash-bound sibling by
+            # absolute path, never from ambient sys.path.
+            path=Path(__file__).with_name('scm_journal_notifications.py')
+            spec=importlib.util.spec_from_file_location('stock_journal_notifications',path)
+            module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+            return module.JournalRenameHint(self.native,worker,self.observer.profile/'git-journal.json')
+
+        def quiet(self,hint):
+            def alive():
+                worker.bounded(1)
+                worker.require(self.held is not None,'Quiet wait lost original process handle')
+                self.held.require_alive()
+                row=self.current()
+                worker.require(row['status']['state']==4 and row['status']['pid']==self.held.pid,
+                    'Stock quiet lifetime or SCM PID changed')
+                self.held.require_alive()
+            # Armed before START. The read-only parent-directory observer never
+            # opens the live journal. Rename activity only schedules STOP/kill;
+            # every semantic assertion is made after the original process exits.
+            receipt=hint.wait(alive,seconds=worker.bounded(45))
+            alive()
+            self.event('stock_quiet_scheduling_hint',pid=self.held.pid,semantic_proof=False,hint=receipt)
+
+        def quiet_baseline(self):
+            worker.require(self.held is None and self.current()['status']['state']==1,
+                'Quiet baseline requires the previous lifetime stopped and reaped')
+            return self.journal.read()
 
         def unchanged(self,label,commits):
-            before=self.source_before(label);stable=self.stable(self.publication())
-            self.start();journal=self.quiet();self.published(label,commits);self.stop()
-            worker.require(self.stable(self.publication())==stable,'Restart duplicated findings/owner/outbox')
+            before=self.source_before(label);baseline=self.publication()
+            previous=self.quiet_baseline()
+            measurement.validate_publication(baseline,project=self.f['project_id'],source=self.source,commits=commits)
+            stable=self.stable(baseline)
+            with self.quiet_hint() as hint:
+                self.start();self.quiet(hint);self.stop()
+            journal=validate_quiet_journal(previous,self.journal.read())
+            doc=self.publication()
+            worker.require(self.stable(doc)==stable,'Restart duplicated findings/owner/outbox')
+            measurement.validate_publication(doc,project=self.f['project_id'],source=self.source,commits=commits)
+            worker.save(self.output/('publication-'+label+'.json'),doc)
             self.unchanged_source(label,before)
-            self.event('stock_repeat_without_publication',label=label,journal=journal)
+            self.event('stock_repeat_without_publication',label=label,journal=journal,
+                proof='offline completed successful cycle and unchanged complete publication/outbox/source')
 
         def failed_start(self,label):
             worker.require(self.current()['status']['state']==1,'Refusal start requires STOPPED')
@@ -510,15 +593,24 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
             self.event('stock_start_refused',label=label,status=row['status'],lease_released=True,no_owned_children=True)
 
         def interrupted_recovery(self,commits):
-            before=self.source_before('interrupted-recovery');stable=self.stable(self.publication())
-            self.start();journal=self.quiet();pid=self.held.pid
-            self.terminate_owned_running_process(pid);row=self.state(1)
+            before=self.source_before('interrupted-recovery');baseline=self.publication()
+            previous=self.quiet_baseline()
+            measurement.validate_publication(baseline,project=self.f['project_id'],source=self.source,commits=commits)
+            stable=self.stable(baseline)
+            with self.quiet_hint() as hint:
+                self.start(interrupt=True);self.quiet(hint);pid=self.held.pid
+                self.held.terminate()
+            row=self.state(1)
             worker.require(row['status']['pid']==0,'Interrupted service retained PID')
             self.held.wait();self.held=None
             worker.wait_until(lambda:not self.children(),45,'interrupted stock children exit')
             with self.observer.locked(): pass
             path=self.observer.profile/'git-journal.json';raw=path.read_bytes()
-            worker.require(self.journal.read()==journal and journal['phase']=='running','Interrupted running journal was not retained')
+            journal=validate_quiet_journal(previous,self.journal.read(),interrupted=True)
+            doc=self.publication()
+            measurement.validate_publication(doc,project=self.f['project_id'],source=self.source,commits=commits)
+            worker.require(self.stable(doc)==stable,'Interrupted quiet lifetime changed durable publications')
+            self.unchanged_source('interrupted-before-recovery',before)
             (self.output/'interrupted-journal.raw').write_bytes(raw)
             self.failed_start('recovery-required')
             worker.require(path.read_bytes()==raw and self.stable(self.publication())==stable,'Refused recovery changed durable publications')
