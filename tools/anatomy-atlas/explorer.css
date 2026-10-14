@@ -30,3 +30,8 @@
 /* The introductory/catalogue overview returns with Home; keep detail's containing system and source controls primary. */
 body:has(#explorerView.ex-detail-mode:not([hidden])) .intro{display:none}
 @media(max-width:1000px){body:has(#explorerView.ex-detail-mode:not([hidden])) .catalogue-nav{display:none}}
+
+/* Mobile keeps search discoverable; optional facets and inactive source routes disclose on demand. */
+#exFiltersDetails{display:contents}#exFiltersDetails>summary,#exRouteTools>summary{display:none}.ex-filter-fields{display:flex;gap:10px;min-width:0}.ex-filter-fields>label{flex:1}.ex-route-rail{display:block}#exRouteTools[open]{display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:6px 10px}#exRouteDetails{grid-column:1/-1}
+@media(max-width:760px){#exFiltersDetails{display:block;flex-basis:100%;font:11px monospace}#exFiltersDetails>summary,#exRouteTools>summary{display:list-item;cursor:pointer;min-height:44px;box-sizing:border-box;padding:14px 6px;font:11px monospace}.ex-filter-fields{gap:6px;padding-bottom:5px}.ex-filter-fields select{min-height:44px}.ex-route-rail{padding:0 9px}#exRouteTools[open]{display:block;padding-bottom:7px}#exRouteTools[open]>div:first-of-type{margin-bottom:6px}#exRouteTools select{min-height:44px}#exRouteTools .ex-route-buttons button{min-height:44px}#exRouteDetails summary{min-height:44px;box-sizing:border-box;padding:14px 0}}
+@media(max-width:760px){.ex-toolbar input,.ex-toolbar select{min-height:44px}#exCutawayHeader #exDetailOpening{min-height:44px}.ex-route-buttons button{min-width:44px}.ex-controls button{min-height:44px}}

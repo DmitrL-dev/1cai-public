@@ -14,6 +14,13 @@ const label=(page,id)=>page.locator(`#exOverlay .ex-label[data-ex-id=${q(id)}]`)
 const treeFile=(page,id)=>page.locator(`#exSourceTree [data-tree-file=${q(id)}]`);
 const camera=s=>Object.fromEntries(['yaw','pitch','panX','panY','zoom'].map(k=>[k,s[k]]));
 const listIds=page=>page.locator('#exObjectList [data-ex-list]').evaluateAll(els=>els.map(el=>el.dataset.exList));
+async function openTools(page,selector){
+  const details=page.locator(selector);
+  if(!await details.evaluate(el=>el.open))await details.locator(':scope > summary').click();
+  await expect(details).toHaveJSProperty('open',true);
+}
+async function selectFilter(page,selector,value){await openTools(page,'#exFiltersDetails');await page.locator(selector).selectOption(value)}
+async function selectRoute(page,value){await openTools(page,'#exRouteTools');await page.locator('#exRouteSelect').selectOption(value)}
 async function compactDetail(page){
   await expect(page.locator('#explorerView')).toHaveClass(/ex-detail-mode/);
   expect(await page.locator('.ex-tree-details').evaluate(el=>el.open),'A new detail opens with its complete tree collapsed').toBe(false);
@@ -21,12 +28,23 @@ async function compactDetail(page){
   for(const selector of ['.ex-list-details','.ex-status','#exExplode','#exNodeExplode'])await expect(page.locator(selector)).toBeHidden();
 }
 async function firstScreen(page,info,name){
+  for(const selector of ['#exFiltersDetails','#exRouteTools']){
+    const details=page.locator(selector),summary=details.locator(':scope > summary');
+    await expect(details).toHaveJSProperty('open',page.viewportSize().width>760);
+    if(page.viewportSize().width<=760){await expect(summary).toBeVisible();expect((await summary.boundingBox()).height,`${selector} mobile disclosure target`).toBeGreaterThanOrEqual(44);}
+    else await expect(summary).toBeHidden();
+  }
   await page.evaluate(()=>window.scrollTo(0,0));await expect.poll(()=>page.evaluate(()=>scrollY)).toBe(0);
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
   const layout=await page.locator('#exViewport').evaluate(el=>{
     const b=el.getBoundingClientRect(),top=Math.max(0,b.top),bottom=Math.min(innerHeight,b.bottom),left=Math.max(0,b.left),right=Math.min(innerWidth,b.right);
     const solidCount=[...el.querySelectorAll('#exStage [data-p][data-ex-id]:not([data-hidden])')].filter(n=>{const r=n.getBoundingClientRect();return r.width>0&&r.height>0&&r.bottom>top&&r.top<bottom&&r.right>left&&r.left<right}).length;
-    return{scrollY,top:b.top,bottom:b.bottom,visibleHeight:Math.max(0,bottom-top),visibleWidth:Math.max(0,right-left),solidCount,windowWidth:innerWidth,windowHeight:innerHeight};
+    const namedParts=['stand.shell.base','focus.file'].map(name=>{
+      const parts=el.querySelectorAll(`#exStage [data-p][data-name="${name}"]`);if(parts.length!==1)return{name,count:parts.length};
+      const part=parts[0],r=part.getBoundingClientRect(),area=r.width*r.height,visibleArea=Math.max(0,Math.min(r.right,right)-Math.max(r.left,left))*Math.max(0,Math.min(r.bottom,bottom)-Math.max(r.top,top));
+      return{name,count:1,area,visibleArea,visibleFraction:area?visibleArea/area:0,hidden:part.hasAttribute('data-hidden')||getComputedStyle(part).display==='none',bounds:{x:r.x,y:r.y,width:r.width,height:r.height}};
+    });
+    return{scrollY,top:b.top,bottom:b.bottom,visibleHeight:Math.max(0,bottom-top),visibleWidth:Math.max(0,right-left),solidCount,namedParts,windowWidth:innerWidth,windowHeight:innerHeight};
   });
   expect(layout.top,'The scene starts on the first screen at page top').toBeLessThan(layout.windowHeight);
   expect(layout.visibleHeight,'More than 200px of scene is visible before scrolling').toBeGreaterThan(200);
@@ -36,6 +54,11 @@ async function firstScreen(page,info,name){
   expect(bytes.readUInt32BE(16)).toBe(page.viewportSize().width);expect(bytes.readUInt32BE(20)).toBe(page.viewportSize().height);
   await writeFile(info.outputPath(`${name}.json`),JSON.stringify({name,layout,state:await state(page),viewport:page.viewportSize(),sha256:createHash('sha256').update(bytes).digest('hex')},null,2));
   await info.attach(name,{path,contentType:'image/png'});
+  if(page.viewportSize().width<=760)for(const part of layout.namedParts){
+    expect(part.count,`${part.name} must identify one actual solid`).toBe(1);expect(part.hidden,part.name).toBe(false);
+    expect(part.area,`${part.name} has nonzero rendered bbox area`).toBeGreaterThan(0);expect(part.visibleArea,part.name).toBeGreaterThan(0);
+    expect(part.visibleFraction,`${part.name}: at least 70% of its bbox area must be on the initial mobile screen`).toBeGreaterThanOrEqual(.7);
+  }
 }
 async function openTree(page){
   const details=page.locator('.ex-tree-details');
@@ -285,14 +308,15 @@ test('Q03 dependency evidence and source routes',async({page},info)=>{
   await expect(page.locator('#graphCanvas [data-flow-step]')).toHaveCount(flow.steps.length);
   for(let i=0;i<flow.steps.length;i++){await page.locator(`#graphCanvas [data-flow-step="${i}"]`).click();await expect.poll(()=>page.evaluate(()=>window.atlas.state.selected)).toBe(flow.steps[i].nodeId)}
   await evidence(page,info,'complete-source-route',page.locator('#graphView'));
-  await page.locator('[data-view="explorer"]').click();await page.locator('#exHome').click();await page.locator('#exRelations').selectOption('route');
+  await page.locator('[data-view="explorer"]').click();await page.locator('#exHome').click();await selectFilter(page,'#exRelations','route');
   await expect(page.locator('#exOverlay .ex-route').first()).toBeVisible();await evidence(page,info,'route-on-spatial-systems');
   await expect(page.locator('.ex-route-rail')).toContainText('Порядок чтения, не выполнение');
+  await openTools(page,'#exRouteTools');
   await expect(page.locator('#exRouteSelect')).toBeVisible();
   await expect(page.locator('#exRouteFocus')).toBeVisible();
   expect(await page.locator('#exRouteDetails').evaluate(el=>el.open)).toBe(false);
   await page.locator('#exRouteDetails > summary').click();await expect(page.locator('#exRouteCopy')).toBeVisible();
-  await page.locator('#exRouteSelect').selectOption('0');
+  await selectRoute(page,'0');
   await page.locator('#exRouteFocus').click();
   const routeChecks=[];
   async function routeStep(index){
@@ -324,7 +348,7 @@ test('Q03 dependency evidence and source routes',async({page},info)=>{
   await page.locator('#exRoutePrev').click();await routeStep(flow.steps.length-2);
   await page.locator('#exRouteNext').click();await routeStep(flow.steps.length-1);
   const alternate=await page.evaluate(()=>({index:window.atlas.data.flows.length-1,nodeId:window.atlas.data.flows.at(-1).steps[0].nodeId}));
-  await page.locator('#exRouteSelect').selectOption(String(alternate.index));
+  await selectRoute(page,String(alternate.index));
   expect(await state(page)).toMatchObject({flowIndex:alternate.index,stepIndex:0,selected:alternate.nodeId});
   await exactSource(page,alternate.nodeId);await expect(page.locator('#exRoutePrev')).toBeDisabled();
   await writeFile(info.outputPath('persistent-source-route.json'),JSON.stringify(routeChecks,null,2));
@@ -345,10 +369,10 @@ test('Q04 navigation history isolation and filtering',async({page},info)=>{
   if(!await page.locator('.ex-list-details').evaluate(el=>el.open))await page.locator('.ex-list-details > summary').click();
   await expect(page.locator('#exObjectList [data-ex-list]').first()).toBeVisible();
   await expect(page.locator('#exExplode')).toBeHidden();await expect(page.locator('#exNodeExplode')).toBeHidden();
-  await page.locator('#exDirectory').selectOption('rentgen_core/');const directoryIds=await listIds(page);expect(directoryIds.every(id=>id.startsWith('file:rentgen_core/'))).toBe(true);expect(directoryIds.length).toBeGreaterThan(0);expect((await state(page)).visibleIds).toContain('interfaces');await page.locator('#exDirectory').selectOption('all');
+  await selectFilter(page,'#exDirectory','rentgen_core/');const directoryIds=await listIds(page);expect(directoryIds.every(id=>id.startsWith('file:rentgen_core/'))).toBe(true);expect(directoryIds.length).toBeGreaterThan(0);expect((await state(page)).visibleIds).toContain('interfaces');await selectFilter(page,'#exDirectory','all');
   const firstPage=await listIds(page);await page.locator('#exPageNext').click();expect((await state(page)).page).toBe(1);expect(await listIds(page)).not.toEqual(firstPage);await page.locator('#exPagePrev').click();expect((await state(page)).page).toBe(0);expect(await listIds(page)).toEqual(firstPage);
-  await page.locator('#exRole').selectOption('test');const ids=await listIds(page);expect(ids.length).toBeGreaterThan(0);expect(await page.evaluate(ids=>ids.every(id=>window.atlas.data.nodes.find(n=>n.id===id)?.role==='test'),ids)).toBe(true);const filtered=await state(page);expect(filtered.visibleIds).toContain(filtered.cutawayRoot);
-  await page.locator('#exRole').selectOption('all');await searchFile(page,'rentgen_core/cli.py');
+  await selectFilter(page,'#exRole','test');const ids=await listIds(page);expect(ids.length).toBeGreaterThan(0);expect(await page.evaluate(ids=>ids.every(id=>window.atlas.data.nodes.find(n=>n.id===id)?.role==='test'),ids)).toBe(true);const filtered=await state(page);expect(filtered.visibleIds).toContain(filtered.cutawayRoot);
+  await selectFilter(page,'#exRole','all');await searchFile(page,'rentgen_core/cli.py');
   await page.locator('#exIsolate').click();const isolatedDetail=await state(page);
   expect(isolatedDetail.visibleIds).toContain('interfaces');expect(isolatedDetail.visibleIds).toContain(isolatedDetail.selected);
   expect(isolatedDetail.visibleIds.filter(id=>id.startsWith('@compartment:interfaces:'))).toHaveLength(isolatedDetail.compartmentCount);
@@ -377,15 +401,24 @@ test('Q06 mobile touch navigation and readable detail',async({page,context},info
   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:box.x+box.width/2,y:box.y+box.height/2,id:1}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await expect.poll(async()=>(await state(page)).selected).toBe('graph');
   await expect(page.locator('#exMobileSelection')).toBeVisible();await expect(page.locator('#exMobileLabel')).toHaveText(await page.evaluate(()=>window.atlas.data.sections.find(n=>n.id==='graph').label));
   await page.locator('#exMobileOpen').click();await compactDetail(page);await firstScreen(page,info,'mobile-cutaway-first-screen');await noOverflow(page);await evidence(page,info,'mobile-system-files');
+  await page.locator('#exFiltersDetails > summary').focus();await page.keyboard.press('Enter');await expect(page.locator('#exFiltersDetails')).toHaveJSProperty('open',true);
+  for(const selector of ['#exRole','#exDirectory','#exRelations'])await expect(page.locator(selector)).toBeVisible();
+  await selectFilter(page,'#exRole','production_source');expect((await state(page)).role).toBe('production_source');await selectFilter(page,'#exRole','all');
+  await page.locator('#exFiltersDetails > summary').click();await expect(page.locator('#exFiltersDetails')).toHaveJSProperty('open',false);
   await searchFile(page,'rentgen_core/capture.py');await inlineSource(page,'file:rentgen_core/capture.py');await noOverflow(page);await evidence(page,info,'mobile-readable-code',page.locator('#inspector'));
   await cutaway(page,'snapshots','file:rentgen_core/capture.py');
   await page.locator('#exOpen').click();await openTree(page);
   await expect(page.locator('#exSourceTree [data-tree-file]')).toHaveCount(11);
   const declaration=await page.evaluate(()=>window.atlas.data.nodes.find(n=>n.id==='symbol:rentgen_core/capture.py:capture_sources').id);
   await page.locator('#exDeclarationList').selectOption(declaration);await cutaway(page,'snapshots',declaration);await exactSource(page,declaration);
+  await page.locator('#exRouteTools > summary').focus();await page.keyboard.press('Enter');await expect(page.locator('#exRouteTools')).toHaveJSProperty('open',true);
   await expect(page.locator('#exRouteSelect')).toBeVisible();await expect(page.locator('#exRouteFocus')).toBeVisible();
   for(const selector of ['#exOpen','#exCloseCutaway','#exDeclarationList','#exRouteFocus','#exRouteNext','#exRoutePrev'])expect((await page.locator(selector).boundingBox()).height,`${selector} mobile touch target`).toBeGreaterThanOrEqual(40);
-  await noOverflow(page);await evidence(page,info,'mobile-focused-declaration-and-tree');await cdp.detach();
+  await noOverflow(page);await evidence(page,info,'mobile-focused-declaration-and-tree');
+  const mobileRoute=await page.evaluate(()=>window.atlas.data.flows[0]);await selectRoute(page,'0');
+  await page.locator('#exRouteNext').click();expect((await state(page)).selected).toBe(mobileRoute.steps[1].nodeId);
+  await expect(page.locator('#exRouteTools')).toHaveJSProperty('open',true);await expect(page.locator('#exRoutePrev')).toBeVisible();await expect(page.locator('#exRouteNext')).toBeVisible();await exactSource(page,mobileRoute.steps[1].nodeId);
+  await page.locator('#exRoutePrev').click();expect((await state(page)).selected).toBe(mobileRoute.steps[0].nodeId);await exactSource(page,mobileRoute.steps[0].nodeId);await expect(page.locator('#exRouteTools')).toHaveJSProperty('open',true);await cdp.detach();
 });
 
 test('Q07 light dark and narrow desktop readability',async({page},info)=>{
@@ -407,7 +440,7 @@ test('Q08 bounded browser interaction performance',async({page,browser},info)=>{
   const detailSorted=[...detailSamples].sort((a,b)=>a-b),detailP95=detailSorted[Math.ceil(detailSorted.length*.95)-1];
   expect((await state(page)).yaw).toBe(detailStart.yaw+300);expect(detailP95,'Bounded cutaway input and two-frame acknowledgement').toBeLessThan(1500);
   await cutaway(page,'snapshots','file:rentgen_core/capture.py');
-  const navigationSamples=[];await page.locator('#exRouteSelect').selectOption('0');
+  const navigationSamples=[];await selectRoute(page,'0');
   for(let i=0;i<3;i++){const start=performance.now();await page.locator('#exRouteNext').click();await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));navigationSamples.push(performance.now()-start);expect((await state(page)).stepIndex).toBe(i+1);}
   expect(Math.max(...navigationSamples),'Source-route navigation and two-frame acknowledgement').toBeLessThan(1500);
   await writeFile(info.outputPath('browser-performance.json'),JSON.stringify({browserVersion:browser.version(),sampleCount:samples.length,inputAndTwoFramesMs:samples,p95Ms:p95,detailInputAndTwoFramesMs:detailSamples,detailP95Ms:detailP95,routeNavigationAndTwoFramesMs:navigationSamples,idleFrameIntervalsMs:frameIntervals,scope:'Current Chromium CI host; not a mobile FPS claim'},null,2));await evidence(page,info,'performance-final-camera',page.locator('#exViewport'));
@@ -458,7 +491,7 @@ test('Q09 selected-system opening is independent and reversible',async({page},in
   await cameraDrag(page,35,25,true);await page.locator('#exZoomIn').click();
   const overview=await state(page),overviewCamera=camera(overview);
   await page.locator('#exOpen').click();await cutaway(page,'snapshots','file:rentgen_core/capture.py');
-  await page.locator('#exRelations').selectOption('all');await cutaway(page,'snapshots','file:rentgen_core/capture.py');
+  await selectFilter(page,'#exRelations','all');await cutaway(page,'snapshots','file:rentgen_core/capture.py');
   expect((await state(page)).neighborCount).toBeGreaterThan(0);
   const pose=()=>page.evaluate(()=>{
     const c=window.explorer.controller,geometry=prefix=>[...document.querySelectorAll('#exStage [data-name]')].filter(n=>n.dataset.name.startsWith(prefix)).map(n=>n.outerHTML);
