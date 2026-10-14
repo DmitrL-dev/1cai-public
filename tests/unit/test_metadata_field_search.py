@@ -110,7 +110,7 @@ def test_authorization_and_cancellation_checked_between_fields():
     (b'<!DOCTYPE Catalog [<!ENTITY a "expanded">]><Catalog>&a;</Catalog>', "XML_FORBIDDEN"),
     (('<Catalog>'+ '<x>'*64+'</x>'*64+'</Catalog>').encode(), "METADATA_LIMIT_EXCEEDED"),
     (b'<Catalog>'+b' '* (4*1024*1024)+b'</Catalog>', "METADATA_LIMIT_EXCEEDED"),
-])
+], ids=["malformed-xml", "forbidden-dtd", "depth-overflow", "byte-overflow"])
 def test_existing_xml_safety_boundary(raw, code):
     with pytest.raises(CoreError) as error:
         parse_xml(raw)
