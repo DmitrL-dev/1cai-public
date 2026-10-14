@@ -31,3 +31,20 @@
 .attribute-match .source-meta{margin-bottom:0}
 .attribute-match .tag{margin-top:6px}
 .attribute-provenance{margin-bottom:14px}
+
+/* Literal navigation is bounded, read-only and separate from archive search. */
+.module-occurrences{margin-top:24px;min-width:0;overflow-wrap:anywhere}
+.module-occurrences h3{font-size:15px;margin-bottom:10px}
+.occurrence-form{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0}
+.occurrence-form label{flex-basis:100%;font-size:12px}
+.occurrence-form input{min-width:0;width:100%;padding:10px;border:1px solid var(--line);border-radius:7px}
+.occurrence-form .button{max-width:100%;white-space:normal}
+#occurrence-status,#occurrence-range{font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+#occurrence-list{display:grid;gap:6px;max-height:28rem;overflow:auto;margin-top:12px}
+#occurrence-list button{text-align:left;min-width:0;max-width:100%;padding:10px;border:1px solid var(--line);border-radius:7px;background:white}
+#occurrence-list button[aria-pressed="true"]{border-color:var(--focus);background:#eff3ff}
+#occurrence-list button:focus-visible{outline-offset:-3px}
+.occurrence-location{display:block;font-size:11px;font-weight:600;margin-bottom:5px}
+.occurrence-excerpt{display:block;font:11px/1.6 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
+#occurrence-highlight{background:#ffdf80;color:inherit;outline:2px solid #d59514;scroll-margin:30px}
+#source-selection{margin-top:8px;overflow-wrap:anywhere}
