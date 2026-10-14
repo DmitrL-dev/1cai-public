@@ -20,8 +20,14 @@
 требует Windows x64 / CPython 3.11; отдельно опубликовано экспериментальное
 Linux x86_64 дополнение: [state/history](product/PORTABLE-CORE.md) и
 [Rust ZIP import](product/RUST-INPUT-CORE.md), без обещания полного Linux/macOS
-product route. Текущие исходники содержат и более поздние эксперименты, которые
-не входят в принятые пакеты. Границы задают [состояние поставки](product/READINESS.md),
+product route. Core dev18 / Companion 0.1.19 в текущих исходниках остаются
+кандидатами; более поздние эксперименты не входят в принятые пакеты.
+Новый [source-facts CLI](product/SOURCE-FACTS.md) описывает отдельный
+pending-acceptance Linux эксперимент с тремя source-only наблюдениями,
+без binding/runtime диагноза. Его обязательный
+[CI с полным cohort и installed-wheel проверкой](../.github/workflows/source-facts-ci.yml)
+подготовлен, но ещё не выполнен для этого кандидата. Границы задают
+[состояние поставки](product/READINESS.md),
 [матрица поддержки](product/PLATFORM-SUPPORT.md) и [план](../ROADMAP.md).
 
 ## Следующее поколение

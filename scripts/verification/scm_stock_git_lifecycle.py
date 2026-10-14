@@ -3,6 +3,9 @@ if not __debug__:
     raise RuntimeError('Stock acceptance requires assertions; do not use Python -O')
 
 import ctypes
+import hashlib
+import hmac
+import secrets
 from contextlib import contextmanager
 from ctypes import wintypes as W
 from datetime import datetime,timezone
@@ -16,6 +19,76 @@ from uuid import uuid4
 
 SCOPE='stock schema3 Git/native BSL full owned lifecycle'
 NATIVE_BSL_CLEANUP_QUERY_RESERVE=6  # Three STOP observations plus three final cleanup observations.
+
+
+# Fixed operation labels only; never serialize arguments or exception messages.
+_FAILURE_OPERATIONS=frozenset({
+    'analyzed.source_before','analyzed.start','analyzed.published',
+    'analyzed.stop','analyzed.unchanged_source','publication.status',
+    'publication.findings','publication.outbox','publication.database',
+    'publication.owner_report','publication.save','publication.current',
+    'publication.process_inspection','publication.native_process',
+})
+_FAILURE_FILES=frozenset({
+    'scm_stock_git_lifecycle.py','scm_git_diagnostic_control.py',
+    'scm_stock_git_control.py','scm_acceptance_worker.py','owner_report_store.py',
+    'observer.py','git_watcher.py',
+})
+_FAILURE_LEAVES=frozenset({'observer.sqlite3','publication-first.json','publication-next.json'})
+
+
+@contextmanager
+def failure_operation(operation,path=None):
+    """Retain the deepest operation on this exception, without changing its flow."""
+    if operation not in _FAILURE_OPERATIONS:
+        raise ValueError('Unknown diagnostic operation')
+    try:
+        yield
+    except BaseException as error:
+        if not hasattr(error,'_stock_failure_context'):
+            error._stock_failure_context=(operation,path)
+        raise
+
+
+def failure_diagnostic(error):
+    """Bounded traceback metadata. No locals, source lines, messages or raw paths."""
+    key=secrets.token_bytes(32)  # Unretained per-error key prevents path guessing.
+    def path_ref(value):
+        if not isinstance(value,(str,bytes,Path)):
+            return None
+        raw=str(value) if not isinstance(value,bytes) else value.decode('utf-8','replace')
+        leaf=raw.replace('\\','/').rsplit('/',1)[-1]
+        return {'id':hmac.new(key,raw.encode('utf-8','replace'),hashlib.sha256).hexdigest()[:20],
+            'leaf':leaf if leaf in _FAILURE_LEAVES else '<redacted>'}
+    name=type(error).__name__ if type(error).__module__=='builtins' else 'Exception'
+    result={'type':name,'message':'Exception details redacted; see diagnostic',
+        'diagnostic':{'schema':1,'operation':'unclassified','path':None,'path_source':None,
+            'traceback':[],'traceback_truncated':False}}
+    detail=result['diagnostic']
+    context=getattr(error,'_stock_failure_context',None)
+    if isinstance(context,tuple) and len(context)==2 and context[0] in _FAILURE_OPERATIONS:
+        detail['operation']=context[0]
+        detail['path']=path_ref(context[1])
+        if detail['path'] is not None: detail['path_source']='operation_target'
+    if isinstance(error,OSError):
+        for field in ('errno','winerror'):
+            value=getattr(error,field,None)
+            if type(value) is int: detail[field]=value
+        if error.filename is not None:
+            detail['path']=path_ref(error.filename);detail['path_source']='exception_filename'
+        if error.filename2 is not None: detail['destination']=path_ref(error.filename2)
+    frames=[];tb=error.__traceback__
+    while tb is not None:
+        code=tb.tb_frame.f_code
+        # Match the source file, not merely its basename (foreign paths are hidden).
+        source=Path(code.co_filename)
+        trusted=(source.parent in (Path(__file__).parent,Path(__file__).parents[2]/'rentgen_core')
+            and source.name in _FAILURE_FILES)
+        frames.append({'file':source.name if trusted else '<external>',
+            'function':code.co_name if trusted else '<redacted>','line':tb.tb_lineno})
+        tb=tb.tb_next
+    detail['traceback']=frames[-16:];detail['traceback_truncated']=len(frames)>16
+    return result
 
 
 class ProcessInventoryIncomplete(RuntimeError):
@@ -85,7 +158,13 @@ def run_lifecycle(test,worker,metadata):
             and measurement.get('native_scope')==SCOPE and len(measurement.get('commits',[]))==2,
             'Full native stock measurement proof missing')
     except BaseException as error:
-        failure={'type':type(error).__name__,'message':str(error)[:400]}
+        try:
+            failure=failure_diagnostic(error)
+        except Exception:
+            # Diagnostics must never replace the original failure or skip cleanup.
+            failure={'type':'PermissionError' if isinstance(error,PermissionError) else 'Exception',
+                'message':'Exception details redacted; diagnostic unavailable',
+                'diagnostic':{'schema':1,'unavailable':True}}
         test.event('stock_failure',**failure)
         try:
             observe=getattr(test,'failure_telemetry',None)
@@ -389,10 +468,16 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
 
         def publication(self):
             from rentgen_core.owner_report_store import OwnerReportStore
-            status=self.observer.status();findings=self.observer.findings_status();events=self.outbox.peek()
+            with failure_operation('publication.status'):
+                status=self.observer.status()
+            with failure_operation('publication.findings'):
+                findings=self.observer.findings_status()
+            with failure_operation('publication.outbox'):
+                events=self.outbox.peek()
             bindings={};owners={}
             if findings['state'] is not None:
-                with sqlite3.connect(self.observer.database.as_uri()+'?mode=ro',uri=True) as db:
+                with failure_operation('publication.database',self.observer.database), \
+                        sqlite3.connect(self.observer.database.as_uri()+'?mode=ro',uri=True) as db:
                     rows=db.execute('SELECT commit_id,snapshot_id FROM finding_binding LIMIT 3').fetchall()
                 worker.require(len(rows)<=2,'Unexpected fixture findings bindings')
                 bindings=dict(rows)
@@ -401,8 +486,9 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
                     event=item['event']
                     if event.get('status')!='analyzed': continue
                     commit=event['commit'];owner_id=event['owner_report_id']
-                    owners[owner_id]=store.get(owner_id,expected_project_id=self.f['project_id'],
-                        expected_snapshot_id=bindings[commit],authorize=lambda:self.observer._context(write=True))
+                    with failure_operation('publication.owner_report'):
+                        owners[owner_id]=store.get(owner_id,expected_project_id=self.f['project_id'],
+                            expected_snapshot_id=bindings[commit],authorize=lambda:self.observer._context(write=True))
             return {'status':status,'findings':findings,'outbox':events,'owners':owners,'bindings':bindings}
 
         def stable(self,document):
@@ -410,16 +496,20 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
 
         def published(self,label,commits,*,native_bsl=False):
             def inspect():
-                row=self.current();worker.require(row['status']['state']==4,'Stock service stopped before findings')
+                with failure_operation('publication.current'):
+                    row=self.current()
+                worker.require(row['status']['state']==4,'Stock service stopped before findings')
                 if native_bsl and label not in self.java_proofs:
                     worker.require(label in ('first','next'),'Native BSL sampling label differs')
                     worker.require(self.query_sequence+3+NATIVE_BSL_CLEANUP_QUERY_RESERVE<=200,
                         'Native BSL sampling would exhaust reserved cleanup observations')
                     try:
-                        with self.process_inspection() as rows:
+                        with failure_operation('publication.process_inspection'), self.process_inspection() as rows:
                             for child in rows:
                                 if Path(child['ExecutablePath'])!=self.runtime/'jdk/bin/java.exe': continue
-                                try: process=self.native.process(child['ProcessId'])
+                                try:
+                                    with failure_operation('publication.native_process'):
+                                        process=self.native.process(child['ProcessId'])
                                 except Exception as error:
                                     if getattr(error,'code',None)==87: continue  # exited during read-only sampling
                                     raise
@@ -439,14 +529,22 @@ def acceptance_type(worker,fixture,probe,control,stock_control,acl,measurement):
                 if len(events)!=len(commits): return None
                 proof=measurement.validate_publication(doc,project=self.f['project_id'],source=self.source,commits=commits)
                 worker.require(not native_bsl or label in self.java_proofs,'Native BSL process window was not proved')
-                worker.save(self.output/('publication-'+label+'.json'),doc)
+                with failure_operation('publication.save',self.output/('publication-'+label+'.json')):
+                    worker.save(self.output/('publication-'+label+'.json'),doc)
                 return proof
             return worker.wait_until(inspect,180,'stock complete publication '+label)
 
         def analyzed(self,label,commits):
-            before=self.source_before(label);self.start()
-            proof=self.published(label,commits,native_bsl=True)
-            self.stop();self.unchanged_source(label,before)
+            with failure_operation('analyzed.source_before'):
+                before=self.source_before(label)
+            with failure_operation('analyzed.start'):
+                self.start()
+            with failure_operation('analyzed.published'):
+                proof=self.published(label,commits,native_bsl=True)
+            with failure_operation('analyzed.stop'):
+                self.stop()
+            with failure_operation('analyzed.unchanged_source'):
+                self.unchanged_source(label,before)
             self.event('stock_analyzed',label=label,**proof)
             return proof
 

@@ -12,6 +12,7 @@ import pytest
 import rentgen_core as api
 from rentgen_core import cli, edt_identity_three_way as planner
 from rentgen_core.local import LocalRuntime
+from platform_support_test_support import requires_bytes_plan
 from project_access_test_support import force_legacy_membership
 from test_edt_identity_three_way import LIMITS, PROJECT, inventory
 import test_project_core_publication as publication
@@ -150,6 +151,7 @@ def assert_error(result, code):
     assert "PRIVATE_PAYLOAD" not in json.dumps(value)
 
 
+@requires_bytes_plan
 def test_calls_pure_planner_once_and_never_resolves_or_decodes_metadata_tree(
     local, monkeypatch
 ):
@@ -177,6 +179,7 @@ def test_calls_pure_planner_once_and_never_resolves_or_decodes_metadata_tree(
     assert asdict(calls[0][1]["limits"]) == LIMITS
 
 
+@requires_bytes_plan
 @pytest.mark.parametrize("name", LIMITS)
 @pytest.mark.parametrize("value", [0, -1, "true", "above"])
 def test_invalid_limits_fail_before_first_read(local, monkeypatch, name, value):
@@ -190,6 +193,7 @@ def test_invalid_limits_fail_before_first_read(local, monkeypatch, name, value):
     )
 
 
+@requires_bytes_plan
 @pytest.mark.parametrize(
     "permissions",
     [set(), {"source:edit"}, {"analysis:run"}, {"source:edit", "analysis:run"}],
@@ -204,6 +208,7 @@ def test_read_permission_is_required_before_input_access(
     assert_error(local.call(), "PROJECT_FORBIDDEN")
 
 
+@requires_bytes_plan
 @pytest.mark.parametrize(
     "raw",
     [
@@ -228,6 +233,7 @@ def test_invalid_json_and_wrong_envelopes_do_not_expose_payload(local, raw):
     assert "result" not in output
 
 
+@requires_bytes_plan
 def test_input_cap_precedes_json_decode(local, monkeypatch):
     local.paths[0].write_bytes(b" " * (8 * 1024**2 + 1))
     monkeypatch.setattr(
@@ -238,10 +244,12 @@ def test_input_cap_precedes_json_decode(local, monkeypatch):
     assert_error(local.call(), "INVALID_ARGUMENT")
 
 
+@requires_bytes_plan
 def test_lower_input_byte_limit_is_enforced(local):
     assert_error(local.call("--max-input-bytes", "1"), "INVALID_ARGUMENT")
 
 
+@requires_bytes_plan
 def test_foreign_project_inventory_stops_before_next_input(local, monkeypatch):
     local.paths[0].write_text(json.dumps(inventory()), encoding="utf-8")
     reads = []
@@ -256,6 +264,7 @@ def test_foreign_project_inventory_stops_before_next_input(local, monkeypatch):
     assert reads == local.paths[:1]
 
 
+@requires_bytes_plan
 @pytest.mark.parametrize("after", [1, 2, 3])
 def test_revocation_after_each_read_stops_before_decode_and_next_read(
     local, monkeypatch, after
@@ -287,6 +296,7 @@ def test_revocation_after_each_read_stops_before_decode_and_next_read(
     assert len(decoded) == after - 1
 
 
+@requires_bytes_plan
 @pytest.mark.parametrize("after", [1, 2, 3])
 def test_revocation_after_each_decode_precedes_following_operation(
     local, monkeypatch, after
@@ -311,6 +321,7 @@ def test_revocation_after_each_decode_precedes_following_operation(
     assert len(decoded) == after
 
 
+@requires_bytes_plan
 def test_revocation_during_normalization_precedes_result_serialization(
     local, monkeypatch
 ):
@@ -332,6 +343,7 @@ def test_revocation_during_normalization_precedes_result_serialization(
     assert_error(local.call(), "PROJECT_FORBIDDEN")
 
 
+@requires_bytes_plan
 @pytest.mark.parametrize("revoke", [False, True])
 def test_planner_errors_are_payload_free_and_reauthorized(local, monkeypatch, revoke):
     def plan(*args, **kwargs):
@@ -349,6 +361,7 @@ def test_planner_errors_are_payload_free_and_reauthorized(local, monkeypatch, re
     )
 
 
+@requires_bytes_plan
 @pytest.mark.parametrize("boundary", ["result", "error"])
 def test_final_serialization_boundary_rechecks_rights(local, monkeypatch, boundary):
     dumps = cli.json.dumps
@@ -368,6 +381,7 @@ def test_final_serialization_boundary_rechecks_rights(local, monkeypatch, bounda
     assert serialized == [True]
 
 
+@requires_bytes_plan
 def test_output_cap_has_no_partial_result(local, monkeypatch):
     monkeypatch.setattr(
         planner,
@@ -377,6 +391,7 @@ def test_output_cap_has_no_partial_result(local, monkeypatch):
     assert_error(local.call(), "OUTPUT_LIMIT_EXCEEDED")
 
 
+@requires_bytes_plan
 def test_revocation_after_state_context_precedes_actual_file_open(local, monkeypatch):
     original, open_file = LocalRuntime.state_context, Path.open
 
@@ -394,6 +409,7 @@ def test_revocation_after_state_context_precedes_actual_file_open(local, monkeyp
     assert_error(local.call(), "PROJECT_FORBIDDEN")
 
 
+@requires_bytes_plan
 def test_mapping_drift_during_planner_capture_is_redacted(local, monkeypatch):
     original = cli._edt_identity_inventory_json
 

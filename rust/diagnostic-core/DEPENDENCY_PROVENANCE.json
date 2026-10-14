@@ -225,5 +225,35 @@
       "vendor_unlisted_files": []
     }
   ],
-  "subsequent_qualification": "../../docs/product/DIAGNOSTIC-KERNEL-QUALIFICATION.json"
+  "subsequent_qualification": "../../docs/product/DIAGNOSTIC-KERNEL-QUALIFICATION.json",
+  "source_facts_linux_addition": {
+    "status": "pre_build_exact_inherited_package_record",
+    "date": "2026-10-05",
+    "dependency": "libc =0.2.186 (Linux target only)",
+    "source_record": "../input-core/DEPENDENCY_PROVENANCE.json",
+    "source_record_sha256": "3b4f19b7f126c8cfc4f9f98f7e2e0f496947a3106adea706bb64f7b821b5ffab",
+    "source_lock_sha256": "efd4f39a444413df5091a0409831e5e63f3ce0b618e4865faf84adf80a1e549c",
+    "updated_lock_sha256": "2156ad1d7e54bbd2240783f44853913e7075b3b587d965405220ef3ca26240b4",
+    "registry_package_count_after_addition": 12,
+    "method": "Copied the exact input-core lock record, package-level notices, both original source-notice excerpts and their recorded manifests. No registry retrieval, installation, dependency build, source-fact test or new independent clearance has occurred. Existing top-level historical synthetic provenance remains unchanged. Source-record limitations apply unchanged.",
+    "package": {
+      "name": "libc",
+      "version": "0.2.186",
+      "registry_source": "registry+https://github.com/rust-lang/crates.io-index",
+      "lock_checksum_sha256": "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66",
+      "official_checksum_sha256": "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66",
+      "official_index_url": "https://raw.githubusercontent.com/rust-lang/crates.io-index/master/li/bc/libc",
+      "official_source_retrieval": "web_tool_official_index_snapshot",
+      "official_source_blob_sha": null,
+      "official_record_line_1_based": 202,
+      "yanked_in_retrieved_official_record": false,
+      "published_at": "2026-04-23T20:00:00Z",
+      "lock_matches_official_index": true,
+      "vendor_recorded_package_checksum_sha256": "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66",
+      "lock_matches_vendor_recorded_package_checksum": true,
+      "vendor_files_checked": 359,
+      "vendor_file_mismatches": [],
+      "vendor_unlisted_files": []
+    }
+  }
 }

@@ -58,9 +58,9 @@ test('interrupted preparation does not block history; tampered result is refused
  await fs.writeFile(file,JSON.stringify(altered));await assert.rejects(f.service.inspect(result.run_id),/BSL_RESULT_MISMATCH/);
  assert.equal(f.calls(),1);
 });
-test('BSL CLI uses literal selected proposal and fixed profile',async()=>{
+for (const core_version of ['0.1.0.dev16', '0.1.0.dev18']) test(`${core_version}: BSL CLI uses literal selected proposal and fixed profile`,async()=>{
  const {createClient}=require('../lib/core.cjs');let args;
- const client=createClient({schema:1,core_version:'0.1.0.dev16',python:'C:\\python.exe',registry:'C:\\state.sqlite3',project_id:project},{execute:async(_,argv)=>{args=argv;return {code:0,stdout:Buffer.from(JSON.stringify({result:report()}))};}});
+ const client=createClient({schema:1,core_version,python:'C:\\python.exe',registry:'C:\\state.sqlite3',project_id:project},{execute:async(_,argv)=>{args=argv;return {code:0,stdout:Buffer.from(JSON.stringify({result:report()}))};}});
  const file='C:\\owned $()\\proposal.json';
  assert.deepEqual(await client.bslCheck({receipt,proposal,file}),report());
  assert.deepEqual(args.slice(3),['proposal-check','--registry','C:\\state.sqlite3','--project',project,'--snapshot',receipt.source_ref.snapshot.snapshot_id,'--proposal-json',file,'--diagnostics-profile',PROFILE]);

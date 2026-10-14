@@ -9,6 +9,12 @@ adapters сохраняют прежние границы. Полная пере
 [Rust ZIP input core](RUST-INPUT-CORE.md) описан отдельно: у него собственные
 Linux byte/session contracts и ограничения.
 
+Текущие исходники candidate Core dev18 / Companion 0.1.19 содержат более поздние
+изменения и отдельный [source-facts CLI](SOURCE-FACTS.md), который добавляет три
+ограниченных наблюдения над выбранными bytes. Этот Linux-only маршрут не входит
+в опубликованное дополнение dev17; его приёмка ещё не завершена. Текущий checkout
+не заменяет принятые пакеты.
+
 ## Что работает на Linux
 
 `rentgen capabilities` возвращает JSON с `contract_version: 1`, `platform` и
@@ -29,8 +35,8 @@ permissions, schema и ограничения входных/выходных д
   В unscoped сервере `rentgen_capabilities` отдаёт ту же матрицу поддержки.
 
 На Linux capture, retained snapshot/graph access, создание/изменение черновиков,
-workspace mutation, live apply/undo/recovery/status, native execution, diagnostics
-и непроверенные state writes возвращают `CAPABILITY_UNAVAILABLE`. CLI делает это
+workspace mutation, live apply/undo/recovery/status, native execution, native
+diagnostics и непроверенные state writes возвращают `CAPABILITY_UNAVAILABLE`. CLI делает это
 до identity, registry, payload и source IO. MCP делает это после ограниченной
 проверки DTO/scope, до runtime dispatch. Прямая попытка вызвать скрытый инструмент
 также отклоняется. Новая команда без явного capability mapping закрыта по умолчанию.

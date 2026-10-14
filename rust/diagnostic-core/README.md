@@ -1,13 +1,16 @@
-# Experimental synthetic diagnostic core
+# Experimental diagnostic and source-fact core
 
 A small experimental Rust component implementing the reviewed bounded
 [protocol](PROTOCOL.md). It evaluates typed evidence and selects an advisory next
 check. It never executes that check, authenticates provenance, grants permission,
 reads a project/database, runs a process, calls a model or changes a product.
 
-This is separate from `rust/input-core`, Python orchestration and the Go scanner.
-Nothing imports it into the production CLI/MCP, package builds or release records.
-Core `25743f7` and Companion `a4d8504` remain the fixed release targets.
+The synthetic entry point remains separate from the product CLI/MCP. A second,
+incompatible source-fact profile is now present in the candidate source tree;
+its Linux process adapter is called by the experimental Python `source-facts`
+command after immutable ZIP acceptance and Go lexical scanning. This candidate
+has not completed its source-fact acceptance gates. Core `25743f7` and Companion
+`a4d8504` remain the fixed earlier release targets.
 
 ## Source layout
 
@@ -20,6 +23,10 @@ Core `25743f7` and Companion `a4d8504` remain the fixed release targets.
 - `src/main.rs`: one bounded synthetic JSON request on stdin, one result on stdout.
   Protocol errors are generic and stderr remains empty. It has no configuration,
   native adapter, filesystem/network/probe access or executable check payload.
+- `src/source_facts/`: strict, pure source-only envelope evaluation. This profile
+  accepts host assertions about three observations, never binding/runtime proof.
+- `src/bin/rentgen-source-facts.rs`: Linux-owned one-shot framed transport for
+  the source-only profile, with parent-death checks before its hello message.
 - `tests/`: development contracts, process-boundary examples and public replay
   of previously observed synthetic wire cases. Public replay is regression,
   not a new independent held-out evaluation.
@@ -65,6 +72,30 @@ build target separate from concurrent research. Do not infer native platform
 qualification from a successful Linux synthetic run. The strict stdin adapter is
 intended only for the synthetic harness; its result is not a user-facing diagnosis.
 
+## Separate source-fact candidate
+
+Build and CLI usage: [SOURCE-FACTS.md](../../docs/product/SOURCE-FACTS.md).
+
+The exact source contract is [submitted source facts v1](../../docs/product/SOURCE-FACTS-PROTOCOL.md),
+SHA-256 `ae22acd2df04bfedb4070e3709ee1c0cd14cb80c2abb7da3084493977dad94dc`.
+The pure entry point is `rentgen_diagnostic_core::source_facts::evaluate(&[u8])`.
+The original `evaluate` entry point and synthetic protocol stay unchanged.
+
+The new profile records a lexical selector, a candidate routine's Export marker,
+and a restricted XML Server property. Its receiver binding and runtime relation
+always remain unknown. Direct library/stdio assertions are not authenticated
+source evidence; the Python owner separately verifies image/input hashes, source
+receipts, current project permissions and child termination before disclosure.
+
+The XML profile is explicitly handwritten and restrictive. It does not certify
+Designer exports, configuration completeness, namespace resolution or real 1C
+execution. No native probe, database call, model or suggested check is executed.
+Windows/macOS delivery of the new host workflow is not qualified.
+
+Development contracts, ancillary fault-injected lifecycle checks and the
+independent handwritten source cohort are separate gates. The synthetic results
+above do not qualify this new profile; final source-fact acceptance is pending.
+
 ## Important coverage limits
 
 Call context covers only statically bound common-module calls, including a
@@ -88,9 +119,10 @@ limits, not evidence that an unsupported explanation is false.
 
 ## Dependencies
 
-Only pinned serde `1.0.228` and serde_json `1.0.149` are direct dependencies.
-The eleven-package registry lock subset comes from the existing reviewed
-input-core lock; no new package version, service or model is introduced.
+Pinned serde `1.0.228` and serde_json `1.0.149` remain the portable dependencies.
+Linux additionally uses libc `0.2.186` only for the source adapter's ownership
+bootstrap. All twelve registry package versions are reused from the reviewed
+input-core lock; no service or model is introduced.
 See [dependency provenance](DEPENDENCY_PROVENANCE.json) and
 [third-party notices](THIRD_PARTY_NOTICES.md), including the full copied notices.
 The first offline `--locked` Cargo invocation passed. Dedicated CI repeats the

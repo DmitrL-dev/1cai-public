@@ -63,7 +63,8 @@ jobs:
         shell: bash
         run: |
           set +e
-          python -m pytest -q --tb=short --junitxml=output/linux-diagnostic.xml > output/linux-diagnostic.log 2>&1
+          # The three supervised modules run separately: 174 ordinary variants on PRs; full176 in manual qualification.
+          python -m pytest -q --tb=short --ignore=tests/unit/test_source_fact_runtime_boundaries.py --ignore=tests/unit/test_source_fact_lifecycle_completion.py --ignore=tests/unit/test_source_fact_wire_receipt_gaps.py --junitxml=output/linux-diagnostic.xml > output/linux-diagnostic.log 2>&1
           status=$?
           set -e
           python scripts/verification/check_linux_baseline.py --junit output/linux-diagnostic.xml --baseline docs/product/evidence/linux-baseline-classification-20261005.json --pytest-exit "$status" --output output/linux-baseline-comparison.json

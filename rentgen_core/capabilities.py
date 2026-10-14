@@ -23,6 +23,7 @@ _GROUPS = {
         "draft-get", "draft-list", "draft-history", "draft-receipt", "draft-read",
     ),
     "analysis.submitted.zip": ("export-analyze",),
+    "analysis.submitted.source_facts": ("source-facts",),
     "analysis.bytes.plan": (
         "metadata-materialize", "edt-attribute-plan", "edt-inventory-plan",
     ),
@@ -73,7 +74,7 @@ _PORTABLE = frozenset({
 def capability_status(capability):
     if capability not in _GROUPS:
         return {"supported": False, "reason": "No reviewed OS contract exists"}
-    if capability == "analysis.submitted.zip":
+    if capability in {"analysis.submitted.zip", "analysis.submitted.source_facts"}:
         return {"supported": _platform == "linux", "reason": None if _platform == "linux" else "Experimental imported-byte sidecar is qualified only on Linux"}
     if capability == "identity.bootstrap":
         return {"supported": _platform == "linux", "reason": None if _platform == "linux" else "Local profile bootstrap is Linux-only; Windows uses its process token"}

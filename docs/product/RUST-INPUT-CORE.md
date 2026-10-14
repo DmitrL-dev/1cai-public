@@ -7,6 +7,10 @@ CLI/IPC orchestration и существующий bounded XML analyzer. Go scann
 Компонент опубликован в [экспериментальном Linux x86_64 дополнении Core dev17](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev17).
 Это не полный cross-platform release и не замена Windows
 retained-source/live-apply/native contracts.
+Новый [source-facts CLI](SOURCE-FACTS.md) в candidate Core dev18 повторно
+использует этот immutable input boundary, но имеет отдельные Go/Rust observers,
+ограниченный handwritten XML profile и незавершённую приёмку. Этот новый маршрут
+не входит в опубликованное дополнение dev17.
 
 ## Полезный результат
 

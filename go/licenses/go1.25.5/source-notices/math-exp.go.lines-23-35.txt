@@ -1,0 +1,13 @@
+// The original C code, the long comment, and the constants
+// below are from FreeBSD's /usr/src/lib/msun/src/e_exp.c
+// and came with this notice. The go code is a simplified
+// version of the original C.
+//
+// ====================================================
+// Copyright (C) 2004 by Sun Microsystems, Inc. All rights reserved.
+//
+// Permission to use, copy, modify, and distribute this
+// software is freely granted, provided that this notice
+// is preserved.
+// ====================================================
+//

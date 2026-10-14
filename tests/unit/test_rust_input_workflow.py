@@ -15,7 +15,7 @@ import zipfile
 
 import pytest
 
-from rentgen_core import cli
+from rentgen_core import cli, rust_input
 from rentgen_core.errors import CoreError
 from rentgen_core.local import LocalRuntime
 from rentgen_core.local_identity import current_local_principal
@@ -25,6 +25,27 @@ from test_metadata_three_way_materialize import PATH, xml
 from test_portable_local_workflow import portable_project, command, ROOT
 
 pytestmark = pytest.mark.skipif(sys.platform != "linux", reason="Experimental Rust import is Linux-only")
+
+
+@pytest.fixture(autouse=True)
+def retained_input_core_io(request, monkeypatch):
+    """Opt-in passive recording; unset means unchanged historical test behavior."""
+    destination = os.environ.get("RENTGEN_INPUT_CORE_CAPTURE_DIR")
+    if not destination:
+        yield
+        return
+    import importlib.util
+    support = Path(__file__).resolve().parents[1] / "fixtures/source_facts/input_io_capture.py"
+    spec = importlib.util.spec_from_file_location("rentgen_input_io_capture", support)
+    recorder = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(recorder)
+    module = sys.modules[__name__]
+    capture = recorder.Capture(destination, request.node.nodeid, module)
+    try:
+        recorder.install(capture, monkeypatch, module)
+        yield
+    finally:
+        capture.finish()
 
 
 @pytest.fixture(scope="module")

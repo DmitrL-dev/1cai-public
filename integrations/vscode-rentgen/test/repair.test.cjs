@@ -60,7 +60,7 @@ test('a failed repair retains its bounded error code without changing recovery s
   assert.equal(executions, 1);
 });
 
-for (const core_version of ['0.1.0.dev7','0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16','0.1.0.dev17']) {
+for (const core_version of ['0.1.0.dev7','0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16','0.1.0.dev17','0.1.0.dev18']) {
 test(`${core_version}: lost process reply is reconciled from receipts with no second execution`, async () => {
   const selectedConfig = {...config,core_version};
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'rentgen-repair-'));

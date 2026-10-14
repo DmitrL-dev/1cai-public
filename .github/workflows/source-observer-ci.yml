@@ -1,0 +1,58 @@
+name: One-shot zero-capability observer fidelity
+on:
+  push:
+    branches: ['codex/linux-source-facts-qualification-20261006']
+permissions:
+  contents: read
+jobs:
+  observer-fidelity:
+    if: github.repository == 'DmitrL-dev/1cai-public' && github.event.before == '0f018fbee472e14e30584c9d03cfa0817e7c8081' && github.run_attempt == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11.9'
+      - name: Prepare exact official observer sources and synthetic probe
+        shell: bash
+        run: |
+          root="$RUNNER_TEMP/rentgen-observer-$GITHUB_SHA"
+          echo "OBSERVER_ROOT=$root" >> "$GITHUB_ENV"
+          python -I -B -c 'import runpy,sys;sys.path.insert(0,sys.argv[1]);sys.argv=sys.argv[1:];runpy.run_path(sys.argv[0]+"/prepare.py",run_name="__main__")' "$GITHUB_WORKSPACE/tests/fixtures/source_facts/observer_fidelity" "$root"
+          cc -std=c11 -O2 -pthread -Wall -Wextra -Werror -Wformat=2 -D_FORTIFY_SOURCE=3 -fstack-protector-strong "$GITHUB_WORKSPACE/tests/fixtures/source_facts/observer_fidelity/exit_race_probe.c" -o "$root/exit-race-probe"
+          cp "$GITHUB_WORKSPACE/tests/fixtures/source_facts/observer_fidelity/exit_race_probe.c" "$root/"
+          git rev-parse HEAD > "$root/source-commit.txt"
+      - name: Build instrumented observers without installing them
+        shell: bash
+        run: |
+          for version in 6.8 6.12; do
+            (cd "$OBSERVER_ROOT/strace-$version" && ./configure --enable-mpers=no --enable-bundled=yes --with-libunwind=no --with-libdw=no > "$OBSERVER_ROOT/configure-$version.log" 2>&1 && make -j1 > "$OBSERVER_ROOT/build-$version.log" 2>&1)
+          done
+      - name: Run bounded synthetic zero-capability A/B control
+        timeout-minutes: 2
+        shell: bash
+        run: |
+          python -I -B "$GITHUB_WORKSPACE/tests/fixtures/source_facts/observer_fidelity/run_bounded.py" "$OBSERVER_ROOT"
+      - name: Require positive observer mechanism evidence
+        if: always() && env.OBSERVER_ROOT != ''
+        shell: bash
+        run: |
+          test -f "$OBSERVER_ROOT/run-results.json"
+          python -I -B "$GITHUB_WORKSPACE/tests/fixtures/source_facts/observer_fidelity/analyze.py" "$OBSERVER_ROOT"
+      - name: Retain synthetic evidence and instrumentation diffs
+        if: always() && env.OBSERVER_ROOT != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: source-observer-fidelity-${{ github.sha }}
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            ${{ env.OBSERVER_ROOT }}/*.json
+            ${{ env.OBSERVER_ROOT }}/*.log
+            ${{ env.OBSERVER_ROOT }}/*.stdout
+            ${{ env.OBSERVER_ROOT }}/*.diff
+            ${{ env.OBSERVER_ROOT }}/*.c
+            ${{ env.OBSERVER_ROOT }}/*.txt

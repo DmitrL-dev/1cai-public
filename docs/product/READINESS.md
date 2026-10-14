@@ -13,11 +13,23 @@ prerelease от 5 октября 2026. Основной комплект: Window
 сохранены в [квитанции публикации](evidence/release-dev17-publication-20261005.json).
 Прежние релизы и принятые байты не изменены.
 
-Метаданные текущих исходников также указывают Core dev17 / Companion 0.1.18,
-но более поздний checkout не тождествен принятой поставке. В частности,
-[синтетический Rust diagnostic kernel](DIAGNOSTIC-KERNEL.md) остаётся отдельным
+В метаданных текущих исходников указаны кандидаты Core dev18 / Companion 0.1.19.
+Более поздний checkout не тождествен принятой поставке. Дополнительные исправления
+восстановления, SQLite/WAL и описаний операций MCP подготовлены в кандидате.
+Их локальные проверки не заменяют CI, установку и native-приёмку следующего
+точного пакета. Новые теги и готовые релизы этим документом не объявляются.
+[Синтетический Rust diagnostic kernel](DIAGNOSTIC-KERNEL.md) остаётся отдельным
 source-экспериментом и не входит в опубликованные пакеты. Пользовательская
 узкая диагностика и native adapters остаются следующими этапами.
+
+Отдельный [source-facts CLI](SOURCE-FACTS.md) соединяет immutable ZIP input,
+Go lexical observer и source-only Rust envelope. Это Linux-only эксперимент
+с ограниченным handwritten XML profile; его итоговая приёмка ещё не завершена.
+Development/lifecycle tests не заменяют независимый source cohort.
+Обязательный [CI полного cohort и installed-wheel проверки](../../.github/workflows/source-facts-ci.yml)
+подготовлен, но ещё не выполнен для этого кандидата. Binding/runtime остаются
+unknown; genuine Designer/native qualification и MCP endpoint не заявлены.
+Новый маршрут не входит в опубликованное Linux-дополнение dev17.
 
 Переносимость принимается по операциям. Linux ZIP import не создаёт снимок,
 граф или диагностику корректности; capture, live apply, native 1С и Companion

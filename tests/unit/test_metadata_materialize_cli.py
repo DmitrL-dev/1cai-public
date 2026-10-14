@@ -12,6 +12,7 @@ import rentgen_core as api
 from rentgen_core import cli
 from rentgen_core.local import LocalRuntime
 from rentgen_core.three_way import plan_three_way
+from platform_support_test_support import requires_bytes_plan
 from project_access_test_support import force_legacy_membership
 from test_metadata_three_way_materialize import PATH, xml
 
@@ -103,6 +104,7 @@ def local(tmp_path, monkeypatch, capsys):
     return ctx, paths, write, call
 
 
+@requires_bytes_plan
 def test_disjoint_merge_returns_deterministic_summary_without_writes(
     local, monkeypatch
 ):
@@ -135,6 +137,7 @@ def test_disjoint_merge_returns_deterministic_summary_without_writes(
     assert before == after
 
 
+@requires_bytes_plan
 def test_summary_requires_no_source_edit_permission(local):
     ctx, _, _, call = local
     with ctx.state.transaction(ctx.principal, write=True) as tx:
@@ -144,6 +147,7 @@ def test_summary_requires_no_source_edit_permission(local):
     assert output["result"]["status"] == "ready"
 
 
+@requires_bytes_plan
 @pytest.mark.parametrize("scope_count", [1, 257])
 def test_disjoint_bsl_summary_includes_bounded_digest_evidence(local, scope_count):
     _, _, write, call = local
@@ -191,6 +195,7 @@ def test_disjoint_bsl_summary_includes_bounded_digest_evidence(local, scope_coun
     assert "private_upstream" not in json.dumps(output)
 
 
+@requires_bytes_plan
 @pytest.mark.parametrize("permission", ["project:read", "analysis:run"])
 def test_authorization_precedes_payload_read(local, monkeypatch, permission):
     ctx, _, _, call = local
@@ -219,6 +224,7 @@ def test_authorization_precedes_payload_read(local, monkeypatch, permission):
         ("--max-total-bytes", "524289"),
     ],
 )
+@requires_bytes_plan
 def test_limits_checked_before_payload_read(local, monkeypatch, option, value):
     _, _, _, call = local
     monkeypatch.setattr(
@@ -248,6 +254,7 @@ def test_limits_checked_before_payload_read(local, monkeypatch, option, value):
         '{"private":',
     ],
 )
+@requires_bytes_plan
 def test_invalid_tree_fails_closed_without_payload(local, raw):
     _, paths, _, call = local
     paths[0].write_text(raw, encoding="utf-8")
@@ -259,6 +266,7 @@ def test_invalid_tree_fails_closed_without_payload(local, raw):
     assert "result" not in output
 
 
+@requires_bytes_plan
 def test_oversized_base64_refused_before_decode(local, monkeypatch):
     _, paths, _, call = local
     paths[0].write_text(
@@ -277,6 +285,7 @@ def test_oversized_base64_refused_before_decode(local, monkeypatch):
     "extra",
     [("--max-files", "1"), ("--max-file-bytes", "1"), ("--max-total-bytes", "2")],
 )
+@requires_bytes_plan
 def test_lower_limits_enforced(local, extra):
     _, _, write, call = local
     write({"a": b"aa", "b": b"bb"}, {}, {})
@@ -285,6 +294,7 @@ def test_lower_limits_enforced(local, extra):
     assert output["error"]["code"] == "THREE_WAY_LIMIT"
 
 
+@requires_bytes_plan
 def test_json_input_byte_cap(local):
     _, paths, _, call = local
     paths[0].write_bytes(b" " * (1024 * 1024 + 1))
@@ -294,6 +304,7 @@ def test_json_input_byte_cap(local):
     assert output["error"]["message"] == "Proposal input exceeds its byte limit"
 
 
+@requires_bytes_plan
 def test_conflict_returns_no_candidate_or_payload(local):
     _, _, write, call = local
     write(
@@ -308,6 +319,7 @@ def test_conflict_returns_no_candidate_or_payload(local):
     assert "candidate" not in json.dumps(output)
 
 
+@requires_bytes_plan
 def test_malformed_xml_returns_no_payload(local):
     _, _, write, call = local
     tree = {PATH: b"<private>"}
@@ -318,6 +330,7 @@ def test_malformed_xml_returns_no_payload(local):
     assert "private" not in json.dumps(output)
 
 
+@requires_bytes_plan
 def test_engine_error_details_are_not_cli_payload(local, monkeypatch):
     _, _, _, call = local
 
@@ -334,6 +347,7 @@ def test_engine_error_details_are_not_cli_payload(local, monkeypatch):
     assert "candidate" not in json.dumps(output)
 
 
+@requires_bytes_plan
 def test_revocation_prevents_next_input_read(local, monkeypatch):
     ctx, paths, _, call = local
     original = cli._metadata_tree
@@ -351,6 +365,7 @@ def test_revocation_prevents_next_input_read(local, monkeypatch):
     assert output["error"]["code"] == "PROJECT_FORBIDDEN"
 
 
+@requires_bytes_plan
 @pytest.mark.parametrize("failure", [False, True])
 def test_output_reauthorizes_success_and_error(local, monkeypatch, failure):
     ctx, _, _, call = local

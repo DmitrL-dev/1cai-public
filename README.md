@@ -167,6 +167,51 @@ Windows/macOS для этого GUI ещё не квалифицированы.
 не принят. Windows live apply и native-инструменты остаются отдельными
 возможностями со своей квалификацией.
 
+Офлайн-тесты `test_bytes_plan_capability_contract.py` отдельно проверяют отказ
+неподдерживаемых ОС до IO и прохождение платформенной проверки Windows/Linux
+до подставленного обработчика identity. Такая проверка матрицы на macOS
+не заменяет реальные прогоны и приёмку на Windows/Linux.
+В `test_edt_attribute_cli.py`, `test_edt_identity_three_way_cli.py` и
+`test_metadata_materialize_cli.py` ограничение платформы применяется только к
+execution-тестам; проверки parser/help/ошибок аргументов выполняются на всех ОС.
+
+Регрессии PowerShell-проекции `test_scm_process_projection.py` запускают точный
+текст скрипта с подставными WMI-объектами через PowerShell 7 (`pwsh` в PATH или
+`RENTGEN_TEST_PWSH=/полный/путь/pwsh`). В CI run `37921315912` сценарий `[0]`
+превысил общий лимит запуска процесса в 10 секунд; это был `TimeoutExpired`,
+а не падение assertion. Фикстура теперь отдельно ограничивает запуск PowerShell
+и подготовку данных 30 секундами, затем по handshake разрешает ровно одно
+выполнение проекции с прежним лимитом 10 секунд. Зависание остаётся ошибкой,
+процесс завершается, повторов нет; baseline и проверки результата не ослаблены.
+Локально на macOS/PowerShell 7.6.6 прошли все 11 сценариев проекции и проверки
+тайм-аутов; задержка старта на 11 секунд воспроизводит старый дефект и проходит
+после фикса. Это не нативная приёмка WMI/COM на Windows и не повторный зелёный CI.
+
+Узкий диагностический прогон native stock lifecycle на Windows завершился
+успешно один раз: run `38184742923`, коммит `294a4ac`. `native_stock_git_accepted`
+равен `true`, `measurement_validated` — `true`, commits/snapshots для `first` и
+`next` различаются, `failure` равен `null`, `cleanup_errors` пуст,
+`service_exists_after` — `false`, `events_sha256` совпал. Это одна попытка, и она
+**не воспроизвела** исходный `PermissionError`: его первоначальная причина
+остаётся **неустановленной**, а диагностический код не является её исправлением.
+Прогон также не является ни зелёным Product checks, ни повторной приёмкой
+176 сценариев.
+
+Диагностика отказов native stock lifecycle теперь сохраняет в `stock_failure`
+и `acceptance.json` ограниченный traceback (до 16 кадров: файл, функция, строка),
+фиксированную операцию и `errno`/`winerror`, когда они доступны. Для чтения
+публикации отдельно различаются status, findings, outbox, SQLite, owner report
+и запись результата; stop и source guard не смешиваются с publication.
+Текст исключения, локальные переменные, исходные строки и полные пути не
+публикуются. Путь представлен HMAC-идентификатором с одноразовым несохраняемым
+ключом и разрешённым фиксированным именем файла либо `<redacted>`; источник
+пути обозначает filename исключения или целевой объект операции. Это позволяет
+различить операции без раскрытия учётных данных и пользовательских имён.
+Если путь отсутствует, он остаётся неизвестным. Cleanup выполняется как прежде,
+повторного запуска нет. Офлайн-инъекции проверяют диагностику и редактирование
+секретов; они не доказывают причину старого PermissionError и не заменяют
+Windows acceptance. Существующие артефакты задним числом не дополняются.
+
 [План с критериями завершения](ROADMAP.md) ·
 [Поддержка платформ](docs/product/PLATFORM-SUPPORT.md) · [Архитектура](ARCHITECTURE.md) ·
 [Linux CLI/state](docs/product/PORTABLE-CORE.md) · [Rust ZIP import](docs/product/RUST-INPUT-CORE.md)
@@ -206,3 +251,33 @@ Windows/macOS для этого GUI ещё не квалифицированы.
 Их прежние заявления о готовности не относятся к текущей поставке.
 
 </details>
+
+### CI source facts: ordinary checks and special qualification
+
+PR/push workflow `source-facts-ci.yml` checks the fixed 174 ordinary variants
+under the existing supervisor, plus the installed-wheel smoke. The two syscall
+authority-audit variants are reserved for `source-facts-qualification.yml`, an
+explicit manual workflow that retains all 176 requirements and the wheel gate.
+The ordinary receipt reports `ordinary_passed`, two full-scope variants `unrun`,
+and `full176_qualified: false`. A green ordinary check is **not** full qualification
+or release approval. Both workflows preserve failure propagation and process cleanup.
+
+The special workflow grants no extra tracing privileges. It can remain red where
+Rust `PR_SET_DUMPABLE=0` prevents complete syscall observation; neither the Rust
+protection nor missing-descriptor assertions are relaxed. Establishing an approved
+observation environment remains a separate prerequisite for full qualification.
+The obsolete single-push privilege exception is removed; manual dispatch does not
+reactivate it. CI evidence uses distinct `ordinary-source-facts-*` and
+`special-source-facts-*` artifacts. No merge or deployment is performed by this change.
+
+Linux portable CI runs on Python 3.11 and 3.12. The shared test helper
+`tests/unit/platform_support_test_support.py` is included in the repository:
+parser checks run on every platform, while only CLI execution tests use the
+actual capability matrix to select supported hosts. Unsupported-platform
+refusal-before-IO checks remain mandatory. Local verification must use a clean
+tracked-source copy so an untracked helper cannot hide a CI collection failure.
+
+Observer workflow regression tests also enforce removal of the obsolete one-shot
+trace exception from both source-fact workflows, rather than requiring its old
+commit guard to remain. They reject restoration of the privileged launcher,
+ptrace capability grants, and sudoers overrides. The Linux baseline is unchanged.

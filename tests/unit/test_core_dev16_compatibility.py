@@ -16,8 +16,8 @@ def adapter(name):
     return module
 
 
-@pytest.mark.parametrize("version", ["0.1.0.dev16", "0.1.0.dev17"])
-def test_editor_probe_accepts_dev16_with_exact_mcp_python_and_project(monkeypatch, version):
+@pytest.mark.parametrize("version", [f"0.1.0.dev{dev}" for dev in range(7, 19)])
+def test_editor_probe_accepts_reviewed_versions_with_exact_mcp_python_and_project(monkeypatch, version):
     module = adapter("prepare.py")
     project = "6e461c4d-e19c-4e37-85b3-3aa0961580b7"
     identity = {
@@ -44,8 +44,8 @@ def test_editor_probe_accepts_dev16_with_exact_mcp_python_and_project(monkeypatc
     assert commands[1][2:5] == ["-m", "rentgen_core", "project-head"]
 
 
-@pytest.mark.parametrize("version", ["0.1.0.dev16", "0.1.0.dev17", "0.1.0.dev999"])
-def test_runtime_installer_dev16_admission_keeps_unknown_versions_refused(
+@pytest.mark.parametrize("version", [f"0.1.0.dev{dev}" for dev in [*range(4, 19), 19, 999]])
+def test_runtime_installer_admission_keeps_unknown_versions_refused(
     monkeypatch, version
 ):
     module = adapter("install_bsl_runtime.py")
@@ -67,7 +67,7 @@ def test_runtime_installer_dev16_admission_keeps_unknown_versions_refused(
         "sys",
         SimpleNamespace(platform="win32", version_info=(3, 11), prefix=sys.prefix),
     )
-    if version == "0.1.0.dev999":
+    if version in {"0.1.0.dev19", "0.1.0.dev999"}:
         with pytest.raises(ValueError, match="supported installed core"):
             module.contract()
     else:

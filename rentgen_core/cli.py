@@ -86,6 +86,7 @@ def _parser():
         command.add_argument("--identity-profile", type=Path, action=_Once)
     for name in (
         "export-analyze",
+        "source-facts",
         "registry-init",
         "project-register",
         "project-list",
@@ -160,7 +161,13 @@ def _parser():
         command.add_argument("--identity-profile", type=Path, action=_Once)
         if name not in ("registry-init", "project-register", "project-list"):
             command.add_argument("--project", required=True, action=_Once)
-        if name == "export-analyze":
+        if name == "source-facts":
+            for option in ("archive", "input-core", "source-scanner", "source-kernel"):
+                command.add_argument("--" + option, type=Path, required=True, action=_Once)
+                command.add_argument("--" + option + "-sha256", required=True, action=_Once)
+            for option in ("caller-entry", "candidate-entry", "selector-start", "selector-end"):
+                command.add_argument("--" + option, required=True, action=_Once)
+        elif name == "export-analyze":
             command.add_argument("--archive", type=Path, required=True, action=_Once)
             command.add_argument("--archive-sha256", required=True, action=_Once)
             command.add_argument("--input-core", type=Path, required=True, action=_Once)
@@ -1207,7 +1214,7 @@ def _execute(args, *, proposal_scope=None):
     permissions = (
         {"project:read", "analysis:run"}
         if args.command
-        in {"metadata-materialize", "owner-report-build", "owner-report-save", "export-analyze"}
+        in {"metadata-materialize", "owner-report-build", "owner-report-save", "export-analyze", "source-facts"}
         else {"project:read"}
         if args.command
         in {
@@ -1280,6 +1287,23 @@ def _execute(args, *, proposal_scope=None):
         else set()
     )
     ctx = runtime.state_context(principal, args.project, permissions=permissions)
+    if args.command == "source-facts":
+        from .submitted_source_facts import source_facts
+
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        value = source_facts(
+            ctx, archive=args.archive, archive_sha256=args.archive_sha256,
+            input_core=args.input_core, input_core_sha256=args.input_core_sha256,
+            source_scanner=args.source_scanner, source_scanner_sha256=args.source_scanner_sha256,
+            source_kernel=args.source_kernel, source_kernel_sha256=args.source_kernel_sha256,
+            caller_entry=args.caller_entry, candidate_entry=args.candidate_entry,
+            selector_start=args.selector_start, selector_end=args.selector_end,
+            cancelled=getattr(args, "_source_cancelled", None),
+            deadline=getattr(args, "_source_deadline", None),
+        )
+        return _ProposalCommandResult(value, ctx, frozenset(permissions), 65_536)
     if args.command == "export-analyze":
         from .submitted_export import analyze_export
 
@@ -1749,10 +1773,18 @@ def _emit_error(payload, scope, request_id):
 
 def main(argv=None) -> int:
     """Run a trusted local command; return zero on success, two on failure."""
+    from .capabilities import COMMAND_CAPABILITIES
+
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
+    first = raw_argv[0] if raw_argv else None
+    if first == "source-facts" or (first not in COMMAND_CAPABILITIES and "source-facts" in raw_argv):
+        from .source_fact_cli import run_source_cli
+
+        return run_source_cli(raw_argv, invalid_placement=first != "source-facts")
     request_id = str(uuid4())
     scope = _ProposalScope()
     try:
-        args = _parser().parse_args(argv)
+        args = _parser().parse_args(raw_argv)
         result = _execute(args, proposal_scope=scope)
         if isinstance(result, _ProposalCommandResult):
             try:
