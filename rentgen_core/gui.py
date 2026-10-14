@@ -24,6 +24,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 import webbrowser
 
 from .errors import CoreError
+from .gui_occurrences import OccurrenceWorkspace, dispatch_occurrences
 from .gui_comparison import ComparisonWorkspace, dispatch_comparison, validate_filename
 from .local import LocalRuntime
 from .local_identity import current_local_principal
@@ -41,6 +42,7 @@ STATIC = {"/": ("index.html", "text/html; charset=utf-8"),
           "/app.js": ("app.js", "text/javascript; charset=utf-8"),
           "/comparison.js": ("comparison.js", "text/javascript; charset=utf-8"),
           "/report-download.js": ("report-download.js", "text/javascript; charset=utf-8"),
+          "/occurrences.js": ("occurrences.js", "text/javascript; charset=utf-8"),
           "/model.js": ("model.js", "text/javascript; charset=utf-8"),
           "/app.css": ("app.css", "text/css; charset=utf-8"),
           "/mark.svg": ("mark.svg", "image/svg+xml")}
@@ -98,7 +100,7 @@ class Search:
     cancel: threading.Event = field(default_factory=threading.Event)
 
 
-class Workspace(ComparisonWorkspace):
+class Workspace(OccurrenceWorkspace, ComparisonWorkspace):
     def __init__(self, config):
         self.config = config
         config.authorize()
@@ -113,6 +115,7 @@ class Workspace(ComparisonWorkspace):
         self.search_worker = None
         self.closed = False
         self._init_comparison()
+        self._init_occurrences()
 
     def reserve(self, filename):
         self.config.authorize()
@@ -215,6 +218,7 @@ class Workspace(ComparisonWorkspace):
 
     def _invalidate_search(self):
         """Called with lock held; never discard an unreaped worker reference."""
+        self._invalidate_occurrences()
         if self.search:
             self.search.valid = False
             self.search.cancel.set()
@@ -437,12 +441,15 @@ class Workspace(ComparisonWorkspace):
             worker = self.worker
             search_worker = self.search_worker
             comparison_worker = self.comparison_worker
+            occurrence_worker = self.occurrence_worker
         if worker:
             worker.join()  # Rust session has its own deadline and confirmed reap.
         if search_worker:
             search_worker.join()
         if comparison_worker:
             comparison_worker.join()
+        if occurrence_worker:
+            occurrence_worker.join()
         # Never wait for a reader while holding the workspace lock.
         with self.report_lock, self.io_lock:
             self.temp.cleanup()
@@ -639,6 +646,8 @@ class Handler(BaseHTTPRequestHandler):
         path = urlsplit(self.path).path
         self._check(api=path.startswith("/api/"))
         app = self.server.workspace
+        if path.startswith("/api/occurrences") and dispatch_occurrences(self, path):
+            return
         if path.startswith("/api/comparison") and dispatch_comparison(self, path):
             return
         if self.command == "GET" and path in STATIC and not urlsplit(self.path).query:
