@@ -24,6 +24,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 import webbrowser
 
 from .errors import CoreError
+from .gui_threeway import ThreewayWorkspace, dispatch_threeway
 from .gui_occurrences import OccurrenceWorkspace, dispatch_occurrences
 from .gui_comparison import ComparisonWorkspace, dispatch_comparison, validate_filename
 from .local import LocalRuntime
@@ -42,6 +43,7 @@ STATIC = {"/": ("index.html", "text/html; charset=utf-8"),
           "/app.js": ("app.js", "text/javascript; charset=utf-8"),
           "/comparison.js": ("comparison.js", "text/javascript; charset=utf-8"),
           "/report-download.js": ("report-download.js", "text/javascript; charset=utf-8"),
+          "/threeway.js": ("threeway.js", "text/javascript; charset=utf-8"),
           "/occurrences.js": ("occurrences.js", "text/javascript; charset=utf-8"),
           "/model.js": ("model.js", "text/javascript; charset=utf-8"),
           "/app.css": ("app.css", "text/css; charset=utf-8"),
@@ -100,7 +102,7 @@ class Search:
     cancel: threading.Event = field(default_factory=threading.Event)
 
 
-class Workspace(OccurrenceWorkspace, ComparisonWorkspace):
+class Workspace(ThreewayWorkspace, OccurrenceWorkspace, ComparisonWorkspace):
     def __init__(self, config):
         self.config = config
         config.authorize()
@@ -116,6 +118,7 @@ class Workspace(OccurrenceWorkspace, ComparisonWorkspace):
         self.closed = False
         self._init_comparison()
         self._init_occurrences()
+        self._init_threeway()
 
     def reserve(self, filename):
         self.config.authorize()
@@ -131,8 +134,10 @@ class Workspace(OccurrenceWorkspace, ComparisonWorkspace):
                 fail("BUSY")
             self._invalidate_comparison_page()
             self._invalidate_search()
+            self._invalidate_threeway()
             if self.pending and self.pending is not self.current:
                 self.pending.path.unlink(missing_ok=True)
+            self._reserve_zip_slots(1, excluding=[self.pending.path] if self.pending and self.pending is not self.current else [])
             job = Job(secrets.token_hex(16), filename, Path(self.temp.name) / (secrets.token_hex(16) + ".zip"))
             self.pending = job
             return job
@@ -428,6 +433,7 @@ class Workspace(OccurrenceWorkspace, ComparisonWorkspace):
     def begin_close(self):
         with self.lock:
             self.closed = True
+            self._invalidate_threeway()
             if self.pending:
                 self.pending.cancel.set()
             self._invalidate_search()
@@ -442,6 +448,7 @@ class Workspace(OccurrenceWorkspace, ComparisonWorkspace):
             search_worker = self.search_worker
             comparison_worker = self.comparison_worker
             occurrence_worker = self.occurrence_worker
+            threeway_worker = self.threeway_worker
         if worker:
             worker.join()  # Rust session has its own deadline and confirmed reap.
         if search_worker:
@@ -450,6 +457,8 @@ class Workspace(OccurrenceWorkspace, ComparisonWorkspace):
             comparison_worker.join()
         if occurrence_worker:
             occurrence_worker.join()
+        if threeway_worker:
+            threeway_worker.join()
         # Never wait for a reader while holding the workspace lock.
         with self.report_lock, self.io_lock:
             self.temp.cleanup()
@@ -646,6 +655,8 @@ class Handler(BaseHTTPRequestHandler):
         path = urlsplit(self.path).path
         self._check(api=path.startswith("/api/"))
         app = self.server.workspace
+        if path.startswith("/api/threeway") and dispatch_threeway(self, path):
+            return
         if path.startswith("/api/occurrences") and dispatch_occurrences(self, path):
             return
         if path.startswith("/api/comparison") and dispatch_comparison(self, path):
