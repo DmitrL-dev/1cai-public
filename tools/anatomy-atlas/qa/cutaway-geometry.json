@@ -1,0 +1,172 @@
+{
+  "scope": "Full official orbit audit of31convex solids,4moving child groups, free world orbit and synchronized hinge/slide opening. Discrete file focus in4compartments. Finite samples; not a continuous mathematical proof or browser QA.",
+  "quick": false,
+  "focused": false,
+  "sourceCommit": "6c8feb291dd251826eebb99e145f4a39f56cda47",
+  "hashes": {
+    "build-detail-scene.mjs": "bf9be3ac2af5b4a93a9f682f396f875f79329a3655a951b406dd2eb9456d8eb6",
+    "cutaway-model.mjs": "2532f4956158ee6b793c2d227080c6c0141d43a19431c3cb590f85d885750251",
+    "qa/cutaway-geometry.mjs": "74322f97fcde7e4836e24d0954e5759f043894b3b7466e5811a8da18262a43b2",
+    "reference/kit/turn-build.mjs": "b4cc085d187a2e56e097980e1fb034a70c9327dcf4d79cf73c2093b80e002673",
+    "reference/kit/turn.mjs": "f2cacb26e354e7283972ea98e51ccac4a5dd4b8e0e9e3b775130ea7b65bd28dd",
+    "reference/kit/turn-audit.mjs": "e118b838c00621eb5d86409552b75b50d02c303eaedefc008146a7c62c2eaefd",
+    "detail-scene.json": "614c20515954962dc0d6e84aa49084c96bedd0fca1b6f1ad6c9af213a2a4e162"
+  },
+  "failures": 0,
+  "result": {
+    "separation": [],
+    "unseparated": [],
+    "cycles": [],
+    "forced": [],
+    "swaps": [],
+    "layers": [],
+    "rigid": [],
+    "swept": [],
+    "posed": [],
+    "folds": [],
+    "self": [],
+    "crowding": [],
+    "endon": [],
+    "coverage": [],
+    "depth": [],
+    "continuity": [],
+    "notes": [],
+    "stats": {
+      "planes": 113,
+      "tightest": 0,
+      "orderStates": 3315,
+      "changes": 146,
+      "posedStates": 1385,
+      "continuity": {
+        "worst": {
+          "q": 0,
+          "birth": 0,
+          "dot": 0,
+          "fade": 0,
+          "motion": 0,
+          "merge": 0
+        },
+        "halvingChecked": 400,
+        "halvingFails": 0,
+        "measures": 2340
+      },
+      "depthStates": 111,
+      "depthPairs": 7621,
+      "seconds": 1450.93
+    },
+    "quick": false,
+    "skipped": [],
+    "changes": [
+      {
+        "family": "pitch",
+        "x": 0.8333333333333334,
+        "count": 156,
+        "pairs": [
+          "cover.surface / stand.neighbor0.file",
+          "shell.back / cover.surface",
+          "shell.back / stand.neighbor0.file",
+          "shell.left / cover.surface"
+        ]
+      },
+      {
+        "family": "sweep",
+        "x": 35,
+        "count": 106,
+        "pairs": [
+          "stand.shell.base / cover.index",
+          "stand.shell.base / stand.neighbor0.file",
+          "shell.left / cover.index",
+          "shell.left / stand.neighbor0.file"
+        ]
+      },
+      {
+        "family": "cover-0",
+        "x": 0.7333333333333333,
+        "count": 104,
+        "pairs": [
+          "cover.surface / compartment0.tray",
+          "cover.surface / source0_0.module",
+          "cover.surface / stand.neighbor0.file",
+          "cover.surface / stand.neighbor4.file"
+        ]
+      },
+      {
+        "family": "sweep",
+        "x": 249,
+        "count": 91,
+        "pairs": [
+          "source1_1.module / stand.neighbor0.file",
+          "source1_1.module / stand.neighbor1.file",
+          "source1_1.module / stand.neighbor2.file",
+          "source1_1.module / stand.neighbor3.file"
+        ]
+      },
+      {
+        "family": "sweep",
+        "x": 255,
+        "count": 83,
+        "pairs": [
+          "shell.front / compartment0.tray",
+          "shell.front / compartment0.index",
+          "shell.front / source0_0.module",
+          "shell.front / source0_1.module"
+        ]
+      },
+      {
+        "family": "sweep",
+        "x": 347,
+        "count": 79,
+        "pairs": [
+          "shell.front / compartment1.tray",
+          "shell.front / compartment1.index",
+          "shell.front / source1_0.module",
+          "shell.front / source1_1.module"
+        ]
+      },
+      {
+        "family": "pitch",
+        "x": 0.48333333333333334,
+        "count": 79,
+        "pairs": [
+          "compartment3.tray / focus.file",
+          "compartment3.tray / focus.declaration",
+          "compartment3.index / focus.file",
+          "compartment3.index / focus.declaration"
+        ]
+      },
+      {
+        "family": "sweep",
+        "x": 330,
+        "count": 77,
+        "pairs": [
+          "shell.front / compartment0.index",
+          "shell.front / compartment2.tray",
+          "shell.front / compartment2.index",
+          "shell.front / source2_0.module"
+        ]
+      },
+      {
+        "family": "sweep",
+        "x": 332,
+        "count": 77,
+        "pairs": [
+          "compartment0.index / compartment3.tray",
+          "compartment0.index / compartment3.index",
+          "compartment0.index / source3_0.module",
+          "compartment0.index / source3_1.module"
+        ]
+      },
+      {
+        "family": "sweep",
+        "x": 221,
+        "count": 71,
+        "pairs": [
+          "shell.back / stand.neighbor4.file",
+          "shell.right / stand.neighbor4.file",
+          "shell.front / stand.neighbor4.file",
+          "shell.left / compartment2.tray"
+        ]
+      }
+    ]
+  }
+}

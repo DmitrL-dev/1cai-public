@@ -1,0 +1,62 @@
+{
+  "scope": "Node geometry+ordering finite mixed-path cost, not browser FPS. 360 mixed full-yaw/pitch±85/opening states,4 discrete focus compartments;1warmup+5 measured rounds. Same geometry/runtime contract, only cycle-refinement predicate differs. Concurrent host load can affect timings.",
+  "runtimeSha256": "f2cacb26e354e7283972ea98e51ccac4a5dd4b8e0e9e3b775130ea7b65bd28dd",
+  "results": [
+    {
+      "variant": "before",
+      "scene": "overview",
+      "solids": 84,
+      "measuredFrames": 1800,
+      "medianMs": 2.6924489999992147,
+      "p95Ms": 4.537172000000282,
+      "medianRoundMeanMs": 3.09296240555554,
+      "maxMs": 9.703340000000026,
+      "forced": 0,
+      "unseparated": 0,
+      "refined": 1068
+    },
+    {
+      "variant": "before",
+      "scene": "cutaway",
+      "solids": 31,
+      "measuredFrames": 1800,
+      "medianMs": 0.9691050000001269,
+      "p95Ms": 1.4644230000003517,
+      "medianRoundMeanMs": 1.063386786111121,
+      "maxMs": 5.222251000001052,
+      "forced": 0,
+      "unseparated": 0,
+      "refined": 11625
+    },
+    {
+      "variant": "after",
+      "scene": "overview",
+      "solids": 84,
+      "measuredFrames": 1800,
+      "medianMs": 2.3593999999993684,
+      "p95Ms": 3.526144999999815,
+      "medianRoundMeanMs": 2.5532406361111346,
+      "maxMs": 13.3623520000001,
+      "forced": 0,
+      "unseparated": 0,
+      "refined": 1062
+    },
+    {
+      "variant": "after",
+      "scene": "cutaway",
+      "solids": 31,
+      "measuredFrames": 1800,
+      "medianMs": 0.8642409999993106,
+      "p95Ms": 1.2572189999991679,
+      "medianRoundMeanMs": 0.9261593166666191,
+      "maxMs": 4.735233999999764,
+      "forced": 0,
+      "unseparated": 0,
+      "refined": 11605
+    }
+  ],
+  "ratios": {
+    "overview": 0.8255000550685764,
+    "cutaway": 0.8709524406012678
+  }
+}

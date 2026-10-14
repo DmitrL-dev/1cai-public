@@ -1,5 +1,7 @@
 # Explorer geometry qualification
 
+The current persistent-cutaway and refreshed overview qualification is documented in [CUTAWAY-QUALIFICATION.md](CUTAWAY-QUALIFICATION.md). Both fresh full audits passed. The historical qualification below pins the prior runtime. The cutaway candidate adds a conservative cycle-refinement correction and requires fresh qualification for both scenes. The new overview full audit (`node qa/overview-geometry.mjs`) has passed all sixteen categories with zero failures, 2,835 order states, 946 posed states and 72 depth states / 10,790 overlapping pairs. Its exact-input report is `qa/overview-geometry.json`; browser and cutaway qualification are separate. The older certificate is retained as provenance, not reused as a pass for changed code.
+
 This report applies to the 84-solid, 14-system semantic explorer, not the older 122-solid physical-atlas scene. Geometry explains source responsibilities; it is not physical hardware or runtime telemetry.
 
 ## Contract

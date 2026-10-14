@@ -1,0 +1,46 @@
+{"parts":84,"objects":14,"bytes":38141,"groups":15,"seconds":0.848}
+separation
+order scan sweep: 360 states
+order scan sweep: 667 random states, 212 event states
+order scan pitch: 61 states
+order scan pitch: 667 random states, 32 event states
+order scan explode: 61 states
+order scan explode: 667 random states, 4 event states
+rigid
+swept
+posed
+folds, self, crowding, endon
+coverage
+continuity
+continuity pitch: 61 frames over 84 parts
+continuity explode: 61 frames over 84 parts
+depth oracle
+separation: 0
+unseparated: 0
+cycles: 0
+forced: 0
+swaps: 0
+layers: 0
+rigid: 0
+swept: 0
+posed: 0
+folds: 0
+self: 0
+crowding: 0
+endon: 0
+coverage: 0
+depth: 0
+continuity: 0
+worst tone step 0 · worst birth 0.00 px² · worst dot α step 0.000 · worst faded α step 0.000 · merges 0 · outline motion over bound 0.000 px · halving 0 of 400
+order changes: 124 states with swaps · 2835 order states · 946 posed states · 214 planes (tightest margin 0.000) · depth oracle 72 states, 10790 overlapping pairs
+  sweep at 169.000: 665 pairs reorder (stand.snapshots.0.source-domain / system.diagnostics.1.input; stand.snapshots.0.source-domain / system.diagnostics.2.result; stand.snapshots.0.source-domain / system.diagnostics.4.probe-carriage; stand.snapshots.0.source-domain / stand.drafts.0.source-domain)
+  sweep at 356.000: 540 pairs reorder (stand.interfaces.0.source-domain / stand.identity.0.source-domain; stand.interfaces.0.source-domain / stand.observer.0.source-domain; stand.interfaces.0.source-domain / system.observer.1.watched-source; stand.interfaces.0.source-domain / system.observer.2.committed-snapshot)
+  sweep at 64.000: 499 pairs reorder (stand.gui.0.source-domain / stand.identity.0.source-domain; system.gui.2.window-left / stand.identity.0.source-domain; system.gui.5.submitted-archive / stand.identity.0.source-domain; system.gui.4.window-top / stand.identity.0.source-domain)
+  sweep at 68.000: 475 pairs reorder (stand.diagnostics.0.source-domain / stand.native.0.source-domain; stand.diagnostics.0.source-domain / system.native.1.check-domain; stand.diagnostics.0.source-domain / stand.observer.0.source-domain; stand.diagnostics.0.source-domain / system.observer.1.watched-source)
+  sweep at 349.000: 456 pairs reorder (stand.interfaces.0.source-domain / stand.graph.0.source-domain; stand.interfaces.0.source-domain / system.graph.1.source-node; stand.interfaces.0.source-domain / system.graph.2.source-node; stand.interfaces.0.source-domain / system.graph.3.source-node)
+  sweep at 244.000: 399 pairs reorder (stand.observer.0.source-domain / stand.evidence.0.source-domain; stand.observer.0.source-domain / system.evidence.1.evidence-record; stand.observer.0.source-domain / system.evidence.2.evidence-record; stand.observer.0.source-domain / system.evidence.3.evidence-record)
+  sweep at 154.000: 396 pairs reorder (stand.snapshots.0.source-domain / stand.diagnostics.0.source-domain; stand.snapshots.0.source-domain / stand.kernel.0.source-domain; stand.gui.0.source-domain / stand.diagnostics.0.source-domain; stand.gui.0.source-domain / stand.kernel.0.source-domain)
+  sweep at 72.000: 342 pairs reorder (system.diagnostics.1.input / stand.drafts.0.source-domain; system.diagnostics.1.input / system.drafts.1.retained-before; system.diagnostics.1.input / system.drafts.2.proposed-after; system.diagnostics.1.input / system.drafts.3.revision-history)
+  sweep at 334.000: 333 pairs reorder (stand.identity.0.source-domain / stand.graph.0.source-domain; stand.identity.0.source-domain / system.graph.1.source-node; stand.identity.0.source-domain / system.graph.2.source-node; stand.identity.0.source-domain / system.graph.3.source-node)
+  sweep at 250.000: 332 pairs reorder (system.evidence.3.evidence-record / stand.delivery.0.source-domain; system.evidence.2.evidence-record / stand.delivery.0.source-domain; system.evidence.1.evidence-record / stand.delivery.0.source-domain; system.evidence.4.provenance-band / stand.delivery.0.source-domain)
+turn audit · 303.42 s

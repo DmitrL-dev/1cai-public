@@ -1,0 +1,55 @@
+{"detail":true,"parts":31,"report":{"parts":31,"groups":5,"layers":[{"name":"detail","parts":31,"planar":113,"framed":0,"groupPairs":0,"dynamic":0,"skip":0}],"tight":[],"margins":[{"a":"stand.shell.base","b":"shell.back","margin":0.10000000000000009},{"a":"stand.shell.base","b":"shell.left","margin":0.10000000000000009},{"a":"stand.shell.base","b":"shell.right","margin":0.10000000000000009},{"a":"stand.shell.base","b":"shell.front","margin":0.10000000000000009},{"a":"stand.shell.base","b":"stand.neighbor0.file","margin":7},{"a":"stand.shell.base","b":"stand.neighbor1.file","margin":7},{"a":"stand.shell.base","b":"stand.neighbor2.file","margin":7},{"a":"stand.shell.base","b":"stand.neighbor3.file","margin":7},{"a":"stand.shell.base","b":"stand.neighbor4.file","margin":7},{"a":"stand.shell.base","b":"stand.neighbor5.file","margin":7},{"a":"shell.back","b":"shell.left","margin":0},{"a":"shell.back","b":"shell.right","margin":0},{"a":"shell.back","b":"shell.front","margin":110},{"a":"shell.back","b":"stand.neighbor0.file","margin":120.000039999995},{"a":"shell.back","b":"stand.neighbor1.file","margin":120.000039999995},{"a":"shell.back","b":"stand.neighbor2.file","margin":120.000039999995},{"a":"shell.back","b":"stand.neighbor3.file","margin":120.000039999995},{"a":"shell.back","b":"stand.neighbor4.file","margin":120.000039999995},{"a":"shell.back","b":"stand.neighbor5.file","margin":120.000039999995},{"a":"shell.left","b":"shell.right","margin":154},{"a":"shell.left","b":"shell.front","margin":0.24852813742385393},{"a":"shell.left","b":"stand.neighbor0.file","margin":11.903584167649235},{"a":"shell.left","b":"stand.neighbor1.file","margin":32.76232592475692},{"a":"shell.left","b":"stand.neighbor2.file","margin":56.99447341628834},{"a":"shell.left","b":"stand.neighbor3.file","margin":81.69069714477898},{"a":"shell.left","b":"stand.neighbor4.file","margin":106.52872851958759},{"a":"shell.left","b":"stand.neighbor5.file","margin":131.42819332243747},{"a":"shell.right","b":"shell.front","margin":0.24852813742385393},{"a":"shell.right","b":"stand.neighbor0.file","margin":130.4314762624421},{"a":"shell.right","b":"stand.neighbor1.file","margin":105.5337386810493},{"a":"shell.right","b":"stand.neighbor2.file","margin":80.69925650215123},{"a":"shell.right","b":"stand.neighbor3.file","margin":56.01223080720853},{"a":"shell.right","b":"stand.neighbor4.file","margin":31.817762334897143},{"a":"shell.right","b":"stand.neighbor5.file","margin":11.416822858121849},{"a":"shell.front","b":"stand.neighbor0.file","margin":7.000713964788261},{"a":"shell.front","b":"stand.neighbor1.file","margin":7.000713964788261},{"a":"shell.front","b":"stand.neighbor2.file","margin":7.000713964788261},{"a":"shell.front","b":"stand.neighbor3.file","margin":7.000713964788261},{"a":"shell.front","b":"stand.neighbor4.file","margin":7.000713964788261},{"a":"shell.front","b":"stand.neighbor5.file","margin":7.000713964788261},{"a":"cover.surface","b":"cover.index","margin":0.10000000000000142},{"a":"compartment0.tray","b":"compartment0.index","margin":0.10000000000000053},{"a":"compartment0.tray","b":"source0_0.module","margin":0.10000000000000053},{"a":"compartment0.tray","b":"source0_1.module","margin":0.10000000000000053},{"a":"compartment0.tray","b":"compartment2.tray","margin":10},{"a":"compartment0.tray","b":"compartment2.index","margin":50.0000999999},{"a":"compartment0.tray","b":"source2_0.module","margin":12.000415992216176},{"a":"compartment0.tray","b":"source2_1.module","margin":12.000415992216176},{"a":"compartment0.index","b":"source0_0.module","margin":33},{"a":"compartment0.index","b":"source0_1.module","margin":33},{"a":"compartment0.index","b":"compartment2.tray","margin":13.000383994983938},{"a":"compartment0.index","b":"compartment2.index","margin":53},{"a":"compartment0.index","b":"source2_0.module","margin":15},{"a":"compartment0.index","b":"source2_1.module","margin":15},{"a":"source0_0.module","b":"source0_1.module","margin":4},{"a":"source0_0.module","b":"compartment2.tray","margin":49.000101999882},{"a":"source0_0.module","b":"compartment2.index","margin":89},{"a":"source0_0.module","b":"source2_0.module","margin":51},{"a":"source0_0.module","b":"source2_1.module","margin":51.20703076726866},{"a":"source0_1.module","b":"compartment2.tray","margin":49.000101999882},{"a":"source0_1.module","b":"compartment2.index","margin":89},{"a":"source0_1.module","b":"source2_0.module","margin":51.20703076726867},{"a":"source0_1.module","b":"source2_1.module","margin":51},{"a":"compartment1.tray","b":"compartment1.index","margin":0.10000000000000053},{"a":"compartment1.tray","b":"source1_0.module","margin":0.10000000000000053},{"a":"compartment1.tray","b":"source1_1.module","margin":0.10000000000000053},{"a":"compartment1.tray","b":"compartment3.tray","margin":10},{"a":"compartment1.tray","b":"compartment3.index","margin":50.0000999999},{"a":"compartment1.tray","b":"source3_0.module","margin":12.000415992216176},{"a":"compartment1.tray","b":"source3_1.module","margin":12.000415992216176},{"a":"compartment1.index","b":"source1_0.module","margin":33},{"a":"compartment1.index","b":"source1_1.module","margin":33},{"a":"compartment1.index","b":"compartment3.tray","margin":13.000383994983938},{"a":"compartment1.index","b":"compartment3.index","margin":53},{"a":"compartment1.index","b":"source3_0.module","margin":15},{"a":"compartment1.index","b":"source3_1.module","margin":15},{"a":"source1_0.module","b":"source1_1.module","margin":4},{"a":"source1_0.module","b":"compartment3.tray","margin":49.000101999882},{"a":"source1_0.module","b":"compartment3.index","margin":89},{"a":"source1_0.module","b":"source3_0.module","margin":51},{"a":"source1_0.module","b":"source3_1.module","margin":51.20703076726867},{"a":"source1_1.module","b":"compartment3.tray","margin":49.000101999882},{"a":"source1_1.module","b":"compartment3.index","margin":89},{"a":"source1_1.module","b":"source3_0.module","margin":51.20703076726866},{"a":"source1_1.module","b":"source3_1.module","margin":51},{"a":"compartment2.tray","b":"compartment2.index","margin":0.10000000000000053},{"a":"compartment2.tray","b":"source2_0.module","margin":0.10000000000000053},{"a":"compartment2.tray","b":"source2_1.module","margin":0.10000000000000053},{"a":"compartment2.index","b":"source2_0.module","margin":33},{"a":"compartment2.index","b":"source2_1.module","margin":33},{"a":"source2_0.module","b":"source2_1.module","margin":4},{"a":"compartment3.tray","b":"compartment3.index","margin":0.10000000000000053},{"a":"compartment3.tray","b":"source3_0.module","margin":0.10000000000000053},{"a":"compartment3.tray","b":"source3_1.module","margin":0.10000000000000053},{"a":"compartment3.index","b":"source3_0.module","margin":33},{"a":"compartment3.index","b":"source3_1.module","margin":33},{"a":"source3_0.module","b":"source3_1.module","margin":4},{"a":"focus.file","b":"focus.declaration","margin":0.10000000000000142},{"a":"stand.neighbor0.file","b":"stand.neighbor1.file","margin":7},{"a":"stand.neighbor0.file","b":"stand.neighbor2.file","margin":32},{"a":"stand.neighbor0.file","b":"stand.neighbor3.file","margin":57},{"a":"stand.neighbor0.file","b":"stand.neighbor4.file","margin":82},{"a":"stand.neighbor0.file","b":"stand.neighbor5.file","margin":107},{"a":"stand.neighbor1.file","b":"stand.neighbor2.file","margin":7},{"a":"stand.neighbor1.file","b":"stand.neighbor3.file","margin":32},{"a":"stand.neighbor1.file","b":"stand.neighbor4.file","margin":57},{"a":"stand.neighbor1.file","b":"stand.neighbor5.file","margin":82},{"a":"stand.neighbor2.file","b":"stand.neighbor3.file","margin":7},{"a":"stand.neighbor2.file","b":"stand.neighbor4.file","margin":32},{"a":"stand.neighbor2.file","b":"stand.neighbor5.file","margin":57},{"a":"stand.neighbor3.file","b":"stand.neighbor4.file","margin":7},{"a":"stand.neighbor3.file","b":"stand.neighbor5.file","margin":32},{"a":"stand.neighbor4.file","b":"stand.neighbor5.file","margin":7}],"proofs":[],"seconds":0.497}}
+separation
+order scan sweep: 360 states
+order scan sweep: 333 random states, 140 event states
+order scan cover-0: 61 states
+order scan cover-0: 333 random states, 28 event states
+order scan cover-1: 61 states
+order scan cover-1: 333 random states, 30 event states
+order scan cover-2: 61 states
+order scan cover-2: 333 random states, 22 event states
+order scan cover-3: 61 states
+order scan cover-3: 333 random states, 26 event states
+order scan pitch: 61 states
+order scan pitch: 333 random states, 46 event states
+rigid
+swept
+posed
+folds, self, crowding, endon
+coverage
+continuity
+continuity cover-0: 61 frames over 31 parts
+continuity cover-1: 61 frames over 31 parts
+continuity cover-2: 61 frames over 31 parts
+continuity cover-3: 61 frames over 31 parts
+continuity pitch: 61 frames over 31 parts
+depth oracle
+separation: 0
+unseparated: 0
+cycles: 0
+forced: 0
+swaps: 0
+layers: 0
+rigid: 0
+swept: 0
+posed: 0
+folds: 0
+self: 0
+crowding: 0
+endon: 0
+coverage: 0
+depth: 0
+continuity: 0
+worst tone step 0 · worst birth 0.00 px² · worst dot α step 0.000 · worst faded α step 0.000 · merges 0 · outline motion over bound 0.000 px · halving 0 of 400
+order changes: 146 states with swaps · 3315 order states · 1385 posed states · 113 planes (tightest margin 0.000) · depth oracle 111 states, 7621 overlapping pairs
+  pitch at 0.833: 156 pairs reorder (cover.surface / stand.neighbor0.file; shell.back / cover.surface; shell.back / stand.neighbor0.file; shell.left / cover.surface)
+  sweep at 35.000: 106 pairs reorder (stand.shell.base / cover.index; stand.shell.base / stand.neighbor0.file; shell.left / cover.index; shell.left / stand.neighbor0.file)
+  cover-0 at 0.733: 104 pairs reorder (cover.surface / compartment0.tray; cover.surface / source0_0.module; cover.surface / stand.neighbor0.file; cover.surface / stand.neighbor4.file)
+  sweep at 249.000: 91 pairs reorder (source1_1.module / stand.neighbor0.file; source1_1.module / stand.neighbor1.file; source1_1.module / stand.neighbor2.file; source1_1.module / stand.neighbor3.file)
+  sweep at 255.000: 83 pairs reorder (shell.front / compartment0.tray; shell.front / compartment0.index; shell.front / source0_0.module; shell.front / source0_1.module)
+  sweep at 347.000: 79 pairs reorder (shell.front / compartment1.tray; shell.front / compartment1.index; shell.front / source1_0.module; shell.front / source1_1.module)
+  pitch at 0.483: 79 pairs reorder (compartment3.tray / focus.file; compartment3.tray / focus.declaration; compartment3.index / focus.file; compartment3.index / focus.declaration)
+  sweep at 330.000: 77 pairs reorder (shell.front / compartment0.index; shell.front / compartment2.tray; shell.front / compartment2.index; shell.front / source2_0.module)
+  sweep at 332.000: 77 pairs reorder (compartment0.index / compartment3.tray; compartment0.index / compartment3.index; compartment0.index / source3_0.module; compartment0.index / source3_1.module)
+  sweep at 221.000: 71 pairs reorder (shell.back / stand.neighbor4.file; shell.right / stand.neighbor4.file; shell.front / stand.neighbor4.file; shell.left / compartment2.tray)
+turn audit · 1450.93 s

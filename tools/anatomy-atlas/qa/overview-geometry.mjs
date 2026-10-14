@@ -1,0 +1,11 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {TURN} from '../reference/kit/turn.mjs';
+import {T,R,P,poses,follow} from '../build-explorer-scene.mjs';
+import * as A from '../reference/kit/audit.mjs';
+import * as TA from '../reference/kit/turn-audit.mjs';
+TURN.exact(true);
+A.settle(R,P);A.auditOrExit(R,P);
+const result=TA.orbit(T,R,P,{poses,quick:false,sweep:{at:yaw=>follow({world:{R:TURN.rotation([0,0,1],yaw),t:[0,0,0]},apart:0}),from:0,to:360,frame:1},clips:[{name:'pitch',at:t=>follow({world:{R:TURN.compose(TURN.rotation([1,0,0],-85+170*t),TURN.rotation([0,0,1],30)),t:[0,0,0]},apart:0}),from:0,to:1,frame:1/60},{name:'explode',at:t=>follow({world:null,apart:t}),from:0,to:1,frame:1/60}],log:x=>console.log(x)});
+const paths=['build-explorer-scene.mjs','qa/overview-geometry.mjs','reference/kit/turn-build.mjs','reference/kit/turn.mjs','reference/kit/turn-audit.mjs'];
+const report={scope:'Full official overview orbit requalification against cycle-refinement runtime fix. Unchanged84solid geometry and ±85pitch/full yaw. Exact-mode matches viewer. Finite sampling; not browser QA.',sourceCommit:'6c8feb291dd251826eebb99e145f4a39f56cda47',hashes:Object.fromEntries(paths.map(p=>[p,createHash('sha256').update(readFileSync(p)).digest('hex')])),failures:TA.orbitFailures(result),result};writeFileSync('qa/overview-geometry.json',JSON.stringify(report,null,2));console.log(TA.orbitReport(result));process.exitCode=report.failures?1:process.exitCode||0;
