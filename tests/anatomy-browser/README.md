@@ -19,14 +19,18 @@ Playwright 1.56.1 is locked; its lockfile was recovered directly from accepted R
 5. Keyboard activation/camera controls and stable reduced-motion pixels.
 6. Chromium touch emulation at 390×844: native touch orbit/pinch/tap, accessible object list and selected-object controls, exact source view, no page overflow and 40px minimum tested primary control.
 7. Light/dark desktop and 1024×768 screenshots of real selected source. Font geometry is recorded, but visual readability still needs actual artifact inspection.
-9. Independent selected-system opening: actual geometry and pose change for the selected system while another remains unchanged, disabled detail context, history and reset reversal.
+9. Independent selected-system opening and reversible cutaway cover/child slides, closed and transitional hit suppression, camera restoration: actual geometry and pose change for the selected system while another remains unchanged, disabled detail context, history and reset reversal.
 
 8. Browser input-to-two-frames timing and idle frame samples. This is CI host data, not a user-device/mobile FPS guarantee.
 
-Normal interaction uses real mouse/keyboard/CDP touch. Read-only exposed state and repository data are only assertions, never navigation mutation hooks. Browser network is restricted to the loopback server. No trace, video, browser profile, tokens or external screenshots are retained.
+Normal interaction uses real mouse/keyboard/CDP touch. Normal acceptance uses real controls. Exposed state/data are read-only assertions; the public explorer.open(id) navigation API is used only for exhaustive all-system catalog and performance setup. Browser network is restricted to the loopback server. No trace, video, browser profile, tokens or external screenshots are retained.
 
 ## Receipts and review
 
 The always-run receipt step records exact checkout/expected HEAD, built HTML and source payload hashes, named case outcomes and available PNG/JSON hashes even on failure. Incomplete or failed cases remain failing. Skips and retries are rejected. Automated success still records screenshot_visual_review: pending until screenshots are actually opened and reviewed. Case count or changed pixels alone do not establish useful readable design.
 
 The intended route is isolated GitHub browser qualification. The local cloud's prior Chromium EPERM was not retried or bypassed. Private Site access and audience remain unchanged. No user's Mac or unrelated product work is involved.
+
+## Persistent cutaway candidate
+
+The nine named cases now include all14 complete source trees, source-backed compartment membership and representative spines, Snapshot11files and four primary modules, declaration focus, bounded opt-in import neighbors, persistent seven-step source reading, route/code synchronization, reversible nested disclosure and closed/intermediate hit testing. These changed assertions require a fresh exact-HEAD Chromium run; previous tile-shelf receipts do not qualify them.

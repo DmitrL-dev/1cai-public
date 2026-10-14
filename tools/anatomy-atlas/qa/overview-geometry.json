@@ -1,0 +1,168 @@
+{
+  "scope": "Full official overview orbit requalification against cycle-refinement runtime fix. Unchanged84solid geometry and ±85pitch/full yaw. Exact-mode matches viewer. Finite sampling; not browser QA.",
+  "sourceCommit": "6c8feb291dd251826eebb99e145f4a39f56cda47",
+  "hashes": {
+    "build-explorer-scene.mjs": "5856b44556559a9ae1447c56a22a2c5e18edcc869b6c4813285ce80bb31c0387",
+    "qa/overview-geometry.mjs": "951defcf8c4911f8cc6436c8ac734f29333a13a98a33a052a9b613c2d19a11ca",
+    "reference/kit/turn-build.mjs": "b4cc085d187a2e56e097980e1fb034a70c9327dcf4d79cf73c2093b80e002673",
+    "reference/kit/turn.mjs": "f2cacb26e354e7283972ea98e51ccac4a5dd4b8e0e9e3b775130ea7b65bd28dd",
+    "reference/kit/turn-audit.mjs": "e118b838c00621eb5d86409552b75b50d02c303eaedefc008146a7c62c2eaefd"
+  },
+  "failures": 0,
+  "result": {
+    "separation": [],
+    "unseparated": [],
+    "cycles": [],
+    "forced": [],
+    "swaps": [],
+    "layers": [],
+    "rigid": [],
+    "swept": [],
+    "posed": [],
+    "folds": [],
+    "self": [],
+    "crowding": [],
+    "endon": [],
+    "coverage": [],
+    "depth": [],
+    "continuity": [],
+    "notes": [],
+    "stats": {
+      "planes": 214,
+      "tightest": 0,
+      "orderStates": 2835,
+      "changes": 124,
+      "posedStates": 946,
+      "continuity": {
+        "worst": {
+          "q": 0,
+          "birth": 0,
+          "dot": 0,
+          "fade": 0,
+          "motion": 0,
+          "merge": 0
+        },
+        "halvingChecked": 400,
+        "halvingFails": 0,
+        "measures": 5038
+      },
+      "depthStates": 72,
+      "depthPairs": 10790,
+      "seconds": 303.421
+    },
+    "quick": false,
+    "skipped": [],
+    "changes": [
+      {
+        "family": "sweep",
+        "x": 169,
+        "count": 665,
+        "pairs": [
+          "stand.snapshots.0.source-domain / system.diagnostics.1.input",
+          "stand.snapshots.0.source-domain / system.diagnostics.2.result",
+          "stand.snapshots.0.source-domain / system.diagnostics.4.probe-carriage",
+          "stand.snapshots.0.source-domain / stand.drafts.0.source-domain"
+        ]
+      },
+      {
+        "family": "sweep",
+        "x": 356,
+        "count": 540,
+        "pairs": [
+          "stand.interfaces.0.source-domain / stand.identity.0.source-domain",
+          "stand.interfaces.0.source-domain / stand.observer.0.source-domain",
+          "stand.interfaces.0.source-domain / system.observer.1.watched-source",
+          "stand.interfaces.0.source-domain / system.observer.2.committed-snapshot"
+        ]
+      },
+      {
+        "family": "sweep",
+        "x": 64,
+        "count": 499,
+        "pairs": [
+          "stand.gui.0.source-domain / stand.identity.0.source-domain",
+          "system.gui.2.window-left / stand.identity.0.source-domain",
+          "system.gui.5.submitted-archive / stand.identity.0.source-domain",
+          "system.gui.4.window-top / stand.identity.0.source-domain"
+        ]
+      },
+      {
+        "family": "sweep",
+        "x": 68,
+        "count": 475,
+        "pairs": [
+          "stand.diagnostics.0.source-domain / stand.native.0.source-domain",
+          "stand.diagnostics.0.source-domain / system.native.1.check-domain",
+          "stand.diagnostics.0.source-domain / stand.observer.0.source-domain",
+          "stand.diagnostics.0.source-domain / system.observer.1.watched-source"
+        ]
+      },
+      {
+        "family": "sweep",
+        "x": 349,
+        "count": 456,
+        "pairs": [
+          "stand.interfaces.0.source-domain / stand.graph.0.source-domain",
+          "stand.interfaces.0.source-domain / system.graph.1.source-node",
+          "stand.interfaces.0.source-domain / system.graph.2.source-node",
+          "stand.interfaces.0.source-domain / system.graph.3.source-node"
+        ]
+      },
+      {
+        "family": "sweep",
+        "x": 244,
+        "count": 399,
+        "pairs": [
+          "stand.observer.0.source-domain / stand.evidence.0.source-domain",
+          "stand.observer.0.source-domain / system.evidence.1.evidence-record",
+          "stand.observer.0.source-domain / system.evidence.2.evidence-record",
+          "stand.observer.0.source-domain / system.evidence.3.evidence-record"
+        ]
+      },
+      {
+        "family": "sweep",
+        "x": 154,
+        "count": 396,
+        "pairs": [
+          "stand.snapshots.0.source-domain / stand.diagnostics.0.source-domain",
+          "stand.snapshots.0.source-domain / stand.kernel.0.source-domain",
+          "stand.gui.0.source-domain / stand.diagnostics.0.source-domain",
+          "stand.gui.0.source-domain / stand.kernel.0.source-domain"
+        ]
+      },
+      {
+        "family": "sweep",
+        "x": 72,
+        "count": 342,
+        "pairs": [
+          "system.diagnostics.1.input / stand.drafts.0.source-domain",
+          "system.diagnostics.1.input / system.drafts.1.retained-before",
+          "system.diagnostics.1.input / system.drafts.2.proposed-after",
+          "system.diagnostics.1.input / system.drafts.3.revision-history"
+        ]
+      },
+      {
+        "family": "sweep",
+        "x": 334,
+        "count": 333,
+        "pairs": [
+          "stand.identity.0.source-domain / stand.graph.0.source-domain",
+          "stand.identity.0.source-domain / system.graph.1.source-node",
+          "stand.identity.0.source-domain / system.graph.2.source-node",
+          "stand.identity.0.source-domain / system.graph.3.source-node"
+        ]
+      },
+      {
+        "family": "sweep",
+        "x": 250,
+        "count": 332,
+        "pairs": [
+          "system.evidence.3.evidence-record / stand.delivery.0.source-domain",
+          "system.evidence.2.evidence-record / stand.delivery.0.source-domain",
+          "system.evidence.1.evidence-record / stand.delivery.0.source-domain",
+          "system.evidence.4.provenance-band / stand.delivery.0.source-domain"
+        ]
+      }
+    ]
+  }
+}

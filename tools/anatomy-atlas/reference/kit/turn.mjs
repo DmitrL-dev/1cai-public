@@ -2962,7 +2962,8 @@ function t3Order(layer, frames, cams, previous, stats, scene) {
               checked[edge] = 1;
               const a = x;
               const b = to[edge];
-              if (t3Disjoint(frames[parts[a]], frames[parts[b]], 0.1)) {
+              // Preserve every genuinely overlapping order edge; a long subpixel sliver can have visible area.
+              if (t3Disjoint(frames[parts[a]], frames[parts[b]], 0)) {
                 live[edge] = 0;
                 indeg[b]--;
                 refined++;
