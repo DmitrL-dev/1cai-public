@@ -20,7 +20,8 @@ def load_script(name):
 
 def runner_scripts(worker):
     return {name:worker.sha(Path(__file__).with_name(name)) for name in
-        ('verify_stock_git_scm.py','scm_stock_git_lifecycle.py','scm_stock_git_measurement.py')}
+        ('verify_stock_git_scm.py','scm_stock_git_lifecycle.py','scm_stock_git_measurement.py',
+            'scm_journal_notifications.py')}
 
 
 def runtime_stage(workdir,mode,*,java_home=None,jar=None):

@@ -49,6 +49,20 @@
 #occurrence-highlight{background:#ffdf80;color:inherit;outline:2px solid #d59514;scroll-margin:30px}
 #source-selection{margin-top:8px;overflow-wrap:anywhere}
 
+/* Three submitted archives: read-only categories and explicit absent sides. */
+#threeway-view{min-width:0}#threeway-view h2{font-size:17px;margin:22px 0 12px}
+#threeway-view .comparison-binding,#threeway-message,#threeway-counts,#threeway-coverage{overflow-wrap:anywhere;min-width:0;font-size:12px;line-height:1.7;margin:12px 0}
+#threeway-view .notice{flex-wrap:wrap}#threeway-view .button{max-width:100%;white-space:normal}
+.threeway-inputs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.threeway-inputs>section{min-width:0;background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px}
+.threeway-inputs label{font-size:12px;font-weight:600;display:block;margin-bottom:10px}
+.threeway-inputs input{display:block;max-width:100%;font-size:12px}
+#threeway-filter{max-width:100%;padding:8px;margin:10px 0}
+#threeway-list{list-style:none;margin:14px 0;padding:0;display:grid;gap:8px;max-height:32rem;overflow:auto}
+#threeway-list li{min-width:0;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fff;overflow-wrap:anywhere}
+#threeway-list h3{font-size:12px;line-height:1.5;margin-bottom:10px}
+#threeway-list p{font:11px/1.6 ui-monospace,monospace;margin-top:6px;overflow-wrap:anywhere}
+@media(max-width:800px){.threeway-inputs{grid-template-columns:minmax(0,1fr)}}
 /* Exact line alignment stays text-only, wraps long source lines and never widens mobile layouts. */
 .comparison-line-diff{min-width:0;margin-top:24px;border-top:1px solid var(--line);padding-top:12px;overflow-wrap:anywhere}
 .comparison-line-diff p{font-size:12px;line-height:1.7;margin-bottom:8px}

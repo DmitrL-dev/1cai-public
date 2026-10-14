@@ -68,7 +68,7 @@ def test_missing_known_properties_rejects_search(children):
     assert error.value.code == "METADATA_SEARCH_UNSUPPORTED"
 
 
-@pytest.mark.parametrize("name", ["x"*513, "я"*257])
+@pytest.mark.parametrize("name", ["x"*513, "я"*257], ids=['oversized-name-1', 'oversized-name-2'])
 def test_oversized_text_rejects_even_without_match(name):
     with pytest.raises(CoreError) as error:
         search(attribute(name), "absent")

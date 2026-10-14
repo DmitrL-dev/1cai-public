@@ -75,7 +75,8 @@ def test_complete_recomputed_pages_and_exact_coverage(running):
 
 @pytest.mark.parametrize("raw,reason", [(b"x" * (256 * 1024 + 1), "SOURCE_TOO_LARGE"),
     (b"\xff", "SOURCE_ENCODING_UNSUPPORTED"), (b"x\x00", "SOURCE_ENCODING_UNSUPPORTED"),
-    (b"a\n" * 4097, "LINE_LIMIT"), (b"a\n" * 1100, "WORK_LIMIT")])
+    (b"a\n" * 4097, "LINE_LIMIT"), (b"a\n" * 1100, "WORK_LIMIT")],
+    ids=["source-byte-limit", "invalid-utf8", "forbidden-control", "line-limit", "alignment-work-limit"])
 def test_unavailable_is_row_free_and_original_sources_preserved(running, raw, reason):
     app, server, _ = running
     result = pair(app, server, {"assets/m.txt": raw}, {"assets/m.txt": b"b\n" * 1100})

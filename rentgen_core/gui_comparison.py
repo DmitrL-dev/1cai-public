@@ -141,6 +141,7 @@ class ComparisonWorkspace:
             previous = self.comparison_pending
             if previous and previous is not self.comparison_current:
                 previous.path.unlink(missing_ok=True)
+            self._reserve_zip_slots(1, excluding=[previous.path] if previous and previous is not self.comparison_current else [])
             item = Comparison(secrets.token_hex(16), before, before.sha256, filename,
                               Path(self.temp.name) / (secrets.token_hex(16) + ".zip"))
             self.comparison_pending = item

@@ -18,6 +18,7 @@
       <button class="nav-item active" data-view="objects" aria-current="page"><span data-icon="boxes"></span>Объекты<span id="object-count" class="nav-count">0</span></button>
       <button class="nav-item" data-view="modules"><span data-icon="code"></span>Модули<span id="module-count" class="nav-count">0</span></button>
       <button class="nav-item" data-view="comparison"><span data-icon="compare"></span>Сравнение ZIP</button>
+      <button class="nav-item" data-view="threeway"><span data-icon="compare"></span>Три версии ZIP</button>
       <button class="nav-item" data-view="provenance"><span data-icon="shield"></span>Источник и границы</button>
     </nav>
     <p class="nav-caption second">СЛЕДУЮЩИЕ ЭТАПЫ</p>
@@ -74,6 +75,26 @@
             <nav class="pagination" aria-label="Страницы сравнения"><button id="compare-previous" class="button subtle" disabled>Предыдущая страница</button><p id="compare-range" role="status"></p><button id="compare-next" class="button subtle" disabled>Следующая страница</button></nav>
             <div id="compare-list" class="comparison-list" aria-label="Файлы сравнения"></div>
             <section id="compare-source" aria-label="Проверенные исходники до и после"></section>
+          </div>
+        </section>
+        <section id="threeway-view" hidden aria-label="Инвентарь трёх ZIP">
+          <div class="notice"><p>Наличие файлов и совпадение SHA-256 и размера по точному пути в трёх ZIP. Роли Base, Current и Upstream задаёте вы: происхождение и родство архивов не проверяются. Категории описывают наблюдаемые отличия, включая отсутствие файла; они не подтверждают корректность слияния или смысл изменений в 1С.</p></div>
+          <h2>1. Подтвердите открытую выгрузку как Current</h2>
+          <p id="threeway-current" class="comparison-binding"></p>
+          <button id="threeway-confirm" class="button secondary">Подтвердить текущую выгрузку как Current</button>
+          <h2>2. Выберите Base и Upstream</h2>
+          <div class="threeway-inputs">
+            <section aria-label="Архив Base"><label for="threeway-base-file">Выбрать ZIP Base</label><input id="threeway-base-file" type="file" accept=".zip,application/zip" disabled><p id="threeway-base" class="comparison-binding">Base: не выбран</p></section>
+            <section aria-label="Архив Upstream"><label for="threeway-upstream-file">Выбрать ZIP Upstream</label><input id="threeway-upstream-file" type="file" accept=".zip,application/zip" disabled><p id="threeway-upstream" class="comparison-binding">Upstream: не выбран</p></section>
+          </div>
+          <p class="muted">Base и Upstream читаются как инвентари файлов ZIP без проверки формата конфигурации. До 16 МиБ на ZIP, 48 МиБ на выбранные три ZIP и 96 МиБ после распаковки; дополнительно действует общий лимит временных ZIP рабочей области 96 МиБ. Загрузка по одной роли. Замена роли, отмена, выход из раздела или новый импорт сбрасывают показанные строки. Изменения не применяются, исходные архивы не изменяются.</p>
+          <div class="notice" role="status"><p id="threeway-message">Подтвердите Current.</p><button id="threeway-check" class="button subtle" disabled>Проверить результат</button><button id="threeway-cancel" class="button subtle" hidden>Отменить набор трёх ZIP</button></div>
+          <div id="threeway-result" hidden>
+            <h2>3. Наблюдаемые отличия файлов</h2>
+            <p id="threeway-counts" role="status"></p><p id="threeway-coverage"></p>
+            <label for="threeway-filter">Показать категории</label><select id="threeway-filter"><option value="changes">Все отличия от Base</option><option value="all">Все пути</option><option value="unchanged">Без изменений относительно Base</option><option value="same_change">Одинаковое отличие от Base</option><option value="keep_current">Отличается только Current</option><option value="take_upstream">Отличается только Upstream</option><option value="conflict">Разные отличия Current и Upstream</option></select>
+            <nav class="pagination" aria-label="Страницы инвентаря трёх ZIP"><button id="threeway-previous" class="button subtle" disabled>Предыдущая страница</button><p id="threeway-range" role="status"></p><button id="threeway-next" class="button subtle" disabled>Следующая страница</button></nav>
+            <ol id="threeway-list" aria-label="Пути трёх ZIP" tabindex="0"></ol>
           </div>
         </section>
         <section id="provenance-view" hidden></section>
