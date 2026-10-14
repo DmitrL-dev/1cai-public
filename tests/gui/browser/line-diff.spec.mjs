@@ -81,7 +81,9 @@ const unicodeRows=[
 ];
 
 test('exact Unicode lines, inert markup, endings and BOM retain both byte-bound originals',async({page,app},testInfo)=>{
-  await openDiff(page,app,{holdReadiness:true});const {request,result}=await select(page,app,'AUnicode.bsl');
+  await openDiff(page,app,{holdReadiness:true});
+  await expect(page.getByText('Для выбранного файла доступно ограниченное построчное сравнение текста.',{exact:false})).toBeVisible();
+  const {request,result}=await select(page,app,'AUnicode.bsl');
   expect(Object.keys(request).sort()).toEqual(['after_sha256','before_sha256','offset','page','pair','path']);
   expect(request).toMatchObject({before_sha256:app.line_diff.archives.before.sha256,after_sha256:app.line_diff.archives.after.sha256,path:'AUnicode.bsl',offset:0});
   const {offset,...selection}=request;

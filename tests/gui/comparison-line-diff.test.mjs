@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {comparisonLineDiffMatches,createComparison} from '../../rentgen_core/gui_assets/comparison.js';
@@ -116,4 +117,11 @@ test('actual engine payloads retain interior-line BOM and a second leading BOM',
   const changed=structuredClone(r);changed.rows.at(-1).text=changed.rows.at(-1).text.replace('\ufeff','');
   assert.equal(comparisonLineDiffMatches(pair,page,selected,0,changed),false,'dropping preserved BOM changes verified bytes');
  }
+});
+
+test('comparison banner describes bounded line comparison without semantic claims',()=>{
+ const html=readFileSync(new URL('../../rentgen_core/gui_assets/index.html',import.meta.url),'utf8');
+ assert.ok(html.includes('Для выбранного файла доступно ограниченное построчное сравнение текста.'));
+ assert.ok(html.includes('Семантический анализ и применение изменений не выполняются.'));
+ assert.ok(!html.includes('Построчное выравнивание, семантический анализ'));
 });
