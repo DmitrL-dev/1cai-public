@@ -14,6 +14,29 @@ const label=(page,id)=>page.locator(`#exOverlay .ex-label[data-ex-id=${q(id)}]`)
 const treeFile=(page,id)=>page.locator(`#exSourceTree [data-tree-file=${q(id)}]`);
 const camera=s=>Object.fromEntries(['yaw','pitch','panX','panY','zoom'].map(k=>[k,s[k]]));
 const listIds=page=>page.locator('#exObjectList [data-ex-list]').evaluateAll(els=>els.map(el=>el.dataset.exList));
+async function compactDetail(page){
+  await expect(page.locator('#explorerView')).toHaveClass(/ex-detail-mode/);
+  expect(await page.locator('.ex-tree-details').evaluate(el=>el.open),'A new detail opens with its complete tree collapsed').toBe(false);
+  await expect(page.locator('#exTreeSearch')).toBeHidden();
+  for(const selector of ['.ex-list-details','.ex-status','#exExplode','#exNodeExplode'])await expect(page.locator(selector)).toBeHidden();
+}
+async function firstScreen(page,info,name){
+  await page.evaluate(()=>window.scrollTo(0,0));await expect.poll(()=>page.evaluate(()=>scrollY)).toBe(0);
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  const layout=await page.locator('#exViewport').evaluate(el=>{
+    const b=el.getBoundingClientRect(),top=Math.max(0,b.top),bottom=Math.min(innerHeight,b.bottom),left=Math.max(0,b.left),right=Math.min(innerWidth,b.right);
+    const solidCount=[...el.querySelectorAll('#exStage [data-p][data-ex-id]:not([data-hidden])')].filter(n=>{const r=n.getBoundingClientRect();return r.width>0&&r.height>0&&r.bottom>top&&r.top<bottom&&r.right>left&&r.left<right}).length;
+    return{scrollY,top:b.top,bottom:b.bottom,visibleHeight:Math.max(0,bottom-top),visibleWidth:Math.max(0,right-left),solidCount,windowWidth:innerWidth,windowHeight:innerHeight};
+  });
+  expect(layout.top,'The scene starts on the first screen at page top').toBeLessThan(layout.windowHeight);
+  expect(layout.visibleHeight,'More than 200px of scene is visible before scrolling').toBeGreaterThan(200);
+  expect(layout.visibleWidth).toBeGreaterThan(200);expect(layout.solidCount,'Actual rendered solids appear in the first-screen scene area').toBeGreaterThan(0);
+  await noOverflow(page);
+  const path=info.outputPath(`${name}.png`),bytes=await page.screenshot({path,fullPage:false,animations:'disabled'});
+  expect(bytes.readUInt32BE(16)).toBe(page.viewportSize().width);expect(bytes.readUInt32BE(20)).toBe(page.viewportSize().height);
+  await writeFile(info.outputPath(`${name}.json`),JSON.stringify({name,layout,state:await state(page),viewport:page.viewportSize(),sha256:createHash('sha256').update(bytes).digest('hex')},null,2));
+  await info.attach(name,{path,contentType:'image/png'});
+}
 async function openTree(page){
   const details=page.locator('.ex-tree-details');
   if(!await details.evaluate(el=>el.open))await details.locator(':scope > summary').click();
@@ -76,6 +99,8 @@ async function cutaway(page,systemId,focusedId){
 async function searchFile(page,path){
   await page.locator('#exSearch').fill(`file:${path}`);
   await expect.poll(async()=>(await state(page)).query).toBe(`file:${path}`);
+  const disclosure=page.locator('.ex-list-details');await expect(disclosure).toBeVisible();
+  if(page.viewportSize().width<760&&!await disclosure.evaluate(el=>el.open))await disclosure.locator('summary').click();
   const target=page.viewportSize().width<760?page.locator(`#exObjectList [data-ex-list=${q(`file:${path}`)}]`):label(page,`file:${path}`).locator('rect');
   await target.click();await expect.poll(async()=>(await state(page)).selected).toBe(`file:${path}`);
 }
@@ -145,6 +170,7 @@ test('Q02 direct scene picking hierarchy and exact source',async({page},info)=>{
   expect(hit,'At least one solid must be directly pointer-pickable').not.toBeNull();await page.mouse.click(hit.x,hit.y);await expect.poll(async()=>(await state(page)).selected).toBe(hit.id);
   await label(page,'snapshots').focus();await page.keyboard.press(' ');
   await page.locator('#exOpen').click();expect((await state(page)).root).toBe('snapshots');
+  await compactDetail(page);await firstScreen(page,info,'desktop-cutaway-first-screen');
   const snapshot=await cutaway(page,'snapshots','file:rentgen_core/capture.py');
   expect(snapshot.files).toHaveLength(11);
   expect(snapshot.files).toEqual(expect.arrayContaining(['capture.py','manifests.py','publication.py','sources.py'].map(name=>'file:rentgen_core/'+name)));
@@ -202,6 +228,7 @@ test('Q02 direct scene picking hierarchy and exact source',async({page},info)=>{
   for(const system of systems){
     await test.step(`Populated cutaway and complete source tree: ${system.id}`,async()=>{
       await page.evaluate(id=>window.explorer.open(id),system.id);
+      await compactDetail(page);
       await openTree(page);await page.locator('#exTreeSearch').fill('');
       const initial=await state(page),model=await cutaway(page,system.id,initial.selected);
       const treeIds=await page.locator('#exSourceTree [data-tree-file]').evaluateAll(els=>els.map(el=>el.dataset.treeFile));
@@ -263,6 +290,8 @@ test('Q03 dependency evidence and source routes',async({page},info)=>{
   await expect(page.locator('.ex-route-rail')).toContainText('Порядок чтения, не выполнение');
   await expect(page.locator('#exRouteSelect')).toBeVisible();
   await expect(page.locator('#exRouteFocus')).toBeVisible();
+  expect(await page.locator('#exRouteDetails').evaluate(el=>el.open)).toBe(false);
+  await page.locator('#exRouteDetails > summary').click();await expect(page.locator('#exRouteCopy')).toBeVisible();
   await page.locator('#exRouteSelect').selectOption('0');
   await page.locator('#exRouteFocus').click();
   const routeChecks=[];
@@ -275,7 +304,14 @@ test('Q03 dependency evidence and source routes',async({page},info)=>{
     await expect(page.locator('#exRouteCopy a[href*="/blob/"]').first()).toHaveAttribute('href',step.refs[0].url);
     await expect(page.locator('#exRouteSelect')).toHaveValue('0');
     await expect(page.locator('#exRouteFocus')).toBeVisible();
-    if(node.id.startsWith('symbol:'))await expect(page.locator('#exDeclarationList')).toHaveValue(node.id);
+    if(node.id.startsWith('symbol:')){
+      await expect(page.locator('#exDeclarationList')).toHaveValue(node.id);
+      const option=page.locator('#exDeclarationList option:checked');
+      await expect(option).toHaveAttribute('data-source-parent',node.parentId);
+      await expect(option).toHaveAttribute('data-evidence-kind',node.evidenceKind);
+      await expect(option).toContainText(node.label);
+      await expect(page.locator('#exInlineSource a[href*="/blob/"]').first()).toHaveAttribute('href',node.refs[0].url);
+    }
     routeChecks.push({index,nodeId:node.id,systemId:node.systemId,file:node.path,refs:step.refs,state:await state(page)});
   }
   for(let i=0;i<flow.steps.length;i++){
@@ -297,14 +333,27 @@ test('Q03 dependency evidence and source routes',async({page},info)=>{
 test('Q04 navigation history isolation and filtering',async({page},info)=>{
   await label(page,'interfaces').locator('rect').click();await page.locator('#exOpen').click();
   await page.locator('#exBack').click();expect((await state(page)).mode).toBe('overview');await page.locator('#exForward').click();expect((await state(page)).root).toBe('interfaces');
+  await compactDetail(page);await selectTreeFile(page,'rentgen_core/cli.py');
+  await page.locator('#exOpen').click();await compactDetail(page);
+  await page.locator('#exBack').click();expect((await state(page)).root).toBe('interfaces');
+  expect(await page.locator('.ex-tree-details').evaluate(el=>el.open),'Back restores an intentionally expanded tree').toBe(true);
+  await expect(page.locator('#exTreeSearch')).toHaveValue('rentgen_core/cli.py');await expect(treeFile(page,'file:rentgen_core/cli.py')).toBeVisible();
+  await page.locator('#exTreeSearch').fill('');
+  expect(await page.locator('#exSourceTree [data-tree-file]').count()).toBe(await page.evaluate(()=>window.atlas.data.nodes.filter(n=>n.systemId==='interfaces'&&n.id.startsWith('file:')).length));
+  await page.locator('#exSearch').fill('file:');await expect.poll(async()=>(await state(page)).query).toBe('file:');
+  await expect(page.locator('.ex-list-details')).toBeVisible();await expect(page.locator('.ex-status')).toBeVisible();
+  if(!await page.locator('.ex-list-details').evaluate(el=>el.open))await page.locator('.ex-list-details > summary').click();
+  await expect(page.locator('#exObjectList [data-ex-list]').first()).toBeVisible();
+  await expect(page.locator('#exExplode')).toBeHidden();await expect(page.locator('#exNodeExplode')).toBeHidden();
   await page.locator('#exDirectory').selectOption('rentgen_core/');const directoryIds=await listIds(page);expect(directoryIds.every(id=>id.startsWith('file:rentgen_core/'))).toBe(true);expect(directoryIds.length).toBeGreaterThan(0);expect((await state(page)).visibleIds).toContain('interfaces');await page.locator('#exDirectory').selectOption('all');
   const firstPage=await listIds(page);await page.locator('#exPageNext').click();expect((await state(page)).page).toBe(1);expect(await listIds(page)).not.toEqual(firstPage);await page.locator('#exPagePrev').click();expect((await state(page)).page).toBe(0);expect(await listIds(page)).toEqual(firstPage);
-  await page.locator('#exRole').selectOption('test');const ids=await listIds(page);expect(ids.length).toBeGreaterThan(0);expect(await page.evaluate(ids=>ids.every(id=>window.atlas.data.nodes.find(n=>n.id===id)?.role==='test'),ids)).toBe(true);expect((await state(page)).visibleIds).toContain('interfaces');
+  await page.locator('#exRole').selectOption('test');const ids=await listIds(page);expect(ids.length).toBeGreaterThan(0);expect(await page.evaluate(ids=>ids.every(id=>window.atlas.data.nodes.find(n=>n.id===id)?.role==='test'),ids)).toBe(true);const filtered=await state(page);expect(filtered.visibleIds).toContain(filtered.cutawayRoot);
+  await page.locator('#exRole').selectOption('all');await searchFile(page,'rentgen_core/cli.py');
   await page.locator('#exIsolate').click();const isolatedDetail=await state(page);
   expect(isolatedDetail.visibleIds).toContain('interfaces');expect(isolatedDetail.visibleIds).toContain(isolatedDetail.selected);
   expect(isolatedDetail.visibleIds.filter(id=>id.startsWith('@compartment:interfaces:'))).toHaveLength(isolatedDetail.compartmentCount);
   await page.locator('#exIsolate').click();
-  await page.locator('#exHome').click();await label(page,'interfaces').locator('rect').click();await page.locator('#exIsolate').click();expect((await state(page)).visibleIds).toEqual(['interfaces']);
+  await page.locator('#exHome').click();await expect(page.locator('.ex-list-details')).toBeVisible();await expect(page.locator('#exExplode')).toBeVisible();await expect(page.locator('#exNodeExplode')).toBeVisible();await label(page,'interfaces').locator('rect').click();await page.locator('#exIsolate').click();expect((await state(page)).visibleIds).toEqual(['interfaces']);
   await evidence(page,info,'isolated-layer');await page.locator('#exIsolate').click();const disclosure=page.locator('.ex-list-details');if(!await disclosure.evaluate(el=>el.open))await disclosure.locator('summary').click();await expect(page.locator('[data-ex-visible="interfaces"]')).toBeVisible();
   await page.locator('[data-ex-visible="interfaces"]').uncheck();expect((await state(page)).visibleIds).not.toContain('interfaces');await page.locator('[data-ex-visible="interfaces"]').check();expect((await state(page)).visibleIds).toContain('interfaces');await disclosure.locator('summary').click();await expect(page.locator('[data-ex-visible="interfaces"]')).toBeHidden();await disclosure.locator('summary').click();await expect(page.locator('[data-ex-visible="interfaces"]')).toBeVisible();
   await page.locator('#exSearch').fill('no-result-qualification-unique');await expect(page.locator('#exEmpty')).toBeVisible();await page.locator('#exClearSearch').click();await expect(page.locator('#exEmpty')).toBeHidden();
@@ -327,7 +376,7 @@ test('Q06 mobile touch navigation and readable detail',async({page,context},info
   await page.locator('#exReset').click();const target=page.locator('#exObjectList [data-ex-list="graph"]');await target.scrollIntoViewIfNeeded();const box=await target.boundingBox();
   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:box.x+box.width/2,y:box.y+box.height/2,id:1}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await expect.poll(async()=>(await state(page)).selected).toBe('graph');
   await expect(page.locator('#exMobileSelection')).toBeVisible();await expect(page.locator('#exMobileLabel')).toHaveText(await page.evaluate(()=>window.atlas.data.sections.find(n=>n.id==='graph').label));
-  await page.locator('#exMobileOpen').click();await noOverflow(page);await evidence(page,info,'mobile-system-files');
+  await page.locator('#exMobileOpen').click();await compactDetail(page);await firstScreen(page,info,'mobile-cutaway-first-screen');await noOverflow(page);await evidence(page,info,'mobile-system-files');
   await searchFile(page,'rentgen_core/capture.py');await inlineSource(page,'file:rentgen_core/capture.py');await noOverflow(page);await evidence(page,info,'mobile-readable-code',page.locator('#inspector'));
   await cutaway(page,'snapshots','file:rentgen_core/capture.py');
   await page.locator('#exOpen').click();await openTree(page);
@@ -342,7 +391,8 @@ test('Q06 mobile touch navigation and readable detail',async({page,context},info
 test('Q07 light dark and narrow desktop readability',async({page},info)=>{
   await searchFile(page,'rentgen_core/capture.py');await inlineSource(page,'file:rentgen_core/capture.py');await evidence(page,info,'desktop-light-code',page.locator('#inspector'));
   await page.locator('#theme').click();await expect(page.locator('body')).toHaveAttribute('data-theme','dark');await evidence(page,info,'desktop-dark-code',page.locator('#inspector'));
-  await page.setViewportSize({width:1024,height:768});await noOverflow(page);await evidence(page,info,'narrow-desktop-explorer');await evidence(page,info,'narrow-desktop-code',page.locator('#inspector'));
+  await page.setViewportSize({width:1024,height:768});await page.locator('#exHome').click();await label(page,'snapshots').focus();await page.keyboard.press(' ');await page.locator('#exOpen').click();
+  await compactDetail(page);await firstScreen(page,info,'narrow-desktop-cutaway-first-screen');await noOverflow(page);await evidence(page,info,'narrow-desktop-explorer');await inlineSource(page,'file:rentgen_core/capture.py');await evidence(page,info,'narrow-desktop-code',page.locator('#inspector'));
 });
 
 test('Q08 bounded browser interaction performance',async({page,browser},info)=>{

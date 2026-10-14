@@ -21,3 +21,12 @@
 @media(min-width:761px) and (max-width:1000px){.workspace{grid-template-columns:minmax(0,1fr)}.catalogue-nav{grid-column:1/-1;max-height:none}#systemNav{display:flex;gap:5px;overflow-x:auto;padding-bottom:6px}#systemNav button{flex:0 0 160px;min-width:160px}.inspector{grid-column:1/-1}.mainpane{min-width:0}}
 
 .ex-import-evidence{font-size:11px;margin:8px 0}.ex-import-evidence summary{cursor:pointer;min-height:25px}#exImportEvidence{max-height:240px;overflow:auto}#exImportEvidence>div{border-bottom:1px solid var(--line);padding:6px 0}#exImportEvidence button{display:block;text-align:left;max-width:100%;font:11px/1.5 monospace;overflow-wrap:anywhere}#exImportEvidence pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:10px}#exImportEvidence a{font:10px/1.5 monospace;overflow-wrap:anywhere}@media(max-width:760px){#exImportEvidence button{min-height:44px;font-size:12px}}
+
+/* Detail starts with the named assembly; source controls remain below, without duplicate inventory. */
+.ex-route-rail{padding:8px 12px;gap:6px 10px}.ex-route-rail label{margin-bottom:3px}.ex-route-buttons{align-items:center}#exRouteDetails{grid-column:1/-1;font-size:10px}#exRouteDetails summary{cursor:pointer;padding:3px 0}#exRouteCopy{padding:6px 0}
+#exCutawayHeader{padding:8px 12px;border-bottom:1px solid var(--line);background:var(--paper)}#exCutawayHeader .ex-cutaway-heading{gap:7px}#exCutawayHeader .ex-cutaway-heading+div{margin-top:3px}
+.ex-detail-mode .ex-node-controls,.ex-detail-mode .ex-controls>label,.ex-detail-mode:not(.ex-search-mode) .ex-list-details,.ex-detail-mode:not(.ex-search-mode) .ex-status{display:none}
+@media(max-width:760px){.ex-route-rail{display:grid;grid-template-columns:1fr;padding:7px 9px}.ex-route-buttons{margin:0;align-items:center}.ex-route-rail select{min-height:36px}.ex-route-rail label{font-size:9px}#exRouteDetails summary{min-height:24px}#exCutawayHeader .ex-cutaway-heading{flex-wrap:nowrap}#exCutawayHeader strong{font-size:11px;line-height:1.4}#exCutawayHeader #exCloseCutaway{flex:0 0 auto;font-size:10px;padding:6px}#exCutawayHeader #exDetailOpening{min-height:32px}}
+/* The introductory/catalogue overview returns with Home; keep detail's containing system and source controls primary. */
+body:has(#explorerView.ex-detail-mode:not([hidden])) .intro{display:none}
+@media(max-width:1000px){body:has(#explorerView.ex-detail-mode:not([hidden])) .catalogue-nav{display:none}}
