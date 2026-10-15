@@ -7,6 +7,7 @@ const assert = require('node:assert/strict');
 const {createHash, randomUUID} = require('node:crypto');
 const {execFile} = require('node:child_process');
 const {promisify} = require('node:util');
+const {checkpoint, failure} = require('./phase.cjs');
 const execute = promisify(execFile);
 const sha = value => createHash('sha256').update(value).digest('hex');
 const read = async file => JSON.parse(await fs.readFile(file, 'utf8'));
@@ -86,12 +87,16 @@ async function proposal(cli, root, ref, text, label) {
 
 async function phaseOne(api, config, scenario, root, report) {
   const cli = cliFor(config);
+  checkpoint(report, 'first.snapshot');
   assert.deepEqual(api.selectedSnapshot(), scenario.snapshot);
   await api.selectSnapshot(scenario.snapshot);
+  checkpoint(report, 'first.metadata');
   const module = await moduleRow(api, scenario);
   report.opened_project = true; report.metadata_search = true;
+  checkpoint(report, 'first.forged-handle');
   await assert.rejects(vscode.commands.executeCommand('rentgen.editSource', 'forged-source-handle', {title: 'Refused'}), /UNKNOWN_VIEW_HANDLE/);
   report.forged_handle_refused = true;
+  checkpoint(report, 'first.manual-draft');
   await vscode.commands.executeCommand('rentgen.openSelection', module.token);
   assert.equal(sha(Buffer.from(vscode.window.activeTextEditor.document.getText(), 'utf8')), scenario.original_sha256);
   const sourceBefore = await fs.readFile(path.join(scenario.source, scenario.module));
@@ -105,6 +110,7 @@ async function phaseOne(api, config, scenario, root, report) {
   const manual = saved.receipt;
   assert.equal((await cli('draft-history', '--draft-id', manual.draft_id)).items.length, 1);
   report.manual_draft_saved = true;
+  checkpoint(report, 'first.bsl');
   await api.refreshDrafts();
   let row = (await api.drafts()).find(item => item.receipt?.draft_id === manual.draft_id);
   assert.deepEqual(row.receipt, manual);
@@ -112,6 +118,7 @@ async function phaseOne(api, config, scenario, root, report) {
   report.bsl = await problems(api, manual, bsl);
   report.real_bsl = true; report.problems_exact_revision = true;
 
+  checkpoint(report, 'first.concurrent-edit');
   const stale = await vscode.commands.executeCommand('rentgen.editDraft', row.token);
   const staleDocument = vscode.window.activeTextEditor.document;
   await replace(staleDocument, scenario.edited + '// stale local edit\r\n');
@@ -127,6 +134,7 @@ async function phaseOne(api, config, scenario, root, report) {
   assert.equal((await vscode.commands.executeCommand('rentgen.editResult', stale.id)).status, 'unresolved');
   report.concurrent_cli = true; report.stale_refused = true;
 
+  checkpoint(report, 'first.revocation');
   await api.refreshDrafts();
   row = (await api.drafts()).find(item => item.receipt?.draft_id === manual.draft_id);
   const revoked = await vscode.commands.executeCommand('rentgen.editDraft', row.token);
@@ -149,6 +157,7 @@ async function phaseOne(api, config, scenario, root, report) {
 
   // Explicit crash-stage fixture: actual journal intent + actual CLI commit.
   // Its receipt is deliberately never passed to a UI save presenter.
+  checkpoint(report, 'first.unobserved-commit');
   const crashModule = await moduleRow(api, scenario);
   await vscode.commands.executeCommand('rentgen.openSelection', crashModule.token);
   const crash = await vscode.commands.executeCommand('rentgen.editSource', crashModule.token, {title: 'Unobserved commit fixture'});
@@ -172,16 +181,19 @@ async function phaseOne(api, config, scenario, root, report) {
   report.crash_stage_committed = true;
 
   // Advance actual Core HEAD without refreshing the explicitly selected snapshot.
+  checkpoint(report, 'first.advance-head');
   await fs.writeFile(path.join(scenario.source, scenario.module), scenario.later);
   await cli('capture', '--scanner', scenario.scanner);
   const newer = await cli('project-head');
   assert.notEqual(newer.snapshot.snapshot_id, scenario.snapshot.snapshot_id);
+  checkpoint(report, 'first.persist-selection');
   await api.openDraft(manual);
   assert.deepEqual(api.selectedSnapshot(), scenario.snapshot);
   const persisted = api.workbenchSnapshot();
   assert.equal(persisted.selection.kind, 'draft');
   assert.equal(persisted.selection.draft_id, manual.draft_id); assert.equal(persisted.selection.revision, 1);
   report.snapshot_pinned_before_restart = true;
+  checkpoint(report, 'first.handoff');
   await write(path.join(root, 'phase1-handoff.json'), {schema: 1, pid: process.pid, snapshot: scenario.snapshot,
     selection: persisted.selection, manual, bsl_run_id: bsl.run_id,
     newer_head: newer, crash: {id: crash.id, draft_id: crash.draft_id, operation_id: intent.operation_id,
@@ -189,20 +201,27 @@ async function phaseOne(api, config, scenario, root, report) {
 }
 
 async function phaseTwo(api, config, scenario, root, report) {
+  checkpoint(report, 'restart.handoff');
   const expected = await read(path.join(root, 'phase1-handoff.json'));
   const cli = cliFor(config);
+  checkpoint(report, 'restart.process');
   assert.notEqual(process.pid, expected.pid);
   report.fresh_extension_host = true;
   // These values come from the extension's real workspaceState restoration.
   // The fixture's handoff file is only an assertion oracle, never state input.
+  checkpoint(report, 'restart.snapshot');
   assert.deepEqual(api.selectedSnapshot(), expected.snapshot);
+  checkpoint(report, 'restart.selection');
   assert.deepEqual(api.workbenchSnapshot().selection, expected.selection);
+  checkpoint(report, 'restart.current-head');
   assert.deepEqual((await cli('project-head')).snapshot, expected.newer_head.snapshot);
   assert.notDeepEqual(api.selectedSnapshot(), expected.newer_head.snapshot);
   report.persisted_context_restored = true; report.pinned_snapshot_restored = true;
+  checkpoint(report, 'restart.historical-draft');
   const historical = await api.draftDocument(expected.manual);
   assert.equal((await vscode.workspace.openTextDocument(historical.uri)).getText(), scenario.edited);
   report.historical_draft_restored = true;
+  checkpoint(report, 'restart.intent-recovery');
   const historyBefore = await cli('draft-history', '--draft-id', expected.crash.draft_id);
   assert.equal(historyBefore.items.length, 1);
   const recovered = await vscode.commands.executeCommand('rentgen.editResult', expected.crash.id);
@@ -210,16 +229,19 @@ async function phaseTwo(api, config, scenario, root, report) {
   assert.equal(recovered.operation_id, expected.crash.operation_id);
   assert.equal(recovered.receipt.proposal_content_id, expected.crash.proposal_content_id);
   assert.equal(recovered.receipt.revision, 1);
+  checkpoint(report, 'restart.receipt-replay');
   const again = await vscode.commands.executeCommand('rentgen.editResult', expected.crash.id);
   assert.deepEqual(again, recovered);
   assert.deepEqual(await cli('draft-history', '--draft-id', expected.crash.draft_id), historyBefore);
   assert.deepEqual(await cli('draft-receipt', '--operation-id', expected.crash.operation_id), recovered.receipt);
   report.reconciled_unobserved_commit = true; report.inspect_did_not_repeat_save = true;
+  checkpoint(report, 'restart.historical-bsl');
   const runsBefore = await api.bslRuns();
   const bsl = await vscode.commands.executeCommand('rentgen.bslResult', expected.bsl_run_id);
   report.bsl = await problems(api, expected.manual, bsl);
   assert.deepEqual(await api.bslRuns(), runsBefore);
   report.historical_bsl_bound = true;
+  checkpoint(report, 'restart.source');
   assert.equal(sha(await fs.readFile(path.join(scenario.source, scenario.module))), expected.current_source_sha256);
   report.source_unchanged = true;
 }
@@ -237,6 +259,7 @@ exports.run = async () => {
     scope: 'automated real editor API execution; no human GUI/accessibility acceptance',
     fault_model: 'durable_intent_commit_unobserved', model_calls: 0, live_1c_apply: false};
   try {
+    checkpoint(report, 'environment');
     assert.equal(vscode.version, launch.editor_api_version);
     assert.equal(vscode.workspace.isTrusted, true);
     assert.equal(vscode.workspace.workspaceFolders.length, 1);
@@ -244,15 +267,19 @@ exports.run = async () => {
     const extension = vscode.extensions.getExtension(launch.companion_id);
     assert.equal(extension?.packageJSON.version, launch.companion_version);
     assert.equal(editorPath(extension.extensionPath), editorPath(launch.extension_path));
+    checkpoint(report, 'activation');
     const api = await extension.activate();
     assert.equal(api.ready, true); assert.equal(api.projectId, config.project_id);
+    checkpoint(report, 'initial-inventories');
     for (const name of ['repairRuns', 'platformRuns', 'testRuns']) assert.deepEqual(await api[name](), []);
     if (phase === 'first') await phaseOne(api, config, scenario, root, report);
     else await phaseTwo(api, config, scenario, root, report);
+    checkpoint(report, 'final-inventories');
     for (const name of ['repairRuns', 'platformRuns', 'testRuns']) assert.deepEqual(await api[name](), []);
+    checkpoint(report, 'complete');
     report.accepted = true;
   } catch (error) {
-    report.error = {name: error.name, message: error.message};
+    report.error = failure(error);
     throw error;
   } finally {
     await write(path.join(root, 'phase-' + phase + '.json'), report);

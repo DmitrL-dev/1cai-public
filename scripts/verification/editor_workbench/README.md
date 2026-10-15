@@ -7,8 +7,11 @@ keyboard, accessibility, native1C, AI-quality or complete IDE acceptance.
 Local Python/Node guard tests do not qualify the editor. A successful exact-source
 `native-editor-workbench` CI job and its positive receipt are required.
 
-The `Product checks` job depends on `windows` and uses its
-`verified-core-development` artifact. The kit receipt must identify the actual
+The `native-editor-workbench` job depends on `windows-artifacts` and uses its
+`verified-core-development` artifact. The separate `windows` job runs the full
+unit contracts in parallel; the entire Product workflow must succeed before
+integration. An early producer artifact does not qualify a failed or incomplete
+Product run. The kit receipt must identify the actual
 checkout commit (GitHub's test-merge commit on pull requests), and the triggering
 PR HEAD is recorded separately. The VSIX must reproduce that same checkout.
 Every installed product file is compared with the wheel and bound Git bytes.
@@ -77,6 +80,16 @@ receipts are uploaded. Raw editor logs, source fixtures, full inventories and
 private per-profile state stay in the disposable attempt. Receipts contain
 reduced metadata and bounded Companion filenames; `full_product_ready` remains false.
 
+An accepted first phase is saved immediately after its supervisor proves owned
+process cleanup, even if restart later fails. A failed host contributes only a
+closed checkpoint ID, boolean progress flags, finite error code/category/operator
+and assertion value types, safe integers, sizes or string hashes. Exception
+messages, stacks, object fields, source text and absolute paths are excluded.
+Missing, malformed or oversized private phase receipts produce a finite
+unavailable diagnostic and preserve the original process failure. Partial phase
+success never changes overall `accepted:false`; both phases and the final byte
+and cleanup checks remain mandatory.
+
 The installed-layout comparison includes `.vsixmanifest` with the exact bytes of
 the outer VSIX `extension.vsixmanifest`. This is a source-based correction for
 the [pinned editor installer](https://github.com/microsoft/vscode/blob/08d4889f9ec4a1685d257b9b95de036c8e1ce1e5/src/vs/platform/extensionManagement/node/extensionManagementService.ts#L649)
@@ -96,6 +109,7 @@ the repository's default `testpaths=tests/unit` does not collect these files:
 python -m pip install -r requirements-test.txt
 python -m pytest -q tests/integration/test_editor_workbench_archive.py tests/integration/test_editor_workbench_inputs.py
 node --check scripts/verification/editor_workbench/host.cjs
+node --test scripts/verification/companion_host/editor-phase.test.cjs
 ```
 
 Real Windows acceptance (the CI job supplies these exact artifact inputs):
@@ -104,6 +118,10 @@ Real Windows acceptance (the CI job supplies these exact artifact inputs):
 python scripts/verification/editor_workbench/run.py --checkout . --kit <verified-kit.zip> --build-receipt <kit-acceptance.json> --vsix <exact-companion.vsix> --expected-commit <actual-checkout-SHA> --trigger-head <event-HEAD-SHA> --output <new-owned-attempt>
 ```
 
-Actual Electron execution is `NOT_RUN` until that command completes on Windows.
+Commit `3cc29c2` reached actual Windows Electron execution: installation and
+inventory passed, the first supervisor exited 0 with cleanup, and restart exited
+1 with cleanup. Its public receipt lacks the failed private phase body, so the
+restart cause remains unknown and the attempt is not accepted. New diagnostics
+and later source changes require a new exact-source Windows run.
 Real kill/reconnect, complete permission revocation, human UI/accessibility,
 licensed1C/EDT/YAxUnit and the other IDE scenarios remain separate release gates.

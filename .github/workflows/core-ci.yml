@@ -30,16 +30,6 @@ jobs:
         with:
           go-version: '1.25.5'
           cache: false
-      - name: Resolve development artifact names
-        shell: pwsh
-        run: |
-          $coreVersion = python -c "import pathlib,tomllib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8'))['project']['version'])"
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $companionVersion = (Get-Content -Raw integrations/vscode-rentgen/package.json | ConvertFrom-Json).version
-          if ($coreVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+\.dev[0-9]+$') { throw 'Invalid development Core version' }
-          if ($companionVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+$') { throw 'Invalid Companion version' }
-          "CORE_KIT_NAME=rentgen-core-$coreVersion-windows-py311" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          "COMPANION_DEVELOPMENT_ASSET=rentgen-companion-$companionVersion-development.vsix" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Install test tools
         run: python -m pip install -r requirements-test.txt
       - name: Python contracts
@@ -90,6 +80,36 @@ jobs:
           ./scripts/verification/test_pinned_runtime_download.ps1 -HelperPath (Join-Path $env:GITHUB_WORKSPACE 'scripts/verification/Invoke-PinnedRuntimeDownload.ps1') -MockRoot $mockRoot
       - name: Scanner tests
         run: go -C go test ./...
+
+  windows-artifacts:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11.9'
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.15.0'
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.25.5'
+          cache: false
+      - name: Resolve development artifact names
+        shell: pwsh
+        run: |
+          $coreVersion = python -c "import pathlib,tomllib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8'))['project']['version'])"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $companionVersion = (Get-Content -Raw integrations/vscode-rentgen/package.json | ConvertFrom-Json).version
+          if ($coreVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+\.dev[0-9]+$') { throw 'Invalid development Core version' }
+          if ($companionVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+$') { throw 'Invalid Companion version' }
+          "CORE_KIT_NAME=rentgen-core-$coreVersion-windows-py311" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "COMPANION_DEVELOPMENT_ASSET=rentgen-companion-$companionVersion-development.vsix" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Install test tools
+        run: python -m pip install -r requirements-test.txt
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: dc61e2ce16f5010b42fb61ae525f644a57b0ab08
@@ -147,7 +167,7 @@ jobs:
           retention-days: 14
 
   native-scm:
-    needs: windows
+    needs: windows-artifacts
     runs-on: windows-latest
     timeout-minutes: 35
     steps:
@@ -190,7 +210,7 @@ jobs:
           retention-days: 14
 
   native-git-diagnostic:
-    needs: windows
+    needs: windows-artifacts
     runs-on: windows-latest
     timeout-minutes: 35
     steps:
@@ -233,7 +253,7 @@ jobs:
           retention-days: 14
 
   native-stock-git:
-    needs: windows
+    needs: windows-artifacts
     runs-on: windows-latest
     timeout-minutes: 40
     steps:
@@ -318,7 +338,7 @@ jobs:
           retention-days: 14
 
   native-editor-workbench:
-    needs: windows
+    needs: windows-artifacts
     runs-on: windows-latest
     timeout-minutes: 40
     steps:

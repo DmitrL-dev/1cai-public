@@ -128,8 +128,8 @@ def test_workflow_keeps_scm_separate_and_retains_failure_evidence():
     import yaml
     document = yaml.safe_load((SCRIPTS.parents[1] / ".github/workflows/core-ci.yml").read_text("utf-8"))
     jobs = document["jobs"]
-    assert jobs["native-scm"]["needs"] == "windows"
-    assert jobs["windows"]["steps"][-1]["with"]["name"] == "verified-core-development"
+    assert jobs["native-scm"]["needs"] == "windows-artifacts"
+    assert jobs["windows-artifacts"]["steps"][-1]["with"]["name"] == "verified-core-development"
     native = jobs["native-scm"]["steps"]
     download = next(s for s in native if "actions/download-artifact@" in s.get("uses", ""))
     assert download["with"] == {"name": "verified-core-development", "path": "output/scm-input"}

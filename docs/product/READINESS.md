@@ -3,12 +3,30 @@
 Текущая цель — **полный финальный релиз с реализацией всех планов**.
 [Единый план и реестр](FULL-FINAL-PLAN.md) сохраняет 127 требований и все
 24 сквозных IDE-сценария. В исходниках развиваются Core/Companion workbench,
-harness настоящего редактора, POSIX owner IO, внутренний reader проверенных
-байтов графа и отдельный diagnostic pilot. Это незавершённая разработка.
-[Промежуточный CI commit `553e1fa`](evidence/development-ci-553e1fa-20261015.json)
-подтвердил ограниченные Windows/Linux/browser/pilot проверки, но весь Product
-workflow завершился отказом editor inventory guard; Extension Host-сценарии
-не запускались. Последующие изменения требуют CI своего source SHA.
+harness настоящего редактора, POSIX owner IO, внутренние
+[сеансы чтения проверенных bytes](../../rentgen_core/POSIX-SNAPSHOT-SESSION.md),
+[Linux identity](../../rentgen_core/LOCAL-IDENTITY.md),
+[POSIX LiveTree](../../rentgen_core/POSIX-LIVE-TREE.md) и отдельный diagnostic pilot.
+LiveTree содержит только внутренние configure/inventory/held-FD read. POSIX
+capture dispatch, scanner ownership и public capture этим adapter не реализованы;
+actual Linux CI ещё нужен.
+[Локальный аудит плана выпуска](../../scripts/release/RELEASE-PLAN-CONTRACT.md)
+проверяет source/tree, bytes и typed claims; полные criterion/topology adapters
+ещё отсутствуют, поэтому это не qualification receipt и не разрешение stable.
+Это незавершённая разработка.
+[Последний исторический CI commit `3cc29c2`](evidence/development-ci-3cc29c2-20261015.json)
+сохраняет Windows 4216 passed / 591 skipped + 51 subtests и Node 577 passed;
+Linux Python 3.11/3.12 — по 3843 passed / 965 skipped без failures/errors;
+GUI browser/backend/frontend — 43/963/98 passed; pilot — 38 protocol tests и
+42 synthetic episodes, без actual model runs или native 1С acceptance.
+Product workflow завершился **failure**: установленный inventory прошёл,
+первый supervisor имеет exit 0 и cleanup complete, но phase body отсутствует
+в публичном artifact и приёмку первой фазы подтвердить нельзя. Restart имеет
+exit 1 и cleanup complete; причина UNKNOWN, приватные phase/log не опубликованы.
+[Предыдущая квитанция `553e1fa`](evidence/development-ci-553e1fa-20261015.json)
+сохраняет свой более ранний отказ inventory до Extension Host.
+Последующие session/identity/LiveTree/audit и editor-observability изменения
+требуют CI своего source SHA; H3 их не квалифицирует.
 Лицензированный стенд 1С/EDT пока недоступен;
 реализация и обычный CI продолжаются, native-приёмка остаётся открытой.
 

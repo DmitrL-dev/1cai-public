@@ -16,6 +16,25 @@ from inputs import PINS, bind_checkout, digest, download, load, require, save
 
 HERE = Path(__file__).resolve().parent
 MAX_COMPANION_DELTA_ENTRIES = 32
+PHASE_FLAGS = {
+    "first": {"opened_project", "metadata_search", "manual_draft_saved", "real_bsl", "problems_exact_revision",
+              "concurrent_cli", "stale_refused", "revoked_write_refused", "forged_handle_refused",
+              "crash_stage_committed", "snapshot_pinned_before_restart"},
+    "restart": {"fresh_extension_host", "persisted_context_restored", "pinned_snapshot_restored",
+                "historical_draft_restored", "reconciled_unobserved_commit", "inspect_did_not_repeat_save",
+                "historical_bsl_bound", "source_unchanged"},
+}
+PHASE_CHECKPOINTS = {"environment", "activation", "initial-inventories", "final-inventories", "complete",
+    "first.snapshot", "first.metadata", "first.forged-handle", "first.manual-draft", "first.bsl",
+    "first.concurrent-edit", "first.revocation", "first.unobserved-commit", "first.advance-head",
+    "first.persist-selection", "first.handoff", "restart.handoff", "restart.process", "restart.snapshot",
+    "restart.selection", "restart.current-head", "restart.historical-draft", "restart.intent-recovery",
+    "restart.receipt-replay", "restart.historical-bsl", "restart.source"}
+PHASE_ERROR_CODES = {"ERR_ASSERTION", "ETIMEDOUT", "PROJECT_FORBIDDEN", "DRAFT_CONFLICT",
+    "WORKBENCH_STATE_INVALID", "WORKBENCH_PROFILE_MISMATCH", "UNKNOWN_VIEW_HANDLE",
+    "TRUST_REQUIRED", "EDITOR_PROFILE_REQUIRED", "WINDOWS_PROFILE_REQUIRED"}
+PHASE_OPERATORS = {"strictEqual", "notStrictEqual", "deepStrictEqual", "notDeepStrictEqual", "==",
+                   "rejects", "match", "doesNotReject"}
 
 
 def tree(root):
@@ -132,21 +151,112 @@ def reduce_phase(value):
                "manual_draft_saved", "real_bsl", "problems_exact_revision", "concurrent_cli", "stale_refused",
                "revoked_write_refused", "forged_handle_refused", "crash_stage_committed", "snapshot_pinned_before_restart",
                "fresh_extension_host", "persisted_context_restored", "pinned_snapshot_restored", "historical_draft_restored",
-               "reconciled_unobserved_commit", "inspect_did_not_repeat_save", "historical_bsl_bound", "source_unchanged"}
+               "reconciled_unobserved_commit", "inspect_did_not_repeat_save", "historical_bsl_bound", "source_unchanged",
+               "checkpoint"}
     require(value.get("accepted") is True and value.get("runtime") == "actual_windows_electron_extension_host", "No positive real editor receipt")
-    required = {
-        "first": {"opened_project", "metadata_search", "manual_draft_saved", "real_bsl", "problems_exact_revision",
-                  "concurrent_cli", "stale_refused", "revoked_write_refused", "forged_handle_refused",
-                  "crash_stage_committed", "snapshot_pinned_before_restart"},
-        "restart": {"fresh_extension_host", "persisted_context_restored", "pinned_snapshot_restored",
-                    "historical_draft_restored", "reconciled_unobserved_commit", "inspect_did_not_repeat_save",
-                    "historical_bsl_bound", "source_unchanged"},
-    }
+    required = PHASE_FLAGS
     require(value.get("phase") in required and all(value.get(key) is True for key in required[value["phase"]]), "Incomplete real editor phase receipt")
     require(value.get("schema") == 1 and type(value.get("process_id")) is int and value["process_id"] > 0
             and value.get("model_calls") == 0 and value.get("live_1c_apply") is False
             and value.get("fault_model") == "durable_intent_commit_unobserved", "Editor scope/provenance differs")
     return {k: v for k, v in value.items() if k in allowed}
+
+
+def read_phase_file(profile, phase):
+    require(phase in PHASE_FLAGS, "Unknown editor phase")
+    file = profile / ("phase-" + phase + ".json")
+    info = file.lstat()
+    require(stat.S_ISREG(info.st_mode) and info.st_nlink == 1 and not file.is_symlink()
+            and not getattr(info, "st_file_attributes", 0) & 0x400, "Unsafe editor phase receipt")
+    with file.open("rb") as stream:
+        opened = os.fstat(stream.fileno())
+        require((opened.st_dev, opened.st_ino, opened.st_size) == (info.st_dev, info.st_ino, info.st_size)
+                and 0 < opened.st_size <= 1024**2, "Editor receipt bound or identity differs")
+        raw = stream.read(1024**2 + 1)
+        require(len(raw) == opened.st_size, "Editor receipt changed or exceeds bound")
+    def pairs(items):
+        value = {}
+        for key, item in items:
+            require(key not in value, "Duplicate editor receipt field")
+            value[key] = item
+        return value
+    return json.loads(raw, object_pairs_hook=pairs)
+
+
+def _phase_value(value):
+    require(type(value) is dict and type(value.get("type")) is str, "Invalid assertion projection")
+    kind = value["type"]
+    if kind in {"null", "undefined", "object", "number", "other"}:
+        require(set(value) == {"type"}, "Unexpected assertion data")
+    elif kind == "boolean":
+        require(set(value) == {"type", "value"} and type(value["value"]) is bool, "Invalid boolean projection")
+    elif kind == "integer":
+        require(set(value) == {"type", "value"} and type(value["value"]) is int
+                and abs(value["value"]) <= 2**53 - 1, "Invalid integer projection")
+    elif kind == "array":
+        require(set(value) == {"type", "length"} and type(value["length"]) is int
+                and 0 <= value["length"] <= 2**32 - 1, "Invalid array projection")
+    elif kind == "string":
+        require(set(value) == {"type", "size_bytes", "sha256"} and type(value["size_bytes"]) is int
+                and 0 <= value["size_bytes"] <= 2**32 - 1, "Invalid string projection")
+        require((value["size_bytes"] > 1024**2 and value["sha256"] is None)
+                or (value["size_bytes"] <= 1024**2 and type(value["sha256"]) is str
+                    and re.fullmatch(r"[a-f0-9]{64}", value["sha256"])), "Invalid assertion digest")
+    else:
+        require(False, "Unknown assertion projection")
+    return dict(value)
+
+
+def reduce_phase_failure(value, phase):
+    require(type(value) is dict and phase in PHASE_FLAGS, "Invalid failed editor phase")
+    flags = set().union(*PHASE_FLAGS.values())
+    metadata = {"schema", "accepted", "phase", "runtime", "process_id", "editor_api_version", "app_name", "scope",
+                "fault_model", "model_calls", "live_1c_apply", "bsl", "checkpoint", "error"}
+    require(set(value) <= metadata | flags and value.get("schema") == 1 and type(value["schema"]) is int
+            and value.get("accepted") is False and value.get("phase") == phase
+            and value.get("runtime") == "actual_windows_electron_extension_host"
+            and type(value.get("process_id")) is int and 0 < value["process_id"] <= 2**31 - 1
+            and type(value.get("model_calls")) is int and value["model_calls"] == 0
+            and value.get("live_1c_apply") is False
+            and value.get("fault_model") == "durable_intent_commit_unobserved", "Failed phase provenance differs")
+    point = value.get("checkpoint")
+    require(type(point) is str and point in PHASE_CHECKPOINTS
+            and ("." not in point or point.startswith(phase + ".")), "Unknown failed editor checkpoint")
+    error = value.get("error")
+    require(type(error) is dict and set(error) == {"category", "code", "operator", "actual", "expected"},
+            "Raw editor exception data refused")
+    require(error["category"] in {"assertion", "timeout", "error"}
+            and (error["code"] is None or error["code"] in PHASE_ERROR_CODES)
+            and (error["operator"] is None or error["operator"] in PHASE_OPERATORS), "Unknown editor error category")
+    reduced = {k: value[k] for k in ("schema", "accepted", "phase", "runtime", "process_id", "checkpoint",
+                                     "fault_model", "model_calls", "live_1c_apply")}
+    for key in flags & value.keys():
+        require(type(value[key]) is bool, "Invalid editor progress flag")
+        reduced[key] = value[key]
+    reduced["error"] = {**{k: error[k] for k in ("category", "code", "operator")},
+                        "actual": _phase_value(error["actual"]), "expected": _phase_value(error["expected"])}
+    return reduced
+
+
+def phase_attempt(command_args, *, output, evidence, profile, phase, receipt):
+    """Preserve validated earlier phases and reduce a failed host before rethrow."""
+    phases = receipt.setdefault("phases", {})
+    try:
+        command(command_args, output, evidence, "host-" + phase, timeout=390)
+    except Exception:
+        try:
+            reduced = reduce_phase_failure(read_phase_file(profile, phase), phase)
+        except Exception:
+            reduced = {"schema": 1, "accepted": False, "phase": phase,
+                       "diagnostic": "failed-phase-receipt-unavailable-or-invalid"}
+        receipt.setdefault("phase_failures", {})[phase] = reduced
+        raise
+    reduced = reduce_phase(read_phase_file(profile, phase))
+    supervisor = json.loads((evidence / ("supervisor-" + phase + ".json")).read_text("utf-8"))
+    require(supervisor["accepted"] is True and supervisor["cleanup_complete"] is True, "Editor descendants not proved closed")
+    reduced["owned_process_cleanup"] = True
+    phases[phase] = reduced
+    save(evidence / "acceptance.json", receipt)
 
 
 def verify(args):
@@ -215,15 +325,10 @@ def verify(args):
         # extension workspaceState and product inputs are never patched here.
         launch_file.write_text(json.dumps(launch, indent=2) + "\n", "utf-8")
         native_before = tree(profile / "local-app-data/Rentgen/runtimes")
-        phases = {}
+        phases = receipt["phases"] = {}
         for phase in ("first", "restart"):
-            command([python, "-I", "-B", HERE / "supervisor.py", "--launch", launch_file, "--mode", phase], output, evidence, "host-" + phase, timeout=390)
-            report_file = profile / ("phase-" + phase + ".json")
-            require(report_file.stat().st_size <= 1024**2, "Editor receipt bound")
-            phases[phase] = reduce_phase(json.loads(report_file.read_text("utf-8")))
-            supervisor = json.loads((evidence / ("supervisor-" + phase + ".json")).read_text("utf-8"))
-            require(supervisor["accepted"] is True and supervisor["cleanup_complete"] is True, "Editor descendants not proved closed")
-            phases[phase]["owned_process_cleanup"] = True
+            phase_attempt([python, "-I", "-B", HERE / "supervisor.py", "--launch", launch_file, "--mode", phase],
+                          output=output, evidence=evidence, profile=profile, phase=phase, receipt=receipt)
         require(phases["first"]["process_id"] != phases["restart"]["process_id"], "Fresh Host not observed")
         require(tree(output / "editor") == editor_inventory, "Pinned editor files changed")
         require(tree(output / "java") == java_inventory, "Pinned JDK input files changed")
@@ -244,7 +349,9 @@ def verify(args):
         receipt.update(accepted=True, phases=phases, artifact_bindings=runtime_binding,
                        all_editor_process_trees_closed=True, exact_source_and_installed_bytes_verified=True)
     except Exception as error:
-        receipt["error"] = {"type": type(error).__name__, "message": str(error)}
+        receipt["error"] = {"type": type(error).__name__ if type(error).__name__ in {
+            "RuntimeError", "ValueError", "TypeError", "KeyError", "OSError", "FileNotFoundError",
+            "TimeoutExpired", "JSONDecodeError"} else "Error"}
         raise
     finally:
         save(evidence / "acceptance.json", receipt)

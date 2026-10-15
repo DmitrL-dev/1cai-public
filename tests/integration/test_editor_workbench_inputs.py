@@ -37,6 +37,97 @@ def phase(which="first"):
             "fault_model": "durable_intent_commit_unobserved", **dict.fromkeys(fields[which], True)}
 
 
+def failed_phase():
+    return {"schema": 1, "accepted": False, "phase": "restart", "process_id": 456,
+            "runtime": "actual_windows_electron_extension_host", "model_calls": 0, "live_1c_apply": False,
+            "fault_model": "durable_intent_commit_unobserved", "checkpoint": "restart.snapshot",
+            "fresh_extension_host": True, "error": {"category": "assertion", "code": "ERR_ASSERTION",
+                "operator": "deepStrictEqual", "actual": {"type": "null"}, "expected": {"type": "object"}}}
+
+
+def test_failed_phase_retains_only_finite_diagnostics_and_cannot_pass(modules):
+    _, runner = modules
+    value = failed_phase() | {"app_name": "/private/source.bsl", "bsl": {"private_source": "never publish"}}
+    reduced = runner.reduce_phase_failure(value, "restart")
+    assert reduced == failed_phase()
+    assert "private" not in json.dumps(reduced)
+    with pytest.raises(RuntimeError, match="No positive real editor receipt"):
+        runner.reduce_phase(value)
+
+
+@pytest.mark.parametrize("defect", ["message", "stack", "checkpoint", "phase", "operator", "category",
+                                       "object-body", "boolean-value", "integer-bool", "string-digest", "flag"])
+def test_failed_phase_refuses_raw_or_unknown_diagnostic_data(modules, defect):
+    _, runner = modules
+    value = failed_phase()
+    if defect in {"message", "stack"}:
+        value["error"][defect] = "/private/source.bsl: confidential"
+    elif defect == "checkpoint":
+        value["checkpoint"] = "/private/source.bsl"
+    elif defect == "phase":
+        value["checkpoint"] = "first.metadata"
+    elif defect in {"operator", "category"}:
+        value["error"][defect] = "private exception string"
+    elif defect == "object-body":
+        value["error"]["actual"] = {"type": "object", "body": "private"}
+    elif defect == "boolean-value":
+        value["error"]["actual"] = {"type": "boolean", "value": 1}
+    elif defect == "integer-bool":
+        value["error"]["actual"] = {"type": "integer", "value": True}
+    elif defect == "string-digest":
+        value["error"]["actual"] = {"type": "string", "size_bytes": 5, "sha256": "private"}
+    else:
+        value["fresh_extension_host"] = 1
+    with pytest.raises(RuntimeError):
+        runner.reduce_phase_failure(value, "restart")
+
+
+def test_restart_failure_preserves_validated_first_phase_and_primary_exception(modules, tmp_path, monkeypatch):
+    _, runner = modules
+    profile, evidence = tmp_path / "profile", tmp_path / "evidence"
+    profile.mkdir(); evidence.mkdir()
+    (profile / "phase-first.json").write_text(json.dumps(phase()))
+    (profile / "phase-restart.json").write_text(json.dumps(failed_phase()))
+    (evidence / "supervisor-first.json").write_text(json.dumps({"accepted": True, "cleanup_complete": True}))
+    original = RuntimeError("private wrapper failure text")
+    def command(*args, **kwargs):
+        if args[3] == "host-restart":
+            raise original
+    monkeypatch.setattr(runner, "command", command)
+    receipt = {"accepted": False}
+    runner.phase_attempt([], output=tmp_path, evidence=evidence, profile=profile, phase="first", receipt=receipt)
+    saved = json.loads((evidence / "acceptance.json").read_text())
+    assert saved["accepted"] is False and saved["phases"]["first"]["owned_process_cleanup"] is True
+    with pytest.raises(RuntimeError) as caught:
+        runner.phase_attempt([], output=tmp_path, evidence=evidence, profile=profile, phase="restart", receipt=receipt)
+    assert caught.value is original
+    assert receipt["phases"] == saved["phases"]
+    assert receipt["phase_failures"]["restart"] == failed_phase()
+    assert receipt["accepted"] is False and "private" not in json.dumps(receipt)
+
+
+@pytest.mark.parametrize("invalid", [False, True])
+def test_missing_or_unbounded_failed_phase_still_preserves_process_failure(modules, tmp_path, monkeypatch, invalid):
+    _, runner = modules
+    if invalid:
+        (tmp_path / "phase-restart.json").write_bytes(b"x" * (1024**2 + 1))
+    original = RuntimeError("private process detail")
+    monkeypatch.setattr(runner, "command", lambda *args, **kwargs: (_ for _ in ()).throw(original))
+    receipt = {"accepted": False}
+    with pytest.raises(RuntimeError) as caught:
+        runner.phase_attempt([], output=tmp_path, evidence=tmp_path, profile=tmp_path, phase="restart", receipt=receipt)
+    assert caught.value is original and receipt["accepted"] is False
+    assert receipt["phase_failures"]["restart"]["diagnostic"] == "failed-phase-receipt-unavailable-or-invalid"
+    assert "private" not in json.dumps(receipt)
+
+
+def test_phase_file_duplicate_json_fields_are_not_admitted(modules, tmp_path):
+    _, runner = modules
+    (tmp_path / "phase-restart.json").write_bytes(b'{"accepted":false,"accepted":true}')
+    with pytest.raises(RuntimeError, match="Duplicate editor receipt field"):
+        runner.read_phase_file(tmp_path, "restart")
+
+
 @pytest.mark.parametrize("which", ["first", "restart"])
 def test_complete_receipt_reduced_without_private_body(modules, which):
     _, runner = modules
