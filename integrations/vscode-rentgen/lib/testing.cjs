@@ -43,6 +43,19 @@ function createTestService({root,config,client,trusted=()=>true,cancel=()=>{}}){
   if(result.status==='failed'&&(result.failure?.run_id!==id||result.failure.project_id!==config.project_id))throw new Error('TEST_RESULT_MISMATCH');
   return result;
  }
- return {start,list,profiles,inspect,get running(){return busy;},cancel(){cancelled=true;if(busy)cancel();},dispose(){disposed=true;if(busy)cancel();}};
+ // Read-only dossier bound to the saved intent; admitted by the advertised Core
+ // operation, never by the published version allowlist. It starts no test run.
+ async function qualify(id,{receipt=null}={}){
+  if(disposed||!trusted())throw new Error('TRUST_REQUIRED');
+  const intent=await request(id);if(receipt!==null&&!isDeepStrictEqual(intent.receipt,receipt))throw new Error('TEST_RESULT_MISMATCH');
+  const value=await client.proposal(intent.receipt.draft_id,intent.receipt.revision);if(!isDeepStrictEqual(value.receipt,intent.receipt))throw new Error('DRAFT_REVISION_MISMATCH');
+  const dossier=await client.testQualify(id);if(disposed||!trusted())throw new Error('TRUST_REQUIRED');
+  const b=dossier.binding;
+  if(b!==null&&(b?.profile_id!==intent.profile.profile_id||b.proposal_content_id!==intent.receipt.proposal_content_id||!isDeepStrictEqual(b.source_ref,intent.receipt.source_ref)))throw new Error('TEST_RESULT_MISMATCH');
+  if(dossier.profile!==null&&dossier.profile.profile_id!==intent.profile.profile_id)throw new Error('TEST_RESULT_MISMATCH');
+  if(dossier.run_status==='completed'&&(b===null||dossier.candidate_sha256!==null&&dossier.candidate_sha256!==value.proposal.replacement.raw_sha256))throw new Error('TEST_RESULT_MISMATCH');
+  return {dossier,intent};
+ }
+ return {start,list,profiles,inspect,qualify,get running(){return busy;},cancel(){cancelled=true;if(busy)cancel();},dispose(){disposed=true;if(busy)cancel();}};
 }
 module.exports={createTestService};

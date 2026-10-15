@@ -62,6 +62,7 @@ rentgen test-profile-list @common
 $operationId = [guid]::NewGuid().ToString()
 rentgen proposal-test @common --snapshot $snapshotId --proposal-json $proposalFile --test-profile $profileId --operation-id $operationId
 rentgen proposal-test-result @common --operation-id $operationId
+rentgen test-run-qualify @common --operation-id $operationId  # development source после dev19
 rentgen test-profile-disable @common --profile-id $profileId
 ```
 
@@ -71,6 +72,10 @@ rentgen test-profile-disable @common --profile-id $profileId
 тесты: смотрите `tests.baseline.status`, `tests.candidate.status`, счётчики и случаи.
 `tests.status` относится к candidate. Ошибки компиляции дают `not_run`, пропуски —
 `incomplete`. Автоматического применения изменений нет.
+
+`test-run-qualify` ничего не запускает: он сверяет сохранённые raw artifacts с
+отчётом и возвращает досье `local_unattested` ([контракт](TEST-RUN-QUALIFICATION.md)).
+Опубликованный dev19 этой команды не содержит.
 
 ## Проверено на установленном пакете
 

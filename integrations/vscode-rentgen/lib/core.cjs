@@ -2,7 +2,7 @@
 const { createHash } = require('node:crypto');
 const { win32 } = require('node:path');
 const {PROFILE,validateBsl}=require('./bsl-result.cjs');
-const {validateProfiles,validateTests}=require('./tests-result.cjs');
+const {validateProfiles,validateTests,validateQualification}=require('./tests-result.cjs');
 
 const MAX_BYTES = 1048576;
 const MAX_OUTPUT = 2097152 + 1; // CLI envelope limit plus newline
@@ -305,6 +305,19 @@ function createClient(config, { execute, trusted = () => true }) {
       requireValue(profile.enabled,'TEST_PROFILE_UNAVAILABLE');
       requireValue(typeof file==='string'&&/^[A-Za-z]:\\/.test(file)&&!controls.test(file),'INVALID_TEST_PATH');
       return validateTests(await call('proposal-test',['--snapshot',saved.source_ref.snapshot.snapshot_id,'--proposal-json',file,'--test-profile',profile.profile_id,'--operation-id',id]),id,saved,proposal,profile);
+    },
+    async testQualifyCapability() {
+      const value = await call('capabilities', [], false);
+      requireValue(value?.contract_version === 1 && typeof value.platform === 'string' &&
+        value.scope === 'os-adapter-support', 'INVALID_CAPABILITIES_RESPONSE');
+      const group = value.capabilities?.['native.evidence.read'];
+      // Advertised operation admits the read-only action; the Core version number does not.
+      return Object.freeze({supported: group?.supported === true && Array.isArray(group.operations) &&
+        group.operations.length <= 200 && group.operations.includes('test-run-qualify')});
+    },
+    async testQualify(id) {
+      requireValue(uuid.test(id), 'INVALID_OPERATION_ID');
+      return validateQualification(await call('test-run-qualify', ['--operation-id', id]), id, config.project_id);
     },
     async testResult(id) {
       requireValue(['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16','0.1.0.dev17','0.1.0.dev19'].includes(config.core_version),'TEST_REQUIRES_DEV8');requireValue(uuid.test(id),'INVALID_OPERATION_ID');
