@@ -16,8 +16,8 @@ def adapter(name):
     return module
 
 
-@pytest.mark.parametrize("version", ["0.1.0.dev16", "0.1.0.dev17"])
-def test_editor_probe_accepts_dev16_with_exact_mcp_python_and_project(monkeypatch, version):
+@pytest.mark.parametrize("version", ["0.1.0.dev16", "0.1.0.dev17", "0.1.0.dev19"])
+def test_editor_probe_accepts_qualified_core_with_exact_mcp_python_and_project(monkeypatch, version):
     module = adapter("prepare.py")
     project = "6e461c4d-e19c-4e37-85b3-3aa0961580b7"
     identity = {
@@ -44,8 +44,8 @@ def test_editor_probe_accepts_dev16_with_exact_mcp_python_and_project(monkeypatc
     assert commands[1][2:5] == ["-m", "rentgen_core", "project-head"]
 
 
-@pytest.mark.parametrize("version", ["0.1.0.dev16", "0.1.0.dev17", "0.1.0.dev999"])
-def test_runtime_installer_dev16_admission_keeps_unknown_versions_refused(
+@pytest.mark.parametrize("version", ["0.1.0.dev16", "0.1.0.dev17", "0.1.0.dev19", "0.1.0.dev18", "0.1.0.dev999"])
+def test_runtime_installer_admits_qualified_core_and_refuses_unqualified_versions(
     monkeypatch, version
 ):
     module = adapter("install_bsl_runtime.py")
@@ -67,7 +67,7 @@ def test_runtime_installer_dev16_admission_keeps_unknown_versions_refused(
         "sys",
         SimpleNamespace(platform="win32", version_info=(3, 11), prefix=sys.prefix),
     )
-    if version == "0.1.0.dev999":
+    if version in {"0.1.0.dev18", "0.1.0.dev999"}:
         with pytest.raises(ValueError, match="supported installed core"):
             module.contract()
     else:
@@ -93,3 +93,21 @@ def test_runtime_installer_keeps_os_and_python_admission_explicit(
     )
     with pytest.raises(ValueError, match="Windows Python 3.11"):
         module.contract()
+
+
+@pytest.mark.parametrize("version", ["0.1.0.dev18", "0.1.0.dev999"])
+def test_editor_probe_refuses_unqualified_version_before_project_lookup(monkeypatch, version):
+    module = adapter("prepare.py")
+    calls = []
+    identity = {"core": version, "mcp": "1.30.0", "platform": "win32",
+                "python": [3, 11], "installed": True}
+
+    def execute(argv, **options):
+        calls.append(argv)
+        return SimpleNamespace(returncode=0, stdout=json.dumps(identity))
+
+    monkeypatch.setattr(module.subprocess, "run", execute)
+    with pytest.raises(ValueError, match="supported installed core"):
+        module.probe(Path(sys.executable), Path("owned-registry.sqlite3"),
+                     "6e461c4d-e19c-4e37-85b3-3aa0961580b7")
+    assert len(calls) == 1

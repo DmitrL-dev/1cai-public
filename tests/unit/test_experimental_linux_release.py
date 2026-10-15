@@ -175,6 +175,29 @@ def test_source_notices_use_exact_commit_not_worktree(fixture, tmp_path):
     assert (target / "LICENSE").read_bytes() == b"Original notice fixture\n"
 
 
+@pytest.mark.parametrize("has_gui", [False, True])
+def test_installation_describes_only_gui_actually_present_in_wheel(fixture, has_gui):
+    f = fixture
+    if has_gui:
+        with zipfile.ZipFile(f["wheel"], "a") as archive:
+            archive.writestr(f"rentgen_core-{f['version']}.dist-info/entry_points.txt",
+                             "[console_scripts]\nrentgen-gui = rentgen_core.gui:main\n")
+            archive.writestr("rentgen_core/gui.py", "# Synthetic packaging fixture\n")
+            archive.writestr("rentgen_core/gui_assets/index.html", "<html></html>\n")
+        f["inputs"]["wheel"].update(sha256=release.sha(f["wheel"].read_bytes()),
+                                    size_bytes=f["wheel"].stat().st_size)
+        f["inputs_path"].write_bytes(release.json_bytes(f["inputs"]))
+    build(f)
+    archive_path = f["output"] / (release.version_name(f["version"]) + ".tar.gz")
+    with tarfile.open(archive_path, "r:gz") as archive:
+        guide = archive.extractfile(release.version_name(f["version"]) + "/INSTALL.md").read().decode()
+    assert (".venv/bin/rentgen-gui" in guide) is has_gui
+    if has_gui:
+        assert f["inputs"]["binary"]["sha256"] in guide
+        assert "127.0.0.1" in guide and "Do not share" in guide
+        assert "command availability alone is not acceptance" in guide
+
+
 @pytest.mark.parametrize("target", ["wheel", "binary", "inputs_path"])
 @pytest.mark.parametrize("kind", ["symlink", "hardlink"])
 def test_local_input_links_refused(fixture, tmp_path, target, kind):

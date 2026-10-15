@@ -1,5 +1,10 @@
 # Experimental Linux supplement: candidate and acceptance
 
+The current source candidate is Core `0.1.0.dev19`, paired with Companion
+`0.1.20`; the published pair remains dev17 / 0.1.18 until acceptance and public
+asset verification are complete. Track outstanding gates in the
+[release plan](../../docs/product/RELEASE-PLAN-20261015.md).
+
 This independent packager does not change the four-file Windows Core contract.
 It creates three supplement files in a new directory:
 
@@ -28,12 +33,12 @@ Create an external `INPUTS.json` with exactly these fields (replace all placehol
 ```json
 {
   "schema": 1,
-  "version": "0.1.0.dev17",
+  "version": "0.1.0.dev19",
   "rust_component_version": "0.1.0",
   "source_commit": "40_lowercase_hex_characters",
   "source_tree": "40_lowercase_hex_characters",
   "windows_kit": {
-    "asset": "rentgen-core-0.1.0.dev17-windows-py311.zip",
+    "asset": "rentgen-core-0.1.0.dev19-windows-py311.zip",
     "sha256": "64_lowercase_hex_characters",
     "size_bytes": 1,
     "ci_run": 1,
@@ -41,7 +46,7 @@ Create an external `INPUTS.json` with exactly these fields (replace all placehol
     "artifact_sha256": "64_lowercase_hex_characters"
   },
   "wheel": {
-    "asset": "rentgen_core-0.1.0.dev17-py3-none-any.whl",
+    "asset": "rentgen_core-0.1.0.dev19-py3-none-any.whl",
     "sha256": "64_lowercase_hex_characters",
     "size_bytes": 1
   },
@@ -106,12 +111,12 @@ Original license/provenance bytes must still match the source commit.
 
 ```sh
 python scripts/release/prepare_experimental_linux.py verify \
-  --version 0.1.0.dev17 --output NEW_CANDIDATE_DIRECTORY \
+  --version 0.1.0.dev19 --output NEW_CANDIDATE_DIRECTORY \
   --extract NEW_EXTRACTED_DIRECTORY
 python scripts/verification/verify_portable_delivery.py \
-  --wheel NEW_EXTRACTED_DIRECTORY/rentgen_core-0.1.0.dev17-py3-none-any.whl \
+  --wheel NEW_EXTRACTED_DIRECTORY/rentgen_core-0.1.0.dev19-py3-none-any.whl \
   --binary NEW_EXTRACTED_DIRECTORY/bin/rentgen-input-core \
-  --expected-version 0.1.0.dev17 --output NEW_INSTALLED_SMOKE_DIRECTORY
+  --expected-version 0.1.0.dev19 --output NEW_INSTALLED_SMOKE_DIRECTORY
 ```
 
 Extraction is optional, uses a fresh directory and only writes files after full
@@ -121,9 +126,23 @@ retain and review its `acceptance.json` with release evidence. A hash verificati
 result alone does not claim the installed smoke passed. If acceptance fails,
 do not publish; revise/replace the candidate and its reviewed record explicitly.
 
+For the dev19 GUI candidate, installed smoke also starts the packaged
+`rentgen-gui` entry point, checks static assets against wheel bytes, rejects
+unauthenticated/foreign-origin requests and imports a synthetic ZIP through
+the real HTTP/Rust path. It does not substitute for rendered-browser acceptance.
+The [GUI workflow](../../.github/workflows/gui-browser-ci.yml) must also run all
+43 sandboxed Chromium gates without skips against a fresh isolated wheel
+installation. Review the exact HEAD, wheel/helper hashes, installed-smoke receipt
+and browser results together. These are candidate requirements, not claims that
+the current candidate has already passed Linux CI. Final extracted supplement
+bytes require their own installed acceptance before publication.
+
 Scope is experimental GNU/Linux x86_64 with glibc >= 2.34, `libgcc_s.so.1`, Linux
->= 5.9, memfd seals and `/proc/self/fd`. Full Linux is not green: 90 known failures
-and 2 errors remain. This supplement does not qualify native 1C, Editor, Observer,
+>= 5.9, memfd seals and `/proc/self/fd`. The historical Linux baseline records
+90 known failures and 2 errors; rerun the complete suite for the candidate and
+review its baseline-comparison receipt without allowing new failure IDs.
+A successful baseline gate does not mean the full Linux suite passed.
+This supplement does not qualify native 1C, Companion/editor integration, Observer,
 live apply, macOS, model quality, acceleration or full product readiness. It is
 not an offline MCP-dependency kit. Any publication is a separate authorized step.
 
@@ -134,5 +153,5 @@ python -m pytest -q tests/unit/test_experimental_linux_release.py tests/unit/tes
 ```
 
 Fixtures use synthetic wheel/binary inputs and do not substitute for actual
-installed CLI acceptance. Neither packager nor tests change runtime, wheel,
+installed CLI/GUI and browser acceptance. Neither packager nor tests change runtime, wheel,
 sdist or VSIX inputs.

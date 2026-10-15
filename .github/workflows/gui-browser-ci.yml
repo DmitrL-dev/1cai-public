@@ -39,7 +39,7 @@ jobs:
         run: |
           test "$(id -u)" -ne 0
           rustup toolchain install 1.92.0 --profile minimal
-          python -m pip install -r requirements-test.txt
+          python -m pip install -r requirements-test.txt -r requirements-product-build.txt
           npm ci --prefix tests/gui/browser --ignore-scripts
           cd tests/gui/browser
           npx --no-install playwright install chromium
@@ -51,7 +51,13 @@ jobs:
           python -m pytest -q tests/unit/test_local_gui.py tests/unit/test_local_gui_search.py tests/unit/test_local_gui_modules.py tests/unit/test_local_gui_pagination.py tests/unit/test_local_gui_comparison.py tests/unit/test_local_gui_source_search.py tests/unit/test_local_gui_search_comparison.py tests/unit/test_local_gui_report.py tests/unit/test_local_gui_fields.py tests/unit/test_metadata_field_search.py tests/unit/test_source_occurrences.py tests/unit/test_source_line_diff.py tests/unit/test_local_gui_line_diff.py tests/unit/test_source_occurrences_backend.py tests/unit/test_local_gui_occurrences.py tests/unit/test_three_zip_inventory.py tests/unit/test_three_zip_inventory_rust.py tests/unit/test_local_gui_threeway.py tests/unit/test_rust_input_workflow.py --junitxml=output/gui-browser/backend.xml
           node --test tests/gui/*.test.mjs > output/gui-browser/model.log
       - name: Run real sandboxed browser acceptance
-        run: npm --prefix tests/gui/browser test
+        run: |
+          python -m build --no-isolation --wheel --outdir output/gui-browser/wheels
+          version=$(python -c 'import pathlib,tomllib;print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')
+          python scripts/verification/verify_portable_delivery.py --wheel "output/gui-browser/wheels/rentgen_core-$version-py3-none-any.whl" --binary "$RENTGEN_INPUT_CORE_TEST_BINARY" --output output/gui-browser/installed --expected-version "$version"
+          export RENTGEN_GUI_INSTALLED_PYTHON="$GITHUB_WORKSPACE/output/gui-browser/installed/environment/bin/python"
+          export RENTGEN_GUI_EXPECTED_VERSION="$version"
+          npm --prefix tests/gui/browser test
       - name: Verify all forty-three browser gates ran and record exact checkout
         run: |
           python - <<'PY'
@@ -62,7 +68,9 @@ jobs:
           assert all(not any(c.find(tag) is not None for tag in ('failure', 'error', 'skipped')) for c in cases)
           assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == os.environ['EXPECTED_HEAD']
           binary = pathlib.Path(os.environ['RENTGEN_INPUT_CORE_TEST_BINARY'])
-          receipt = {'status': 'passed', 'checkout_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(), 'workflow_sha': os.environ['GITHUB_SHA'], 'input_core_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(), 'browser_cases': len(cases), 'synthetic_inputs_only': True, 'sandbox_enabled': True, 'host': '127.0.0.1'}
+          installed = json.loads((output / 'installed/acceptance.json').read_text())
+          assert installed['gui']['http_rust_import'] and installed['gui']['isolated_installed_package']
+          receipt = {'status': 'passed', 'checkout_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(), 'workflow_sha': os.environ['GITHUB_SHA'], 'input_core_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(), 'installed_wheel_sha256': installed['wheel_sha256'], 'installed_version': installed['version'], 'browser_backend': 'fresh isolated wheel installation', 'browser_cases': len(cases), 'synthetic_inputs_only': True, 'sandbox_enabled': True, 'host': '127.0.0.1'}
           (output / 'acceptance.json').write_text(json.dumps(receipt, indent=2) + '\n')
           PY
       - name: Upload bounded synthetic evidence only
@@ -75,6 +83,7 @@ jobs:
             output/gui-browser/backend.xml
             output/gui-browser/model.log
             output/gui-browser/acceptance.json
+            output/gui-browser/installed/acceptance.json
             output/gui-browser/results/**/*.png
             output/gui-browser/results/**/*.json
             output/gui-browser/results/**/*.html

@@ -182,8 +182,26 @@ def source_files(inputs):
     return result
 
 
-def installation(inputs):
+def installation(inputs, *, gui=False):
     version = inputs["version"]
+    gui_guide = f"""
+## Experimental local GUI (only in this wheel)
+
+Create your own identity/registry/project using the exact-source portable guide
+below, then launch from this extracted directory:
+
+    .venv/bin/python -I .venv/bin/rentgen-gui --registry /absolute/registry.sqlite3 --identity-profile /absolute/identity.json --project PROJECT_UUID --input-core "$PWD/bin/rentgen-input-core" --input-core-sha256 {inputs['binary']['sha256']} --open-browser
+
+The private launch URL is for a browser on the same computer. Do not share or
+log it. The server listens only on 127.0.0.1; stop it with Ctrl+C. The GUI reads
+bounded Designer XML ZIP files, searches objects/modules/fields and compares
+two or three archives. It does not write source files, publish snapshots, merge
+changes or validate a live database. GUI Windows/macOS are not qualified.
+Exact limits and keyboard/browser instructions:
+https://github.com/DmitrL-dev/1cai-public/blob/{inputs['source_commit']}/docs/product/LOCAL-GUI.md
+The installed HTTP/Rust smoke and browser acceptance must be reviewed in this
+release's qualification; command availability alone is not acceptance.
+""" if gui else ""
     return f"""# Rentgen Core {version}: experimental GNU/Linux x86_64 supplement
 
 Prerelease only. Requires CPython 3.11 or 3.12 with venv/pip, glibc >= 2.34,
@@ -215,7 +233,7 @@ Exact-source command guides (identity-init, registry-init, project-register and
 export-analyze with explicit registry, profile, project and archive hash):
 https://github.com/DmitrL-dev/1cai-public/blob/{inputs['source_commit']}/docs/product/PORTABLE-CORE.md
 https://github.com/DmitrL-dev/1cai-public/blob/{inputs['source_commit']}/docs/product/RUST-INPUT-CORE.md
-
+{gui_guide}
 Accepted scope must be read together with the release's installed-smoke receipt:
 basic local identity/registry/project creation and read-only ZIP export analysis.
 Native capture is unavailable on Linux. Installation does not migrate state.
@@ -242,13 +260,20 @@ def payload(inputs, wheel, binary):
         metadata = BytesParser().parsebytes(archive.read(names[0]))
         if metadata.get_all("Name") != ["rentgen-core"] or metadata.get_all("Version") != [inputs["version"]]:
             raise ValueError("Wheel component identity differs")
+        # Do not advertise GUI for historical wheels which lack its entry point.
+        entrypoints = [item for item in archive.infolist() if item.filename.endswith(".dist-info/entry_points.txt")]
+        gui = False
+        if len(entrypoints) == 1 and entrypoints[0].file_size <= MAX_JSON:
+            gui = (b"rentgen-gui = rentgen_core.gui:main" in archive.read(entrypoints[0]).splitlines()
+                   and "rentgen_core/gui.py" in archive.namelist()
+                   and "rentgen_core/gui_assets/index.html" in archive.namelist())
     if (len(binary) < 64 or binary[:7] != b"\x7fELF\x02\x01\x01"
             or binary[16:18] not in (b"\x02\x00", b"\x03\x00")
             or binary[18:20] != b"\x3e\x00"):
         raise ValueError("Expected little-endian ELF64 x86_64 executable")
     result = source_files(inputs)
     result.update({inputs["wheel"]["asset"]: wheel, "bin/rentgen-input-core": binary,
-                   "INSTALL.md": installation(inputs), "build-inputs.json": json_bytes(inputs)})
+                   "INSTALL.md": installation(inputs, gui=gui), "build-inputs.json": json_bytes(inputs)})
     if len(result) > MAX_MEMBERS or sum(map(len, result.values())) > MAX_TOTAL - 1024**2:
         raise ValueError("Archive payload exceeds limits")
     return result

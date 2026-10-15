@@ -135,6 +135,13 @@ python scripts/verification/build_gui_visual_fixture.py \
 
 ### Настоящая браузерная приёмка Linux
 
+Для кандидата dev19 CI сначала собирает wheel, устанавливает его в новое
+окружение и проверяет CLI/HTTP/Rust и доставленные static assets. Браузерный
+backend затем запускается через `python -I` из этой установки с проверкой
+версии и пути импорта. Это предотвращает незаметное использование checkout
+вместо содержимого пакета. Само добавление gate не означает его прохождения;
+результат относится к точному commit запуска.
+
 Отдельный обязательный для квалификации GUI workflow `Linux GUI browser acceptance`
 собирает Rust helper из того же checkout и требует выполнения всех 43 Playwright-проверок настоящей
 страницы через `127.0.0.1`. Настройка required check в branch protection выполняется
@@ -178,7 +185,7 @@ full-page изменения viewport/clip; размеры PNG сверяютс�
 правила Host/Origin/token/CSP приложения не изменяются.
 
 CI сохраняет JUnit, синтетические скриншоты и receipt с commit checkout и хешем helper.
-Успешный receipt создаётся только после одиннадцати выполненных тестов без skips/errors.
+Успешный receipt создаётся только после всех 43 выполненных тестов без skips/errors.
 Трассы запросов, профиль, identity, registry и ссылка с token не публикуются. На PR явно checkout-ится точный head SHA; receipt проверяет его совпадение с ожидаемым
 HEAD и отдельно записывает workflow SHA. Зелёный запуск не доказывает другой HEAD. Это Linux Chromium gate, не Windows/macOS GUI-приёмка,
 не полная WCAG-сертификация и не GUI-релиз.

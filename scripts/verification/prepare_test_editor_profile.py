@@ -4,9 +4,11 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import tomllib
 from uuid import uuid4
 
 MODULE = "CommonModules/RentgenPlatformProbe/Ext/Module.bsl"
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def prepare(args):
@@ -15,6 +17,16 @@ def prepare(args):
     source = root / "source"
     shutil.copytree(args.source.resolve(strict=True), source)
     python = args.python.resolve(strict=True)
+    identity = json.loads(subprocess.check_output(
+        [str(python), "-I", "-c",
+         "import importlib.metadata,json,sys;from pathlib import Path;import rentgen_core;print(json.dumps({'version':importlib.metadata.version('rentgen-core'),'installed':Path(rentgen_core.__file__).resolve().is_relative_to(Path(sys.prefix).resolve())}))"],
+        timeout=15,
+    ))
+    expected_core_version = args.expected_core_version or tomllib.loads(
+        (ROOT / "pyproject.toml").read_text("utf-8")
+    )["project"]["version"]
+    if identity != {"installed": True, "version": expected_core_version}:
+        raise ValueError("Installed Core " + expected_core_version + " required")
     registry = root / "registry.sqlite3"
     project = None
 
@@ -122,7 +134,7 @@ def prepare(args):
         "profile.json",
         {
             "schema": 1,
-            "core_version": "0.1.0.dev17",
+            "core_version": identity["version"],
             "python": str(python),
             "registry": str(registry),
             "project_id": project,
@@ -154,4 +166,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("output", "source", "python", "scanner", "profile-spec"):
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument("--expected-core-version", help="Exact installed version; defaults to this checkout's project.version")
     prepare(parser.parse_args())

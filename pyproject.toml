@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rentgen-core"
-version = "0.1.0.dev17"
+version = "0.1.0.dev19"
 description = "Local 1C source snapshots and reviewable drafts; early-access core"
 readme = "packaging/core/README.md"
 requires-python = ">=3.11"
