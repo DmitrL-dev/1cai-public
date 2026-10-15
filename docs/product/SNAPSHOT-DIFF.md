@@ -13,6 +13,10 @@ Linux CLI/MCP-маршрут реализован в development-исходни�
 конкретного source/build-кандидата определяется отдельной проверенной
 [квитанцией точных source и bytes](#приёмка-конкретной-сборки).
 CI более раннего main `8e7346e` этот новый блок не проверял.
+[Первый CI `597e50e`](evidence/development-ci-597e50e-20261016.json)
+сохраняет Linux tool-catalog oracle failure до capture и Windows installed-workflow
+failure с неизвестной внутренней причиной. Installed pair этого HEAD не принят;
+исправленные проверяющие клиенты требуют собственной новой приёмки.
 
 ## CLI и MCP
 

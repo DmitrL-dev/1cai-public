@@ -49,9 +49,7 @@ def test_native_sdk_explicit_pair_history_survives_unrelated_broken_head(local_p
     changed=project["images"][probe.CALLEE].replace(b"Return 1",b"Return 2")
     async def scenario():
         async with server(project,scanner,tmp_path/"pair-capture.stderr",monkeypatch) as (session,_):
-            names={tool.name for tool in (await session.list_tools()).tools}
-            assert "rentgen_snapshot_diff" in names
-            assert not any(name.startswith(("rentgen_metadata_","rentgen_draft_","rentgen_proposal_")) for name in names)
+            probe.require_linux_project_tools([tool.name for tool in (await session.list_tools()).tools])
             head=await call(session,"rentgen_project_head",dict(project_id=project["project_id"]))
             async def capture(head):
                 return await call(session,"rentgen_capture",dict(project_id=project["project_id"],operation_id=str(uuid4()),expected_head=head))
@@ -67,6 +65,7 @@ def test_native_sdk_explicit_pair_history_survives_unrelated_broken_head(local_p
         principal,state,membership=owned_administrator(project)
         state_before=project["state"].read_bytes();registry_before=project["registry"].read_bytes()
         async with server(project,None,tmp_path/"pair-history.stderr",monkeypatch) as (session,_):
+            probe.require_linux_project_tools([tool.name for tool in (await session.list_tools()).tools])
             pages=[];cursor=None
             while True:
                 assert len(pages)<3

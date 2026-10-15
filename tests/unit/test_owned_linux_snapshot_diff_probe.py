@@ -21,6 +21,71 @@ PROJECT="11111111-1111-4111-8111-111111111111"
 BEFORE,AFTER="a"*64,"b"*64
 
 
+LINUX_PROJECT_TOOLS=(
+    "rentgen_project_head","rentgen_publication_receipt","rentgen_capture",
+    "rentgen_source_list","rentgen_source_read","rentgen_snapshot_diff",
+    "rentgen_graph_resolve","rentgen_impact",
+    "rentgen_draft_get","rentgen_draft_list","rentgen_draft_history",
+    "rentgen_draft_receipt","rentgen_draft_read",
+)
+
+
+def test_closed_linux_project_inventory_accepts_portable_history_in_any_order():
+    # Constructed names only: this checks the oracle, not host admission or IO.
+    assert probe.require_linux_project_tools(list(LINUX_PROJECT_TOOLS)) is None
+    assert probe.require_linux_project_tools(list(reversed(LINUX_PROJECT_TOOLS))) is None
+
+
+@pytest.mark.parametrize("missing",LINUX_PROJECT_TOOLS)
+def test_closed_linux_project_inventory_requires_every_expected_tool(missing):
+    names=[name for name in LINUX_PROJECT_TOOLS if name!=missing]
+    with pytest.raises(probe.ProbeFailure,match="inventory differs"):
+        probe.require_linux_project_tools(names)
+
+
+@pytest.mark.parametrize("extra",[
+    "rentgen_project_list","rentgen_capabilities",
+    "rentgen_draft_start","rentgen_draft_edit","rentgen_draft_save",
+    "rentgen_draft_archive","rentgen_draft_restore","rentgen_draft_check",
+    "rentgen_proposal_create","rentgen_proposal_check",
+    "rentgen_proposal_live_apply","rentgen_proposal_live_undo",
+    "rentgen_proposal_live_status","rentgen_proposal_live_recover",
+    "rentgen_metadata_live_apply","rentgen_metadata_live_undo",
+    "rentgen_metadata_live_status","rentgen_metadata_live_recover",
+    "rentgen_native_archive","rentgen_owner_report_get","rentgen_owner_report_list",
+    "rentgen_metadata_materialize","rentgen_edt_attribute_plan","rentgen_edt_inventory_plan",
+    "rentgen_draft_future_read","rentgen_unknown_tool",
+])
+def test_closed_linux_project_inventory_refuses_unlisted_tools(extra):
+    with pytest.raises(probe.ProbeFailure,match="inventory differs"):
+        probe.require_linux_project_tools([*LINUX_PROJECT_TOOLS,extra])
+
+
+@pytest.mark.parametrize("duplicate",LINUX_PROJECT_TOOLS)
+def test_closed_linux_project_inventory_cannot_erase_duplicate_tool_names(duplicate):
+    with pytest.raises(probe.ProbeFailure,match="duplicated"):
+        probe.require_linux_project_tools([*LINUX_PROJECT_TOOLS,duplicate])
+
+
+def test_closed_linux_project_inventory_rejects_wrong_tool_with_same_count():
+    names=list(LINUX_PROJECT_TOOLS);names[-1]="rentgen_draft_start"
+    with pytest.raises(probe.ProbeFailure,match="inventory differs"):
+        probe.require_linux_project_tools(names)
+
+
+@pytest.mark.parametrize("wrong",[None,True,13,[],{}])
+def test_closed_linux_project_inventory_requires_string_names(wrong):
+    names=list(LINUX_PROJECT_TOOLS);names[-1]=wrong
+    with pytest.raises(probe.ProbeFailure,match="malformed"):
+        probe.require_linux_project_tools(names)
+
+
+@pytest.mark.parametrize("wrong",[None,"rentgen_snapshot_diff",set(LINUX_PROJECT_TOOLS)])
+def test_closed_linux_project_inventory_requires_uncollapsed_sdk_names(wrong):
+    with pytest.raises(probe.ProbeFailure,match="malformed"):
+        probe.require_linux_project_tools(wrong)
+
+
 def page():
     def ref(snapshot):return dict(project_id=PROJECT,snapshot_id=snapshot,manifest_hash=snapshot)
     def entry(snapshot,digest):return dict(ref=dict(snapshot=ref(snapshot),layer_id="base",relative_path=probe.CALLEE,raw_sha256=digest),size_bytes=3,encoding="utf-8",identity_status="unresolved")

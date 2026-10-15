@@ -61,6 +61,8 @@
 `rentgen_snapshot_diff` с общим POSIX budget и конечной проверкой выдачи.
 Этот source-контракт требует собственной exact-source installed CLI/SDK-приёмки;
 CI `c9` / `8e` новый diff не содержит и не квалифицирует.
+[Первый CI `597e50e`](docs/product/evidence/development-ci-597e50e-20261016.json)
+сохранён как отрицательный; Linux/Windows installed pair этого HEAD не принят.
 
 [Аудит плана выпуска](scripts/release/RELEASE-PLAN-CONTRACT.md) проверяет локальные
 bytes и полноту заявленных проверок; готовность финального продукта он не подтверждает.

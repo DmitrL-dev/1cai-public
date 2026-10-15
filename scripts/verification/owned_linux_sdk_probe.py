@@ -28,6 +28,28 @@ def require(condition, message):
     if not condition: raise ProbeFailure(message)
 
 
+LINUX_PROJECT_TOOLS=frozenset({
+    "rentgen_project_head","rentgen_publication_receipt","rentgen_capture",
+    "rentgen_source_list","rentgen_source_read","rentgen_snapshot_diff",
+    "rentgen_graph_resolve","rentgen_impact",
+    "rentgen_draft_get","rentgen_draft_list","rentgen_draft_history",
+    "rentgen_draft_receipt","rentgen_draft_read",
+})
+
+
+def require_linux_project_tools(names):
+    """Independent closed inventory for the default project-scoped Linux SDK.
+
+    Draft history reads are portable. Windows writers/native tools and CLI-only
+    byte-plan commands have no place in this MCP inventory. Do not derive the
+    expectation from the runtime capability map being checked.
+    """
+    require(type(names) is list and all(type(name) is str for name in names),
+        "Linux project-scoped SDK tool names are malformed")
+    require(len(names)==len(set(names)),"Linux project-scoped SDK tool names are duplicated")
+    require(set(names)==LINUX_PROJECT_TOOLS,"Linux project-scoped SDK tool inventory differs")
+
+
 def canonical(value):
     return json.dumps(value,sort_keys=True,separators=(",",":"),ensure_ascii=False).encode()
 
@@ -566,8 +588,7 @@ def diff_library_controls(fixture,before,after,principal,state,set_owner):
 async def snapshot_diff(config):
     fixture=project(config,"sdk-diff");changed=IMAGES[CALLEE].replace(b"Return 1",b"Return 2")
     async with server(config,fixture) as (session,_):
-        names={tool.name for tool in (await session.list_tools()).tools}
-        require("rentgen_snapshot_diff" in names and not any(name.startswith(("rentgen_metadata_","rentgen_draft_","rentgen_proposal_")) for name in names),"Installed comparison tool scope differs")
+        require_linux_project_tools([tool.name for tool in (await session.list_tools()).tools])
         head=await call(session,"rentgen_project_head",dict(project_id=fixture["project_id"]))
         async def capture(head):return await call(session,"rentgen_capture",dict(project_id=fixture["project_id"],operation_id=str(uuid4()),expected_head=head))
         first=await capture(head);before=first["snapshot"]["snapshot_id"]
@@ -581,6 +602,7 @@ async def snapshot_diff(config):
     principal,state,set_owner=diff_admin(config,fixture)
     state_bytes=read(fixture["state"]);registry_bytes=read(fixture["registry"])
     async with server(config,fixture,scanner=False) as (session,_):
+        require_linux_project_tools([tool.name for tool in (await session.list_tools()).tools])
         pages=[];cursor=None
         while True:
             require(len(pages)<3,"Comparison pagination did not terminate")
@@ -637,9 +659,7 @@ async def snapshot_diff(config):
 async def happy(config):
     fixture=project(config,"sdk-history");operation=str(uuid4())
     async with server(config,fixture) as (session,_):
-        names={tool.name for tool in (await session.list_tools()).tools}
-        require({"rentgen_capture","rentgen_source_list","rentgen_source_read","rentgen_graph_resolve","rentgen_impact"}<=names
-                and "rentgen_proposal_live_apply" not in names,"Installed SDK capability list differs")
+        require_linux_project_tools([tool.name for tool in (await session.list_tools()).tools])
         head=await call(session,"rentgen_project_head",dict(project_id=fixture["project_id"]))
         first=await call(session,"rentgen_capture",dict(project_id=fixture["project_id"],operation_id=operation,expected_head=head))
         snapshot=first["snapshot"]["snapshot_id"]
@@ -655,6 +675,7 @@ async def happy(config):
         require(second["snapshot"]!=first["snapshot"] and second["head"]["revision"]==2,"SDK second capture did not advance")
     fixture["source"].rename(fixture["source"].with_name("source-relocated"))
     async with server(config,fixture,scanner=False) as (session,_):
+        require_linux_project_tools([tool.name for tool in (await session.list_tools()).tools])
         require(await call(session,"rentgen_capture",dict(project_id=fixture["project_id"],operation_id=operation,expected_head=head))==first,"SDK replay changed receipt")
         require(await call(session,"rentgen_publication_receipt",dict(project_id=fixture["project_id"],operation_id=operation))==first,"SDK durable receipt differs")
         await read_source(session,fixture,snapshot,IMAGES[CALLEE]);await read_source(session,fixture,second["snapshot"]["snapshot_id"],changed)

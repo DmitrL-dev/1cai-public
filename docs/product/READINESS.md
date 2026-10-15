@@ -94,6 +94,10 @@ Windows CLI остаётся legacy; новый MCP имеет общий deadli
 с прежними per-session resources, public macOS закрыт. Новый diff отсутствует
 в `c9` / `8e`; local tests не заменяют его actual Linux/installed SDK-приёмку
 для следующего точного source и финальных bytes.
+[Первый CI `597e50e`](evidence/development-ci-597e50e-20261016.json)
+остался отрицательным: Linux остановился на неверном tool-prefix oracle до capture,
+Windows — в installed MCP workflow с недоступной внутренней ошибкой. Исправление
+проверяющих клиентов требует нового точного CI; прежний отказ не переписывается.
 Опубликованные dev19 / Companion 0.1.20, 127 требований и 24 IDE-сценария
 сохраняют прежний статус; full-product/native/model/human acceptance не объявлена.
 
