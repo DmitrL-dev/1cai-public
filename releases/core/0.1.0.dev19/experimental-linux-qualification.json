@@ -1,0 +1,17 @@
+{
+  "archive_sha256": "e15b226c3979798ce6cf32dcdcf5bbfe18404e12d8c2aa850560b4d1be7533d2",
+  "binary_sha256": "8a374c45b52ae9f66e73d64fa1aedd4e30acac15ca2709a00927b6b297581a04",
+  "browser_cases": 43,
+  "browser_skipped": 0,
+  "candidate_qualification_passed": true,
+  "canonical_windows_wheel": true,
+  "credentials_removed": true,
+  "full_product_ready": false,
+  "release_published": false,
+  "sandbox_enabled": true,
+  "schema": 1,
+  "source_commit": "5eee97ea050c9f4c06eaceb4d191f16868fb0141",
+  "source_tree": "0e1bcfc82561e01091ad4c2a9274738739a982e8",
+  "version": "0.1.0.dev19",
+  "wheel_sha256": "c37920f5bdddadcd42dacfebbbf11dd877a40d0ae890a8d26b5c01732ac590b0"
+}

@@ -1,0 +1,287 @@
+{
+  "schema": 1,
+  "source_commit": "5eee97ea050c9f4c06eaceb4d191f16868fb0141",
+  "source_tree": "0e1bcfc82561e01091ad4c2a9274738739a982e8",
+  "scope": "Core dev19 / Companion 0.1.20 exact-source component prerelease qualification; not full product, IDE, AI or native 1C business acceptance",
+  "source_ci_qualification_passed": true,
+  "main_runs": {
+    "product": {
+      "id": 38701365219,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38701365219",
+      "conclusion": "success",
+      "jobs": {
+        "windows": 116310080851,
+        "native-scm": 116321187073,
+        "native-git-diagnostic": 116321187284,
+        "native-stock-git": 116321187456
+      }
+    },
+    "portable": {
+      "id": 38701365128,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38701365128",
+      "conclusion": "success",
+      "jobs": {
+        "Linux experimental contracts (Python 3.12)": 116310080450,
+        "Linux experimental contracts (Python 3.11)": 116310080975
+      }
+    },
+    "gui": {
+      "id": 38701365237,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38701365237",
+      "conclusion": "success",
+      "jobs": {
+        "Linux GUI real browser and 200% zoom": 116310081065
+      }
+    }
+  },
+  "windows": {
+    "python": {
+      "testcases": 4648,
+      "passed": 4116,
+      "skipped": 532,
+      "failed": 0,
+      "errors": 0,
+      "junit_header_tests": 4699,
+      "successful_subtests_additionally_reported": 51,
+      "preflight_passed_included_not_added": 95
+    },
+    "node": {
+      "passed": 430,
+      "skipped": 0,
+      "failed": 0
+    },
+    "go": "passed",
+    "kit_builds_identical": true,
+    "kit_payload_files_verified": 40,
+    "dependency_wheels": 30,
+    "offline_hash_locked_install": true,
+    "mcp_tools": 33,
+    "installed_snapshot_comparison": true,
+    "installed_observer_separate_processes": true,
+    "companion_cli_interoperability": {
+      "accepted": true,
+      "scenarios": 1,
+      "revisions": [
+        1,
+        2,
+        3
+      ],
+      "draft_save_calls": 3,
+      "lost_response_receipt_recovered": true,
+      "stale_edit_refused": true,
+      "actual_editor_gui_run": false,
+      "artifact": {
+        "id": 11957199356,
+        "name": "draft-companion-evidence",
+        "sha256": "2c47496e96f7e0b34e3e99d46b82d96fe7d10e24cd511d7d32615aaedab34938",
+        "size_bytes": 12610
+      }
+    },
+    "native_scm_lifecycle": true,
+    "native_stock_git_bsl_lifecycle": true,
+    "native_git_ownership_diagnostic": true,
+    "native_git_scm_accepted_by_diagnostic": false,
+    "continuous_git_accepted_by_diagnostic": false,
+    "production_trust_policy_selected": false,
+    "stock_active_bsl_interruption_exercised": false,
+    "stock_raw_bsl_report_retained": false,
+    "stock_interruption_scope": "quiet continuous wait after unchanged tick",
+    "native_service_absent_after_each_run": true,
+    "native_cleanup_errors": [],
+    "actual_editor_acceptance": false,
+    "native_1c_business_acceptance": false
+  },
+  "linux": {
+    "strict_portable_each_lane": {
+      "passed": 318,
+      "skipped": 1,
+      "failed": 0,
+      "errors": 0
+    },
+    "gui_backend_each_portable_lane": {
+      "passed": 315,
+      "skipped": 0,
+      "failed": 0,
+      "errors": 0
+    },
+    "diagnostic_full_each_lane": {
+      "testcases": 4648,
+      "passed": 3605,
+      "failed": 90,
+      "errors": 2,
+      "skipped": 951,
+      "junit_header_tests": 4701,
+      "successful_subtests_additionally_reported": 53,
+      "new_failure_ids": [],
+      "missing_baseline_cases": [],
+      "full_suite_green": false
+    },
+    "main_browser": {
+      "backend_passed": 963,
+      "browser_passed": 43,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "fresh_isolated_installed_wheel": true,
+      "sandbox_enabled": true,
+      "keyboard_narrow_and_native_200_percent_zoom": true,
+      "artifact": {
+        "id": 11957540810,
+        "name": "linux-gui-browser-evidence",
+        "sha256": "03c1be31817c78306c384d6d9f65fd6e8733cae4c947d164c8a66afa9801c246",
+        "size_bytes": 4855882
+      }
+    },
+    "scope": "Experimental GNU/Linux x86_64 state/history/planners and read-only ZIP CLI/GUI. Not capture, retained snapshots, draft writes, Observer, live apply, native 1C, Companion or macOS.",
+    "final_supplement_qualification_passed": true,
+    "supplement": {
+      "asset": "rentgen-core-0.1.0.dev19-experimental-linux-x86_64.tar.gz",
+      "size_bytes": 982299,
+      "sha256": "e15b226c3979798ce6cf32dcdcf5bbfe18404e12d8c2aa850560b4d1be7533d2",
+      "run_id": 38705066182,
+      "run_url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38705066182",
+      "artifact_id": 11958312063,
+      "artifact_sha256": "f797c7da634bcd6b30d38df6fa11a8ed7ff298ff6ff003e0c6eaffe519519e77",
+      "artifact_size_bytes": 988817,
+      "canonical_windows_wheel": true,
+      "regular_members": 141,
+      "same_environment_canonical_reconstruction_archive_sha256_equal": true,
+      "ci_gzip_bytes_preserved": true,
+      "cross_zlib_reproducibility_claimed": false,
+      "fresh_extracted_installed_smoke": true,
+      "browser_passed": 43,
+      "browser_skipped": 0,
+      "sandbox_enabled": true,
+      "credentials_removed": true,
+      "receipts": {
+        "installed": "experimental-linux-installation.json",
+        "installed_sha256": "93d2994a92154c42d1c95097bda097ea89377d0b89f798d3a02e4e360c7d6d03",
+        "qualification": "experimental-linux-qualification.json",
+        "qualification_sha256": "baab466eef7cb319c1eddf83bd409e56761e2c8304c181cc681dbf3a138ca505",
+        "packaging": "experimental-linux-packaging.json",
+        "packaging_sha256": "d9bbc6401726adaf0322d01c0bba7e23ac26c0383d4c99c905fe0a45c3825549"
+      },
+      "local_packaging": {
+        "two_fresh_directories_all_three_files_identical": true,
+        "matches_qualified_ci_bytes": true,
+        "platform": "Darwin",
+        "python": "3.11.15",
+        "zlib_runtime_version": "1.2.12",
+        "assembly_only": true,
+        "linux_execution_on_macos_claimed": false
+      }
+    },
+    "canonical_windows_wheel_members_equal": 132,
+    "wheel_container_hashes_equal": false
+  },
+  "assets": {
+    "windows_artifact": {
+      "id": 11957229378,
+      "name": "verified-core-development",
+      "sha256": "d2510836a45b549de6f6ea8575d5a2f7c40f0c9ac39575aabb7721a0417dfa29",
+      "size_bytes": 18929262
+    },
+    "python_report_artifact": {
+      "id": 11957806700,
+      "name": "python-contract-report",
+      "sha256": "b8bb108be29b64c32a99a5baaede6b3f6c1e6783c10387c03549797fc2a0e4a4",
+      "size_bytes": 79628
+    },
+    "linux311_artifact": {
+      "id": 11957575763,
+      "name": "experimental-linux-python-3.11",
+      "sha256": "d6661134d80fd5c073012a8bebe716f53cfce3b5a091b206f640191542bcbbc1",
+      "size_bytes": 2264197
+    },
+    "linux312_artifact": {
+      "id": 11957076348,
+      "name": "experimental-linux-python-3.12",
+      "sha256": "1c8a221d5be20fab831d23a0cbaf4e3ea1ba8349c4c5503cb3088df641e28c7c",
+      "size_bytes": 2263547
+    },
+    "native_artifacts": [
+      {
+        "id": 11958250146,
+        "name": "native-scm-evidence",
+        "sha256": "e19b224ba75f76a4ef1e283a475618545290577b3e905ef984512d5641e23725",
+        "size_bytes": 614885
+      },
+      {
+        "id": 11957597655,
+        "name": "native-git-diagnostic-evidence",
+        "sha256": "7f7bbbfabdbb3668fb8554d128baac96d0dd48f31ea915be507e056381bbe01d",
+        "size_bytes": 508354
+      },
+      {
+        "id": 11957514172,
+        "name": "native-stock-git-evidence",
+        "sha256": "797e7288156b6a8d710005fe7dfb5009f3c2e5734be545de1ef85303e9f6e2ff",
+        "size_bytes": 683890
+      }
+    ],
+    "windows_kit": {
+      "asset": "rentgen-core-0.1.0.dev19-windows-py311.zip",
+      "size_bytes": 20809034,
+      "sha256": "6b75cb14aa453451d3f3d59952ae099a39f15fc13c40d8a32dd32ce443f4d906"
+    },
+    "canonical_wheel": {
+      "sha256": "c37920f5bdddadcd42dacfebbbf11dd877a40d0ae890a8d26b5c01732ac590b0",
+      "size_bytes": 504744
+    },
+    "sdist": {
+      "sha256": "89e84dce430406ca668a4b232a6af2330775721c8ee762ea67f66856865ca56a",
+      "size_bytes": 971901
+    },
+    "companion_vsix": {
+      "asset": "rentgen-companion-0.1.20.vsix",
+      "sha256": "b0d9ce0ac1efd11e1ef2a76e7a57fdd3b647ba55667fe079e86ea0e4a58244c9",
+      "size_bytes": 335890
+    }
+  },
+  "full_product_ready": false,
+  "historical_acceptance_not_inherited": true,
+  "visual_review": {
+    "schema": 1,
+    "source_commit": "5eee97ea050c9f4c06eaceb4d191f16868fb0141",
+    "ci_run": 38701365237,
+    "artifact_id": 11957540810,
+    "artifact_sha256": "03c1be31817c78306c384d6d9f65fd6e8733cae4c947d164c8a66afa9801c246",
+    "reviewer": "Codex image inspection; not human acceptance",
+    "scope": "Three exact-source Linux CI screenshots: 200% line diff, full import provenance, 390px narrow line diff",
+    "observations": [
+      "No visible text or control overlap in the reviewed captures",
+      "200% diff controls and byte/line provenance remain legible",
+      "390px comparison and diff fit the narrow layout",
+      "Synthetic markup is displayed as source text",
+      "Boundaries distinguish archive inspection from live diagnostics or merge/apply"
+    ],
+    "blocking_visual_findings": [],
+    "limitations": [
+      "Static screenshot inspection does not replace browser execution or human usability acceptance",
+      "390x3178 image was displayed resized to 251x2048"
+    ],
+    "images": [
+      {
+        "path": "results/line-diff-real-Chromium-20-4861b-ne-line-navigation-operable/line-diff-200-percent.png",
+        "size_bytes": 137502,
+        "sha256": "f70202e3ba743f5a6228d428e2b5dbe9a8a7b4d63b7b27cbb4dca43def97e38d"
+      },
+      {
+        "path": "results/acceptance-real-UI-ZIP-imp-5315c--source-and-byte-provenance/real-import-provenance.png",
+        "size_bytes": 169955,
+        "sha256": "0c6a200c28acf26e33205a0c01934b7e8c79b87b85bd6e4455fa2a36864bf532"
+      },
+      {
+        "path": "results/line-diff-390px-inline-dif-ef116-overflow-or-transient-toast/line-diff-390px.png",
+        "size_bytes": 273368,
+        "sha256": "023ba3fd48d69844a117c1848602a2aa0298cc7313133e8b1df816643f16fb5d"
+      }
+    ]
+  },
+  "companion_tag_workflow_verified": false,
+  "release_publication_verified": false,
+  "subsequent_gates": [
+    "Companion tag workflow reproduces exact accepted VSIX and creates draft/prerelease",
+    "Unauthenticated public download verifies every published asset size and SHA256; separate later receipt"
+  ]
+}
