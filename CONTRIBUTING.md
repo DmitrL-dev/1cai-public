@@ -4,6 +4,10 @@
 или обычные тематические ветки участников. Собственный код распространяется
 под MIT; зависимости сохраняют свои лицензии.
 
+Правила работы с кодом, проверками и ветками собраны в [AGENTS.md](AGENTS.md).
+Текущая [сверка планов и gates выпуска](docs/product/RELEASE-PLAN-20261015.md)
+отделяет кандидат от опубликованной поставки.
+
 ## Проверки
 
 Для полной существующей Windows-матрицы нужны Windows x64, Python 3.11,
@@ -24,6 +28,37 @@ go -C go test ./...
 Сборка ядра описана в [CORE-INSTALLATION.md](docs/product/CORE-INSTALLATION.md).
 Сборка расширения: `python integrations/vscode-rentgen/build.py --output NEW.vsix`.
 VSIX содержит исходники и собственный packager; он не требует npm-зависимостей.
+
+### Экспериментальные Linux GUI и Rust
+
+Для ZIP reader используется закреплённый Rust 1.92.0 с `--locked`:
+[сборка и проверки input core](rust/input-core/README.md#build-and-test).
+Изменения HTTP API, поиска, сравнения и frontend проверяйте по
+[инструкции GUI](docs/product/LOCAL-GUI.md#проверки). Настоящий HTTP→Rust импорт
+требует собранный Linux binary в `RENTGEN_INPUT_CORE_TEST_BINARY`.
+JavaScript model-тесты запускаются отдельно:
+
+```sh
+node --test tests/gui/*.test.mjs
+```
+
+Браузерные проверки GUI выполняются на Linux с обычной sandbox Chromium;
+порядок установки test-only зависимостей и запуска приведён в
+[приёмке GUI](docs/product/LOCAL-GUI.md#проверки).
+Не заменяйте этот прогон браузером macOS или отключённой sandbox.
+Локальный прогон фиксируйте как локальный; результат GitHub CI относится
+к точному commit запуска.
+
+Текущую матрицу и точные команды задают workflows:
+[Windows/Core](.github/workflows/core-ci.yml),
+[Linux portable](.github/workflows/portable-ci.yml),
+[GUI browser](.github/workflows/gui-browser-ci.yml),
+[synthetic diagnostic kernel](.github/workflows/diagnostic-ci.yml) и
+[статический атлас](.github/workflows/anatomy-browser-ci.yml).
+В Linux полный Python suite сравнивается с явно зафиксированной Windows-specific
+baseline; успешный baseline gate не означает, что весь продукт принят на Linux.
+Атлас имеет отдельную [инструкцию сборки и проверок](tools/anatomy-atlas/README.md)
+и не входит в приёмку GUI.
 
 ## Изменения
 

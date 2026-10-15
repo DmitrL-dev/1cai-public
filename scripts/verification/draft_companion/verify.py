@@ -4,6 +4,7 @@ import base64
 from dataclasses import asdict
 import hashlib
 import importlib
+import importlib.metadata
 import json
 import os
 from pathlib import Path
@@ -13,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import tomllib
 from uuid import uuid4
 
 PACKAGES = ("rentgen_core", "rentgen_graph", "rentgen_diagnostics")
@@ -30,7 +32,7 @@ def bind_checkout(checkout, expected, trigger_head):
     if commit != expected:
         raise ValueError("Checkout commit does not match the CI event")
     tree = subprocess.check_output(["git", "-C", str(checkout), "ls-tree", "-rz", commit,
-                                   "--", *PACKAGES, COMPANION, "LICENSE"], timeout=10)
+                                   "--", *PACKAGES, COMPANION, "LICENSE", "pyproject.toml"], timeout=10)
     files = {}
     for record in tree.split(b"\0"):
         if not record:
@@ -50,7 +52,10 @@ def bind_checkout(checkout, expected, trigger_head):
         files[name] = {"git_blob": blob, "sha256": hashlib.sha256(raw).hexdigest()}
     if not files or not any(name.startswith(COMPANION + "/") for name in files):
         raise ValueError("Missing bound Companion source")
-    return {"checkout_commit": commit, "trigger_head": trigger_head, "files": files,
+    if "pyproject.toml" not in files:
+        raise ValueError("Missing bound Core version metadata")
+    version = tomllib.loads((checkout / "pyproject.toml").read_text("utf-8"))["project"]["version"]
+    return {"checkout_commit": commit, "trigger_head": trigger_head, "files": files, "core_version": version,
             "scope": "actual CI checkout; on pull_request this may be GitHub's test merge"}
 
 
@@ -58,6 +63,9 @@ def prepare_fixture(manifest_file, root, scanner):
     if os.name != "nt":
         raise RuntimeError("Windows is required; no emulated adapter or skipped success")
     manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+    installed_version = importlib.metadata.version("rentgen-core")
+    if installed_version != manifest["core_version"]:
+        raise RuntimeError("Installed Core version differs from bound checkout")
     bound_packages = {}
     for name in PACKAGES:
         package = Path(importlib.import_module(name).__file__).resolve().parent
@@ -100,7 +108,7 @@ def prepare_fixture(manifest_file, root, scanner):
     ref = selected.sources.resolve("base", "CommonModules/ОбщийМодуль/Ext/Module.bsl")
     if selected.sources.read_source(ref) != original:
         raise RuntimeError("Retained source bytes changed")
-    return {"config": {"schema": 1, "core_version": "0.1.0.dev17", "python": sys.executable,
+    return {"config": {"schema": 1, "core_version": installed_version, "python": sys.executable,
                        "registry": str(registry.path), "project_id": registered.project_id},
             "ref": asdict(ref), "module": str(module), "original_base64": base64.b64encode(original).decode(),
             "bound_packages": bound_packages, "python_version": sys.version,

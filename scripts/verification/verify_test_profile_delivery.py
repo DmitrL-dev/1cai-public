@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import tomllib
 from uuid import uuid4
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -30,8 +31,11 @@ def verify(args):
         ],
         timeout=15,
     )
-    if json.loads(identity) != {"installed": True, "version": "0.1.0.dev17"}:
-        raise ValueError("Installed dev17 required")
+    expected_core_version = args.expected_core_version or tomllib.loads(
+        (ROOT / "pyproject.toml").read_text("utf-8")
+    )["project"]["version"]
+    if json.loads(identity) != {"installed": True, "version": expected_core_version}:
+        raise ValueError("Installed Core " + expected_core_version + " required")
     registry = output / "registry.sqlite3"
     project, sequence = None, 0
 
@@ -252,4 +256,5 @@ if __name__ == "__main__":
         parser.add_argument("--" + name, type=Path, required=True)
     for name in ("platform-sha256", "ibcmd-sha256"):
         parser.add_argument("--" + name, required=True)
+    parser.add_argument("--expected-core-version", help="Exact installed version; defaults to this checkout's project.version")
     print(json.dumps(verify(parser.parse_args())))

@@ -1,0 +1,72 @@
+name: Release candidate Linux qualification
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact main-reachable source commit qualified by both CI runs
+        type: string
+        required: true
+      product_run:
+        description: Successful Product checks main-push run ID
+        type: string
+        required: true
+      portable_run:
+        description: Successful Experimental portable contracts main-push run ID
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: release-candidate-linux-${{ inputs.source_sha }}
+  cancel-in-progress: false
+
+jobs:
+  linux-candidate:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      PYTHONUTF8: '1'
+      CANDIDATE_SOURCE: ${{ inputs.source_sha }}
+      PRODUCT_RUN: ${{ inputs.product_run }}
+      PORTABLE_RUN: ${{ inputs.portable_run }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.source_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11.9'
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24.15.0'
+      - name: Collect successful exact-source CI bytes and build candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(id -u)" -ne 0
+          python scripts/verification/verify_release_candidate.py collect --source "$CANDIDATE_SOURCE" --product-run "$PRODUCT_RUN" --portable-run "$PORTABLE_RUN" --output output/release-candidate
+      - name: Install locked browser test tools without credentials or elevation
+        run: |
+          test -z "${GH_TOKEN:-}" && test -z "${GITHUB_TOKEN:-}"
+          npm ci --prefix tests/gui/browser --ignore-scripts
+          cd tests/gui/browser
+          npx --no-install playwright install chromium
+      - name: Qualify the final extracted supplement and installed browser package
+        run: python scripts/verification/verify_release_candidate.py qualify --source "$CANDIDATE_SOURCE" --output output/release-candidate
+      - name: Upload candidate and bounded qualification receipts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: linux-release-candidate-${{ github.run_id }}
+          path: |
+            output/release-candidate/candidate/
+            output/release-candidate/inputs.json
+            output/release-candidate/collection.json
+            output/release-candidate/receipts/
+          if-no-files-found: error
+          retention-days: 14

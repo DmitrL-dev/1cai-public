@@ -5,9 +5,12 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import tomllib
+
+ROOT = Path(__file__).resolve().parents[2]
 
 
-def verify(python, scanner, output):
+def verify(python, scanner, output, expected_core_version=None):
     python, scanner, output = (
         python.resolve(strict=True),
         scanner.resolve(strict=True),
@@ -37,7 +40,10 @@ def verify(python, scanner, output):
         timeout=15,
     )
     identity = json.loads(probe.stdout)
-    assert identity == {"version": "0.1.0.dev17", "installed": True}, identity
+    expected_core_version = expected_core_version or tomllib.loads(
+        (ROOT / "pyproject.toml").read_text("utf-8")
+    )["project"]["version"]
+    assert identity == {"version": expected_core_version, "installed": True}, identity
 
     def command(name, *args, project=None, error=None):
         argv = [
@@ -151,5 +157,6 @@ if __name__ == "__main__":
     parser.add_argument("--python", required=True, type=Path)
     parser.add_argument("--scanner", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--expected-core-version", help="Exact installed version; defaults to this checkout's project.version")
     args = parser.parse_args()
-    print(json.dumps(verify(args.python, args.scanner, args.output)))
+    print(json.dumps(verify(args.python, args.scanner, args.output, args.expected_core_version)))

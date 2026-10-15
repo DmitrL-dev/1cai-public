@@ -27,8 +27,8 @@ for (const context_tokens of [true, false, '8192', 8192.5, null, 0, 4096, 65536,
   });
 }
 
-test('an unqualified future core profile is refused', () => {
-  assert.throws(() => createClient({...config, core_version: '0.1.0.dev999'}, {execute: async () => output({})}), /INVALID_EDITOR_PROFILE/);
+for (const core_version of ['0.1.0.dev18', '0.1.0.dev999']) test(`${core_version}: unqualified core profile is refused`, () => {
+  assert.throws(() => createClient({...config, core_version}, {execute: async () => output({})}), /INVALID_EDITOR_PROFILE/);
 });
 
 test('source text preserves BOM/CRLF and rejects altered bytes or reference', () => {
@@ -111,7 +111,7 @@ test('native result lookup is a read without snapshot or executable and rejects 
   await assert.rejects(client.platformResult(id),/PLATFORM_RESULT_MISMATCH/);
 });
 
-for (const core_version of ['0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16','0.1.0.dev17']) test(`${core_version} profile can use native result lookup and test profile listing`,async()=>{
+for (const core_version of ['0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16','0.1.0.dev17','0.1.0.dev19']) test(`${core_version} profile can use native result lookup and test profile listing`,async()=>{
   const id='00000000-0000-4000-8000-000000000003';
   const commands=[];
   const client=createClient({...config,core_version},{execute:async(_,args)=>{
@@ -150,7 +150,7 @@ test('first manual draft uses explicit source, draft and operation with revision
  const operation='00000000-0000-4000-8000-000000000003',title='Первая ручная правка',content='c'.repeat(64);let seen;
  let reply={project_id:project,draft_id:draft,revision:1,title,source_ref:ref,proposal_content_id:content,operation_id:operation,
   outcome:'committed',action:'draft.saved',status:'active'};
- const client=createClient({...config,core_version:'0.1.0.dev17'},{execute:async(_,args)=>{seen=args;return output(reply);}});
+ const client=createClient({...config,core_version:'0.1.0.dev19'},{execute:async(_,args)=>{seen=args;return output(reply);}});
  assert.deepEqual(await client.createDraft(ref,draft,title,'C:\\owned\\proposal.json',content,operation),reply);
  assert.deepEqual(seen.slice(3),['draft-save','--registry',config.registry,'--project',project,'--draft-id',draft,'--operation-id',operation,
   '--expected-revision','0','--snapshot',ref.snapshot.snapshot_id,'--proposal-json','C:\\owned\\proposal.json','--title='+title]);
@@ -162,7 +162,7 @@ test('first manual draft uses explicit source, draft and operation with revision
 });
 
 test('first manual draft rejects invalid titles, paths and selectors before starting CLI',async()=>{
- let calls=0;const client=createClient({...config,core_version:'0.1.0.dev17'},{execute:async()=>{calls++;return output({});}});
+ let calls=0;const client=createClient({...config,core_version:'0.1.0.dev19'},{execute:async()=>{calls++;return output({});}});
  const operation='00000000-0000-4000-8000-000000000003',content='c'.repeat(64);
  for(const title of ['', ' ', '\n', '\u202eunsafe', 'x'.repeat(241), '\ud800']){
   await assert.rejects(client.createDraft(ref,draft,title,'C:\\owned\\proposal.json',content,operation),/INVALID_DRAFT_TITLE/);
@@ -176,7 +176,7 @@ test('first manual draft rejects invalid titles, paths and selectors before star
 test('option-like module locators and draft titles stay literal CLI values',async()=>{
  const source={...ref,layer_id:'--help',relative_path:'--Module.bsl'},operation='00000000-0000-4000-8000-000000000003',content='c'.repeat(64);
  let seen,reply={ref:source,raw_sha256:hash,size_bytes:bytes.length,encoding:'base64',data:bytes.toString('base64')};
- const client=createClient({...config,core_version:'0.1.0.dev17'},{execute:async(_,args)=>{seen=args;return output(reply);}});
+ const client=createClient({...config,core_version:'0.1.0.dev19'},{execute:async(_,args)=>{seen=args;return output(reply);}});
  assert.equal(await client.source(source),bytes.toString('utf8'));
  assert.ok(seen.includes('--layer=--help'));assert.ok(seen.includes('--path=--Module.bsl'));assert.equal(seen.includes('--help'),false);
  for(const title of ['--help','--snapshot','-Правка',' title with spaces ']){

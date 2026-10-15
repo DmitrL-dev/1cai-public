@@ -1,5 +1,6 @@
 """Owned synthetic project; real production HTTP/Rust paths, no test API endpoints."""
 import hashlib
+import importlib.metadata
 import json
 import os
 import shutil
@@ -10,7 +11,15 @@ import threading
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT))
+INSTALLED = sys.argv[1:] == ['--installed']
+if INSTALLED:
+    # -I excludes checkout and user site-packages. Only fixture generators are
+    # added; production imports must resolve within the fresh wheel installation.
+    assert sys.flags.isolated and os.environ.get('RENTGEN_GUI_EXPECTED_VERSION')
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+else:
+    assert not sys.argv[1:]
+    sys.path.insert(0, str(ROOT))
 from rentgen_core import gui
 from rentgen_core.local_identity import initialize_local_identity
 from rentgen_core.registry import ProjectRegistry
@@ -18,6 +27,11 @@ from attribute_fixture import build_attribute_archive
 from occurrence_fixture import build_occurrence_archive
 from threeway_fixture import build_threeway_archives
 from line_diff_fixture import build_line_diff_archives
+
+if INSTALLED:
+    assert Path(gui.__file__).resolve().is_relative_to(Path(sys.prefix).resolve())
+    assert not Path(gui.__file__).resolve().is_relative_to(ROOT / 'rentgen_core')
+    assert importlib.metadata.version('rentgen-core') == os.environ['RENTGEN_GUI_EXPECTED_VERSION']
 
 
 def sha(path):

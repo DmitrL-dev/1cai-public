@@ -22,6 +22,16 @@
 
 Исходники кандидата, выбранный будущий номер версии и локальный тест не являются
 новым релизом. Сами по себе они не меняют состав опубликованных Core dev17 / Companion 0.1.18.
+Текущий кандидат — Core dev19 / Companion 0.1.20;
+[план приёмки и незакрытые условия](../../docs/product/RELEASE-PLAN-20261015.md)
+ведутся отдельно от опубликованных пакетов.
+
+Экспериментальное Linux-дополнение готовится по
+[отдельной инструкции](EXPERIMENTAL-LINUX.md). Помимо CLI, для нового GUI
+нужны smoke установленного wheel с настоящим loopback HTTP/Rust и все
+43 браузерных gates без пропусков, выполняемые над установленным пакетом.
+Наличие этого маршрута в CI не является результатом: перед выпуском нужны
+успешный запуск точного source commit и проверка извлечённых финальных байтов.
 
 ## Companion
 
@@ -82,6 +92,32 @@ wheel/sdist и точный состав файлов выпуска. Маниф
 содержать манифест, добавленный после приёмки его сборки.
 Нельзя подменять принятый ZIP сборкой последующего коммита документации.
 Публикуются ZIP, manifest.json, SHA256SUMS и RELEASE_NOTES.md как prerelease.
+
+## Финальная Linux-квалификация кандидата
+
+После обычного merge и успешных **main push** runs точного исходного SHA
+запустите read-only workflow [release-candidate-ci.yml](../../.github/workflows/release-candidate-ci.yml):
+
+```sh
+gh workflow run release-candidate-ci.yml --repo DmitrL-dev/1cai-public --ref main \
+  -f source_sha=EXACT_MAIN_SHA \
+  -f product_run=PRODUCT_RUN_ID \
+  -f portable_run=PORTABLE_RUN_ID
+```
+
+Подставьте SHA и run IDs `Product checks` / `Experimental portable contracts`
+одного commit. Workflow проверяет GitHub artifact digests до распаковки, Windows
+kit provenance и полное содержимое wheel обеих ОС. ZIP container metadata может
+различаться; доставляется неизменный канонический wheel Windows-комплекта.
+Из него и Linux CI helper собирается supplement, затем именно его извлечённые
+байты проходят установленный CLI/HTTP/Rust и все 43 sandboxed browser gates.
+Токен GitHub доступен только сбору входов, не выполнению пакета.
+
+Результат — CI artifact с тремя файлами кандидата и ограниченными квитанциями.
+Workflow не создаёт теги, не принимает manifests, не публикует Release и не
+заменяет отдельную проверку Windows/native/Companion. После успешной квалификации
+зафиксируйте фактические records и выполните штатный `prepare/verify`;
+публикуйте те же проверенные байты. При ошибке кандидат не считается принятым.
 
 ## Общие заметки и локальные теги
 

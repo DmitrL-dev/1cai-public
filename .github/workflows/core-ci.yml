@@ -30,6 +30,16 @@ jobs:
         with:
           go-version: '1.25.5'
           cache: false
+      - name: Resolve development artifact names
+        shell: pwsh
+        run: |
+          $coreVersion = python -c "import pathlib,tomllib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8'))['project']['version'])"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $companionVersion = (Get-Content -Raw integrations/vscode-rentgen/package.json | ConvertFrom-Json).version
+          if ($coreVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+\.dev[0-9]+$') { throw 'Invalid development Core version' }
+          if ($companionVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+$') { throw 'Invalid Companion version' }
+          "CORE_KIT_NAME=rentgen-core-$coreVersion-windows-py311" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "COMPANION_DEVELOPMENT_ASSET=rentgen-companion-$companionVersion-development.vsix" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Install test tools
         run: python -m pip install -r requirements-test.txt
       - name: Python contracts
@@ -89,7 +99,7 @@ jobs:
         working-directory: output/accepted-companion
         run: python scripts/release/prepare_companion.py build --tag companion-v0.1.4 --output release-assets
       - name: Build development companion
-        run: python integrations/vscode-rentgen/build.py --output output/rentgen-companion-0.1.18-development.vsix
+        run: python integrations/vscode-rentgen/build.py --output "output/$env:COMPANION_DEVELOPMENT_ASSET"
       - name: Build reproducible kit and verify offline CLI and MCP
         run: |
           python -m pip download --require-hashes --only-binary=:all: -r requirements/locks/mcp-py311-windows.txt --dest output/mcp-wheels
@@ -105,7 +115,7 @@ jobs:
           PYTHONUTF8: '1'
         shell: pwsh
         run: |
-          python scripts/verification/draft_companion/verify.py --python output/core-kit/offline-install/environment/Scripts/python.exe --scanner output/core-kit/rentgen-core-0.1.0.dev17-windows-py311/bsl-scan.exe --checkout . --expected-checkout $env:CI_CHECKOUT_SHA --trigger-head $env:CI_TRIGGER_HEAD --output output/draft-companion-evidence
+          python scripts/verification/draft_companion/verify.py --python output/core-kit/offline-install/environment/Scripts/python.exe --scanner "output/core-kit/$env:CORE_KIT_NAME/bsl-scan.exe" --checkout . --expected-checkout $env:CI_CHECKOUT_SHA --trigger-head $env:CI_TRIGGER_HEAD --output output/draft-companion-evidence
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Upload cross-client draft evidence
         if: always()
@@ -120,19 +130,19 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Verify installed snapshot comparison
-        run: python scripts/verification/verify_snapshot_diff_delivery.py --python output/core-kit/offline-install/environment/Scripts/python.exe --scanner output/core-kit/rentgen-core-0.1.0.dev17-windows-py311/bsl-scan.exe --output output/verification
+        run: python scripts/verification/verify_snapshot_diff_delivery.py --python output/core-kit/offline-install/environment/Scripts/python.exe --scanner "output/core-kit/$env:CORE_KIT_NAME/bsl-scan.exe" --output output/verification
       - name: Verify installed observer across processes
-        run: python scripts/verification/verify_observer_delivery.py --python output/core-kit/offline-install/environment/Scripts/python.exe --scanner output/core-kit/rentgen-core-0.1.0.dev17-windows-py311/bsl-scan.exe --output output/observer-verification
+        run: python scripts/verification/verify_observer_delivery.py --python output/core-kit/offline-install/environment/Scripts/python.exe --scanner "output/core-kit/$env:CORE_KIT_NAME/bsl-scan.exe" --output output/observer-verification
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: verified-core-development
           path: |
-            output/core-kit/rentgen-core-0.1.0.dev17-windows-py311.zip
+            output/core-kit/${{ env.CORE_KIT_NAME }}.zip
             output/core-kit/acceptance.json
             output/core-kit/offline-install/acceptance.json
             output/verification/acceptance.json
             output/observer-verification/acceptance.json
-            output/rentgen-companion-0.1.18-development.vsix
+            output/${{ env.COMPANION_DEVELOPMENT_ASSET }}
           if-no-files-found: error
           retention-days: 14
 

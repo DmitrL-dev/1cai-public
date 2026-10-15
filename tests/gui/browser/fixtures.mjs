@@ -10,7 +10,9 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 export const test = base.extend({
   app: async ({}, use) => {
     if (!process.env.RENTGEN_INPUT_CORE_TEST_BINARY) throw new Error('Set RENTGEN_INPUT_CORE_TEST_BINARY; real Rust acceptance must not skip');
-    const child = spawn(process.env.PYTHON || 'python', [path.join(here, 'server.py')], {stdio: ['pipe', 'pipe', 'pipe']});
+    const installed = process.env.RENTGEN_GUI_INSTALLED_PYTHON;
+    const args = installed ? ['-I', path.join(here, 'server.py'), '--installed'] : [path.join(here, 'server.py')];
+    const child = spawn(installed || process.env.PYTHON || 'python', args, {stdio: ['pipe', 'pipe', 'pipe']});
     let stderr = '';
     child.stderr.on('data', data => { stderr += data; });
     const closed = new Promise(resolve => child.once('close', (code, signal) => resolve({code, signal})));
