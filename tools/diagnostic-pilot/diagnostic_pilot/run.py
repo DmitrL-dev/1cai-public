@@ -11,8 +11,28 @@ from .broker import Broker
 from .contracts import Invalid, action, encoded, require
 from .corpus import load
 from .evaluate import audit, audit_schedule
-from .policies import FixedOrder, OnePass, ReadyAgent, RustPolicy, terminal
+from .policies import FixedOrder, ModelOneShot, OnePass, ReadyAgent, RustPolicy, terminal
 from .ready_worker import MODEL_SETTINGS, PINS, SYSTEM_PROMPT
+from .one_shot_worker import EFFECTIVE_SETTINGS as ONE_SHOT_SETTINGS, SYSTEM_PROMPT as ONE_SHOT_PROMPT
+
+
+def policy_profiles(names):
+    profiles = {}
+    for name in names:
+        if name in {'ready_agent', 'hybrid', 'model_one_shot'}:
+            one_shot = name == 'model_one_shot'
+            prompt = ONE_SHOT_PROMPT if one_shot else SYSTEM_PROMPT
+            settings = ONE_SHOT_SETTINGS if one_shot else MODEL_SETTINGS
+            profiles[name] = {'mode': 'terminal_only_one_request_ablation' if one_shot else 'adaptive_tool_loop',
+                'new_observations_allowed': 0 if one_shot else 3, 'host_observation_cap': 3, 'host_cost_cap': 9,
+                'new_observation_cost_allowed': 0 if one_shot else 9,
+                'provider': 'langchain_ollama.ChatOllama',
+                'maximum_model_requests': settings['maximum_requests'],
+                'system_prompt_sha256': hashlib.sha256(prompt.encode()).hexdigest(),
+                'model_settings': settings, 'model_settings_sha256': hashlib.sha256(encoded(settings)).hexdigest(),
+                'output_schema': 'Decision', 'check_tool_available': not one_shot,
+                'scope': 'initial typed facts only; different tools/request budget, not a fair architecture benchmark' if one_shot else 'owned development research policy'}
+    return profiles
 
 
 def source_hashes():
@@ -78,6 +98,7 @@ def report(manifest, cases, factories):
         'ledger_and_findings_safe': safe, 'mechanical_safety_passed': safe and not inconclusive,
         'execution_status': 'failed' if not safe else 'inconclusive' if inconclusive else 'completed',
         'native_acceptance': False, 'heldout_independence': False, 'ai_competence_accepted': False,
+        'policy_profiles': policy_profiles(factories),
         'criteria': criteria, 'criteria_sha256': criteria_hash,
         'evaluation': schedule, 'scores': scores, 'errors': errors, 'records': records}
 
@@ -85,7 +106,7 @@ def report(manifest, cases, factories):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--corpus', type=Path, default=Path(__file__).resolve().parent / 'cases')
-    parser.add_argument('--policies', nargs='+', choices=['fixed', 'one_pass', 'rust', 'ready_agent', 'hybrid'], default=['fixed', 'rust'])
+    parser.add_argument('--policies', nargs='+', choices=['fixed', 'one_pass', 'rust', 'ready_agent', 'hybrid', 'model_one_shot'], default=['fixed', 'rust'])
     parser.add_argument('--rust-binary', type=Path); parser.add_argument('--rust-sha256')
     parser.add_argument('--model'); parser.add_argument('--endpoint', default='http://127.0.0.1:11434')
     parser.add_argument('--case-id', type=int, action='append', help='Explicit development smoke subset; never whole-corpus acceptance')
@@ -100,7 +121,7 @@ def main(argv=None):
         cases = [case for case in cases if case['id'] in args.case_id]
     if 'rust' in args.policies or 'hybrid' in args.policies:
         require(args.rust_binary is not None and args.rust_sha256 is not None, 'explicit_rust_binary_required')
-    if {'ready_agent', 'hybrid'} & set(args.policies):
+    if {'ready_agent', 'hybrid', 'model_one_shot'} & set(args.policies):
         require(args.model is not None, 'explicit_local_model_required')
     factories = {}
     for name in args.policies:
@@ -108,13 +129,14 @@ def main(argv=None):
         elif name == 'one_pass': factories[name] = OnePass
         elif name == 'rust': factories[name] = lambda: RustPolicy(args.rust_binary, args.rust_sha256)
         elif name == 'ready_agent': factories[name] = lambda: ReadyAgent(args.model, args.endpoint)
+        elif name == 'model_one_shot': factories[name] = lambda: ModelOneShot(args.model, args.endpoint)
         else: factories[name] = lambda: ReadyAgent(args.model, args.endpoint, rust=RustPolicy(args.rust_binary, args.rust_sha256))
     result = report(manifest, cases, factories)
     result['selected_case_ids'] = [case['id'] for case in cases]
     result['whole_corpus_schedule_complete'] = set(result['selected_case_ids']) == set(corpus_case_ids)
     result['runtime'] = {'python': sys.version.split()[0], 'platform': sys.platform,
                          'rust_binary_sha256': args.rust_sha256 if 'rust' in factories or 'hybrid' in factories else None,
-                         'model_name': args.model if {'ready_agent', 'hybrid'} & set(factories) else None}
+                         'model_name': args.model if {'ready_agent', 'hybrid', 'model_one_shot'} & set(factories) else None}
     framework_versions = {}
     for package in sorted(set(PINS) | {'langchain-core', 'langgraph', 'langgraph-prebuilt',
                                       'langgraph-checkpoint', 'langgraph-sdk', 'ollama', 'pydantic'}):
@@ -125,10 +147,16 @@ def main(argv=None):
     lock = Path(__file__).resolve().parent / 'requirements-ready.lock'
     if not lock.is_file():
         lock = lock.parent.parent / 'requirements-ready.lock'
+    profiles = result['policy_profiles']
+    prompt_hashes = {p['system_prompt_sha256'] for p in profiles.values()} or {hashlib.sha256(SYSTEM_PROMPT.encode()).hexdigest()}
+    settings_hashes = {p['model_settings_sha256'] for p in profiles.values()} or {hashlib.sha256(encoded(MODEL_SETTINGS)).hexdigest()}
+    settings = next(iter(profiles.values()))['model_settings'] if len(settings_hashes) == 1 and profiles else MODEL_SETTINGS
     result['runtime'].update({'framework_versions': framework_versions,
         'requirements_lock_sha256': hashlib.sha256(lock.read_bytes()).hexdigest() if lock.is_file() else None,
-        'system_prompt_sha256': hashlib.sha256(SYSTEM_PROMPT.encode()).hexdigest(),
-        'model_settings': MODEL_SETTINGS, 'model_settings_sha256': hashlib.sha256(encoded(MODEL_SETTINGS)).hexdigest(),
+        'system_prompt_sha256': next(iter(prompt_hashes)) if len(prompt_hashes) == 1 else None,
+        'model_settings': settings if len(settings_hashes) == 1 else None,
+        'model_settings_sha256': next(iter(settings_hashes)) if len(settings_hashes) == 1 else None,
+        'model_configuration_provenance': 'policy_profiles; mixed profiles have no single effective prompt or request limit',
         'model_artifact_digest': None, 'model_artifact_verification': 'not_verified_by_harness'})
     require(source_hashes() == implementation, 'implementation_changed_during_run')
     result['implementation_sha256'] = implementation

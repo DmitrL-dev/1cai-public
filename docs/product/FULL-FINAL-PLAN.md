@@ -15,13 +15,15 @@
 
 ## Текущий блок разработки
 
-Ветка **`feat/ide-workbench` — работа в процессе** на базе S. Следующие части готовятся совместно, с собственными проверками и документацией. Эта запись не заявляет завершение, успешный CI новой ветки, installed/native/model acceptance или новый выпуск.
+Следующие части развиваются совместно на базе S, с собственными проверками и документацией. Это работа в процессе; промежуточный результат не закрывает весь блок, IDE-сценарий или финальный релиз.
+
+[Квитанция CI commit `553e1fa`](evidence/development-ci-553e1fa-20261015.json) сохраняет точный source/tree: Windows Python 4164 passed / 589 skipped + 51 subtests, Node 577/577; Linux Python 3.11/3.12 — по 3789 passed / 965 skipped, без failures/errors; browser 43/43 и 29 protocol tests / 42 synthetic pilot episodes. Product workflow при этом завершился **failure**: реальная установка VSIX прошла, но editor inventory guard отказал до первого Extension Host. Более поздние изменения reader, model policy и installer guard требуют своего интеграционного CI. Эта квитанция не является новым выпуском или приёмкой AI/native 1С.
 
 | Часть | Что готовится | Что необходимо принять отдельно |
 | --- | --- | --- |
 | B01: metadata workbench | Core navigation CLI/DTO, Companion metadata/source navigation, сохранение контекста и привязанные к revision Problems; harness настоящего Windows editor host | Точный новый Core+VSIX, реальный editor activation/restart/recovery/conflict и независимая проверка bytes/диагностики. Editor host не является стендом 1С |
-| Часть B07/B08: POSIX owner IO | Отдельный безопасный filesystem adapter и owner-report/runtime evidence workflow | Настоящие Linux/macOS filesystem/race/permission/restart проверки и Windows regressions. Это не готовые portable capture, native execution или вся служба |
-| Часть B06: isolated diagnostic pilot | Broker, frozen inputs, реальные policy adapters и независимый evaluator в отдельном исследовательском контуре | Протокольные тесты отдельно от реального model/native run; независимый holdout и actual runtime evidence. Заглушки не дают положительной оценки AI |
+| Часть B07/B08: POSIX owner IO и byte-owned graph | Отдельный filesystem adapter, owner-report/runtime evidence workflow и [внутренний SQLite reader](../../rentgen_core/VERIFIED-GRAPH.md) с одной owned connection, явными бюджетами и без pathname fallback | Квалификация итоговых bytes на каждой ОС; descriptor-backed retained sessions, identity, capture/publication и scanner ownership ещё не реализованы этим reader. Public capabilities остаются прежними; image budget не является hard RSS cap |
+| Часть B06: isolated diagnostic pilot | Broker, frozen inputs, реальные policy adapters, evaluator и отдельный terminal-only `model_one_shot` | One-request policy — ablation с нулём новых observations, а не same-tools/budgets benchmark. Нужны независимый holdout и actual model/native evidence; protocol controls их не заменяют |
 
 Каждая часть требует квалификации своего итогового SHA. Документация, старые CI и существующие receipts не объявляются результатами новой ветки.
 
@@ -35,7 +37,7 @@
 | B04 — метаданные и специальные инструменты | Открыт | UUID/owner/layer, lossless forms/queries/СКД/MXL/resources/extensions/EPF/ERF, отдельные no-op/minimal/native/runtime fixtures |
 | B05 — обновления и восстановление данных | Открыт | Supplier old/new/ours, support rules и общий предок, semantic/native final diff, данные/ссылки, partial-apply/crash и проверенный rollback |
 | B06 — диагностика и ежедневная AI-задача | Частично в работе | Исследовательский pilot, затем независимый ready-agent/Rust/hybrid benchmark, native witnesses, пользовательский CLI/MCP и реальная семантически верная daily revision |
-| B07 — переносимость по операциям | Частично в работе | Сначала POSIX owner IO; отдельно остаются identity, retained snapshots, capture/publication/graph/drafts, процессы, installed delivery, cancel/recovery и только затем live writes |
+| B07 — переносимость по операциям | Частично в работе | POSIX owner IO и внутренний verified-byte graph seam; отдельно остаются identity, descriptor-backed retained sessions, capture/publication/drafts, процессы, installed delivery, cancel/recovery и только затем live writes |
 | B08 — Observer, source-facts и отчёт владельцу | Открыт | #84 gates, production trust, активный native BSL cancel/recovery, checkpoint/errors/unchanged, доказательный runtime/owner report и notifications |
 | B09 — первый результат и измерения | Открыт | Новый пользователь и прерывание; representative cold/warm/start/search/index/edit-to-run/RSS/model-cost с точными corpus/hardware/versions |
 | B10 — полный финальный выпуск | Открыт | После полных критериев: stable-channel tooling, совместимость компонентов, OS/arch/dependencies, exact-source CI и installed/editor/native/model gates, принятые bytes, tag/download/Pages |
@@ -189,7 +191,7 @@
 ## Оставшиеся внешние условия
 
 - Лицензированный exact-build 1С/EDT host и owned test bases для нового native, debugger, data/rollback и object/runtime matrix. Сейчас недоступны.
-- Реальный закреплённый editor host и установленные Core/VSIX/BSL для UI/restart/Problems; editor harness готовится, положительная приёмка не заявлена.
+- Квалификация закреплённого editor host связывает точные Core/VSIX/BSL bytes с activation/restart/recovery/Problems; keyboard/accessibility и native 1С остаются отдельными gates.
 - Реальный выбранный model endpoint и независимый frozen holdout с разрешёнными fixtures/лицензиями для сравнения policies и новой daily AI-задачи.
 - Настоящие заявленные Windows/Linux/macOS/arch/filesystem топологии; обычные hosted Windows SCM/Git checks не являются native 1С business workflow.
 - Независимый новый пользователь для первого результата и времени; automated offline install этого не заменяет.

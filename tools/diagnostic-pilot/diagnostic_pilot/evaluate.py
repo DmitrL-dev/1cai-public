@@ -68,6 +68,8 @@ def findings(envelope):
 def audit(case, episode):
     """Replay the ledger independently. Corrupt/ineligible reveals fail closed."""
     require(episode['case_id'] == case['id'] and type(episode['events']) is list and len(episode['events']) <= 4, 'incomplete_schedule')
+    if episode['policy'] == 'model_one_shot':
+        require(len(episode['events']) == 1 and action(episode['events'][0]['action'])['kind'] != 'check', 'one_shot_terminal_required')
     expected = copy.deepcopy(case['initial'])
     attempts = cost = disclosed = 0
     terminal = None
@@ -158,16 +160,25 @@ def audit(case, episode):
                         choices.append(group([anchor, predicate]))
         if not any(proof and proof <= cited for proof in choices):
             unjustified += 1
-    return {'case_id': case['id'], 'initial_evidence_states': findings(case['initial'])[0],
+    initial_states = findings(case['initial'])[0]
+    case_findings = set(case['expected']['supported'])
+    initial_only = episode['policy'] == 'model_one_shot'
+    recall_target = case_findings & {h for h, state in initial_states.items() if state == 'supported'} if initial_only else case_findings
+    return {'case_id': case['id'], 'initial_evidence_states': initial_states,
             'final_evidence_states': states, 'claimed_supported': sorted(supported),
             'claimed_refuted': sorted(refuted),
             'terminal_kind': terminal['kind'], 'false_causes': false_causes,
             'false_refutations': false_refutations, 'unjustified_findings': unjustified,
             'safe': false_causes + false_refutations + unjustified == 0,
-            'finding_recall_numerator': len(supported & set(case['expected']['supported'])),
-            'finding_recall_denominator': len(case['expected']['supported']),
-            'avoidable_abstention': terminal['kind'] == 'abstain' and bool(case['expected']['supported']) and case['expected']['sufficient_possible'],
-            'budget_or_unavailable_abstention': terminal['kind'] == 'abstain' and not case['expected']['sufficient_possible'],
+            'finding_recall_numerator': len(supported & recall_target),
+            'finding_recall_denominator': len(recall_target),
+            'finding_recall_scope': 'initial_evidence_only' if initial_only else 'case_findings',
+            'case_finding_recall_numerator': len(supported & case_findings),
+            'case_finding_recall_denominator': len(case_findings),
+            'abstention_scope': 'initial_evidence_only' if initial_only else 'observation_budget',
+            'avoidable_abstention': terminal['kind'] == 'abstain' and bool(recall_target) and (initial_only or case['expected']['sufficient_possible']),
+            'initial_evidence_only_abstention': initial_only and terminal['kind'] == 'abstain' and not recall_target,
+            'budget_or_unavailable_abstention': not initial_only and terminal['kind'] == 'abstain' and not case['expected']['sufficient_possible'],
             'inconclusive': terminal['kind'] == 'unavailable', 'totals': episode['totals']}
 
 
@@ -218,6 +229,7 @@ def audit_schedule(cases, policies, records, criteria, criteria_sha256):
             'next_check_accuracy': None,
             'next_check_accuracy_limitation': 'No independent admissible-next-action labels in public development controls',
             'per_policy': {p: {'episodes': sum(s['policy'] == p for s in scores),
+                'finding_recall_scope': next(s['finding_recall_scope'] for s in scores if s['policy'] == p),
                 'findings_recalled': sum(s['finding_recall_numerator'] for s in scores if s['policy'] == p),
                 'findings_expected': sum(s['finding_recall_denominator'] for s in scores if s['policy'] == p),
                 'requests': sum(s['totals']['attempts'] for s in scores if s['policy'] == p),

@@ -15,6 +15,7 @@ from archive import extract_verified
 from inputs import PINS, bind_checkout, digest, download, load, require, save
 
 HERE = Path(__file__).resolve().parent
+MAX_COMPANION_DELTA_ENTRIES = 32
 
 
 def tree(root):
@@ -62,22 +63,66 @@ def installed_files(wheel, runtime, binding):
     return result
 
 
-def companion_files(extension, vsix):
+def companion_delta(actual, expected, changed, allowed_package_rewrites):
+    def entries(names):
+        records = []
+        for name in sorted(names)[:MAX_COMPANION_DELTA_ENTRIES]:
+            encoded = name.encode("utf-8", "surrogatepass")
+            printable = (len(encoded) <= 256 and not name.startswith("/") and "\\" not in name
+                         and ":" not in name and all(part not in {"", ".", ".."} for part in name.split("/"))
+                         and all(char.isprintable() for char in name))
+            record = {"relative_path": name} if printable else {
+                "relative_path_sha256": hashlib.sha256(encoded).hexdigest(), "relative_path_omitted": True}
+            record.update(expected=expected.get(name), actual=actual.get(name))
+            if name in allowed_package_rewrites:
+                record["allowed_package_json_rewrite"] = True
+            records.append(record)
+        return {"count": len(names), "truncated": len(names) > MAX_COMPANION_DELTA_ENTRIES, "entries": records}
+
+    missing, unexpected = set(expected) - set(actual), set(actual) - set(expected)
+    return {"schema": 1, "scope": "owned synthetic editor attempt; relative filenames and hashes only",
+            "accepted": not missing and not unexpected and not (changed - allowed_package_rewrites),
+            "expected_files": len(expected), "actual_files": len(actual),
+            "entry_limit_per_category": MAX_COMPANION_DELTA_ENTRIES,
+            "missing": entries(missing), "unexpected": entries(unexpected), "content_changed": entries(changed)}
+
+
+def companion_files(extension, vsix, diagnostic=None):
     actual = tree(extension)
     with ZipFile(vsix) as archive:
         expected = {name.removeprefix("extension/"): archive.read(name) for name in archive.namelist()
                     if name.startswith("extension/") and not name.endswith("/")}
-    require(set(actual) == set(expected), "Installed Companion file inventory differs from VSIX")
-    for name, raw in expected.items():
-        installed = (extension / name).read_bytes()
+        # The pinned installer removes the prefix /^extension/, so the outer
+        # extension.vsixmanifest is installed as .vsixmanifest as well.
+        require(".vsixmanifest" not in expected, "VSIX payload shadows installed manifest")
+        expected[".vsixmanifest"] = archive.read("extension.vsixmanifest")
+    expected_inventory = {name: {"sha256": hashlib.sha256(raw).hexdigest(), "size_bytes": len(raw)}
+                          for name, raw in expected.items()}
+    changed, allowed_package_rewrites = set(), set()
+    for name in sorted(set(actual) & set(expected)):
+        raw, installed = expected[name], (extension / name).read_bytes()
+        if installed == raw:
+            continue
+        changed.add(name)
         if name == "package.json":
-            # VS Code may add installation metadata; executable/configuration
-            # properties must remain byte-derived from the exact VSIX manifest.
-            value, original = json.loads(installed), json.loads(raw)
-            value.pop("__metadata", None)
-            require(value == original, "Installed extension manifest differs")
-        else:
-            require(installed == raw, "Installed extension bytes differ: " + name)
+            # Only installation metadata and JSON serialization may differ;
+            # executable/configuration properties must match the exact VSIX.
+            try:
+                value, original = json.loads(installed), json.loads(raw)
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                continue
+            if isinstance(value, dict) and isinstance(original, dict):
+                value.pop("__metadata", None)
+                if value == original:
+                    allowed_package_rewrites.add(name)
+    if diagnostic is not None:
+        diagnostic.update(companion_delta(actual, expected_inventory, changed, allowed_package_rewrites))
+    require(set(actual) == set(expected), "Installed Companion file inventory differs from VSIX")
+    rejected = sorted(changed - allowed_package_rewrites)
+    if rejected:
+        name = rejected[0]
+        raise RuntimeError("Installed extension manifest differs" if name == "package.json"
+                           else "Installed extension bytes differ: " + name)
     return actual
 
 
@@ -163,7 +208,8 @@ def verify(args):
         extensions = list((output / "extensions").glob(binding["companion_id"] + "-*/package.json"))
         require(len(extensions) == 1, "Expected only the installed exact Companion")
         extension = extensions[0].parent
-        extension_inventory = companion_files(extension, vsix)
+        receipt["companion_inventory"] = {"installed": {}}
+        extension_inventory = companion_files(extension, vsix, receipt["companion_inventory"]["installed"])
         launch["extension_path"] = str(extension)
         # This controlled supervisor descriptor gains its installed path once;
         # extension workspaceState and product inputs are never patched here.
@@ -182,7 +228,9 @@ def verify(args):
         require(tree(output / "editor") == editor_inventory, "Pinned editor files changed")
         require(tree(output / "java") == java_inventory, "Pinned JDK input files changed")
         require(tree(profile / "local-app-data/Rentgen/runtimes") == native_before, "Installed BSL runtime files changed")
-        require(companion_files(extension, vsix) == extension_inventory, "Installed Companion changed")
+        receipt["companion_inventory"]["after_hosts"] = {}
+        require(companion_files(extension, vsix, receipt["companion_inventory"]["after_hosts"]) == extension_inventory,
+                "Installed Companion changed")
         require(installed_files(wheel, runtime, binding) == installed, "Installed Core files changed")
         require(all(digest(runtime / name) == value for name, value in copied.items()), "Copied Python files changed")
         require(bind_checkout(checkout, args.expected_commit, args.trigger_head, vsix)["files"] == binding["files"], "Checkout changed during editor run")

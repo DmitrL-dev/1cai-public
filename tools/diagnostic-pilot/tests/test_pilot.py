@@ -231,6 +231,13 @@ class PilotTests(unittest.TestCase):
         for key in ['native_acceptance', 'heldout_independence', 'ai_competence_accepted']:
             self.assertFalse(result[key])
 
+    def test_one_shot_evaluator_independently_refuses_an_observation_trajectory(self):
+        record = episode(self.case(), FixedOrder())
+        self.assertGreater(len(record['events']), 1)
+        record['policy'] = 'model_one_shot'
+        with self.assertRaisesRegex(Invalid, 'one_shot_terminal_required'):
+            audit(self.case(), record)
+
     def test_before_after_summary_keeps_exact_revisions_and_observed_claims(self):
         result = report(self.manifest, self.cases, {'fixed': FixedOrder})
         pair, = result['evaluation']['paired_revisions']

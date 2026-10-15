@@ -99,7 +99,7 @@ def run(model, endpoint, input_stream=None):
         unavailable('model_unavailable'); return
 
     class Decision(BaseModel):
-        model_config = ConfigDict(extra='forbid')
+        model_config = ConfigDict(extra='forbid', strict=True)
         kind: Literal['diagnosis', 'abstain']
         supported: list[str] = Field(max_length=5)
         refuted: list[str] = Field(max_length=5)

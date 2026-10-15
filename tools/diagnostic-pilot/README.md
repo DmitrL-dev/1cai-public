@@ -181,6 +181,66 @@ distinction above was added. Do not reinterpret that flag as a passed model run.
 
 ## Verification boundaries
 
+### Terminal-only model ablation
+
+`--policies model_one_shot` selects a separate terminal-only **one-request
+ablation**. It uses the same pinned `ChatOllama` provider, per-call model
+settings, `Decision` wire schema and initial typed view as `ready_agent`.
+Its explicit system instruction permits only a final `Decision`: there is no
+`request_check` tool, tool loop, repair, retry or second host decision. The check
+catalog in the view is metadata; it does not grant observation permission.
+The existing `one_pass` remains a deterministic rule baseline.
+
+This arm allows **zero new observations / zero observation cost / one actual
+model request per episode**. Its tools, request budget and interface prompt
+differ from the adaptive policies. It does not satisfy the planned same-tools,
+same-budgets comparison, close `IDE-AI-01`, establish benchmark independence or
+select an architecture. Compare diagnosis at identical evidence separately
+from final adaptive results after extra checks. The unchanged public 14 cases
+remain development controls; no new holdout or real-model result is added.
+
+For example, with an operator-selected local runtime already available:
+
+```sh
+python3.11 -m diagnostic_pilot.run --policies model_one_shot \
+  --model EXPLICIT_LOCAL_MODEL --endpoint http://127.0.0.1:11434 \
+  --output /tmp/pilot-model-one-shot.json
+```
+
+Reports retain per-policy mode, effective request/observation limits,
+provider, prompt hash and settings hash in `policy_profiles`. Mixed adaptive
+and one-shot runs have no single effective prompt/settings hash; consult each
+profile. Source hashes include the worker. Model name still does not attest
+weights: the model digest remains `null` / `not_verified_by_harness` until an
+external operator qualification supplies that evidence. All acceptance flags
+remain false.
+
+The same broker/evaluator validates every terminal claim and evidence citation.
+Zero checks does not prove diagnostic quality. For this arm, recall and avoidable
+abstention use findings supported by the **initial** evidence; missing future
+witnesses justify abstention. `case_finding_recall_*` separately preserves the
+full case-truth denominator. A zero initial recall denominator is no positive
+accuracy claim. Unsupported findings still fail the common safety gate.
+Null/unstructured/invalid outputs, foreign/multiple tool calls, missing usage
+and provider failures remain unavailable/inconclusive (or protocol failure),
+with finite diagnostics and no raw model/exception text. They never pass the
+mechanical completion gate.
+
+Owned loopback protocol tests use the actual pinned provider/framework,
+compare the `Decision` schema/options/initial view with `ready_agent`, count
+actual HTTP requests, and exercise positive and negative responses. These are
+protocol tests with a controlled peer, not model competence or native evidence.
+The historical ready-agent prompt, corpus and negative model receipts are
+unchanged.
+
+Both workers use strict `Decision` admission: boolean, floating-point and
+numeric-string evidence IDs are rejected before Pydantic can coerce them to
+integers. This is a minimal admission hardening of the existing ready worker;
+its prompt and model settings are unchanged. The adaptive framework may retry
+invalid structured outputs within its original eight-request budget; the
+one-shot arm still makes exactly one request and never repairs an invalid
+response. Actual-framework/HTTP controls cover these types on both paths.
+
 Standalone tests cover hash tampering, strict JSON admission, hidden-outcome
 separation, consent/repeat/cumulative budgets, partial bundles, incompatible
 shape, fact limits, timeout accounting, A→B→A retirement, evidence citations,

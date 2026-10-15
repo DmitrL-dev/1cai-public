@@ -142,6 +142,7 @@ class RustPolicy:
 class ReadyAgent:
     """Persistent real framework worker. Host retains the only evidence broker."""
     name = 'ready_agent'
+    worker_script = 'ready_worker.py'
     def __init__(self, model, endpoint='http://127.0.0.1:11434', timeout=120, rust=None):
         require(type(model) is str and 1 <= len(model) <= 128 and not any(ord(c) < 33 for c in model), 'invalid_model')
         url = urlsplit(endpoint)
@@ -154,7 +155,7 @@ class ReadyAgent:
         if self.child is None:
             self._stderr = tempfile.TemporaryFile()
             env = {key: os.environ[key] for key in ['PATH', 'SYSTEMROOT', 'WINDIR', 'TMPDIR', 'TEMP', 'TMP'] if key in os.environ}
-            self.child = subprocess.Popen([sys.executable, '-I', str(Path(__file__).with_name('ready_worker.py')),
+            self.child = subprocess.Popen([sys.executable, '-I', str(Path(__file__).with_name(self.worker_script)),
                 '--model', self.model, '--endpoint', self.endpoint], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                 stderr=self._stderr, env=env, start_new_session=os.name == 'posix')
             self._deadline = time.monotonic() + self.timeout
@@ -207,3 +208,21 @@ class ReadyAgent:
         if self.child:
             stop(self.child)
             self.child.stdin.close(); self.child.stdout.close(); self._stderr.close()
+
+
+class ModelOneShot(ReadyAgent):
+    """One terminal decision from initial evidence; a one-request ablation."""
+    name = 'model_one_shot'
+    worker_script = 'one_shot_worker.py'
+    def __init__(self, model, endpoint='http://127.0.0.1:11434', timeout=120):
+        super().__init__(model, endpoint, timeout)
+        self._decided = False
+    def decide(self, view):
+        require(not self._decided, 'one_shot_already_decided')
+        self._decided = True
+        decision, charge, metrics = super().decide(view)
+        require(decision['kind'] != 'check', 'one_shot_terminal_required')
+        require(type(metrics.get('model_requests')) is int and 0 <= metrics['model_requests'] <= 1, 'invalid_metrics')
+        if decision['kind'] != 'unavailable':
+            require(metrics['model_requests'] == 1, 'invalid_metrics')
+        return decision, charge, metrics

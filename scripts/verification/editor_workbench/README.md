@@ -75,7 +75,18 @@ The attempt must be a new direct child `RUNNER_TEMP/rg-editor-<12 hex>`.
 Only reduced `evidence/acceptance.json`, `runtime-binding.json` and supervisor
 receipts are uploaded. Raw editor logs, source fixtures, full inventories and
 private per-profile state stay in the disposable attempt. Receipts contain
-hashes/IDs/booleans; `full_product_ready` remains false.
+reduced metadata and bounded Companion filenames; `full_product_ready` remains false.
+
+The installed-layout comparison includes `.vsixmanifest` with the exact bytes of
+the outer VSIX `extension.vsixmanifest`. This is a source-based correction for
+the [pinned editor installer](https://github.com/microsoft/vscode/blob/08d4889f9ec4a1685d257b9b95de036c8e1ce1e5/src/vs/platform/extensionManagement/node/extensionManagementService.ts#L649)
+and its [prefix extraction](https://github.com/microsoft/vscode/blob/08d4889f9ec4a1685d257b9b95de036c8e1ce1e5/src/vs/base/node/zip.ts#L320),
+not a positive Windows runtime receipt. Unknown files, missing files, changed
+manifest bytes and other payload changes still fail. On either installed-file
+inspection, `acceptance.json` records bounded relative filenames and hashes for
+missing, unexpected and changed entries; it includes no file bodies or absolute
+paths. Portable synthetic layout tests qualify this comparison only; actual
+Windows acceptance still requires the exact-source CI receipt above.
 
 Guard tests (portable; these do not launch Electron). The new CI job explicitly
 installs the pinned tools and runs both paths before its actual runtime attempt;

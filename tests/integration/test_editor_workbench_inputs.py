@@ -1,9 +1,11 @@
 """Portable verifier guards; never substitutes for real editor acceptance."""
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
 import subprocess
 import urllib.request
+from zipfile import ZipFile
 
 import pytest
 
@@ -122,6 +124,106 @@ def test_exact_git_and_vsix_bytes_bound_before_runtime(modules, tmp_path, tamper
         assert bound["source_commit"] == bound["trigger_head"] == head
         assert bound["companion_id"] == "rentgen.project-companion"
         assert len(bound["files"]) == 3
+
+
+@pytest.fixture
+def installed_companion(tmp_path):
+    """Synthetic pinned-installer layout; does not launch or qualify an editor."""
+    package = {"name": "project-companion", "main": "extension.cjs", "activationEvents": ["onCommand:rentgen.open"]}
+    payload = {"package.json": json.dumps(package).encode("utf-8"), "extension.cjs": b"module.exports = {};\n"}
+    manifest = b'<PackageManifest Version="2.0.0">bound manifest</PackageManifest>\r\n'
+    vsix = tmp_path / "companion.vsix"
+    with ZipFile(vsix, "w") as archive:
+        archive.writestr("extension.vsixmanifest", manifest)
+        archive.writestr("[Content_Types].xml", b"<Types/>")
+        for name, raw in payload.items():
+            archive.writestr("extension/" + name, raw)
+    extension = tmp_path / "installed"
+    extension.mkdir()
+    for name, raw in payload.items():
+        (extension / name).write_bytes(raw)
+    (extension / ".vsixmanifest").write_bytes(manifest)
+    package["__metadata"] = {"installedTimestamp": 1, "targetPlatform": "undefined"}
+    (extension / "package.json").write_bytes(json.dumps(package, indent=2).encode("utf-8"))
+    return extension, vsix, manifest
+
+
+def test_installed_companion_binds_generated_manifest_and_limited_package_metadata(modules, installed_companion):
+    _, runner = modules
+    extension, vsix, manifest = installed_companion
+    diagnostic = {}
+    inventory = runner.companion_files(extension, vsix, diagnostic)
+    assert set(inventory) == {"package.json", "extension.cjs", ".vsixmanifest"}
+    assert inventory[".vsixmanifest"] == {"sha256": hashlib.sha256(manifest).hexdigest(), "size_bytes": len(manifest)}
+    assert diagnostic["accepted"] is True
+    assert diagnostic["missing"]["count"] == diagnostic["unexpected"]["count"] == 0
+    assert [item["relative_path"] for item in diagnostic["content_changed"]["entries"]] == ["package.json"]
+    assert diagnostic["content_changed"]["entries"][0]["allowed_package_json_rewrite"] is True
+    assert "installedTimestamp" not in json.dumps(diagnostic)
+
+
+@pytest.mark.parametrize("tamper,category,name,message", [
+    ("payload", "content_changed", "extension.cjs", "Installed extension bytes differ"),
+    ("manifest", "content_changed", ".vsixmanifest", "Installed extension bytes differ"),
+    ("extra", "unexpected", "unexpected.json", "Installed Companion file inventory differs"),
+    ("missing-payload", "missing", "extension.cjs", "Installed Companion file inventory differs"),
+    ("missing-manifest", "missing", ".vsixmanifest", "Installed Companion file inventory differs"),
+    ("package", "content_changed", "package.json", "Installed extension manifest differs"),
+    ("package-extra-setting", "content_changed", "package.json", "Installed extension manifest differs"),
+    ("package-invalid", "content_changed", "package.json", "Installed extension manifest differs"),
+], ids=["payload-bytes", "generated-manifest-bytes", "unknown-extra", "missing-payload", "missing-generated-manifest", "package-configuration", "package-extra-setting", "package-invalid-json"])
+def test_installed_companion_tamper_and_unknown_inventory_refuse_with_reduced_delta(
+        modules, installed_companion, tamper, category, name, message):
+    _, runner = modules
+    extension, vsix, _ = installed_companion
+    private_body = b"private fixture body must not appear in reduced evidence"
+    if tamper.startswith("missing-"):
+        (extension / name).unlink()
+    elif tamper in {"package", "package-extra-setting"}:
+        package = json.loads((extension / name).read_bytes())
+        package["main" if tamper == "package" else "unexpectedSetting"] = "changed.cjs"
+        (extension / name).write_bytes(json.dumps(package).encode("utf-8"))
+    else:
+        (extension / name).write_bytes(private_body)
+    diagnostic = {}
+    with pytest.raises(RuntimeError, match=message):
+        runner.companion_files(extension, vsix, diagnostic)
+    assert diagnostic["accepted"] is False
+    entries = {item["relative_path"]: item for item in diagnostic[category]["entries"]}
+    assert name in entries
+    if category != "missing":
+        assert entries[name]["actual"]["sha256"] == hashlib.sha256((extension / name).read_bytes()).hexdigest()
+    if category != "unexpected":
+        assert entries[name]["expected"]["sha256"]
+    text = json.dumps(diagnostic)
+    assert private_body.decode() not in text and str(extension) not in text
+
+
+def test_vsix_payload_cannot_shadow_generated_manifest(modules, installed_companion):
+    _, runner = modules
+    extension, vsix, _ = installed_companion
+    with ZipFile(vsix, "a") as archive:
+        archive.writestr("extension/.vsixmanifest", b"shadow")
+    with pytest.raises(RuntimeError, match="VSIX payload shadows installed manifest"):
+        runner.companion_files(extension, vsix)
+
+
+def test_companion_inventory_diagnostic_is_bounded_and_omits_unsafe_names(modules):
+    _, runner = modules
+    record = {"sha256": "0" * 64, "size_bytes": 1}
+    actual = {f"file-{number:03}.cjs": record for number in range(100)}
+    unsafe = "/private/path/" + "x" * 300
+    actual[unsafe] = record
+    diagnostic = runner.companion_delta(actual, {}, set(), set())
+    assert diagnostic["accepted"] is False
+    assert diagnostic["unexpected"]["count"] == 101
+    assert diagnostic["unexpected"]["truncated"] is True
+    assert len(diagnostic["unexpected"]["entries"]) == runner.MAX_COMPANION_DELTA_ENTRIES
+    redacted = diagnostic["unexpected"]["entries"][0]
+    assert redacted["relative_path_omitted"] is True
+    assert redacted["relative_path_sha256"] == hashlib.sha256(unsafe.encode()).hexdigest()
+    assert unsafe not in json.dumps(diagnostic)
+    assert len(json.dumps(diagnostic).encode()) < 32 * 1024
 
 
 def test_real_runtime_never_skips_on_non_windows(modules, monkeypatch):

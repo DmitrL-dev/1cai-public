@@ -27,8 +27,11 @@ product route. Текущие исходники содержат и более 
 [квитанции](product/evidence/release-dev19-publication-20261015.json);
 [датированная сверка](product/RELEASE-PLAN-20261015.md) сохраняет историю этого выпуска.
 Текущий [план полного финального релиза](product/FULL-FINAL-PLAN.md) ведёт
-127 требований, все 24 IDE-сценария и очередь реализации. Workbench, POSIX owner IO
-и isolated diagnostic pilot находятся в разработке; новая приёмка не заявлена.
+127 требований, все 24 IDE-сценария и очередь реализации. Workbench, POSIX owner IO,
+внутренний reader графа и isolated diagnostic pilot находятся в разработке.
+[Промежуточный CI](product/evidence/development-ci-553e1fa-20261015.json)
+сохраняет точные результаты commit `553e1fa`, включая отказ editor harness;
+более поздним изменениям требуется собственная квалификация.
 Лицензированного стенда 1С/EDT пока нет, native-gates остаются открытыми.
 
 ## Просмотреть ZIP без установки редактора
