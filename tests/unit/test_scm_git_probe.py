@@ -24,6 +24,11 @@ def api():
     return module
 
 
+@pytest.fixture
+def python_executable():
+    return str(Path(sys.executable).resolve(strict=True))
+
+
 def roots(tmp_path):
     selected, other = tmp_path / 'selected', tmp_path / 'other'
     selected.mkdir()
@@ -105,9 +110,9 @@ def test_command_refuses_other_or_foreign_trust_root(tmp_path):
             module.probe_command(Path(sys.executable).resolve(), selected, trusted_root=trusted)
 
 
-def test_capture_retains_raw_bytes_and_checks_exclusive_evidence_paths(tmp_path):
+def test_capture_retains_raw_bytes_and_checks_exclusive_evidence_paths(tmp_path, python_executable):
     module = api()
-    command = (sys.executable, '-I', '-c', 'import sys;sys.stdout.buffer.write(b"ok\\xff");sys.stderr.write("raw error")')
+    command = (python_executable, '-I', '-c', 'import sys;sys.stdout.buffer.write(b"ok\\xff");sys.stderr.write("raw error")')
     result = module.capture(command, dict(os.environ), tmp_path, 'probe')
     assert result['exit_code'] == 0 and not result['timed_out'] and not result['output_limit_exceeded']
     assert result['argv'] == list(command)
@@ -123,17 +128,17 @@ def test_capture_retains_raw_bytes_and_checks_exclusive_evidence_paths(tmp_path)
         module.capture(command, dict(os.environ), tmp_path, '../foreign')
 
 
-def test_capture_timeout_terminates_and_reaps_the_same_child(tmp_path):
+def test_capture_timeout_terminates_and_reaps_the_same_child(tmp_path, python_executable):
     module = api()
-    result = module.capture((sys.executable, '-I', '-c', 'import time;time.sleep(30)'),
+    result = module.capture((python_executable, '-I', '-c', 'import time;time.sleep(30)'),
                             dict(os.environ), tmp_path, 'timeout', timeout=0.15)
     assert result['timed_out'] and result['exit_code'] != 0 and result['child_reaped']
     assert result['duration_seconds'] < 5
 
 
-def test_capture_overflow_is_bounded_and_never_owner_evidence(tmp_path):
+def test_capture_overflow_is_bounded_and_never_owner_evidence(tmp_path, python_executable):
     module = api()
-    result = module.capture((sys.executable, '-I', '-c',
+    result = module.capture((python_executable, '-I', '-c',
         'import sys;sys.stdout.buffer.write(b"x"*1000000);sys.stdout.flush()'),
         dict(os.environ), tmp_path, 'overflow', output_limit=1024)
     assert result['output_limit_exceeded'] and result['child_reaped']

@@ -266,6 +266,7 @@ def test_second_ci_empty_file_and_duplicate_directory_acls_are_rejected(tmp_path
             api.verify_temporary_acls(tmp_path, {tmp_path: sddl}, None)
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="Actual Windows SCM owned-tree metadata")
 def test_cleanup_structural_inventory_does_not_read_locked_file_bytes(tmp_path, monkeypatch):
     api = load("scm_acceptance_worker")
     api.ROOT = tmp_path
@@ -287,11 +288,18 @@ def test_cleanup_restores_acl_before_attempting_config_write(tmp_path, monkeypat
     worker = api.Acceptance(context, output)
     worker.native.query.return_value = {"exists": False}
     worker.native.owner.return_value = "S-1-5-21-123"
+    calls = []
+    inventory_calls = []
+    backup_enabled = [False]
     @contextmanager
     def backup():
+        backup_enabled[0] = True
         calls.append("backup-enabled")
-        yield
-        calls.append("backup-restored")
+        try:
+            yield
+        finally:
+            backup_enabled[0] = False
+            calls.append("backup-restored")
     worker.native.backup_privilege.side_effect = backup
     worker.native.privileges.side_effect = [
         [{"name": "SeBackupPrivilege", "enabled": False}],
@@ -300,14 +308,23 @@ def test_cleanup_restores_acl_before_attempting_config_write(tmp_path, monkeypat
     ]
     worker.backup_acl = Mock()
     saved = output / "fixture.acl"
-    raw = ("fixture\nD:\nfixture\\service.json\nD:\n").encode("utf-16-le")
+    raw = f"{root.name}\nD:\n{config.relative_to(root.parent)}\nD:\n".encode("utf-16-le")
     saved.write_bytes(raw)
     owners = output / "fixture-owners.json"
     owners.write_text(json.dumps({".": "S-1-5-21-123", "service.json": "S-1-5-21-123"}), "utf-8")
     worker.acl_backups = [(root, saved, api.sha(saved))]
     worker.owner_backups = {root: (owners, api.sha(owners))}
-    calls = []
     original_write = Path.write_bytes
+    def inventory(path, *, hash_files=True):
+        assert path == root
+        inventory_calls.append((hash_files, backup_enabled[0]))
+        calls.append("inventory-hashed" if hash_files else "inventory-structural")
+        if hash_files:
+            assert not backup_enabled[0]
+            assert "fixture-restore" in calls
+        else:
+            assert backup_enabled[0]
+        return {}
     def write(path, value):
         if path == config:
             calls.append("config")
@@ -324,10 +341,13 @@ def test_cleanup_restores_acl_before_attempting_config_write(tmp_path, monkeypat
         calls.append(label)
         path.write_bytes(raw)
     worker.snapshot_acl = snapshot
+    monkeypatch.setattr(api, "inventory", inventory)
     monkeypatch.setattr(api, "owned_scanner_pids", lambda: [])
     monkeypatch.setattr(Path, "write_bytes", write)
     errors = worker.cleanup()
     assert "fixture-restore" in calls
+    assert inventory_calls == [(False, True), (True, False), (True, False)]
+    assert calls.index("backup-enabled") < calls.index("inventory-structural") < calls.index("backup-restored")
     assert calls.index("backup-enabled") < calls.index("backup-restored") < calls.index("fixture-restore")
     assert calls.index("fixture-restore") < calls.index("config")
     assert calls.index("fixture-verify") < calls.index("config")
@@ -346,8 +366,11 @@ def test_exact_acl_restore_validates_all_entries_before_native_calls(tmp_path, m
     else:
         entries[root / "child"] = "not a DACL"
     native = Mock(side_effect=AssertionError("Native calls preceded validation"))
-    monkeypatch.setattr(api.ctypes, "WinDLL", native)
-    with pytest.raises(RuntimeError):
+    monkeypatch.setattr(api.ctypes, "WinDLL", native, raising=False)
+    message = {"outside": "Original ACL path escapes owned root",
+               "missing-root": "Invalid original ACL root",
+               "descriptor": "Invalid DACL descriptor"}[invalid]
+    with pytest.raises(RuntimeError, match=f"^{message}$"):
         api.restore_original_acls(root, entries)
     native.assert_not_called()
 
@@ -474,9 +497,12 @@ def test_native_explicit_policy_roundtrip_covers_files_and_directories(tmp_path)
 
 
 @pytest.mark.parametrize("already_enabled", [False, True])
-def test_backup_privilege_restores_previous_state_after_body_failure(already_enabled):
+def test_backup_privilege_restores_previous_state_after_body_failure(monkeypatch, already_enabled):
     import ctypes
     api = load("scm_native_evidence")
+    last_error = {"code": 0}
+    monkeypatch.setattr(api.ctypes, "set_last_error", lambda code: last_error.update(code=code), raising=False)
+    monkeypatch.setattr(api.ctypes, "get_last_error", lambda: last_error["code"], raising=False)
     native = api.NativeEvidence.__new__(api.NativeEvidence)
     calls = []
     native.kernel = Mock()
@@ -517,9 +543,12 @@ def test_backup_privilege_restores_previous_state_after_body_failure(already_ena
     native.kernel.CloseHandle.assert_called_once()
 
 
-def test_backup_privilege_refuses_success_bool_with_not_all_assigned():
+def test_backup_privilege_refuses_success_bool_with_not_all_assigned(monkeypatch):
     import ctypes
     api = load("scm_native_evidence")
+    last_error = {"code": 0}
+    monkeypatch.setattr(api.ctypes, "set_last_error", lambda code: last_error.update(code=code), raising=False)
+    monkeypatch.setattr(api.ctypes, "get_last_error", lambda: last_error["code"], raising=False)
     native = api.NativeEvidence.__new__(api.NativeEvidence)
     native.kernel, native.security = Mock(), Mock()
     def adjust(*args):
@@ -552,6 +581,7 @@ def test_native_backup_privilege_is_scoped_or_refused_without_token_change():
     assert native.privileges() == before
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="Actual Windows SCM owned-tree metadata")
 def test_structural_inventory_rejects_real_hardlink(tmp_path):
     api = load("scm_acceptance_worker")
     api.ROOT = tmp_path

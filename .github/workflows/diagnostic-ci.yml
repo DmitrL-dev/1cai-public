@@ -42,7 +42,6 @@ jobs:
     env:
       CARGO_BUILD_JOBS: '1'
       CARGO_INCREMENTAL: '0'
-      CARGO_TARGET_DIR: ${{ runner.temp }}/diagnostic-pilot-rust
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -57,10 +56,14 @@ jobs:
           python -c "import langchain, langchain_ollama"
           python -m unittest discover -s tools/diagnostic-pilot/tests -v
       - name: Build the real frozen Rust policy
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/diagnostic-pilot-rust
         run: |
           rustup toolchain install 1.92.0 --profile minimal
           cargo +1.92.0 build --locked --release --manifest-path rust/diagnostic-core/Cargo.toml
       - name: Compare fixed, one-pass and Rust on owned development controls
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/diagnostic-pilot-rust
         run: |
           python - <<'PY'
           import hashlib

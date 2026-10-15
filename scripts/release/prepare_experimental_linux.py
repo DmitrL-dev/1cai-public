@@ -238,7 +238,10 @@ Accepted scope must be read together with the release's installed-smoke receipt:
 basic local identity/registry/project creation and read-only ZIP export analysis.
 Native capture is unavailable on Linux. Installation does not migrate state.
 MCP dependencies and MCP installation are not qualified by this supplement.
-The complete Linux suite is NOT green: 90 known failures and 2 errors remain.
+Read the exact-source Linux diagnostic report in the CI run identified by
+build-inputs.json for executed, skipped, failed and errored cases. A successful
+baseline comparison may include known failures; it is separate from the
+installed-smoke receipt and does not qualify unsupported operations.
 This does not qualify native 1C, Editor, Observer, live apply, macOS, model quality,
 full product readiness or acceleration. No speedup is claimed.
 

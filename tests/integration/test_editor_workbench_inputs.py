@@ -96,11 +96,13 @@ def test_exact_git_and_vsix_bytes_bound_before_runtime(modules, tmp_path, tamper
     root = tmp_path / "checkout"
     extension = root / "integrations/vscode-rentgen"
     extension.mkdir(parents=True)
-    (extension / "build.py").write_text("def build_bytes():\n    return b'exact-vsix'\n")
-    (extension / "package.json").write_text(json.dumps({"publisher": "rentgen", "name": "project-companion", "version": "0.1.20"}))
+    # Match the repository's exact-byte policy regardless of inherited Git EOL settings.
+    (root / ".gitattributes").write_bytes(b"* -text\n")
+    (extension / "build.py").write_bytes(b"def build_bytes():\n    return b'exact-vsix'\n")
+    (extension / "package.json").write_bytes(json.dumps({"publisher": "rentgen", "name": "project-companion", "version": "0.1.20"}).encode("utf-8"))
     product = root / "rentgen_core"
     product.mkdir()
-    (product / "__init__.py").write_text("VALUE = 'bound source'\n")
+    (product / "__init__.py").write_bytes(b"VALUE = 'bound source'\n")
     subprocess.run(["git", "init", "-q", str(root)], check=True)
     subprocess.run(["git", "-C", str(root), "add", "."], check=True)
     subprocess.run(["git", "-C", str(root), "-c", "user.name=Guard", "-c", "user.email=guard@example.invalid",
@@ -109,7 +111,7 @@ def test_exact_git_and_vsix_bytes_bound_before_runtime(modules, tmp_path, tamper
     vsix = tmp_path / "exact.vsix"
     vsix.write_bytes(b"exact-vsix")
     if tamper == "source":
-        (product / "__init__.py").write_text("VALUE = 'changed after commit'\n")
+        (product / "__init__.py").write_bytes(b"VALUE = 'changed after commit'\n")
     elif tamper == "vsix":
         vsix.write_bytes(b"other-vsix")
     if tamper:

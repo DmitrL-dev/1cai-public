@@ -25,6 +25,8 @@
 - Go scanner: `go -C go test ./...`. Rust input core: pinned toolchain и
   `--locked` из portable workflow. Браузерные проверки GUI: все gates из
   `.github/workflows/gui-browser-ci.yml`, настоящий helper и sandbox.
+- Изменения workflow проверять `actionlint`: разбор YAML не проверяет
+  допустимость GitHub expression contexts и не заменяет реальное исполнение CI.
 - Полный Linux suite имеет документированный Windows baseline. Не удалять
   failure IDs и не расширять baseline ради зелёного CI; новые failures исправлять.
 - Не заменять native 1С, installed-package или browser acceptance подставными

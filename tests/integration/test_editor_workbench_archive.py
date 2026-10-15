@@ -45,7 +45,13 @@ def test_exact_inventory_preserves_raw_bytes_and_notices(tmp_path):
         "drive", "ads", "nul", "con", "aux", "lpt", "superscript-device", "console-device", "device-space",
         "trailing-dot", "trailing-space", "control", "del", "format-control", "wildcard", "double-slash"])
 def test_unsafe_spellings_refuse_before_destination_exists(tmp_path, name):
-    path = make_zip(tmp_path, [("valid-first", b"valid"), (name, b"bad")])
+    stored_name = "aXfile" if name == "a\\file" else name
+    path = make_zip(tmp_path, [("valid-first", b"valid"), (stored_name, b"bad")])
+    if stored_name != name:
+        # Windows ZipInfo normalizes backslashes before writing either header.
+        raw = path.read_bytes()
+        assert raw.count(b"aXfile") == 2
+        path.write_bytes(raw.replace(b"aXfile", b"a\\file"))
     destination = tmp_path / "unpacked"
     with pytest.raises(ValueError):
         extract(path, destination)
