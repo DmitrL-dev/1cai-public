@@ -1,4 +1,5 @@
 'use strict';
+const {NATIVE_CORE_VERSIONS,REPAIR_CORE_VERSIONS}=require('./lib/core-versions.cjs');
 const vscode = require('vscode');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -88,8 +89,8 @@ exports.activate = async context => {
     context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(document => {
       if (document.uri.scheme === 'rentgen-view') problems.clear('closed');
     }));
-    const repairAvailable = ['0.1.0.dev7','0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16','0.1.0.dev17','0.1.0.dev19'].includes(config.core_version);
-    const nativeAvailable = ['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16','0.1.0.dev17','0.1.0.dev19'].includes(config.core_version);
+    const repairAvailable = REPAIR_CORE_VERSIONS.includes(config.core_version);
+    const nativeAvailable = NATIVE_CORE_VERSIONS.includes(config.core_version);
     const repair = createRepairUI(vscode, createRepairService({root,extensionRoot:context.extensionPath,config,client,trusted:()=>vscode.workspace.isTrusted}),views,context,repairAvailable);
     const edit=createEditUI(vscode,createEditService({root,config,client,trusted:()=>vscode.workspace.isTrusted}),views,context,repairAvailable);
     let bslRunner;

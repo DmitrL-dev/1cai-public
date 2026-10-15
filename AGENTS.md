@@ -86,6 +86,7 @@
   manifests, checksums и актуальных ограничений. Core tag указывает на
   `source_commit` принятого ZIP; записи выпуска могут быть закоммичены позже.
 - Перед финальным push выполнить полный поиск прежних и новых номеров версий
+  (`scripts/release/check_version_claims.py` помогает, но не заменяет поиск)
   по README, docs, integrations, packaging и планам, включая файлы вне текущего
   diff. Проверить все текущие publication/metadata/candidate-утверждения;
   отличать их от датированных origin/evidence и compatibility-history.
