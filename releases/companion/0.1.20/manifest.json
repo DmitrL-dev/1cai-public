@@ -1,0 +1,14 @@
+{
+  "version": "0.1.20",
+  "sha256": "b0d9ce0ac1efd11e1ef2a76e7a57fdd3b647ba55667fe079e86ea0e4a58244c9",
+  "size_bytes": 335890,
+  "required_core": "0.1.0.dev19",
+  "stage": "prerelease",
+  "platform_1c_tested": false,
+  "tested_1c_version": null,
+  "native_editor_source_commit": null,
+  "test_scope": "Exact main source C Windows: 430 Node passed, 0 skipped; one real Companion service/process runner to installed dev19 CLI scenario produced revisions 1/2/3 and checked lost-response recovery plus stale refusal. Not an actual editor GUI scenario. VSIX matches main CI and independently rebuilt local bytes. The subsequent Companion tag workflow must independently reproduce and verify these bytes; publication receives a separate receipt.",
+  "spectorn_integrated": false,
+  "source_qualification_commit": "5eee97ea050c9f4c06eaceb4d191f16868fb0141",
+  "source_ci_run": 38701365219
+}

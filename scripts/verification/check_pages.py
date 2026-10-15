@@ -84,7 +84,8 @@ def validate() -> None:
             assert 'не скриншот продукта' in markup.lower(), 'Missing illustration disclosure'
             assert 'Синтетический пример' in markup, 'Missing demo disclosure'
             assert 'Не запускались в демо' in markup, 'Demo must not fabricate checks'
-            assert 'core-v0.1.0-dev17' in markup and 'companion-v0.1.18' in markup
+            assert 'core-v0.1.0-dev19' in markup and 'companion-v0.1.20' in markup
+            assert 'локальный GUI' in markup and 'release-dev19-publication-20261015.json' in markup
             assert 'id="nextgen"' in markup and 'IDE-DEVELOPMENT-PLAN.md' in markup
             assert 'Статические макеты' in markup and 'не снимки работающей IDE' in markup
             assert 'Новая среда ещё не входит' in markup

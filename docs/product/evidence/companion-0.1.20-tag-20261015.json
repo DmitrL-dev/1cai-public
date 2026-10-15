@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "scope": "Companion tag workflow reproduces accepted VSIX and verifies downloaded assets before draft creation; not full product/editor/native 1C acceptance",
+  "tag": "companion-v0.1.20",
+  "source_commit": "d5c4022dfaf413581614875c87df7ab679d87102",
+  "source_qualification_commit": "5eee97ea050c9f4c06eaceb4d191f16868fb0141",
+  "workflow": {
+    "id": 38706909525,
+    "head_sha": "d5c4022dfaf413581614875c87df7ab679d87102",
+    "event": "push",
+    "head_branch": "companion-v0.1.20",
+    "path": ".github/workflows/release.yml",
+    "status": "completed",
+    "conclusion": "success",
+    "run_attempt": 1,
+    "html_url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38706909525"
+  },
+  "jobs": [
+    {
+      "id": 116328467004,
+      "name": "build",
+      "conclusion": "success"
+    },
+    {
+      "id": 116328691933,
+      "name": "draft",
+      "conclusion": "success"
+    }
+  ],
+  "artifact": {
+    "id": 11958208730,
+    "name": "accepted-companion",
+    "digest": "sha256:6cb1b8ce4e03ea27d47c94ea2ccfb5d958849725c35e2ef7ce0cb1f67cd1c931",
+    "size_in_bytes": 87305
+  },
+  "api_digest_verified": true,
+  "bounded_extraction": true,
+  "official_prepare_companion_verify_passed": true,
+  "vsix_equal_main_ci_and_local_build": true,
+  "canonical_delivered_assets": "Windows tag CI artifact",
+  "metadata_json_equal_local_build": true,
+  "metadata_line_endings": "Windows release.json uses CRLF; local macOS uses LF; JSON and all other files equal",
+  "files": [
+    {
+      "name": "RELEASE_NOTES.md",
+      "size_bytes": 8666,
+      "sha256": "eb52bac699c224aa8c6ddf7a3b5c10b3a09e37cfcb63f322d8a2eba9aff26fa2"
+    },
+    {
+      "name": "SHA256SUMS",
+      "size_bytes": 96,
+      "sha256": "ef8d5efdc1734c627539125fb35cf549c426324d13daddd7583be4883bc76d08"
+    },
+    {
+      "name": "release.json",
+      "size_bytes": 1040,
+      "sha256": "6c61eb22dec25c840309106c982fca5f3322e07ae4ef4ed49a608d27975c6515"
+    },
+    {
+      "name": "rentgen-companion-0.1.20.vsix",
+      "size_bytes": 335890,
+      "sha256": "b0d9ce0ac1efd11e1ef2a76e7a57fdd3b647ba55667fe079e86ea0e4a58244c9"
+    }
+  ],
+  "full_product_ready": false
+}

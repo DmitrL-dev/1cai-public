@@ -1,9 +1,12 @@
 # Experimental Linux supplement: candidate and acceptance
 
-The current source candidate is Core `0.1.0.dev19`, paired with Companion
-`0.1.20`; the published pair remains dev17 / 0.1.18 until acceptance and public
-asset verification are complete. Track outstanding gates in the
-[release plan](../../docs/product/RELEASE-PLAN-20261015.md).
+The published pair is Core `0.1.0.dev19` / Companion `0.1.20`, including the
+experimental Linux supplement. Its [publication receipt](../../docs/product/evidence/release-dev19-publication-20261015.json)
+binds anonymous downloads, tags, public hashes and sizes. CI and installed/browser
+acceptance are recorded separately in [Core qualification](../../releases/core/0.1.0.dev19/qualification.json).
+The procedure below applies independently to
+each new candidate; example version numbers do not accept a later rebuild.
+Track outstanding directions in the [release plan](../../docs/product/RELEASE-PLAN-20261015.md).
 
 This independent packager does not change the four-file Windows Core contract.
 It creates three supplement files in a new directory:

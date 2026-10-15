@@ -1,7 +1,10 @@
 # Переносимое ядро: первый ограниченный срез
 
-Этот ограниченный срез входит в опубликованный Core dev17. Для Linux x86_64
-доступно [экспериментальное дополнение](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev17)
+Source и CI/installation dev19 связаны с [Core qualification](../../releases/core/0.1.0.dev19/qualification.json);
+публичные файлы и теги — с [квитанцией публикации](evidence/release-dev19-publication-20261015.json).
+
+Этот ограниченный срез входит в опубликованный Core dev19. Для Linux x86_64
+доступно [экспериментальное дополнение](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev19)
 с wheel и Rust executable; MCP-зависимости, Go scanner и редактор в него не входят.
 Полный продукт, offline-kit и Companion пока не приняты на Linux/macOS. Windows retained-source, live-apply, process ownership и native
 adapters сохраняют прежние границы. Полная перепись и новый LLM runtime не нужны
