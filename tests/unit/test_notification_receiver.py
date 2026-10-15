@@ -390,10 +390,10 @@ def test_outbox_retry_after_lost_response_reopens_durable_receipt(tmp_path):
         bearer_token="test-secret-123",
         sender=sender,
     )
-    assert deliver_outbox(queue, adapter)[0].status is DeliveryStatus.RETRYABLE
+    assert deliver_outbox(queue, adapter, authorize=lambda: None)[0].status is DeliveryStatus.RETRYABLE
     assert len(queue.peek()) == 1
     instance = receiver(tmp_path)
-    assert deliver_outbox(queue, adapter)[0].status is DeliveryStatus.ACCEPTED
+    assert deliver_outbox(queue, adapter, authorize=lambda: None)[0].status is DeliveryStatus.ACCEPTED
     assert queue.peek() == []
     assert [item.status.value for item in received] == ["accepted", "duplicate"]
     assert instance.count() == 1

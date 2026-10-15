@@ -41,6 +41,8 @@ class SarifContext:
     scope_id: str
     complete: bool
     report_sha256: str
+    analyzer_name: str
+    analyzer_version: str
 
 
 def _require(condition, code="SARIF_INVALID", message="Unsupported SARIF structure"):
@@ -135,7 +137,9 @@ def _context(context, observation, profile_id, scope_id):
             isinstance(v, str)
             and 0 < len(v) <= MAX_TEXT
             and not any(unicodedata.category(c) in {"Cs", "Cc"} for c in v)
-            for v in (profile_id, scope_id)
+            for v in (
+                profile_id, scope_id, context.analyzer_name, context.analyzer_version
+            )
         )
         and context.observation == observation
         and context.profile_id == profile_id
@@ -196,7 +200,7 @@ def _finding(value):
     return Finding(rule, path, anchor, message, start)
 
 
-def _run(value):
+def _run(value, context):
     _object(value, {"tool", "results"}, {"invocations"})
     driver = _object(
         _object(value["tool"], {"driver"})["driver"],
@@ -205,6 +209,15 @@ def _run(value):
     )
     for text in driver.values():
         _text(text)
+    # The trusted context pins the analyzer; an unversioned or different tool
+    # report is never imported as this profile's complete result.
+    _require(
+        driver["name"] == context.analyzer_name
+        and context.analyzer_version
+        in {driver.get("version"), driver.get("semanticVersion")},
+        "SARIF_CONTEXT",
+        "SARIF analyzer differs from the attested name and version",
+    )
     if "invocations" in value:
         invocations = value["invocations"]
         _require(isinstance(invocations, list) and 1 <= len(invocations) <= MAX_RUNS)
@@ -275,7 +288,7 @@ def parse_sarif(
     findings = {}
     count = 0
     for run in runs:
-        results = _run(run)
+        results = _run(run, context)
         count += len(results)
         _require(count <= MAX_FINDINGS, "SARIF_LIMIT", "SARIF finding limit exceeded")
         for result in results:
