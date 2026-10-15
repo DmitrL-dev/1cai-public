@@ -269,7 +269,13 @@ def test_accepted_source_can_precede_fetched_main(source_repository):
 def test_collector_uses_safe_archive_paths(candidate, tmp_path, name):
     archive = tmp_path / "unsafe.zip"
     with ZipFile(archive, "w") as package:
-        package.writestr(name, "untrusted payload")
+        # ZipInfo(name) normalizes backslashes on Windows. Preserve the hostile
+        # archive spelling so this fixture exercises the production guard there.
+        member = ZipInfo("fixture")
+        member.filename = member.orig_filename = name
+        package.writestr(member, "untrusted payload")
+    with ZipFile(archive) as package:
+        assert [member.orig_filename for member in package.infolist()] == [name]
     destination = tmp_path / "extracted"
     with pytest.raises(ValueError):
         candidate.extract(archive, destination)
