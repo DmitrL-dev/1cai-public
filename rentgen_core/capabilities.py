@@ -42,6 +42,7 @@ _GROUPS = {
     "snapshot.source.read": (
         "source-list", "source-read", "graph-resolve", "impact",
     ),
+    "snapshot.compare.read": ("snapshot-diff",),
     "source.capture": ("capture",),
     "native.execution": (
         "proposal-check", "proposal-platform-check", "proposal-platform-result",
@@ -87,7 +88,9 @@ def capability_status(capability):
         return {"supported": True, "reason": None}
     if _platform == "linux" and capability in _PORTABLE:
         return {"supported": True, "reason": None}
-    if _platform == "linux" and capability in {"snapshot.source.read", "source.capture"}:
+    if _platform == "linux" and capability in {
+        "snapshot.source.read", "snapshot.compare.read", "source.capture",
+    }:
         return {"supported": True, "reason": None}
     reason = (
         "Local identity adapter has not been qualified for this OS"

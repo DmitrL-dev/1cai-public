@@ -362,12 +362,12 @@ class RentgenGraphReaderFactory:
     def open(self, *, graph_path: Path, snapshot):
         return _RentgenGraphReader(graph_path)
 
-    def open_verified(self, *, graph_bytes, manifest_bytes, snapshot, authorize_read, limits):
+    def open_verified(self, *, graph_bytes, manifest_bytes, snapshot, authorize_read, limits, operation_budget=None):
         """Internal opt-in byte reader. Never falls back to a retained pathname."""
         from rentgen_core._verified_graph import _VerifiedGraph
 
         owner = _VerifiedGraph(graph_bytes, manifest_bytes, snapshot=snapshot,
-                               authorize_read=authorize_read, limits=limits)
+                               authorize_read=authorize_read, limits=limits, operation_budget=operation_budget)
         return _VerifiedGraphContext(owner)
 
 

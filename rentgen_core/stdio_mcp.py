@@ -7,6 +7,7 @@ import argparse
 import base64
 import binascii
 from dataclasses import asdict, dataclass, is_dataclass, replace
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -32,6 +33,7 @@ MAX_PENDING_CALLS = 8
 MAX_PROPOSAL_RESULT_BYTES = 131072
 MAX_PROPOSAL_ARGUMENT_BYTES = 24576
 _OUTPUT_SCOPE = "rentgenOutputScope"
+_DIFF_TOOL = "rentgen_snapshot_diff"
 
 
 def _object(properties, required=None):
@@ -179,6 +181,16 @@ TOOL_SCHEMAS = {
         _PIN,
     ),
     "rentgen_source_read": _object(_SOURCE),
+    _DIFF_TOOL: _object(
+        {
+            "project_id": _UUID,
+            "before_snapshot_id": _HASH,
+            "after_snapshot_id": _HASH,
+            "limit": {"type": "integer", "minimum": 1, "maximum": 100},
+            "cursor": {"type": "string", "minLength": 1, "maxLength": 8192},
+        },
+        ["project_id", "before_snapshot_id", "after_snapshot_id"],
+    ),
     "rentgen_graph_resolve": _object(_SOURCE),
     "rentgen_impact": _object(
         {**_SOURCE, "depth": {"type": "integer", "minimum": 1, "maximum": 5}}, _SOURCE
@@ -276,6 +288,7 @@ _DESCRIPTIONS = {
     "rentgen_capture": "Capture and publish against the original expected head. Cancellation is not rollback; reconcile the operation receipt.",
     "rentgen_source_list": "Find retained sources across an explicit snapshot by path substring, file kind and exact layer; filters apply before pagination.",
     "rentgen_source_read": "Read up to 1 MiB of exact retained bytes as base64 with SourceRef and raw hash.",
+    _DIFF_TOOL: "Compare source bytes in two explicit retained snapshots under one bounded read operation; does not inspect current sources or infer object identity.",
     "rentgen_graph_resolve": "Resolve a retained source module in an explicit snapshot's graph.",
     "rentgen_impact": "Return bounded static impact from an explicit snapshot's graph.",
     _NATIVE_ARCHIVE_TOOL: "Create an admin-only logical archive for one completed native run after re-resolving its exact project snapshot. Evidence remains readable and counted; no files are deleted or moved.",
@@ -756,6 +769,10 @@ def _proposal_dispatch(runtime, principal, name, args, *, state_ctx=None):
 
 
 def _family_limit(family):
+    if family == "diff":
+        from .snapshot_diff import MAX_DIFF_OUTPUT_BYTES
+
+        return MAX_DIFF_OUTPUT_BYTES
     if family == "draft":
         return MAX_RESULT_BYTES
     if family in {"proposal", "admin"}:
@@ -813,6 +830,125 @@ def _proposal_reply(result, request_id, protocol_request_id):
         raise
     _proposal_permissions(result.context, result.permissions)
     return reply
+
+
+def _diff_payload_hash(payload):
+    canonical = json.dumps(
+        payload, sort_keys=True, ensure_ascii=True, allow_nan=False,
+        separators=(",", ":"),
+    ).encode("ascii")
+    return hashlib.sha256(canonical).hexdigest()
+
+
+def _output_payload(text):
+    def pairs(items):
+        document = {}
+        for key, value in items:
+            if key in document:
+                raise ValueError("Duplicate output key")
+            document[key] = value
+        return document
+
+    def constant(_):
+        raise ValueError("Non-finite output number")
+
+    def number(value):
+        result = float(value)
+        if not math.isfinite(result):
+            raise ValueError("Non-finite output number")
+        return result
+
+    return json.loads(text, object_pairs_hook=pairs, parse_constant=constant, parse_float=number)
+
+
+def _diff_reply(runtime, principal, operation, request_id, protocol_request_id):
+    from mcp.types import CallToolResult, JSONRPCResponse, TextContent
+    from .snapshot_diff import DiffOperationResult, DiffOutputScope, authorize_diff_output
+
+    if type(operation) is not DiffOperationResult or type(operation.output_scope) is not DiffOutputScope:
+        raise CoreError("PROJECT_ACCESS_UNAVAILABLE", "Invalid protected comparison scope")
+    scope = operation.output_scope
+    try:
+        payload = json.loads(_json({"result": {"snapshot_diff": operation.value}, "request_id": request_id}))
+        reply = CallToolResult(
+            content=[TextContent(type="text", text=_json(payload))],
+            structuredContent=payload,
+            _meta={_OUTPUT_SCOPE: {
+                **asdict(scope),
+                "family": "diff",
+                "permissions": ["project:read"],
+                "request_id": request_id,
+                "protocol_request_id": 0 if protocol_request_id is None else protocol_request_id,
+                "payload_sha256": _diff_payload_hash(payload),
+            }},
+        )
+        dumped = reply.model_dump(by_alias=True, mode="json", exclude_none=True)
+        _validated_diff_output(dumped, dumped["_meta"][_OUTPUT_SCOPE], dumped["_meta"][_OUTPUT_SCOPE]["protocol_request_id"])
+        wire = JSONRPCResponse(
+            jsonrpc="2.0", id=0 if protocol_request_id is None else protocol_request_id,
+            result=dumped,
+        ).model_dump_json(by_alias=True, exclude_none=True).encode("utf-8") + b"\n"
+        if len(wire) > _family_limit("diff"):
+            raise CoreError("OUTPUT_LIMIT_EXCEEDED", "Protected SDK response exceeds its wire size limit")
+    except BaseException:
+        authorize_diff_output(runtime, principal, scope)
+        raise
+    authorize_diff_output(runtime, principal, scope)
+    return reply
+
+
+def _validated_diff_output(result, scope, protocol_request_id):
+    """Rebuild only immutable pair authority; never transfer an owned read session."""
+    from .context import validate_project_id
+    from .snapshot_diff import DiffOutputScope
+    from .snapshots import validate_operation_id
+
+    fields = {"project_id", "before_snapshot_id", "after_snapshot_id", "catalog_digest", "deadline"}
+    extra = {"family", "permissions", "request_id", "protocol_request_id", "payload_sha256"}
+    if type(scope) is not dict or set(scope) != fields | extra:
+        raise ValueError("Invalid internal comparison scope")
+    if scope["family"] != "diff" or scope["permissions"] != ["project:read"]:
+        raise ValueError("Invalid comparison output authority")
+    validate_project_id(scope["project_id"])
+    validate_operation_id(scope["request_id"])
+    if type(scope["protocol_request_id"]) is not type(protocol_request_id) or scope["protocol_request_id"] != protocol_request_id:
+        raise ValueError("Comparison response belongs to another request")
+    for field in ("before_snapshot_id", "after_snapshot_id", "catalog_digest", "payload_sha256"):
+        if type(scope[field]) is not str or re.fullmatch(r"[0-9a-f]{64}", scope[field]) is None:
+            raise ValueError("Invalid comparison output binding")
+    if type(scope["deadline"]) is not float or not math.isfinite(scope["deadline"]) or scope["deadline"] <= 0:
+        raise ValueError("Invalid comparison output deadline")
+    content = result.get("content")
+    structured = result.get("structuredContent")
+    if (
+        set(result) - {"content", "structuredContent", "isError", "_meta"}
+        or type(result.get("_meta")) is not dict
+        or set(result["_meta"]) != {_OUTPUT_SCOPE}
+        or type(content) is not list or len(content) != 1
+        or type(content[0]) is not dict or set(content[0]) != {"type", "text"}
+        or content[0]["type"] != "text" or type(content[0]["text"]) is not str
+        or type(structured) is not dict or result.get("isError") is True
+    ):
+        raise ValueError("Comparison requires both complete SDK representations")
+    text_payload = json.loads(content[0]["text"])
+    if (
+        content[0]["text"] != _json(structured)
+        or _diff_payload_hash(text_payload) != scope["payload_sha256"]
+        or _diff_payload_hash(structured) != scope["payload_sha256"]
+        or set(structured) != {"result", "request_id"}
+        or structured["request_id"] != scope["request_id"]
+        or type(structured["result"]) is not dict
+        or set(structured["result"]) != {"snapshot_diff"}
+    ):
+        raise ValueError("Comparison output representations or request differ")
+    value = structured["result"]["snapshot_diff"]
+    if type(value) is not dict:
+        raise ValueError("Invalid comparison document")
+    for label, field in (("before_snapshot", "before_snapshot_id"), ("after_snapshot", "after_snapshot_id")):
+        expected = {"project_id": scope["project_id"], "snapshot_id": scope[field], "manifest_hash": scope[field]}
+        if value.get(label) != expected:
+            raise ValueError("Comparison output pair differs from its authority")
+    return DiffOutputScope(**{field: scope[field] for field in fields})
 
 
 def _dispatch(runtime, principal, name, args, *, cancelled=lambda: False):
@@ -908,7 +1044,17 @@ def _execute(
     try:
         prepared = validate_arguments(name, arguments, scope=scope)
         require_operation(name)
-        if name in mcp_drafts.TOOLS:
+        if name == _DIFF_TOOL:
+            from .snapshot_diff import compare_retained_pair
+
+            operation = compare_retained_pair(
+                runtime, principal, arguments["project_id"],
+                arguments["before_snapshot_id"], arguments["after_snapshot_id"],
+                limit=arguments.get("limit", 100), cursor=arguments.get("cursor"),
+                cancelled=cancelled,
+            )
+            return _diff_reply(runtime, principal, operation, request_id, protocol_request_id)
+        elif name in mcp_drafts.TOOLS:
             family = "draft"
             permissions = mcp_drafts.permissions(name)
             proposal_context = runtime.state_context(
@@ -1269,7 +1415,9 @@ def create_server(runtime, principal, *, cancellations=None, scope=None):
                     protocol_request_id=request_id,
                     scope=scope,
                     **({"cancelled": lambda: cancellations.active.get(request_id, False)}
-                       if name == "rentgen_capture" and sys.platform == "linux" else {}),
+                       if name == _DIFF_TOOL or (
+                           name == "rentgen_capture" and sys.platform == "linux"
+                       ) else {}),
                 ),
                 abandon_on_cancel=False,
                 limiter=limiter,
@@ -1322,21 +1470,47 @@ class _GuardedOutput:
         )
 
     def _write(self, text):
-        document = json.loads(text)
+        # A duplicate outer key can hide a protected first result from a
+        # last-value parser while raw forwarding would still disclose it.
+        # Refuse ambiguous frames before any write; no request ID is trusted.
+        document = _output_payload(text)
+        if type(document) is not dict:
+            raise ValueError("Expected one MCP output object")
         result = document.get("result")
         meta = result.get("_meta") if type(result) is dict else None
         scope = meta.get(_OUTPUT_SCOPE) if type(meta) is dict else None
+        marked = type(meta) is dict and _OUTPUT_SCOPE in meta
         structured = result.get("structuredContent") if type(result) is dict else None
         # SDK clients may consume either representation. Protect both, including
         # a text-only reply whose structured content was lost in serialization.
         payloads = [structured]
         content = result.get("content", []) if type(result) is dict else []
+        malformed_text = False
         for item in content if type(content) is list else []:
             if type(item) is dict and item.get("type") == "text":
                 try:
-                    payloads.append(json.loads(item.get("text", "")))
-                except (ValueError, TypeError):
-                    pass
+                    payloads.append(_output_payload(item.get("text", "")))
+                except (ValueError, TypeError, RecursionError):
+                    malformed_text = True
+        diff_payload = any(
+            type(payload) is dict and type(payload.get("result")) is dict
+            and "snapshot_diff" in payload["result"] for payload in payloads
+        )
+        diff_scope = type(scope) is dict and scope.get("family") == "diff"
+        if diff_payload or diff_scope:
+            raw = self._diff_bytes(document, result, scope)
+            return self._write_bytes(raw, text)
+        # Every TextContent emitted by this owned server is strict JSON, for
+        # success and error replies alike. Without internal scope, malformed
+        # text cannot safely be treated as an ordinary result: a lost diff scope
+        # and structured representation must not disclose corrupted text. SDK
+        # incidental plaintext errors are normalized to the same bounded error.
+        if malformed_text and not marked:
+            raw = self._bytes(self._error(
+                document, str(uuid4()), "PROJECT_ACCESS_UNAVAILABLE",
+                "Unscoped tool output could not be verified",
+            ))
+            return self._write_bytes(raw, text)
         protected_keys = set()
         draft_diagnostic = False
         for payload in payloads:
@@ -1353,7 +1527,6 @@ class _GuardedOutput:
                 if type(body.get("draft")) is dict and "diagnostic" in body["draft"]:
                     draft_diagnostic = True
         protected = bool(protected_keys)
-        marked = type(meta) is dict and _OUTPUT_SCOPE in meta
         if not marked and not protected:
             raw = text.encode("utf-8")
         else:
@@ -1463,6 +1636,35 @@ class _GuardedOutput:
                             else "Current project permissions could not be verified",
                         )
                     )
+        return self._write_bytes(raw, text)
+
+    def _diff_bytes(self, document, result, scope):
+        request_id = str(uuid4())
+        try:
+            validated = _validated_diff_output(result, scope, document["id"])
+            request_id = scope["request_id"]
+            del result["_meta"][_OUTPUT_SCOPE]
+            if not result["_meta"]:
+                del result["_meta"]
+            raw = self._bytes(document)
+            if len(raw) > _family_limit("diff"):
+                raw = self._bytes(self._error(document, request_id, "OUTPUT_LIMIT_EXCEEDED", "Protected SDK response exceeds its wire size limit"))
+        except Exception:
+            return self._bytes(self._error(document, request_id, "PROJECT_ACCESS_UNAVAILABLE", "Protected comparison scope could not be verified"))
+        try:
+            from .snapshot_diff import authorize_diff_output
+
+            # The worker that owns the retained sessions has already drained.
+            # Recheck this immutable authority after encoding, immediately before
+            # the synchronous write in this output worker.
+            authorize_diff_output(self._runtime, self._principal, validated)
+        except CoreError as exc:
+            return self._bytes(self._error(document, request_id, exc.code, exc.message))
+        except Exception:
+            return self._bytes(self._error(document, request_id, "PROJECT_ACCESS_UNAVAILABLE", "Current comparison authority could not be verified"))
+        return raw
+
+    def _write_bytes(self, raw, text):
         remaining = memoryview(raw)
         while remaining:
             written = self._stream.write(remaining)

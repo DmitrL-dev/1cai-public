@@ -113,6 +113,15 @@ failed before the installed SDK phase: that phase was NOT_RUN and no new owned-k
 artifact was produced. This dated failure remains evidence for those exact bytes;
 a later source/run needs its own verified receipt and does not rewrite it.
 
+[PR #103 `c9cb31e`](../../docs/product/evidence/development-ci-c9cb31e-20261016.json)
+and the independent [fresh main `8e7346e`](../../docs/product/evidence/development-ci-8e7346e-20261016.json)
+have positive receipts for their exact synthetic actual installed CLI/SDK
+fixtures. Original API pins, all four public files, source/product bytes and SDK
+wheel payloads were independently checked. The observed CPython 3.11.15 /
+glibc 2.39 / kernel 6.17 runner does not qualify the declared minimum platform,
+OS-wide airgap or Python 3.12 offline SDK. Candidate manifest flags remain unchanged;
+the separately accepted scenario has no publication or full-release authority.
+
 The generated `INSTALL.md` creates a fresh environment, installs the SDK with
 `--no-index --require-hashes --only-binary=:all:`, installs the exact Core wheel
 with its hash and runs `pip check`. These instructions must be executed against
@@ -123,7 +132,42 @@ stale-operation and wrong-scanner rejection. A synthetic packaging fixture or
 successful macOS exporter run does not supply that evidence.
 
 Default capture budgets are 64 MiB total source, 16 MiB per file and 4096 source
-entries. This profile does not qualify the larger full-product budgets,
-Companion, native 1C/EDT, metadata/drafts/diff, live apply, macOS, model quality
-or the complete Linux suite. The immutable existing accepted profiles and the
-full final-release plan remain separate.
+entries. A receipt covering capture/source/graph does not itself qualify a new
+snapshot-pair comparison: that extension needs exact-source installed CLI/SDK
+evidence under the contract below. Neither scope qualifies the full Linux
+product, Companion, native 1C/EDT, metadata/drafts, live apply, macOS, model quality
+or a final release. Existing accepted profiles remain separately bound.
+
+## Snapshot-pair extension of a selected source
+
+A source/build containing [SNAP-DIFF-01](../../docs/product/SNAPSHOT-DIFF.md)
+adds a narrow retained-pair Linux CLI route and `rentgen_snapshot_diff` in the
+official SDK. A receipt for an earlier source without this pair scenario does
+not qualify the extension. Published dev19 and accepted records are unchanged.
+
+For selected final bytes, actual installed CLI and official SDK processes must
+compare an explicit ordered pair after current source files/scanner are
+unavailable, preserve it after a later head, and paginate with exact counts and
+SourceRefs. Bind real protocol outcomes for unknown pair, cursor mismatch,
+tamper and revocation separately from trusted installed-library controls for
+low combined budget, early cancellation, original deadline and final scope.
+Library injection is not a public CLI/MCP option; a cancelled SDK call alone
+does not establish cancellation during retained copying. Oversized/lost/unequal
+wire representations and ID/scope mutation are a third, local wire-control scope.
+Record exact source/tree, archive/manifest/wheel/scanner/SDK bindings, commands,
+calls, executed/skipped/refused counts and owner cleanup for each group.
+Extending the SDK probe is a qualification requirement, not an outcome inferred
+from source tests, exporter success or older main CI.
+
+POSIX defaults are 512 MiB bounded read allowance including probe bytes,
+8 GiB conservative simultaneous image accounting (**not hard RSS**),
+40,000 source entries, 1,200,000 inventory items, conservative graph SQLite
+allowances of 128 MiB row bytes and 20,000,000 VM steps including reservations/
+precharges (excluding state/catalog SQLite), 8192 descriptors, 32 cursors and one original 30-second
+deadline. Accounting starts before state/catalog; per-session ceilings still
+apply. A page is at most 1 MiB. The new MCP 2 MiB bound covers the full wire,
+both JSON representations, emitted metadata, request ID and newline; private
+authorization scope is removed before emission. The resource accounting covers
+retained POSIX/graph envelopes, not whole-process RSS or physical disk IO.
+Public macOS, metadata/drafts/live/native, Companion and full-product acceptance
+are not opened by this extension. Build candidate flags remain unchanged.

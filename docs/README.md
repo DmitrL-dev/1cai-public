@@ -35,15 +35,19 @@ Human GUI, native 1С и полная IDE этим не приняты. Исто
 [отказ `3cc29c2`](product/evidence/development-ci-3cc29c2-20261015.json) и
 [ранний отказ `553e1fa`](product/evidence/development-ci-553e1fa-20261015.json) сохранены.
 Ограниченный [Linux capture/source/graph блок](product/PORTABLE-CORE.md#linux-capture-и-чтение-снимков)
-проверен на [PR #102, HEAD `366db69`](product/evidence/development-ci-366db69-20261016.json):
-actual Linux, installed CLI и отдельно source SDK MCP; main `2e2dd4f` имеет то же
-дерево, а fresh main push CI учитывается отдельно. Опубликованные пакеты этот
-capture не содержат; offline installed SDK этим не квалифицирован.
-Следом подготовлен source-кандидат [отдельного Linux CLI/MCP offline-комплекта](../scripts/release/OWNED-LINUX-KIT.md)
-с 29 закреплёнными SDK wheels для CPython 3.11.15 / GNU/Linux x86_64.
-Результат actual offline/SDK-приёмки определяется отдельной проверенной
-`acceptance.json` для точных source и bytes; CI capture её не заменяет.
-Этот source/build-кандидат не меняет опубликованный dev19.
+имеет [PR #102 source-приёмку](product/evidence/development-ci-366db69-20261016.json).
+[PR #103 `c9cb31e`](product/evidence/development-ci-c9cb31e-20261016.json) и независимо
+[fresh main `8e7346e`](product/evidence/development-ci-8e7346e-20261016.json)
+проверили actual Linux installed CLI/MCP offline-комплект на синтетическом сценарии.
+[Контракт комплекта](../scripts/release/OWNED-LINUX-KIT.md) связывает source, bytes
+и отдельную `acceptance.json`; результаты старого комплекта не принимают новую сборку.
+Это development-приёмка, опубликованные dev19 / 0.1.20 не меняются.
+
+Новый [SNAP-DIFF-01](product/SNAPSHOT-DIFF.md) — source-контракт ограниченного
+Linux paired CLI/MCP сравнения снимков и `rentgen_snapshot_diff`.
+Общий budget действует на POSIX pair; Windows CLI остаётся прежним, новый MCP
+добавляет общий deadline/output guard, public macOS закрыт. Старые CI `c9` / `8e`
+новый diff не содержат; actual installed CLI/SDK-приёмка новой сборки нужна отдельно.
 [Аудит плана выпуска](../scripts/release/RELEASE-PLAN-CONTRACT.md)
 отделяет проверенные bytes и заявленное покрытие от ещё не принятого полного продукта.
 Лицензированного стенда 1С/EDT пока нет, native-gates остаются открытыми.

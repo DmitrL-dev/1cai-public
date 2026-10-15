@@ -7,6 +7,7 @@ from threading import get_ident
 from time import monotonic
 
 from .context import SnapshotRef
+from ._read_operation_budget import ReadOperationBudget
 from .errors import CoreError
 from .manifests import parse_manifest, sha256
 from .sources import (
@@ -60,12 +61,24 @@ class _Rows:
     """Charge rows before accumulating them; never expose a native cursor."""
     def __init__(self, owner, cursor):
         self._owner, self._cursor = owner, cursor
+        self._lease = None
 
     def _next(self):
         self._owner._checkpoint()
         if self._cursor is None:
             return None
-        row = self._owner._sql(self._cursor.fetchone)
+        lease = None
+        if self._owner._operation_budget is not None:
+            # SQLite length and column limits bound each materialized Python
+            # row. Reserve that worst case BEFORE fetchone creates its values.
+            count = len(self._cursor.description or ())
+            lease = self._owner._operation_budget.reserve_images(
+                128 + count * (256 + 4 * self._owner._limits.max_value_bytes))
+        try:
+            row = self._owner._sql(self._cursor.fetchone)
+        finally:
+            if lease is not None:
+                lease.close()
         if row is not None:
             cost = 128 + 16 * len(row)
             for value in row:
@@ -90,6 +103,10 @@ class _Rows:
                 self._owner._cursor_failure = exc
                 if not preserve:
                     raise
+            else:
+                if self._lease is not None:
+                    self._lease.close()
+                    self._lease = None
 
     def fetchone(self):
         # This private one-row operation terminates its statement, even on a hit.
@@ -124,9 +141,17 @@ class _Queries:
         self._owner._checkpoint()
         if len(self._owner._rows) >= self._owner._limits.max_open_cursors:
             raise _limit()
-        cursor = self._owner._sql(lambda: self._owner._db.execute(statement, parameters))
+        lease = (None if self._owner._operation_budget is None else
+                 self._owner._operation_budget.reserve_cursor())
+        try:
+            cursor = self._owner._sql(lambda: self._owner._db.execute(statement, parameters))
+        except BaseException:
+            if lease is not None:
+                lease.close()
+            raise
         try:
             rows = _Rows(self._owner, cursor)
+            rows._lease = lease
             self._owner._rows.add(rows)
             return rows
         except BaseException:
@@ -134,13 +159,18 @@ class _Queries:
                 cursor.close()
             except BaseException:
                 pass
+            else:
+                if lease is not None:
+                    lease.close()
             raise
 
 
 class _VerifiedGraph:
-    def __init__(self, raw, manifest, *, snapshot, authorize_read, limits):
+    def __init__(self, raw, manifest, *, snapshot, authorize_read, limits,
+                 operation_budget=None):
         if (type(limits) is not VerifiedGraphLimits or type(snapshot) is not SnapshotRef
-                or not callable(authorize_read)):
+                or not callable(authorize_read)
+                or (operation_budget is not None and type(operation_budget) is not ReadOperationBudget)):
             raise CoreError("INVALID_QUERY_OPTIONS", "Typed graph limits, snapshot and authorization are required")
         self._raw, self._manifest = raw, manifest
         self._snapshot, self._authorize, self._limits = snapshot, authorize_read, limits
@@ -151,12 +181,17 @@ class _VerifiedGraph:
         self._row_bytes = 0
         self._steps = 0
         self._queries = _Queries(self)
+        self._operation_budget = operation_budget
+        self._budget_leases = []
+        self._budget_registered = False
 
     def _checkpoint(self):
         if self._phase not in {"entering", "active"} or self._owner != (os.getpid(), get_ident()):
             raise _invalid()
         if self._cursor_failure is not None:
             raise _corrupt("Verified graph statement cleanup failed")
+        if self._operation_budget is not None:
+            self._operation_budget.checkpoint()
         if monotonic() >= self._deadline:
             raise CoreError("SNAPSHOT_READ_DEADLINE_EXCEEDED", "Verified graph deadline exceeded")
         self._authorize()
@@ -170,7 +205,8 @@ class _VerifiedGraph:
             self._steps += self._quantum
             if self._steps >= self._limits.max_vm_steps:
                 raise _limit()
-            self._checkpoint()
+            if self._operation_budget is None or self._steps % 1000 == 0:
+                self._checkpoint()
         except BaseException as exc:
             self._pending = exc
             return 1
@@ -208,6 +244,9 @@ class _VerifiedGraph:
         self._phase, self._owner = "entering", (os.getpid(), get_ident())
         self._deadline = monotonic() + self._limits.deadline_seconds
         try:
+            if self._operation_budget is not None:
+                self._operation_budget.owner_opened(self)
+                self._budget_registered = True
             self._checkpoint()
             raw, manifest = self._raw, self._manifest
             if type(raw) is not bytes or type(manifest) is not bytes:
@@ -218,6 +257,13 @@ class _VerifiedGraph:
                 raise _limit()
             if sha256(manifest) != self._snapshot.manifest_hash:
                 raise _corrupt("Manifest digest does not match selected snapshot")
+            if self._operation_budget is not None:
+                # Independent parser/path set, retained graph rows, native image
+                # and cache envelopes are reserved before parsing/connect/work.
+                envelope = 64 * len(manifest) + 131072 + len(raw)
+                envelope += self._limits.max_row_bytes + 1024 * self._limits.cache_kib
+                self._budget_leases.append(self._operation_budget.reserve_images(envelope))
+                self._precharge_work()
             document = parse_manifest(manifest)
             if document["project_id"] != self._snapshot.project_id:
                 raise _corrupt("Manifest project does not match selected snapshot")
@@ -234,10 +280,15 @@ class _VerifiedGraph:
             self._db.deserialize(raw)  # Exactly one native image copy; no source path.
             self._raw = self._manifest = None
             self._db.row_factory = sqlite3.Row
-            self._db.execute("PRAGMA query_only=ON").close()
-            self._db.execute("PRAGMA trusted_schema=OFF").close()
-            self._db.execute("PRAGMA temp_store=MEMORY").close()
-            self._db.execute("PRAGMA cache_size=-" + str(self._limits.cache_kib)).close()
+            if self._operation_budget is not None:
+                # Count every VM step across statements. A 1000-step quantum
+                # would miss each short statement's tail in a shared allowance.
+                self._quantum = 1
+                self._db.set_progress_handler(self._progress, self._quantum)
+            self._setup_statement("PRAGMA query_only=ON")
+            self._setup_statement("PRAGMA trusted_schema=OFF")
+            self._setup_statement("PRAGMA temp_store=MEMORY")
+            self._setup_statement("PRAGMA cache_size=-" + str(self._limits.cache_kib))
             disable_extensions = getattr(self._db, "enable_load_extension", None)
             if disable_extensions is not None:
                 disable_extensions(False)
@@ -247,8 +298,9 @@ class _VerifiedGraph:
             self._db.setlimit(sqlite3.SQLITE_LIMIT_ATTACHED, 0)
             self._db.setlimit(sqlite3.SQLITE_LIMIT_WORKER_THREADS, 0)
             self._db.set_authorizer(self._policy)
-            self._quantum = min(1000, self._limits.max_vm_steps)
-            self._db.set_progress_handler(self._progress, self._quantum)
+            if self._operation_budget is None:
+                self._quantum = min(1000, self._limits.max_vm_steps)
+                self._db.set_progress_handler(self._progress, self._quantum)
             if [tuple(row) for row in self._queries.execute("PRAGMA integrity_check")] != [("ok",)]:
                 raise _corrupt("Graph integrity check failed")
             if self._queries.execute("PRAGMA foreign_key_check").fetchone() is not None:
@@ -282,6 +334,7 @@ class _VerifiedGraph:
                 raise CoreError("INVALID_QUERY_OPTIONS", "Invalid graph traversal bounds")
             self._row_bytes = 0
             self._steps = 0
+            self._precharge_work()
             result = operation()
             self._checkpoint()
             # Bound disclosure separately from cumulative fetched-row accounting.
@@ -298,6 +351,28 @@ class _VerifiedGraph:
             raise
         finally:
             self._busy = False
+
+    def _precharge_work(self):
+        if self._operation_budget is not None:
+            # Conservative cumulative allowance, not post-fetch/VM measurement.
+            self._operation_budget.charge_rows(self._limits.max_row_bytes)
+            self._operation_budget.charge_vm(self._limits.max_vm_steps)
+
+    def _setup_statement(self, statement):
+        lease = (None if self._operation_budget is None else
+                 self._operation_budget.reserve_cursor())
+        cursor = None
+        try:
+            cursor = self._sql(lambda: self._db.execute(statement))
+        finally:
+            if cursor is not None:
+                try:
+                    cursor.close()
+                except BaseException as exc:
+                    self._cursor_failure = exc
+                    raise
+            if lease is not None:
+                lease.close()
 
     def _close(self, *, preserve):
         self._phase = "closed"
@@ -317,6 +392,13 @@ class _VerifiedGraph:
                 db.close()
             except BaseException as exc:
                 failure = failure or exc
+        if failure is None and self._operation_budget is not None:
+            for lease in reversed(self._budget_leases):
+                lease.close()
+            self._budget_leases.clear()
+            if self._budget_registered:
+                self._operation_budget.owner_closed(self)
+                self._budget_registered = False
         if failure is not None and not preserve:
             if not isinstance(failure, Exception):
                 raise failure

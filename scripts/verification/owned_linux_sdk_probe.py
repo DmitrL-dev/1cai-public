@@ -16,7 +16,7 @@ import stat
 import subprocess
 from threading import Event, Thread
 import sys
-from time import monotonic
+from time import monotonic, sleep
 from uuid import uuid4
 from contextlib import asynccontextmanager, closing
 
@@ -133,7 +133,7 @@ def check_imports(site,expected):
                 isolated_core_graph_sdk=True,third_party_imports_inside_venv=True)
 
 
-def command(config,*args):
+def command(config,*args,expected_error=None):
     child=subprocess.Popen([sys.executable,"-I","-B","-X","pycache_prefix="+config["bytecode_prefix"],"-m","rentgen_core",*map(str,args)],
         cwd=config["workspace"],stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=True)
     buffers={"out":bytearray(),"error":bytearray()};end=monotonic()+30;done=False
@@ -149,8 +149,14 @@ def command(config,*args):
                     require(len(buffers[key.data])+len(raw)<=(1024**2 if key.data=="out" else 32768),"Fixture CLI output bound")
                     buffers[key.data].extend(raw)
         child.wait(timeout=max(.01,end-monotonic()));done=True
-        require(child.returncode==0 and not buffers["error"],"Installed SDK fixture CLI bootstrap failed")
-        return json.loads(buffers["out"])["result"]
+        document=json.loads(buffers["out"])
+        require(not buffers["error"],"Installed SDK fixture CLI diagnostics differ")
+        if expected_error is not None:
+            require(child.returncode==2 and document.get("error",{}).get("code")==expected_error
+                and "result" not in document,"Installed CLI refusal differs")
+            return document
+        require(child.returncode==0 and "error" not in document,"Installed SDK fixture CLI bootstrap failed")
+        return document["result"]
     finally:
         if not done:
             try:os.killpg(child.pid,signal.SIGKILL)
@@ -347,6 +353,287 @@ async def read_source(session,fixture,snapshot,raw):
     require(base64.b64decode(value["data"],validate=True)==raw and value["raw_sha256"]==sha(raw),"Historical SDK bytes differ")
 
 
+DIFF_SCOPE="actual installed explicit retained-pair fixture only"
+DIFF_LIBRARY_SCOPE="isolated installed-library negative controls, not SDK protocol acceptance"
+DIFF_COUNTS=dict(added=1,removed=1,modified=1,unchanged=2)
+DIFF_LIMITATIONS=[
+    "Source-path byte comparison only; no semantic identity or graph delta.",
+    "Read-operation accounting is conservative; no hard RSS limit or precise during-copy SDK cancellation claim.",
+    "Actual synthetic fixture only; no minimum-platform, native 1C/EDT or model qualification.",
+]
+
+
+def diff_args(fixture,before,after,**options):
+    return dict(project_id=fixture["project_id"],before_snapshot_id=before,after_snapshot_id=after,**options)
+
+
+def diff_page(value,project_id,before,after):
+    """Check the actual public page's pair and every retained SourceRef."""
+    require(type(value) is dict and set(value)=={"before_snapshot","after_snapshot","scope","identity","counts","changes","next_cursor"},"Unexpected comparison output scope")
+    refs={side:dict(project_id=project_id,snapshot_id=snapshot,manifest_hash=snapshot)
+          for side,snapshot in (("before",before),("after",after))}
+    require(value["before_snapshot"]==refs["before"] and value["after_snapshot"]==refs["after"]
+        and value["scope"]=="source_bytes_by_layer_and_path" and value["identity"]=="source_path_only","Comparison pair identity differs")
+    require(type(value["counts"]) is dict and set(value["counts"])=={"added","removed","modified","unchanged"}
+        and all(type(n) is int and n>=0 for n in value["counts"].values())
+        and type(value["changes"]) is list and len(value["changes"])<=100
+        and (value["next_cursor"] is None or type(value["next_cursor"]) is str and len(value["next_cursor"])<=128),"Comparison page bounds differ")
+    for change in value["changes"]:
+        require(type(change) is dict and set(change)=={"kind","before","after"}
+            and change["kind"] in {"added","removed","modified"},"Comparison change shape differs")
+        require((change["before"] is None)==(change["kind"]=="added")
+            and (change["after"] is None)==(change["kind"]=="removed"),"Comparison change sides differ")
+        paths=[]
+        for side in ("before","after"):
+            entry=change[side]
+            if entry is None:continue
+            require(type(entry) is dict and set(entry)=={"ref","size_bytes","encoding","identity_status"}
+                and type(entry["size_bytes"]) is int and entry["size_bytes"]>=0
+                and entry["identity_status"]=="unresolved" and (entry["encoding"] is None or type(entry["encoding"]) is str),"Comparison entry differs")
+            ref=entry["ref"]
+            require(type(ref) is dict and set(ref)=={"snapshot","layer_id","relative_path","raw_sha256"}
+                and ref["snapshot"]==refs[side] and ref["layer_id"]=="base"
+                and type(ref["relative_path"]) is str and ref["relative_path"]
+                and type(ref["raw_sha256"]) is str and len(ref["raw_sha256"])==64
+                and all(c in "0123456789abcdef" for c in ref["raw_sha256"]),"Comparison retained SourceRef differs")
+            paths.append(ref["relative_path"])
+        require(len(set(paths))==1,"Modified comparison paths differ")
+    return value
+
+
+def diff_expected_changes(images,changed,old_xml="data.xml",new_xml="renamed.xml"):
+    """Independent fixed fixture oracle, including renamed bytes and sizes."""
+    entry=lambda path,raw:(path,sha(raw),len(raw))
+    original,modified=entry(CALLEE,images[CALLEE]),entry(CALLEE,changed)
+    old,new=entry(old_xml,images[old_xml]),entry(new_xml,images[old_xml])
+    return ([("modified",original,modified),("removed",old,None),("added",None,new)],
+            [("modified",modified,original),("added",None,old),("removed",new,None)])
+
+
+def check_diff_changes(changes,expected):
+    def entry(value):
+        return None if value is None else (value["ref"]["relative_path"],value["ref"]["raw_sha256"],value["size_bytes"])
+    actual=[(change["kind"],entry(change["before"]),entry(change["after"])) for change in changes]
+    require(actual==expected,"Comparison fixture changes, hashes or sizes differ")
+
+
+def diff_wire(reply):
+    """The public SDK message must not carry private authorization metadata."""
+    document=reply.model_dump(by_alias=True,mode="json",exclude_none=True)
+    require(type(document) is dict and set(document)=={"content","structuredContent","isError"}
+        and type(document["isError"]) is bool and type(document["content"]) is list and len(document["content"])==1,
+        "Comparison private output scope escaped")
+    block=document["content"][0]
+    require(type(block) is dict and set(block)=={"type","text"} and block["type"]=="text"
+        and type(block["text"]) is str and len(reply.content)==1 and reply.content[0].type=="text"
+        and reply.content[0].text==block["text"],"Comparison content metadata escaped")
+    payload=document["structuredContent"]
+    require(type(payload) is dict,"Comparison public payload missing")
+    if document["isError"]:
+        require(set(payload)=={"error"} and type(payload["error"]) is dict
+            and set(payload["error"])=={"code","message","request_id","details"},"Comparison CoreError schema differs")
+        error=payload["error"]
+        require(all(type(error[name]) is str and error[name] for name in ("code","message","request_id"))
+            and type(error["details"]) is dict and not error["details"],"Unexpected comparison refusal details")
+    else:
+        require(set(payload)=={"result","request_id"} and type(payload["request_id"]) is str and payload["request_id"]
+            and type(payload["result"]) is dict and set(payload["result"])=={"snapshot_diff"},"Comparison success payload schema differs")
+    def unique(pairs):
+        value={}
+        for key,item in pairs:
+            require(key not in value,"Ambiguous SDK comparison text")
+            value[key]=item
+        return value
+    def invalid_constant(value):raise ProbeFailure("Nonfinite SDK comparison text")
+    text=json.loads(reply.content[0].text,object_pairs_hook=unique,parse_constant=invalid_constant)
+    try:
+        # Python equality conflates True/1 and 1.0/1. Compare their JSON types
+        # too; both representations must describe exactly the same value.
+        exact=lambda value:json.dumps(value,sort_keys=True,separators=(",",":"),ensure_ascii=False,allow_nan=False)
+        require(exact(text)==exact(payload),"SDK comparison representations differ")
+    except (TypeError,ValueError) as error:
+        raise ProbeFailure("Invalid SDK comparison JSON") from error
+    return payload
+
+
+async def diff_call(session,fixture,before,after,**options):
+    reply=await session.call_tool("rentgen_snapshot_diff",diff_args(fixture,before,after,**options),read_timeout_seconds=timedelta(seconds=60))
+    payload=diff_wire(reply)
+    require(not reply.isError and set(payload["result"])=={"snapshot_diff"},"Installed SDK comparison refused")
+    return diff_page(payload["result"]["snapshot_diff"],fixture["project_id"],before,after)
+
+
+async def diff_refused(session,fixture,before,after,code,**options):
+    reply=await session.call_tool("rentgen_snapshot_diff",diff_args(fixture,before,after,**options),read_timeout_seconds=timedelta(seconds=60))
+    payload=diff_wire(reply)
+    require(reply.isError and payload.get("error",{}).get("code")==code and "result" not in payload,"Installed SDK comparison refusal differs")
+
+
+def generation(fixture,snapshot):
+    with closing(sqlite3.connect(fixture["state"].as_uri()+"?mode=ro",uri=True)) as db:
+        rows=db.execute("SELECT generation_relpath FROM snapshots WHERE project_id=? AND snapshot_id=?",(fixture["project_id"],snapshot)).fetchall()
+    require(len(rows)==1 and type(rows[0][0]) is str,"Fixture generation binding missing")
+    relative=Path(rows[0][0])
+    require(not relative.is_absolute() and len(relative.parts)==2 and relative.parts[0]=="generations"
+        and all(p not in {".",".."} for p in relative.parts),"Fixture generation binding unsafe")
+    return fixture["state"].parent/relative
+
+
+def diff_cli(config,fixture,before,after,**options):
+    args=["snapshot-diff","--registry",fixture["registry"],"--identity-profile",fixture["profile"],"--project",fixture["project_id"],"--before",before,"--after",after]
+    for name in ("limit","cursor"):
+        if name in options:args += ["--"+name,str(options[name])]
+    value=command(config,*args,expected_error=options.get("expected_error"))
+    return value if "expected_error" in options else diff_page(value,fixture["project_id"],before,after)
+
+
+def diff_admin(config,fixture):
+    """Two real owned Linux profiles, with ordinary audited memberships."""
+    from rentgen_core.authorization import OWNER_PERMISSIONS
+    from rentgen_core.local_identity import current_local_principal
+    from rentgen_core.state import ProjectState
+    profile=fixture["profile"].parent.parent/"administrator/identity.json"
+    command(config,"identity-init","--identity-profile",profile)
+    owner=current_local_principal(identity_profile=fixture["profile"])
+    admin=current_local_principal(identity_profile=profile)
+    require(owner!=admin,"Fixture administrator identity was not distinct")
+    state=ProjectState(fixture["state"],fixture["project_id"])
+    with state.transaction(owner,write=True) as tx:
+        tx.set_membership(admin,OWNER_PERMISSIONS,operation_id=str(uuid4()),expected_revision=tx.membership_revision())
+    def set_owner(present):
+        with state.transaction(admin,write=True) as tx:
+            options=dict(operation_id=str(uuid4()),expected_revision=tx.membership_revision())
+            if present:tx.set_membership(owner,OWNER_PERMISSIONS,**options)
+            else:tx.revoke_membership(owner,**options)
+    return owner,state,set_owner
+
+
+def diff_owner_limits(budget):
+    from rentgen_core._posix_snapshot_session import PosixSnapshotLimits
+    from rentgen_core._verified_graph import VerifiedGraphLimits
+    return (PosixSnapshotLimits(copied_byte_budget=min(budget.limits.copied_bytes,2560*1024**2),
+                resident_byte_budget=min(budget.limits.image_bytes,4*1024**3)),
+            VerifiedGraphLimits(image_buffer_budget=2*1024**3))
+
+
+def diff_library_controls(fixture,before,after,principal,state,set_owner):
+    """Installed trusted library negatives, separate from the SDK protocol."""
+    from dataclasses import replace
+    from rentgen_core._posix_snapshot_session import open_posix_snapshot_session
+    from rentgen_core._read_operation_budget import ReadOperationBudget,ReadOperationLimits
+    from rentgen_core.context import SnapshotRef
+    from rentgen_core.errors import CoreError
+    from rentgen_core.local import LocalRuntime
+    from rentgen_core.snapshot_diff import compare_retained_pair,authorize_diff_output
+    from rentgen_graph.snapshot_adapter import RentgenGraphReaderFactory
+    factory=RentgenGraphReaderFactory();runtime=LocalRuntime(fixture["registry"],graph_reader_factory=factory)
+    def compare(**options):return compare_retained_pair(runtime,principal,fixture["project_id"],before,after,**options)
+    def refused(action,code):
+        try:action()
+        except CoreError as error:require(error.code==code,"Installed library refusal differs")
+        else:raise ProbeFailure("Installed library negative control unexpectedly succeeded")
+    def descriptors():return len(list(Path("/proc/self/fd").iterdir()))
+    counts=[];baseline=descriptors()
+    for snapshot in (before,after):
+        budget=ReadOperationBudget()
+        limits,graph_limits=diff_owner_limits(budget)
+        with open_posix_snapshot_session(state=state,principal=principal,
+                snapshot=SnapshotRef(fixture["project_id"],snapshot,snapshot),graph_reader_factory=factory,
+                limits=limits,graph_limits=graph_limits,authorize_read=budget.checkpoint,
+                operation_budget=budget) as session:require(len(session.entries())==4,"Installed individual owner inventory differs")
+        budget.close();summary=budget.summary()
+        require(summary["closed"] and summary["owners_closed"]==2 and summary["active_owners"]==0
+            and not any(summary["held"].values()),"Installed individual owner cleanup differs")
+        counts.append(summary["cumulative"]["copied_bytes"])
+    bound=max(counts)
+    require(bound>0,"Installed individual copy accounting missing")
+    refused(lambda:compare(operation_limits=replace(ReadOperationLimits(),copied_bytes=bound)),"SNAPSHOT_READ_LIMIT_EXCEEDED")
+    refused(lambda:compare(cancelled=lambda:True),"REQUEST_CANCELLED")
+    operation=compare();scope=operation.output_scope
+    refused(lambda:authorize_diff_output(runtime,principal,replace(scope,before_snapshot_id=after)),"SNAPSHOT_CORRUPT")
+    set_owner(False)
+    try:refused(lambda:authorize_diff_output(runtime,principal,scope),"PROJECT_FORBIDDEN")
+    finally:set_owner(True)
+    operation=compare(operation_limits=replace(ReadOperationLimits(),deadline_seconds=3))
+    sleep(max(0,operation.output_scope.deadline-monotonic())+.02)
+    refused(lambda:authorize_diff_output(runtime,principal,operation.output_scope),"SNAPSHOT_READ_DEADLINE_EXCEEDED")
+    require(descriptors()==baseline,"Installed comparison descriptor cleanup differs")
+    return dict(scope=DIFF_LIBRARY_SCOPE,separate_owners_fit=True,combined_copy_budget_refused=True,
+        pre_cancel_refused=True,descriptors_restored_after_refusals=True,post_success_authority_revocation_refused=True,
+        output_scope_pair_mismatch_refused=True,expired_output_scope_refused=True)
+
+
+async def snapshot_diff(config):
+    fixture=project(config,"sdk-diff");changed=IMAGES[CALLEE].replace(b"Return 1",b"Return 2")
+    async with server(config,fixture) as (session,_):
+        names={tool.name for tool in (await session.list_tools()).tools}
+        require("rentgen_snapshot_diff" in names and not any(name.startswith(("rentgen_metadata_","rentgen_draft_","rentgen_proposal_")) for name in names),"Installed comparison tool scope differs")
+        head=await call(session,"rentgen_project_head",dict(project_id=fixture["project_id"]))
+        async def capture(head):return await call(session,"rentgen_capture",dict(project_id=fixture["project_id"],operation_id=str(uuid4()),expected_head=head))
+        first=await capture(head);before=first["snapshot"]["snapshot_id"]
+        (fixture["source"]/CALLEE).write_bytes(changed);(fixture["source"]/"data.xml").rename(fixture["source"]/"renamed.xml")
+        second=await capture(first["head"]);after=second["snapshot"]["snapshot_id"]
+        (fixture["source"]/CALLEE).write_bytes(changed.replace(b"Return 2",b"Return 3"))
+        third=await capture(second["head"]);unrelated=third["snapshot"]["snapshot_id"]
+        require(len({before,after,unrelated})==3 and third["head"]["revision"]==3,"Comparison fixture publications differ")
+    (generation(fixture,unrelated)/"manifest.json").write_bytes(b"deliberately broken unrelated head")
+    fixture["source"].rename(fixture["source"].with_name("source-relocated"))
+    principal,state,set_owner=diff_admin(config,fixture)
+    state_bytes=read(fixture["state"]);registry_bytes=read(fixture["registry"])
+    async with server(config,fixture,scanner=False) as (session,_):
+        pages=[];cursor=None
+        while True:
+            require(len(pages)<3,"Comparison pagination did not terminate")
+            page=await diff_call(session,fixture,before,after,limit=1,**({"cursor":cursor} if cursor else {}));pages.append(page)
+            require(page["counts"]==DIFF_COUNTS,"SDK comparison counts differ")
+            cursor=page["next_cursor"]
+            if cursor is None:break
+        changes=[change for page in pages for change in page["changes"]]
+        expected_forward,expected_reverse=diff_expected_changes(IMAGES,changed)
+        require(len(pages)==3,"SDK comparison page count differs")
+        check_diff_changes(changes,expected_forward)
+        reverse=await diff_call(session,fixture,after,before)
+        require(reverse["counts"]==DIFF_COUNTS and reverse["next_cursor"] is None,"SDK reverse comparison differs")
+        check_diff_changes(reverse["changes"],expected_reverse)
+        same=await diff_call(session,fixture,before,before)
+        require(same["counts"]==dict(added=0,removed=0,modified=0,unchanged=4) and not same["changes"] and same["next_cursor"] is None,"SDK self comparison differs")
+        await read_source(session,fixture,before,IMAGES[CALLEE]);await read_source(session,fixture,after,changed)
+        await diff_refused(session,fixture,"0"*64,after,"SNAPSHOT_NOT_FOUND")
+        await diff_refused(session,fixture,after,before,"INVALID_DIFF_CURSOR",limit=1,cursor=pages[0]["next_cursor"])
+        await diff_refused(session,fixture,before,after,"INVALID_DIFF_CURSOR",limit=2,cursor=pages[0]["next_cursor"])
+        for selected in (before,after):
+            manifest=generation(fixture,selected)/"manifest.json";raw=read(manifest);manifest.write_bytes(b"deliberately corrupt selected snapshot")
+            try:await diff_refused(session,fixture,before,after,"SNAPSHOT_CORRUPT")
+            finally:manifest.write_bytes(raw)
+        require(await call(session,"rentgen_project_head",dict(project_id=fixture["project_id"]))==third["head"],"SDK explicit comparison changed head")
+    cli_pages=[];cursor=None
+    while True:
+        require(len(cli_pages)<3,"CLI comparison pagination did not terminate")
+        page=diff_cli(config,fixture,before,after,limit=1,**({"cursor":cursor} if cursor else {}));cli_pages.append(page);cursor=page["next_cursor"]
+        if cursor is None:break
+    require(cli_pages==pages and diff_cli(config,fixture,after,before)==reverse
+        and diff_cli(config,fixture,before,before)==same,"Installed CLI/SDK comparisons differ")
+    diff_cli(config,fixture,"0"*64,after,expected_error="SNAPSHOT_NOT_FOUND")
+    diff_cli(config,fixture,after,before,limit=1,cursor=pages[0]["next_cursor"],expected_error="INVALID_DIFF_CURSOR")
+    retained=command(config,"source-read","--registry",fixture["registry"],"--identity-profile",fixture["profile"],"--project",fixture["project_id"],"--snapshot",before,"--layer","base","--path",CALLEE,"--base64")
+    require(base64.b64decode(retained["data"],validate=True)==IMAGES[CALLEE],"Installed CLI historical bytes differ")
+    require(read(fixture["state"])==state_bytes and read(fixture["registry"])==registry_bytes,"Readonly comparisons changed project data")
+    controls=diff_library_controls(fixture,before,after,principal,state,set_owner)
+    async with server(config,fixture,scanner=False) as (session,_):
+        set_owner(False)
+        try:
+            await diff_refused(session,fixture,before,after,"PROJECT_FORBIDDEN")
+        finally:set_owner(True)
+    return dict(schema=1,scope=DIFF_SCOPE,sdk=dict(explicit_forward=True,reverse_pair=True,self_pair=True,
+        historical_bytes=True,broken_unrelated_head_ignored=True,live_inputs_removed=True,unknown_snapshot_refused=True,
+        wrong_pair_cursor_refused=True,wrong_limit_cursor_refused=True,tampered_before_refused=True,tampered_after_refused=True,
+        revoked_current_read_refused=True,output_scope_private=True,pagination=dict(pages=3,changes=3,limit=1,counts=DIFF_COUNTS),
+        before_snapshot_sha256=before,after_snapshot_sha256=after,unrelated_head_snapshot_sha256=unrelated),
+        cli=dict(explicit_forward=True,reverse_pair=True,self_pair=True,pagination=True,historical_bytes=True,
+            broken_unrelated_head_ignored=True,unknown_snapshot_refused=True,wrong_pair_cursor_refused=True,head_database_unchanged=True),
+        trusted_library_controls=controls,limitations=DIFF_LIMITATIONS)
+
+
 async def happy(config):
     fixture=project(config,"sdk-history");operation=str(uuid4())
     async with server(config,fixture) as (session,_):
@@ -475,13 +762,13 @@ def main():
     wrappers={name:read(wrapper_root/name,65536) for name in config["expected"]["scripts"]}
     audit_before=audit(prefix,site,config["expected"],config["baseline"],wrappers)
     imports=check_imports(site,config["expected"])
-    async def scenario():return await happy(config),await cancelled(config)
-    history,cancellation=asyncio.run(scenario())
+    async def scenario():return await happy(config),await cancelled(config),await snapshot_diff(config)
+    history,cancellation,comparison=asyncio.run(scenario())
     check_imports(site,config["expected"])
     audit_after=audit(prefix,site,config["expected"],config["baseline"],wrappers)
     require(audit_before==audit_after,"Installed bytes changed during SDK scenarios")
     print(json.dumps(dict(schema=1,accepted=True,scope="actual installed offline-input SDK synthetic fixture only",
-        inventory=audit_after,imports=imports,history=history,cancellation=cancellation,
+        inventory=audit_after,imports=imports,history=history,cancellation=cancellation,snapshot_diff=comparison,
         no_source_checkout_imports=True,old_bytecode_not_loaded=True)))
 
 

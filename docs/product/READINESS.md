@@ -52,21 +52,50 @@ metadata/drafts/diff/native/live/macOS закрыты. Default limits — 64 М�
 Source SDK tests и installed CLI не подтверждают будущий offline installed SDK.
 Опубликованная пара и full-product readiness не изменились.
 
-Отдельно подготовлен source-кандидат [Linux CLI/MCP offline-комплекта](../../scripts/release/OWNED-LINUX-KIT.md),
-профиль `owned-linux-cli-mcp-py311-x86_64-v1`: **CPython 3.11.15 / GNU/Linux x86_64**,
-glibc ≥ 2.34, kernel ≥ 5.9. Exporter связывает точные исходники, Core wheel,
-Go scanner, Rust helper, лицензии и [29 закреплённых SDK wheels](../../requirements/locks/LINUX-MCP-LOCK.md).
-Реализована отдельная проверка извлечённого комплекта: offline install, `pip check`,
-installed CLI и настоящий SDK stdio capture/read/history/replay/cancellation.
-Результат actual offline/SDK-приёмки определяет только отдельная проверенная
-`acceptance.json` с точными source/bytes bindings по контракту комплекта.
 [Первый CI HEAD `5f7522b`](evidence/development-ci-5f7522b-20261016.json) завершился
-с ошибками: exporter отказал до SDK-фазы, поэтому она осталась NOT_RUN; нового
-owned-kit artifact нет. Эта датированная запись не изменяется последующими прогонами.
-Подготовка архива, local controls и PR #102 source capture CI не заменяют новую
-приёмку. Python 3.12 остаётся
-обычным source/CLI CI target; SDK offline closure для него не принята. Новый
-кандидат не меняет принятые dev19 / Companion 0.1.20 или полный финальный статус.
+с ошибками: exporter отказал до SDK-фазы, которая осталась NOT_RUN; нового
+owned-kit artifact нет. Эта запись остаётся отрицательной. Исторический main
+`2e2dd4f` также имел Product failure; его idle-stop root cause не установлен
+успехом последующих запусков.
+
+[PR #103, HEAD `c9cb31e`](evidence/development-ci-c9cb31e-20261016.json) принят
+в ограниченном development scope: 13 выполненных checks SUCCESS, ожидаемый
+PR-only Pages deploy SKIP. Squash main `8e7346ec973ace409d941e3d3091d1b8f84c6b99`
+имеет то же дерево `7a3bdee313084810119633160a1674ee523e2c32`; его
+[собственные fresh push CI](evidence/development-ci-8e7346e-20261016.json)
+независимо завершили **14/14 checks SUCCESS**:
+
+- Windows: **4472 passed / 1108 skipped + 51 passed subtests**, Node **585 passed**,
+  Go — два tested packages passed, два packages без tests; 95 preflight отдельно.
+- Linux: Python 3.11 — **4605 passed / 976 skipped**, Python 3.12 —
+  **4604 passed / 977 skipped**, без failures/errors. По 46 actual Linux cases,
+  включая два source SDK cases; installed CLI — по 45 свежих вызовов/10 outcomes.
+- Настоящий Windows editor API: обе фазы complete, разные host PID, cleanup,
+  inventory 54 и все 152 установленных product bytes/source bindings проверены.
+- GUI: **43 browser / 963 backend / 98 frontend**, без failures/errors/skips,
+  sandbox и масштаб 200%; diagnostic framework — 38 controls / 42 synthetic episodes,
+  actual model runs 0. Девять файлов Pages сверены с source и публичным HTTP.
+
+[Linux offline CLI/MCP kit](../../scripts/release/OWNED-LINUX-KIT.md) отдельно прошёл
+синтетический actual installed scenario с offline hash-locked install / `pip check`,
+официальным SDK stdio, capture/source/graph/history/replay и controlled pre-CAS
+cancellation/cleanup. Original API hash/size проверены до guarded extraction;
+четыре файла комплекта, 152 product files и 29 SDK wheels связаны с source.
+Inventory — 30 distributions / 1082 RECORD payload files и четыре native imports;
+это bound CI observation, не полная публичная копия installed venv.
+Observed runtime: CPython 3.11.15 / GNU/Linux x86_64 / glibc 2.39 / kernel 6.17.
+Minimum platform, OS-wide airgap, performance и Python 3.12 offline SDK не приняты.
+Manifest остаётся `accepted:false` / `published:false` / `candidate:true`:
+отдельный положительный scope receipt не является release authority.
+
+Следующий source-контракт — [SNAP-DIFF-01](SNAPSHOT-DIFF.md): Linux paired CLI/MCP,
+ранний общий POSIX budget и `rentgen_snapshot_diff` с конечным wire guard.
+Windows CLI остаётся legacy; новый MCP имеет общий deadline/output guard
+с прежними per-session resources, public macOS закрыт. Новый diff отсутствует
+в `c9` / `8e`; local tests не заменяют его actual Linux/installed SDK-приёмку
+для следующего точного source и финальных bytes.
+Опубликованные dev19 / Companion 0.1.20, 127 требований и 24 IDE-сценария
+сохраняют прежний статус; full-product/native/model/human acceptance не объявлена.
 
 [Локальный аудит плана выпуска](../../scripts/release/RELEASE-PLAN-CONTRACT.md)
 проверяет source/tree, bytes и typed claims; полные criterion/topology adapters

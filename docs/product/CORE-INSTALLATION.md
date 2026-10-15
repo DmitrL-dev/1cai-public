@@ -142,6 +142,39 @@ python3.11 scripts/verification/verify_owned_linux_delivery.py \
 [контракту приёмки](../../scripts/release/OWNED-LINUX-KIT.md#qualification-still-required).
 Local tests и PR #102 capture CI её не заменяют; успешный запуск сам по себе
 не публикует кандидат и не изменяет его build-manifest.
+[PR #103 c9](evidence/development-ci-c9cb31e-20261016.json) и независимо
+[fresh main 8e](evidence/development-ci-8e7346e-20261016.json) имеют положительные
+квитанции точных синтетических installed CLI/SDK scenarios. Observed glibc 2.39 /
+kernel 6.17 не квалифицируют нижние platform prerequisites или следующий diff.
+
+## SNAP-DIFF-01 в выбранной source-сборке
+
+Сборка с [контрактом SNAP-DIFF-01](SNAPSHOT-DIFF.md) добавляет read-only сравнение
+двух явных retained snapshots в Linux CLI и `rentgen_snapshot_diff` в официальном
+SDK MCP. Это не новая возможность опубликованного dev19 и не расширение старой
+acceptance.json. Новый архив требует отдельной actual Linux/installed CLI+SDK
+приёмки своих source/bytes.
+
+После двух публикаций, из окружения выбранной сборки:
+
+```sh
+rentgen snapshot-diff --registry ./registry.sqlite3 \
+  --identity-profile ./account/identity.json --project PROJECT_UUID \
+  --before BEFORE_SHA256 --after AFTER_SHA256 --limit 100
+```
+
+Следующая страница сохраняет ordered pair, project и limit и добавляет cursor.
+Scanner и текущие source files для чтения retained pair не нужны. MCP использует
+`before_snapshot_id`/`after_snapshot_id` и те же page/cursor semantics;
+profile и registry задаются при trusted запуске сервера.
+
+Общий POSIX budget начинается до state/catalog, session limits действуют
+дополнительно. Page JSON — до 1 МиБ, полный новый Linux CLI/MCP envelope — до
+2 МиБ; MCP считает оба JSON представления, ID, emitted metadata и newline.
+Private authorization scope удаляется перед выдачей.
+[Лимиты и различия платформ](SNAPSHOT-DIFF.md#лимиты-одного-сравнения) не являются
+hard RSS cap. Windows CLI остаётся legacy; новый Windows MCP имеет общий
+deadline/output guard без объявления POSIX shared accounting. macOS закрыт.
 
 ## Локальный stdio MCP
 

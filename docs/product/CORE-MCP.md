@@ -28,7 +28,7 @@ adapter must not be reused as end-user authentication for an HTTP service.
 The bounded Linux/amd64 capture/read route was qualified at
 [PR #102, HEAD `366db69`](evidence/development-ci-366db69-20261016.json): actual Linux,
 installed CLI and separate source SDK MCP tests. It is absent from published
-dev19; it does not qualify the future offline installed SDK candidate below.
+dev19; it does not qualify the separate exact-source offline installed SDK receipt below.
 Main `2e2dd4f` has the same tree; its fresh push CI is a separate qualification.
 For a new capture, trusted startup must provide both an
 absolute static CGO-disabled Go scanner and its trusted lowercase SHA-256:
@@ -48,7 +48,7 @@ state/history subset. Its defaults are 64 MiB total source, 16 MiB per file and
 closed. See [PORTABLE-CORE.md](PORTABLE-CORE.md) for the qualified source scope,
 bounds and remaining gates.
 
-For a future offline Linux SDK installation there is a separate source-candidate
+For an offline Linux SDK installation there is a separate source/build contract:
 [owned Linux kit](../../scripts/release/OWNED-LINUX-KIT.md), with
 [29 locked original wheels](../../requirements/locks/LINUX-MCP-LOCK.md).
 Its exact interpreter target is CPython 3.11.15 on GNU/Linux x86_64 with glibc ≥ 2.34
@@ -58,6 +58,10 @@ installed CLI and official-SDK stdio history/replay plus controlled pre-CAS
 cancellation. Its actual result is determined by a separately verified
 `acceptance.json` bound to the exact source and delivered bytes. PR #102 capture
 CI and a successful exporter build do not provide that evidence.
+[PR #103 c9](evidence/development-ci-c9cb31e-20261016.json) and independently
+[fresh main 8e](evidence/development-ci-8e7346e-20261016.json) accepted their exact
+synthetic installed CLI/SDK scenarios. Their observed CPython 3.11.15 / glibc 2.39 /
+kernel 6.17 does not qualify the minimum platform or the later SNAP-DIFF extension.
 The candidate leaves published dev19 / Companion 0.1.20 unchanged.
 
 ## Startup scope (dev6)
@@ -182,6 +186,43 @@ Source reads return `ref`, `raw_sha256`, `size_bytes`, `encoding: "base64"` and
 and opaque/invalid-UTF-8 payloads. Graph methods return the core pinned
 project/snapshot/manifest/capability envelope. Quality remains `unavailable`;
 source-path locators do not become verified 1C metadata UUIDs.
+
+## Source/build: bounded snapshot-pair comparison
+
+The development `rentgen_snapshot_diff` tool implements the narrow
+[SNAP-DIFF-01 contract](SNAPSHOT-DIFF.md). It is not an added tool in the
+published dev19 artifacts or an extension of their accepted platform scope.
+
+| Required arguments | Optional arguments |
+| --- | --- |
+| `project_id`, `before_snapshot_id`, `after_snapshot_id` | `limit` (integer 1–100, default 100), `cursor` (opaque nonempty string) |
+
+Both snapshots are explicit, ordered, authorized members of one project.
+The cursor binds that pair, project and page size; a later head does not select
+another pair. Success is `result.snapshot_diff` inside the usual
+`{result, request_id}` document. Counts cover the whole pair; changes cover
+one page. No source content, semantic object identity or rename inference is
+added. Registry/identity/scanner remain trusted server startup inputs, and
+operation limits are not request options.
+
+Linux starts the shared owner before either side's state/catalog/retained
+validation. [Defaults](SNAPSHOT-DIFF.md#лимиты-одного-сравнения) are bounded read
+allowance and conservative accounting, not hard RSS. Windows MCP keeps its
+per-session resource contract with the new common deadline/final pair guard;
+Windows CLI retains its legacy route. Public macOS entrypoints remain denied.
+
+The page has a 1 MiB JSON ceiling. This tool's 2 MiB limit covers the **complete
+emitted SDK wire response**, including JSON-RPC ID, newline, emitted metadata and both
+text/structured JSON representations. Missing or unequal representations,
+duplicate JSON keys, changed scope/pair metadata or another response ID are
+refused. Final output rechecks current permission, exact catalog pair and
+the original deadline after serialization. Private authorization scope is removed
+before emission. Oversize is never truncated success.
+
+Actual Linux/installed SDK evidence belongs to the exact source/build candidate
+and its separate acceptance receipt; old main CI or a source-only SDK test
+cannot qualify this extension. Published versions and native/model/human gates
+are unchanged.
 
 ## Proposals and real BSL diagnostics
 
