@@ -6,9 +6,11 @@
 [DIAGNOSTIC-KERNEL](DIAGNOSTIC-KERNEL.md). Существующий prototype не завершает
 весь контур ниже: он работает только с переданными синтетическими фактами.
 Документ задаёт следующий исследовательский срез Рентгена как специализированной
-системы рассуждения о 1С. Он не входит в опубликованный Core dev17 / Companion 0.1.18 и не меняет
-экспериментальный статус Linux. Метаданные текущих исходников пока также
-указывают dev17 / 0.1.18; совпадение номеров не добавляет prototype в пакеты.
+системы рассуждения о 1С. Этот prototype не входит в опубликованные пакеты,
+указанные в [READINESS](READINESS.md), и не меняет экспериментальный статус Linux.
+Метаданные исходников задают [pyproject.toml](../../pyproject.toml) и
+[package.json Companion](../../integrations/vscode-rentgen/package.json);
+смена номера версии не добавляет prototype в поставку и не является приёмкой.
 Текущие возможности и ограничения остаются в [READINESS](READINESS.md),
 [PLATFORM-SUPPORT](PLATFORM-SUPPORT.md) и [RUST-INPUT-CORE](RUST-INPUT-CORE.md).
 

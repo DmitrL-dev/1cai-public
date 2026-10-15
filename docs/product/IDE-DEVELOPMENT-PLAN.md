@@ -57,8 +57,8 @@ IDE и не возможности опубликованного выпуска
 
 | Уровень | Состояние |
 | :--- | :--- |
-| Опубликовано | [Core dev17](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev17) и [Companion 0.1.18](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.18), ранний доступ / prerelease с ограниченными сценариями |
-| Экспериментальная поставка | Linux x86_64: локальное состояние, история и ограниченный Rust ZIP import; границы в [PORTABLE-CORE](PORTABLE-CORE.md) и [RUST-INPUT-CORE](RUST-INPUT-CORE.md) |
+| Опубликовано | [Актуальная пара Core / Companion и точные пакеты](READINESS.md), ранний доступ / prerelease с ограниченными сценариями |
+| Экспериментальная поставка | Linux x86_64: локальное состояние, история, ограниченный Rust ZIP import и [read-only GUI](LOCAL-GUI.md) с поиском, двумя/тремя ZIP и bounded line diff; это отдельные срезы, не готовая IDE. Границы — в [PLATFORM-SUPPORT](PLATFORM-SUPPORT.md) |
 | Исходники и прототипы | Более поздние проверки и отдельные компоненты не обновляют принятые пакеты. [Прототип интерфейса #72](https://github.com/DmitrL-dev/1cai-public/pull/72) не подтверждает готовность новой IDE |
 | План | Привычная IDE, единый рабочий контекст, поиск, хранилище, отладка, сотрудничество людей и необязательные агенты |
 | Исследование | Полное покрытие форм, ресурсов, СКД, семантического merge, восстановления и вариантов AI-архитектуры |

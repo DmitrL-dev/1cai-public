@@ -1,0 +1,103 @@
+{
+  "schema": 1,
+  "verified_at_utc": "2026-10-15T08:43:05.206531+00:00",
+  "scope": "Anonymous public prerelease metadata, tag commits and exact asset bytes; no CI/installation claim",
+  "authenticated": false,
+  "repository": "DmitrL-dev/1cai-public",
+  "asset_count": 10,
+  "core": {
+    "tag": "core-v0.1.0-dev19",
+    "release_id": 413583188,
+    "url": "https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev19",
+    "source_commit": "5eee97ea050c9f4c06eaceb4d191f16868fb0141",
+    "source_tree": "0e1bcfc82561e01091ad4c2a9274738739a982e8",
+    "draft": false,
+    "prerelease": true,
+    "published_at": "2026-10-15T08:41:34Z",
+    "assets": [
+      {
+        "name": "RELEASE_NOTES.md",
+        "asset_id": 643242815,
+        "size_bytes": 14657,
+        "sha256": "a36f967c69baf5eb8b5d43f6100516611f0d91e7a9eac2936bd0dbac196c1797",
+        "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/core-v0.1.0-dev19/RELEASE_NOTES.md"
+      },
+      {
+        "name": "SHA256SUMS",
+        "asset_id": 643242824,
+        "size_bytes": 109,
+        "sha256": "665fc549513e9817b660bffd084707c95c524cae907ac6d5bfe4947e621ceacf",
+        "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/core-v0.1.0-dev19/SHA256SUMS"
+      },
+      {
+        "name": "experimental-linux-SHA256SUMS",
+        "asset_id": 643243078,
+        "size_bytes": 124,
+        "sha256": "f9bfc8edf9f2ed1bca962dfa1e08b565a1c8353dc7c6c24c928a4bcd948727d9",
+        "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/core-v0.1.0-dev19/experimental-linux-SHA256SUMS"
+      },
+      {
+        "name": "experimental-linux-manifest.json",
+        "asset_id": 643243064,
+        "size_bytes": 31096,
+        "sha256": "52aa3fbbf641626d7311400f88afca216eeb322ee7d3a4e5f76780c27f1f8e1a",
+        "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/core-v0.1.0-dev19/experimental-linux-manifest.json"
+      },
+      {
+        "name": "manifest.json",
+        "asset_id": 643242828,
+        "size_bytes": 1727,
+        "sha256": "76b82ea2f21f5ea6ec0673b44075735a8d1d7a44711f002ae7c3324a0aaa0858",
+        "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/core-v0.1.0-dev19/manifest.json"
+      },
+      {
+        "name": "rentgen-core-0.1.0.dev19-experimental-linux-x86_64.tar.gz",
+        "asset_id": 643242811,
+        "size_bytes": 982299,
+        "sha256": "e15b226c3979798ce6cf32dcdcf5bbfe18404e12d8c2aa850560b4d1be7533d2",
+        "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/core-v0.1.0-dev19/rentgen-core-0.1.0.dev19-experimental-linux-x86_64.tar.gz"
+      },
+      {
+        "name": "rentgen-core-0.1.0.dev19-windows-py311.zip",
+        "asset_id": 643242820,
+        "size_bytes": 20809034,
+        "sha256": "6b75cb14aa453451d3f3d59952ae099a39f15fc13c40d8a32dd32ce443f4d906",
+        "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/core-v0.1.0-dev19/rentgen-core-0.1.0.dev19-windows-py311.zip"
+      }
+    ]
+  },
+  "companion": {
+    "tag": "companion-v0.1.20",
+    "release_id": 413583670,
+    "url": "https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.20",
+    "source_commit": "d5c4022dfaf413581614875c87df7ab679d87102",
+    "source_tree": "f01643429d58283d4af3237dfd47773c48b8cfef",
+    "draft": false,
+    "prerelease": true,
+    "published_at": "2026-10-15T08:41:36Z",
+    "assets": [
+      {
+        "name": "SHA256SUMS",
+        "asset_id": 643244101,
+        "size_bytes": 96,
+        "sha256": "ef8d5efdc1734c627539125fb35cf549c426324d13daddd7583be4883bc76d08",
+        "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/companion-v0.1.20/SHA256SUMS"
+      },
+      {
+        "name": "release.json",
+        "asset_id": 643244102,
+        "size_bytes": 1040,
+        "sha256": "6c61eb22dec25c840309106c982fca5f3322e07ae4ef4ed49a608d27975c6515",
+        "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/companion-v0.1.20/release.json"
+      },
+      {
+        "name": "rentgen-companion-0.1.20.vsix",
+        "asset_id": 643244103,
+        "size_bytes": 335890,
+        "sha256": "b0d9ce0ac1efd11e1ef2a76e7a57fdd3b647ba55667fe079e86ea0e4a58244c9",
+        "url": "https://github.com/DmitrL-dev/1cai-public/releases/download/companion-v0.1.20/rentgen-companion-0.1.20.vsix"
+      }
+    ]
+  },
+  "publication_downloads_verified": true
+}

@@ -119,17 +119,19 @@ optional locks и lazy fetch, а также `GIT_NO_REPLACE_OBJECTS=1`. Поэт
 конкретного коммита игнорирует replacement refs, сохраняя сами refs без изменений.
 Значение этой переменной определено в [документации Git](https://git-scm.com/docs/git/2.55.0#Documentation/git.txt-GIT_NO_REPLACE_OBJECTS).
 
-Это изменение находится в разрабатываемом Core после dev15. Локальные тесты
-используют настоящий Git и Go scanner, SQLite, отчёты и outbox; результаты BSL
-внедряются тестовым адаптером. Проверка установленного stock worker под
-LocalService с настоящим BSL и новым релизом ещё требуется. Канонизация не
+Это изменение входит в исходники опубликованной поставки из [READINESS](READINESS.md).
+Локальные тесты используют настоящий Git и Go scanner, SQLite, отчёты и outbox;
+результаты BSL внедряются тестовым адаптером. Фактический scope проверки
+установленного stock worker под LocalService и его ограничения сохранены в
+[qualification dev19](../../releases/core/0.1.0.dev19/qualification.json).
+Локальные подставные результаты не заменяют installed/native-приёмку. Канонизация не
 фиксирует filesystem identity и не
 защищает от подмены каталога после проверки: требования к deployment ACL и
 целостности executable остаются действующими.
 
 ### Ограничение вывода дочернего Git
 
-В разрабатываемом Core stdout ограничивается во время чтения binary pipe:
+Core ограничивает stdout во время чтения binary pipe:
 HEAD/root/ref — 8192 байта, ancestry — 0 байт, tree listing — 4 MiB, один
 blob — 1 MiB. Сохраняются пределы 256 BSL-файлов и 64 MiB суммарного содержимого.
 Листинг может превысить предел и из-за файлов с неподдерживаемыми расширениями;
@@ -191,7 +193,7 @@ recovery across the journal boundary, and 10002 cycles with real journal persist
 a controlled watcher. They do not constitute native Git/BSL acceptance under
 LocalService, a long-running pilot, or general product readiness.
 
-## Local BSL failure reason (Core dev12 candidate)
+## Local BSL failure reason (since Core dev12)
 
 When a bound BSL analysis fails, `profile/git-journal.json` can preserve its
 validated reason in the fatal event:

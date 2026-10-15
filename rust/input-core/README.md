@@ -1,9 +1,12 @@
 # Rentgen immutable input core (experimental Linux slice)
 
-This unpublished crate moves submitted-ZIP file acquisition, validation, hashing,
+This crate is not published to a Cargo registry. Its verified binary is delivered
+in the experimental Linux supplement described in [READINESS](../../docs/product/READINESS.md).
+It moves submitted-ZIP file acquisition, validation, hashing,
 and bounded decoding into Rust. It does not replace Rentgen's XML authorization or
 metadata interpretation, the Windows retained-read path, or the Go scanner. It
-is not an extractor, generic ZIP service, live project scanner, or release claim.
+is not an extractor, generic ZIP service, or live project scanner; helper delivery
+does not establish full Linux product readiness.
 
 ## Build and test
 

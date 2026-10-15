@@ -1,10 +1,13 @@
 # Rust input core: экспериментальный Linux import
 
+Source и CI/installation dev19 связаны с [Core qualification](../../releases/core/0.1.0.dev19/qualification.json);
+публичные файлы и теги — с [квитанцией публикации](evidence/release-dev19-publication-20261015.json).
+
 Первый нативный Rust срез выполняет чтение и принятие готовой ZIP-выгрузки,
 проверку структуры архива, ограниченную декомпрессию и SHA-256. Rust удерживает
 собственную immutable session. Python сохраняет local identity, membership,
 CLI/IPC orchestration и существующий bounded XML analyzer. Go scanner не меняется.
-Компонент опубликован в [экспериментальном Linux x86_64 дополнении Core dev17](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev17).
+Компонент опубликован в [экспериментальном Linux x86_64 дополнении Core dev19](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev19).
 Это не полный cross-platform release и не замена Windows
 retained-source/live-apply/native contracts.
 

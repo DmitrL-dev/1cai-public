@@ -1,6 +1,6 @@
 # История черновиков: ядро и локальный CLI
 
-Реализовано в development checkout, 2026-09-09. Это сохранение предложений
+Первоначально реализовано 9 сентября 2026 в development checkout. Это сохранение предложений
 изменений в SQLite проекта. Исходные модули и опубликованные снимки не меняются.
 [HTTP API](PROJECT-DRAFTS-HTTP.md) и [браузерный редактор](DRAFT-EDITOR.md) реализованы;
 предыдущие wheel/sdist dev2 не содержат эту реализацию.
@@ -36,7 +36,7 @@ CLI устанавливает actor по SID текущего процесса 
 
 ### Первый черновик без модели и BSL
 
-Этот маршрут предназначен для Windows-комплекта Core dev17 после
+Этот маршрут предназначен для Windows-комплекта Core dev19 после
 [первого снимка и списка модулей](../../GETTING_STARTED.md#3-сохраните-первый-снимок).
 Продолжите в той же PowerShell-консоли: `$rentgenCommand`, `$projectId` и
 `$snapshotId` уже содержат путь установленного CLI и точные ID из его ответов.
@@ -134,8 +134,8 @@ operation ID. При `DRAFT_CONFLICT` изменения другого авто
 
 ### Создание и точечная правка без полного proposal JSON
 
-Новые команды `draft-start` и `draft-edit` относятся к проверяемому source
-checkout после dev17; опубликованный Windows-комплект dev17 ими не дополнен.
+Команды `draft-start` и `draft-edit` входят в Windows-комплект Core dev19;
+их точная приёмка сохранена в [qualification](../../releases/core/0.1.0.dev19/qualification.json).
 Они используют то же ядро, что и [MCP-команды большого черновика](LARGE-DRAFT-MCP.md).
 Нужны Windows, schema4 и права `project:read` + `source:edit`. На неподдерживаемой
 ОС следует `CAPABILITY_UNAVAILABLE` до чтения выбранных файлов и состояния.

@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "source_commit": "5eee97ea050c9f4c06eaceb4d191f16868fb0141",
+  "scope": "Packaging only from qualified inputs; no Linux execution on macOS; no universal cross-zlib claim",
+  "python": "3.11.15",
+  "platform": "Darwin",
+  "zlib_runtime_version": "1.2.12",
+  "two_fresh_directories_all_three_files_identical": true,
+  "files": [
+    {
+      "name": "experimental-linux-SHA256SUMS",
+      "sha256": "f9bfc8edf9f2ed1bca962dfa1e08b565a1c8353dc7c6c24c928a4bcd948727d9",
+      "matches_qualified_ci_bytes": true
+    },
+    {
+      "name": "experimental-linux-manifest.json",
+      "sha256": "52aa3fbbf641626d7311400f88afca216eeb322ee7d3a4e5f76780c27f1f8e1a",
+      "matches_qualified_ci_bytes": true
+    },
+    {
+      "name": "rentgen-core-0.1.0.dev19-experimental-linux-x86_64.tar.gz",
+      "sha256": "e15b226c3979798ce6cf32dcdcf5bbfe18404e12d8c2aa850560b4d1be7533d2",
+      "matches_qualified_ci_bytes": true
+    }
+  ],
+  "qualified_ci_bytes_preserved": true
+}

@@ -1,21 +1,54 @@
 # Состояние публичной поставки
 
-## Кандидат на 15 октября 2026
+## Текущая опубликованная пара — Core dev19 / Companion 0.1.20
 
-Текущие исходники готовятся как **Core dev19 / Companion 0.1.20**.
-Это ещё не опубликованная пара. [План выпуска и сверка всех направлений](RELEASE-PLAN-20261015.md)
-отделяют реализованные изменения от ожидающей проверки поставки.
-Номера dev18 / 0.1.19 остаются у невыпущенного draft #84; его Linux
-source-facts и незакрытая квалификация не входят в этот кандидат.
+Опубликованы [Core dev19](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev19)
+и [Companion 0.1.20](https://github.com/DmitrL-dev/1cai-public/releases/tag/companion-v0.1.20)
+как prerelease. Основной комплект — Windows x64 / CPython 3.11.
+Экспериментальное дополнение GNU/Linux x86_64 включает state/history,
+ограниченный Rust ZIP import и локальный read-only GUI: поиск объектов,
+полей и модулей, вхождения, сравнение двух ZIP, отчёт, инвентарь трёх ZIP
+и ограниченный построчный diff. Снимки, черновики, merge/apply и диагностика
+живой базы этим GUI не выполняются.
 
-Новая приёмка включает точный CI, Windows offline kit и совместную проверку
-Companion→установленный CLI, Linux установленный wheel/HTTP/Rust и настоящую
-браузерную проверку. До появления квитанций результат этих gates не заявляется.
-История и опубликованные файлы dev17 / 0.1.18 ниже остаются неизменными.
+Core source commit: [`5eee97ea050c9f4c06eaceb4d191f16868fb0141`](https://github.com/DmitrL-dev/1cai-public/tree/5eee97ea050c9f4c06eaceb4d191f16868fb0141);
+дерево `0e1bcfc82561e01091ad4c2a9274738739a982e8`. Exact-source CI, Windows offline installation/Companion→CLI
+и Linux installed HTTP/Rust/browser сохранены в
+[Core qualification](../../releases/core/0.1.0.dev19/qualification.json).
+Анонимная загрузка, теги и размеры/SHA-256 финальных публичных файлов сохранены в
+[квитанции публикации](evidence/release-dev19-publication-20261015.json).
+Состав и точные accepted records: [Core notes](../../releases/core/0.1.0.dev19/RELEASE_NOTES.md),
+[Core qualification](../../releases/core/0.1.0.dev19/qualification.json),
+[Companion notes](../../releases/companion/0.1.20/RELEASE_NOTES.md).
 
-## Текущий статус на 5 октября 2026
+`qualification.json` — неизменный снимок приёмки до Companion tag workflow
+и публикации. Его `companion_tag_workflow_verified=false` и
+`release_publication_verified=false` сохраняют фактическое состояние того этапа;
+они не переписываются задним числом. Последующий
+[tag workflow 38706909525](https://github.com/DmitrL-dev/1cai-public/actions/runs/38706909525)
+успешен; [отдельная квитанция тега](evidence/companion-0.1.20-tag-20261015.json)
+фиксирует проверку принятых VSIX/метаданных на release-record commit
+`d5c4022dfaf413581614875c87df7ab679d87102`. Публичные файлы подтверждены
+отдельной квитанцией публикации выше. Core tag остаётся на source
+`5eee97ea050c9f4c06eaceb4d191f16868fb0141`; последующий main с документацией
+не подменяет принятые bytes и SHA этих тегов.
 
-Последняя подтверждённая опубликованная пара — **Core dev17 / Companion 0.1.18**,
+Успешная Linux baseline-проверка не означает полностью зелёный Linux suite
+или поддержку всего продукта на этой ОС. Windows/macOS GUI, новая активация
+в настоящем редакторе, native 1С business workflow, качество AI и cold OwnerIPC
+не квалифицированы. Полная IDE остаётся планом.
+Номера dev18 / 0.1.19 сохраняются у отдельного draft #84; его source-facts,
+полный176/whole-process gate и независимая квалификация не входят в выпуск.
+
+Встроенные README и инструкции из source commit сохраняют формулировки
+момента сборки. Для установки dev19 используйте его release notes и
+`INSTALL.md` финального Linux-архива; факт публикации подтверждает квитанция.
+Предыдущие теги, assets и исторические evidence не перезаписаны.
+[Сверка направлений и план](RELEASE-PLAN-20261015.md) сохраняет незакрытые задачи.
+
+## Исторический статус на 5 октября 2026
+
+На 5 октября 2026 последняя подтверждённая пара — **Core dev17 / Companion 0.1.18**,
 prerelease от 5 октября 2026. Основной комплект: Windows x64 / CPython 3.11.
 Отдельно опубликовано экспериментальное дополнение Linux x86_64 для локального
 состояния/истории, планировщиков и ограниченного Rust ZIP import. Полный продукт
