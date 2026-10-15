@@ -54,6 +54,10 @@
   CLI, loopback HTTP/static assets/Rust и все браузерные gates без skips.
 - [ ] Собрать Linux supplement из принятых байтов; повторить сборку,
   проверить архив и установку извлечённого финального комплекта на Linux.
+  Для этого добавлен [отдельный ручной CI gate](../../.github/workflows/release-candidate-ci.yml),
+  который использует канонический Windows wheel и same-source Linux helper,
+  проверяет GitHub digests и запускает installed smoke/43 browser tests.
+  Локально 155 release/collector/kit тестов прошли; реальный gate ещё ожидается.
 - [ ] Закоммитить manifests, notes и qualification с фактическими результатами;
   сформировать accepted release-assets штатными scripts/release.
 - [ ] Слить проверенные изменения обычным merge, сохранив provenance исходных
