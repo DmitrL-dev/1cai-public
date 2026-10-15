@@ -2,6 +2,7 @@
 from dataclasses import asdict, replace
 from datetime import datetime, timezone
 import os
+import sys
 
 from .context import SnapshotRef
 from .errors import CoreError
@@ -72,7 +73,7 @@ def _flush_outputs(path):
         flush_owned(path / name)
 
 
-def capture_and_publish(ctx, *, expected_head, builder, operation_id):
+def capture_and_publish(ctx, *, expected_head, builder, operation_id, cancelled=lambda: False):
     from .capture import _capture_generation
 
     if ctx is None:
@@ -88,6 +89,18 @@ def capture_and_publish(ctx, *, expected_head, builder, operation_id):
     previous = _receipt(ctx, expected_head, operation_id)
     if previous is not None:
         return previous
+    if sys.platform == "linux":
+        from ._linux_capture import LinuxCaptureBackend
+
+        if type(builder) is not LinuxCaptureBackend:
+            raise CoreError(
+                "GRAPH_ADAPTER_UNAVAILABLE",
+                "Linux capture requires the configured owned scanner backend",
+            )
+        return builder.capture(
+            ctx, expected_head=expected_head, operation_id=operation_id,
+            cancelled=cancelled,
+        )
     result = None
     try:
         with _capture_generation(

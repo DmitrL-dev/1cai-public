@@ -9,7 +9,8 @@
 | Уровень | Windows | Linux / macOS |
 | --- | --- | --- |
 | Опубликованные Core dev19 / Companion 0.1.20 | Ранний доступ, Windows x64 / CPython 3.11, ограниченные проверенные сценарии | Linux x86_64: отдельное экспериментальное дополнение для state/history/planners, Rust ZIP import и read-only GUI с поиском и сравнением ZIP. Полный Linux/macOS-маршрут не принят |
-| Текущие исходники | Принятый Core source `5eee97e`; последующий checkout не тождественен принятым пакетам | Дополнительные операции требуют собственной квалификации; наличие исходников не означает поддержку полного маршрута |
+| Проверенный development main `413cc65` | Отдельный CI и installed editor API first/restart приняты; human GUI/native 1С открыты. Это не новые опубликованные пакеты | Linux reader/LiveTree и прежний state/ZIP/GUI scope имеют отдельный CI; macOS продукта не принят |
+| Следующий source-блок | Windows regression нового итогового SHA ещё нужен | Linux/amd64 private default-base capture → graph/publication → CLI/MCP source/history read реализуется; actual Linux и installed-приёмка ещё не завершены. Metadata/drafts/diff/native/live/macOS закрыты |
 | Захват, снимки и граф в опубликованном Core | Windows retained-file sessions и доверенный scanner | Безопасные адаптеры чтения/захвата ещё нужно принять |
 | BSL/1С/EDT, live apply, Observer-служба | Свои runtime, права и ограничения; не универсальное применение | Не включаются автоматически вместе с переносимым CLI |
 | VSCodium / Cline / Companion | Текущий профиль требует Windows и доверенную рабочую папку | Наличие самого редактора на ОС не переносит интеграцию Рентгена |
@@ -39,6 +40,22 @@ Companion по-прежнему использует Windows-профиль. Д�
 Полный Linux regression не является зелёным: прежние retained-Windows и
 platform-fixture отказы учтены отдельно от целевых portable tests. Старые Windows
 результаты на другом candidate не переносятся на эту сборку.
+
+## Следующая source integration
+
+[Linux capture и retained source/graph](PORTABLE-CORE.md#следующий-блок-linux-capture-и-чтение-снимков)
+связываются одним блоком с tests и инструкциями. Целевой scope — Linux/amd64,
+новый private project и default base layer, trusted static Go scanner с явным
+SHA-256, complete generation, publication receipt и чтение истории из свежих
+CLI/MCP-процессов. Defaults 64 МиБ total / 16 МиБ file / 4096 entries не являются
+приёмкой максимального workload или полного B07. Этот блок не входит в dev19;
+локальные POSIX controls на macOS и Linux cross-build не заменяют actual Linux
+и installed qualification нового SHA.
+
+[CI main `413cc65`](evidence/development-ci-413cc65-20261016.json) относится к
+предыдущему development-срезу, включая настоящий Windows editor API workbench,
+прежний Linux state/ZIP/GUI и synthetic diagnostic framework. Он не переносится
+на новые capture bytes, human GUI, native 1С или AI competence.
 
 ## Как станет проще работать на разных ОС
 

@@ -332,6 +332,91 @@ class SnapshotCapabilities:
     )
 
 
+def _source_page(document, snapshot, *, limit=100, cursor=None, query="", kind="all", layer=None):
+    """Pure pagination over an already verified manifest; no IO or authorization."""
+    filters = source_query(query=query, kind=kind, layer=layer)
+    if type(limit) is not int or not 1 <= limit <= 200:
+        raise CoreError("INVALID_QUERY_OPTIONS", "Source page limit must be 1..200")
+    entries = selected_entries(document, filters)
+    ordinals = {
+        layer["layer_id"]: layer["ordinal"]
+        for layer in document["source"]["layers"]
+    }
+    binding = {
+        "version": 1,
+        "project_id": snapshot.project_id,
+        "snapshot_id": snapshot.snapshot_id,
+        "limit": limit,
+    }
+    if filters != {"query": "", "kind": "all", "layer": None}:
+        binding.update(
+            version=2, filters=filters, manifest_hash=snapshot.manifest_hash
+        )
+    start = 0
+    if cursor is not None:
+        try:
+            if not isinstance(cursor, str) or len(cursor) > 8192:
+                raise ValueError()
+            decoded = _decode(
+                base64.b64decode(cursor, altchars=b"-_", validate=True)
+            )
+            if (
+                not isinstance(decoded, dict)
+                or type(decoded.get("version")) is not int
+                or type(decoded.get("limit")) is not int
+            ):
+                raise ValueError()
+            last = decoded.pop("last")
+            if (
+                decoded != binding
+                or type(last) is not list
+                or len(last) != 2
+                or type(last[0]) is not int
+            ):
+                raise ValueError()
+            matches = [
+                i
+                for i, entry in enumerate(entries)
+                if [ordinals[entry["layer_id"]], entry["relative_path"]] == last
+            ]
+            if len(matches) != 1:
+                raise ValueError()
+            start = matches[0] + 1
+        except (ValueError, KeyError, TypeError, CoreError) as exc:
+            raise CoreError(
+                "INVALID_SOURCE_CURSOR",
+                "Cursor does not match this snapshot, page size and filters",
+            ) from exc
+    page = entries[start : start + limit]
+    next_cursor = None
+    if start + len(page) < len(entries):
+        last = page[-1]
+        next_cursor = base64.urlsafe_b64encode(
+            canonical_bytes(
+                dict(
+                    binding,
+                    last=[ordinals[last["layer_id"]], last["relative_path"]],
+                )
+            )
+        ).decode("ascii")
+    return SourcePage(
+        tuple(
+            SourceEntry(
+                SourceRef(
+                    snapshot,
+                    e["layer_id"],
+                    e["relative_path"],
+                    e["raw_sha256"],
+                ),
+                e["size_bytes"],
+                e["encoding"],
+            )
+            for e in page
+        ),
+        next_cursor,
+    )
+
+
 @dataclass(frozen=True)
 class SnapshotSources:
     snapshot: SnapshotRef
@@ -389,89 +474,10 @@ class SnapshotSources:
         return raw
 
     def list_entries(self, *, limit=100, cursor=None, query="", kind="all", layer=None):
-        document = self._document()
-        filters = source_query(query=query, kind=kind, layer=layer)
-        if type(limit) is not int or not 1 <= limit <= 200:
-            raise CoreError("INVALID_QUERY_OPTIONS", "Source page limit must be 1..200")
-        entries = selected_entries(document, filters)
-        ordinals = {
-            layer["layer_id"]: layer["ordinal"]
-            for layer in document["source"]["layers"]
-        }
-        binding = {
-            "version": 1,
-            "project_id": self.snapshot.project_id,
-            "snapshot_id": self.snapshot.snapshot_id,
-            "limit": limit,
-        }
-        if filters != {"query": "", "kind": "all", "layer": None}:
-            binding.update(
-                version=2, filters=filters, manifest_hash=self.snapshot.manifest_hash
-            )
-        start = 0
-        if cursor is not None:
-            try:
-                if not isinstance(cursor, str) or len(cursor) > 8192:
-                    raise ValueError()
-                decoded = _decode(
-                    base64.b64decode(cursor, altchars=b"-_", validate=True)
-                )
-                if (
-                    not isinstance(decoded, dict)
-                    or type(decoded.get("version")) is not int
-                    or type(decoded.get("limit")) is not int
-                ):
-                    raise ValueError()
-                last = decoded.pop("last")
-                if (
-                    decoded != binding
-                    or type(last) is not list
-                    or len(last) != 2
-                    or type(last[0]) is not int
-                ):
-                    raise ValueError()
-                matches = [
-                    i
-                    for i, entry in enumerate(entries)
-                    if [ordinals[entry["layer_id"]], entry["relative_path"]] == last
-                ]
-                if len(matches) != 1:
-                    raise ValueError()
-                start = matches[0] + 1
-            except (ValueError, KeyError, TypeError, CoreError) as exc:
-                raise CoreError(
-                    "INVALID_SOURCE_CURSOR",
-                    "Cursor does not match this snapshot, page size and filters",
-                ) from exc
-        page = entries[start : start + limit]
-        next_cursor = None
-        if start + len(page) < len(entries):
-            last = page[-1]
-            next_cursor = base64.urlsafe_b64encode(
-                canonical_bytes(
-                    dict(
-                        binding,
-                        last=[ordinals[last["layer_id"]], last["relative_path"]],
-                    )
-                )
-            ).decode("ascii")
-        return SourcePage(
-            tuple(
-                SourceEntry(
-                    SourceRef(
-                        self.snapshot,
-                        e["layer_id"],
-                        e["relative_path"],
-                        e["raw_sha256"],
-                    ),
-                    e["size_bytes"],
-                    e["encoding"],
-                )
-                for e in page
-            ),
-            next_cursor,
+        return _source_page(
+            self._document(), self.snapshot, limit=limit, cursor=cursor,
+            query=query, kind=kind, layer=layer,
         )
-
 
 @dataclass(frozen=True)
 class SnapshotReadLimits:

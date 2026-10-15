@@ -37,6 +37,11 @@ _GROUPS = {
         "draft-edit", "edt-inventory", "metadata-plan",
         "metadata-summary", "metadata-search", "metadata-object",
     ),
+    # Additive v1 alias: existing Windows consumers retain the broad group;
+    # command admission uses this later, narrowly reviewed read-only group.
+    "snapshot.source.read": (
+        "source-list", "source-read", "graph-resolve", "impact",
+    ),
     "source.capture": ("capture",),
     "native.execution": (
         "proposal-check", "proposal-platform-check", "proposal-platform-result",
@@ -81,6 +86,8 @@ def capability_status(capability):
     if capability == "runtime.inspect" or _platform == "win32":
         return {"supported": True, "reason": None}
     if _platform == "linux" and capability in _PORTABLE:
+        return {"supported": True, "reason": None}
+    if _platform == "linux" and capability in {"snapshot.source.read", "source.capture"}:
         return {"supported": True, "reason": None}
     reason = (
         "Local identity adapter has not been qualified for this OS"

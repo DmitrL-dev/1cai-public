@@ -3,9 +3,12 @@
 **Активная цель — полный финальный релиз с реализацией всех текущих планов.**
 [Единый реестр 127 требований](docs/product/FULL-FINAL-PLAN.md) фиксирует
 исходную базу, статусы всех 24 IDE-сценариев и полную очередь.
-В `feat/ide-workbench` готовятся metadata workbench Core/Companion и harness
-настоящего редактора, POSIX owner IO и отдельный diagnostic pilot.
-Это работа в процессе, без объявления новой приёмки или успешного CI.
+Workbench, POSIX reader/LiveTree и diagnostic pilot объединены в main
+`413cc65`; [CI этого SHA](docs/product/evidence/development-ci-413cc65-20261016.json)
+принял ограниченный installed workbench в двух настоящих Windows Extension Hosts.
+Следующим цельным блоком готовятся Linux/amd64 capture → publication → source/graph
+reads через CLI/MCP. [Его scope и границы](docs/product/PORTABLE-CORE.md#следующий-блок-linux-capture-и-чтение-снимков)
+пока требуют actual Linux и installed-приёмки; новый выпуск не заявлен.
 Лицензированного стенда 1С/EDT пока нет: native-gates открыты,
 реализация и обычный CI продолжаются.
 
@@ -129,6 +132,13 @@ profile, project/state reads, draft history/receipt и byte/JSON planners. По�
 Первый этап не обещает чтение любого снимка, создание новых черновиков или live apply.
 
 ### Затем: чтение сохранённых снимков
+
+В следующем блоке исходников POSIX reader связан с новым Linux/amd64 capture:
+private bootstrap, копирование источников, фиксированный scanner, проверенный
+SQLite graph, короткий publication CAS и чтение истории. Целевой срез — новый
+проект с default base layer; metadata/drafts/diff/native/live и macOS закрыты.
+Приёмка на настоящем Linux и из установленного wheel ещё нужна. Это часть B07,
+не закрытие всего этапа и не изменение опубликованного dev19.
 
 Отделить интерфейс безопасного чтения от Windows-реализации. Для Linux и macOS
 принимать отдельные адаптеры чтения принадлежащих хранилищу снимков: ограничения

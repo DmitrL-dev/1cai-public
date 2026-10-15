@@ -1,7 +1,8 @@
 """Resolve explicit project scope before any project source IO."""
 
 from dataclasses import dataclass
-from typing import Callable
+import sys
+from typing import Callable, TYPE_CHECKING
 from uuid import uuid4
 
 from .context import (
@@ -18,12 +19,18 @@ from .state import ProjectState
 from .graph import GraphReaderFactory
 from .sources import SnapshotSources, SnapshotGraph, verify_generation
 
+if TYPE_CHECKING:
+    from ._posix_snapshot_session import PosixSnapshotLimits
+    from ._verified_graph import VerifiedGraphLimits
+
 
 @dataclass(frozen=True)
 class ContextResolver:
     registry: ProjectRegistry
     configured_default: str | None = None
     graph_reader_factory: GraphReaderFactory | None = None
+    posix_snapshot_limits: "PosixSnapshotLimits | None" = None
+    posix_graph_limits: "VerifiedGraphLimits | None" = None
 
     def __post_init__(self):
         if self.configured_default is not None:
@@ -69,19 +76,37 @@ class ContextResolver:
                 )
         snapshot, sources, graph = None, None, None
         if catalog is not None:
-            path = project.state_root / catalog.generation_relpath
-            verification_options = (
-                {} if authorize_read is None else {"authorize_read": authorize_read}
-            )
-            verify_generation(path, catalog, **verification_options)
-            if self.graph_reader_factory is None:
-                raise CoreError(
-                    "GRAPH_ADAPTER_UNAVAILABLE",
-                    "A graph reader adapter must be explicitly installed",
+            if sys.platform == "linux":
+                from ._posix_snapshot_facade import PosixSnapshotSources, PosixSnapshotGraph
+                from ._posix_snapshot_session import PosixSnapshotLimits
+                from ._verified_graph import VerifiedGraphLimits
+
+                sources = PosixSnapshotSources(
+                    catalog.snapshot, state, principal, self.graph_reader_factory,
+                    (PosixSnapshotLimits(copied_byte_budget=2560 * 1024**2,
+                                         resident_byte_budget=4 * 1024**3)
+                     if self.posix_snapshot_limits is None else self.posix_snapshot_limits),
+                    (VerifiedGraphLimits(image_buffer_budget=2 * 1024**3)
+                     if self.posix_graph_limits is None else self.posix_graph_limits),
+                    authorize_read if authorize_read is not None else lambda: None,
                 )
-            snapshot = catalog.snapshot
-            sources = SnapshotSources(snapshot, state, principal, path)
-            graph = SnapshotGraph(snapshot, sources, self.graph_reader_factory)
+                sources._verify()
+                snapshot = catalog.snapshot
+                graph = PosixSnapshotGraph(snapshot, sources)
+            else:
+                path = project.state_root / catalog.generation_relpath
+                verification_options = (
+                    {} if authorize_read is None else {"authorize_read": authorize_read}
+                )
+                verify_generation(path, catalog, **verification_options)
+                if self.graph_reader_factory is None:
+                    raise CoreError(
+                        "GRAPH_ADAPTER_UNAVAILABLE",
+                        "A graph reader adapter must be explicitly installed",
+                    )
+                snapshot = catalog.snapshot
+                sources = SnapshotSources(snapshot, state, principal, path)
+                graph = SnapshotGraph(snapshot, sources, self.graph_reader_factory)
         return ProjectContext(
             project_id,
             principal,

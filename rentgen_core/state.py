@@ -148,10 +148,10 @@ class ProjectState:
         object.__setattr__(self, "path", Path(self.path).absolute())
 
     @classmethod
-    def create(cls, path: Path, project_id: str, owner: Principal) -> "ProjectState":
+    def create(cls, path: Path, project_id: str, owner: Principal, *, _bootstrap=None) -> "ProjectState":
         """Bootstrap a new explicit file; no attach, overwrite or migration."""
         state = cls(path, project_id)
-        with _sqlite.create_database(state.path, _SCHEMA) as connection:
+        with _sqlite.create_database(state.path, _SCHEMA, _owned=_bootstrap) as connection:
             connection.execute("INSERT INTO project VALUES (1, ?)", (project_id,))
             identity = (project_id, owner.id, owner.authority)
             connection.execute("INSERT INTO memberships VALUES (?, ?, ?)", identity)

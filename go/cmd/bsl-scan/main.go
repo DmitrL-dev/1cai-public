@@ -26,6 +26,9 @@ import (
 )
 
 func main() {
+	if runOwned(os.Args[1:]) {
+		return
+	}
 	workers := flag.Int("workers", runtime.NumCPU(), "parallel workers")
 	mode := flag.String("mode", "scan", "mode: scan|callgraph")
 	format := flag.String("format", "json", "output format: json|summary (scan mode only)")

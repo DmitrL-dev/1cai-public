@@ -815,7 +815,7 @@ def _proposal_reply(result, request_id, protocol_request_id):
     return reply
 
 
-def _dispatch(runtime, principal, name, args):
+def _dispatch(runtime, principal, name, args, *, cancelled=lambda: False):
     if name in _PROPOSAL_TOOLS:
         return _proposal_dispatch(runtime, principal, name, args)
     if name == "rentgen_capabilities":
@@ -842,6 +842,7 @@ def _dispatch(runtime, principal, name, args):
             expected_head=ProjectHead(**head),
             operation_id=args["operation_id"],
             builder=runtime.graph_builder,
+            **({"cancelled": cancelled} if sys.platform == "linux" else {}),
         )
     # Authenticate before importing/opening the graph adapter or generation.
     runtime.state_context(principal, project)
@@ -895,7 +896,8 @@ def _json(value):
 
 
 def _execute(
-    runtime, principal, name, arguments, *, protocol_request_id=None, scope=None
+    runtime, principal, name, arguments, *, protocol_request_id=None, scope=None,
+    cancelled=lambda: False,
 ):
     from mcp.types import CallToolResult, TextContent
 
@@ -1102,7 +1104,10 @@ def _execute(
                     {"owner_reports": value}, proposal_context, permissions, family
                 )
         else:
-            result = _dispatch(runtime, principal, name, arguments)
+            result = _dispatch(
+                runtime, principal, name, arguments,
+                **({"cancelled": cancelled} if name == "rentgen_capture" else {}),
+            )
         if isinstance(result, _ProposalToolResult):
             return _proposal_reply(result, request_id, protocol_request_id)
         payload = {"result": result, "request_id": request_id}
@@ -1263,6 +1268,8 @@ def create_server(runtime, principal, *, cancellations=None, scope=None):
                     arguments,
                     protocol_request_id=request_id,
                     scope=scope,
+                    **({"cancelled": lambda: cancellations.active.get(request_id, False)}
+                       if name == "rentgen_capture" and sys.platform == "linux" else {}),
                 ),
                 abandon_on_cancel=False,
                 limiter=limiter,
@@ -1495,6 +1502,7 @@ def main(argv=None) -> int:
     parser.add_argument("--registry", type=Path, required=True)
     parser.add_argument("--identity-profile", type=Path)
     parser.add_argument("--scanner", type=Path)
+    parser.add_argument("--scanner-sha256")
     parser.add_argument("--project", action="append", metavar="PROJECT_UUID")
     parser.add_argument("--allow-tool", action="append", metavar="TOOL")
     args = parser.parse_args(argv)
@@ -1517,9 +1525,17 @@ def main(argv=None) -> int:
             diagnostics = InstalledDiagnostics()
         except ImportError:
             diagnostics = None
+        if sys.platform == "linux":
+            from ._linux_capture import LinuxCaptureBackend
+
+            builder = LinuxCaptureBackend(args.scanner, args.scanner_sha256)
+        else:
+            if args.scanner_sha256 is not None:
+                raise CoreError("INVALID_ARGUMENT", "Scanner SHA-256 configuration requires Linux")
+            builder = _InstalledBuilder(args.scanner)
         runtime = LocalRuntime(
             args.registry,
-            graph_builder=_InstalledBuilder(args.scanner),
+            graph_builder=builder,
             diagnostic_provider=diagnostics,
         )
         anyio.run(serve, runtime, principal, scope)

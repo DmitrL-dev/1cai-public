@@ -39,6 +39,9 @@ def test_every_adapter_operation_has_explicit_capability():
 def test_live_native_snapshot_unknown_capabilities_fail_closed(monkeypatch, platform):
     monkeypatch.setattr(capabilities, "_platform", platform)
     for command in ("capture", "source-read", "proposal-live-apply", "metadata-live-undo", "metadata-workspace-apply", "proposal-test", "draft-save", "new-operation"):
+        if platform == "linux" and command in {"capture", "source-read"}:
+            capabilities.require_operation(command)
+            continue
         with pytest.raises(CoreError) as error:
             capabilities.require_operation(command)
         assert error.value.code == "CAPABILITY_UNAVAILABLE"
@@ -249,7 +252,8 @@ def test_real_stdio_mcp_reads_saved_draft_and_filters_unsupported_tools(portable
                     assert "rentgen_capabilities" in listed
                     assert "rentgen_draft_read" in listed
                     assert "rentgen_proposal_live_apply" not in listed
-                    assert "rentgen_capture" not in listed
+                    assert {"rentgen_capture", "rentgen_source_list", "rentgen_source_read", "rentgen_graph_resolve", "rentgen_impact"} <= listed
+                    assert "rentgen_draft_save" not in listed
                     caps = await session.call_tool("rentgen_capabilities", {})
                     assert caps.structuredContent["result"]["platform"] == "linux"
                     result = await session.call_tool("rentgen_draft_receipt", {"project_id": project, "operation_id": operation})

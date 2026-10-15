@@ -323,8 +323,14 @@ def _populate_store(
     mode: BuildMode = BuildMode.LEGACY,
     binding=None,
     source_paths: tuple[str, ...] = (),
+    _records=None,
 ) -> tuple[dict, int]:
-    inputs = inputs if inputs is not None else BuildInputs(NDJSON, SCORES)
+    if _records is not None:
+        if mode is not BuildMode.SNAPSHOT or inputs is not None:
+            raise ValueError("Owned records require snapshot mode without path inputs")
+        inputs = BuildInputs(NDJSON, None)  # Locator is never opened in this branch.
+    else:
+        inputs = inputs if inputs is not None else BuildInputs(NDJSON, SCORES)
     _create_schema(con)
 
     # Stage the corpus once on disk. Both declaration indexing and binding read
@@ -339,7 +345,7 @@ def _populate_store(
         "CREATE TABLE input_stage (module_id TEXT, name_key TEXT, line INTEGER, digest TEXT, raw TEXT)"
     )
     n_subs = 0
-    for obj in _iter_ndjson(inputs.callgraph_path):
+    for obj in (_iter_ndjson(inputs.callgraph_path) if _records is None else _records):
         mid, path, provenance = module_identity(obj)
         semantic_record = {
             k: v for k, v in obj.items() if k not in {"module", "source_path", "name"}
@@ -725,7 +731,8 @@ def _populate_store(
         if mode is BuildMode.LEGACY
         else "PRAGMA journal_mode = DELETE;"
     )
-    con.execute("VACUUM;")
+    if _records is None:
+        con.execute("VACUUM;")
     return meta, joined
 
 

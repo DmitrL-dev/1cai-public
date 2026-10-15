@@ -47,6 +47,21 @@ jobs:
           cargo +1.92.0 --version
       - name: Bound all collected pytest IDs before expensive qualification
         run: python -m pytest --collect-only -q
+      - name: Test and build the owned static Linux scanner
+        env:
+          CGO_ENABLED: '0'
+        run: |
+          go -C go test -timeout 120s ./...
+          go -C go build -trimpath -buildmode=exe -o "$GITHUB_WORKSPACE/output/bsl-scan-owned-linux" ./cmd/bsl-scan
+          python - <<'PY'
+          import hashlib, os
+          from pathlib import Path
+          scanner = Path("output/bsl-scan-owned-linux").resolve(strict=True)
+          digest = hashlib.sha256(scanner.read_bytes()).hexdigest()
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as stream:
+              stream.write(f"RENTGEN_TEST_LINUX_SCANNER={scanner}\n")
+              stream.write(f"RENTGEN_TEST_LINUX_SCANNER_SHA256={digest}\n")
+          PY
       - name: Locked Rust native and process contracts
         run: |
           cargo +1.92.0 test --locked --manifest-path rust/input-core/Cargo.toml
@@ -77,11 +92,14 @@ jobs:
           cmp "output/direct-wheel/rentgen_core-$version-py3-none-any.whl" "dist/rentgen_core-$version-py3-none-any.whl"
           sha256sum "dist/rentgen_core-$version-py3-none-any.whl" > output/wheel-reproducibility.sha256
           python scripts/verification/verify_portable_delivery.py --wheel "dist/rentgen_core-$version-py3-none-any.whl" --binary "$RENTGEN_INPUT_CORE_TEST_BINARY" --output output/installed-portable --expected-version "$version"
+          python scripts/verification/verify_linux_capture_delivery.py --wheel "dist/rentgen_core-$version-py3-none-any.whl" --scanner "$RENTGEN_TEST_LINUX_SCANNER" --scanner-sha256 "$RENTGEN_TEST_LINUX_SCANNER_SHA256" --output output/installed-linux-capture --expected-version "$version" --source-commit "$(git rev-parse HEAD)"
           mkdir -p output/experimental-linux
           cp "$RENTGEN_INPUT_CORE_TEST_BINARY" output/experimental-linux/rentgen-input-core
+          cp "$RENTGEN_TEST_LINUX_SCANNER" output/experimental-linux/bsl-scan-owned-linux
           cp LICENSE rust/input-core/README.md rust/input-core/PROTOCOL.md rust/input-core/THIRD_PARTY_NOTICES.md rust/input-core/DEPENDENCY_PROVENANCE.json output/experimental-linux/
           cp -r rust/input-core/licenses output/experimental-linux/licenses
           sha256sum output/experimental-linux/rentgen-input-core > output/experimental-linux/SHA256SUMS
+          sha256sum output/experimental-linux/bsl-scan-owned-linux >> output/experimental-linux/SHA256SUMS
       - name: Upload scoped evidence and development artifacts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -95,6 +113,7 @@ jobs:
             output/linux-diagnostic.log
             output/linux-baseline-comparison.json
             output/installed-portable/acceptance.json
+            output/installed-linux-capture/acceptance.json
             output/wheel-reproducibility.sha256
             output/experimental-linux/
             dist/*.whl
