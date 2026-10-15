@@ -4,6 +4,7 @@ from dataclasses import FrozenInstanceError
 import hashlib
 import importlib
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -216,7 +217,7 @@ def test_every_trusted_context_pin_is_enforced(tmp_path, field, value):
     assert list(store.reports.iterdir()) == []
 
 
-@pytest.mark.parametrize("at_call", range(1, 7))
+@pytest.mark.parametrize("at_call", range(1, 8) if os.name == "posix" else range(1, 7))
 def test_authorization_revocation_never_returns_a_receipt(tmp_path, at_call):
     producer, _, store = configured(tmp_path)
     calls = []
@@ -231,7 +232,7 @@ def test_authorization_revocation_never_returns_a_receipt(tmp_path, at_call):
         producer.produce(SOURCE, authorize=authorize, as_of=AS_OF)
     assert error.value is denied
     assert len(calls) == at_call
-    if at_call < 6:
+    if at_call < (7 if os.name == "posix" else 6):
         assert list(store.reports.iterdir()) == []
     else:
         # The existing store checks authorization again after its immutable write.

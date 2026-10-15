@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling==1.32.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rentgen-diagnostic-pilot"
+version = "0.0.0"
+description = "Research-only evidence-broker and diagnostic policy comparison"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = []
+
+[project.optional-dependencies]
+ready = ["langchain==1.4.6", "langchain-ollama==1.1.0"]
+
+[project.scripts]
+rentgen-diagnostic-pilot = "diagnostic_pilot.run:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["diagnostic_pilot"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"requirements-ready.lock" = "diagnostic_pilot/requirements-ready.lock"

@@ -316,3 +316,55 @@ jobs:
             ${{ steps.stock_scm_paths.outputs.inputs }}/evidence/
           if-no-files-found: warn
           retention-days: 14
+
+  native-editor-workbench:
+    needs: windows
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11.9'
+      - name: Install pinned editor verifier test tools
+        run: python -m pip install -r requirements-test.txt
+      - name: Verify editor archive, provenance and receipt guards
+        run: python -m pytest -q --tb=short tests/integration/test_editor_workbench_archive.py tests/integration/test_editor_workbench_inputs.py
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: verified-core-development
+          path: output/editor-input
+      - name: Prepare owned editor workbench attempt
+        id: editor_paths
+        shell: pwsh
+        run: |
+          $work = Join-Path $env:RUNNER_TEMP ('rg-editor-' + [guid]::NewGuid().ToString('N').Substring(0, 12))
+          if (Test-Path -LiteralPath $work) { throw 'Editor attempt must be new' }
+          "work=$work" >> $env:GITHUB_OUTPUT
+      - name: Qualify installed Companion in real pinned Windows Extension Hosts
+        env:
+          EDITOR_WORKDIR: ${{ steps.editor_paths.outputs.work }}
+          CI_TRIGGER_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          PYTHONUTF8: '1'
+        shell: pwsh
+        run: |
+          $kits = @(Get-ChildItem -LiteralPath output/editor-input/core-kit -Filter 'rentgen-core-*-windows-py311.zip' -File)
+          $vsix = @(Get-ChildItem -LiteralPath output/editor-input -Filter 'rentgen-companion-*-development.vsix' -File)
+          if ($kits.Count -ne 1 -or $vsix.Count -ne 1) { throw 'Expected one exact Core kit and Companion VSIX' }
+          $commit = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python scripts/verification/editor_workbench/run.py --checkout . --kit $kits[0].FullName --build-receipt output/editor-input/core-kit/acceptance.json --vsix $vsix[0].FullName --expected-commit $commit --trigger-head $env:CI_TRIGGER_HEAD --output $env:EDITOR_WORKDIR
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Upload reduced real editor workbench evidence
+        if: always() && steps.editor_paths.outputs.work != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: native-editor-workbench-evidence
+          path: |
+            ${{ steps.editor_paths.outputs.work }}/evidence/acceptance.json
+            ${{ steps.editor_paths.outputs.work }}/evidence/runtime-binding.json
+            ${{ steps.editor_paths.outputs.work }}/evidence/supervisor-*.json
+          if-no-files-found: warn
+          retention-days: 14

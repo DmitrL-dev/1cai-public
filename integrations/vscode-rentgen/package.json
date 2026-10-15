@@ -15,14 +15,20 @@
   },
   "contributes": {
     "views": {"explorer": [
+      {"id": "rentgen.metadata", "name": "Рентген: метаданные"},
       {"id": "rentgen.sources", "name": "Рентген: модули"},
       {"id": "rentgen.drafts", "name": "Рентген: черновики"}
     ]},
     "viewsWelcome": [
+      {"view": "rentgen.metadata", "contents": "Метаданные читаются из выбранного сохранённого снимка. Для этого установленное ядро должно поддерживать контракт навигации.", "when": "!rentgen.metadataAvailable"},
       {"view": "rentgen.sources", "contents": "Откройте подготовленный профиль через launch.ps1. Для чтения проекта требуется доверие к рабочей папке.", "when": "!rentgen.ready"},
       {"view": "rentgen.drafts", "contents": "Сохранённые черновики появятся после подключения профиля Рентгена.", "when": "!rentgen.ready"}
     ],
     "commands": [
+      {"command":"rentgen.refreshMetadata","title":"Рентген: обновить метаданные выбранного снимка","icon":"$(refresh)","enablement":"rentgen.ready && rentgen.metadataAvailable"},
+      {"command":"rentgen.searchMetadata","title":"Рентген: найти объект метаданных","icon":"$(search)","enablement":"rentgen.ready && rentgen.metadataAvailable"},
+      {"command":"rentgen.selectSnapshot","title":"Рентген: открыть точный снимок","icon":"$(history)","enablement":"rentgen.profileLoaded"},
+      {"command":"rentgen.resetWorkbench","title":"Рентген: сбросить рабочий контекст и открыть последний снимок","enablement":"rentgen.profileLoaded"},
       {"command":"rentgen.testDraft","title":"Рентген: выполнить тесты версии","icon":"$(testing-run-icon)","enablement":"rentgen.ready && rentgen.testsAvailable && !rentgen.testsRunning"},
       {"command":"rentgen.testResult","title":"Рентген: результат тестов","icon":"$(history)","enablement":"rentgen.ready && rentgen.testsAvailable && !rentgen.testsRunning"},
       {"command":"rentgen.bslCheck","title":"Рентген: проверить версию BSL","icon":"$(checklist)","enablement":"rentgen.ready && rentgen.bslAvailable && !rentgen.bslRunning"},
@@ -49,6 +55,9 @@
       {"command": "rentgen.repairSource", "when": "false"},
       {"command": "rentgen.platformCheck", "when": "false"}
     ], "view/title": [
+      {"command":"rentgen.searchMetadata","when":"view == rentgen.metadata && rentgen.ready && rentgen.metadataAvailable","group":"navigation@1"},
+      {"command":"rentgen.refreshMetadata","when":"view == rentgen.metadata && rentgen.ready && rentgen.metadataAvailable","group":"navigation@2"},
+      {"command":"rentgen.selectSnapshot","when":"view == rentgen.sources && rentgen.profileLoaded","group":"navigation@0"},
       {"command":"rentgen.testResult","when":"view == rentgen.drafts && rentgen.testsAvailable","group":"navigation@7"},
       {"command":"rentgen.bslResult","when":"view == rentgen.drafts && rentgen.bslAvailable","group":"navigation@6"},
       {"command":"rentgen.editResult","when":"view == rentgen.drafts && rentgen.editAvailable","group":"navigation@5"},
@@ -60,6 +69,7 @@
       {"command": "rentgen.cancelRepair", "when": "view == rentgen.sources && rentgen.repairRunning", "group": "navigation@3"},
       {"command": "rentgen.platformResult", "when": "view == rentgen.drafts && rentgen.platformAvailable", "group": "navigation@4"}
     ], "view/item/context": [
+      {"command":"rentgen.editSource","when":"view == rentgen.metadata && viewItem == rentgen.source && rentgen.editAvailable","group":"inline@2"},
       {"command":"rentgen.testDraft","when":"view == rentgen.drafts && (viewItem == draft || viewItem == version) && rentgen.testsAvailable","group":"inline@4"},
       {"command":"rentgen.bslCheck","when":"view == rentgen.drafts && (viewItem == draft || viewItem == version) && rentgen.bslAvailable","group":"inline@3"},
       {"command":"rentgen.editSource","when":"view == rentgen.sources && viewItem == rentgen.source && rentgen.editAvailable","group":"inline@2"},

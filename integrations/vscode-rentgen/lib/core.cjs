@@ -22,8 +22,8 @@ function freeze(value) {
 }
 function snapshot(value, project) {
   requireValue(value?.project_id === project, 'PROJECT_MISMATCH');
-  requireValue(hash.test(value.snapshot_id) && hash.test(value.manifest_hash));
-  return { project_id: project, snapshot_id: value.snapshot_id, manifest_hash: value.manifest_hash };
+  requireValue(hash.test(value.snapshot_id) && value.manifest_hash === value.snapshot_id);
+  return Object.freeze({ project_id: project, snapshot_id: value.snapshot_id, manifest_hash: value.manifest_hash });
 }
 function sourceRef(value, project) {
   const selected = snapshot(value?.snapshot, project);
@@ -33,7 +33,7 @@ function sourceRef(value, project) {
     !controls.test(value.relative_path) && !value.relative_path.includes('\\') &&
     value.relative_path.split('/').every(part => part && part !== '.' && part !== '..'));
   requireValue(hash.test(value.raw_sha256));
-  return { snapshot: selected, layer_id: value.layer_id, relative_path: value.relative_path, raw_sha256: value.raw_sha256 };
+  return Object.freeze({ snapshot: selected, layer_id: value.layer_id, relative_path: value.relative_path, raw_sha256: value.raw_sha256 });
 }
 function sameRef(left, right, project) {
   requireValue(JSON.stringify(sourceRef(left, project)) === JSON.stringify(sourceRef(right, project)), 'SOURCE_REF_MISMATCH');
@@ -83,17 +83,68 @@ function profileConfig(value) {
   requireValue(Number.isInteger(context_tokens) && [8192, 16384, 32768].includes(context_tokens), 'INVALID_EDITOR_PROFILE');
   return Object.freeze({ schema: 1, core_version: value.core_version, python: value.python, registry: value.registry, project_id: value.project_id, context_tokens });
 }
+function metadataEnvelope(value, selected, {objectRef = null, limit = 100, layer = null} = {}) {
+  const valid = condition => requireValue(condition, 'INVALID_METADATA_RESPONSE');
+  const text = (value, maximum, nullable = false) => valid(nullable && value === null ||
+    typeof value === 'string' && value.length <= maximum && !controls.test(value));
+  valid(value?.schema === 1 && value.identity_status === 'source_path_only');
+  valid(JSON.stringify(snapshot(value.snapshot, selected.project_id)) === JSON.stringify(selected));
+  valid(typeof value.truncated === 'boolean'); text(value.completeness, 128);
+  valid(Array.isArray(value.parser_profiles) && value.parser_profiles.length <= 8);
+  value.parser_profiles.forEach(item => text(item, 128));
+  valid(Array.isArray(value.layers) && value.layers.length <= 64);
+  const layers = new Set();
+  for (const item of value.layers) {
+    text(item.layer_id, 64); valid(!layers.has(item.layer_id)); layers.add(item.layer_id);
+    valid(['supported', 'unsupported'].includes(item.status)); text(item.completeness, 128);
+    if (layer !== null) valid(item.layer_id === layer);
+  }
+  valid(Array.isArray(value.source_refs) && value.source_refs.length <= 10000);
+  const refKey = ref => {
+    const normalized = sourceRef(ref, selected.project_id);
+    valid(JSON.stringify(normalized.snapshot) === JSON.stringify(selected) && layers.has(normalized.layer_id));
+    return JSON.stringify(normalized);
+  };
+  const verified = new Set(value.source_refs.map(refKey));
+  const reference = ref => valid(verified.has(refKey(ref)));
+  const preview = item => {
+    valid(item && typeof item === 'object'); reference(item.source_ref);
+    text(item.type, 128); text(item.name, 1024, true); text(item.synonym, 4096, true);
+    valid(item.uuid_status === 'unverified'); text(item.observed_uuid, 128, true);
+  };
+  if (Object.hasOwn(value, 'objects')) {
+    valid(Array.isArray(value.objects) && value.objects.length <= limit &&
+      value.returned === value.objects.length && Number.isSafeInteger(value.total_matches) &&
+      value.total_matches >= value.returned && value.total_matches <= 20000 &&
+      value.truncated === (value.total_matches > value.returned));
+    value.objects.forEach(preview);
+  }
+  if (objectRef) {
+    preview(value.object); sameRef(value.object.source_ref, objectRef, selected.project_id);
+    const modules = value.object.modules;
+    valid(Array.isArray(modules?.items) && modules.items.length <= 200 &&
+      Number.isSafeInteger(modules.total) && modules.total >= modules.items.length &&
+      modules.total <= 20000 && modules.truncated === (modules.total > modules.items.length));
+    for (const item of modules.items) {
+      reference(item.source_ref); valid(item.source_ref.layer_id === objectRef.layer_id &&
+        item.status === 'verified_bytes' && Number.isSafeInteger(item.size_bytes) &&
+        item.size_bytes >= 0 && item.size_bytes <= 16 * 1024 * 1024);
+    }
+  }
+  return value;
+}
 function createClient(config, { execute, trusted = () => true }) {
   config = profileConfig(config);
   let tail = Promise.resolve(), pending = 0, disposed = false;
   const trust = () => requireValue(!disposed && trusted(), 'TRUST_REQUIRED');
-  async function call(command, args = []) {
+  async function call(command, args = [], scoped = true) {
     trust();
     requireValue(pending < 8, 'CLI_QUEUE_FULL');
     pending++;
     const request = tail.then(async () => {
       trust();
-      const result = await execute(config.python, ['-I', '-m', 'rentgen_core', command, '--registry', config.registry, '--project', config.project_id, ...args]);
+      const result = await execute(config.python, ['-I', '-m', 'rentgen_core', command,
+        ...(scoped ? ['--registry', config.registry, '--project', config.project_id] : []), ...args]);
       trust();
       requireValue(Buffer.isBuffer(result.stdout) && result.stdout.length <= MAX_OUTPUT, 'CLI_OUTPUT_LIMIT');
       let envelope;
@@ -110,6 +161,18 @@ function createClient(config, { execute, trusted = () => true }) {
   }
   return Object.freeze({
     dispose() { disposed = true; },
+    async navigationCapability() {
+      const value = await call('capabilities', [], false);
+      requireValue(value?.contract_version === 1 && value.platform === 'win32' &&
+        value.scope === 'os-adapter-support', 'INVALID_CAPABILITIES_RESPONSE');
+      const retained = value.capabilities?.['snapshot.retained.read'];
+      requireValue(retained && typeof retained.supported === 'boolean' &&
+        Array.isArray(retained.operations) && retained.operations.length <= 200 &&
+        retained.operations.every(item => typeof item === 'string' && /^[a-z][a-z0-9-]{0,80}$/.test(item)),
+        'INVALID_CAPABILITIES_RESPONSE');
+      return Object.freeze({supported:retained.supported &&
+        ['metadata-summary','metadata-search','metadata-object'].every(name => retained.operations.includes(name))});
+    },
     async head() {
       const value = await call('project-head');
       requireValue(value?.project_id === config.project_id, 'PROJECT_MISMATCH');
@@ -135,6 +198,31 @@ function createClient(config, { execute, trusted = () => true }) {
       ref = sourceRef(ref, config.project_id);
       const value = await call('source-read', ['--snapshot', ref.snapshot.snapshot_id, '--layer='+ref.layer_id, '--path='+ref.relative_path, '--base64']);
       return sourceText(value, ref);
+    },
+    async metadataSummary(selected, {layer = null} = {}) {
+      selected = snapshot(selected, config.project_id);
+      requireValue(layer === null || typeof layer === 'string' && /^[a-z][a-z0-9_-]{0,63}$/.test(layer), 'INVALID_SEARCH');
+      const args = ['--snapshot', selected.snapshot_id];
+      if (layer !== null) args.push('--layer='+layer);
+      return metadataEnvelope(await call('metadata-summary', args), selected, {layer});
+    },
+    async metadataSearch(selected, {query = '', type = null, layer = null} = {}) {
+      selected = snapshot(selected, config.project_id);
+      for (const value of [query, ...(type === null ? [] : [type])]) requireValue(
+        typeof value === 'string' && [...value].length <= 256 && Buffer.byteLength(value) <= 1024 && !controls.test(value), 'INVALID_SEARCH');
+      requireValue(layer === null || typeof layer === 'string' && /^[a-z][a-z0-9_-]{0,63}$/.test(layer), 'INVALID_SEARCH');
+      const args = ['--snapshot', selected.snapshot_id, '--query='+query, '--limit', '100'];
+      if (type !== null) args.push('--type='+type);
+      if (layer !== null) args.push('--layer='+layer);
+      const value = metadataEnvelope(await call('metadata-search', args), selected, {layer});
+      requireValue(Array.isArray(value.objects), 'INVALID_METADATA_RESPONSE');
+      return value;
+    },
+    async metadataObject(selected, ref) {
+      selected = snapshot(selected, config.project_id); ref = sourceRef(ref, config.project_id);
+      requireValue(JSON.stringify(ref.snapshot) === JSON.stringify(selected), 'SOURCE_REF_MISMATCH');
+      return metadataEnvelope(await call('metadata-object', ['--snapshot', selected.snapshot_id,
+        '--layer='+ref.layer_id, '--path='+ref.relative_path]), selected, {objectRef:ref, layer:ref.layer_id});
     },
     async drafts({ status = 'active', after = null } = {}) {
       requireValue(['active', 'archived'].includes(status));

@@ -22,7 +22,7 @@ function pendingTests(status='completed'){
  const receipt={draft_id:'draft',revision:3,proposal_content_id:'a'.repeat(64)};
  const token=handles.add(receipt),started=deferred(),completed=deferred();
  const result={run_id:'run-v3',status,report:{tests:{baseline:{status:'failed'},candidate:{status:'passed'}}},failure:{code:'TEST_NATIVE_FAILED'}};
- let starts=0,reads=0;
+ let starts=0,reads=0,contextVersion=0;
  const vscode={workspace:{isTrusted:true,openTextDocument:async value=>{opened.push(value);return value;}},
   ProgressLocation:{Notification:15},commands:{registerCommand:(name,fn)=>{commands.set(name,fn);return {dispose(){}};},executeCommand:async(...args)=>contexts.push(args)},
   window:{showTextDocument:async value=>shown.push(value),showInformationMessage:value=>messages.push(value),
@@ -30,8 +30,9 @@ function pendingTests(status='completed'){
  const service={running:false,dispose(){},cancel(){},profiles:async()=>[{profile_id:'registered',name:'Own tests',modules:[{tests:['One']}]}],
   start:async(selected,profile)=>{assert.deepEqual(selected,receipt);assert.equal(profile,'registered');starts++;started.resolve();await completed.promise;return result;},
   inspect:async id=>{assert.equal(id,result.run_id);reads++;return result;}};
- createTestsUI(vscode,service,{selectedDraft:selected=>handles.get(selected)},{subscriptions:[]},true);
- return {commands,vscode,handles,token,receipt,result,started,completed,messages,errors,opened,shown,contexts,counts:()=>({starts,reads})};
+ createTestsUI(vscode,service,{selectedDraft:selected=>handles.get(selected),contextVersion:()=>contextVersion},{subscriptions:[]},true);
+ return {commands,vscode,handles,token,receipt,result,started,completed,messages,errors,opened,shown,contexts,
+  changeContext:()=>{contextVersion++;},counts:()=>({starts,reads})};
 }
 
 for(const status of ['completed','incomplete','failed'])test(`an invalidated ${status} test run remains recoverable without automatic presentation`,async()=>{
@@ -90,4 +91,12 @@ test('an unexpected receipt lookup failure propagates and clears the busy state'
  assert.deepEqual(f.contexts.at(-1),['setContext','rentgen.testsRunning',false]);
  assert.equal(await f.commands.get('rentgen.testResult')(f.result.run_id),f.result);
  assert.deepEqual(f.counts(),{starts:1,reads:1});
+});
+test('changing the workbench pin suppresses an automatic test report while its historical receipt remains recoverable',async()=>{
+ const f=pendingTests(),pending=f.commands.get('rentgen.testDraft')(f.token,'registered');
+ await f.started.promise;f.changeContext();f.completed.resolve();assert.equal(await pending,f.result);
+ assert.deepEqual(f.opened,[]);assert.deepEqual(f.shown,[]);assert.deepEqual(f.messages,[]);
+ assert.deepEqual(f.handles.get(f.token),f.receipt);
+ assert.equal(await f.commands.get('rentgen.testResult')(f.result.run_id),f.result);
+ assert.deepEqual(f.counts(),{starts:1,reads:1});assert.equal(f.shown.length,1);
 });

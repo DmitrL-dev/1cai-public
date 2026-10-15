@@ -476,7 +476,10 @@ def test_relative_or_network_locator_is_rejected(tmp_path, locator):
         )
 
 
-@pytest.mark.parametrize("kind", ["hardlink", "symlink", "ancestor", "junction"])
+@pytest.mark.parametrize("kind", [
+    "hardlink", "symlink", "ancestor",
+    pytest.param("junction", marks=pytest.mark.skipif(os.name != "nt", reason="Native Windows junction fixture")),
+])
 def test_links_are_rejected_without_resolving_them(tmp_path, kind):
     target = tmp_path / "target.json"
     target.write_text(json.dumps(payload()), encoding="utf-8")

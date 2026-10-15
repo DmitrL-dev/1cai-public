@@ -102,6 +102,9 @@ def _parser():
         "membership-receipt",
         "capture",
         "source-list",
+        "metadata-summary",
+        "metadata-search",
+        "metadata-object",
         "snapshot-diff",
         "source-read",
         "graph-resolve",
@@ -167,6 +170,15 @@ def _parser():
             command.add_argument("--input-core-sha256", required=True, action=_Once)
             command.add_argument("--query", default="", action=_Once)
             command.add_argument("--limit", type=int, default=50, action=_Once)
+        elif name in {"metadata-summary", "metadata-search", "metadata-object"}:
+            command.add_argument("--snapshot", required=True, action=_Once)
+            command.add_argument("--layer", required=name == "metadata-object", action=_Once)
+            if name == "metadata-search":
+                command.add_argument("--query", default="", action=_Once)
+                command.add_argument("--type", dest="metadata_type", action=_Once)
+                command.add_argument("--limit", type=int, default=100, action=_Once)
+            if name == "metadata-object":
+                command.add_argument("--path", required=True, action=_Once)
         elif name == "metadata-materialize":
             for label in ("base", "current", "upstream"):
                 command.add_argument(
@@ -1215,6 +1227,9 @@ def _execute(args, *, proposal_scope=None):
             "owner-report-list",
             "edt-inventory",
             "edt-inventory-plan",
+            "metadata-summary",
+            "metadata-search",
+            "metadata-object",
         }
         else {"project:admin"}
         if args.command
@@ -1348,6 +1363,34 @@ def _execute(args, *, proposal_scope=None):
             proposal_scope.context = ctx
             proposal_scope.permissions = frozenset(permissions)
         return _proposal_live_command(args, runtime, ctx)
+    if args.command in {"metadata-summary", "metadata-search", "metadata-object"}:
+        from . import project_navigation
+
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = frozenset(permissions)
+        # Resolve an exact selected snapshot, never a replacement current head.
+        runtime = replace(
+            runtime,
+            graph_reader_factory=runtime.graph_reader_factory or _graph_factory(),
+        )
+        selected = runtime.resolve(principal, args.project, args.snapshot)
+        if proposal_scope is not None:
+            proposal_scope.context = selected
+        if args.command == "metadata-summary":
+            value = project_navigation.summary(selected, layer_id=args.layer)
+        elif args.command == "metadata-search":
+            value = project_navigation.search(
+                selected, query=args.query, metadata_type=args.metadata_type,
+                layer_id=args.layer, limit=args.limit,
+            )
+        else:
+            value = project_navigation.object_details(
+                selected, layer_id=args.layer, relative_path=args.path,
+            )
+        return _ProposalCommandResult(
+            value, selected, frozenset(permissions), project_navigation.OUTPUT_LIMIT
+        )
     if args.command.startswith("metadata-"):
         import asyncio
         from .edt_profiles import parse_json

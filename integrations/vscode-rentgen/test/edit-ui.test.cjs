@@ -54,9 +54,24 @@ test('a new unsaved source session is discoverable through existing edit recover
 test('manual source command is contributed to the source tree without requiring a model',()=>{
  const manifest=require('../package.json'),command=manifest.contributes.commands.find(c=>c.command==='rentgen.editSource');
  assert.ok(command);assert.equal(command.enablement,'rentgen.ready && rentgen.editAvailable');
- const menu=manifest.contributes.menus['view/item/context'].find(c=>c.command==='rentgen.editSource');
- assert.match(menu.when,/view == rentgen.sources/);assert.match(menu.when,/viewItem == rentgen.source/);
- assert.equal(menu.when.includes('repair'),false);
+ for(const view of ['rentgen.sources','rentgen.metadata']){
+  const menu=manifest.contributes.menus['view/item/context'].find(c=>c.command==='rentgen.editSource'&&c.when.includes('view == '+view+' '));
+  assert.ok(menu);assert.match(menu.when,/viewItem == rentgen.source/);
+  assert.equal(menu.when.includes('repair'),false);
+ }
+});
+
+test('explicit manual title uses the same minted source and validation without replacing the interactive path',async()=>{
+ const f=fixture(),ref={relative_path:'CommonModules/Module.bsl'};let starts=0,dialogs=0;
+ f.views.selectedSource=token=>{if(token!=='minted-source')throw new Error('UNKNOWN_VIEW_HANDLE');return ref;};
+ f.vscode.window.showInputBox=async()=>{dialogs++;throw new Error('UNEXPECTED_DIALOG');};
+ f.service.start=async(source,title)=>{assert.equal(source,ref);assert.equal(title,'First manual');starts++;return {id:'new',file:'C:\\owned\\module.bsl'};};
+ assert.equal((await f.commands.get('rentgen.editSource')('minted-source',{title:'First manual'})).id,'new');
+ for(const options of [{title:'\n'},{title:'First manual',python:'C:\\other.exe'},null,[]]){
+  await assert.rejects(f.commands.get('rentgen.editSource')('minted-source',options),/INVALID_DRAFT_TITLE/);
+ }
+ await assert.rejects(f.commands.get('rentgen.editSource')('forged',{title:'First manual'}),/UNKNOWN_VIEW_HANDLE/);
+ assert.equal(starts,1);assert.equal(dialogs,0);assert.equal(f.calls.includes('publish'),false);
 });
 
 test('a source handle invalidated during the title dialog cancels before reading a module',async()=>{
@@ -75,6 +90,18 @@ for(const boundary of ['source-read','document-open'])test(`late manual source p
  const pending=f.commands.get('rentgen.editSource')('source');await began.promise;
  f.vscode.window.activeTextEditor={document:{uri:{scheme:'file',fsPath:'C:\\other.bsl'},version:1}};gate.resolve();
  assert.equal((await pending).id,session.id);assert.equal(f.calls.includes('open'),false);assert.equal(f.calls.includes('publish'),false);
+});
+
+for(const alteration of ['new pin','typing','navigation'])test(`preparing an existing draft preserves local work after ${alteration}`,async()=>{
+ const f=fixture(),gate=deferred(),began=deferred(),session=await f.service.open();let contextVersion=0;
+ f.views.contextVersion=()=>contextVersion;
+ f.service.open=async()=>{began.resolve();await gate.promise;return session;};
+ const pending=f.commands.get('rentgen.editDraft')('minted');await began.promise;
+ if(alteration==='new pin')contextVersion++;
+ if(alteration==='typing')changed(f);
+ if(alteration==='navigation')f.vscode.window.activeTextEditor={document:{uri:{scheme:'file',fsPath:'C:\\other.bsl'},version:1}};
+ gate.resolve();assert.equal((await pending).id,session.id);
+ assert.equal(f.calls.includes('open'),false);assert.equal(f.calls.includes('publish'),false);
 });
 
 for(const status of ['saved','unresolved'])test(`recovering a ${status} session reopens the editable working copy without publishing`,async()=>{
@@ -142,7 +169,10 @@ test('the requested diff may take focus and still report the exact stable saved 
  const f=fixture();f.views.openDraft=async(_,current=()=>true)=>{
   assert.equal(current(),true);f.calls.push('diff');
   const candidate={toString:()=> 'rentgen-view://candidate/module.bsl'};
-  f.vscode.window.activeTextEditor={document:{uri:candidate}};return ['original',candidate];
+  f.vscode.window.activeTextEditor={document:{uri:candidate}};
+  assert.equal(current(),false);assert.equal(current([candidate]),true);
+  assert.equal(current([{toString:()=> 'rentgen-view://other/module.bsl'}]),false);
+  return ['original',candidate];
  };
  assert.equal((await f.commands.get('rentgen.saveDraftEdit')()).receipt.revision,3);
  assert.equal(infos(f).length,1);

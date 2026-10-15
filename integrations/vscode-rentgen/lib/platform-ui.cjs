@@ -27,10 +27,12 @@ function createPlatformUI(vscode, service, views, context, enabled) {
     check(); if (busy || service.running) throw new Error('PLATFORM_RUNNING');
     const token = typeof selection === 'string' ? selection : selection?.token;
     const receipt = views.selectedDraft(token);
+    const contextVersion = views.contextVersion?.();
     busy = true;
     // Refresh/new-save invalidation suppresses only automatic presentation;
     // the exact historical result remains available through explicit recovery.
     const current = () => {
+      if (contextVersion !== undefined && views.contextVersion() !== contextVersion) return false;
       try { return isDeepStrictEqual(views.selectedDraft(token), receipt); }
       catch (error) { if (error?.message === 'UNKNOWN_VIEW_HANDLE') return false; throw error; }
     };

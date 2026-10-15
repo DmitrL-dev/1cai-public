@@ -1,0 +1,2140 @@
+[
+  {
+    "expected": {
+      "refuted": [
+        "call_context_unavailable"
+      ],
+      "sufficient_possible": true,
+      "supported": [
+        "method_not_exported"
+      ]
+    },
+    "family": "export_revision_pair",
+    "id": 1,
+    "initial": {
+      "access": "usable",
+      "attempted_checks": [],
+      "budget": {
+        "cost_remaining": 9,
+        "observations_remaining": 3,
+        "rule_applications_remaining": 256
+      },
+      "cancelled": false,
+      "capabilities": [
+        {
+          "check_id": "c01_call_copy",
+          "state": "ready"
+        },
+        {
+          "check_id": "c02_call_flags",
+          "state": "ready"
+        }
+      ],
+      "catalog_version": 1,
+      "facts": [
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 1,
+          "input_id": 1,
+          "predicate": "call_edge",
+          "scope": {
+            "case_id": 1,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "call",
+            "method": 3,
+            "module": 2,
+            "module_kind": "common",
+            "route": "same_context",
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "edge",
+            "value": "static_external_resolved"
+          }
+        }
+      ],
+      "rule_version": 1,
+      "schema_version": 1,
+      "scope": {
+        "case_id": 1,
+        "compatibility": "synthetic_v1",
+        "context_id": 5,
+        "execution": "thin_client",
+        "platform": "synthetic_8_3_27",
+        "revision_id": 1,
+        "session_id": 4,
+        "snapshot_id": 2
+      },
+      "sequence": 1,
+      "target": {
+        "kind": "call",
+        "method": 3,
+        "module": 2,
+        "module_kind": "common",
+        "route": "same_context",
+        "site": 1
+      }
+    },
+    "outcomes": {
+      "c01_call_copy": {
+        "facts": [
+          {
+            "predicate": "compiled_copy_present",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          }
+        ],
+        "status": "observed"
+      },
+      "c02_call_flags": {
+        "facts": [
+          {
+            "predicate": "context_enabled",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          },
+          {
+            "predicate": "server_call_enabled",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          },
+          {
+            "predicate": "exported",
+            "value": {
+              "kind": "bool",
+              "value": false
+            }
+          }
+        ],
+        "status": "observed"
+      }
+    },
+    "pair": "pair_001",
+    "phase": "before",
+    "provenance": {
+      "heldout": false,
+      "license": "MIT",
+      "native_verified": false,
+      "origin": "owned_synthetic_control"
+    }
+  },
+  {
+    "expected": {
+      "refuted": [
+        "call_context_unavailable",
+        "method_not_exported"
+      ],
+      "sufficient_possible": true,
+      "supported": []
+    },
+    "family": "export_revision_pair",
+    "id": 2,
+    "initial": {
+      "access": "usable",
+      "attempted_checks": [],
+      "budget": {
+        "cost_remaining": 9,
+        "observations_remaining": 3,
+        "rule_applications_remaining": 256
+      },
+      "cancelled": false,
+      "capabilities": [
+        {
+          "check_id": "c01_call_copy",
+          "state": "ready"
+        },
+        {
+          "check_id": "c02_call_flags",
+          "state": "ready"
+        }
+      ],
+      "catalog_version": 1,
+      "facts": [
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 1,
+          "input_id": 1,
+          "predicate": "call_edge",
+          "scope": {
+            "case_id": 2,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 2,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "call",
+            "method": 3,
+            "module": 2,
+            "module_kind": "common",
+            "route": "same_context",
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "edge",
+            "value": "static_external_resolved"
+          }
+        }
+      ],
+      "rule_version": 1,
+      "schema_version": 1,
+      "scope": {
+        "case_id": 2,
+        "compatibility": "synthetic_v1",
+        "context_id": 5,
+        "execution": "thin_client",
+        "platform": "synthetic_8_3_27",
+        "revision_id": 2,
+        "session_id": 4,
+        "snapshot_id": 2
+      },
+      "sequence": 1,
+      "target": {
+        "kind": "call",
+        "method": 3,
+        "module": 2,
+        "module_kind": "common",
+        "route": "same_context",
+        "site": 1
+      }
+    },
+    "outcomes": {
+      "c01_call_copy": {
+        "facts": [
+          {
+            "predicate": "compiled_copy_present",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          }
+        ],
+        "status": "observed"
+      },
+      "c02_call_flags": {
+        "facts": [
+          {
+            "predicate": "context_enabled",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          },
+          {
+            "predicate": "server_call_enabled",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          },
+          {
+            "predicate": "exported",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          }
+        ],
+        "status": "observed"
+      }
+    },
+    "pair": "pair_001",
+    "phase": "after",
+    "provenance": {
+      "heldout": false,
+      "license": "MIT",
+      "native_verified": false,
+      "origin": "owned_synthetic_control"
+    }
+  },
+  {
+    "expected": {
+      "refuted": [
+        "method_not_exported"
+      ],
+      "sufficient_possible": true,
+      "supported": [
+        "call_context_unavailable"
+      ]
+    },
+    "family": "context_unavailable",
+    "id": 3,
+    "initial": {
+      "access": "usable",
+      "attempted_checks": [],
+      "budget": {
+        "cost_remaining": 9,
+        "observations_remaining": 3,
+        "rule_applications_remaining": 256
+      },
+      "cancelled": false,
+      "capabilities": [
+        {
+          "check_id": "c01_call_copy",
+          "state": "ready"
+        },
+        {
+          "check_id": "c02_call_flags",
+          "state": "ready"
+        }
+      ],
+      "catalog_version": 1,
+      "facts": [
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 1,
+          "input_id": 1,
+          "predicate": "call_edge",
+          "scope": {
+            "case_id": 3,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "call",
+            "method": 3,
+            "module": 2,
+            "module_kind": "common",
+            "route": "same_context",
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "edge",
+            "value": "static_external_resolved"
+          }
+        }
+      ],
+      "rule_version": 1,
+      "schema_version": 1,
+      "scope": {
+        "case_id": 3,
+        "compatibility": "synthetic_v1",
+        "context_id": 5,
+        "execution": "thin_client",
+        "platform": "synthetic_8_3_27",
+        "revision_id": 1,
+        "session_id": 4,
+        "snapshot_id": 2
+      },
+      "sequence": 1,
+      "target": {
+        "kind": "call",
+        "method": 3,
+        "module": 2,
+        "module_kind": "common",
+        "route": "same_context",
+        "site": 1
+      }
+    },
+    "outcomes": {
+      "c01_call_copy": {
+        "facts": [
+          {
+            "predicate": "compiled_copy_present",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          }
+        ],
+        "status": "observed"
+      },
+      "c02_call_flags": {
+        "facts": [
+          {
+            "predicate": "context_enabled",
+            "value": {
+              "kind": "bool",
+              "value": false
+            }
+          },
+          {
+            "predicate": "server_call_enabled",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          },
+          {
+            "predicate": "exported",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          }
+        ],
+        "status": "observed"
+      }
+    },
+    "pair": "control",
+    "phase": "control",
+    "provenance": {
+      "heldout": false,
+      "license": "MIT",
+      "native_verified": false,
+      "origin": "owned_synthetic_control"
+    }
+  },
+  {
+    "expected": {
+      "refuted": [
+        "receiver_kind_mismatch"
+      ],
+      "sufficient_possible": true,
+      "supported": [
+        "immediate_member_absent"
+      ]
+    },
+    "family": "structure_absent_key",
+    "id": 4,
+    "initial": {
+      "access": "usable",
+      "attempted_checks": [],
+      "budget": {
+        "cost_remaining": 9,
+        "observations_remaining": 3,
+        "rule_applications_remaining": 256
+      },
+      "cancelled": false,
+      "capabilities": [
+        {
+          "check_id": "c10_receiver_kind",
+          "state": "ready"
+        },
+        {
+          "check_id": "c11_receiver_shape",
+          "state": "ready"
+        }
+      ],
+      "catalog_version": 1,
+      "facts": [
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 1,
+          "input_id": 1,
+          "predicate": "receiver_retained",
+          "scope": {
+            "case_id": 4,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "expected_kind": "structure",
+            "kind": "receiver",
+            "member": 3,
+            "receiver": 2,
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "bool",
+            "value": true
+          }
+        }
+      ],
+      "rule_version": 1,
+      "schema_version": 1,
+      "scope": {
+        "case_id": 4,
+        "compatibility": "synthetic_v1",
+        "context_id": 5,
+        "execution": "thin_client",
+        "platform": "synthetic_8_3_27",
+        "revision_id": 1,
+        "session_id": 4,
+        "snapshot_id": 2
+      },
+      "sequence": 1,
+      "target": {
+        "expected_kind": "structure",
+        "kind": "receiver",
+        "member": 3,
+        "receiver": 2,
+        "site": 1
+      }
+    },
+    "outcomes": {
+      "c10_receiver_kind": {
+        "facts": [
+          {
+            "predicate": "receiver_kind",
+            "value": {
+              "kind": "receiver_kind",
+              "value": "structure"
+            }
+          }
+        ],
+        "status": "observed"
+      },
+      "c11_receiver_shape": {
+        "facts": [
+          {
+            "predicate": "member_present",
+            "value": {
+              "kind": "shape",
+              "present": false,
+              "receiver_kind": "structure",
+              "witness": "key_presence"
+            }
+          }
+        ],
+        "status": "observed"
+      }
+    },
+    "pair": "control",
+    "phase": "control",
+    "provenance": {
+      "heldout": false,
+      "license": "MIT",
+      "native_verified": false,
+      "origin": "owned_synthetic_control"
+    }
+  },
+  {
+    "expected": {
+      "refuted": [
+        "receiver_kind_mismatch",
+        "immediate_member_absent"
+      ],
+      "sufficient_possible": true,
+      "supported": []
+    },
+    "family": "structure_key_with_undefined",
+    "id": 5,
+    "initial": {
+      "access": "usable",
+      "attempted_checks": [],
+      "budget": {
+        "cost_remaining": 9,
+        "observations_remaining": 3,
+        "rule_applications_remaining": 256
+      },
+      "cancelled": false,
+      "capabilities": [
+        {
+          "check_id": "c10_receiver_kind",
+          "state": "ready"
+        },
+        {
+          "check_id": "c11_receiver_shape",
+          "state": "ready"
+        }
+      ],
+      "catalog_version": 1,
+      "facts": [
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 1,
+          "input_id": 1,
+          "predicate": "receiver_retained",
+          "scope": {
+            "case_id": 5,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "expected_kind": "structure",
+            "kind": "receiver",
+            "member": 3,
+            "receiver": 2,
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "bool",
+            "value": true
+          }
+        }
+      ],
+      "rule_version": 1,
+      "schema_version": 1,
+      "scope": {
+        "case_id": 5,
+        "compatibility": "synthetic_v1",
+        "context_id": 5,
+        "execution": "thin_client",
+        "platform": "synthetic_8_3_27",
+        "revision_id": 1,
+        "session_id": 4,
+        "snapshot_id": 2
+      },
+      "sequence": 1,
+      "target": {
+        "expected_kind": "structure",
+        "kind": "receiver",
+        "member": 3,
+        "receiver": 2,
+        "site": 1
+      }
+    },
+    "outcomes": {
+      "c10_receiver_kind": {
+        "facts": [
+          {
+            "predicate": "receiver_kind",
+            "value": {
+              "kind": "receiver_kind",
+              "value": "structure"
+            }
+          }
+        ],
+        "status": "observed"
+      },
+      "c11_receiver_shape": {
+        "facts": [
+          {
+            "predicate": "member_present",
+            "value": {
+              "kind": "shape",
+              "present": true,
+              "receiver_kind": "structure",
+              "witness": "key_presence"
+            }
+          }
+        ],
+        "status": "observed"
+      }
+    },
+    "pair": "control",
+    "phase": "control",
+    "provenance": {
+      "heldout": false,
+      "license": "MIT",
+      "native_verified": false,
+      "origin": "owned_synthetic_control"
+    }
+  },
+  {
+    "expected": {
+      "refuted": [
+        "receiver_kind_mismatch"
+      ],
+      "sufficient_possible": false,
+      "supported": []
+    },
+    "family": "unavailable_shape",
+    "id": 6,
+    "initial": {
+      "access": "usable",
+      "attempted_checks": [],
+      "budget": {
+        "cost_remaining": 9,
+        "observations_remaining": 3,
+        "rule_applications_remaining": 256
+      },
+      "cancelled": false,
+      "capabilities": [],
+      "catalog_version": 1,
+      "facts": [
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 1,
+          "input_id": 1,
+          "predicate": "receiver_retained",
+          "scope": {
+            "case_id": 6,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "expected_kind": "structure",
+            "kind": "receiver",
+            "member": 3,
+            "receiver": 2,
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "bool",
+            "value": true
+          }
+        },
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 2,
+          "input_id": 2,
+          "predicate": "receiver_kind",
+          "scope": {
+            "case_id": 6,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "expected_kind": "structure",
+            "kind": "receiver",
+            "member": 3,
+            "receiver": 2,
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "receiver_kind",
+            "value": "structure"
+          }
+        }
+      ],
+      "rule_version": 1,
+      "schema_version": 1,
+      "scope": {
+        "case_id": 6,
+        "compatibility": "synthetic_v1",
+        "context_id": 5,
+        "execution": "thin_client",
+        "platform": "synthetic_8_3_27",
+        "revision_id": 1,
+        "session_id": 4,
+        "snapshot_id": 2
+      },
+      "sequence": 1,
+      "target": {
+        "expected_kind": "structure",
+        "kind": "receiver",
+        "member": 3,
+        "receiver": 2,
+        "site": 1
+      }
+    },
+    "outcomes": {},
+    "pair": "control",
+    "phase": "control",
+    "provenance": {
+      "heldout": false,
+      "license": "MIT",
+      "native_verified": false,
+      "origin": "owned_synthetic_control"
+    }
+  },
+  {
+    "expected": {
+      "refuted": [
+        "method_not_exported"
+      ],
+      "sufficient_possible": true,
+      "supported": [
+        "call_context_unavailable"
+      ]
+    },
+    "family": "two_conflicting_premises",
+    "id": 7,
+    "initial": {
+      "access": "usable",
+      "attempted_checks": [],
+      "budget": {
+        "cost_remaining": 9,
+        "observations_remaining": 3,
+        "rule_applications_remaining": 256
+      },
+      "cancelled": false,
+      "capabilities": [
+        {
+          "check_id": "c01_call_copy",
+          "state": "ready"
+        },
+        {
+          "check_id": "c02_call_flags",
+          "state": "ready"
+        }
+      ],
+      "catalog_version": 1,
+      "facts": [
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 1,
+          "input_id": 1,
+          "predicate": "call_edge",
+          "scope": {
+            "case_id": 7,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "call",
+            "method": 3,
+            "module": 2,
+            "module_kind": "common",
+            "route": "same_context",
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "edge",
+            "value": "static_external_resolved"
+          }
+        },
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 2,
+          "input_id": 2,
+          "predicate": "compiled_copy_present",
+          "scope": {
+            "case_id": 7,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "call",
+            "method": 3,
+            "module": 2,
+            "module_kind": "common",
+            "route": "same_context",
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "bool",
+            "value": true
+          }
+        },
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 3,
+          "input_id": 3,
+          "predicate": "compiled_copy_present",
+          "scope": {
+            "case_id": 7,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "call",
+            "method": 3,
+            "module": 2,
+            "module_kind": "common",
+            "route": "same_context",
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 4,
+          "input_id": 4,
+          "predicate": "context_enabled",
+          "scope": {
+            "case_id": 7,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "call",
+            "method": 3,
+            "module": 2,
+            "module_kind": "common",
+            "route": "same_context",
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "bool",
+            "value": true
+          }
+        },
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 5,
+          "input_id": 5,
+          "predicate": "context_enabled",
+          "scope": {
+            "case_id": 7,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "call",
+            "method": 3,
+            "module": 2,
+            "module_kind": "common",
+            "route": "same_context",
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "bool",
+            "value": false
+          }
+        },
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 6,
+          "input_id": 6,
+          "predicate": "exported",
+          "scope": {
+            "case_id": 7,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "call",
+            "method": 3,
+            "module": 2,
+            "module_kind": "common",
+            "route": "same_context",
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "bool",
+            "value": true
+          }
+        }
+      ],
+      "rule_version": 1,
+      "schema_version": 1,
+      "scope": {
+        "case_id": 7,
+        "compatibility": "synthetic_v1",
+        "context_id": 5,
+        "execution": "thin_client",
+        "platform": "synthetic_8_3_27",
+        "revision_id": 1,
+        "session_id": 4,
+        "snapshot_id": 2
+      },
+      "sequence": 1,
+      "target": {
+        "kind": "call",
+        "method": 3,
+        "module": 2,
+        "module_kind": "common",
+        "route": "same_context",
+        "site": 1
+      }
+    },
+    "outcomes": {
+      "c01_call_copy": {
+        "facts": [
+          {
+            "predicate": "compiled_copy_present",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          }
+        ],
+        "status": "observed"
+      },
+      "c02_call_flags": {
+        "facts": [
+          {
+            "predicate": "context_enabled",
+            "value": {
+              "kind": "bool",
+              "value": false
+            }
+          },
+          {
+            "predicate": "server_call_enabled",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          },
+          {
+            "predicate": "exported",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          }
+        ],
+        "status": "observed"
+      }
+    },
+    "pair": "control",
+    "phase": "control",
+    "provenance": {
+      "heldout": false,
+      "license": "MIT",
+      "native_verified": false,
+      "origin": "owned_synthetic_control"
+    }
+  },
+  {
+    "expected": {
+      "refuted": [],
+      "sufficient_possible": true,
+      "supported": [
+        "source_runtime_mismatch"
+      ]
+    },
+    "family": "source_runtime_mismatch",
+    "id": 8,
+    "initial": {
+      "access": "usable",
+      "attempted_checks": [],
+      "budget": {
+        "cost_remaining": 9,
+        "observations_remaining": 3,
+        "rule_applications_remaining": 256
+      },
+      "cancelled": false,
+      "capabilities": [
+        {
+          "check_id": "c11_receiver_shape",
+          "state": "ready"
+        },
+        {
+          "check_id": "c20_source_presence",
+          "state": "ready"
+        },
+        {
+          "check_id": "c21_object_correlation",
+          "state": "ready"
+        }
+      ],
+      "catalog_version": 1,
+      "facts": [
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 1,
+          "input_id": 1,
+          "predicate": "receiver_retained",
+          "scope": {
+            "case_id": 8,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "mismatch",
+            "member": 3,
+            "receiver": 2,
+            "runtime_type": 5,
+            "site": 1,
+            "source_type": 4
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "bool",
+            "value": true
+          }
+        },
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 2,
+          "input_id": 2,
+          "predicate": "receiver_kind",
+          "scope": {
+            "case_id": 8,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "mismatch",
+            "member": 3,
+            "receiver": 2,
+            "runtime_type": 5,
+            "site": 1,
+            "source_type": 4
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "receiver_kind",
+            "value": "application_object"
+          }
+        }
+      ],
+      "rule_version": 1,
+      "schema_version": 1,
+      "scope": {
+        "case_id": 8,
+        "compatibility": "synthetic_v1",
+        "context_id": 5,
+        "execution": "thin_client",
+        "platform": "synthetic_8_3_27",
+        "revision_id": 1,
+        "session_id": 4,
+        "snapshot_id": 2
+      },
+      "sequence": 1,
+      "target": {
+        "kind": "mismatch",
+        "member": 3,
+        "receiver": 2,
+        "runtime_type": 5,
+        "site": 1,
+        "source_type": 4
+      }
+    },
+    "outcomes": {
+      "c11_receiver_shape": {
+        "facts": [
+          {
+            "predicate": "member_present",
+            "value": {
+              "kind": "shape",
+              "present": false,
+              "receiver_kind": "application_object",
+              "witness": "session_metadata"
+            }
+          }
+        ],
+        "status": "observed"
+      },
+      "c20_source_presence": {
+        "facts": [
+          {
+            "predicate": "source_member",
+            "value": {
+              "kind": "source_presence",
+              "value": "present"
+            }
+          }
+        ],
+        "status": "observed"
+      },
+      "c21_object_correlation": {
+        "facts": [
+          {
+            "predicate": "object_correlation",
+            "value": {
+              "kind": "correlation",
+              "value": "same_attested"
+            }
+          }
+        ],
+        "status": "observed"
+      }
+    },
+    "pair": "control",
+    "phase": "control",
+    "provenance": {
+      "heldout": false,
+      "license": "MIT",
+      "native_verified": false,
+      "origin": "owned_synthetic_control"
+    }
+  },
+  {
+    "expected": {
+      "refuted": [],
+      "sufficient_possible": false,
+      "supported": []
+    },
+    "family": "unverified_object_correlation",
+    "id": 9,
+    "initial": {
+      "access": "usable",
+      "attempted_checks": [],
+      "budget": {
+        "cost_remaining": 9,
+        "observations_remaining": 3,
+        "rule_applications_remaining": 256
+      },
+      "cancelled": false,
+      "capabilities": [],
+      "catalog_version": 1,
+      "facts": [
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 1,
+          "input_id": 1,
+          "predicate": "receiver_retained",
+          "scope": {
+            "case_id": 9,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "mismatch",
+            "member": 3,
+            "receiver": 2,
+            "runtime_type": 5,
+            "site": 1,
+            "source_type": 4
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "bool",
+            "value": true
+          }
+        },
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 2,
+          "input_id": 2,
+          "predicate": "receiver_kind",
+          "scope": {
+            "case_id": 9,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "mismatch",
+            "member": 3,
+            "receiver": 2,
+            "runtime_type": 5,
+            "site": 1,
+            "source_type": 4
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "receiver_kind",
+            "value": "application_object"
+          }
+        },
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 3,
+          "input_id": 3,
+          "predicate": "member_present",
+          "scope": {
+            "case_id": 9,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "mismatch",
+            "member": 3,
+            "receiver": 2,
+            "runtime_type": 5,
+            "site": 1,
+            "source_type": 4
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "shape",
+            "present": false,
+            "receiver_kind": "application_object",
+            "witness": "session_metadata"
+          }
+        },
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 4,
+          "input_id": 4,
+          "predicate": "source_member",
+          "scope": {
+            "case_id": 9,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "mismatch",
+            "member": 3,
+            "receiver": 2,
+            "runtime_type": 5,
+            "site": 1,
+            "source_type": 4
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "source_presence",
+            "value": "present"
+          }
+        },
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 5,
+          "input_id": 5,
+          "predicate": "object_correlation",
+          "scope": {
+            "case_id": 9,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "mismatch",
+            "member": 3,
+            "receiver": 2,
+            "runtime_type": 5,
+            "site": 1,
+            "source_type": 4
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "correlation",
+            "value": "unverified"
+          }
+        }
+      ],
+      "rule_version": 1,
+      "schema_version": 1,
+      "scope": {
+        "case_id": 9,
+        "compatibility": "synthetic_v1",
+        "context_id": 5,
+        "execution": "thin_client",
+        "platform": "synthetic_8_3_27",
+        "revision_id": 1,
+        "session_id": 4,
+        "snapshot_id": 2
+      },
+      "sequence": 1,
+      "target": {
+        "kind": "mismatch",
+        "member": 3,
+        "receiver": 2,
+        "runtime_type": 5,
+        "site": 1,
+        "source_type": 4
+      }
+    },
+    "outcomes": {},
+    "pair": "control",
+    "phase": "control",
+    "provenance": {
+      "heldout": false,
+      "license": "MIT",
+      "native_verified": false,
+      "origin": "owned_synthetic_control"
+    }
+  },
+  {
+    "expected": {
+      "refuted": [],
+      "sufficient_possible": false,
+      "supported": []
+    },
+    "family": "foreign_revision",
+    "id": 10,
+    "initial": {
+      "access": "usable",
+      "attempted_checks": [],
+      "budget": {
+        "cost_remaining": 9,
+        "observations_remaining": 3,
+        "rule_applications_remaining": 256
+      },
+      "cancelled": false,
+      "capabilities": [],
+      "catalog_version": 1,
+      "facts": [
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 1,
+          "input_id": 1,
+          "predicate": "call_edge",
+          "scope": {
+            "case_id": 10,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 2,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "call",
+            "method": 3,
+            "module": 2,
+            "module_kind": "common",
+            "route": "same_context",
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "edge",
+            "value": "static_external_resolved"
+          }
+        },
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 2,
+          "input_id": 2,
+          "predicate": "exported",
+          "scope": {
+            "case_id": 10,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "call",
+            "method": 3,
+            "module": 2,
+            "module_kind": "common",
+            "route": "same_context",
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "bool",
+            "value": false
+          }
+        }
+      ],
+      "rule_version": 1,
+      "schema_version": 1,
+      "scope": {
+        "case_id": 10,
+        "compatibility": "synthetic_v1",
+        "context_id": 5,
+        "execution": "thin_client",
+        "platform": "synthetic_8_3_27",
+        "revision_id": 2,
+        "session_id": 4,
+        "snapshot_id": 2
+      },
+      "sequence": 1,
+      "target": {
+        "kind": "call",
+        "method": 3,
+        "module": 2,
+        "module_kind": "common",
+        "route": "same_context",
+        "site": 1
+      }
+    },
+    "outcomes": {
+      "c01_call_copy": {
+        "facts": [
+          {
+            "predicate": "compiled_copy_present",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          }
+        ],
+        "status": "observed"
+      },
+      "c02_call_flags": {
+        "facts": [
+          {
+            "predicate": "context_enabled",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          },
+          {
+            "predicate": "server_call_enabled",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          },
+          {
+            "predicate": "exported",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          }
+        ],
+        "status": "observed"
+      }
+    },
+    "pair": "control",
+    "phase": "control",
+    "provenance": {
+      "heldout": false,
+      "license": "MIT",
+      "native_verified": false,
+      "origin": "owned_synthetic_control"
+    }
+  },
+  {
+    "expected": {
+      "refuted": [],
+      "sufficient_possible": false,
+      "supported": []
+    },
+    "family": "timeout_is_not_false",
+    "id": 11,
+    "initial": {
+      "access": "usable",
+      "attempted_checks": [],
+      "budget": {
+        "cost_remaining": 9,
+        "observations_remaining": 3,
+        "rule_applications_remaining": 256
+      },
+      "cancelled": false,
+      "capabilities": [
+        {
+          "check_id": "c01_call_copy",
+          "state": "ready"
+        },
+        {
+          "check_id": "c02_call_flags",
+          "state": "ready"
+        }
+      ],
+      "catalog_version": 1,
+      "facts": [
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 1,
+          "input_id": 1,
+          "predicate": "call_edge",
+          "scope": {
+            "case_id": 11,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "call",
+            "method": 3,
+            "module": 2,
+            "module_kind": "common",
+            "route": "same_context",
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "edge",
+            "value": "static_external_resolved"
+          }
+        }
+      ],
+      "rule_version": 1,
+      "schema_version": 1,
+      "scope": {
+        "case_id": 11,
+        "compatibility": "synthetic_v1",
+        "context_id": 5,
+        "execution": "thin_client",
+        "platform": "synthetic_8_3_27",
+        "revision_id": 1,
+        "session_id": 4,
+        "snapshot_id": 2
+      },
+      "sequence": 1,
+      "target": {
+        "kind": "call",
+        "method": 3,
+        "module": 2,
+        "module_kind": "common",
+        "route": "same_context",
+        "site": 1
+      }
+    },
+    "outcomes": {
+      "c01_call_copy": {
+        "facts": [
+          {
+            "predicate": "compiled_copy_present",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          }
+        ],
+        "status": "observed"
+      },
+      "c02_call_flags": {
+        "facts": [],
+        "status": "timeout"
+      }
+    },
+    "pair": "control",
+    "phase": "control",
+    "provenance": {
+      "heldout": false,
+      "license": "MIT",
+      "native_verified": false,
+      "origin": "owned_synthetic_control"
+    }
+  },
+  {
+    "expected": {
+      "refuted": [],
+      "sufficient_possible": false,
+      "supported": [
+        "method_not_exported"
+      ]
+    },
+    "family": "pending_consent",
+    "id": 12,
+    "initial": {
+      "access": "usable",
+      "attempted_checks": [],
+      "budget": {
+        "cost_remaining": 9,
+        "observations_remaining": 3,
+        "rule_applications_remaining": 256
+      },
+      "cancelled": false,
+      "capabilities": [
+        {
+          "check_id": "c01_call_copy",
+          "state": "ready"
+        },
+        {
+          "check_id": "c02_call_flags",
+          "state": "consent_required"
+        }
+      ],
+      "catalog_version": 1,
+      "facts": [
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 1,
+          "input_id": 1,
+          "predicate": "call_edge",
+          "scope": {
+            "case_id": 12,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "call",
+            "method": 3,
+            "module": 2,
+            "module_kind": "common",
+            "route": "same_context",
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "edge",
+            "value": "static_external_resolved"
+          }
+        }
+      ],
+      "rule_version": 1,
+      "schema_version": 1,
+      "scope": {
+        "case_id": 12,
+        "compatibility": "synthetic_v1",
+        "context_id": 5,
+        "execution": "thin_client",
+        "platform": "synthetic_8_3_27",
+        "revision_id": 1,
+        "session_id": 4,
+        "snapshot_id": 2
+      },
+      "sequence": 1,
+      "target": {
+        "kind": "call",
+        "method": 3,
+        "module": 2,
+        "module_kind": "common",
+        "route": "same_context",
+        "site": 1
+      }
+    },
+    "outcomes": {
+      "c01_call_copy": {
+        "facts": [
+          {
+            "predicate": "compiled_copy_present",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          }
+        ],
+        "status": "observed"
+      },
+      "c02_call_flags": {
+        "facts": [
+          {
+            "predicate": "context_enabled",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          },
+          {
+            "predicate": "server_call_enabled",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          },
+          {
+            "predicate": "exported",
+            "value": {
+              "kind": "bool",
+              "value": false
+            }
+          }
+        ],
+        "status": "observed"
+      }
+    },
+    "pair": "control",
+    "phase": "control",
+    "provenance": {
+      "heldout": false,
+      "license": "MIT",
+      "native_verified": false,
+      "origin": "owned_synthetic_control"
+    }
+  },
+  {
+    "expected": {
+      "refuted": [],
+      "sufficient_possible": false,
+      "supported": []
+    },
+    "family": "unsupported_form",
+    "id": 13,
+    "initial": {
+      "access": "usable",
+      "attempted_checks": [],
+      "budget": {
+        "cost_remaining": 9,
+        "observations_remaining": 3,
+        "rule_applications_remaining": 256
+      },
+      "cancelled": false,
+      "capabilities": [
+        {
+          "check_id": "c01_call_copy",
+          "state": "ready"
+        },
+        {
+          "check_id": "c02_call_flags",
+          "state": "ready"
+        }
+      ],
+      "catalog_version": 1,
+      "facts": [
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 1,
+          "input_id": 1,
+          "predicate": "call_edge",
+          "scope": {
+            "case_id": 13,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "call",
+            "method": 3,
+            "module": 2,
+            "module_kind": "form",
+            "route": "same_context",
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "edge",
+            "value": "static_external_resolved"
+          }
+        }
+      ],
+      "rule_version": 1,
+      "schema_version": 1,
+      "scope": {
+        "case_id": 13,
+        "compatibility": "synthetic_v1",
+        "context_id": 5,
+        "execution": "thin_client",
+        "platform": "synthetic_8_3_27",
+        "revision_id": 1,
+        "session_id": 4,
+        "snapshot_id": 2
+      },
+      "sequence": 1,
+      "target": {
+        "kind": "call",
+        "method": 3,
+        "module": 2,
+        "module_kind": "form",
+        "route": "same_context",
+        "site": 1
+      }
+    },
+    "outcomes": {},
+    "pair": "control",
+    "phase": "control",
+    "provenance": {
+      "heldout": false,
+      "license": "MIT",
+      "native_verified": false,
+      "origin": "owned_synthetic_control"
+    }
+  },
+  {
+    "expected": {
+      "refuted": [],
+      "sufficient_possible": true,
+      "supported": [
+        "call_context_unavailable",
+        "method_not_exported"
+      ]
+    },
+    "family": "coexisting_findings",
+    "id": 14,
+    "initial": {
+      "access": "usable",
+      "attempted_checks": [],
+      "budget": {
+        "cost_remaining": 9,
+        "observations_remaining": 3,
+        "rule_applications_remaining": 256
+      },
+      "cancelled": false,
+      "capabilities": [
+        {
+          "check_id": "c01_call_copy",
+          "state": "ready"
+        },
+        {
+          "check_id": "c02_call_flags",
+          "state": "ready"
+        }
+      ],
+      "catalog_version": 1,
+      "facts": [
+        {
+          "adapter": "synthetic_v1",
+          "adapter_version": 1,
+          "check_id": null,
+          "id": 1,
+          "input_id": 1,
+          "predicate": "call_edge",
+          "scope": {
+            "case_id": 14,
+            "compatibility": "synthetic_v1",
+            "context_id": 5,
+            "execution": "thin_client",
+            "platform": "synthetic_8_3_27",
+            "revision_id": 1,
+            "session_id": 4,
+            "snapshot_id": 2
+          },
+          "sequence": 1,
+          "state": "observed",
+          "supersedes": [],
+          "target": {
+            "kind": "call",
+            "method": 3,
+            "module": 2,
+            "module_kind": "common",
+            "route": "same_context",
+            "site": 1
+          },
+          "valid_until": 65535,
+          "value": {
+            "kind": "edge",
+            "value": "static_external_resolved"
+          }
+        }
+      ],
+      "rule_version": 1,
+      "schema_version": 1,
+      "scope": {
+        "case_id": 14,
+        "compatibility": "synthetic_v1",
+        "context_id": 5,
+        "execution": "thin_client",
+        "platform": "synthetic_8_3_27",
+        "revision_id": 1,
+        "session_id": 4,
+        "snapshot_id": 2
+      },
+      "sequence": 1,
+      "target": {
+        "kind": "call",
+        "method": 3,
+        "module": 2,
+        "module_kind": "common",
+        "route": "same_context",
+        "site": 1
+      }
+    },
+    "outcomes": {
+      "c01_call_copy": {
+        "facts": [
+          {
+            "predicate": "compiled_copy_present",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          }
+        ],
+        "status": "observed"
+      },
+      "c02_call_flags": {
+        "facts": [
+          {
+            "predicate": "context_enabled",
+            "value": {
+              "kind": "bool",
+              "value": false
+            }
+          },
+          {
+            "predicate": "server_call_enabled",
+            "value": {
+              "kind": "bool",
+              "value": true
+            }
+          },
+          {
+            "predicate": "exported",
+            "value": {
+              "kind": "bool",
+              "value": false
+            }
+          }
+        ],
+        "status": "observed"
+      }
+    },
+    "pair": "control",
+    "phase": "control",
+    "provenance": {
+      "heldout": false,
+      "license": "MIT",
+      "native_verified": false,
+      "origin": "owned_synthetic_control"
+    }
+  }
+]
