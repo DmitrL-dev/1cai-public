@@ -15,9 +15,14 @@
 
 ## Границы и проверки
 
-- Продуктовый комплект: Windows x64 / CPython 3.11. Linux state/ZIP/GUI —
-  отдельный экспериментальный маршрут, принимаемый на GNU/Linux x86_64.
-  Наличие pure-Python wheel не означает поддержку всех команд или macOS.
+- Продуктовый комплект: Windows x64 / CPython 3.11. Linux state/ZIP/GUI и
+  отдельно проверенный [PR #102 source capture/graph/history](docs/product/evidence/development-ci-366db69-20261016.json) —
+  ограниченные экспериментальные маршруты GNU/Linux x86_64, без нового выпуска.
+  [Offline SDK-кандидат](scripts/release/OWNED-LINUX-KIT.md) требует отдельной
+  проверенной `acceptance.json` с привязкой к точным source и bytes; source SDK
+  tests и installed CLI её не заменяют. Точные границы —
+  [PORTABLE-CORE](docs/product/PORTABLE-CORE.md). Наличие pure-Python wheel
+  не означает поддержку всех команд или macOS.
 - Python: `python -m pytest -q <relevant tests>`; полный Windows suite и
   installed-kit/SCM проверки выполняет `.github/workflows/core-ci.yml`.
 - Companion: `node --test integrations/vscode-rentgen/test/*.test.cjs

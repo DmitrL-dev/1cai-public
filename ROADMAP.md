@@ -6,9 +6,14 @@
 Workbench, POSIX reader/LiveTree и diagnostic pilot объединены в main
 `413cc65`; [CI этого SHA](docs/product/evidence/development-ci-413cc65-20261016.json)
 принял ограниченный installed workbench в двух настоящих Windows Extension Hosts.
-Следующим цельным блоком готовятся Linux/amd64 capture → publication → source/graph
-reads через CLI/MCP. [Его scope и границы](docs/product/PORTABLE-CORE.md#следующий-блок-linux-capture-и-чтение-снимков)
-пока требуют actual Linux и installed-приёмки; новый выпуск не заявлен.
+Ограниченный Linux/amd64 capture → publication → source/graph/history
+[проверен на PR #102, HEAD `366db69`](docs/product/evidence/development-ci-366db69-20261016.json):
+actual Linux и installed CLI, отдельно source SDK MCP. Main `2e2dd4f` содержит
+то же дерево; его fresh push CI — отдельная проверка. [Scope](docs/product/PORTABLE-CORE.md#linux-capture-и-чтение-снимков)
+не включает новый offline SDK kit: его actual приёмка требует отдельной
+проверенной `acceptance.json` для точных source и bytes.
+Следующий delivery-блок — этот [кандидат](scripts/release/OWNED-LINUX-KIT.md);
+новый выпуск и полный B07 не объявлены.
 Лицензированного стенда 1С/EDT пока нет: native-gates открыты,
 реализация и обычный CI продолжаются.
 
@@ -133,12 +138,14 @@ profile, project/state reads, draft history/receipt и byte/JSON planners. По�
 
 ### Затем: чтение сохранённых снимков
 
-В следующем блоке исходников POSIX reader связан с новым Linux/amd64 capture:
-private bootstrap, копирование источников, фиксированный scanner, проверенный
-SQLite graph, короткий publication CAS и чтение истории. Целевой срез — новый
-проект с default base layer; metadata/drafts/diff/native/live и macOS закрыты.
-Приёмка на настоящем Linux и из установленного wheel ещё нужна. Это часть B07,
-не закрытие всего этапа и не изменение опубликованного dev19.
+На [PR #102, HEAD `366db69`](docs/product/evidence/development-ci-366db69-20261016.json)
+принят ограниченный Linux/amd64 маршрут: private bootstrap, копирование источников,
+фиксированный scanner, SQLite graph, publication CAS и исторические чтения.
+Actual Linux/source SDK tests и installed CLI проверены отдельно; они не
+квалифицируют offline installed SDK. Срез — новый private project/default base layer;
+metadata/drafts/diff/native/live и macOS закрыты. Это часть B07, без закрытия
+всего этапа и без изменения опубликованного dev19. Последующие bytes и main push
+CI требуют своих точных проверок.
 
 Отделить интерфейс безопасного чтения от Windows-реализации. Для Linux и macOS
 принимать отдельные адаптеры чтения принадлежащих хранилищу снимков: ограничения

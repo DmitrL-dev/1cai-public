@@ -4,7 +4,7 @@
 [Единый план и реестр](FULL-FINAL-PLAN.md) сохраняет 127 требований и все
 24 сквозных IDE-сценария.
 
-## Проверенная разработка и следующий блок
+## Проверенная разработка и следующий offline-блок
 
 PR #101 объединён в main одним squash-коммитом
 `413cc65c177a46a1087c641148c7df3f9a616934`, дерево
@@ -33,15 +33,40 @@ PR #101 объединён в main одним squash-коммитом
 и [inventory failure `553e1fa`](evidence/development-ci-553e1fa-20261015.json)
 сохранены с прежними причинами и scope; успешный новый запуск их не переписывает.
 
-Следующий совместный [Linux/amd64 capture блок](PORTABLE-CORE.md#следующий-блок-linux-capture-и-чтение-снимков)
-реализуется в исходниках: private bootstrap → verified copied sources → fixed Go
-scanner → SQLite graph → complete generation → короткий catalog/head/receipt CAS,
-затем fresh CLI/MCP source/graph reads и история. Actual Linux и installed-приёмка
-этого нового блока ещё не завершены. Его локальные POSIX/SQLite и отрицательные
-контроли на macOS не являются Linux CI. Scope ограничен новым private project,
-default base layer и source/graph; metadata/drafts/diff/native/live и macOS закрыты.
-Default capture limits — 64 МиБ всех источников, 16 МиБ на файл, 4096 записей;
-они не подтверждают полный B07 или максимумы внутренних adapters.
+[PR #102, HEAD `366db694c8ca46f8a643860fa819cfc65597d8da`](evidence/development-ci-366db69-20261016.json)
+имеет 13 успешных выполненных checks; PR-only Pages deploy штатно пропущен.
+Linux Python 3.11/3.12: по **4441 passed / 975 skipped**, без failures/errors;
+44 actual Linux cases, включая 2 source SDK MCP cases прошли в каждой lane.
+Installed CLI из проверенного wheel выполнил по 45 свежих вызовов: 42 success,
+3 ожидаемых отказа, два capture, source/graph/history и receipt replay.
+Windows regression: **4376 passed / 1039 skipped + 51 passed subtests**, Node 585;
+editor first/restart и GUI 43/963/98 также проверены в scope квитанции.
+
+PR слит squash в main `2e2dd4f1b34057fa58d9810f24781ce706a47f19`;
+его дерево `32454b3da4a1fb6cbfc373a2b0c225bbb657bcd1` совпадает с проверенным.
+Это PR source qualification: собственные fresh main push runs — отдельная проверка,
+не результат этой записи. [Capture scope](PORTABLE-CORE.md#linux-capture-и-чтение-снимков):
+GNU/Linux amd64, новый private project/default base layer и source/graph;
+metadata/drafts/diff/native/live/macOS закрыты. Default limits — 64 МиБ total,
+16 МиБ file, 4096 entries; это не полный B07 или максимумы внутренних adapters.
+Source SDK tests и installed CLI не подтверждают будущий offline installed SDK.
+Опубликованная пара и full-product readiness не изменились.
+
+Отдельно подготовлен source-кандидат [Linux CLI/MCP offline-комплекта](../../scripts/release/OWNED-LINUX-KIT.md),
+профиль `owned-linux-cli-mcp-py311-x86_64-v1`: **CPython 3.11.15 / GNU/Linux x86_64**,
+glibc ≥ 2.34, kernel ≥ 5.9. Exporter связывает точные исходники, Core wheel,
+Go scanner, Rust helper, лицензии и [29 закреплённых SDK wheels](../../requirements/locks/LINUX-MCP-LOCK.md).
+Реализована отдельная проверка извлечённого комплекта: offline install, `pip check`,
+installed CLI и настоящий SDK stdio capture/read/history/replay/cancellation.
+Результат actual offline/SDK-приёмки определяет только отдельная проверенная
+`acceptance.json` с точными source/bytes bindings по контракту комплекта.
+[Первый CI HEAD `5f7522b`](evidence/development-ci-5f7522b-20261016.json) завершился
+с ошибками: exporter отказал до SDK-фазы, поэтому она осталась NOT_RUN; нового
+owned-kit artifact нет. Эта датированная запись не изменяется последующими прогонами.
+Подготовка архива, local controls и PR #102 source capture CI не заменяют новую
+приёмку. Python 3.12 остаётся
+обычным source/CLI CI target; SDK offline closure для него не принята. Новый
+кандидат не меняет принятые dev19 / Companion 0.1.20 или полный финальный статус.
 
 [Локальный аудит плана выпуска](../../scripts/release/RELEASE-PLAN-CONTRACT.md)
 проверяет source/tree, bytes и typed claims; полные criterion/topology adapters

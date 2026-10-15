@@ -112,7 +112,8 @@ resource budgets and cleanup while retaining exceptions. It does not substitute
 POSIX descriptors for Windows handles or exercise a fake capture. Native POSIX
 fork coverage is skipped on hosts without `os.fork`.
 
-Actual Linux runtime execution is still required. This layer does not advertise
-Linux/macOS snapshot access, capture, scanner process ownership, native execution,
-installed delivery, or a complete published generation. Windows file-lease
-regression coverage remains required on the final integrated source commit.
+Actual Linux and Windows regression were separately qualified for the bounded
+[PR #102 source integration](../docs/product/evidence/development-ci-366db69-20261016.json),
+including installed CLI. These are that source's observations, not future offline
+SDK or subsequent-source acceptance. This layer alone does not advertise OS
+snapshot access, capture, scanner process ownership, native 1C or published delivery.

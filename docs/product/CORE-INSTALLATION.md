@@ -10,7 +10,8 @@
 приёмка продукта описана в [состоянии поставки в репозитории](https://github.com/DmitrL-dev/1cai-public/blob/main/docs/product/READINESS.md). Инструкции не
 устанавливают платформу 1С, EDT или модели и не запускают HTTP-сервер или старый
 MCP. Опубликованный dev19 захватывает рабочие исходники на Windows; новый
-Linux source-маршрут описан ниже и ещё требует отдельной приёмки.
+Linux source-маршрут ниже имеет отдельную PR source/installed CLI-приёмку;
+offline installed SDK-комплект требует собственной приёмки точных bytes.
 
 ## Сборка из открытых исходников
 
@@ -89,19 +90,58 @@ go -C go build -buildvcs=false -trimpath -o ..\output\bsl-scan.exe ./cmd/bsl-sca
 
 ## Новый Linux source-маршрут: ещё не выпуск
 
-Текущий checkout содержит ограниченную integration для GNU/Linux amd64: новый
-private project, его default base layer, capture/publication и чтение source/graph.
-Это не обновление опубликованных dev19 wheel/ZIP и не принятый Linux offline-kit.
+Ограниченная integration для GNU/Linux amd64 проверена на
+[PR #102, HEAD `366db69`](evidence/development-ci-366db69-20261016.json): новый private
+project/default base, capture/publication и source/graph/history, actual Linux,
+installed CLI и отдельно source SDK. Это не обновление опубликованных dev19
+wheel/ZIP и не приёмка следующего offline SDK-kit. Main `2e2dd4f` имеет то же дерево;
+собственные fresh main push runs учитываются отдельно.
 Для нового CLI capture нужны `--scanner /absolute/executable` и
 `--scanner-sha256 <trusted-lowercase-sha256>`; MCP получает эти параметры только
 при доверенном запуске сервера. Одного `--scanner` для Linux недостаточно.
 
 Default limits — 64 МиБ всех исходников, 16 МиБ на файл и 4096 source entries;
 полный набор metadata/draft/native/live команд этим не открывается. Local-account
-profile, безопасный bootstrap, точный receipt replay без scanner и незакрытая
-native/installed-приёмка описаны в [PORTABLE-CORE.md](PORTABLE-CORE.md);
+profile, безопасный bootstrap, точный receipt replay без scanner, проверенный
+capture scope и отдельные оставшиеся gates описаны в [PORTABLE-CORE.md](PORTABLE-CORE.md);
 форма запуска MCP — в [CORE-MCP.md](CORE-MCP.md). Windows-команды ниже сохраняют
 свои прежние scanner/SID контракты.
+
+## Кандидат Linux CLI/MCP offline-комплекта
+
+Отдельный source-профиль `owned-linux-cli-mcp-py311-x86_64-v1` доставляет Core wheel,
+Go scanner, Rust helper и 29 оригинальных SDK wheels с лицензиями и hash locks.
+Точный target — CPython 3.11.15 / GNU/Linux x86_64, glibc ≥ 2.34 и kernel ≥ 5.9;
+Python/OS libraries остаются prerequisites. Python 3.12 имеет обычный source/CLI CI,
+но не SDK offline closure. Это ещё не выпуск и не замена опубликованного dev19.
+
+Команды подготовки/квалификации требуют полного Git checkout выбранного source;
+один wheel или sdist его не заменяет. Продуктовые процессы verifier запускает из
+установленного окружения, без импорта product-модулей из checkout.
+[Canonical build guide](../../scripts/release/OWNED-LINUX-KIT.md) описывает trusted
+input JSON и единственный режим exporter `prepare_owned_linux.py build`.
+Generated `INSTALL.md` ставит локальные SDK/Core wheels с `--no-index` и
+`--require-hashes`, затем запускает `pip check`. Для отдельной actual target
+qualification предназначена команда из выбранного checkout:
+
+```sh
+python3.11 scripts/verification/verify_owned_linux_delivery.py \
+  --archive CANDIDATE.tar.gz --archive-sha256 TRUSTED_ARCHIVE_SHA256 \
+  --manifest owned-linux-manifest-v1.json --manifest-sha256 TRUSTED_MANIFEST_SHA256 \
+  --expected-version EXACT_SOURCE_VERSION --source-commit EXACT_SOURCE_COMMIT \
+  --scanner-sha256 TRUSTED_SCANNER_SHA256 --rust-sha256 TRUSTED_RUST_SHA256 \
+  --output NEW_QUALIFICATION_DIRECTORY
+```
+
+Замените placeholders проверенными входами; output должен быть новым, его parent
+должен существовать. Verifier сверяет tooling с selected source, проверяет archive
+и manifest до извлечения, устанавливает final bytes и проверяет installed CLI/SDK.
+Результат фиксируется отдельно в `acceptance.json`; в CI она поставляется как
+`owned-linux-acceptance.json` вместе с тремя файлами кандидата в artifact
+`owned-linux-cli-mcp-py311-x86_64-v1`. Проверяйте её source/bytes bindings по
+[контракту приёмки](../../scripts/release/OWNED-LINUX-KIT.md#qualification-still-required).
+Local tests и PR #102 capture CI её не заменяют; успешный запуск сам по себе
+не публикует кандидат и не изменяет его build-manifest.
 
 ## Локальный stdio MCP
 

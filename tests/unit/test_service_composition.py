@@ -766,28 +766,58 @@ def test_git_config_explicit_null_selects_continuous_lifetime(configured, scanne
 
 @pytest.mark.parametrize("capture", [False, True])
 def test_continuous_git_stop_interrupts_idle_wait(configured, workspace, monkeypatch, scanner, capture):
-    waiting = Event()
+    waiting, started, entered, finished = (Event() for _ in range(4))
 
     class ObservableStop(Event):
         def wait(self, timeout=None):
             waiting.set()
             return super().wait(timeout)
 
+    class ObservableAdapter(FakeAdapter):
+        def analyze(self, *args, **kwargs):
+            entered.set()
+            return super().analyze(*args, **kwargs)
+
     stop = ObservableStop()
     if capture:
         configured.document.update(schema=3, scanner=str(scanner))
     configured.document.update(max_cycles=None, interval_seconds=86400)
-    observer, _, module, _, adapter = wire(configured, workspace, monkeypatch, publish=not capture)
+    observer, _, module, _, adapter = wire(
+        configured, workspace, monkeypatch, adapter=ObservableAdapter(), publish=not capture
+    )
     original = module.read_bytes()
     results = []
-    thread = Thread(target=lambda: results.append(service_entry.run_console(configured.path, stop_event=stop)))
+
+    def run():
+        started.set()
+        try:
+            results.append(service_entry.run_console(configured.path, stop_event=stop))
+        finally:
+            finished.set()
+
+    thread = Thread(target=run)
+
+    def diagnostic():
+        try:
+            value = json.loads(wait_diagnostic(thread, started, entered, finished, results))
+            value["idle_wait_entered"] = waiting.is_set()
+            return json.dumps(value, sort_keys=True)
+        except BaseException:
+            return '{"diagnostic_available": false}'
+
     thread.start()
     try:
-        assert waiting.wait(15)
+        assert waiting.wait(15), diagnostic()
     finally:
         stop.set()
         thread.join(15)
-    assert not thread.is_alive()
+        error = sys.exception()
+        if error is not None:
+            try:
+                error.add_note("Service idle wait after cleanup: " + diagnostic())
+            except BaseException:
+                pass
+    assert not thread.is_alive(), diagnostic()
     assert (results[0].exit_code, results[0].cycles) == (0, 1)
     assert len(adapter.calls) == 1
     assert module.read_bytes() == original

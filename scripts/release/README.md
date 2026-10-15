@@ -44,6 +44,33 @@ component pair, exact bytes, dependency/license inventory и lifecycle coverage.
 Наличие этого маршрута в CI не является результатом: перед выпуском нужны
 успешный запуск точного source commit и проверка извлечённых финальных байтов.
 
+## Отдельный кандидат Linux CLI/MCP offline kit
+
+[Owned Linux kit](OWNED-LINUX-KIT.md) — новый source-профиль
+`owned-linux-cli-mcp-py311-x86_64-v1`, отдельный от принятого dev19 supplement.
+Он связывает source/tree, Core wheel, Go/Rust helpers, лицензии и
+[29-wheel Linux SDK lock](../../requirements/locks/LINUX-MCP-LOCK.md).
+Target: CPython 3.11.15 / GNU/Linux x86_64, glibc ≥ 2.34, kernel ≥ 5.9;
+Python 3.12 не имеет SDK offline closure в этом профиле.
+
+Exporter `prepare_owned_linux.py build` только подготавливает кандидат;
+режима `verify` у него нет. Фактическую установку и CLI/SDK-сценарий выполняет
+`verify_owned_linux_delivery.py` с внешними archive/manifest hashes, точным
+source commit и обоими native helper hashes. Точная команда — в
+[CORE-INSTALLATION](../../docs/product/CORE-INSTALLATION.md#кандидат-linux-climcp-offline-комплекта).
+Результат проверки финального извлечённого комплекта фиксируется отдельно в
+`acceptance.json` по [контракту приёмки](OWNED-LINUX-KIT.md#qualification-still-required);
+CI-копия `owned-linux-acceptance.json` входит в artifact из четырёх файлов.
+Local packaging controls, dependency metadata checks и PR #102 source capture CI
+не заменяют проверенную квитанцию точных source/bytes.
+
+Manifest подготовки всегда сохраняет `candidate:true`, `accepted:false`,
+`published:false`, `linux_installed_cli_mcp_qualified:false` и
+`full_product_ready:false`; отдельная acceptance receipt не переписывает
+этот снимок подготовки. Никакие существующие release records, теги или assets
+этим профилем не изменяются. Выпуск потребует новой версии/qualification decision
+и публикации ровно принятых bytes по штатной политике.
+
 ## Companion
 
 В `releases/companion/VERSION` фиксируются проверенный SHA256/размер VSIX и

@@ -3,9 +3,12 @@
 The base package uses only the standard library for explicit local project state,
 captured source bytes and source-bound graph publication. The published Windows
 route uses the process SID and explicit project/snapshot selectors. The current
-checkout also contains a bounded Linux/amd64 source capture/read integration;
-its exact-source native and installed qualification is still pending, and it is
-not part of published dev19. See [PORTABLE-CORE](../docs/product/PORTABLE-CORE.md).
+checkout also contains a bounded Linux/amd64 source capture/read integration.
+[PR #102, HEAD `366db69`](../docs/product/evidence/development-ci-366db69-20261016.json)
+qualified actual Linux, installed CLI and separate source SDK tests; main
+`2e2dd4f` has the same tree, with fresh push CI tracked separately. This route is
+not part of published dev19 and does not qualify the future offline installed SDK.
+See [PORTABLE-CORE](../docs/product/PORTABLE-CORE.md).
 The concrete graph adapter is `rentgen_graph`. Legacy `tools/rentgen` modules
 are compatibility aliases during the separate all-consumer cutover.
 
@@ -298,9 +301,11 @@ prove rollback when a commit already won the race.
 Defaults are 64 MiB total source, 16 MiB per file and 4096 source entries, with a
 120-second operation bound and shorter phase limits. Metadata navigation, diff,
 draft writes, native execution, live writes and macOS remain closed. This source
-integration is not a published Linux capture kit or full product qualification;
-see [PORTABLE-CORE](../docs/product/PORTABLE-CORE.md) for the pending acceptance
-and exact ownership/resource limits.
+integration was qualified only for the PR source/actual Linux/installed CLI scope
+above, not a published Linux capture kit or full product. The offline SDK
+source/build candidate requires its own verified `acceptance.json` bound to
+exact source and bytes; see [PORTABLE-CORE](../docs/product/PORTABLE-CORE.md)
+for the distinct qualification scopes and exact ownership/resource limits.
 
 ## Verification
 
