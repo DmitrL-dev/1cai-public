@@ -7,7 +7,10 @@ reads a project/database, runs a process, calls a model or changes a product.
 
 This is separate from `rust/input-core`, Python orchestration and the Go scanner.
 Nothing imports it into the production CLI/MCP, package builds or release records.
-Core `25743f7` and Companion `a4d8504` remain the fixed release targets.
+Core `25743f7` and Companion `a4d8504` are historical dev17 / 0.1.18 release targets.
+The current published pair and accepted bytes are listed in [READINESS](../../docs/product/READINESS.md).
+This synthetic kernel is not delivered in Core dev19 / Companion 0.1.20 and is
+not native or user-facing diagnostics; a version update does not qualify it.
 
 ## Source layout
 

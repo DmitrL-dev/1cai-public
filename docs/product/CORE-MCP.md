@@ -42,7 +42,7 @@ a different project returns `MCP_PROJECT_FORBIDDEN`. Checks precede dispatch and
 registry/source access. Unknown names still return `UNKNOWN_TOOL`. Requests cannot
 set or widen startup scope. Current membership/permission checks remain in force.
 
-Without either option the Windows dev17 server exposes all 33 registered tools.
+Without either option the published Windows dev19 server exposes all 33 registered tools.
 Project-only startup exposes the 31 tools with explicit project selectors,
 excluding `rentgen_project_list` and `rentgen_capabilities`. Explicitly combining
 project scope with either registry-wide tool is a startup error. Tool-only scope may access the SID's authorized projects.
@@ -56,7 +56,7 @@ output permission checks. State schema 4 is unchanged.
 
 ## Tool contract
 
-Published dev17 exposes thirty-three tools on Windows, including the
+Published dev19 exposes thirty-three tools on Windows, including the
 read-only `rentgen_capabilities` report. Historical dev15 exposes thirty-two; the
 previous dev2 artifacts expose ten. Linux exposes only its supported subset,
 documented in [PORTABLE-CORE.md](PORTABLE-CORE.md). All tools return MCP text content containing JSON and equivalent
@@ -78,12 +78,12 @@ Semantic failures after schema validation keep their existing core error codes.
 
 | Tool | Required arguments | Optional arguments |
 |---|---|---|
-| `rentgen_capabilities` (dev17) | none | none |
+| `rentgen_capabilities` (since dev17) | none | none |
 | `rentgen_project_list` | none | none |
 | `rentgen_project_head` | `project_id` | none |
 | `rentgen_publication_receipt` | `project_id`, `operation_id` | none |
 | `rentgen_capture` | `project_id`, `operation_id`, `expected_head` | none |
-| `rentgen_source_list` | `project_id`, `snapshot_id` | `limit` (1–200, default 100), `cursor`; development checkout also supports `query`, `kind`, `layer` |
+| `rentgen_source_list` | `project_id`, `snapshot_id` | `limit` (1–200, default 100), `cursor`, `query`, `kind`, `layer` |
 | `rentgen_source_read` | `project_id`, `snapshot_id`, `layer_id`, `relative_path` | none |
 | `rentgen_graph_resolve` | `project_id`, `snapshot_id`, `layer_id`, `relative_path` | none |
 | `rentgen_impact` | `project_id`, `snapshot_id`, `layer_id`, `relative_path` | `depth` (1–5, default 1) |
@@ -106,7 +106,7 @@ lowercase SHA-256 digests. Every source/graph request requires an explicit
 snapshot; there is no default/latest fallback. Layer and source paths are the
 exact locators returned by `rentgen_source_list`, not display aliases.
 
-The development checkout adds [whole-snapshot source discovery](SOURCE-DISCOVERY.md):
+The published Windows core supports [whole-snapshot source discovery](SOURCE-DISCOVERY.md):
 path substring `query`, `kind=all|module`, and exact `layer`, applied before pagination.
 Filtered cursors bind all three options; installed dev2 artifacts do not include this change.
 

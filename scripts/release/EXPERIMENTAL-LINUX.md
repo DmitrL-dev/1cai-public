@@ -129,15 +129,15 @@ retain and review its `acceptance.json` with release evidence. A hash verificati
 result alone does not claim the installed smoke passed. If acceptance fails,
 do not publish; revise/replace the candidate and its reviewed record explicitly.
 
-For the dev19 GUI candidate, installed smoke also starts the packaged
+For GUI qualification, installed smoke also starts the packaged
 `rentgen-gui` entry point, checks static assets against wheel bytes, rejects
 unauthenticated/foreign-origin requests and imports a synthetic ZIP through
 the real HTTP/Rust path. It does not substitute for rendered-browser acceptance.
 The [GUI workflow](../../.github/workflows/gui-browser-ci.yml) must also run all
 43 sandboxed Chromium gates without skips against a fresh isolated wheel
 installation. Review the exact HEAD, wheel/helper hashes, installed-smoke receipt
-and browser results together. These are candidate requirements, not claims that
-the current candidate has already passed Linux CI. Final extracted supplement
+and browser results together. These qualification requirements apply to each new candidate. The published
+dev19 results are recorded in [Core qualification](../../releases/core/0.1.0.dev19/qualification.json). Final extracted supplement
 bytes require their own installed acceptance before publication.
 
 Scope is experimental GNU/Linux x86_64 with glibc >= 2.34, `libgcc_s.so.1`, Linux

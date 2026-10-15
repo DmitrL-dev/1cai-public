@@ -103,7 +103,7 @@ Python wheel или переносимого Go scanner не подтвержд�
 
 ### Сначала: локальное состояние и чтение истории
 
-В экспериментальном Linux-дополнении dev17 уже опубликованы local identity
+Начиная с экспериментального Linux-дополнения dev17 опубликованы local identity
 profile, project/state reads, draft history/receipt и byte/JSON planners. Подробный
 контракт и ограничения — [PORTABLE-CORE](docs/product/PORTABLE-CORE.md). Это не
 приёмка всех команд Linux и не автоматический импорт Windows identity/state.
@@ -155,18 +155,19 @@ profile, project/state reads, draft history/receipt и byte/JSON planners. По�
 **Первый Rust-срез реализован:** [ограниченный Linux ZIP import](docs/product/RUST-INPUT-CORE.md)
 с owned process/immutable bytes, без извлечения файлов на диск и без live apply.
 Есть adversarial/parity/lifecycle тесты и synthetic latency/RSS observations;
-они не доказывают универсальное ускорение. Для опубликованного dev17 приняты
+они не доказывают универсальное ускорение. В историческом выпуске dev17 приняты
 целевые CI и установка экспериментального дополнения. Далее — новые read-only
 adapters с отдельной Windows/macOS квалификацией. Python orchestration
 и отдельный Go scanner пока сохраняются.
 
 ## 5. Надёжный выпуск и проверяемая правка
 
-В Core dev17 приняты компонентные проверки восстановления после прерывания и
+Начиная с Core dev17 приняты компонентные проверки восстановления после прерывания и
 потери ответа, сохранения сторонних изменений, миграции SQLite с WAL и описаний
 операций MCP. Следующие пакеты требуют повторной квалификации точных bytes.
 Изменения исходников и локальные тесты относятся к выбранному candidate;
-они не обновляют опубликованные пакеты dev17.
+они не изменяют принятые bytes опубликованных пакетов.
+Текущую квалификацию и версии отдельно фиксирует [READINESS](docs/product/READINESS.md).
 
 Для выбранного commit нужны актуальные CI, установка готовых артефактов,
 проверка совместимости Core/Companion и повторение заявленных Windows-сценариев.

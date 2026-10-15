@@ -72,6 +72,13 @@
 - Новая поставка требует CI точного source commit, installation/interop,
   manifests, checksums и актуальных ограничений. Core tag указывает на
   `source_commit` принятого ZIP; записи выпуска могут быть закоммичены позже.
+- Перед финальным push выполнить полный поиск прежних и новых номеров версий
+  по README, docs, integrations, packaging и планам, включая файлы вне текущего
+  diff. Проверить все текущие publication/metadata/candidate-утверждения;
+  отличать их от датированных origin/evidence и compatibility-history.
+  Не переписывать accepted source/tag commits и release records; точные версии
+  сохранять в install-командах, контрактах и исторических counts. Планы могут
+  ссылаться на READINESS как единый источник актуальной опубликованной пары.
 - После публикации скачать публичные файлы и сверить размер/SHA256, затем
   обновить опубликованную пару в README/READINESS/инструкциях/Pages.
   Компонентный prerelease не объявляет готовность полной IDE, AI или live apply.

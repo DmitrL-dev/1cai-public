@@ -1,13 +1,14 @@
 # Git evidence и жизненный цикл находок — библиотечный срез O1
 
-Разработка в `codex/edt-metadata-dev9`, после опубликованного dev8.
+Исходный библиотечный срез разрабатывался в `codex/edt-metadata-dev9` после dev8.
+Текущие опубликованные компоненты и приёмка перечислены в [READINESS](READINESS.md).
 `rentgen_core/git_observer.py` предоставляет probe и чистую reconciliation-
 функцию, а `rentgen_core/git_watcher.py` связывает их с observer. SQLite
 observer хранит state/events/receipts атомарно; `record-findings` и
 `findings-status` доступны через CLI. Это принятый bounded срез направления 4
-из [ROADMAP](../../ROADMAP.md). [READINESS](READINESS.md) по-прежнему не
-утверждает готовность фонового scheduler, поставляемого analyzer или общей
-приёмки O1.
+из [ROADMAP](../../ROADMAP.md). Наличие этого библиотечного контракта не
+подтверждает общую приёмку O1; актуальные watcher/analyzer/service сценарии
+и ограничения оцениваются по [READINESS](READINESS.md).
 
 ## Наблюдение за Git
 
