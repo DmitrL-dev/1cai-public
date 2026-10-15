@@ -1,0 +1,9 @@
+{
+  "name": "editor-workbench-acceptance",
+  "displayName": "Rentgen installed workbench acceptance harness",
+  "publisher": "rentgen-verification",
+  "version": "0.0.1",
+  "engines": {"vscode": "^1.135.0"},
+  "main": "host.cjs",
+  "activationEvents": ["onStartupFinished"]
+}

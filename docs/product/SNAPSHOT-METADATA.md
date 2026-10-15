@@ -51,6 +51,33 @@ detail = get_metadata_object(
 | `truncated` | Результат содержит ограниченные коллекции; полные totals отдельно |
 | `completeness` | Область покрытия, а не обещание полной семантики 1С |
 
+## CLI навигации в текущей разработке
+
+В текущих исходниках добавлены `metadata-summary`, `metadata-search` и
+`metadata-object`. Это ещё не новая опубликованная поставка: принятый Core
+0.1.0.dev19 этих команд не содержит. Поддержку установленного ядра определяют
+через `capabilities`: отчёт должен иметь `contract_version: 1` и
+`scope="os-adapter-support"`, а `snapshot.retained.read` — `supported=true`
+и все три операции в списке `operations`.
+Маршрут остаётся Windows-only; новый filesystem adapter сам по себе не
+включает навигацию на Linux/macOS.
+
+```powershell
+python -I -m rentgen_core metadata-summary --registry C:\Rentgen\registry --project PROJECT_UUID --snapshot SNAPSHOT_SHA256
+python -I -m rentgen_core metadata-search --registry C:\Rentgen\registry --project PROJECT_UUID --snapshot SNAPSHOT_SHA256 --query "Заказ" --type Document --limit 100
+python -I -m rentgen_core metadata-object --registry C:\Rentgen\registry --project PROJECT_UUID --snapshot SNAPSHOT_SHA256 --layer base --path "Documents/Заказ.xml"
+```
+
+`--snapshot` обязателен: CLI не подставляет текущий head. `--layer` можно
+указать в summary/search, а для object он обязателен. Имена/UUID из preview
+не служат селекторами: `--path` берут из выданного `SourceRef` того же слоя.
+Команды возвращают прежние metadata-поля с дополнительным `schema: 1` внутри
+`result`; сведения о неполноте и ограничении коллекций сохраняются.
+Ответ ограничен 2 МиБ UTF-8 целиком. Текущий `project:read` повторно проверяется
+после материализации и сериализации, до выдачи ответа; частичного результата
+при отказе нет. Фильтр поиска — до 256 символов/1024 UTF-8 байтов без
+управляющих знаков, `--limit` — целое 1..200.
+
 ## Формат и полнота
 
 `source_format="unknown"` не превращается автоматически в Designer XML.

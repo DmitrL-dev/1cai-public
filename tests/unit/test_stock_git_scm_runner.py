@@ -95,7 +95,7 @@ def test_stock_job_uses_verified_kit_pins_no_warmup_and_retains_failures():
     path=Path(__file__).resolve().parents[2]/'.github/workflows/core-ci.yml'
     jobs=yaml.safe_load(path.read_text('utf-8'))['jobs']
     assert 'native-stock-git' in jobs,'Native stock Git/BSL job missing'
-    job=jobs['native-stock-git'];assert job['needs']=='windows' and job['runs-on']=='windows-latest'
+    job=jobs['native-stock-git'];assert job['needs']=='windows-artifacts' and job['runs-on']=='windows-latest'
     steps=job['steps']
     prepare=next(s for s in steps if s.get('id')=='stock_scm_paths')
     assert 'rg-scm-' in prepare['run'] and 'rg-bsl-' in prepare['run']

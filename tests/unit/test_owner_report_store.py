@@ -1,6 +1,7 @@
 """Durable owner-report receipts preserve bounded evidence and context."""
 
 import json
+import os
 
 import pytest
 
@@ -50,7 +51,8 @@ def test_owner_report_store_saves_reads_and_lists_context_bound_receipt(tmp_path
         authorize=lambda: calls.append("auth"),
     )
     assert listed == [receipt]
-    assert calls == ["auth"] * 6
+    # POSIX additionally authorizes immediately before atomic publication.
+    assert calls == ["auth"] * (7 if os.name == "posix" else 6)
 
 
 def test_owner_report_store_is_idempotent_for_same_id_and_rejects_conflict(tmp_path):

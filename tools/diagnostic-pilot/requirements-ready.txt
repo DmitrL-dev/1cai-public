@@ -1,0 +1,4 @@
+# Optional research environment only. Primary PyPI versions checked 2026-10-15.
+# Framework/model dependencies never enter Core or MCP production locks.
+langchain==1.4.6
+langchain-ollama==1.1.0

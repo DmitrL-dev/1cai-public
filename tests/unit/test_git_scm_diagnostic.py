@@ -563,7 +563,7 @@ def test_workflow_keeps_git_diagnostic_separate_and_uploads_failed_evidence():
     document = yaml.safe_load((SCRIPT.parents[2] / '.github/workflows/core-ci.yml').read_text('utf-8'))
     jobs = document['jobs']
     git = jobs['native-git-diagnostic']
-    assert git['needs'] == 'windows' and git['runs-on'] == 'windows-latest'
+    assert git['needs'] == 'windows-artifacts' and git['runs-on'] == 'windows-latest'
     steps = git['steps']
     download = next(step for step in steps if 'actions/download-artifact@' in step.get('uses', ''))
     assert download['with']['name'] == 'verified-core-development'

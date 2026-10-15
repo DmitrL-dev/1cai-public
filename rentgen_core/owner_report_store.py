@@ -11,7 +11,8 @@ import stat
 import time
 from uuid import UUID, uuid4
 
-from ._windows_source_tree import pinned_directory, read_retained
+from ._windows_source_tree import pinned_directory
+from .platform_filesystem import open_directory, read_retained
 from .edt_profiles import parse_json
 from .errors import CoreError
 from .manifests import sha256
@@ -218,6 +219,8 @@ class OwnerReportStore:
         self.reports = self.root / "reports"
 
     def initialize(self):
+        if os.name == "posix":
+            return self._initialize_posix()
         _require(
             self.root.parent.is_dir(),
             "OWNER_REPORT_STORE_NOT_FOUND",
@@ -262,6 +265,30 @@ class OwnerReportStore:
                         "Owner-report reports path is unsafe",
                     )
                 self._initialize_lock()
+
+    def _initialize_posix(self):
+        """Create only owned children of verified directory capabilities."""
+        try:
+            with open_directory(self.root.parent) as parent:
+                with parent.child(self.root.name, create=True, private=True) as root:
+                    with root.child("reports", create=True, private=True):
+                        pass
+                    try:
+                        with root.create_file("store.lock") as stream:
+                            stream.write(b"0")
+                    except FileExistsError:
+                        pass
+                    if root.read("store.lock", 1) != b"0":
+                        raise CoreError(
+                            "OWNER_REPORT_STORE_RECOVERY_REQUIRED",
+                            "Owner-report lock file is incomplete",
+                        )
+        except FileNotFoundError as exc:
+            raise CoreError("OWNER_REPORT_STORE_NOT_FOUND", "Owner-report store parent is absent") from exc
+        except (OSError, CoreError) as exc:
+            if isinstance(exc, CoreError) and exc.code.startswith("OWNER_REPORT_STORE_"):
+                raise
+            raise CoreError("OWNER_REPORT_STORE_CONFLICT", "Owner-report store path is unsafe") from exc
 
     def _initialize_lock(self):
         lock_path = self.root / "store.lock"
@@ -315,6 +342,11 @@ class OwnerReportStore:
     def _owned_root(self):
         """Pin root and reports for the complete store operation."""
         try:
+            if os.name == "posix":
+                with open_directory(self.root, private=True) as root:
+                    with root.child("reports", private=True) as reports:
+                        yield root, reports
+                return
             with pinned_directory(self.root):
                 if not self._safe_directory(self.reports):
                     raise CoreError(
@@ -325,9 +357,9 @@ class OwnerReportStore:
                 # Windows.  Direct exclusive file creation remains compatible
                 # with this read-only directory handle.
                 with pinned_directory(self.reports):
-                    yield
+                    yield None
         except CoreError as exc:
-            if exc.code == "SOURCE_PATH_UNSAFE":
+            if exc.code in {"SOURCE_PATH_UNSAFE", "SNAPSHOT_CORRUPT"}:
                 raise CoreError(
                     "OWNER_REPORT_STORE_CONFLICT",
                     "Owner-report store path is unsafe",
@@ -340,6 +372,10 @@ class OwnerReportStore:
             ) from exc
 
     def _ready(self):
+        if os.name == "posix":
+            # The held-capability entry below performs the no-follow check.
+            # Do not reopen reports by pathname before that scope.
+            return
         _require(
             self.reports.is_dir() and not self.reports.is_symlink(),
             "OWNER_REPORT_STORE_NOT_FOUND",
@@ -347,7 +383,11 @@ class OwnerReportStore:
         )
 
     @contextmanager
-    def _locked(self):
+    def _locked(self, directories=None):
+        if directories is not None:
+            with self._posix_locked(directories[0]):
+                yield
+            return
         lock_path = self.root / "store.lock"
         if lock_path.exists() and not self._regular_leaf(lock_path):
             raise CoreError(
@@ -415,10 +455,49 @@ class OwnerReportStore:
                     pass
             stream.close()
 
-    def _entries(self, *, validate=False):
+    @contextmanager
+    def _posix_locked(self, root):
+        """Cooperative store serialization; flock is not a hostile-writer lease."""
+        import fcntl
+
+        with root.file("store.lock") as stream:
+            if stream.read(2) != b"0":
+                raise CoreError("OWNER_REPORT_STORE_RECOVERY_REQUIRED", "Owner-report lock file is incomplete")
+            acquired = False
+            try:
+                for _ in range(20):
+                    try:
+                        fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                        acquired = True
+                        break
+                    except BlockingIOError:
+                        time.sleep(0.01)
+                if not acquired:
+                    raise CoreError("OWNER_REPORT_STORE_BUSY", "Another owner-report store operation is active")
+                root.verify()
+                yield
+            except BaseException:
+                if acquired:
+                    try:
+                        fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
+                    except OSError:
+                        pass
+                raise
+            else:
+                if acquired:
+                    fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
+
+    def _entries(self, directories=None, *, validate=False):
         self._ready()
         try:
-            entries = list(self.reports.iterdir())
+            if directories is None:
+                entries = list(self.reports.iterdir())
+            else:
+                entries = []
+                for name in directories[1].names():
+                    entries.append(self.reports / name)
+                    if len(entries) > self.MAX_REPORTS:
+                        break
         except OSError as exc:
             raise CoreError(
                 "OWNER_REPORT_STORE_RECOVERY_REQUIRED",
@@ -436,7 +515,11 @@ class OwnerReportStore:
                     "OWNER_REPORT_STORE_RECOVERY_REQUIRED",
                     "Owner-report temporary file requires recovery",
                 )
-            if entry.is_symlink() or not entry.is_file() or entry.suffix != ".json":
+            valid = (
+                stat.S_ISREG(directories[1].stat(entry.name).st_mode)
+                if directories is not None else not entry.is_symlink() and entry.is_file()
+            )
+            if not valid or entry.suffix != ".json":
                 raise CoreError(
                     "OWNER_REPORT_STORE_CONFLICT",
                     "Owner-report store contains foreign files",
@@ -446,12 +529,15 @@ class OwnerReportStore:
         result = sorted(result, key=lambda path: path.name)
         if validate:
             for entry in result:
-                self._read(entry)
+                self._read(entry, directories)
         return result
 
-    def _read(self, path):
+    def _read(self, path, directories=None):
         try:
-            raw = read_retained(path, MAX_RECORD)
+            raw = (
+                read_retained(path, MAX_RECORD) if directories is None
+                else directories[1].read(path.name, MAX_RECORD)
+            )
             value = parse_json(raw)
             valid = (
                 type(value) is dict
@@ -516,21 +602,23 @@ class OwnerReportStore:
         self._ready()
         authorize()
         report = _report(report)
-        with self._owned_root(), self._locked():
-            entries = self._entries(validate=True)
+        with self._owned_root() as directories, self._locked(directories):
+            entries = self._entries(directories, validate=True)
             report_id = str(uuid4()) if report_id is None else _report_id(report_id)
             path = self.reports / f"{report_id}.json"
-            if path.is_symlink():
+            if directories is None and path.is_symlink():
                 raise CoreError(
                     "OWNER_REPORT_STORE_CONFLICT", "Owner-report path is unsafe"
                 )
-            if path.exists():
-                previous = self._read(path)
+            if path in entries:
+                previous = self._read(path, directories)
                 _require(
                     _canonical(previous["report"]) == _canonical(report),
                     "OWNER_REPORT_STORE_CONFLICT",
                     "Report ID already contains another report",
                 )
+                if directories is not None:
+                    directories[1].sync()
                 authorize()
                 return previous
             _require(
@@ -556,22 +644,28 @@ class OwnerReportStore:
                     "OWNER_REPORT_STORE_LIMIT",
                     "Owner-report receipt is too large",
                 )
-                # Publish directly with exclusive create while the store lock
-                # and reports-directory pin exclude readers and path swaps.
-                # A crash can leave a partial final file; the next operation
-                # rejects it as recovery-required instead of exposing bytes.
-                with path.open("xb") as stream:
-                    stream.write(raw)
-                    stream.flush()
-                    os.fsync(stream.fileno())
+                if directories is not None:
+                    # POSIX readers consume verified copied bytes. Publication
+                    # uses a private sibling, fsync and atomic no-overwrite rename;
+                    # an interrupted temporary is recovery-required, never history.
+                    authorize()
+                    directories[1].publish_bytes(path.name, raw)
+                else:
+                    # Preserve the Windows deny-write/delete directory-pin path.
+                    with path.open("xb") as stream:
+                        stream.write(raw)
+                        stream.flush()
+                        os.fsync(stream.fileno())
             except FileExistsError:
                 try:
-                    previous = self._read(path)
+                    previous = self._read(path, directories)
                     _require(
                         _canonical(previous["report"]) == _canonical(report),
                         "OWNER_REPORT_STORE_CONFLICT",
                         "Report ID already contains another report",
                     )
+                    if directories is not None:
+                        directories[1].sync()
                     authorize()
                     return previous
                 except CoreError:
@@ -604,15 +698,15 @@ class OwnerReportStore:
         _hash(expected_snapshot_id, "snapshot_id", snapshot=True)
         self._ready()
         authorize()
-        with self._owned_root(), self._locked():
-            self._entries(validate=True)
+        with self._owned_root() as directories, self._locked(directories):
+            entries = self._entries(directories, validate=True)
             path = self.reports / f"{report_id}.json"
             _require(
-                path.exists() and not path.is_symlink(),
+                path in entries,
                 "OWNER_REPORT_STORE_NOT_FOUND",
                 "Owner-report receipt is absent",
             )
-            receipt = self._read(path)
+            receipt = self._read(path, directories)
             _require(
                 receipt["project_id"] == expected_project_id
                 and receipt["snapshot_id"] == expected_snapshot_id,
@@ -636,10 +730,10 @@ class OwnerReportStore:
             )
         self._ready()
         authorize()
-        with self._owned_root(), self._locked():
+        with self._owned_root() as directories, self._locked(directories):
             selected = []
-            for path in self._entries(validate=False):
-                receipt = self._read(path)
+            for path in self._entries(directories, validate=False):
+                receipt = self._read(path, directories)
                 if (
                     receipt["project_id"] != expected_project_id
                     or receipt["snapshot_id"] != expected_snapshot_id

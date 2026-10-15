@@ -29,6 +29,14 @@
 [план и незакрытые направления](../../docs/product/RELEASE-PLAN-20261015.md)
 ведутся отдельно от опубликованных пакетов.
 
+Для будущей полной поставки есть отдельный read-only
+[аудит плана кандидата v2](RELEASE-PLAN-CONTRACT.md): явные channel/source/tree,
+component pair, exact bytes, dependency/license inventory и lifecycle coverage.
+Он сохраняет все 127 требований, IDE24 и Windows/Linux/macOS final targets;
+отсутствующие native/model/human/product adapters остаются unqualified.
+Результат всегда `published:false`, не является qualification receipt и не
+включает stable publication. Существующие prepare/verify workflows не изменены.
+
 Экспериментальное Linux-дополнение готовится по
 [отдельной инструкции](EXPERIMENTAL-LINUX.md). Помимо CLI, для нового GUI
 нужны smoke установленного wheel с настоящим loopback HTTP/Rust и все

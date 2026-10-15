@@ -25,7 +25,22 @@ product route. Текущие исходники содержат и более 
 [матрица поддержки](product/PLATFORM-SUPPORT.md) и [план](../ROADMAP.md).
 Опубликованные файлы dev19 / 0.1.20 проверены по
 [квитанции](product/evidence/release-dev19-publication-20261015.json);
-[план](product/RELEASE-PLAN-20261015.md) отдельно перечисляет незакрытые направления.
+[датированная сверка](product/RELEASE-PLAN-20261015.md) сохраняет историю этого выпуска.
+Текущий [план полного финального релиза](product/FULL-FINAL-PLAN.md) ведёт
+127 требований, все 24 IDE-сценария и очередь реализации. Workbench, POSIX owner IO,
+внутренние [retained sessions](../rentgen_core/POSIX-SNAPSHOT-SESSION.md),
+[Linux identity](../rentgen_core/LOCAL-IDENTITY.md),
+[POSIX LiveTree](../rentgen_core/POSIX-LIVE-TREE.md) и isolated diagnostic pilot
+находятся в разработке. LiveTree пока реализует только внутренние configure,
+inventory и held-FD read; public capture не подключён, actual Linux CI ещё нужен.
+[Аудит плана выпуска](../scripts/release/RELEASE-PLAN-CONTRACT.md)
+отделяет проверенные bytes и заявленное покрытие от ещё не принятого полного продукта.
+[Последний исторический CI](product/evidence/development-ci-3cc29c2-20261015.json)
+сохраняет точные результаты commit `3cc29c2`: Product failure, inventory прошёл,
+restart exit 1 с причиной UNKNOWN; первая фаза не принята по одному exit 0 без phase body.
+[Предыдущая квитанция](product/evidence/development-ci-553e1fa-20261015.json) сохранена;
+более поздним изменениям требуется собственная квалификация.
+Лицензированного стенда 1С/EDT пока нет, native-gates остаются открытыми.
 
 ## Просмотреть ZIP без установки редактора
 

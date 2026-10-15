@@ -1,5 +1,6 @@
 'use strict';
 const {draftTitle}=require('./core.cjs');
+const {isDeepStrictEqual}=require('node:util');
 function createEditUI(vscode,service,views,context,enabled){
  let busy=false;
  function check(){if(!vscode.workspace.isTrusted)throw new Error('TRUST_REQUIRED');if(!enabled)throw new Error('EDIT_REQUIRES_DEV7_OR_DEV8');}
@@ -8,10 +9,13 @@ function createEditUI(vscode,service,views,context,enabled){
   const document=await vscode.workspace.openTextDocument(vscode.Uri.file(session.file));check();
   if(current())await vscode.window.showTextDocument(document,{preview:false});return session;
  }
- async function show(result,current=()=>true,notificationCurrent=current){
+ async function show(result,current=()=>true,notificationCurrent=current,contextCurrent=()=>true){
   check();
   if(result.status==='saved'){
-   views.refreshDrafts();if(!current())return result;
+   // Capture before our own list invalidation. A later commit stays retained,
+   // but must not replace a workbench context selected while Core was saving.
+   const selectedContext=contextCurrent();
+   views.refreshDrafts();if(!selectedContext||!current())return result;
    const opened=await views.openDraft(result.receipt,current);check();
    if(opened!==null&&notificationCurrent(opened))void vscode.window.showInformationMessage(`Рентген: сохранена версия ${result.receipt.revision} черновика. Запустите проверки этой версии; конфигурация не изменялась.`);
   }else if(!current())return result;
@@ -20,8 +24,18 @@ function createEditUI(vscode,service,views,context,enabled){
   else await openFile(result);
   return result;
  }
- async function open(selection){check();const receipt=views.selectedDraft(typeof selection==='string'?selection:selection?.token);return openFile(await service.open(receipt));}
- async function start(selection){
+ async function open(selection){
+  check();const token=typeof selection==='string'?selection:selection?.token,receipt=views.selectedDraft(token);
+  const document=vscode.window.activeTextEditor?.document,version=document?.version,contextVersion=views.contextVersion?.();
+  const current=()=>{
+   if(!vscode.workspace.isTrusted||document?.isClosed||vscode.window.activeTextEditor?.document!==document||document?.version!==version)return false;
+   if(contextVersion!==undefined&&views.contextVersion()!==contextVersion)return false;
+   try{return isDeepStrictEqual(views.selectedDraft(token),receipt);}
+   catch(error){if(error.message==='UNKNOWN_VIEW_HANDLE')return false;throw error;}
+  };
+  return openFile(await service.open(receipt),current);
+ }
+ async function start(selection, options){
   check();if(busy||service.running)throw new Error('EDIT_RUNNING');
   const token=typeof selection==='string'?selection:selection?.token,ref=views.selectedSource(token);
   const document=vscode.window.activeTextEditor?.document,version=document?.version;
@@ -30,9 +44,10 @@ function createEditUI(vscode,service,views,context,enabled){
    try{return views.selectedSource(token)===ref;}catch(error){if(error.message==='UNKNOWN_VIEW_HANDLE')return false;throw error;}
   };busy=true;
   try{
-   const title=await vscode.window.showInputBox({title:'Новый ручной черновик',value:[...ref.relative_path.split('/').at(-1)].slice(0,240).join(''),
+   if(options!==undefined&&(!options||typeof options!=='object'||Array.isArray(options)||Object.keys(options).join(',')!=='title'))throw new Error('INVALID_DRAFT_TITLE');
+   const title=options===undefined?await vscode.window.showInputBox({title:'Новый ручной черновик',value:[...ref.relative_path.split('/').at(-1)].slice(0,240).join(''),
     prompt:'Откроется рабочая копия модуля. Первая версия появится после команды «Сохранить версию черновика».',
-    validateInput:value=>{try{draftTitle(value);}catch{return 'Введите название до 240 символов без управляющих знаков';}}});
+    validateInput:value=>{try{draftTitle(value);}catch{return 'Введите название до 240 символов без управляющих знаков';}}}):options.title;
    if(title===undefined)return null;check();draftTitle(title);if(!current())return null;
    return await openFile(await service.start(ref,title),current);
   }finally{busy=false;}
@@ -43,6 +58,8 @@ function createEditUI(vscode,service,views,context,enabled){
    const document=vscode.window.activeTextEditor?.document;
    if(document?.uri.scheme!=='file')throw new Error('UNKNOWN_EDIT_DOCUMENT');
    const file=document.uri.fsPath,initialVersion=document.version;
+   const contextVersion=views.contextVersion?.();
+   const contextCurrent=()=>contextVersion===undefined||views.contextVersion()===contextVersion;
    const sameDocument=()=>!document.isClosed&&document.uri.scheme==='file'&&document.uri.fsPath===file;
    const selected=await service.forFile(file);check();
    if(!sameDocument()||document.version!==initialVersion)throw new Error('EDIT_BUFFER_CHANGED');
@@ -52,12 +69,15 @@ function createEditUI(vscode,service,views,context,enabled){
    // autosave back to clean, must not present this completion as the current buffer.
    const version=document.version;
    const bufferCurrent=()=>sameDocument()&&document.version===version&&!document.isDirty;
-   const current=()=>vscode.workspace.isTrusted&&bufferCurrent()&&vscode.window.activeTextEditor?.document===document;
+   const current=opened=>{
+    const active=vscode.window.activeTextEditor?.document;
+    return vscode.workspace.isTrusted&&bufferCurrent()&&(active===document||(Array.isArray(opened)&&opened.some(uri=>uri.toString()===active?.uri?.toString())));
+   };
    const notificationCurrent=opened=>{
     const active=vscode.window.activeTextEditor?.document;
     return bufferCurrent()&&(active===document||(Array.isArray(opened)&&opened.some(uri=>uri.toString()===active?.uri?.toString())));
    };
-   return await show(await service.save(selected.id),current,notificationCurrent);
+   return await show(await service.save(selected.id),current,notificationCurrent,contextCurrent);
   }finally{busy=false;}
  }
  async function inspect(id){

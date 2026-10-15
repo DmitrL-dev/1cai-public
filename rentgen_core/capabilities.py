@@ -35,6 +35,7 @@ _GROUPS = {
         "source-list", "snapshot-diff", "source-read", "graph-resolve", "impact",
         "proposal-create", "proposal-diff", "draft-save", "draft-start",
         "draft-edit", "edt-inventory", "metadata-plan",
+        "metadata-summary", "metadata-search", "metadata-object",
     ),
     "source.capture": ("capture",),
     "native.execution": (

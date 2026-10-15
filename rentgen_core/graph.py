@@ -1,7 +1,10 @@
 """Injected graph contracts. The core imports no concrete scanner or HTTP adapter."""
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
+from typing import Callable, ContextManager, Protocol, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ._verified_graph import VerifiedGraphLimits
 
 from .errors import CoreError
 from .manifests import CapturedInput
@@ -65,3 +68,21 @@ class GraphReader(Protocol):
 class GraphReaderFactory(Protocol):
     def open(self, *, graph_path: Path, snapshot: SnapshotRef) -> GraphReader:
         ...
+
+
+class VerifiedGraphReaderFactory(Protocol):
+    def open_verified(
+        self, *, graph_bytes: bytes, manifest_bytes: bytes, snapshot: SnapshotRef,
+        authorize_read: Callable[[], None], limits: "VerifiedGraphLimits",
+    ) -> ContextManager[GraphReader]:
+        ...
+
+
+def open_verified_graph(factory, **options):
+    """Require the reviewed byte seam; a path-only adapter is never a fallback."""
+    opener = getattr(factory, "open_verified", None)
+    if not callable(opener):
+        raise CoreError("GRAPH_ADAPTER_UNAVAILABLE", "A verified-byte graph reader is required")
+    # Do not interpose a generator context: a refused foreign/reentrant exit
+    # must leave the adapter context available for its real owner to close.
+    return opener(**options)

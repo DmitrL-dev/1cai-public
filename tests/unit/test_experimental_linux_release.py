@@ -112,7 +112,7 @@ def test_build_is_candidate_and_repeatable_acceptance_extracts_exact_bytes(fixtu
     assert (target / "rust/input-core/licenses/example/LICENSE").read_bytes() == b"Original license fixture\n"
     assert json.loads((target / "build-inputs.json").read_bytes()) == f["inputs"]
     guide = (target / "INSTALL.md").read_text()
-    for text in ("glibc >= 2.34", "libgcc_s.so.1", "Linux >= 5.9", "memfd seals", "/proc/self/fd", "90 known failures and 2 errors", "No speedup"):
+    for text in ("glibc >= 2.34", "libgcc_s.so.1", "Linux >= 5.9", "memfd seals", "/proc/self/fd", "exact-source Linux diagnostic report", "known failures", "No speedup"):
         assert text in guide
     with pytest.raises(FileExistsError):
         release.verify(f["version"], f["output"], target)

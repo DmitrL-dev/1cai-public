@@ -1,5 +1,6 @@
 """Real local Go scanner adapter over retained, hash-verified captured bytes."""
 from dataclasses import asdict
+from contextlib import contextmanager
 import hashlib
 import json
 import math
@@ -15,7 +16,7 @@ from rentgen_core.graph import CapturedTree, GraphBuildReceipt
 from rentgen_core.manifests import canonical_bytes
 
 from .build_store import BuildInputs, build_snapshot_graph, _validate_callgraph_record
-from .identity import SCHEMA_VERSION, IDENTITY_VERSION, source_key
+from .identity import SCHEMA_VERSION, IDENTITY_VERSION, source_key, identifier_key
 from .store import RentgenStore
 
 ADAPTER_VERSION = "rentgen-captured-go-v1"
@@ -360,6 +361,56 @@ class RentgenCapturedGoBuilder:
 class RentgenGraphReaderFactory:
     def open(self, *, graph_path: Path, snapshot):
         return _RentgenGraphReader(graph_path)
+
+    def open_verified(self, *, graph_bytes, manifest_bytes, snapshot, authorize_read, limits):
+        """Internal opt-in byte reader. Never falls back to a retained pathname."""
+        from rentgen_core._verified_graph import _VerifiedGraph
+
+        owner = _VerifiedGraph(graph_bytes, manifest_bytes, snapshot=snapshot,
+                               authorize_read=authorize_read, limits=limits)
+        return _VerifiedGraphContext(owner)
+
+
+class _VerifiedGraphContext:
+    """No suspended generator can be consumed by a refused foreign/reentrant exit."""
+    def __init__(self, owner):
+        self._owner = owner
+
+    def __enter__(self):
+        owner = self._owner.__enter__()
+        try:
+            owner._db.create_function("identifier_key", 1, identifier_key, deterministic=True)
+            return _VerifiedGraphReader(owner)
+        except BaseException:
+            owner._close(preserve=True)
+            raise
+
+    def __exit__(self, kind, value, traceback):
+        return self._owner.__exit__(kind, value, traceback)
+
+
+class _ConnectionStore(RentgenStore):
+    """Reuse fixed graph SQL with the one operation-owned in-memory connection."""
+    def __init__(self, owner):
+        self._owner = owner
+
+    @contextmanager
+    def _con(self):
+        yield self._owner._queries
+
+
+class _VerifiedGraphReader:
+    def __init__(self, owner):
+        self._owner, self._store = owner, _ConnectionStore(owner)
+
+    def resolve_module(self, graph_source_path):
+        return self._owner.run(lambda: self._store.resolve_module(graph_source_path), graph_source_path)
+
+    def module_impact(self, graph_source_path, *, max_depth, max_edges):
+        return self._owner.run(
+            lambda: self._store.module_impact(graph_source_path, max_depth=max_depth, max_edges=max_edges),
+            graph_source_path, max_depth=max_depth, max_edges=max_edges,
+        )
 
 
 class _RentgenGraphReader:

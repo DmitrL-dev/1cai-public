@@ -1,0 +1,179 @@
+{
+  "schema": "rentgen-development-ci-checkpoint/1",
+  "date": "2026-10-15",
+  "repository": "DmitrL-dev/1cai-public",
+  "pull_request": 101,
+  "source_commit": "3cc29c283bdad14c9ff11e87e560e58af8dba914",
+  "workflow_checkout": "6e8a51380a9d7bfd60522f0098a64419955d1de4",
+  "tree": "2df6f245fb80352e75969b52a66939b842b29065",
+  "workflow_checkout_basis": "Default PR merge source/tree provenance; actual job checkout scopes are recorded separately below.",
+  "base_main": "f287412502e1af514bf00e8f894779048c18c675",
+  "status": "partial development checkpoint; Product workflow failed at real editor restart; cause UNKNOWN",
+  "release_created": false,
+  "full_product_ready": false,
+  "product": {
+    "run_id": 38739674532,
+    "conclusion": "failure",
+    "windows": {
+      "job_id": 116437793576,
+      "conclusion": "success",
+      "python": {
+        "cases": 4807,
+        "passed": 4216,
+        "skipped": 591,
+        "failures": 0,
+        "errors": 0,
+        "subtests_passed": 51
+      },
+      "node": {
+        "passed": 577
+      },
+      "additional_counts_basis": "verified terminal Windows/Node summary",
+      "verified_byte_reader_cases": {
+        "cases": 54,
+        "passed": 52,
+        "posix_fork_skipped": 2
+      },
+      "python_report_artifact": {
+        "id": 11978350116,
+        "size_bytes": 83200,
+        "sha256": "2f8f943df493e32ed4720ce37278137f78786791640326ed9f92e2d5b7b70faf",
+        "junit_sha256": "0a3feb8311d2ccc567abbcf8d9b6cc8fefd2e5d7821feca534ff61dff14d99f6"
+      }
+    },
+    "workflow_checkout": "6e8a51380a9d7bfd60522f0098a64419955d1de4",
+    "checkout_basis": "Targeted full Windows terminal log observed this merge checkout.",
+    "run_url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38739674532"
+  },
+  "editor": {
+    "accepted": false,
+    "installed_inventory_accepted": true,
+    "first_extension_host": {
+      "process_exit_code": 0,
+      "owned_process_cleanup": true,
+      "phase_body_in_public_artifact": false,
+      "phase_acceptance": "NOT_ESTABLISHED_FROM_AVAILABLE_ARTIFACT"
+    },
+    "restart_extension_host": {
+      "process_exit_code": 1,
+      "owned_process_cleanup": true,
+      "accepted": false
+    },
+    "failure_cause": "UNKNOWN",
+    "failure_detail_availability": "private raw phase/log absent from public artifact",
+    "human_keyboard_accessibility": "NOT_RUN",
+    "scope": "Automated synthetic installed Windows editor attempt; no human/native1C/model acceptance",
+    "artifact": {
+      "id": 11977003141,
+      "size_bytes": 1777,
+      "sha256": "5e855664cae343960a4804e340e235fcfe65eef5cdbe8764e9c26d198b234c6b"
+    }
+  },
+  "portable": {
+    "run_id": 38739674544,
+    "conclusion": "success",
+    "baseline_unchanged": true,
+    "archive_api_hashes_verified_before_guarded_extraction": true,
+    "versions": [
+      {
+        "python": "3.11",
+        "passed": 3843,
+        "skipped": 965,
+        "failures": 0,
+        "errors": 0,
+        "full_suite_green": true,
+        "previous_baseline_cases": {
+          "passed": 86,
+          "skipped": 6
+        },
+        "junit_sha256": "6bebdfb3013ed6f418fc8b460af3ad807457322ca97f4c9b7fa83ca35ea2c505",
+        "installed_wheel_sha256": "4f2267598a136b9c8f36ef7ac3621cf91160b9e7abf342061e236f0b55cc936c",
+        "installed_binary_sha256": "8a374c45b52ae9f66e73d64fa1aedd4e30acac15ca2709a00927b6b297581a04",
+        "capture_unavailable": true,
+        "installed_scope": "experimental Linux installed CLI and read-only GUI import; not Windows/macOS or full Linux qualification"
+      },
+      {
+        "python": "3.12",
+        "passed": 3843,
+        "skipped": 965,
+        "failures": 0,
+        "errors": 0,
+        "full_suite_green": true,
+        "previous_baseline_cases": {
+          "passed": 86,
+          "skipped": 6
+        },
+        "junit_sha256": "99757a221d5c12fca9a765a0dceae96725edf6c356528e7bcfbc8798576b7064",
+        "installed_wheel_sha256": "4f2267598a136b9c8f36ef7ac3621cf91160b9e7abf342061e236f0b55cc936c",
+        "installed_binary_sha256": "8a374c45b52ae9f66e73d64fa1aedd4e30acac15ca2709a00927b6b297581a04",
+        "capture_unavailable": true,
+        "installed_scope": "experimental Linux installed CLI and read-only GUI import; not Windows/macOS or full Linux qualification"
+      }
+    ],
+    "whole_linux_product_qualified": false,
+    "workflow_checkout": "6e8a51380a9d7bfd60522f0098a64419955d1de4",
+    "checkout_basis": "PR merge API parents/tree and verified source bytes bind this source; only portable terminal job logs were truncated before checkout lines.",
+    "run_url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38739674544"
+  },
+  "gui": {
+    "run_id": 38739674531,
+    "conclusion": "success",
+    "browser_passed": 43,
+    "python_backend_passed": 963,
+    "node_model_passed": 98,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "sandbox_enabled": true,
+    "installed_wheel_sha256": "4f2267598a136b9c8f36ef7ac3621cf91160b9e7abf342061e236f0b55cc936c",
+    "input_core_sha256": "07cb87150e04d97ad02e2b5e1a865244777963c1a8f75992b890fc9745474b79",
+    "scope": "experimental Linux installed CLI and read-only GUI import; not Windows/macOS or full Linux qualification",
+    "artifact": {
+      "id": 11976158669,
+      "size_bytes": 4860212,
+      "sha256": "91f78b87b375029dfc59fdbcabea6d48d78ef1170a59563e221a8bbb58ffe366",
+      "api_digest_verified_before_guarded_extraction": true
+    },
+    "checkout": "3cc29c283bdad14c9ff11e87e560e58af8dba914",
+    "workflow_checkout": "6e8a51380a9d7bfd60522f0098a64419955d1de4",
+    "checkout_basis": "GUI explicitly checked out the H3 source commit within the workflow associated with the PR merge.",
+    "run_url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38739674531"
+  },
+  "diagnostic_pilot": {
+    "run_id": 38739674620,
+    "run_attempt": 1,
+    "conclusion": "success",
+    "linux_framework_unit_tests": 38,
+    "development_episodes": 42,
+    "policies": [
+      "fixed",
+      "one_pass",
+      "rust"
+    ],
+    "mechanical_safety_passed": true,
+    "actual_model_runs": 0,
+    "ai_competence_accepted": false,
+    "heldout_independence": false,
+    "native_acceptance": false,
+    "scope": "owned public development controls; not independent heldout or native/LLM competence acceptance",
+    "source_hashes_verified": true,
+    "artifact": {
+      "id": 11976135896,
+      "size_bytes": 12104,
+      "sha256": "87b65b54fe62eead3702525f3e999a545c1d0aa44f7d096579adddd8c4166b68",
+      "result_sha256": "2a98a2b3748636c3de2cebacee37d1f2d6fa8f1934d45bd1997e8d811b62a966"
+    },
+    "workflow_checkout": "6e8a51380a9d7bfd60522f0098a64419955d1de4",
+    "checkout_basis": "Targeted full diagnostic terminal log observed this merge checkout.",
+    "run_url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38739674620"
+  },
+  "limits": [
+    "Counts and bytes apply only to the exact source/tree above, not later H4 changes.",
+    "First host exit 0 and owned-process cleanup do not establish first-phase acceptance without its phase body.",
+    "Restart exit 1 remains a failure with UNKNOWN cause; no raw private phase, source or log is published here.",
+    "Later POSIX session, identity hardening, LiveTree, release audit and editor observability require their own integrated source CI.",
+    "No licensed 1C/EDT stand; all dependent native gates remain open.",
+    "No full IDE scenario, model competence, independent holdout or whole Linux/macOS product acceptance.",
+    "No release, version bump, tag or overwrite of accepted artifacts."
+  ]
+}

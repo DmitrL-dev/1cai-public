@@ -12,11 +12,11 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def windows_steps():
+def artifact_steps():
     workflow = yaml.safe_load(
         (ROOT / ".github/workflows/core-ci.yml").read_text("utf-8")
     )
-    return workflow["jobs"]["windows"]["steps"]
+    return workflow["jobs"]["windows-artifacts"]["steps"]
 
 
 def resolve(tmp_path, core, companion):
@@ -31,7 +31,7 @@ def resolve(tmp_path, core, companion):
     package.write_text(json.dumps({"version": companion}), encoding="utf-8")
     env_file = tmp_path / "github-env"
     step = next(
-        step for step in windows_steps()
+        step for step in artifact_steps()
         if step.get("name") == "Resolve development artifact names"
     )
     # Execute the actual step, using this test's Python even outside Actions.
@@ -70,7 +70,7 @@ def test_invalid_versions_cannot_select_artifact_paths(tmp_path, core, companion
 
 
 def test_installed_checks_and_upload_use_the_resolved_assets():
-    steps = windows_steps()
+    steps = artifact_steps()
     by_name = {step.get("name"): step for step in steps}
     for name in (
         "Verify installed cross-client draft editing",

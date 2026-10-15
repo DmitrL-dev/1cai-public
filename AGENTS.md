@@ -3,9 +3,10 @@
 ## Сначала установить факты
 
 - Центральные входы: `README.md`, `ROADMAP.md`, `docs/README.md` и
-  `docs/product/READINESS.md`. Ближайшая сверка —
-  `docs/product/RELEASE-PLAN-20261015.md`; исторические планы и evidence не
-  являются результатами текущего HEAD.
+  `docs/product/READINESS.md`. Текущий план и реестр —
+  `docs/product/FULL-FINAL-PLAN.md`: цель — полный финальный релиз со всеми
+  текущими планами; компонентный prerelease не закрывает её.
+  Датированные планы и evidence не являются результатами текущего HEAD.
 - Проверить `git status`, remote main, открытые PR и актуальный diff перед
   изменениями. Сохранять чужие незакоммиченные правки; работать в одной ветке
   задачи или отдельном worktree при необходимости изоляции.
@@ -24,6 +25,8 @@
 - Go scanner: `go -C go test ./...`. Rust input core: pinned toolchain и
   `--locked` из portable workflow. Браузерные проверки GUI: все gates из
   `.github/workflows/gui-browser-ci.yml`, настоящий helper и sandbox.
+- Изменения workflow проверять `actionlint`: разбор YAML не проверяет
+  допустимость GitHub expression contexts и не заменяет реальное исполнение CI.
 - Полный Linux suite имеет документированный Windows baseline. Не удалять
   failure IDs и не расширять baseline ради зелёного CI; новые failures исправлять.
 - Не заменять native 1С, installed-package или browser acceptance подставными

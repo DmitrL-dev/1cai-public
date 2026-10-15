@@ -8,7 +8,7 @@ from pathlib import Path
 import re
 import unicodedata
 
-from ._windows_source_tree import read_retained
+from .platform_filesystem import read_retained
 from .context import validate_project_id
 from .errors import CoreError
 from .owner_report import RuntimeMetric, RuntimeMetricReport

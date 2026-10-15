@@ -84,3 +84,35 @@ test('invalidation after display submission suppresses the later selected-versio
  // be recalled through this API. Its asynchronous completion may not toast.
  assert.equal(f.shown.length,1);assert.deepEqual(f.messages,[]);assert.deepEqual(f.errors,[]);
 });
+
+test('workbench check presents exact-revision Problems instead of a JSON-only report',async()=>{
+ const f=pendingCheck(),commands=f.commands,context={subscriptions:[]},calls=[];
+ const uri={scheme:'rentgen-view',authority:'minted',path:'/v3.bsl'};
+ const service={running:false,dispose(){},start:async receipt=>({status:'completed',receipt}),inspect:async()=>({status:'incomplete'})};
+ createBslUI(f.vscode,service,{selectedDraft:token=>f.handles.get(token),contextVersion:()=>1},context,true,{problems:{
+  present:async(result,{isCurrent})=>{assert.equal(isCurrent(),true);calls.push(result);return {status:'published',uri,count:2};},clear:()=>calls.push('clear'),
+ }});
+ const nativeCommands=[];f.vscode.commands.executeCommand=async(...args)=>nativeCommands.push(args);
+ await commands.get('rentgen.bslCheck')(f.token);
+ assert.deepEqual(f.opened,[]);assert.deepEqual(f.shown,[uri]);assert.equal(calls.length,1);
+ assert.ok(nativeCommands.some(args=>args[0]==='workbench.actions.view.problems'));
+ assert.match(f.messages[0],/версии 3: 2/);
+});
+
+test('opening another workbench context while BSL runs suppresses automatic Problems and focus changes',async()=>{
+ const f=pendingCheck(),waiting=deferred(),began=deferred();let version=1,presented=0;
+ const service={running:false,dispose(){},start:async receipt=>{began.resolve();await waiting.promise;return {status:'completed',receipt};}};
+ createBslUI(f.vscode,service,{selectedDraft:token=>f.handles.get(token),contextVersion:()=>version},{subscriptions:[]},true,{
+  problems:{present:async()=>{presented++;throw new Error('STALE_PRESENTATION');},clear(){}},
+ });
+ const pending=f.commands.get('rentgen.bslCheck')(f.token);await began.promise;version++;waiting.resolve();await pending;
+ assert.equal(presented,0);assert.deepEqual(f.shown,[]);assert.deepEqual(f.messages,[]);
+});
+
+test('Problems binding failure clears previous diagnostics and propagates without a clean notification',async()=>{
+ const f=pendingCheck();let cleared=0;
+ createBslUI(f.vscode,{running:false,dispose(){},start:async()=>f.result},{selectedDraft:token=>f.handles.get(token)},
+  {subscriptions:[]},true,{problems:{present:async()=>{throw new Error('BSL_PROBLEMS_MISMATCH');},clear(){cleared++;}}});
+ await assert.rejects(f.commands.get('rentgen.bslCheck')(f.token),/BSL_PROBLEMS_MISMATCH/);
+ assert.equal(cleared,1);assert.deepEqual(f.shown,[]);assert.deepEqual(f.messages,[]);
+});

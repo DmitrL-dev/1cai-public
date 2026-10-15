@@ -99,6 +99,7 @@ def test_windows_command_line_preserves_quoted_profile_paths(tmp_path):
     assert api().command_line_argv(subprocess.list2cmdline(values))==values
 
 
+@pytest.mark.skipif(sys.platform != 'win32', reason='Actual Windows command-line parser in Java observation binding')
 def test_native_java_proof_requires_fixed_argv_parent_and_localservice(tmp_path):
     module=api();runtime=tmp_path/'runtimes/profile';scratch=tmp_path/'diagnostic-runs'
     attempt=scratch/str(UUID(int=12));argv=module.expected_java_argv(runtime,attempt)
@@ -113,6 +114,36 @@ def test_native_java_proof_requires_fixed_argv_parent_and_localservice(tmp_path)
         module.validate_java(row,{**process,'token_user_sid':'S-1-5-18'},service_pid=11,runtime=runtime,scratch=scratch)
     row['CommandLine']=subprocess.list2cmdline([*argv,'--override'])
     with pytest.raises(RuntimeError): module.validate_java(row,process,service_pid=11,runtime=runtime,scratch=scratch)
+
+
+def test_java_observation_policy_requires_fixed_parsed_argv_parent_and_localservice(tmp_path, monkeypatch):
+    module=api();runtime=tmp_path/'runtimes/profile';scratch=tmp_path/'diagnostic-runs'
+    attempt=scratch/str(UUID(int=12));argv=module.expected_java_argv(runtime,attempt)
+    row={'ProcessId':17,'ParentProcessId':11,'ExecutablePath':str(runtime/'jdk/bin/java.exe'),
+        'CommandLine':'native command fixture'}
+    process={'pid':17,'image':row['ExecutablePath'],'token_user_sid':'S-1-5-19'}
+    parsed=list(argv);commands=[]
+    def parse(command):
+        assert command==row['CommandLine']
+        commands.append(command)
+        return list(parsed)
+    # Only the observation policy runs here; native Windows parsing stays above.
+    monkeypatch.setattr(module,'command_line_argv',parse)
+    assert module.validate_java(row,process,service_pid=11,runtime=runtime,scratch=scratch)['argv']==argv
+    assert commands==[row['CommandLine']]
+    for key,value in [('ParentProcessId',12),('ExecutablePath',str(tmp_path/'foreign/java.exe'))]:
+        with pytest.raises(RuntimeError):
+            module.validate_java({**row,key:value},process,service_pid=11,runtime=runtime,scratch=scratch)
+    for changed in ({**process,'pid':18},{**process,'token_user_sid':'S-1-5-18'}):
+        with pytest.raises(RuntimeError):
+            module.validate_java(row,changed,service_pid=11,runtime=runtime,scratch=scratch)
+    parsed.append('--override')
+    with pytest.raises(RuntimeError):
+        module.validate_java(row,process,service_pid=11,runtime=runtime,scratch=scratch)
+    parsed[:]=argv
+    parsed[14]=str(tmp_path/'foreign'/attempt.name/'src')
+    with pytest.raises(RuntimeError):
+        module.validate_java(row,process,service_pid=11,runtime=runtime,scratch=scratch)
 
 
 @pytest.mark.parametrize('changed',['denied','timeout','overflow','unreaped','process_error','wrong_name','wrong_verb','wrong_image','bool_exit'])

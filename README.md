@@ -38,6 +38,22 @@
 > конфигурации и качество AI ещё требуют приёмки.
 > [Версии, проверки и ограничения →](docs/product/READINESS.md)
 
+**Текущая цель — полный финальный релиз со всеми запланированными сценариями.**
+[Единый план и реестр 127 требований](docs/product/FULL-FINAL-PLAN.md)
+сохраняет все 24 IDE-сценария открытыми. Текущие исходники развивают
+проектное рабочее место Core/Companion, POSIX owner IO, внутренние сеансы чтения
+проверенных snapshot bytes, Linux identity и отдельный diagnostic pilot.
+[Внутренний POSIX LiveTree](rentgen_core/POSIX-LIVE-TREE.md) реализует configure,
+inventory и чтение через held FD; до public capture нужны интеграция и actual Linux CI.
+[Аудит плана выпуска](scripts/release/RELEASE-PLAN-CONTRACT.md) проверяет локальные
+bytes и полноту заявленных проверок; готовность финального продукта он не подтверждает.
+[Последний исторический CI commit `3cc29c2`](docs/product/evidence/development-ci-3cc29c2-20261015.json)
+фиксирует частичные результаты и **Product failure**: inventory прошёл, restart
+завершился с exit 1, причина UNKNOWN. Exit 0 первого host без сохранённого phase body
+не доказывает приёмку первой фазы. Последующие изменения требуют своей приёмки.
+Лицензированного стенда 1С/EDT пока нет,
+поэтому native-проверки остаются открытыми, а реализация и обычный CI продолжаются.
+
 ## Экспериментальный Linux GUI: локальный просмотр ZIP
 
 **Экспериментальный маршрут для GNU/Linux x86_64.** Дополнение Core dev19

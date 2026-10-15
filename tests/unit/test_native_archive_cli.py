@@ -1,4 +1,5 @@
 import json
+import sys
 
 import pytest
 import test_metadata_runs as metadata_fixtures
@@ -37,6 +38,9 @@ def test_native_archive_parser_requires_explicit_namespace_and_binding():
         parser.parse_args(base + ["--namespace", "test-runs"])
 
 
+@pytest.mark.skipif(
+    sys.platform != "win32", reason="Windows capture and native archive contract"
+)
 def test_native_archive_cli_archives_metadata_run_before_any_new_evidence(
     captured, monkeypatch, capsys
 ):
@@ -67,6 +71,9 @@ def test_native_archive_cli_archives_metadata_run_before_any_new_evidence(
         )
 
 
+@pytest.mark.skipif(
+    sys.platform != "win32", reason="Windows capture and native archive contract"
+)
 def test_native_archive_cli_redacts_snapshot_error_after_access_revoke(
     captured, monkeypatch, capsys
 ):
@@ -100,3 +107,45 @@ def test_native_archive_cli_redacts_snapshot_error_after_access_revoke(
     assert "SNAPSHOT_CORRUPT" not in json.dumps(error)
     assert not (ctx.state.path.parent / "native-archive").exists()
     assert run.exists()
+
+
+@pytest.mark.skipif(
+    sys.platform not in {"linux", "darwin"},
+    reason="Actual unsupported OS native archive refusal",
+)
+def test_native_archive_cli_refuses_unsupported_os_before_identity_runtime_or_archive_io(
+    tmp_path, monkeypatch, capsys
+):
+    def forbidden(*args, **kwargs):
+        pytest.fail("Unsupported native archive accessed identity, runtime, or archive")
+
+    monkeypatch.setattr(cli, "current_local_principal", forbidden)
+    monkeypatch.setattr(cli, "_runtime", forbidden)
+    monkeypatch.setattr("rentgen_core.native_resources.archive_native_run", forbidden)
+    missing = tmp_path / "not-created"
+    argv = [
+        "native-archive",
+        "--registry",
+        str(missing / "registry.sqlite3"),
+        "--identity-profile",
+        str(missing / "identity.json"),
+        "--project",
+        "11111111-1111-4111-8111-111111111111",
+        "--snapshot",
+        "b" * 64,
+        "--operation-id",
+        "22222222-2222-4222-8222-222222222222",
+        "--namespace",
+        "metadata-runs",
+        "--profile-id",
+        "a" * 64,
+    ]
+    assert cli.main(argv) == 2
+    output = capsys.readouterr()
+    error = json.loads(output.out)["error"]
+    assert output.err == ""
+    assert error["code"] == "CAPABILITY_UNAVAILABLE"
+    assert error["details"]["operation"] == "native-archive"
+    assert error["details"]["capability"] == "native.execution"
+    assert error["details"]["platform"] == sys.platform
+    assert not missing.exists()

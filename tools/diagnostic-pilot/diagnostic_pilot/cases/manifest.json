@@ -1,0 +1,14 @@
+{
+  "files": [
+    {
+      "path": "development.json",
+      "sha256": "a0ac6a85537fa6ef46730b58f33235c74845565be17211212f5f8ad30ef9e2dc",
+      "size_bytes": 52359
+    }
+  ],
+  "heldout": false,
+  "license": "MIT",
+  "native_verified": false,
+  "origin": "owned_synthetic_controls",
+  "schema": 1
+}

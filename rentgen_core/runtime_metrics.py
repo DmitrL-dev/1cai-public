@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import re
 
-from ._windows_source_tree import read_retained
+from .platform_filesystem import read_retained
 from .edt_profiles import parse_json
 from .errors import CoreError
 from .owner_report import (

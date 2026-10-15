@@ -19,9 +19,11 @@ function createTestsUI(vscode,service,views,context,enabled){
   check();if(busy||service.running)throw new Error('TEST_RUNNING');
   const token=typeof selection==='string'?selection:selection?.token;
   const receipt=views.selectedDraft(token);busy=true;
+  const contextVersion=views.contextVersion?.();
   // Refresh/new-save invalidation controls presentation only. The exact
   // historical result remains available without repeating the test run.
   const current=()=>{
+   if(contextVersion!==undefined&&views.contextVersion()!==contextVersion)return false;
    try{return isDeepStrictEqual(views.selectedDraft(token),receipt);}
    catch(error){if(error?.message==='UNKNOWN_VIEW_HANDLE')return false;throw error;}
   };

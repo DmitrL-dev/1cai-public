@@ -46,7 +46,7 @@ function pendingCheck(status='completed'){
   const receipt={draft_id:'draft',revision:3,proposal_content_id:'a'.repeat(64)};
   const token=handles.add(receipt),started=deferred(),completed=deferred();
   const result={run_id:'run-v3',status,report:{analysis:{baseline:{status:'passed'},candidate:{status:'passed'}}}};
-  let starts=0,reads=0;
+  let starts=0,reads=0,contextVersion=0;
   const vscode={workspace:{isTrusted:true,openTextDocument:async value=>{opened.push(value);return value;}},
     ProgressLocation:{Notification:15},commands:{registerCommand:(name,fn)=>{commands.set(name,fn);return {dispose(){}};},executeCommand:async()=>{}},
     window:{showTextDocument:async value=>shown.push(value),showInformationMessage:value=>messages.push(value),
@@ -54,8 +54,9 @@ function pendingCheck(status='completed'){
   const service={running:false,dispose(){},cancel(){},start:async(selected,platform)=>{
     assert.deepEqual(selected,receipt);assert.equal(platform,'C:\\1cv8.exe');starts++;started.resolve();await completed.promise;return result;
   },inspect:async id=>{assert.equal(id,result.run_id);reads++;return result;}};
-  createPlatformUI(vscode,service,{selectedDraft:selected=>handles.get(selected)},{subscriptions:[]},true);
-  return {commands,vscode,handles,token,receipt,result,started,completed,messages,errors,opened,shown,counts:()=>({starts,reads})};
+  createPlatformUI(vscode,service,{selectedDraft:selected=>handles.get(selected),contextVersion:()=>contextVersion},{subscriptions:[]},true);
+  return {commands,vscode,handles,token,receipt,result,started,completed,messages,errors,opened,shown,
+    changeContext:()=>{contextVersion++;},counts:()=>({starts,reads})};
 }
 
 for(const status of ['completed','incomplete','failed'])test(`an invalidated ${status} platform check stays recoverable without automatic presentation`,async()=>{
@@ -104,4 +105,12 @@ test('platform check remains busy through display and suppresses a stale late an
   assert.equal(f.shown.length,1);assert.deepEqual(f.messages,[]);assert.deepEqual(f.counts(),{starts:1,reads:0});
   assert.equal(await f.commands.get('rentgen.platformResult')(f.result.run_id),f.result);
   assert.deepEqual(f.counts(),{starts:1,reads:1});
+});
+test('changing the workbench pin suppresses an automatic platform report while its historical receipt remains valid',async()=>{
+  const f=pendingCheck(),pending=f.commands.get('rentgen.platformCheck')(f.token,'C:\\1cv8.exe');
+  await f.started.promise;f.changeContext();f.completed.resolve();assert.equal(await pending,f.result);
+  assert.deepEqual(f.opened,[]);assert.deepEqual(f.shown,[]);assert.deepEqual(f.messages,[]);
+  assert.deepEqual(f.handles.get(f.token),f.receipt);
+  assert.equal(await f.commands.get('rentgen.platformResult')(f.result.run_id),f.result);
+  assert.deepEqual(f.counts(),{starts:1,reads:1});assert.equal(f.shown.length,1);
 });

@@ -1,0 +1,154 @@
+{
+  "schema": "rentgen-development-ci-checkpoint/1",
+  "date": "2026-10-15",
+  "repository": "DmitrL-dev/1cai-public",
+  "pull_request": 101,
+  "source_commit": "553e1fa2c8324ed77f59d88a5c84cc572610021a",
+  "workflow_checkout": "8a02df657f91716a4663007a22fd19e17b283997",
+  "tree": "d4c114d1651a840bbad6395b2ee8951af920eabe",
+  "base_main": "f287412502e1af514bf00e8f894779048c18c675",
+  "status": "partial development checkpoint; product workflow failed at editor inventory guard",
+  "release_created": false,
+  "full_product_ready": false,
+  "product": {
+    "run_id": 38732930318,
+    "conclusion": "failure",
+    "windows": {
+      "conclusion": "success",
+      "python": {
+        "passed": 4164,
+        "skipped": 589,
+        "failures": 0,
+        "errors": 0,
+        "subtests_passed": 51
+      },
+      "node": {
+        "passed": 577,
+        "skipped": 0,
+        "failures": 0
+      },
+      "python_report_artifact": {
+        "id": 11974311532,
+        "size_bytes": 81531,
+        "sha256": "0094a425b8507c4c4febb066c47cf822d38a35d4e94c5e13882d5e6205b99ec7",
+        "digest_verified": true
+      }
+    },
+    "native_stock_git": "success",
+    "native_scm": "success",
+    "native_git_diagnostic": "success"
+  },
+  "editor": {
+    "job_id": 116427996952,
+    "accepted": false,
+    "archive_provenance_guards_passed": 74,
+    "actual_windows_vsix_install": {
+      "accepted": true,
+      "exit_code": 0,
+      "cleanup_complete": true
+    },
+    "first_extension_host": "NOT_RUN",
+    "restart_extension_host": "NOT_RUN",
+    "human_keyboard_accessibility": "NOT_RUN",
+    "failure_code": "installed_companion_inventory_mismatch",
+    "actual_inventory_delta": "NOT_CAPTURED",
+    "artifact": {
+      "id": 11974721960,
+      "size_bytes": 795,
+      "sha256": "e39391aaf61ec391fa007e60eb63f380c8fc70797df44b5758c0ad64072a06f5",
+      "digest_verified": true
+    }
+  },
+  "portable": {
+    "run_id": 38732930320,
+    "conclusion": "success",
+    "python_versions": [
+      "3.11",
+      "3.12"
+    ],
+    "each_full_suite": {
+      "passed": 3789,
+      "skipped": 965,
+      "failures": 0,
+      "errors": 0
+    },
+    "full_suite_green": true,
+    "baseline_unchanged": true,
+    "previous_baseline_cases": {
+      "passed": 86,
+      "windows_scoped_skipped": 6
+    },
+    "new_failures": 0,
+    "installed_scope": "experimental Linux installed CLI and read-only GUI import",
+    "capture_unavailable_exit": 2,
+    "whole_linux_product_qualified": false,
+    "archives": [
+      {
+        "id": 11972491229,
+        "size_bytes": 2271498,
+        "sha256": "5005164b0ee3c348a3b2d03818546e5cdb49e0b1026bf66daa9e49f8929c1bb8"
+      },
+      {
+        "id": 11971976837,
+        "size_bytes": 2271517,
+        "sha256": "2dbcc323e2ecff45aa7ec3f68c48349ec595269607c58a06a1784a75a6880383"
+      }
+    ],
+    "api_digests_verified_before_guarded_extraction": true
+  },
+  "gui": {
+    "run_id": 38732930314,
+    "conclusion": "success",
+    "browser": {
+      "passed": 43,
+      "skipped": 0,
+      "failures": 0,
+      "errors": 0
+    },
+    "python_backend_passed": 963,
+    "node_model_passed": 98,
+    "sandbox_enabled": true,
+    "browser_zoom_percent": 200,
+    "installed_backend": "fresh isolated wheel installation",
+    "installed_wheel_sha256": "150733150a6b7b8866098d455cbfcb53abd9e892fd21f0d94398172f5dfeca1e",
+    "artifact": {
+      "id": 11971881200,
+      "size_bytes": 4851834,
+      "sha256": "ee2ff49cc13e553a4f1928cd89cb83a697651496aca67e74bd8c9a33e6ebddcd",
+      "original_api_digest_verified_before_guarded_extraction": true
+    }
+  },
+  "diagnostic_pilot": {
+    "run_id": 38732930319,
+    "conclusion": "success",
+    "linux_framework_unit_tests": 29,
+    "development_episodes": 42,
+    "policies": [
+      "fixed",
+      "one_pass",
+      "rust"
+    ],
+    "mechanical_safety_passed": true,
+    "ai_competence_accepted": false,
+    "heldout_independence": false,
+    "native_acceptance": false,
+    "artifact": {
+      "id": 11970398049,
+      "size_bytes": 11523,
+      "sha256": "3165ac90d7984d77c7b649d8cf962d39382db7a81f85b519886e2bb7bb0b203e",
+      "api_digest_verified_before_guarded_extraction": true
+    }
+  },
+  "site": {
+    "run_id": 38732930334,
+    "build": "success",
+    "deploy": "skipped"
+  },
+  "limits": [
+    "Counts and bytes apply only to the exact source/tree above.",
+    "Later SQLite-reader/model-ablation/installer changes require their own integrated source CI.",
+    "No licensed 1C/EDT stand; all dependent native gates remain open.",
+    "No full IDE scenario, model competence, independent holdout or whole Linux/macOS product acceptance.",
+    "No release, version bump, tag or overwrite of accepted artifacts."
+  ]
+}
