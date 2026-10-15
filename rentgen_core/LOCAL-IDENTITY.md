@@ -43,6 +43,7 @@ snapshot of all ancestors. Malicious same-UID processes, root and modified
 project databases remain outside the trusted-local boundary. This change adds
 no capture, retained-session, live-apply, remote-authentication or macOS product
 capability. Real Darwin descriptor/ACL tests exercise private implementation
-primitives only; Linux bootstrap and the existing CLI/history workflow require
-their actual Linux tests on the resulting source commit. Local tests are not
-GitHub CI or native 1C/EDT acceptance.
+primitives only. Actual Linux bootstrap/CLI history and scoped installed CLI
+were separately qualified at [PR #102, HEAD `366db69`](../docs/product/evidence/development-ci-366db69-20261016.json).
+Local tests remain distinct from CI; this does not qualify native 1C/EDT, the
+future offline installed SDK or later source/bytes.

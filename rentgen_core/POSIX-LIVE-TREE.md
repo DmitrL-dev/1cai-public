@@ -107,5 +107,7 @@ interrupted mid-call. Successful exit also rechecks the observed inventory.
 Tests use real owned POSIX directories, held streams, actual mutations and process
 fork/thread boundaries, plus the existing capture data loops. No POSIX-as-Windows
 handles, fake OS platform, live publication or scanner lifecycle is used. Local
-macOS results are source evidence only; actual Linux filesystem/device runtime
-qualification and final Windows regression CI must run on the integrated source.
+macOS results are source evidence only. Actual Linux and Windows regression were
+separately qualified for the bounded [PR #102 capture integration](../docs/product/evidence/development-ci-366db69-20261016.json),
+including installed CLI. Subsequent source/bytes and the future offline installed
+SDK need their own acceptance; larger device/workload claims remain unqualified.

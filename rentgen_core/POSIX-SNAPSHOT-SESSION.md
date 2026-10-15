@@ -107,5 +107,7 @@ private owned retained trees and commit fixture catalogs through the state-only
 publication seam. They exercise real POSIX descriptor IO, SQLite and current
 membership/catalog checks. They do not stand in for live capture, scanner process
 ownership, native 1C, installed delivery, or an end-to-end published generation.
-Actual Linux runtime/ACL/filesystem execution and final Windows regression CI
-remain necessary; local macOS evidence is recorded separately.
+Actual Linux/runtime and Windows regression were separately qualified in the
+bounded [PR #102 integration](../docs/product/evidence/development-ci-366db69-20261016.json),
+including installed CLI. Local macOS evidence retains its own scope; future
+offline installed SDK and subsequent source/bytes require separate acceptance.

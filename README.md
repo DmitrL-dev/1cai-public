@@ -46,10 +46,18 @@
 обе фазы, восстановление контекста и точные установленные байты прошли проверку.
 Это автоматическая приёмка API редактора; human GUI, native 1С и полная IDE открыты.
 
-Следующий совместный блок — [экспериментальный Linux capture и чтение снимков](docs/product/PORTABLE-CORE.md#следующий-блок-linux-capture-и-чтение-снимков).
-В исходниках связаны private state, захват источников, доверенный Go scanner,
-граф, публикация с квитанцией и CLI/MCP. Его actual Linux и installed-приёмка
-ещё не завершены; опубликованный dev19 capture на Linux не содержит.
+Ограниченный [Linux capture и чтение снимков](docs/product/PORTABLE-CORE.md#linux-capture-и-чтение-снимков)
+проверен на [PR #102, HEAD `366db69`](docs/product/evidence/development-ci-366db69-20261016.json):
+actual Linux scanner, publication/history, installed CLI и отдельный source SDK MCP.
+PR слит в main `2e2dd4f` с тем же деревом; fresh main push CI учитывается отдельно.
+Опубликованный dev19 capture на Linux не содержит; offline installed SDK ниже
+пока не квалифицирован.
+Для следующей доставки подготовлен отдельный source-кандидат
+[Linux CLI/MCP offline-комплекта](scripts/release/OWNED-LINUX-KIT.md):
+CPython 3.11.15 / GNU/Linux x86_64, Go scanner и 29 закреплённых SDK wheels.
+**Установка этого комплекта и installed SDK-сценарий ещё не выполнялись.**
+CI capture-блока не заменяет эту приёмку; опубликованные dev19 / 0.1.20 прежние.
+
 [Аудит плана выпуска](scripts/release/RELEASE-PLAN-CONTRACT.md) проверяет локальные
 bytes и полноту заявленных проверок; готовность финального продукта он не подтверждает.
 Лицензированного стенда 1С/EDT пока нет,

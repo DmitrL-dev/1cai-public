@@ -1,0 +1,163 @@
+{
+  "schema": 1,
+  "kind": "development PR source qualification; not release authority",
+  "observed_at": "2026-10-15T17:35:19.889689+00:00",
+  "repository": "DmitrL-dev/1cai-public",
+  "pr": 102,
+  "pr_url": "https://github.com/DmitrL-dev/1cai-public/pull/102",
+  "head": "366db694c8ca46f8a643860fa819cfc65597d8da",
+  "base": "413cc65c177a46a1087c641148c7df3f9a616934",
+  "tree": "32454b3da4a1fb6cbfc373a2b0c225bbb657bcd1",
+  "synthetic_merge": "e0aa84b4c5db70cdf34f4e0f1ca75868362cd38b",
+  "merged_main": "2e2dd4f1b34057fa58d9810f24781ce706a47f19",
+  "merged_main_parent": "413cc65c177a46a1087c641148c7df3f9a616934",
+  "merged_main_tree_equals_qualified_head": true,
+  "merge_method": "squash",
+  "checks": {
+    "executed_success": 13,
+    "expected_pr_deploy_skipped": 1,
+    "other_failures_or_pending": 0,
+    "conflicts": false,
+    "blocking_reviews_or_threads": false
+  },
+  "workflows": {
+    "Product": 38773203686,
+    "portable": 38773203694,
+    "GUI": 38773203594,
+    "diagnostic": 38773203494,
+    "site": 38773203583
+  },
+  "windows": {
+    "checkout": "e0aa84b4c5db70cdf34f4e0f1ca75868362cd38b",
+    "python_unique": 5415,
+    "passed": 4376,
+    "skipped": 1039,
+    "failed": 0,
+    "errors": 0,
+    "passed_subtests_additional": 51,
+    "suite_test_attribute": 5466,
+    "preflight_passed_separate": 95,
+    "node_passed": 585,
+    "node_skipped": 0,
+    "go_tested_packages_passed": 2,
+    "go_packages_without_tests": 2,
+    "controls_scope": "6 negative private-pipe harness cases and 21 local-mock cases with 308 assertions; not production native execution"
+  },
+  "linux": {
+    "checkouts": [
+      "e0aa84b4c5db70cdf34f4e0f1ca75868362cd38b",
+      "e0aa84b4c5db70cdf34f4e0f1ca75868362cd38b"
+    ],
+    "python_versions": [
+      "3.11",
+      "3.12"
+    ],
+    "each": {
+      "passed": 4441,
+      "skipped": 975,
+      "failed": 0,
+      "errors": 0,
+      "actual_linux_cases_passed": 44,
+      "source_sdk_mcp_cases_passed": 2,
+      "prior_native_cancellation_case_passed": true,
+      "installed_cli_fresh_calls": 45,
+      "installed_cli_success": 42,
+      "installed_cli_expected_refusal": 3,
+      "new_captures": 2,
+      "source_history_and_receipt_replay": true,
+      "outcomes_passed": 10,
+      "wheel_product_git_blobs_equal": 152
+    },
+    "go_committed_source_files_bound": 19,
+    "go_license_sha256": "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad",
+    "go_license_size_bytes": 1453,
+    "toolchain_archive_independently_verified": false,
+    "compiler_claim": "CI build observation only; execution acceptance separate",
+    "offline_installed_sdk_closure": false
+  },
+  "editor": {
+    "actual_windows_editor_api": true,
+    "first_and_restart_complete": true,
+    "distinct_host_pids": [
+      9892,
+      8728
+    ],
+    "owned_cleanup": true,
+    "companion_inventory_files": 54,
+    "source_and_runtime_bindings_unchanged": true,
+    "human_keyboard_accessibility": false,
+    "native_1C": false
+  },
+  "GUI": {
+    "checkout": "366db694c8ca46f8a643860fa819cfc65597d8da",
+    "workflow_sha": "e0aa84b4c5db70cdf34f4e0f1ca75868362cd38b",
+    "browser_passed": 43,
+    "backend_passed": 963,
+    "node_passed": 98,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "sandbox_enabled": true,
+    "zoom": 2,
+    "synthetic_inputs_only": true
+  },
+  "diagnostic": {
+    "checkout": "e0aa84b4c5db70cdf34f4e0f1ca75868362cd38b",
+    "framework_controls": 38,
+    "synthetic_episodes": 42,
+    "rust_tests_each_OS": 35,
+    "actual_model_runs": 0,
+    "independent_holdout": false,
+    "native_1C": false,
+    "evaluation_recomputed_equal": true
+  },
+  "original_artifact_pins": [
+    {
+      "id": 11994386641,
+      "role": "Windows JUnit",
+      "bytes": 96920,
+      "sha256": "b65abe7c11ed84b5b4455a303b3bed5265721425dd3e898a1b7d52c40ddd4318"
+    },
+    {
+      "id": 11992098893,
+      "role": "editor",
+      "bytes": 4474,
+      "sha256": "e10db87020027a07a922d46b0ef3930b32d94aa307833f41de94a44120c2fac9"
+    },
+    {
+      "id": 11993272101,
+      "role": "GUI",
+      "bytes": 4858441,
+      "sha256": "ddb90eb5fc0a7bab4b9d38dc6e6a8eb361c7176a768e29b95588e65cb3cf3c34"
+    },
+    {
+      "id": 11994495243,
+      "role": "portable3.11",
+      "bytes": 4580680,
+      "sha256": "1fb9b8e0ef4c1bab958b779cc55bd2ced2e122f312184941874aefbb8be13ec8"
+    },
+    {
+      "id": 11994545444,
+      "role": "portable3.12",
+      "bytes": 4580825,
+      "sha256": "eceabe7d07d9938c6129357809d72591c2b72dbc60b3e2701c7338a55323377c"
+    },
+    {
+      "id": 11991393996,
+      "role": "diagnostic",
+      "bytes": 12107,
+      "sha256": "16e847a91801a4002ebbcfd6cb1a4ca4d14562ef4648a966cfddf5baaf739590"
+    }
+  ],
+  "original_API_digest_size_before_guarded_extraction": true,
+  "independent_source_artifact_reductions": true,
+  "fresh_main_push_qualification": "separate; not established by this PR receipt",
+  "scope": "GNU/Linux amd64, new private project, default base layer: source/graph capture, publication and historical reads. Defaults: 64 MiB total source, 16 MiB per file, 4096 entries. No metadata, drafts, diff, live apply or macOS admission; full B07 remains open.",
+  "limits": [
+    "No licensed 1C/EDT stand or native business, AI, human GUI, performance or full-product qualification.",
+    "Source SDK tests are separate from installed CLI; the future offline SDK candidate is NOT_RUN.",
+    "POSIX ownership does not prove filesystem-wide atomicity or isolate hostile processes with the same UID. Failed-generation and staging orphans have no GC or repair.",
+    "Published Core dev19, Companion 0.1.20, tags, assets and accepted records are unchanged; no new release."
+  ],
+  "full_product_ready": false
+}

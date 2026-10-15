@@ -16,11 +16,16 @@ jobs:
   linux:
     name: Linux experimental contracts (Python ${{ matrix.python }})
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: ${{ matrix.python == '3.11' && 45 || 30 }}
     strategy:
       fail-fast: false
       matrix:
         python: ['3.11', '3.12']
+        include:
+          - python: '3.11'
+            runtime: '3.11.15'
+          - python: '3.12'
+            runtime: '3.12'
     env:
       PYTHONUTF8: '1'
       CARGO_BUILD_JOBS: '1'
@@ -30,7 +35,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
-          python-version: ${{ matrix.python }}
+          python-version: ${{ matrix.runtime }}
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '24.15.0'
@@ -125,6 +130,228 @@ jobs:
           cp output/linux-scanner-provenance.json output/experimental-linux/GO-SCANNER-PROVENANCE.json
           sha256sum output/experimental-linux/rentgen-input-core > output/experimental-linux/SHA256SUMS
           sha256sum output/experimental-linux/bsl-scan-owned-linux >> output/experimental-linux/SHA256SUMS
+      - name: Acquire exact owned Linux SDK wheels (online input acquisition)
+        if: matrix.python == '3.11'
+        timeout-minutes: 5
+        run: |
+          python - <<'PY'
+          import importlib.util, os, subprocess, sys
+          from pathlib import Path
+          assert sys.platform == "linux" and sys.implementation.name == "cpython"
+          assert sys.version_info[:3] == (3, 11, 15), "Owned SDK profile requires CPython 3.11.15"
+          source = Path("requirements/locks/check_linux_mcp_lock.py")
+          spec = importlib.util.spec_from_file_location("owned_sdk_lock", source)
+          checker = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(checker)
+          checker.load_inputs()  # Exact committed lock, target, origins and closure, before network IO.
+          wheelhouse = Path("output/owned-linux-wheelhouse")
+          wheelhouse.mkdir(mode=0o700, exist_ok=False)
+          command = [sys.executable, "-I", "-m", "pip", "--isolated", "--disable-pip-version-check",
+              "--no-cache-dir", "download", "--index-url", "https://pypi.org/simple",
+              "--require-hashes", "--only-binary=:all:", "--no-deps",
+              "--implementation", "cp", "--python-version", "3.11.15",
+              "--abi", "cp311", "--abi", "abi3", "--abi", "none"]
+          # Explicit glibc ceiling, independent of the runner's newer glibc tags.
+          for platform in [f"manylinux_2_{n}_x86_64" for n in range(34, 4, -1)] + [
+                  "manylinux2014_x86_64", "manylinux2010_x86_64", "manylinux1_x86_64"]:
+              command += ["--platform", platform]
+          command += ["--dest", str(wheelhouse), "-r", "requirements/locks/mcp-py311-linux-x86_64.txt"]
+          subprocess.run(command, check=True, timeout=240)
+          checked = checker.verify_wheelhouse(wheelhouse)
+          assert len(checked["wheels"]) == 29, "Expected the exact 29-wheel SDK closure"
+          assert sum(item["size_bytes"] for item in checked["wheels"]) <= 16 * 1024**2
+          # Input parsing and online acquisition are not installed/native qualification.
+          PY
+      - name: Export a separate owned Linux CLI and MCP candidate
+        if: matrix.python == '3.11'
+        timeout-minutes: 3
+        run: |
+          python - <<'PY'
+          import hashlib, importlib.util, json, os, stat, subprocess, sys, tomllib
+          from pathlib import Path
+          assert sys.version_info[:3] == (3, 11, 15)
+          root = Path.cwd().resolve(strict=True)
+          source = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip()
+          version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+          spec = importlib.util.spec_from_file_location("owned_kit_exporter", "scripts/release/prepare_owned_linux.py")
+          exporter = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(exporter)
+          # These are observations of locally built, already source-bound bytes.
+          # The exporter independently reopens and verifies every pinned input.
+          def record(path, asset):
+              path = Path(os.path.abspath(path))
+              with exporter.OwnedDirectory(path.parent) as parent:
+                  before = os.stat(path.name, dir_fd=parent.fd, follow_symlinks=False)
+                  assert stat.S_ISREG(before.st_mode) and before.st_nlink == 1
+                  assert 0 < before.st_size <= exporter.MAX_FILE
+                  descriptor = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent.fd)
+                  try:
+                      assert exporter._stamp(os.fstat(descriptor)) == exporter._stamp(before)
+                      content = bytearray()
+                      while True:
+                          block = os.read(descriptor, 65536)
+                          if not block:
+                              break
+                          content.extend(block)
+                          assert len(content) <= exporter.MAX_FILE
+                      assert exporter._stamp(os.fstat(descriptor)) == exporter._stamp(before)
+                      assert exporter._stamp(os.stat(path.name, dir_fd=parent.fd, follow_symlinks=False)) == exporter._stamp(before)
+                      assert len(content) == before.st_size
+                  finally:
+                      os.close(descriptor)
+              return dict(asset=asset, sha256=hashlib.sha256(content).hexdigest(), size_bytes=len(content))
+          paths = {
+              "wheel": root / "dist" / f"rentgen_core-{version}-py3-none-any.whl",
+              "scanner": Path(os.environ["RENTGEN_TEST_LINUX_SCANNER"]),
+              "scanner_license": root / "output/linux-scanner-GO-LICENSE",
+              "scanner_provenance": root / "output/linux-scanner-provenance.json",
+              "rust_helper": Path(os.environ["RENTGEN_INPUT_CORE_TEST_BINARY"]),
+          }
+          assets = {"wheel": f"rentgen_core-{version}-py3-none-any.whl", "scanner": "bsl-scan-owned-linux",
+              "scanner_license": "GO-LICENSE", "scanner_provenance": "go-scanner-build-inputs.json",
+              "rust_helper": "rentgen-input-core"}
+          inputs = dict(schema=1, profile=exporter.PROFILE, version=version, source_commit=source, source_tree=tree)
+          inputs.update({name: record(path, assets[name]) for name, path in paths.items()})
+          assert inputs["scanner"]["sha256"] == os.environ["RENTGEN_TEST_LINUX_SCANNER_SHA256"]
+          exporter.validate_inputs(inputs)
+          private = Path("output/owned-linux-inputs")
+          private.mkdir(mode=0o700, exist_ok=False)
+          input_path = private / "build-inputs.json"
+          with input_path.open("xb") as stream:
+              stream.write(exporter.json_bytes(inputs))
+          input_path.chmod(0o600)
+          candidate = Path("output/owned-linux-candidate")
+          command = [sys.executable, "-I", "scripts/release/prepare_owned_linux.py", "build",
+              "--inputs", str(input_path), "--inputs-sha256", exporter.sha(input_path.read_bytes()),
+              "--wheelhouse", "output/owned-linux-wheelhouse", "--output", str(candidate)]
+          for name, path in paths.items():
+              command += ["--" + name.replace("_", "-"), str(path)]
+          subprocess.run(command, check=True, timeout=150)
+          manifest_path = candidate / exporter.MANIFEST
+          manifest = exporter.parse_json(manifest_path.read_bytes())
+          assert manifest["inputs"] == inputs and manifest["kind"] == exporter.PROFILE
+          values = {
+              "OWNED_LINUX_VERSION": version, "OWNED_LINUX_SOURCE": source, "OWNED_LINUX_TREE": tree,
+              "OWNED_LINUX_ARCHIVE": str(candidate / manifest["asset"]),
+              "OWNED_LINUX_MANIFEST": str(manifest_path),
+              "OWNED_LINUX_ARCHIVE_SHA256": manifest["sha256"],
+              "OWNED_LINUX_MANIFEST_SHA256": exporter.sha(manifest_path.read_bytes()),
+              "OWNED_LINUX_SCANNER_SHA256": inputs["scanner"]["sha256"],
+              "OWNED_LINUX_RUST_SHA256": inputs["rust_helper"]["sha256"],
+          }
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as stream:
+              for name, value in values.items():
+                  assert "\n" not in value and "\r" not in value
+                  stream.write(name + "=" + value + "\n")
+          PY
+      - name: Verify final owned Linux archive through installed CLI and official SDK offline
+        if: matrix.python == '3.11'
+        timeout-minutes: 10
+        run: |
+          python scripts/verification/verify_owned_linux_delivery.py \
+            --archive "$OWNED_LINUX_ARCHIVE" --manifest "$OWNED_LINUX_MANIFEST" \
+            --archive-sha256 "$OWNED_LINUX_ARCHIVE_SHA256" --manifest-sha256 "$OWNED_LINUX_MANIFEST_SHA256" \
+            --output output/installed-owned-linux --expected-version "$OWNED_LINUX_VERSION" \
+            --source-commit "$OWNED_LINUX_SOURCE" --scanner-sha256 "$OWNED_LINUX_SCANNER_SHA256" \
+            --rust-sha256 "$OWNED_LINUX_RUST_SHA256"
+      - name: Bound the four public owned Linux candidate files
+        if: matrix.python == '3.11'
+        timeout-minutes: 2
+        run: |
+          python - <<'PY'
+          import hashlib, importlib.util, json, os, re, stat
+          from pathlib import Path
+          spec = importlib.util.spec_from_file_location("owned_kit_exporter", "scripts/release/prepare_owned_linux.py")
+          exporter = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(exporter)
+          candidate = Path("output/owned-linux-candidate")
+          manifest_path = Path(os.environ["OWNED_LINUX_MANIFEST"])
+          archive_path = Path(os.environ["OWNED_LINUX_ARCHIVE"])
+          def pinned(path, expected, limit):
+              with exporter.OwnedDirectory(path.parent) as parent:
+                  size = os.stat(path.name, dir_fd=parent.fd, follow_symlinks=False).st_size
+                  return parent.read(path.name, dict(sha256=expected, size_bytes=size), limit=limit)
+          manifest_raw = pinned(manifest_path, os.environ["OWNED_LINUX_MANIFEST_SHA256"], 1024**2)
+          manifest = exporter.parse_json(manifest_raw)
+          archive_raw = pinned(archive_path, os.environ["OWNED_LINUX_ARCHIVE_SHA256"], 64 * 1024**2)
+          exporter.verified_payload(archive_raw, manifest)
+          expected_files = {manifest["asset"], exporter.MANIFEST, exporter.CHECKSUMS}
+          with exporter.OwnedDirectory(candidate) as directory:
+              assert set(os.listdir(directory.fd)) == expected_files
+          checksum_expected = (exporter.sha(archive_raw) + "  " + manifest["asset"] + "\n"
+              + exporter.sha(manifest_raw) + "  " + exporter.MANIFEST + "\n").encode()
+          checksum = pinned(candidate / exporter.CHECKSUMS, exporter.sha(checksum_expected), 1024)
+          receipt_path = Path("output/installed-owned-linux/acceptance.json")
+          with exporter.OwnedDirectory(receipt_path.parent) as directory:
+              info = os.stat(receipt_path.name, dir_fd=directory.fd, follow_symlinks=False)
+              assert stat.S_ISREG(info.st_mode) and info.st_nlink == 1 and 0 < info.st_size <= 1024**2
+              # The verifier created this file in this job. Freeze the observed
+              # bytes and compare the owned copy before public staging.
+              descriptor = os.open(receipt_path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory.fd)
+              try:
+                  assert exporter._stamp(os.fstat(descriptor)) == exporter._stamp(info)
+                  content = bytearray()
+                  while True:
+                      block = os.read(descriptor, 65536)
+                      if not block:
+                          break
+                      content.extend(block)
+                      assert len(content) <= 1024**2
+                  assert exporter._stamp(os.fstat(descriptor)) == exporter._stamp(info)
+                  assert exporter._stamp(os.stat(receipt_path.name, dir_fd=directory.fd, follow_symlinks=False)) == exporter._stamp(info)
+                  assert len(content) == info.st_size
+                  receipt_raw = bytes(content)
+              finally:
+                  os.close(descriptor)
+              receipt_raw = directory.read(receipt_path.name,
+                  dict(sha256=exporter.sha(receipt_raw), size_bytes=info.st_size), limit=1024**2)
+          receipt = exporter.parse_json(receipt_raw)
+          assert receipt["schema"] == 1 and receipt["profile"] == exporter.PROFILE
+          assert receipt["candidate"] is True and receipt["release_authority"] is False
+          assert receipt["source_commit"] == os.environ["OWNED_LINUX_SOURCE"]
+          assert receipt["source_tree"] == os.environ["OWNED_LINUX_TREE"]
+          assert receipt["version"] == os.environ["OWNED_LINUX_VERSION"]
+          for section, raw in (("archive", archive_raw), ("manifest", manifest_raw)):
+              assert receipt[section] == dict(sha256=exporter.sha(raw), size_bytes=len(raw))
+          assert receipt["scanner"]["sha256"] == os.environ["OWNED_LINUX_SCANNER_SHA256"]
+          assert receipt["rust_helper"]["sha256"] == os.environ["OWNED_LINUX_RUST_SHA256"]
+          assert receipt["rust_helper"]["executed"] is False
+          assert len(receipt["sdk_wheels"]) == 29
+          assert receipt["runtime"]["python"] == "3.11.15"
+          assert receipt["offline_install"] == dict(no_index=True, require_hashes=True, binary_only=True,
+              pip_check=True, bootstrap_and_core_unchanged=True)
+          assert receipt["sdk"]["schema"] == 1 and receipt["sdk"]["accepted"] is True
+          def public(value):
+              if isinstance(value, dict):
+                  for key, item in value.items():
+                      public(key); public(item)
+              elif isinstance(value, list):
+                  for item in value:
+                      public(item)
+              elif isinstance(value, str):
+                  assert not value.startswith(("/", "file:")) and not re.match(r"[A-Za-z]:[\\/]", value)
+                  assert all(private not in value for private in (
+                      str(Path.cwd()), os.environ.get("RUNNER_TEMP", "/__unused__"), "/Users/", "/home/runner/"))
+          public(receipt)
+          files = {manifest["asset"]: archive_raw, exporter.MANIFEST: manifest_raw,
+              exporter.CHECKSUMS: checksum, "owned-linux-acceptance.json": receipt_raw}
+          assert sum(map(len, files.values())) <= 64 * 1024**2
+          with exporter.OwnedDirectory("output/owned-linux-public", create=True) as directory:
+              for name, raw in sorted(files.items()):
+                  directory.write(name, raw)
+                  directory.read(name, dict(sha256=exporter.sha(raw), size_bytes=len(raw)), limit=64 * 1024**2)
+              assert set(os.listdir(directory.fd)) == set(files)
+          PY
+      - name: Upload separate owned Linux candidate and scoped acceptance
+        if: success() && matrix.python == '3.11'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: owned-linux-cli-mcp-py311-x86_64-v1
+          path: output/owned-linux-public/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
       - name: Upload scoped evidence and development artifacts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

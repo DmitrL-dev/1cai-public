@@ -10,7 +10,8 @@
 | --- | --- | --- |
 | Опубликованные Core dev19 / Companion 0.1.20 | Ранний доступ, Windows x64 / CPython 3.11, ограниченные проверенные сценарии | Linux x86_64: отдельное экспериментальное дополнение для state/history/planners, Rust ZIP import и read-only GUI с поиском и сравнением ZIP. Полный Linux/macOS-маршрут не принят |
 | Проверенный development main `413cc65` | Отдельный CI и installed editor API first/restart приняты; human GUI/native 1С открыты. Это не новые опубликованные пакеты | Linux reader/LiveTree и прежний state/ZIP/GUI scope имеют отдельный CI; macOS продукта не принят |
-| Следующий source-блок | Windows regression нового итогового SHA ещё нужен | Linux/amd64 private default-base capture → graph/publication → CLI/MCP source/history read реализуется; actual Linux и installed-приёмка ещё не завершены. Metadata/drafts/diff/native/live/macOS закрыты |
+| Проверенный PR #102 source `366db69` | Windows regression, installed editor API и GUI проверены в [scope записи](evidence/development-ci-366db69-20261016.json); без новой native 1С/human приёмки | Linux/amd64 новый private project/default base source+graph capture/publication/history: actual Linux/source SDK и installed CLI проверены. Main `2e2dd4f` имеет то же дерево; fresh push CI отдельно. Offline installed SDK, metadata/drafts/diff/native/live/macOS закрыты |
+| Следующий source-кандидат offline CLI/MCP | Принятый Windows-профиль не меняется | Отдельный `owned-linux-cli-mcp-py311-x86_64-v1`: CPython 3.11.15 / x86_64, glibc ≥ 2.34 / kernel ≥ 5.9 и 29 locked SDK wheels; actual offline install/SDK-приёмка NOT_RUN. Python 3.12 — source/CLI CI, без SDK offline closure |
 | Захват, снимки и граф в опубликованном Core | Windows retained-file sessions и доверенный scanner | Безопасные адаптеры чтения/захвата ещё нужно принять |
 | BSL/1С/EDT, live apply, Observer-служба | Свои runtime, права и ограничения; не универсальное применение | Не включаются автоматически вместе с переносимым CLI |
 | VSCodium / Cline / Companion | Текущий профиль требует Windows и доверенную рабочую папку | Наличие самого редактора на ОС не переносит интеграцию Рентгена |
@@ -41,21 +42,27 @@ Companion по-прежнему использует Windows-профиль. Д�
 platform-fixture отказы учтены отдельно от целевых portable tests. Старые Windows
 результаты на другом candidate не переносятся на эту сборку.
 
-## Следующая source integration
+## Проверенный capture source и следующий offline-кандидат
 
-[Linux capture и retained source/graph](PORTABLE-CORE.md#следующий-блок-linux-capture-и-чтение-снимков)
-связываются одним блоком с tests и инструкциями. Целевой scope — Linux/amd64,
-новый private project и default base layer, trusted static Go scanner с явным
-SHA-256, complete generation, publication receipt и чтение истории из свежих
-CLI/MCP-процессов. Defaults 64 МиБ total / 16 МиБ file / 4096 entries не являются
-приёмкой максимального workload или полного B07. Этот блок не входит в dev19;
-локальные POSIX controls на macOS и Linux cross-build не заменяют actual Linux
-и installed qualification нового SHA.
+[Linux capture и retained source/graph](PORTABLE-CORE.md#linux-capture-и-чтение-снимков)
+приняты в ограниченном scope на [PR #102, HEAD `366db69`](evidence/development-ci-366db69-20261016.json):
+Linux/amd64 новый private project/default base, trusted static Go scanner с SHA-256,
+complete generation, publication receipt и история. Actual Linux/source SDK и
+installed CLI проверены отдельно; offline installed SDK пока не принят.
+Main `2e2dd4f` имеет то же дерево, его fresh push CI — отдельная проверка.
+Defaults 64 МиБ total / 16 МиБ file / 4096 entries не являются приёмкой максимального
+workload или полного B07. Этот маршрут не входит в dev19; его PR receipt
+не переносится на последующие source/bytes, macOS или полный продукт.
 
 [CI main `413cc65`](evidence/development-ci-413cc65-20261016.json) относится к
 предыдущему development-срезу, включая настоящий Windows editor API workbench,
 прежний Linux state/ZIP/GUI и synthetic diagnostic framework. Он не переносится
 на новые capture bytes, human GUI, native 1С или AI competence.
+
+Для следующей доставки есть отдельный source-кандидат [Linux CLI/MCP offline kit](../../scripts/release/OWNED-LINUX-KIT.md)
+и [его SDK lock](../../requirements/locks/LINUX-MCP-LOCK.md). Подготовка/проверка
+входных bytes не заменяет новую установку финального архива на точном target.
+CI capture и опубликованный dev19 не квалифицируют этот новый offline-профиль.
 
 ## Как станет проще работать на разных ОС
 

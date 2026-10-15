@@ -25,9 +25,12 @@ set actor, permissions, source root, registry, executable, environment or an
 output file. Project memberships are checked again on each operation. This local OS
 adapter must not be reused as end-user authentication for an HTTP service.
 
-The current checkout adds a bounded Linux/amd64 source capture/read integration;
-it is not present in published dev19 and still requires exact-source native and
-installed qualification. For a new capture, trusted startup must provide both an
+The bounded Linux/amd64 capture/read route was qualified at
+[PR #102, HEAD `366db69`](evidence/development-ci-366db69-20261016.json): actual Linux,
+installed CLI and separate source SDK MCP tests. It is absent from published
+dev19; it does not qualify the future offline installed SDK candidate below.
+Main `2e2dd4f` has the same tree; its fresh push CI is a separate qualification.
+For a new capture, trusted startup must provide both an
 absolute static CGO-disabled Go scanner and its trusted lowercase SHA-256:
 
 ```sh
@@ -42,7 +45,19 @@ replay may omit both scanner options. The Linux source route admits only capture
 source-list/read and graph-resolve/impact in addition to the existing portable
 state/history subset. Its defaults are 64 MiB total source, 16 MiB per file and
 4096 source entries; metadata/draft writes, diff, native and live tools stay
-closed. See [PORTABLE-CORE.md](PORTABLE-CORE.md) for bounds and pending acceptance.
+closed. See [PORTABLE-CORE.md](PORTABLE-CORE.md) for the qualified source scope,
+bounds and remaining gates.
+
+For a future offline Linux SDK installation there is a separate source-candidate
+[owned Linux kit](../../scripts/release/OWNED-LINUX-KIT.md), with
+[29 locked original wheels](../../requirements/locks/LINUX-MCP-LOCK.md).
+Its exact interpreter target is CPython 3.11.15 on GNU/Linux x86_64 with glibc ≥ 2.34
+and kernel ≥ 5.9. The Windows MCP lock is not a Linux dependency profile; Python
+3.12 source/CLI CI does not qualify SDK offline closure. The new verifier exercises
+installed CLI and official-SDK stdio history/replay plus controlled pre-CAS
+cancellation, but **actual offline SDK acceptance is currently NOT_RUN**.
+PR #102 capture CI and a successful exporter build do not provide that evidence.
+The candidate leaves published dev19 / Companion 0.1.20 unchanged.
 
 ## Startup scope (dev6)
 

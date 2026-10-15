@@ -98,8 +98,10 @@ Linux tests execute the actual built scanner, sealed image, pipes, private files
 parent SIGKILL, native timer and syscall refusal from a real post-filter process.
 Fault seams only force denials. Non-Linux runs do not pretend to be Linux. Native
 Mac Go tests and Linux cross-compilation establish their stated source/build
-scope only; actual Linux/amd64 kernel/filesystem/runtime CI and exact installed
-delivery remain necessary. No public capability is admitted by this module.
+scope only. Actual Linux/amd64 and installed CLI integration were separately
+qualified at [PR #102, HEAD `366db69`](../docs/product/evidence/development-ci-366db69-20261016.json).
+That scoped receipt does not qualify the future offline installed SDK, larger
+workloads or subsequent bytes. No public capability is admitted by this module.
 
 Kernel interfaces: [PDEATHSIG](https://man7.org/linux/man-pages/man2/PR_SET_PDEATHSIG.2const.html),
 [seccomp TSYNC/ABI](https://man7.org/linux/man-pages/man2/seccomp.2.html),

@@ -34,9 +34,15 @@ product route. Текущие исходники содержат и более 
 Human GUI, native 1С и полная IDE этим не приняты. Исторические
 [отказ `3cc29c2`](product/evidence/development-ci-3cc29c2-20261015.json) и
 [ранний отказ `553e1fa`](product/evidence/development-ci-553e1fa-20261015.json) сохранены.
-Следующий [Linux capture/source/graph блок](product/PORTABLE-CORE.md#следующий-блок-linux-capture-и-чтение-снимков)
-связывает POSIX owners, scanner, publication и CLI/MCP в исходниках; actual Linux
-и installed-квалификация ещё не завершены. Опубликованные пакеты его не содержат.
+Ограниченный [Linux capture/source/graph блок](product/PORTABLE-CORE.md#linux-capture-и-чтение-снимков)
+проверен на [PR #102, HEAD `366db69`](product/evidence/development-ci-366db69-20261016.json):
+actual Linux, installed CLI и отдельно source SDK MCP; main `2e2dd4f` имеет то же
+дерево, а fresh main push CI учитывается отдельно. Опубликованные пакеты этот
+capture не содержат; offline installed SDK этим не квалифицирован.
+Следом подготовлен source-кандидат [отдельного Linux CLI/MCP offline-комплекта](../scripts/release/OWNED-LINUX-KIT.md)
+с 29 закреплёнными SDK wheels для CPython 3.11.15 / GNU/Linux x86_64.
+Actual offline-установка и SDK-приёмка пока **NOT_RUN**; отдельный CI capture
+их не подтверждает. Этот кандидат не меняет опубликованный dev19.
 [Аудит плана выпуска](../scripts/release/RELEASE-PLAN-CONTRACT.md)
 отделяет проверенные bytes и заявленное покрытие от ещё не принятого полного продукта.
 Лицензированного стенда 1С/EDT пока нет, native-gates остаются открытыми.
@@ -77,7 +83,8 @@ Linux-архива. Windows/macOS для этого маршрута не ква
 | :--- | :--- |
 | Установить опубликованный Core dev19 | [Готовый выпуск и первый запуск](../GETTING_STARTED.md#готовый-core-dev19) |
 | Собрать Core из выбранных исходников и зарегистрировать проект | [Сборка ядра и первый проект](product/CORE-INSTALLATION.md) |
-| Подготовить воспроизводимый комплект с зависимостями | [Офлайн-комплект Core](product/CORE-OFFLINE-KIT.md) |
+| Подготовить Windows-комплект с зависимостями | [Офлайн-комплект Core](product/CORE-OFFLINE-KIT.md) |
+| Подготовить кандидат Linux CLI/MCP offline-комплекта; installed-приёмка ещё нужна | [Отдельный Linux-профиль](../scripts/release/OWNED-LINUX-KIT.md) |
 | Создать отдельный профиль VSCodium / Cline | [Подготовка редактора](../integrations/open-editor/README.md) |
 | Настроить панели модулей и черновиков | [Companion: расширение редактора](../integrations/vscode-rentgen/README.md) |
 | Подключить AI-клиент к ядру | [Инструменты MCP](product/CORE-MCP.md) |

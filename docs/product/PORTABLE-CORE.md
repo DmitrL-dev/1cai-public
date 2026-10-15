@@ -43,13 +43,18 @@ native execution, diagnostics и непроверенные state writes воз�
 ещё требуют отдельной реализации и native приёмки. POSIX file descriptor не
 объявляется эквивалентом Windows deny-write/deny-delete retained handle.
 
-## Следующий блок: Linux capture и чтение снимков
+## Linux capture и чтение снимков
 
-Это **новая source integration, ещё без завершённой actual Linux и installed-приёмки**.
-[CI main `413cc65`](evidence/development-ci-413cc65-20261016.json) квалифицирует
-предыдущий development-срез; опубликованный dev19 не содержит этот capture backend
-или Go scanner для него. До квалификации нового точного SHA и готового комплекта
-не считайте команды ниже поддержанным выпуском.
+Ограниченный маршрут проверен на [PR #102, HEAD `366db69`](evidence/development-ci-366db69-20261016.json):
+actual Linux scanner/kernel/ACL, publication/history/replay, installed CLI из wheel
+и отдельно source SDK MCP. В Linux lanes 3.11/3.12 прошли по 4441 tests / 975 skips,
+44 actual Linux cases, включая 2 source SDK cases; installed CLI — 45 вызовов, 42 success и
+3 ожидаемых отказа. Windows regression и editor/GUI сохраняют свой scope в записи.
+
+PR слит в main `2e2dd4f` с тем же деревом `32454b3da4a1fb6cbfc373a2b0c225bbb657bcd1`.
+Fresh main push CI — отдельная проверка; PR receipt её не заменяет. Этот capture
+не входит в опубликованный dev19. Source SDK и installed CLI не квалифицируют
+следующий offline installed SDK-комплект; его приёмка пока NOT_RUN.
 
 Целевой сценарий — GNU/Linux amd64, новый private project и его default base layer:
 сохранить исходники и статический граф, перечитать их в свежем процессе, сохранить
@@ -95,10 +100,38 @@ CAS. Неопубликованные попытки сохраняются; а�
 permissions отсутствуют.
 
 Локальные POSIX/SQLite controls и cross-compilation на macOS подтверждают только
-свой scope. Нужны actual Linux scanner/kernel/ACL, CLI/MCP cancellation/replay/history,
-installed wheel без source fallback и Windows regression на новом итоговом SHA.
-Полный offline SDK closure, весь Linux/macOS продукт, native 1С/EDT и финальный
-релиз остаются открытыми.
+свой scope. Actual Linux/source SDK, installed CLI и Windows regression отдельно
+приняты для указанного PR source `366db69`; следующие source/bytes и fresh main
+push требуют своих проверок. Offline installed SDK closure, весь Linux/macOS
+продукт, native 1С/EDT и финальный релиз остаются открытыми.
+
+## Кандидат Linux CLI/MCP offline-комплекта
+
+В исходниках подготовлен отдельный профиль `owned-linux-cli-mcp-py311-x86_64-v1`;
+это не опубликованное dev19-дополнение и не принятие всего Linux-продукта.
+[Exporter и точные команды](../../scripts/release/OWNED-LINUX-KIT.md) связывают
+source commit/tree, Core wheel, static Go scanner, прежний Rust helper и лицензии.
+[Linux SDK lock](../../requirements/locks/LINUX-MCP-LOCK.md) сохраняет 29 оригинальных
+wheels для официального MCP SDK 1.30.0. Interpreter и OS libraries не поставляются.
+
+Target этого комплекта — **CPython 3.11.15 / GNU/Linux x86_64**, glibc ≥ 2.34,
+kernel ≥ 5.9, `libgcc_s.so.1`, memfd seals и `/proc/self/fd`. Python 3.12 остаётся
+source/CLI CI target, без квалифицированного offline SDK closure. Windows lock
+не используется как Linux wheelhouse; optional MCP CLI extras не включены.
+
+Generated `INSTALL.md` устанавливает только локальные hash-locked wheels и Core,
+затем выполняет `pip check`. Отдельный `verify_owned_linux_delivery.py` предназначен
+для фактической проверки извлечённых финальных bytes: свежие installed CLI и
+официальный SDK stdio, default-base capture, source/graph/history, receipt replay
+и контролируемая отмена до CAS с cleanup. Поздняя отмена по-прежнему может уступить
+commit; отсутствие публикации в контролируемом pre-CAS сценарии не даёт общего rollback.
+
+**Actual offline SDK install/acceptance пока NOT_RUN.** Local exporter/guard tests
+и отдельный source capture CI не являются этой приёмкой. Новая поставка требует
+своего точного source SHA, final archive/manifest hashes и actual target execution;
+manifest кандидата остаётся `accepted:false`, `published:false` и
+`linux_installed_cli_mcp_qualified:false`. Metadata/drafts/diff/live/native,
+Companion, macOS, AI и полный B07 этим профилем не допускаются.
 
 ## Local ownership, не новый IAM
 
