@@ -89,6 +89,10 @@ Missing, malformed or oversized private phase receipts produce a finite
 unavailable diagnostic and preserve the original process failure. Partial phase
 success never changes overall `accepted:false`; both phases and the final byte
 and cleanup checks remain mandatory.
+Checkpoints update only the attempt's original regular, single-link acceptance
+file, with identity checks and a bounded write/flush/fsync. Other input and
+receipt creation stays exclusive. A terminal write failure refuses success and
+cannot replace an already active host/process exception.
 
 The installed-layout comparison includes `.vsixmanifest` with the exact bytes of
 the outer VSIX `extension.vsixmanifest`. This is a source-based correction for

@@ -238,7 +238,46 @@ def reduce_phase_failure(value, phase):
     return reduced
 
 
-def phase_attempt(command_args, *, output, evidence, profile, phase, receipt):
+class AcceptanceReceipt:
+    """Update only this attempt's original bounded receipt; other saves stay exclusive."""
+    def __init__(self, path):
+        self.path = path
+        self._identity = None
+
+    def _check(self, info):
+        require(stat.S_ISREG(info.st_mode) and info.st_nlink == 1
+                and not getattr(info, "st_file_attributes", 0) & 0x400,
+                "Unsafe acceptance receipt")
+        identity = info.st_dev, info.st_ino
+        require(self._identity is None or identity == self._identity,
+                "Acceptance receipt identity changed")
+        return identity
+
+    def save(self, value):
+        data = (json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
+        require(len(data) <= 2 * 1024**2, "Receipt exceeds 2 MiB")
+        if self._identity is not None:
+            self._check(self.path.lstat())
+        with self.path.open("x+b" if self._identity is None else "r+b") as stream:
+            self._identity = self._check(os.fstat(stream.fileno()))
+            self._check(self.path.lstat())
+            stream.write(data)
+            stream.truncate()
+            stream.flush()
+            os.fsync(stream.fileno())
+            self._check(os.fstat(stream.fileno()))
+            self._check(self.path.lstat())
+
+
+def finish_receipt(acceptance, receipt, primary_error):
+    try:
+        acceptance.save(receipt)
+    except Exception:
+        if primary_error is None:
+            raise
+
+
+def phase_attempt(command_args, *, output, evidence, profile, phase, receipt, acceptance):
     """Preserve validated earlier phases and reduce a failed host before rethrow."""
     phases = receipt.setdefault("phases", {})
     try:
@@ -256,7 +295,7 @@ def phase_attempt(command_args, *, output, evidence, profile, phase, receipt):
     require(supervisor["accepted"] is True and supervisor["cleanup_complete"] is True, "Editor descendants not proved closed")
     reduced["owned_process_cleanup"] = True
     phases[phase] = reduced
-    save(evidence / "acceptance.json", receipt)
+    acceptance.save(receipt)
 
 
 def verify(args):
@@ -271,6 +310,7 @@ def verify(args):
                "trigger_head": args.trigger_head, "scope": "installed Windows editor API workbench slice",
                "human_gui_accessibility": "NOT_RUN", "full_product_ready": False,
                "model_calls": 0, "live_1c_apply": False, "fault_model": "durable_intent_commit_unobserved"}
+    acceptance = AcceptanceReceipt(evidence / "acceptance.json")
     try:
         checkout = args.checkout.resolve(strict=True)
         vsix = args.vsix.resolve(strict=True)
@@ -328,7 +368,8 @@ def verify(args):
         phases = receipt["phases"] = {}
         for phase in ("first", "restart"):
             phase_attempt([python, "-I", "-B", HERE / "supervisor.py", "--launch", launch_file, "--mode", phase],
-                          output=output, evidence=evidence, profile=profile, phase=phase, receipt=receipt)
+                          output=output, evidence=evidence, profile=profile, phase=phase, receipt=receipt,
+                          acceptance=acceptance)
         require(phases["first"]["process_id"] != phases["restart"]["process_id"], "Fresh Host not observed")
         require(tree(output / "editor") == editor_inventory, "Pinned editor files changed")
         require(tree(output / "java") == java_inventory, "Pinned JDK input files changed")
@@ -354,7 +395,7 @@ def verify(args):
             "TimeoutExpired", "JSONDecodeError"} else "Error"}
         raise
     finally:
-        save(evidence / "acceptance.json", receipt)
+        finish_receipt(acceptance, receipt, sys.exc_info()[1])
 
 
 if __name__ == "__main__":

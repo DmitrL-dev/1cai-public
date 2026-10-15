@@ -2,8 +2,10 @@
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
+import sys
 import urllib.request
 from zipfile import ZipFile
 
@@ -95,15 +97,89 @@ def test_restart_failure_preserves_validated_first_phase_and_primary_exception(m
             raise original
     monkeypatch.setattr(runner, "command", command)
     receipt = {"accepted": False}
-    runner.phase_attempt([], output=tmp_path, evidence=evidence, profile=profile, phase="first", receipt=receipt)
+    acceptance = runner.AcceptanceReceipt(evidence / "acceptance.json")
+    runner.phase_attempt([], output=tmp_path, evidence=evidence, profile=profile, phase="first", receipt=receipt,
+                         acceptance=acceptance)
     saved = json.loads((evidence / "acceptance.json").read_text())
     assert saved["accepted"] is False and saved["phases"]["first"]["owned_process_cleanup"] is True
     with pytest.raises(RuntimeError) as caught:
-        runner.phase_attempt([], output=tmp_path, evidence=evidence, profile=profile, phase="restart", receipt=receipt)
+        try:
+            runner.phase_attempt([], output=tmp_path, evidence=evidence, profile=profile, phase="restart", receipt=receipt,
+                                 acceptance=acceptance)
+        finally:
+            runner.finish_receipt(acceptance, receipt, sys.exc_info()[1])
     assert caught.value is original
     assert receipt["phases"] == saved["phases"]
     assert receipt["phase_failures"]["restart"] == failed_phase()
     assert receipt["accepted"] is False and "private" not in json.dumps(receipt)
+    assert json.loads((evidence / "acceptance.json").read_text()) == receipt
+
+
+def test_both_phases_and_final_acceptance_update_the_same_real_receipt(modules, tmp_path, monkeypatch):
+    _, runner = modules
+    for which in ("first", "restart"):
+        (tmp_path / ("phase-" + which + ".json")).write_text(json.dumps(phase(which)))
+        (tmp_path / ("supervisor-" + which + ".json")).write_text(json.dumps({"accepted": True, "cleanup_complete": True}))
+    monkeypatch.setattr(runner, "command", lambda *args, **kwargs: None)
+    receipt = {"accepted": False}
+    acceptance = runner.AcceptanceReceipt(tmp_path / "acceptance.json")
+    for which in ("first", "restart"):
+        runner.phase_attempt([], output=tmp_path, evidence=tmp_path, profile=tmp_path, phase=which,
+                             receipt=receipt, acceptance=acceptance)
+        assert json.loads(acceptance.path.read_text()) == receipt and receipt["accepted"] is False
+    receipt["accepted"] = True
+    runner.finish_receipt(acceptance, receipt, None)
+    assert json.loads(acceptance.path.read_text()) == receipt
+    assert set(receipt["phases"]) == {"first", "restart"}
+
+
+@pytest.mark.parametrize("primary_failure", [False, True])
+def test_final_receipt_io_failure_refuses_success_and_preserves_primary_error(modules, tmp_path, monkeypatch, primary_failure):
+    _, runner = modules
+    acceptance = runner.AcceptanceReceipt(tmp_path / "acceptance.json")
+    receipt = {"accepted": False}
+    acceptance.save(receipt)
+    io_error, primary = OSError("receipt IO failed"), RuntimeError("original process failure")
+    monkeypatch.setattr(runner.os, "fsync", lambda fd: (_ for _ in ()).throw(io_error))
+    with pytest.raises(RuntimeError if primary_failure else OSError) as caught:
+        try:
+            if primary_failure:
+                raise primary
+        finally:
+            runner.finish_receipt(acceptance, receipt, sys.exc_info()[1])
+    assert caught.value is (primary if primary_failure else io_error)
+
+
+def test_acceptance_writer_never_overwrites_preexisting_or_replaced_file(modules, tmp_path):
+    _, runner = modules
+    path = tmp_path / "acceptance.json"
+    path.write_bytes(b"preexisting")
+    with pytest.raises(FileExistsError):
+        runner.AcceptanceReceipt(path).save({"accepted": False})
+    assert path.read_bytes() == b"preexisting"
+    path.unlink()
+    acceptance = runner.AcceptanceReceipt(path)
+    acceptance.save({"accepted": False})
+    replacement = tmp_path / "replacement"
+    replacement.write_bytes(b"foreign replacement")
+    os.replace(replacement, path)
+    with pytest.raises(RuntimeError, match="identity changed"):
+        acceptance.save({"accepted": True})
+    assert path.read_bytes() == b"foreign replacement"
+
+
+def test_acceptance_writer_refuses_hardlink_alias_and_oversized_update(modules, tmp_path):
+    _, runner = modules
+    acceptance = runner.AcceptanceReceipt(tmp_path / "acceptance.json")
+    acceptance.save({"accepted": False})
+    original = acceptance.path.read_bytes()
+    with pytest.raises(RuntimeError, match="exceeds 2 MiB"):
+        acceptance.save({"accepted": False, "data": "x" * (2 * 1024**2)})
+    assert acceptance.path.read_bytes() == original
+    os.link(acceptance.path, tmp_path / "alias")
+    with pytest.raises(RuntimeError, match="Unsafe acceptance receipt"):
+        acceptance.save({"accepted": True})
+    assert acceptance.path.read_bytes() == original
 
 
 @pytest.mark.parametrize("invalid", [False, True])
@@ -115,7 +191,8 @@ def test_missing_or_unbounded_failed_phase_still_preserves_process_failure(modul
     monkeypatch.setattr(runner, "command", lambda *args, **kwargs: (_ for _ in ()).throw(original))
     receipt = {"accepted": False}
     with pytest.raises(RuntimeError) as caught:
-        runner.phase_attempt([], output=tmp_path, evidence=tmp_path, profile=tmp_path, phase="restart", receipt=receipt)
+        runner.phase_attempt([], output=tmp_path, evidence=tmp_path, profile=tmp_path, phase="restart", receipt=receipt,
+                             acceptance=runner.AcceptanceReceipt(tmp_path / "acceptance.json"))
     assert caught.value is original and receipt["accepted"] is False
     assert receipt["phase_failures"]["restart"]["diagnostic"] == "failed-phase-receipt-unavailable-or-invalid"
     assert "private" not in json.dumps(receipt)
