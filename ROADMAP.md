@@ -7,13 +7,14 @@ Workbench, POSIX reader/LiveTree и diagnostic pilot объединены в mai
 `413cc65`; [CI этого SHA](docs/product/evidence/development-ci-413cc65-20261016.json)
 принял ограниченный installed workbench в двух настоящих Windows Extension Hosts.
 Ограниченный Linux/amd64 capture → publication → source/graph/history
-[проверен на PR #102, HEAD `366db69`](docs/product/evidence/development-ci-366db69-20261016.json):
-actual Linux и installed CLI, отдельно source SDK MCP. Main `2e2dd4f` содержит
-то же дерево; его fresh push CI — отдельная проверка. [Scope](docs/product/PORTABLE-CORE.md#linux-capture-и-чтение-снимков)
-не включает новый offline SDK kit: его actual приёмка требует отдельной
-проверенной `acceptance.json` для точных source и bytes.
-Следующий delivery-блок — этот [кандидат](scripts/release/OWNED-LINUX-KIT.md);
-новый выпуск и полный B07 не объявлены.
+имеет [PR #102 source-приёмку](docs/product/evidence/development-ci-366db69-20261016.json).
+[PR #103 `c9cb31e`](docs/product/evidence/development-ci-c9cb31e-20261016.json) и
+[fresh main `8e7346e`](docs/product/evidence/development-ci-8e7346e-20261016.json)
+отдельно подтвердили синтетический installed CLI/MCP offline-сценарий точных source/bytes.
+Следующая часть — [SNAP-DIFF-01](docs/product/SNAPSHOT-DIFF.md): source-контракт
+Linux paired CLI/MCP с общим POSIX budget и конечным output guard.
+Его actual Linux/installed SDK-приёмка относится только к новой точной сборке;
+положительные `c9` / `8e` её не заменяют. Новый выпуск и полный B07 не объявлены.
 Лицензированного стенда 1С/EDT пока нет: native-gates открыты,
 реализация и обычный CI продолжаются.
 
@@ -138,14 +139,21 @@ profile, project/state reads, draft history/receipt и byte/JSON planners. По�
 
 ### Затем: чтение сохранённых снимков
 
-На [PR #102, HEAD `366db69`](docs/product/evidence/development-ci-366db69-20261016.json)
-принят ограниченный Linux/amd64 маршрут: private bootstrap, копирование источников,
-фиксированный scanner, SQLite graph, publication CAS и исторические чтения.
-Actual Linux/source SDK tests и installed CLI проверены отдельно; они не
-квалифицируют offline installed SDK. Срез — новый private project/default base layer;
-metadata/drafts/diff/native/live и macOS закрыты. Это часть B07, без закрытия
-всего этапа и без изменения опубликованного dev19. Последующие bytes и main push
-CI требуют своих точных проверок.
+[PR #102 `366db69`](docs/product/evidence/development-ci-366db69-20261016.json)
+принял ограниченный Linux/amd64 capture/read маршрут. Последующие
+[PR #103 `c9cb31e`](docs/product/evidence/development-ci-c9cb31e-20261016.json) и
+[fresh main `8e7346e`](docs/product/evidence/development-ci-8e7346e-20261016.json)
+отдельно проверили точный offline CLI/MCP kit на синтетическом сценарии.
+Это часть B07, без закрытия всего этапа и без изменения опубликованного dev19.
+
+[SNAP-DIFF-01](docs/product/SNAPSHOT-DIFF.md) описывает новый source-контракт:
+Linux сравнивает ordered pair из catalog в двух owned read sessions под общим
+ранним budget, сохраняет исходный deadline и повторно проверяет права перед
+выдачей страницы. MCP `rentgen_snapshot_diff` ограничивает полное wire message.
+Windows CLI сохраняет прежний контракт; новый Windows MCP получает общий
+deadline/output guard с прежними per-session ресурсами. Public macOS закрыт.
+Для каждой новой сборки нужны свои actual Linux, installed CLI/SDK и Windows
+regression receipts; прежние `c9` / `8e` этот diff не проверяли.
 
 Отделить интерфейс безопасного чтения от Windows-реализации. Для Linux и macOS
 принимать отдельные адаптеры чтения принадлежащих хранилищу снимков: ограничения

@@ -171,6 +171,43 @@ def validate_external(archive_raw, manifest_raw, archive_sha256, manifest_sha256
     return manifest, kit.verified_payload(archive_raw, manifest)
 
 
+def require_snapshot_diff_acceptance(value):
+    """The newly qualified route is mandatory; an older capture receipt fails."""
+    base.require(type(value) is dict and set(value)=={"schema","scope","sdk","cli","trusted_library_controls","limitations"}
+        and type(value["schema"]) is int and value["schema"]==1
+        and value["scope"]=="actual installed explicit retained-pair fixture only", "Installed retained-pair receipt required")
+    sdk_flags={"explicit_forward","reverse_pair","self_pair","historical_bytes","broken_unrelated_head_ignored",
+        "live_inputs_removed","unknown_snapshot_refused","wrong_pair_cursor_refused","wrong_limit_cursor_refused",
+        "tampered_before_refused","tampered_after_refused","revoked_current_read_refused","output_scope_private"}
+    ids={"before_snapshot_sha256","after_snapshot_sha256","unrelated_head_snapshot_sha256"}
+    sdk=value["sdk"]
+    base.require(type(sdk) is dict and set(sdk)==sdk_flags|ids|{"pagination"}
+        and all(sdk[name] is True for name in sdk_flags)
+        and all(type(sdk[name]) is str and re.fullmatch("[0-9a-f]{64}",sdk[name]) for name in ids)
+        and len({sdk[name] for name in ids})==3, "Installed SDK retained-pair scenarios incomplete")
+    page=sdk["pagination"]
+    base.require(type(page) is dict and set(page)=={"pages","changes","limit","counts"}
+        and all(type(page[name]) is int and page[name]==expected for name,expected in (("pages",3),("changes",3),("limit",1)))
+        and type(page["counts"]) is dict and page["counts"]==dict(added=1,removed=1,modified=1,unchanged=2)
+        and all(type(n) is int for n in page["counts"].values()), "Installed retained-pair pagination differs")
+    cli_flags={"explicit_forward","reverse_pair","self_pair","pagination","historical_bytes",
+        "broken_unrelated_head_ignored","unknown_snapshot_refused","wrong_pair_cursor_refused","head_database_unchanged"}
+    cli=value["cli"]
+    base.require(type(cli) is dict and set(cli)==cli_flags and all(cli[name] is True for name in cli_flags), "Installed CLI retained-pair scenarios incomplete")
+    library_flags={"separate_owners_fit","combined_copy_budget_refused","pre_cancel_refused",
+        "descriptors_restored_after_refusals","post_success_authority_revocation_refused",
+        "output_scope_pair_mismatch_refused","expired_output_scope_refused"}
+    library=value["trusted_library_controls"]
+    base.require(type(library) is dict and set(library)==library_flags|{"scope"}
+        and library["scope"]=="isolated installed-library negative controls, not SDK protocol acceptance"
+        and all(library[name] is True for name in library_flags), "Installed library refusal controls incomplete")
+    base.require(value["limitations"]==[
+        "Source-path byte comparison only; no semantic identity or graph delta.",
+        "Read-operation accounting is conservative; no hard RSS limit or precise during-copy SDK cancellation claim.",
+        "Actual synthetic fixture only; no minimum-platform, native 1C/EDT or model qualification.",
+    ], "Installed retained-pair limitations differ")
+
+
 def verify(archive, manifest, archive_sha256, manifest_sha256, output, expected_version,
            source_commit, scanner_sha256, rust_sha256):
     runtime=host()  # Before candidate IO or output creation, never a spoofed Linux path.
@@ -244,6 +281,7 @@ def verify(archive, manifest, archive_sha256, manifest_sha256, output, expected_
     sdk_receipt = json.loads(stdout)
     base.require(sdk_receipt.get("schema") == 1 and sdk_receipt.get("accepted") is True,
                  "Installed SDK fixture did not produce positive receipt")
+    require_snapshot_diff_acceptance(sdk_receipt.get("snapshot_diff"))
     receipt = dict(schema=1, profile=kit.PROFILE, candidate=True, release_authority=False,
         runtime=runtime,qualification_tooling_sha256=tooling,
         source_commit=source_commit, source_tree=inputs["source_tree"], version=expected_version,

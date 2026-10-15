@@ -4,12 +4,24 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import venv
 from kit_inputs import extract
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def client_failure_locations(stderr):
+    """Report bounded client frame numbers without copying private output."""
+    if type(stderr) is not str:
+        return "unavailable"
+    lines = re.findall(
+        r'^[ \t|]*File "(?:[^"\r\n]*[\\/])?client\.py", line ([1-9][0-9]{0,5})(?:,|$)',
+        stderr[-65536:], re.MULTILINE,
+    )
+    return ", ".join("client.py:" + line for line in lines[-4:]) or "unavailable"
 
 
 def digest(path):
@@ -81,7 +93,10 @@ def verify(archive_path, output, expected_sha256):
             raise
         (output / f"{name}.log").write_text(stdout + stderr, encoding="utf-8")
         if process.returncode != 0:
-            raise RuntimeError(f"{name} failed; inspect its log in {output}")
+            locations = client_failure_locations(stderr)
+            raise RuntimeError(
+                f"{name} failed; client frames: {locations}; inspect its log in {output}"
+            )
         return stdout
 
     run(

@@ -31,10 +31,11 @@ def test_v1_alias_preserves_windows_contract_without_opening_linux_writers(monke
     groups = report["capabilities"]
     assert set(groups["snapshot.retained.read"]["operations"]) == _LEGACY_RETAINED
     assert set(groups["snapshot.source.read"]["operations"]) == _SOURCE_READS
+    assert groups["snapshot.compare.read"]["operations"] == ["snapshot-diff"]
     assert groups["snapshot.retained.read"]["supported"] is (platform == "win32")
-    for operation in _SOURCE_READS | {"capture"}:
+    for operation in _SOURCE_READS | {"capture", "snapshot-diff"}:
         assert capabilities.operation_supported(operation) is (platform != "darwin")
-    for operation in _LEGACY_RETAINED - _SOURCE_READS:
+    for operation in _LEGACY_RETAINED - _SOURCE_READS - {"snapshot-diff"}:
         assert capabilities.operation_supported(operation) is (platform == "win32")
     assert not capabilities.operation_supported("unreviewed-source-command")
 

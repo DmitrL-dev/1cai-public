@@ -47,17 +47,22 @@
 Это автоматическая приёмка API редактора; human GUI, native 1С и полная IDE открыты.
 
 Ограниченный [Linux capture и чтение снимков](docs/product/PORTABLE-CORE.md#linux-capture-и-чтение-снимков)
-проверен на [PR #102, HEAD `366db69`](docs/product/evidence/development-ci-366db69-20261016.json):
-actual Linux scanner, publication/history, installed CLI и отдельный source SDK MCP.
-PR слит в main `2e2dd4f` с тем же деревом; fresh main push CI учитывается отдельно.
-Опубликованный dev19 capture на Linux не содержит; offline installed SDK ниже
-требует отдельной приёмки точного комплекта.
-Для следующей доставки подготовлен отдельный source-кандидат
-[Linux CLI/MCP offline-комплекта](scripts/release/OWNED-LINUX-KIT.md):
-CPython 3.11.15 / GNU/Linux x86_64, Go scanner и 29 закреплённых SDK wheels.
-Это source/build-кандидат: результат installed CLI/SDK-приёмки определяет только
-проверенная отдельная `acceptance.json` для точных source и bytes. CI capture-блока
-её не заменяет; опубликованные dev19 / 0.1.20 прежние.
+имеет отдельную [PR #102 source-приёмку](docs/product/evidence/development-ci-366db69-20261016.json).
+Позднее [PR #103, HEAD `c9cb31e`](docs/product/evidence/development-ci-c9cb31e-20261016.json)
+и независимо [fresh main `8e7346e`](docs/product/evidence/development-ci-8e7346e-20261016.json)
+прошли ограниченный actual Linux installed CLI/MCP offline-сценарий:
+точные source/bytes, offline install, source/graph/history, replay и pre-CAS cancellation.
+Это синтетическая автоматическая приёмка конкретного development-комплекта;
+[контракт Linux kit](scripts/release/OWNED-LINUX-KIT.md) требует отдельную проверенную
+`acceptance.json` для каждой новой сборки. Опубликованные dev19 / 0.1.20 прежние.
+
+В текущих source реализован [SNAP-DIFF-01](docs/product/SNAPSHOT-DIFF.md):
+ограниченное сравнение двух сохранённых снимков через Linux CLI и MCP
+`rentgen_snapshot_diff` с общим POSIX budget и конечной проверкой выдачи.
+Этот source-контракт требует собственной exact-source installed CLI/SDK-приёмки;
+CI `c9` / `8e` новый diff не содержит и не квалифицирует.
+[Первый CI `597e50e`](docs/product/evidence/development-ci-597e50e-20261016.json)
+сохранён как отрицательный; Linux/Windows installed pair этого HEAD не принят.
 
 [Аудит плана выпуска](scripts/release/RELEASE-PLAN-CONTRACT.md) проверяет локальные
 bytes и полноту заявленных проверок; готовность финального продукта он не подтверждает.

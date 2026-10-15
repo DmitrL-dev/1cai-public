@@ -686,6 +686,9 @@ def _snapshot_command(args, runtime, principal):
 class _ProposalScope:
     context: object = None
     permissions: frozenset = frozenset({"project:read", "source:edit"})
+    diff_runtime: object = None
+    diff_principal: object = None
+    diff_project_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -694,6 +697,13 @@ class _ProposalCommandResult:
     context: object
     permissions: frozenset = frozenset({"project:read", "source:edit"})
     output_limit: int = 2 * 1024**2
+
+
+@dataclass(frozen=True)
+class _DiffCommandResult:
+    operation: object
+    runtime: object
+    principal: object
 
 
 def _proposal_permissions(ctx, permissions=frozenset({"project:read", "source:edit"})):
@@ -1234,6 +1244,18 @@ def _execute(args, *, proposal_scope=None):
         return runtime.registry.list_for(principal)
     if args.command == "project-head":
         return runtime.head(principal, args.project)
+    if args.command == "snapshot-diff" and sys.platform != "win32":
+        from .snapshot_diff import compare_retained_pair
+
+        if proposal_scope is not None:
+            proposal_scope.diff_runtime = runtime
+            proposal_scope.diff_principal = principal
+            proposal_scope.diff_project_id = args.project
+        # The coordinator creates its budget before state/catalog lookup. Do
+        # not perform the ordinary state_context or two eager resolvers here.
+        operation = compare_retained_pair(runtime, principal, args.project,
+            args.before, args.after, limit=args.limit, cursor=args.cursor)
+        return _DiffCommandResult(operation, runtime, principal)
     permissions = (
         {"project:read", "analysis:run"}
         if args.command
@@ -1783,7 +1805,33 @@ def _emit(value, *, stream=None):
     )
 
 
+def _write_diff_output(encoded):
+    if hasattr(sys.stdout, "buffer"):
+        stream, remaining = sys.stdout.buffer, memoryview(encoded)
+    else:
+        stream, remaining = sys.stdout, encoded.decode("utf-8")
+    while remaining:
+        written = stream.write(remaining)
+        if type(written) is not int or written <= 0 or written > len(remaining):
+            raise OSError("Local CLI output write failed")
+        remaining = remaining[written:]
+    stream.flush()
+
+
 def _emit_error(payload, scope, request_id):
+    if scope.diff_runtime is not None:
+        encoded = json.dumps(payload, ensure_ascii=True, allow_nan=False)
+        try:
+            scope.diff_runtime.state_context(scope.diff_principal, scope.diff_project_id,
+                                            permissions={"project:read"})
+        except CoreError as exc:
+            encoded = json.dumps(exc.to_dict(request_id), ensure_ascii=True, allow_nan=False)
+        except (OSError, sqlite3.Error):
+            encoded = json.dumps(CoreError("PROJECT_ACCESS_UNAVAILABLE",
+                "Current project permissions could not be verified").to_dict(request_id),
+                ensure_ascii=True, allow_nan=False)
+        print(encoded, flush=True)
+        return
     if scope.context is None:
         _emit(payload)
         return
@@ -1815,7 +1863,22 @@ def main(argv=None) -> int:
     try:
         args = _parser().parse_args(argv)
         result = _execute(args, proposal_scope=scope)
-        if isinstance(result, _ProposalCommandResult):
+        if isinstance(result, _DiffCommandResult):
+            from .snapshot_diff import MAX_DIFF_OUTPUT_BYTES, authorize_diff_output
+
+            operation = result.operation
+            try:
+                envelope = {"result": operation.value, "request_id": request_id}
+                encoded = json.dumps(envelope, default=_default, ensure_ascii=False,
+                    allow_nan=False, separators=(",", ":")).encode("utf-8") + b"\n"
+                if len(encoded) > MAX_DIFF_OUTPUT_BYTES:
+                    raise CoreError("OUTPUT_LIMIT_EXCEEDED", "Command result exceeds its byte limit")
+            except BaseException:
+                authorize_diff_output(result.runtime, result.principal, operation.output_scope)
+                raise
+            authorize_diff_output(result.runtime, result.principal, operation.output_scope)
+            _write_diff_output(encoded)
+        elif isinstance(result, _ProposalCommandResult):
             try:
                 envelope = {"result": result.value, "request_id": request_id}
                 encoded = json.dumps(

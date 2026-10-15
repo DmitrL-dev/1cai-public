@@ -1,0 +1,250 @@
+{
+  "schema": 1,
+  "kind": "scoped development source/bytes qualification; not release authority",
+  "observed_at": "2026-10-15T19:27:09.350055+00:00",
+  "repository": "DmitrL-dev/1cai-public",
+  "head": "c9cb31eb803d24211a3ef145c2dd86ae99c41a93",
+  "tree": "7a3bdee313084810119633160a1674ee523e2c32",
+  "event": "pull_request",
+  "checks": {
+    "executed_success": 13,
+    "expected_pr_deploy_skipped": 1,
+    "other_failures_or_pending": 0
+  },
+  "workflows": {
+    "Product": 38790436151,
+    "portable": 38790436473,
+    "GUI": 38790435980
+  },
+  "windows": {
+    "checkout": "9ce2081e4071fa88acc37658182f2a0310af1281",
+    "python_unique": 5580,
+    "passed": 4472,
+    "skipped": 1108,
+    "failed": 0,
+    "errors": 0,
+    "passed_subtests_additional": 51,
+    "suite_test_attribute": 5631,
+    "preflight_passed_separate": 95,
+    "node_passed": 585,
+    "node_skipped": 0,
+    "go_tested_packages_passed": 2,
+    "go_packages_without_tests": 2,
+    "controls_scope": "6 negative private-pipe harness controls plus 21 local mock cases / 308 assertions; not production native 1C execution"
+  },
+  "linux": {
+    "versions": [
+      {
+        "python": "3.11",
+        "passed": 4605,
+        "skipped": 976,
+        "failed": 0,
+        "errors": 0,
+        "actual_linux_cases_passed": 46,
+        "source_sdk_mcp_cases_passed": 2,
+        "installed_cli_fresh_calls": 45,
+        "installed_cli_outcomes_passed": 10,
+        "wheel_product_git_blobs_equal": 152
+      },
+      {
+        "python": "3.12",
+        "passed": 4604,
+        "skipped": 977,
+        "failed": 0,
+        "errors": 0,
+        "actual_linux_cases_passed": 46,
+        "source_sdk_mcp_cases_passed": 2,
+        "installed_cli_fresh_calls": 45,
+        "installed_cli_outcomes_passed": 10,
+        "wheel_product_git_blobs_equal": 152
+      }
+    ],
+    "capture_default_limits": {
+      "total_source_bytes": 67108864,
+      "file_bytes": 16777216,
+      "source_entries": 4096
+    },
+    "scope": "GNU/Linux amd64, new private project/default base source+graph; actual capture/publication/history/replay; source SDK tests separate from installed SDK"
+  },
+  "owned_linux_offline_sdk": {
+    "profile": "owned-linux-cli-mcp-py311-x86_64-v1",
+    "actual_synthetic_fixture_accepted": true,
+    "source_commit": "9ce2081e4071fa88acc37658182f2a0310af1281",
+    "source_tree": "7a3bdee313084810119633160a1674ee523e2c32",
+    "archive_sha256": "5681931d98b11bec1bdb18d918abbd5860bccda41392538804832f7c1cc2bdbf",
+    "manifest_sha256": "4cee62f150260f17497581a3c5724b7c47d9e725beb018a4232f407365c253b2",
+    "acceptance_sha256": "501d260187efeef9bf74c05a67ab834869568afba528eda7071ad0fa05a3be7f",
+    "inner_cli_canonical_sha256": "97dea3c46efc5b9ccf9c8715c0b64838efe4c617c209f6ac2b7722839238cdbd",
+    "four_original_public_files_independently_equal": true,
+    "source_product_files": 152,
+    "locked_sdk_wheels": 29,
+    "installed_inventory_distributions": 30,
+    "installed_RECORD_payload_files": 1082,
+    "installed_native_extension_imports": 4,
+    "inventory_scope": "bound CI observation; not a complete public copy of installed venv bytes",
+    "observed_runtime": {
+      "architecture": "x86_64",
+      "glibc": "2.39",
+      "implementation": "cpython",
+      "kernel_release": "6.17.0-1022-azure",
+      "python": "3.11.15",
+      "soabi": "cpython-311-x86_64-linux-gnu"
+    },
+    "offline_install": {
+      "binary_only": true,
+      "bootstrap_and_core_unchanged": true,
+      "no_index": true,
+      "pip_check": true,
+      "require_hashes": true
+    },
+    "history_and_replay": {
+      "first_snapshot_sha256": "7b67c1b846f15041dec911f7edb3c37ac2a4219e9af6e4fe9943263711fe0c32",
+      "graph_resolve": true,
+      "historical_bytes": true,
+      "nontrivial_impact": true,
+      "replay_without_live_source_or_configured_scanner": true,
+      "second_snapshot_sha256": "5d399580fe074fc058601f2881b07890932b6162d07bf129f40dd2915ec2d038",
+      "two_captures": true
+    },
+    "cancellation": {
+      "exact_request_id": true,
+      "no_publication": true,
+      "pidfd_owned_barrier": true,
+      "real_notification": true,
+      "scanner_reaped": true,
+      "scope": "deliberately paused pre-CAS child; late cancellation can lose to commit",
+      "worker_drained": true
+    },
+    "manifest_flags": {
+      "accepted": false,
+      "published": false,
+      "linux_installed_cli_mcp_qualified": false,
+      "candidate": true,
+      "full_product_ready": false
+    },
+    "source_sdk_mcp_tests_are_separate": true,
+    "python312_offline_sdk_qualified": false,
+    "minimum_platform_qualified": false,
+    "os_wide_airgap_qualified": false
+  },
+  "editor": {
+    "actual_windows_editor_api": true,
+    "first_and_restart_complete": true,
+    "distinct_host_pids": [
+      8124,
+      956
+    ],
+    "owned_cleanup": true,
+    "companion_inventory_files": 54,
+    "installed_product_files": 152,
+    "source_and_runtime_bindings_unchanged": true,
+    "human_keyboard_accessibility": false,
+    "native_1C": false
+  },
+  "GUI": {
+    "checkout": "c9cb31eb803d24211a3ef145c2dd86ae99c41a93",
+    "workflow_sha": "9ce2081e4071fa88acc37658182f2a0310af1281",
+    "browser_passed": 43,
+    "backend_passed": 963,
+    "node_passed": 98,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "sandbox_enabled": true,
+    "zoom": 2,
+    "synthetic_inputs_only": true
+  },
+  "original_artifact_pins": [
+    {
+      "role": "Windows JUnit",
+      "id": 12000891081,
+      "bytes": 99342,
+      "sha256": "60f2040a00bb1c9a03c3bc099c402bca84d58267969c7c2764e76f8d81994cf3"
+    },
+    {
+      "role": "editor",
+      "id": 11999703698,
+      "bytes": 4472,
+      "sha256": "a12ec25eda0896626a2ce19b7f25426fa9311c1eb62b9b3019bacdff5dad2948"
+    },
+    {
+      "role": "GUI",
+      "id": 12000323102,
+      "bytes": 4857133,
+      "sha256": "4f295e97f7ca51d72a2b16374ebb4b982817b718318f473d0685c81df755be7c"
+    },
+    {
+      "role": "portable Python 3.11",
+      "id": 12001086270,
+      "bytes": 4587727,
+      "sha256": "492d1eabd953dfe617709ef729063d9364969204409275440eb4d1cb1685d697"
+    },
+    {
+      "role": "portable Python 3.12",
+      "id": 12001011260,
+      "bytes": 4587862,
+      "sha256": "c3a5988b19ab77ddcb6717fe24960f7dae900f88498b94d899ce5fbf7f253f3f"
+    },
+    {
+      "role": "owned Linux four-file CLI/MCP kit",
+      "id": 12000711812,
+      "bytes": 12587760,
+      "sha256": "bdf16976014e9119435ad80b8f207e296849ab77749c788e0a2a429031eafbba"
+    }
+  ],
+  "original_API_digest_size_before_guarded_extraction": true,
+  "independent_evidence_records": [
+    {
+      "name": "pr103-second-evidence/pr103-second-product.json",
+      "sha256": "efe50429e5cf125a91a0ce9b62caa8613f1171bdddee778d6eed1aa5320d8e47"
+    },
+    {
+      "name": "pr103-second-portable-ordinary-receipt.json",
+      "sha256": "a91732442de4def0e3d3181dde742b1afa2fc8292d1106c98f379eb9c708ee52"
+    },
+    {
+      "name": "pr103-second-root-qualification.json",
+      "sha256": "f8ffeb53f83b48c5ba7739ff75d12955e7bdaa5f73f79fe4d50541638647f274"
+    },
+    {
+      "name": "pr103-second-owned-kit-reduced.json",
+      "sha256": "91059fd7f8deac7dc102d6617ca62b601fc83e24c9bcb27b79c419bd9a6a3bad"
+    },
+    {
+      "name": "pr103-second-sdk-receipt-observation.json",
+      "sha256": "a366796bbd8c9c5c331ca3331058757e8b4bd1baa6c3b80a641192b479a8268a"
+    },
+    {
+      "name": "pr103-second-owned-byte-peer.json",
+      "sha256": "bc7d6bfb8a5c9c0cbcb1d9ccc5bee2ab6cb4ed642057655460915304e3ce82dc"
+    },
+    {
+      "name": "pr103-second-owned-peer-final.json",
+      "sha256": "ad549f9934688823f57b7cb1b2825521dc02202904e8301bdfbd5d5d8ff0a254"
+    }
+  ],
+  "snap_diff_01_qualified": false,
+  "limits": [
+    "Actual automated synthetic fixtures only; no licensed 1C/EDT, human full IDE/accessibility, model competence, minimum platform, performance or full-product acceptance.",
+    "The newer uncommitted SNAP-DIFF-01 source is absent from this tree; its actual Linux and installed CLI/SDK qualification requires a separate exact-source/bytes receipt.",
+    "Historical main2e2 and first PR103 failures remain failed; a later positive idle-stop test does not establish the old root cause.",
+    "No new release; published Core dev19 / Companion 0.1.20 and candidate manifest authority flags are unchanged."
+  ],
+  "published": false,
+  "release_authority": false,
+  "full_product_ready": false,
+  "pr": 103,
+  "pr_url": "https://github.com/DmitrL-dev/1cai-public/pull/103",
+  "base": "2e2dd4f1b34057fa58d9810f24781ce706a47f19",
+  "synthetic_merge": {
+    "sha": "9ce2081e4071fa88acc37658182f2a0310af1281",
+    "tree": "7a3bdee313084810119633160a1674ee523e2c32",
+    "parents": [
+      "2e2dd4f1b34057fa58d9810f24781ce706a47f19",
+      "c9cb31eb803d24211a3ef145c2dd86ae99c41a93"
+    ]
+  },
+  "merged_main": "8e7346ec973ace409d941e3d3091d1b8f84c6b99",
+  "merged_main_tree_equals_qualified_head": true,
+  "fresh_main_push_qualification": "separate; see development-ci-8e7346e-20261016.json"
+}

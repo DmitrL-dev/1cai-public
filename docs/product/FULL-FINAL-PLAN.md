@@ -15,19 +15,43 @@
 
 ## Текущий блок разработки
 
-Workbench, POSIX reader/LiveTree, identity и diagnostic pilot объединены в main `413cc65c177a46a1087c641148c7df3f9a616934`, дерево `4da121995d8936b09ad9fbbc17f7f800571eef99`, через squash PR #101. [Свежие CI main](evidence/development-ci-413cc65-20261016.json) подтвердили Windows 4274 passed / 754 skipped + 51 passed subtests, Node 585; Linux Python 3.11/3.12 — по 4061 passed / 968 skipped, без новых baseline failures; GUI 43/963/98 без failures/errors/skips. Обе фазы установленного настоящего Windows editor API workbench приняты с разными PID, cleanup и точными inventory/runtime bindings. Diagnostic framework: 38 controls / 42 synthetic episodes, actual model runs 0. Pages опубликованы и сверены по девяти файлам. Это development qualification, без нового выпуска, human GUI, AI competence или native 1С acceptance.
+[PR #103 `c9cb31e`](evidence/development-ci-c9cb31e-20261016.json) и независимо
+[fresh main `8e7346e`](evidence/development-ci-8e7346e-20261016.json) приняты в
+ограниченном development scope; дерево обоих `7a3bdee313084810119633160a1674ee523e2c32`.
+Main push: 14/14 checks SUCCESS; Windows 4472 passed / 1108 skipped + 51 passed
+subtests, Node 585; Linux Python 3.11 — 4605 passed / 976 skipped, 3.12 —
+4604 passed / 977 skipped; GUI 43/963/98 без failures/errors/skips.
+Обе фазы настоящего Windows editor API имеют разные PID, cleanup и точные
+inventory/runtime bindings. Diagnostic: 38 controls / 42 synthetic episodes,
+actual model runs 0; Pages сверены по девяти файлам.
 
-Исторические [Product failure `3cc29c2`](evidence/development-ci-3cc29c2-20261015.json) и [inventory failure `553e1fa`](evidence/development-ci-553e1fa-20261015.json) сохранены с прежними scope и причинами. Ограниченный Linux/amd64 capture/publication/read принят на [PR #102, HEAD `366db69`](evidence/development-ci-366db69-20261016.json): actual Linux, source SDK MCP, installed CLI и Windows regression. Squash main `2e2dd4f1b34057fa58d9810f24781ce706a47f19` имеет то же дерево `32454b3da4a1fb6cbfc373a2b0c225bbb657bcd1`; fresh main push CI учитывается отдельно. Следующий delivery-блок — source/build-кандидат offline CLI/SDK kit; результат actual приёмки определяется только отдельной проверенной `acceptance.json` точных source/bytes. Реестр ниже сохраняет исходную базу S и все canonical статусы; этот ограниченный результат не закрывает полный B07, IDE-сценарий или финальный релиз.
+Отдельно приняты exact-source/bytes синтетические Linux installed CLI/MCP kit
+scenarios: offline install, source/graph/history, replay и pre-CAS cancellation.
+29 locked SDK wheels дают 30 installed distributions / 1082 RECORD payload files
+и четыре native imports. Это observed CI inventory, не полная публичная копия venv;
+minimum platform, OS-wide airgap и Python 3.12 offline SDK не квалифицированы.
+Manifest кандидата сохраняет `accepted:false` / `published:false` /
+`candidate:true`; scoped receipt не даёт release authority.
 
-| Часть | Что готовится | Что необходимо принять отдельно |
+Исторические [Product failure `3cc29c2`](evidence/development-ci-3cc29c2-20261015.json),
+[inventory failure `553e1fa`](evidence/development-ci-553e1fa-20261015.json) и
+[первый PR #103 `5f7522b`](evidence/development-ci-5f7522b-20261016.json)
+сохранены отрицательными. Прежний main `2e2dd4f` Product FAIL не объясняется новым
+успехом idle-stop test; историческая root cause остаётся неизвестной.
+Реестр ниже сохраняет исходную базу S и все canonical статусы: частичная приёмка
+не закрывает полный B07, IDE-сценарий, native/model/human scope или финальный релиз.
+
+| Часть | Проверенная область или source-контракт | Что необходимо принять отдельно |
 | --- | --- | --- |
-| B01: metadata workbench | Ограниченный installed editor API-сценарий принят на main `413cc65`: navigation, revision Problems, draft/conflict/revocation и restart/recovery | Human keyboard/accessibility, новая поставка, native 1С и полные IDE-сценарии открыты. Editor host не является стендом 1С |
-| Часть B07/B08: Linux capture и retained source/graph | [PR #102, HEAD `366db69`](evidence/development-ci-366db69-20261016.json): private bootstrap, scanner, graph/generation, publication CAS, actual Linux/source SDK tests, installed CLI/history/replay и Windows regression проверены | Main `2e2dd4f` имеет то же дерево, fresh push CI — отдельно. Scope: Linux/amd64 новый private project/default base source+graph, defaults 64 МиБ total / 16 МиБ file / 4096 entries. Offline installed SDK, metadata/drafts/diff/native/live/macOS и полный B07 открыты; image budgets не hard RSS cap, общий diff budget отдельный |
-| Часть B06: isolated diagnostic pilot | Broker, frozen inputs, реальные policy adapters, evaluator и отдельный terminal-only `model_one_shot` | One-request policy — ablation с нулём новых observations, а не same-tools/budgets benchmark. Нужны независимый holdout и actual model/native evidence; protocol controls их не заменяют |
-| Часть B10: candidate release audit | [Read-only план выпуска](../../scripts/release/RELEASE-PLAN-CONTRACT.md): source/tree/record, exact bytes, typed lifecycle claims, все 127 ID и шесть обязательных OS/role targets | Это проверка bound claims, не аутентификация экспериментов. Full-criterion/topology/dependency-closure adapters и stable packaging/publication ещё отсутствуют; `published:false`, полный релиз не принят |
-| Следующая часть B07/B10: Linux offline CLI/MCP | Source-кандидат [owned Linux kit](../../scripts/release/OWNED-LINUX-KIT.md): exact-source exporter, 29-wheel Linux SDK lock, generated install guide и verifier для CPython 3.11.15 / GNU/Linux x86_64 | Actual offline install / `pip check` / installed CLI+SDK scenario требуют отдельной проверенной `acceptance.json` точных source/bytes. Capture CI PR #102 — отдельный source-scope; Python 3.12 не имеет SDK offline closure. Публикация, все 127 полных критериев и 24 IDE-сценария этим не закрываются |
+| B01: metadata workbench | Настоящий installed Windows editor API first/restart, navigation, revision Problems, draft/conflict/revocation и recovery в точных `c9` / `8e` | Human keyboard/accessibility, новая поставка, native 1С и полные IDE-сценарии открыты |
+| Часть B07/B08: Linux capture и retained source/graph | [PR #102](evidence/development-ci-366db69-20261016.json) и последующие scoped receipts: private bootstrap, scanner, graph/generation, publication CAS, source/history/replay, source SDK и installed CLI | GNU/Linux amd64 новый private project/default base; capture defaults 64 МиБ total / 16 МиБ file / 4096 entries не квалифицируют максимальный workload, metadata/drafts/native/live/macOS или весь B07 |
+| Часть B07/B10: Linux offline CLI/MCP | [Exact-source kit](../../scripts/release/OWNED-LINUX-KIT.md) принят на синтетических actual `c9` / `8e` fixtures; original API pins и четыре публичных файла проверены независимо | Каждая новая сборка требует своей проверенной `acceptance.json` source/bytes. Minimum platform, OS-wide airgap, Python 3.12 offline SDK, публикация и полный продукт открыты |
+| Следующая часть B07: SNAP-DIFF-01 | [Source-контракт](SNAPSHOT-DIFF.md): Linux paired CLI/MCP и общий ранний POSIX budget; новый MCP full-wire guard | Новый diff отсутствует в `c9` / `8e`; нужны actual Linux/installed CLI/SDK и Windows regression receipts следующего source. Windows CLI legacy, новый MCP common deadline с per-session resources; public macOS закрыт |
+| Часть B06: isolated diagnostic pilot | Broker, frozen inputs, policy adapters, evaluator и terminal-only `model_one_shot` | One-request ablation имеет ноль новых observations; независимый holdout, actual model/native evidence открыты |
+| Часть B10: candidate release audit | [Read-only план выпуска](../../scripts/release/RELEASE-PLAN-CONTRACT.md): source/tree/record, bytes, typed claims, 127 ID и шесть OS/role targets | Bound claims не аутентифицируют эксперименты; полные criterion/topology/dependency adapters и stable packaging/publication отсутствуют |
 
-Каждая часть требует квалификации своего итогового SHA. Документация, старые CI и существующие receipts не объявляются результатами новой ветки.
+Каждая часть требует квалификации своего итогового SHA. Старые CI, local tests
+и существующие receipts не объявляются результатами новой source-сборки.
 
 ## Очередь до полного результата
 

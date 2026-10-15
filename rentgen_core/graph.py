@@ -1,10 +1,12 @@
 """Injected graph contracts. The core imports no concrete scanner or HTTP adapter."""
 from dataclasses import dataclass
+from inspect import signature
 from pathlib import Path
 from typing import Callable, ContextManager, Protocol, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ._verified_graph import VerifiedGraphLimits
+    from ._read_operation_budget import ReadOperationBudget
 
 from .errors import CoreError
 from .manifests import CapturedInput
@@ -74,6 +76,7 @@ class VerifiedGraphReaderFactory(Protocol):
     def open_verified(
         self, *, graph_bytes: bytes, manifest_bytes: bytes, snapshot: SnapshotRef,
         authorize_read: Callable[[], None], limits: "VerifiedGraphLimits",
+        operation_budget: "ReadOperationBudget | None" = None,
     ) -> ContextManager[GraphReader]:
         ...
 
@@ -83,6 +86,14 @@ def open_verified_graph(factory, **options):
     opener = getattr(factory, "open_verified", None)
     if not callable(opener):
         raise CoreError("GRAPH_ADAPTER_UNAVAILABLE", "A verified-byte graph reader is required")
+    if options.get("operation_budget") is not None:
+        try:
+            parameters = signature(opener).parameters
+            if "operation_budget" not in parameters:
+                raise ValueError("Missing explicit shared-budget seam")
+            signature(opener).bind(**options)
+        except (TypeError, ValueError) as exc:
+            raise CoreError("GRAPH_ADAPTER_UNAVAILABLE", "A shared-budget graph reader is required") from exc
     # Do not interpose a generator context: a refused foreign/reentrant exit
     # must leave the adapter context available for its real owner to close.
     return opener(**options)

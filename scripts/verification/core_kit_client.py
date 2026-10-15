@@ -18,6 +18,12 @@ import rentgen_core.source_catalog
 import rentgen_core.stdio_mcp
 
 
+def require_tool_inventory(names):
+    expected = set(rentgen_core.stdio_mcp.TOOL_SCHEMAS)
+    assert len(names) == len(set(names)) == len(expected), "MCP tool cardinality differs"
+    assert set(names) == expected, "MCP tool inventory differs"
+
+
 async def main():
     (
         cli,
@@ -101,8 +107,7 @@ async def main():
         async with ClientSession(read, write) as session:
             await session.initialize()
             tools = [t.name for t in (await session.list_tools()).tools]
-            assert len(tools) == 33 and len(set(tools)) == 33
-            assert set(tools) == set(rentgen_core.stdio_mcp.TOOL_SCHEMAS)
+            require_tool_inventory(tools)
             capabilities = await call(session, "rentgen_capabilities", {})
             assert capabilities["platform"] == "win32"
             assert capabilities["capabilities"]["source.live.mutate"]["supported"] is True

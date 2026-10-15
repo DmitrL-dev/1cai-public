@@ -1,0 +1,78 @@
+{
+  "schema": "rentgen-development-ci-checkpoint/1",
+  "date": "2026-10-16",
+  "repository": "DmitrL-dev/1cai-public",
+  "pull_request": 104,
+  "source_commit": "597e50eef6be4598764407e54f1940b4b0fa0025",
+  "base_main": "8e7346ec973ace409d941e3d3091d1b8f84c6b99",
+  "workflow_checkout": "138fe5407b7172b669763a5b4cbe21d22acbfdc0",
+  "tree": "b4231a5acd05acb2493b33c8eb79f9036c0bb9af",
+  "status": "FAILED first snapshot-diff development attempt; no integration or release acceptance",
+  "release_created": false,
+  "full_product_ready": false,
+  "checks": {
+    "success": 6,
+    "failure": 3,
+    "skipped": 5,
+    "scope": "Exact-head terminal check metadata, not raw artifact acceptance for successful lanes"
+  },
+  "product": {
+    "run_id": 38805161134,
+    "producer_job": 116663994885,
+    "conclusion": "failure",
+    "failed_step": {
+      "number": 11,
+      "name": "Build reproducible kit and verify offline CLI and MCP"
+    },
+    "observed_failure": "Installed MCP workflow client failed; inner workflow.log was not retained in public evidence",
+    "underlying_failure_cause": "UNKNOWN",
+    "independent_source_finding": "Frozen client asserts 33 tools, while this source catalog contains 34. Pure source reproduction confirms that obsolete oracle rejects the catalog; it does not prove the unavailable inner CI exception.",
+    "native_editor_scm_stock_git_diagnostic": "SKIPPED"
+  },
+  "portable": {
+    "run_id": 38805160976,
+    "conclusion": "failure",
+    "versions": [
+      {
+        "python": "3.11",
+        "cases": 5742,
+        "passed": 4764,
+        "skipped": 977,
+        "failure": 1,
+        "artifact": {
+          "id": 12005934521,
+          "sha256": "64f028b07ae7e26aa4a24457156c31eb3ce271cfca9004168705cb7f93ee8324",
+          "size_bytes": 119626
+        },
+        "junit_sha256": "b5b6c60e04b6150806cde3c99f66d080b75a9769da949223bf44fc4a7d582707"
+      },
+      {
+        "python": "3.12",
+        "cases": 5742,
+        "passed": 4763,
+        "skipped": 978,
+        "failure": 1,
+        "artifact": {
+          "id": 12007325699,
+          "sha256": "4008d3de54301d3541401eaf1d0f231d77fbce599f7c39e2325d47360e3b67f4",
+          "size_bytes": 118468
+        },
+        "junit_sha256": "9d7b036acc370e8411dba8c5b8ed9ffb78dcc6952c273368940f61dae513fdb5"
+      }
+    ],
+    "failure_case": "tests/unit/test_linux_snapshot_diff_sdk.py::test_native_sdk_explicit_pair_history_survives_unrelated_broken_head",
+    "failure_location": "line 54, list_tools prefix assertion",
+    "failure": "Oracle incorrectly rejects all rentgen_draft_ names, including five existing portable draft history reads",
+    "new_three_capture_scenario": "NOT_REACHED",
+    "steps_13_through_18": "SKIPPED",
+    "installed_cli": "NOT_RUN",
+    "owned_offline_installed_sdk": "NOT_RUN",
+    "owned_artifact": "ABSENT",
+    "api_original_size_hash_verified_before_guarded_extraction": true
+  },
+  "limits": [
+    "This receipt preserves first HEAD failures. Later source needs its own exact-head CI and bytes.",
+    "No new Linux installed pair acceptance, native 1C/EDT, model, human, full IDE or final-product claim.",
+    "No published version, release, tag or accepted artifact was changed."
+  ]
+}

@@ -1,6 +1,7 @@
 """Internal copied POSIX generation owner; no capture or public OS admission."""
 from contextlib import ExitStack
 from dataclasses import asdict, dataclass
+import errno
 import os
 from pathlib import PurePosixPath
 import stat
@@ -9,6 +10,7 @@ from threading import get_ident
 from time import monotonic
 
 from . import _posix_source_tree as retained
+from ._read_operation_budget import ReadOperationBudget
 from ._verified_graph import VerifiedGraphLimits
 from .context import Principal, SnapshotRef
 from .errors import CoreError
@@ -47,18 +49,20 @@ def _limit():
 
 
 def open_posix_snapshot_session(*, state, principal, snapshot, graph_reader_factory,
-                                limits, graph_limits, authorize_read):
+                                limits, graph_limits, authorize_read, operation_budget=None):
     """Trusted internal factory; derive the retained root from the state locator."""
     return _PosixSnapshotSession(state, principal, snapshot, graph_reader_factory,
-                                 limits, graph_limits, authorize_read)
+                                 limits, graph_limits, authorize_read, operation_budget)
 
 
 class _PosixSnapshotSession:
-    def __init__(self, state, principal, snapshot, factory, limits, graph_limits, authorize):
+    def __init__(self, state, principal, snapshot, factory, limits, graph_limits, authorize,
+                 operation_budget=None):
         if (type(state) is not ProjectState or type(principal) is not Principal
                 or type(snapshot) is not SnapshotRef or state.project_id != snapshot.project_id
                 or type(limits) is not PosixSnapshotLimits
-                or type(graph_limits) is not VerifiedGraphLimits or not callable(authorize)):
+                or type(graph_limits) is not VerifiedGraphLimits or not callable(authorize)
+                or (operation_budget is not None and type(operation_budget) is not ReadOperationBudget)):
             raise CoreError("INVALID_QUERY_OPTIONS", "Typed trusted POSIX session inputs required")
         self._state, self._principal, self.snapshot = state, principal, snapshot
         self._factory, self._limits, self._graph_limits = factory, limits, graph_limits
@@ -70,6 +74,11 @@ class _PosixSnapshotSession:
         self._entries, self._index = (), {}
         self._used, self._resident_peak = 0, 0
         self._summary = None
+        self._operation_budget = operation_budget
+        self._budget_leases = []
+        self._budget_registered = False
+        self._descriptor_caps = []
+        self._retained_open_started = False
 
     def _owner_check(self):
         if self._owner != (os.getpid(), get_ident()):
@@ -94,6 +103,8 @@ class _PosixSnapshotSession:
         return catalog
 
     def _deadline_check(self):
+        if self._operation_budget is not None:
+            self._operation_budget.checkpoint()
         if monotonic() >= self._deadline:
             raise CoreError("SNAPSHOT_READ_DEADLINE_EXCEEDED", "POSIX session deadline exceeded")
 
@@ -121,6 +132,12 @@ class _PosixSnapshotSession:
                 # read(size + 1) bounds even a concurrent grow; no whole-file bytearray.
                 held = len(self._manifest or b"") + sum(map(len, self._buffers.values()))
                 self._reserve_resident(held + size + 1)
+                if self._operation_budget is not None:
+                    # Charge the entire possible read, including its grow/probe
+                    # byte and derived copies later discarded after verification.
+                    # The legacy per-session _used remains verified payload size.
+                    self._operation_budget.charge_copy(size + 1)
+                    self._budget_leases.append(self._operation_budget.reserve_images(size + 1))
                 raw = stream.read(size + 1)
                 if len(raw) != size or (digest is not None and sha256(raw) != digest):
                     raise _corrupt("Retained artifact bytes do not match manifest")
@@ -144,6 +161,8 @@ class _PosixSnapshotSession:
                 or sum(entry["size_bytes"] for entry in entries) > 1024**3
                 or any(entry["size_bytes"] > _MAX_DERIVED for entry in document["derived_inputs"])):
             raise _limit()
+        if self._operation_budget is not None:
+            self._operation_budget.charge_entries(len(entries))
         self._expected = {"manifest.json", "graph.sqlite3"}
         self._expected.update(entry["relative_path"] for entry in document["derived_inputs"])
         self._expected.update("sources/" + entry["layer_id"] + "/" + entry["relative_path"] for entry in entries)
@@ -161,6 +180,16 @@ class _PosixSnapshotSession:
         self._index = {(entry.ref.layer_id, entry.ref.relative_path): entry for entry in self._entries}
 
     def _inventory(self, *, entering):
+        if self._operation_budget is None:
+            return self._inventory_impl(entering=entering)
+        # names() eagerly collects/sorts. Reserve its complete conservative pass
+        # before the first scandir, including one unlisted-item refusal sentinel.
+        slots = min(self._limits.max_inventory_items, len(self._expected) + len(self._allowed_dirs) + 1)
+        self._operation_budget.charge_inventory(slots + 1)
+        with self._operation_budget.reserve_images((slots + 1) * 1280):
+            return self._inventory_impl(entering=entering, maximum=slots)
+
+    def _inventory_impl(self, *, entering, maximum=None):
         found, directories, count = set(), {""}, 0
         pending = [""]
         while pending:
@@ -172,11 +201,12 @@ class _PosixSnapshotSession:
             if relative in self._stamps and self._stamps[relative] != current:
                 raise _corrupt("Generation directory changed during session")
             self._stamps[relative] = current
-            remaining = self._limits.max_inventory_items - count
-            for name in directory.names(maximum=min(retained.MAX_ENTRIES, remaining + 1)):
+            remaining = (self._limits.max_inventory_items if maximum is None else maximum) - count
+            names_limit = remaining + 1 if maximum is None else remaining
+            for name in directory.names(maximum=min(retained.MAX_ENTRIES, names_limit)):
                 self._deadline_check()
                 count += 1
-                if count > self._limits.max_inventory_items:
+                if count > (self._limits.max_inventory_items if maximum is None else maximum):
                     raise _limit()
                 child = relative + "/" + name if relative else name
                 if len(PurePosixPath(child).parts) > self._limits.max_relative_components:
@@ -193,7 +223,10 @@ class _PosixSnapshotSession:
                         if not entering:
                             raise _corrupt("Generation directory inventory changed")
                         self._check_descriptors(extra=1)
+                        if self._operation_budget is not None:
+                            self._budget_leases.append(self._operation_budget.reserve_descriptors(1))
                         cap = self._stack.enter_context(directory.child(name, private=True))
+                        self._descriptor_caps.append(cap)
                         self._directories[child] = cap
                     if retained._stamp(os.fstat(self._directories[child]._fd)) != stamp:
                         raise _corrupt("Generation directory changed during inventory")
@@ -225,18 +258,32 @@ class _PosixSnapshotSession:
         try:
             if sys.platform not in {"linux", "darwin"}:
                 raise CoreError("CAPTURE_PLATFORM_UNSUPPORTED", "No POSIX generation session")
-            self._catalog = self._checkpoint()
             root_path = self._state.path.parent
             self._base_descriptors = len(root_path.parts) + 2
+            if self._operation_budget is not None:
+                self._operation_budget.owner_opened(self)
+                self._budget_registered = True
+                # Ancestor/selected directories, one leaf/scandir transient and
+                # conservative SQLite state db/WAL/SHM authorization allowance.
+                self._budget_leases.append(self._operation_budget.reserve_descriptors(self._base_descriptors + 5))
+            self._catalog = self._checkpoint()
             self._check_descriptors(extra=0)
             self._stack = ExitStack()
+            self._retained_open_started = True
             root = self._stack.enter_context(retained.open_directory(root_path, private=True))
+            self._descriptor_caps.append(root)
             generations = self._stack.enter_context(root.child("generations", private=True))
+            self._descriptor_caps.append(generations)
             selected = self._catalog.generation_relpath.removeprefix("generations/")
             self._directories[""] = self._stack.enter_context(generations.child(selected, private=True))
+            self._descriptor_caps.append(self._directories[""])
             self._stamps[""] = retained._stamp(os.fstat(self._directories[""]._fd))
             self._manifest = self._copy("manifest.json", self._limits.max_manifest_bytes,
                                         digest=self.snapshot.manifest_hash)
+            if self._operation_budget is not None:
+                # Covers eager canonical JSON validation plus SourceEntry/path/
+                # index construction, before parse_manifest allocates any of it.
+                self._budget_leases.append(self._operation_budget.reserve_images(256 * len(self._manifest) + 131072))
             self._document = parse_manifest(self._manifest)
             self._prepare()
             self._inventory(entering=True)
@@ -255,9 +302,11 @@ class _PosixSnapshotSession:
             for entry in derived:
                 self._copy(entry["relative_path"], entry["size_bytes"], exact=entry["size_bytes"], digest=entry["raw_sha256"])
             graph = self._copy("graph.sqlite3", self._graph_limits.max_graph_bytes, digest=self._catalog.graph_hash)
+            options = ({} if self._operation_budget is None else
+                       {"operation_budget": self._operation_budget})
             self._graph_context = open_verified_graph(self._factory, graph_bytes=graph,
                 manifest_bytes=self._manifest, snapshot=self.snapshot,
-                authorize_read=self._checkpoint, limits=self._graph_limits)
+                authorize_read=self._checkpoint, limits=self._graph_limits, **options)
             self._reader = self._graph_context.__enter__()
             del graph
             self._inventory(entering=False)
@@ -326,6 +375,8 @@ class _PosixSnapshotSession:
 
     def _cleanup(self, exception):
         failure = None
+        descriptors = ({fd for cap in self._descriptor_caps for fd, *_ in cap._chain}
+                       if self._operation_budget is not None else set())
         context, self._graph_context = self._graph_context, None
         self._reader = None
         if context is not None:
@@ -339,13 +390,42 @@ class _PosixSnapshotSession:
                 stack.__exit__(*(exception if exception[0] is not None else failure or exception))
             except BaseException:
                 failure = failure or sys.exc_info()
+        if self._operation_budget is not None:
+            # Retained cleanup preserves an existing body exception. Independently
+            # observe native descriptor closure before refunding its reservations.
+            for fd in descriptors:
+                try:
+                    os.fstat(fd)
+                except OSError as exc:
+                    if exc.errno == errno.EBADF:
+                        continue
+                try:
+                    raise _corrupt("POSIX descriptor close was not acknowledged")
+                except CoreError:
+                    failure = failure or sys.exc_info()
+            if self._retained_open_started and not descriptors:
+                try:
+                    raise _corrupt("POSIX initial descriptor close was not observable")
+                except CoreError:
+                    failure = failure or sys.exc_info()
         self._phase = "closed"
         self._directories.clear()
+        self._descriptor_caps.clear()
         self._stamps.clear()
         self._buffers.clear()
         self._manifest = self._document = self._authorize_read = None
         self._factory = self._state = self._principal = None
         self._entries, self._index = (), {}
+        # A failed native close is not an acknowledgement of zero resources.
+        # Keep reservations outstanding on that failed operation; preserve its
+        # first cause and make any attempted successful budget.close refuse.
+        if failure is None and self._operation_budget is not None:
+            for lease in reversed(self._budget_leases):
+                lease.close()
+            self._budget_leases.clear()
+            if self._budget_registered:
+                self._operation_budget.owner_closed(self)
+                self._budget_registered = False
         if failure is not None and exception[0] is None:
             raise failure[1].with_traceback(failure[2])
 

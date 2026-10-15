@@ -6,7 +6,7 @@ Source и CI/installation dev19 связаны с [Core qualification](../../rel
 Этот ограниченный срез входит в опубликованный Core dev19. Для Linux x86_64
 доступно [экспериментальное дополнение](https://github.com/DmitrL-dev/1cai-public/releases/tag/core-v0.1.0-dev19)
 с wheel и Rust executable; MCP-зависимости, Go scanner и редактор в него не входят.
-Полный продукт, offline-kit и Companion пока не приняты на Linux/macOS. Windows retained-source, live-apply, process ownership и native
+Полный Linux/macOS-продукт и Companion не приняты. Отдельные development offline CLI/MCP receipts описаны ниже. Windows retained-source, live-apply, process ownership и native
 adapters сохраняют прежние границы. Полная перепись и новый LLM runtime не нужны
 для описанного ниже state/history среза. Уже реализованный экспериментальный
 [Rust ZIP input core](RUST-INPUT-CORE.md) описан отдельно: у него собственные
@@ -130,11 +130,48 @@ commit; отсутствие публикации в контролируемо�
 Actual offline SDK install/acceptance фиксируется отдельной `acceptance.json`;
 проверяйте её точные source/bytes bindings по
 [контракту комплекта](../../scripts/release/OWNED-LINUX-KIT.md#qualification-still-required).
-Local exporter/guard tests и source capture CI не являются этой приёмкой.
-Новая поставка требует своего source SHA, final archive/manifest hashes и actual target execution;
-manifest кандидата остаётся `accepted:false`, `published:false` и
-`linux_installed_cli_mcp_qualified:false`. Metadata/drafts/diff/live/native,
-Companion, macOS, AI и полный B07 этим профилем не допускаются.
+[PR #103 `c9cb31e`](evidence/development-ci-c9cb31e-20261016.json) и независимо
+[fresh main `8e7346e`](evidence/development-ci-8e7346e-20261016.json)
+прошли этот ограниченный синтетический actual CLI/SDK-сценарий. Original API
+hash/size проверены до guarded extraction; четыре публичных файла комплекта,
+все 152 product files и 29 SDK wheels связаны с точными исходниками.
+Установленный SDK inventory: 30 distributions / 1082 RECORD payload files,
+четыре native extension imports; это bound CI observation, не полная публичная
+копия установленного venv. Source SDK cases учитываются отдельно.
+
+Observed target — CPython 3.11.15, glibc 2.39, kernel 6.17 на x86_64.
+Проверка не квалифицирует нижние заявленные версии glibc/kernel, OS-wide airgap,
+производительность или Python 3.12 offline SDK closure. Новая сборка требует
+своих final archive/manifest hashes и actual target execution; её manifest
+сохраняет `accepted:false`, `published:false`, `candidate:true` и
+`linux_installed_cli_mcp_qualified:false`. Отдельный положительный CI receipt
+имеет только свой scope и не изменяет authority этих flags.
+Metadata/drafts/live/native, Companion, macOS, AI и полный B07 не приняты.
+
+## Source-контракт SNAP-DIFF-01
+
+[Ограниченное сравнение снимков](SNAPSHOT-DIFF.md) реализовано отдельно от
+принятого capture/kit среза. Linux CLI `snapshot-diff` и MCP `rentgen_snapshot_diff`
+сравнивают ordered catalog pair с ранним общим POSIX budget:
+512 МиБ bounded read allowance, включая grow/probe; 8 ГиБ conservative image
+accounting, не hard RSS; 40 000 source entries, 1 200 000 inventory items,
+128 МиБ graph row allowance и 20 млн graph VM allowance с консервативными
+reservations/precharges; state/catalog SQLite исключены. Далее — 8192 held
+descriptors, 32 cursors и исходный
+30-секундный deadline. Per-session limits действуют дополнительно.
+
+Страница содержит не более 100 записей и 1 МиБ JSON; полный MCP wire message
+ограничен 2 МиБ вместе с request ID, newline, emitted metadata и двумя представлениями
+JSON; private authorization scope удаляется до выдачи. Это retained POSIX/graph
+accounting, не whole-process/RSS или physical disk IO cap. Оба owner должны успешно закрыться; выдача повторно проверяет pair,
+catalog, permissions и исходный deadline. Потеря/расхождение representations
+или metadata даёт отказ. Windows CLI сохраняет legacy contract; новый Windows
+MCP использует общий deadline/output guard и прежние per-session resources.
+Public macOS не допущен. Точные команды, cursor и границы — в контракте.
+
+Новая source-сборка требует отдельных actual Linux pair controls, installed
+CLI/официального SDK scenarios и Windows regression receipts. Положительные
+`c9` / `8e` этот diff не содержат и не квалифицируют.
 
 ## Local ownership, не новый IAM
 
