@@ -133,6 +133,50 @@ def test_both_phases_and_final_acceptance_update_the_same_real_receipt(modules, 
     assert set(receipt["phases"]) == {"first", "restart"}
 
 
+def test_normal_quit_exit_zero_cannot_accept_a_failed_phase_or_drop_its_diagnostics(modules, tmp_path, monkeypatch):
+    _, runner = modules
+    (tmp_path / "phase-restart.json").write_text(json.dumps(failed_phase()))
+    (tmp_path / "supervisor-restart.json").write_text(json.dumps({"accepted": True, "cleanup_complete": True}))
+    monkeypatch.setattr(runner, "command", lambda *args, **kwargs: None)
+    receipt = {"accepted": False}
+    acceptance = runner.AcceptanceReceipt(tmp_path / "acceptance.json")
+    with pytest.raises(RuntimeError, match="No positive real editor receipt"):
+        try:
+            runner.phase_attempt([], output=tmp_path, evidence=tmp_path, profile=tmp_path,
+                                 phase="restart", receipt=receipt, acceptance=acceptance)
+        finally:
+            runner.finish_receipt(acceptance, receipt, sys.exc_info()[1])
+    assert json.loads(acceptance.path.read_text()) == receipt
+    assert receipt["phase_failures"]["restart"] == failed_phase()
+    assert receipt["phases"] == {} and receipt["accepted"] is False
+
+
+@pytest.mark.parametrize("which", ["first", "restart"])
+def test_editor_window_uses_persistent_workspace_mode_and_startup_harness(modules, tmp_path, which):
+    inputs, _ = modules
+    supervisor = inputs.load(HERE / "supervisor.py", "editor_workbench_supervisor_controls")
+    launch = {"editor": str(tmp_path / "VSCodium.exe"), "harness": str(HERE), "vsix": str(tmp_path / "target.vsix")}
+    command = supervisor.editor_command(launch, tmp_path, which)
+    assert not any(arg.startswith("--extensionTestsPath") for arg in command)
+    assert command[command.index("--user-data-dir") + 1] == str(tmp_path / "editor-user")
+    assert command[-1] == str(tmp_path / "profile/workspace")
+    assert "--extensionDevelopmentPath=" + str(HERE) in command
+    package = json.loads((HERE / "package.json").read_text())
+    assert package["main"] == "host.cjs" and package["activationEvents"] == ["onStartupFinished"]
+
+
+def test_editor_install_still_uses_exact_vsix_and_unknown_launch_mode_refuses(modules, tmp_path):
+    inputs, _ = modules
+    supervisor = inputs.load(HERE / "supervisor.py", "editor_workbench_install_controls")
+    launch = {"editor": str(tmp_path / "VSCodium.exe"), "harness": str(HERE), "vsix": str(tmp_path / "target.vsix")}
+    command = supervisor.editor_command(launch, tmp_path, "install")
+    assert command[1] == str(tmp_path / "resources/app/out/cli.js")
+    assert command[-2:] == ["--install-extension", launch["vsix"]]
+    assert not any(arg.startswith("--extensionDevelopmentPath") for arg in command)
+    with pytest.raises(ValueError, match="Unknown editor mode"):
+        supervisor.editor_command(launch, tmp_path, "unknown")
+
+
 @pytest.mark.parametrize("primary_failure", [False, True])
 def test_final_receipt_io_failure_refuses_success_and_preserves_primary_error(modules, tmp_path, monkeypatch, primary_failure):
     _, runner = modules

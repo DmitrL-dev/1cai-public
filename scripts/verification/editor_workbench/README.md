@@ -65,10 +65,22 @@ scanner, VSIX and installed runtime bytes are checked again after both hosts.
 Automatic editor/extension updates, telemetry and recommendations are disabled
 in this owned profile. No installed system editor or runtime is changed.
 
-The launch uses Microsoft's documented
-[`--extensionDevelopmentPath` / `--extensionTestsPath`](https://code.visualstudio.com/api/working-with-extensions/testing-extension#advanced-setup-your-own-runner)
-and [isolated CLI installation options](https://code.visualstudio.com/docs/configure/command-line#_working-with-extensions).
-The development extension is this small test runner. The target Companion is
+The launch uses [`--extensionDevelopmentPath`](https://code.visualstudio.com/api/working-with-extensions/testing-extension#advanced-setup-your-own-runner)
+and [isolated CLI installation options](https://code.visualstudio.com/docs/configure/command-line#_working-with-extensions)
+in a normal owned window. The harness activates on `onStartupFinished`, completes
+the same strict API phase and writes its private receipt before requesting
+`workbench.action.quit`. Activation itself returns before this asynchronous run,
+so normal shutdown does not wait for its own activation. The supervisor still
+owns the complete process tree; an exit code of zero without an accepted phase
+and cleanup evidence cannot pass.
+
+`--extensionTestsPath` is deliberately absent: the [VSCodium tag metadata](https://github.com/VSCodium/vscodium/blob/1.135.06055/upstream/stable.json)
+binds this editor to VS Code commit `08d4889f9ec4a1685d257b9b95de036c8e1ce1e5`,
+whose [storage options](https://github.com/microsoft/vscode/blob/08d4889f9ec4a1685d257b9b95de036c8e1ce1e5/src/vs/platform/storage/electron-main/storageMainService.ts#L107-L111)
+force in-memory storage during extension tests. Such a launch cannot qualify
+persisted workspace restoration across processes. No Memento is injected,
+copied from the handoff oracle or repaired by the harness.
+The development extension is this small runner. The target Companion is
 installed from the exact VSIX, not loaded as a development extension. No mock
 `vscode` provider, network model or npm dependency is used.
 
@@ -114,6 +126,7 @@ python -m pip install -r requirements-test.txt
 python -m pytest -q tests/integration/test_editor_workbench_archive.py tests/integration/test_editor_workbench_inputs.py
 node --check scripts/verification/editor_workbench/host.cjs
 node --test scripts/verification/companion_host/editor-phase.test.cjs
+node --test scripts/verification/companion_host/editor-activation.test.cjs
 ```
 
 Real Windows acceptance (the CI job supplies these exact artifact inputs):
@@ -122,10 +135,10 @@ Real Windows acceptance (the CI job supplies these exact artifact inputs):
 python scripts/verification/editor_workbench/run.py --checkout . --kit <verified-kit.zip> --build-receipt <kit-acceptance.json> --vsix <exact-companion.vsix> --expected-commit <actual-checkout-SHA> --trigger-head <event-HEAD-SHA> --output <new-owned-attempt>
 ```
 
-Commit `3cc29c2` reached actual Windows Electron execution: installation and
-inventory passed, the first supervisor exited 0 with cleanup, and restart exited
-1 with cleanup. Its public receipt lacks the failed private phase body, so the
-restart cause remains unknown and the attempt is not accepted. New diagnostics
-and later source changes require a new exact-source Windows run.
+Commit `7c5f784` accepted the complete first real Windows phase, then refused the
+restored snapshot in the fresh host. Its reduced failure body was preserved.
+The source-bound investigation identified the extension-test storage mode above;
+the normal-window correction requires its own exact-source Windows run before
+restart acceptance can be claimed.
 Real kill/reconnect, complete permission revocation, human UI/accessibility,
 licensed1C/EDT/YAxUnit and the other IDE scenarios remain separate release gates.

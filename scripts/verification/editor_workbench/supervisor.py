@@ -8,6 +8,20 @@ import subprocess
 import sys
 
 
+def editor_command(launch, base, mode):
+    if mode not in {"install", "first", "restart"}:
+        raise ValueError("Unknown editor mode")
+    editor = Path(launch["editor"])
+    common = ["--user-data-dir", str(base / "editor-user"), "--extensions-dir", str(base / "extensions")]
+    if mode == "install":
+        return [str(editor), str(editor.parent / "resources/app/out/cli.js"), *common,
+                "--install-extension", launch["vsix"]]
+    # Extension test mode disables persistent storage in this pinned editor.
+    return [str(editor), *common, "--extensionDevelopmentPath=" + launch["harness"],
+            "--disable-workspace-trust", "--skip-welcome", "--skip-release-notes", "--disable-gpu",
+            "--new-window", str(base / "profile/workspace")]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--launch", required=True, type=Path)
@@ -39,18 +53,11 @@ def main():
                RENTGEN_EDITOR_PROFILE=str(profile))
     for name in ("temp", "user-profile", "app-data"):
         (base / name).mkdir(exist_ok=True)
-    command = [str(editor)]
+    command = editor_command(launch, base, args.mode)
     if args.mode == "install":
         env["ELECTRON_RUN_AS_NODE"] = "1"
-        command += [str(editor.parent / "resources/app/out/cli.js"), "--user-data-dir", str(base / "editor-user"),
-                    "--extensions-dir", str(base / "extensions"), "--install-extension", launch["vsix"]]
     else:
         env.update(RENTGEN_WORKBENCH_PHASE=args.mode, RENTGEN_WORKBENCH_LAUNCH=str(args.launch.resolve(strict=True)))
-        command += ["--user-data-dir", str(base / "editor-user"), "--extensions-dir", str(base / "extensions"),
-                    "--extensionDevelopmentPath=" + launch["harness"],
-                    "--extensionTestsPath=" + str(Path(launch["harness"]) / "host.cjs"),
-                    "--disable-workspace-trust", "--skip-welcome", "--skip-release-notes", "--disable-gpu",
-                    "--new-window", str(profile / "workspace")]
     os.environ.clear()
     os.environ.update(env)
     report = {"schema": 1, "mode": args.mode, "accepted": False, "cleanup_complete": False,

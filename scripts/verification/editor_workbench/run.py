@@ -282,6 +282,9 @@ def phase_attempt(command_args, *, output, evidence, profile, phase, receipt, ac
     phases = receipt.setdefault("phases", {})
     try:
         command(command_args, output, evidence, "host-" + phase, timeout=390)
+        reduced = reduce_phase(read_phase_file(profile, phase))
+        supervisor = json.loads((evidence / ("supervisor-" + phase + ".json")).read_text("utf-8"))
+        require(supervisor["accepted"] is True and supervisor["cleanup_complete"] is True, "Editor descendants not proved closed")
     except Exception:
         try:
             reduced = reduce_phase_failure(read_phase_file(profile, phase), phase)
@@ -290,9 +293,6 @@ def phase_attempt(command_args, *, output, evidence, profile, phase, receipt, ac
                        "diagnostic": "failed-phase-receipt-unavailable-or-invalid"}
         receipt.setdefault("phase_failures", {})[phase] = reduced
         raise
-    reduced = reduce_phase(read_phase_file(profile, phase))
-    supervisor = json.loads((evidence / ("supervisor-" + phase + ".json")).read_text("utf-8"))
-    require(supervisor["accepted"] is True and supervisor["cleanup_complete"] is True, "Editor descendants not proved closed")
     reduced["owned_process_cleanup"] = True
     phases[phase] = reduced
     acceptance.save(receipt)

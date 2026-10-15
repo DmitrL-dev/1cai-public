@@ -8,13 +8,17 @@ const {createHash, randomUUID} = require('node:crypto');
 const {execFile} = require('node:child_process');
 const {promisify} = require('node:util');
 const {checkpoint, failure} = require('./phase.cjs');
+const {start} = require('./activation.cjs');
 const execute = promisify(execFile);
 const sha = value => createHash('sha256').update(value).digest('hex');
 const read = async file => JSON.parse(await fs.readFile(file, 'utf8'));
 const write = async (file, value) => fs.writeFile(file, JSON.stringify(value, null, 2) + '\n', {flag: 'wx'});
 // VS Code URI.fsPath lowercases Windows drive letters; Python paths need not.
 const editorPath = value => path.resolve(vscode.Uri.file(value).fsPath);
-exports.activate = () => ({});
+// Normal workspace persistence is required for the restart experiment. The
+// --extensionTestsPath runner deliberately selects in-memory editor storage.
+// A normal quit still needs the strict private phase receipt to qualify success.
+exports.activate = () => start(exports.run, () => vscode.commands.executeCommand('workbench.action.quit'));
 
 function cliFor(config) {
   return async (command, ...extra) => {
