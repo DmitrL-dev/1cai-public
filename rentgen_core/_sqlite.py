@@ -37,8 +37,12 @@ def transaction(path: Path, *, write: bool = False):
 
 
 @contextmanager
-def create_database(path: Path, schema: str):
+def create_database(path: Path, schema: str, *, _owned=None):
     """Own a new DB through schema/bootstrap commit; clean only owned files on error."""
+    if _owned is not None:
+        with _owned.create_database(path, schema) as connection:
+            yield connection
+        return
     with path.open("xb"):
         pass
     owned_paths = (path,)

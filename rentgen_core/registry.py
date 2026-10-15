@@ -2,6 +2,8 @@
 
 import os
 import sqlite3
+import sys
+from contextlib import ExitStack
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
@@ -71,8 +73,17 @@ class ProjectRegistry:
         source = Path(os.path.normcase(str(Path(source_root).resolve(strict=True))))
         if not source.is_dir():
             raise CoreError("INVALID_SOURCE_ROOT", "Source root must be a directory")
-        state = Path(os.path.normcase(str(Path(state_root).resolve())))
+        state = Path(os.path.normcase(str(
+            Path(state_root).absolute() if sys.platform == "linux"
+            else Path(state_root).resolve()
+        )))
         project_id = str(uuid4())
+        with ExitStack() as owned_roots:
+            return self._register_new(
+                owner, source, state, project_id, display_name, owned_roots
+            )
+
+    def _register_new(self, owner, source, state, project_id, display_name, owned_roots):
         created = False
         try:
             with _sqlite.transaction(self.path, write=True) as connection:
@@ -100,9 +111,19 @@ class ProjectRegistry:
                         "PROJECT_REGISTRATION_CONFLICT",
                         "Source or state root is already registered",
                     ) from exc
-                state.mkdir()
-                created = True
-                ProjectState.create(state / "state.sqlite3", project_id, owner)
+                if sys.platform == "linux":
+                    from ._private_state_bootstrap import new_linux_private_state
+
+                    bootstrap = owned_roots.enter_context(new_linux_private_state(state))
+                    ProjectState.create(
+                        state / "state.sqlite3", project_id, owner, _bootstrap=bootstrap
+                    )
+                    # Keep all owned descriptors alive through the registry commit.
+                    bootstrap.verify(complete=True)
+                else:
+                    state.mkdir()
+                    created = True
+                    ProjectState.create(state / "state.sqlite3", project_id, owner)
         except BaseException:
             if created:
                 # Only files created under this call's exclusively reserved directory.

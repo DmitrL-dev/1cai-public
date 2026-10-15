@@ -242,12 +242,13 @@ def _validate_manifest(document):
         "schema_version": "2",
         "identity_version": "source-path-v1",
         "source_digest": document["source_digest"],
-        "adapter_version": "rentgen-captured-go-v1",
         "quality": "unavailable",
         "semantic_scope": "bounded_static_calls; preprocessing and dynamic types unresolved",
     }.items():
         if graph[key] != value:
             raise _corrupt("Graph binding or capability mismatch")
+    if graph["adapter_version"] not in {"rentgen-captured-go-v1", "rentgen-captured-owned-go-v1"}:
+        raise _corrupt("Unsupported captured graph adapter")
     derived = document["derived_inputs"]
     if not isinstance(derived, list) or len(derived) != len(_DERIVED_PATHS):
         raise _corrupt("Invalid derived input inventory")

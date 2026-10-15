@@ -40,17 +40,18 @@
 
 **Текущая цель — полный финальный релиз со всеми запланированными сценариями.**
 [Единый план и реестр 127 требований](docs/product/FULL-FINAL-PLAN.md)
-сохраняет все 24 IDE-сценария открытыми. Текущие исходники развивают
-проектное рабочее место Core/Companion, POSIX owner IO, внутренние сеансы чтения
-проверенных snapshot bytes, Linux identity и отдельный diagnostic pilot.
-[Внутренний POSIX LiveTree](rentgen_core/POSIX-LIVE-TREE.md) реализует configure,
-inventory и чтение через held FD; до public capture нужны интеграция и actual Linux CI.
+сохраняет все 24 IDE-сценария открытыми.
+[CI main `413cc65`](docs/product/evidence/development-ci-413cc65-20261016.json)
+подтвердил ограниченный Core/Companion workbench в настоящем Windows-редакторе:
+обе фазы, восстановление контекста и точные установленные байты прошли проверку.
+Это автоматическая приёмка API редактора; human GUI, native 1С и полная IDE открыты.
+
+Следующий совместный блок — [экспериментальный Linux capture и чтение снимков](docs/product/PORTABLE-CORE.md#следующий-блок-linux-capture-и-чтение-снимков).
+В исходниках связаны private state, захват источников, доверенный Go scanner,
+граф, публикация с квитанцией и CLI/MCP. Его actual Linux и installed-приёмка
+ещё не завершены; опубликованный dev19 capture на Linux не содержит.
 [Аудит плана выпуска](scripts/release/RELEASE-PLAN-CONTRACT.md) проверяет локальные
 bytes и полноту заявленных проверок; готовность финального продукта он не подтверждает.
-[Последний исторический CI commit `3cc29c2`](docs/product/evidence/development-ci-3cc29c2-20261015.json)
-фиксирует частичные результаты и **Product failure**: inventory прошёл, restart
-завершился с exit 1, причина UNKNOWN. Exit 0 первого host без сохранённого phase body
-не доказывает приёмку первой фазы. Последующие изменения требуют своей приёмки.
 Лицензированного стенда 1С/EDT пока нет,
 поэтому native-проверки остаются открытыми, а реализация и обычный CI продолжаются.
 

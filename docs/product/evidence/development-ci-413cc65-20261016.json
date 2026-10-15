@@ -1,0 +1,372 @@
+{
+  "schema": "rentgen-development-ci/1",
+  "observed_at": "2026-10-16",
+  "repository": "DmitrL-dev/1cai-public",
+  "scope": "Post-merge development main CI and installed slices; not a new release or full-product qualification",
+  "source_commit": "413cc65c177a46a1087c641148c7df3f9a616934",
+  "source_tree": "4da121995d8936b09ad9fbbc17f7f800571eef99",
+  "parent_commit": "f287412502e1af514bf00e8f894779048c18c675",
+  "integration": {
+    "pull_request": "https://github.com/DmitrL-dev/1cai-public/pull/101",
+    "method": "squash",
+    "historical_pr_head": "c0102a1f61c18d14480a4e746728554fbceffc6e",
+    "historical_pr_tree_equals_main_tree": true
+  },
+  "checks": {
+    "total": 14,
+    "completed": 14,
+    "success": 14,
+    "entries": [
+      {
+        "name": "native-stock-git",
+        "conclusion": "success",
+        "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050194/job/116513467530"
+      },
+      {
+        "name": "native-git-diagnostic",
+        "conclusion": "success",
+        "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050194/job/116513467475"
+      },
+      {
+        "name": "native-scm",
+        "conclusion": "success",
+        "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050194/job/116513467469"
+      },
+      {
+        "name": "native-editor-workbench",
+        "conclusion": "success",
+        "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050194/job/116513467432"
+      },
+      {
+        "name": "deploy",
+        "conclusion": "success",
+        "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050238/job/116512204917"
+      },
+      {
+        "name": "Synthetic Rust contracts (windows-latest)",
+        "conclusion": "success",
+        "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050318/job/116512098877"
+      },
+      {
+        "name": "Synthetic Rust contracts (ubuntu-24.04)",
+        "conclusion": "success",
+        "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050318/job/116512098859"
+      },
+      {
+        "name": "Synthetic broker and policy comparison (Linux)",
+        "conclusion": "success",
+        "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050318/job/116512098310"
+      },
+      {
+        "name": "Linux GUI real browser and 200% zoom",
+        "conclusion": "success",
+        "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050254/job/116512097120"
+      },
+      {
+        "name": "windows-artifacts",
+        "conclusion": "success",
+        "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050194/job/116512095465"
+      },
+      {
+        "name": "windows",
+        "conclusion": "success",
+        "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050194/job/116512094993"
+      },
+      {
+        "name": "build",
+        "conclusion": "success",
+        "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050238/job/116512094892"
+      },
+      {
+        "name": "Linux experimental contracts (Python 3.11)",
+        "conclusion": "success",
+        "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050215/job/116512094676"
+      },
+      {
+        "name": "Linux experimental contracts (Python 3.12)",
+        "conclusion": "success",
+        "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050215/job/116512094298"
+      }
+    ]
+  },
+  "workflows": [
+    {
+      "name": "Product",
+      "run_id": 38761050194,
+      "conclusion": "success",
+      "event": "push",
+      "branch": "main",
+      "head_sha": "413cc65c177a46a1087c641148c7df3f9a616934",
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050194"
+    },
+    {
+      "name": "Portable",
+      "run_id": 38761050215,
+      "conclusion": "success",
+      "event": "push",
+      "branch": "main",
+      "head_sha": "413cc65c177a46a1087c641148c7df3f9a616934",
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050215"
+    },
+    {
+      "name": "Linux GUI browser acceptance",
+      "run_id": 38761050254,
+      "conclusion": "success",
+      "event": "push",
+      "branch": "main",
+      "head_sha": "413cc65c177a46a1087c641148c7df3f9a616934",
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050254"
+    },
+    {
+      "name": "Diagnostic contracts",
+      "run_id": 38761050318,
+      "conclusion": "success",
+      "event": "push",
+      "branch": "main",
+      "head_sha": "413cc65c177a46a1087c641148c7df3f9a616934",
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050318"
+    },
+    {
+      "name": "Publish product site",
+      "run_id": 38761050238,
+      "conclusion": "success",
+      "event": "push",
+      "branch": "main",
+      "head_sha": "413cc65c177a46a1087c641148c7df3f9a616934",
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050238"
+    }
+  ],
+  "windows": {
+    "passed": 4274,
+    "skipped": 754,
+    "passed_subtests": 51,
+    "failures": 0,
+    "errors": 0,
+    "unique_junit_cases": 5028,
+    "junit_sha256": "74750271f80e4c18e65e8d1703aeb1169b1e9f8a288f8b8f6a91bd2491f59ed5",
+    "separate_preflight_passed": 95,
+    "preflight_not_added_to_full_total": true,
+    "skip_reasons": {
+      "Actual POSIX live tree IO": 68,
+      "Actual POSIX fork ownership guard": 4,
+      "Actual Linux /proc nested-device boundary": 1,
+      "Experimental GUI ZIP backend is Linux-only": 354,
+      "Actual POSIX copied generation session": 56,
+      "Actual Darwin retained-subtree ACL": 1,
+      "Actual Linux retained-subtree default ACL": 1,
+      "Actual POSIX filesystem acceptance": 53,
+      "Actual Darwin extended ACL": 2,
+      "Actual Linux default ACL xattr": 1,
+      "Symlink creation needs Windows privilege; reparse flag is checked by contract": 1,
+      "Experimental Rust import is Linux-only": 47,
+      "Actual Linux Rust submitted-byte contract": 42,
+      "Actual POSIX descriptors": 23,
+      "Actual Linux identity bootstrap": 10,
+      "Linux GUI qualification": 46,
+      "Actual Linux profile and subprocess acceptance": 21,
+      "POSIX installed GUI bootstrap uses selectable pipes": 11,
+      "GUI backend is Linux-only": 7,
+      "Actual Linux process refusal": 1,
+      "Actual Linux startup refusal": 1,
+      "Actual unsupported OS native archive refusal": 1,
+      "Rust submitted ZIPs are Linux-only": 2
+    },
+    "node_passed": 585,
+    "node_skipped": 0,
+    "node_failed": 0,
+    "go_tested_packages": 2,
+    "go_packages_without_tests": 2,
+    "installed_offline_cli_mcp": true,
+    "installed_cross_client_draft": true,
+    "installed_snapshot_comparison": true,
+    "installed_observer": true,
+    "scm_and_stock_git_jobs": "success",
+    "private_pipe_controls_scope": "controlled configuration/pin harness only",
+    "runtime_download_controls_scope": "local mock only"
+  },
+  "editor": {
+    "scope": "installed Windows editor API workbench slice",
+    "accepted": true,
+    "first": {
+      "accepted": true,
+      "checkpoint": "complete",
+      "host_process_id": 8164
+    },
+    "restart": {
+      "accepted": true,
+      "checkpoint": "complete",
+      "host_process_id": 3912
+    },
+    "distinct_host_processes": true,
+    "both_supervisors_exit_zero": true,
+    "all_editor_process_trees_closed": true,
+    "installed_companion_files": 54,
+    "post_host_companion_files": 54,
+    "inventory_binding_equal": true,
+    "source_and_runtime_unchanged": true,
+    "licenses_and_notices_retained": true,
+    "kit_sha256": "bbf6cb97b9148ff774ca76eaab23fb6ba902e1c670acd8ca2e92656768bcc082",
+    "wheel_sha256": "a02f7738605eab01ad2bfba00595ebb2270d26ed4de571096a156e280ab926a2",
+    "vsix_sha256": "a679c5374b4185f169db1d3559a815c61287253c4cffbf77b870940aad306640",
+    "real_bsl": true,
+    "exact_revision_problems": true,
+    "historical_bsl_binding_equal": true,
+    "model_calls": 0,
+    "live_1c_apply": false,
+    "human_gui_accessibility": "NOT_RUN",
+    "full_product_ready": false
+  },
+  "portable": {
+    "python_versions": [
+      {
+        "python": "3.11",
+        "passed": 4061,
+        "skipped": 968,
+        "failures": 0,
+        "errors": 0,
+        "junit_sha256": "5e644a114f7d5ad6add182080dede817178f8041291481e85b92db0a7dbf436f"
+      },
+      {
+        "python": "3.12",
+        "passed": 4061,
+        "skipped": 968,
+        "failures": 0,
+        "errors": 0,
+        "junit_sha256": "70b0f901c81e4440ffaa7f14a66e9faa9726d9e09f25545180e3dc44cea48376"
+      }
+    ],
+    "baseline_sha256": "128bf3666c02dbb4d440d717630c70f70546863de4bb2421bab059ce60411d33",
+    "baseline_unchanged": true,
+    "new_failure_ids": [],
+    "missing_baseline_ids": [],
+    "product_source_files_per_wheel": 137,
+    "all_product_source_bytes_equal_checkout": true,
+    "crlf_normalization_used": false,
+    "checkout_basis": "Completed push/main API run and exact inventory and bytes of all 137 product files across rentgen_core, rentgen_graph and rentgen_diagnostics in both wheels; no portable checkout log line asserted",
+    "installed_scope": "experimental Linux CLI and read-only GUI; no public Linux capture in this source commit",
+    "wheel_sha256": "3f594f4007435dac01790ecd168d4eb9fe424357dfebaf4e2adb6bb441b08152",
+    "input_core_sha256": "8a374c45b52ae9f66e73d64fa1aedd4e30acac15ca2709a00927b6b297581a04",
+    "core_graph_source_files_per_wheel": 127,
+    "diagnostics_source_files_per_wheel": 10,
+    "exact_product_inventory_equal_checkout": true
+  },
+  "gui": {
+    "browser_passed": 43,
+    "backend_passed": 963,
+    "frontend_passed": 98,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "sandbox_enabled": true,
+    "actual_zoom_factor": 2,
+    "installed_wheel_sha256": "3f594f4007435dac01790ecd168d4eb9fe424357dfebaf4e2adb6bb441b08152",
+    "input_core_sha256": "07cb87150e04d97ad02e2b5e1a865244777963c1a8f75992b890fc9745474b79",
+    "scope": "experimental Linux installed CLI and read-only GUI import; not Windows/macOS or full Linux qualification"
+  },
+  "diagnostic": {
+    "framework_controls": 38,
+    "synthetic_episodes": 42,
+    "policies": [
+      "fixed",
+      "one_pass",
+      "rust"
+    ],
+    "source_file_count": 9,
+    "source_hashes_verified": true,
+    "corpus_hash_verified": true,
+    "criteria_hash_verified": true,
+    "whole_evaluation_recomputed_equal": true,
+    "actual_model_runs": 0,
+    "ai_competence_accepted": false,
+    "heldout_independence": false,
+    "native_acceptance": false
+  },
+  "pages": {
+    "url": "https://dmitrl-dev.github.io/1cai-public/",
+    "files": 9,
+    "total_bytes": 872660,
+    "artifact_source_and_public_http200_bytes_equal": true,
+    "human_browser_qa": false
+  },
+  "original_artifacts": [
+    {
+      "role": "windows-python-contracts",
+      "run_id": 38761050194,
+      "artifact_id": 11986872194,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050194/artifacts/11986872194",
+      "size_bytes": 86998,
+      "sha256": "004971d546ae1ad3fd85af149f1d4278da2ae5253677a82bbeda8796e5391c5a",
+      "original_api_size_and_digest_verified": true
+    },
+    {
+      "role": "installed-windows-editor-workbench",
+      "run_id": 38761050194,
+      "artifact_id": 11985368521,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050194/artifacts/11985368521",
+      "size_bytes": 4442,
+      "sha256": "1d41b60ae01d46e8180a3cd088d7f28a0db9f1b294f01f567c6d9da9a8e3f67f",
+      "original_api_size_and_digest_verified": true
+    },
+    {
+      "role": "linux-gui-browser",
+      "run_id": 38761050254,
+      "artifact_id": 11987150536,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050254/artifacts/11987150536",
+      "size_bytes": 4856167,
+      "sha256": "714ecda0f3e83ed9684a89a38cb5b21fcd94340c35a97c8601ad6f9820297a79",
+      "original_api_size_and_digest_verified": true
+    },
+    {
+      "role": "portable-python-3.11",
+      "run_id": 38761050215,
+      "artifact_id": 11986612856,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050215/artifacts/11986612856",
+      "size_bytes": 2326498,
+      "sha256": "96b102e982efe1114d7d2ab20e08d85e86497f96ab92da8f8e0e3270cef5914c",
+      "original_api_size_and_digest_verified": true
+    },
+    {
+      "role": "portable-python-3.12",
+      "run_id": 38761050215,
+      "artifact_id": 11987430807,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050215/artifacts/11987430807",
+      "size_bytes": 2325910,
+      "sha256": "d60ccd81d7defad07e30dc1a4bbca9ae900defa745d06f5471943d5c64fe13ba",
+      "original_api_size_and_digest_verified": true
+    },
+    {
+      "role": "diagnostic-synthetic-baselines",
+      "run_id": 38761050318,
+      "artifact_id": 11985248014,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050318/artifacts/11985248014",
+      "size_bytes": 12107,
+      "sha256": "e52586ad1f600baf74dd257cfa230286099095f083af6ac7abbe87fd739e9c7e",
+      "original_api_size_and_digest_verified": true
+    },
+    {
+      "role": "github-pages",
+      "run_id": 38761050238,
+      "artifact_id": 11985792345,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38761050238/artifacts/11985792345",
+      "size_bytes": 797042,
+      "sha256": "2f87d396165a98f3b787eb2e97bfa14f788fa722d06c6e74a0e75337aa1b786e",
+      "original_api_size_and_digest_verified": true
+    }
+  ],
+  "evidence_verification": {
+    "original_api_size_and_sha256_before_guarded_extraction": true,
+    "independent_root_editor_gui_windows_reduction": true,
+    "independent_portable_and_diagnostic_reduction": true,
+    "raw_private_traces_or_profiles_published": false
+  },
+  "limits": [
+    "These results apply only to source 413cc65c177a46a1087c641148c7df3f9a616934 and tree 4da121995d8936b09ad9fbbc17f7f800571eef99.",
+    "The next Linux/amd64 capture/source/graph integration is unqualified by these runs and is not in published dev19.",
+    "Human GUI/accessibility, native 1C/EDT, actual model competence, independent holdout, all 24 complete IDE scenarios and full-product readiness remain open.",
+    "Canonical 127 requirement IDs, states, criteria and source basis are unchanged.",
+    "Published Core dev19 / Companion 0.1.20 tags, assets and qualification/publication records are unchanged.",
+    "Historical failed CI receipts are preserved; this receipt does not rewrite their outcomes."
+  ],
+  "new_release_published": false,
+  "full_product_ready": false
+}

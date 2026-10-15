@@ -350,6 +350,10 @@ def _parser():
                 )
         elif name == "capture":
             command.add_argument("--scanner", type=Path, action=_Once)
+            command.add_argument(
+                "--scanner-sha256", action=_Once,
+                help="Trusted SHA-256 of the static Linux x64 scanner",
+            )
             command.add_argument("--operation-id", action=_Once)
             command.add_argument("--expected-head-json", type=Path, action=_Once)
         elif name.startswith("owner-report-"):
@@ -591,7 +595,21 @@ def _capture(args, runtime, ctx):
         {"recovery": {"operation_id": operation_id, "expected_head": head}},
         stream=sys.stderr,
     )
-    builder = runtime.graph_builder or _InstalledBuilder(args.scanner)
+    scanner_sha256 = getattr(args, "scanner_sha256", None)
+    if sys.platform == "linux":
+        from ._linux_capture import LinuxCaptureBackend
+
+        if runtime.graph_builder is not None and (
+            args.scanner is not None or scanner_sha256 is not None
+        ):
+            raise CoreError(
+                "INVALID_ARGUMENT", "Choose runtime or command-line scanner configuration"
+            )
+        builder = runtime.graph_builder or LinuxCaptureBackend(args.scanner, scanner_sha256)
+    else:
+        if scanner_sha256 is not None:
+            raise CoreError("INVALID_ARGUMENT", "Scanner SHA-256 configuration requires Linux")
+        builder = runtime.graph_builder or _InstalledBuilder(args.scanner)
     return capture_and_publish(
         ctx, expected_head=head, builder=builder, operation_id=operation_id
     )

@@ -181,7 +181,7 @@ def verify(wheel, binary, output, expected_version):
     assert cli('project-head', *common, '--project', project)['result']['snapshot'] is None
     assert (source / 'untouched.bsl').read_bytes() == b'Unchanged();\n'
     refused = cli('capture', *common, '--project', project, expected=2)
-    assert refused['error']['code'] == 'CAPABILITY_UNAVAILABLE'
+    assert refused['error']['code'] == 'GRAPH_ADAPTER_UNAVAILABLE'
     gui = gui_delivery(python, core, core_hash, common, project, archive, wheel, workspace, output)
     receipt = {'schema': 1, 'scope': 'experimental Linux installed CLI and read-only GUI import; not Windows/macOS or full Linux qualification', 'version': expected_version, 'wheel_sha256': hashlib.sha256(wheel.read_bytes()).hexdigest(), 'binary_sha256': core_hash, 'checks': checks, 'counts': report['counts'], 'gui': gui, 'source_unchanged': True, 'project_head_unchanged': True}
     (output / 'acceptance.json').write_text(json.dumps(receipt, indent=2) + '\n')

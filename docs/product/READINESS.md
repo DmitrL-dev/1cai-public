@@ -2,31 +2,50 @@
 
 Текущая цель — **полный финальный релиз с реализацией всех планов**.
 [Единый план и реестр](FULL-FINAL-PLAN.md) сохраняет 127 требований и все
-24 сквозных IDE-сценария. В исходниках развиваются Core/Companion workbench,
-harness настоящего редактора, POSIX owner IO, внутренние
-[сеансы чтения проверенных bytes](../../rentgen_core/POSIX-SNAPSHOT-SESSION.md),
-[Linux identity](../../rentgen_core/LOCAL-IDENTITY.md),
-[POSIX LiveTree](../../rentgen_core/POSIX-LIVE-TREE.md) и отдельный diagnostic pilot.
-LiveTree содержит только внутренние configure/inventory/held-FD read. POSIX
-capture dispatch, scanner ownership и public capture этим adapter не реализованы;
-actual Linux CI ещё нужен.
+24 сквозных IDE-сценария.
+
+## Проверенная разработка и следующий блок
+
+PR #101 объединён в main одним squash-коммитом
+`413cc65c177a46a1087c641148c7df3f9a616934`, дерево
+`4da121995d8936b09ad9fbbc17f7f800571eef99`.
+[Повторные CI main](evidence/development-ci-413cc65-20261016.json) подтвердили:
+
+- Windows: **4274 passed / 754 skipped + 51 passed subtests**, Node **585 passed**,
+  Go и установленные проверки; 95 preflight controls считаются отдельно.
+- Настоящий установленный Windows editor API workbench: обе фазы complete,
+  разные Extension Host PID, cleanup завершён, inventory 54 файлов и runtime/license
+  bindings проверены. Сохранение, conflict/revocation, Problems точной revision,
+  restart и recovery durable intent выполнены без модели и live 1С.
+- Linux Python 3.11/3.12: по **4061 passed / 968 skipped**, failures/errors 0;
+  известный Windows-oriented baseline не расширен. Полный собранный unit suite
+  прошёл с указанными OS/runtime skips; это не приёмка всего Linux-продукта.
+  Все 137 product files каждого wheel совпали с checkout: 127 Core/graph и
+  10 diagnostics. Это число файлов отдельно от 127 требований реестра.
+- Linux GUI: **43 browser / 963 backend / 98 frontend**, без failures/errors/skips,
+  настоящий sandboxed browser, installed wheel и масштаб 200%.
+- Diagnostic pilot: **38 framework controls / 42 synthetic episodes**;
+  source hashes и evaluation перепроверены. Actual model runs — 0.
+
+Автоматическая приёмка редактора не закрывает human GUI/accessibility, native 1С,
+все 24 IDE-сценария или качество AI. Эти CI не являются новым выпуском.
+Исторические [Product failure `3cc29c2`](evidence/development-ci-3cc29c2-20261015.json)
+и [inventory failure `553e1fa`](evidence/development-ci-553e1fa-20261015.json)
+сохранены с прежними причинами и scope; успешный новый запуск их не переписывает.
+
+Следующий совместный [Linux/amd64 capture блок](PORTABLE-CORE.md#следующий-блок-linux-capture-и-чтение-снимков)
+реализуется в исходниках: private bootstrap → verified copied sources → fixed Go
+scanner → SQLite graph → complete generation → короткий catalog/head/receipt CAS,
+затем fresh CLI/MCP source/graph reads и история. Actual Linux и installed-приёмка
+этого нового блока ещё не завершены. Его локальные POSIX/SQLite и отрицательные
+контроли на macOS не являются Linux CI. Scope ограничен новым private project,
+default base layer и source/graph; metadata/drafts/diff/native/live и macOS закрыты.
+Default capture limits — 64 МиБ всех источников, 16 МиБ на файл, 4096 записей;
+они не подтверждают полный B07 или максимумы внутренних adapters.
+
 [Локальный аудит плана выпуска](../../scripts/release/RELEASE-PLAN-CONTRACT.md)
 проверяет source/tree, bytes и typed claims; полные criterion/topology adapters
 ещё отсутствуют, поэтому это не qualification receipt и не разрешение stable.
-Это незавершённая разработка.
-[Последний исторический CI commit `3cc29c2`](evidence/development-ci-3cc29c2-20261015.json)
-сохраняет Windows 4216 passed / 591 skipped + 51 subtests и Node 577 passed;
-Linux Python 3.11/3.12 — по 3843 passed / 965 skipped без failures/errors;
-GUI browser/backend/frontend — 43/963/98 passed; pilot — 38 protocol tests и
-42 synthetic episodes, без actual model runs или native 1С acceptance.
-Product workflow завершился **failure**: установленный inventory прошёл,
-первый supervisor имеет exit 0 и cleanup complete, но phase body отсутствует
-в публичном artifact и приёмку первой фазы подтвердить нельзя. Restart имеет
-exit 1 и cleanup complete; причина UNKNOWN, приватные phase/log не опубликованы.
-[Предыдущая квитанция `553e1fa`](evidence/development-ci-553e1fa-20261015.json)
-сохраняет свой более ранний отказ inventory до Extension Host.
-Последующие session/identity/LiveTree/audit и editor-observability изменения
-требуют CI своего source SHA; H3 их не квалифицирует.
 Лицензированный стенд 1С/EDT пока недоступен;
 реализация и обычный CI продолжаются, native-приёмка остаётся открытой.
 
@@ -64,9 +83,10 @@ Core source commit: [`5eee97ea050c9f4c06eaceb4d191f16868fb0141`](https://github.
 не подменяет принятые bytes и SHA этих тегов.
 
 Успешная Linux baseline-проверка не означает полностью зелёный Linux suite
-или поддержку всего продукта на этой ОС. Windows/macOS GUI, новая активация
-в настоящем редакторе, native 1С business workflow, качество AI и cold OwnerIPC
-не квалифицированы. Полная IDE остаётся планом.
+или поддержку всего продукта на этой ОС. Для опубликованного dev19 новая
+активация настоящего редактора не квалифицирована: более поздний main CI выше
+относится к своим development bytes. Windows/macOS GUI, native 1С business
+workflow, качество AI и cold OwnerIPC остаются открытыми. Полная IDE остаётся планом.
 Номера dev18 / 0.1.19 сохраняются у отдельного draft #84; его source-facts,
 полный176/whole-process gate и независимая квалификация не входят в выпуск.
 

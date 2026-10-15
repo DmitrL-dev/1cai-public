@@ -47,6 +47,44 @@ jobs:
           cargo +1.92.0 --version
       - name: Bound all collected pytest IDs before expensive qualification
         run: python -m pytest --collect-only -q
+      - name: Test and build the owned static Linux scanner
+        env:
+          CGO_ENABLED: '0'
+        run: |
+          go -C go test -timeout 120s ./...
+          go -C go build -trimpath -buildmode=exe -o "$GITHUB_WORKSPACE/output/bsl-scan-owned-linux" ./cmd/bsl-scan
+          python - <<'PY'
+          import hashlib, json, os, shutil, subprocess
+          from pathlib import Path
+          scanner = Path("output/bsl-scan-owned-linux").resolve(strict=True)
+          digest = hashlib.sha256(scanner.read_bytes()).hexdigest()
+          go_version = subprocess.check_output(["go", "version"], text=True).strip()
+          assert go_version == "go version go1.25.5 linux/amd64", "Unexpected Go toolchain"
+          goroot = Path(subprocess.check_output(["go", "env", "GOROOT"], text=True).strip())
+          license_bytes = (goroot / "LICENSE").read_bytes()
+          license_hash = hashlib.sha256(license_bytes).hexdigest()
+          assert license_hash == "911f8f5782931320f5b8d1160a76365b83aea6447ee6c04fa6d5591467db9dad"
+          Path("output/linux-scanner-GO-LICENSE").write_bytes(license_bytes)
+          source_files = [Path("go/go.mod"), *sorted(Path("go").rglob("*.go"))]
+          provenance = {
+              "schema": "rentgen-owned-linux-scanner-build-observation/1",
+              "protocol": "rentgen-owned-scanner-linux-v1",
+              "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+              "source_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+              "source_files_sha256": {str(path): hashlib.sha256(path.read_bytes()).hexdigest() for path in source_files},
+              "go_version": go_version,
+              "go_executable_sha256": hashlib.sha256(Path(shutil.which("go")).read_bytes()).hexdigest(),
+              "cgo_enabled": False,
+              "build_arguments": ["build", "-trimpath", "-buildmode=exe", "./cmd/bsl-scan"],
+              "scanner": {"sha256": digest, "size_bytes": scanner.stat().st_size},
+              "license": {"path": "licenses/GO-LICENSE", "sha256": license_hash, "size_bytes": len(license_bytes)},
+              "scope": "CI build observation; installed acceptance is a separate receipt",
+          }
+          Path("output/linux-scanner-provenance.json").write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as stream:
+              stream.write(f"RENTGEN_TEST_LINUX_SCANNER={scanner}\n")
+              stream.write(f"RENTGEN_TEST_LINUX_SCANNER_SHA256={digest}\n")
+          PY
       - name: Locked Rust native and process contracts
         run: |
           cargo +1.92.0 test --locked --manifest-path rust/input-core/Cargo.toml
@@ -77,11 +115,16 @@ jobs:
           cmp "output/direct-wheel/rentgen_core-$version-py3-none-any.whl" "dist/rentgen_core-$version-py3-none-any.whl"
           sha256sum "dist/rentgen_core-$version-py3-none-any.whl" > output/wheel-reproducibility.sha256
           python scripts/verification/verify_portable_delivery.py --wheel "dist/rentgen_core-$version-py3-none-any.whl" --binary "$RENTGEN_INPUT_CORE_TEST_BINARY" --output output/installed-portable --expected-version "$version"
+          python scripts/verification/verify_linux_capture_delivery.py --wheel "dist/rentgen_core-$version-py3-none-any.whl" --scanner "$RENTGEN_TEST_LINUX_SCANNER" --scanner-sha256 "$RENTGEN_TEST_LINUX_SCANNER_SHA256" --output output/installed-linux-capture --expected-version "$version" --source-commit "$(git rev-parse HEAD)"
           mkdir -p output/experimental-linux
           cp "$RENTGEN_INPUT_CORE_TEST_BINARY" output/experimental-linux/rentgen-input-core
+          cp "$RENTGEN_TEST_LINUX_SCANNER" output/experimental-linux/bsl-scan-owned-linux
           cp LICENSE rust/input-core/README.md rust/input-core/PROTOCOL.md rust/input-core/THIRD_PARTY_NOTICES.md rust/input-core/DEPENDENCY_PROVENANCE.json output/experimental-linux/
           cp -r rust/input-core/licenses output/experimental-linux/licenses
+          cp output/linux-scanner-GO-LICENSE output/experimental-linux/licenses/GO-LICENSE
+          cp output/linux-scanner-provenance.json output/experimental-linux/GO-SCANNER-PROVENANCE.json
           sha256sum output/experimental-linux/rentgen-input-core > output/experimental-linux/SHA256SUMS
+          sha256sum output/experimental-linux/bsl-scan-owned-linux >> output/experimental-linux/SHA256SUMS
       - name: Upload scoped evidence and development artifacts
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -95,6 +138,7 @@ jobs:
             output/linux-diagnostic.log
             output/linux-baseline-comparison.json
             output/installed-portable/acceptance.json
+            output/installed-linux-capture/acceptance.json
             output/wheel-reproducibility.sha256
             output/experimental-linux/
             dist/*.whl

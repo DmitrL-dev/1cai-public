@@ -12,7 +12,7 @@ adapters сохраняют прежние границы. Полная пере
 [Rust ZIP input core](RUST-INPUT-CORE.md) описан отдельно: у него собственные
 Linux byte/session contracts и ограничения.
 
-## Что работает на Linux
+## Что входит в опубликованный dev19 на Linux
 
 `rentgen capabilities` возвращает JSON с `contract_version: 1`, `platform` и
 матрицей `os-adapter-support`. Это проверка реализации OS adapter, не выдача прав
@@ -31,9 +31,10 @@ permissions, schema и ограничения входных/выходных д
   показывает только инструменты с поддерживаемым OS контрактом в startup scope.
   В unscoped сервере `rentgen_capabilities` отдаёт ту же матрицу поддержки.
 
-На Linux capture, retained snapshot/graph access, создание/изменение черновиков,
-workspace mutation, live apply/undo/recovery/status, native execution, diagnostics
-и непроверенные state writes возвращают `CAPABILITY_UNAVAILABLE`. CLI делает это
+В опубликованном dev19 на Linux capture, retained snapshot/graph access,
+создание/изменение черновиков, workspace mutation, live apply/undo/recovery/status,
+native execution, diagnostics и непроверенные state writes возвращают
+`CAPABILITY_UNAVAILABLE`. CLI делает это
 до identity, registry, payload и source IO. MCP делает это после ограниченной
 проверки DTO/scope, до runtime dispatch. Прямая попытка вызвать скрытый инструмент
 также отклоняется. Новая команда без явного capability mapping закрыта по умолчанию.
@@ -41,6 +42,63 @@ workspace mutation, live apply/undo/recovery/status, native execution, diagnosti
 На macOS доступна только матрица capabilities: identity adapter и полный workflow
 ещё требуют отдельной реализации и native приёмки. POSIX file descriptor не
 объявляется эквивалентом Windows deny-write/deny-delete retained handle.
+
+## Следующий блок: Linux capture и чтение снимков
+
+Это **новая source integration, ещё без завершённой actual Linux и installed-приёмки**.
+[CI main `413cc65`](evidence/development-ci-413cc65-20261016.json) квалифицирует
+предыдущий development-срез; опубликованный dev19 не содержит этот capture backend
+или Go scanner для него. До квалификации нового точного SHA и готового комплекта
+не считайте команды ниже поддержанным выпуском.
+
+Целевой сценарий — GNU/Linux amd64, новый private project и его default base layer:
+сохранить исходники и статический граф, перечитать их в свежем процессе, сохранить
+следующую версию и прочитать предыдущую. В исходниках связаны:
+
+- [Private state bootstrap](../../rentgen_core/PRIVATE-STATE-BOOTSTRAP.md) и
+  [POSIX LiveTree](../../rentgen_core/POSIX-LIVE-TREE.md): private descriptor ownership,
+  bounded копирование и повторные проверки источников.
+- [Fixed Go scanner owner](../../rentgen_core/LINUX-SCANNER-OWNER.md): exact SHA-256,
+  статический CGO-disabled ELF amd64, sealed image, ограниченные pipes и owned process.
+- [Graph bundle](../../rentgen_graph/POSIX-GRAPH-BUNDLE.md) и
+  [complete generation](../../rentgen_core/POSIX-GENERATION-OWNER.md): проверенные bytes,
+  actual SQLite, final manifest last; source/generation owners успешно закрываются
+  до короткой publication transaction.
+- [Capture backend](../../rentgen_core/LINUX-CAPTURE-BACKEND.md): catalog/head/receipt CAS,
+  recovery durable receipt и точный replay без повторного source/scanner IO.
+- [Read facade](../../rentgen_core/POSIX-SNAPSHOT-FACADE.md): `source-list`, `source-read`,
+  `graph-resolve` и `impact` из catalogued snapshot, с проверкой bytes и прав вокруг
+  каждого чтения. Старые снимки читаются независимо от текущего live source.
+
+CLI `capture --scanner <absolute-executable> --scanner-sha256 <trusted-sha256>`
+требует заранее доверенные executable bytes. MCP получает те же параметры только
+как startup options сервера; request не выбирает executable или его hash.
+`--operation-id` и исходный `--expected-head-json` связывают повтор операции с её
+квитанцией. При точном replay scanner может отсутствовать. Отмена проверяется вне
+write transaction; если короткий commit уже выиграл гонку, исход восстанавливается
+по durable receipt, а не объявляется отменённым задним числом.
+
+Capability contract остаётся v1. Новый узкий alias `snapshot.source.read` и
+`source.capture` допускают только этот source/graph маршрут на Linux. Старая
+широкая группа `snapshot.retained.read` сохраняет Windows-совместимость и остаётся
+закрытой на Linux. Metadata navigation, snapshot diff, создание/редактирование
+черновиков, native execution, live writes и macOS этим блоком не допускаются.
+
+Default capture limits: **64 МиБ всех исходников, 16 МиБ на файл, 4096 записей**,
+120 секунд на операцию и более короткие фазовые limits. Это ограниченный срез,
+не квалификация максимальных 1 ГиБ / 64 МиБ / 100 000 файлов внутренних adapters
+или всего B07. Image/descriptor budgets не являются hard process RSS cap.
+Private paths и повторные проверки не доказывают filesystem-wide atomicity или
+защиту от hostile кода того же OS account. Source-copy staging attempts остаются
+orphans; complete generation получает catalog/head/receipt только после успешного
+CAS. Неопубликованные попытки сохраняются; автоматическая очистка и repair
+permissions отсутствуют.
+
+Локальные POSIX/SQLite controls и cross-compilation на macOS подтверждают только
+свой scope. Нужны actual Linux scanner/kernel/ACL, CLI/MCP cancellation/replay/history,
+installed wheel без source fallback и Windows regression на новом итоговом SHA.
+Полный offline SDK closure, весь Linux/macOS продукт, native 1С/EDT и финальный
+релиз остаются открытыми.
 
 ## Local ownership, не новый IAM
 
@@ -131,6 +189,6 @@ Windows capability contract и не выдаются за Linux live-apply пр�
 
 Полный старый Windows-oriented unit suite на Linux имеет отдельные известные
 platform/runtime failures. Сравнение с неизменённым baseline необходимо: нельзя
-объявлять полный suite зелёным по одному целевому набору. Новая native 1С/редакторная
-приёмка, macOS, portable snapshot import/retained reader, native tools, Companion
-и полный Linux offline-kit остаются отдельными этапами.
+объявлять полный suite зелёным по одному целевому набору. Native 1С, macOS, квалификация нового capture/retained-reader блока, native tools,
+Linux Companion и полный Linux offline-kit остаются отдельными этапами. Более
+поздний Windows editor API main CI не квалифицирует Linux Companion или native 1С.
