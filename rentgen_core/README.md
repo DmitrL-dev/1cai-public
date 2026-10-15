@@ -1,9 +1,12 @@
 # Local project foundation
 
-The base package uses only the standard library for explicit project state, captured source bytes,
-and source-bound graph publication on local Windows. The installed `rentgen`
-CLI uses a Windows process SID and explicit project/snapshot selectors. The
-concrete adapter is the `rentgen_graph` package. Legacy `tools/rentgen` modules
+The base package uses only the standard library for explicit local project state,
+captured source bytes and source-bound graph publication. The published Windows
+route uses the process SID and explicit project/snapshot selectors. The current
+checkout also contains a bounded Linux/amd64 source capture/read integration;
+its exact-source native and installed qualification is still pending, and it is
+not part of published dev19. See [PORTABLE-CORE](../docs/product/PORTABLE-CORE.md).
+The concrete graph adapter is `rentgen_graph`. Legacy `tools/rentgen` modules
 are compatibility aliases during the separate all-consumer cutover.
 
 The root `pyproject.toml` uses an explicit Hatchling backend. Build/install
@@ -16,15 +19,16 @@ existing audited Windows runtime lock for its dependency versions. Base wheel
 installation does not install the SDK. The sdist includes CORE-INSTALLATION,
 CORE-MCP, STATE-MIGRATION, PROJECT-ACCESS, SNAPSHOT-METADATA,
 SNAPSHOT-READ-SESSIONS, SNAPSHOT-PUBLICATION-ADR and that runtime lock.
-The development stdio tools derive identity from the Windows process SID; source/graph
-reads require explicit project and snapshot IDs. Setup and migration remain CLI
+The stdio tools derive identity from the Windows process SID or the explicit
+Linux local-account profile; source/graph reads require explicit project and
+snapshot IDs. Setup and migration remain CLI
 operations. Cancellation does not imply rollback; reconcile the original capture
 operation receipt. See `docs/product/CORE-MCP.md` for bounds and exact tool schemas.
-No HTTP, remote MCP, live source/infobase editing, update, observer service or
-full-product readiness is implied by this local CLI slice. The development
-checkout exposes a bounded metadata preview and an owned-workspace writer; its
-CLI commands never grant permission to mutate the registered source root or a
-1C infobase. Those live-apply acceptance gates remain open.
+No HTTP, remote MCP, update, observer service or full-product readiness is implied
+by this local CLI slice. The Windows route also exposes bounded metadata preview,
+owned-workspace and explicit source live writers with their own permissions,
+preconditions and recovery receipts. They do not grant arbitrary infobase editing
+and are not enabled by the Linux source capture/read integration.
 
 The public package also exposes a bounded `WindowsServiceInstaller` for
 explicit SCM command planning/execution, a retained `load_onec_register_export`
@@ -115,12 +119,15 @@ transaction. A read transaction observes the membership snapshot at its start;
 revocation affects subsequent units of work, not an already-running read scope.
 
 Only new files/directories are initialized. Registration commits its registry
-mapping after state bootstrap. Direct state creation commits schema and owner
-bootstrap in one SQLite transaction. On failure it removes only the new database
-file reserved by that call and its newly created sidecars; existing database or
-sidecar destinations are rejected without overwriting them. Registration exceptions
-remove only its exclusively created state directory. A process crash may leave an unregistered directory for explicit
-recovery; registry/state/filesystem do not claim a distributed atomic transaction.
+mapping after state bootstrap. The default direct state factory commits schema and
+owner bootstrap in one SQLite transaction; its failure cleanup removes only its
+new database and sidecars. Windows registration also removes its exclusively
+created state directory on failure. Linux registration instead uses the
+[private state bootstrap](PRIVATE-STATE-BOOTSTRAP.md): failure cleanup only closes
+owned descriptors, leaving any new root/partial database as an orphan. Existing
+objects are never repaired or deleted. A verification/close failure after the
+registry commit cannot roll that registration back; registry/state/filesystem
+do not claim a distributed atomic transaction.
 There is no automatic migration, attach/move, alias, network-filesystem support,
 or protection against direct file mutation by the same OS account. Membership
 changes use mandatory caller operation IDs and an administrative revision/CAS.
@@ -203,7 +210,7 @@ read transaction, and verifies manifest, retained sources, graph and derived inp
 hashes before returning capabilities. Explicit missing IDs return
 `SNAPSHOT_NOT_FOUND`; no other project or newer head is searched.
 
-## Captured graph publication and pinned reads
+## Captured graph publication and pinned reads on Windows
 
 The trusted composition root explicitly injects the concrete scanner and reader;
 the stdlib core never imports HTTP, private graph data or a quality model:
@@ -262,8 +269,9 @@ no-follow file and ancestor handles across the entire explicitly immutable,
 read-only SQLite query; corrupt bytes or journal sidecars fail. Later live source
 edits or head changes cannot change pinned results.
 
-Publication and retained readers currently require the supported Windows handle
-adapter. The capture qualifier remains `working_tree_verified_passes_v1` with
+The Windows route above uses its supported retained-handle adapter; the separate
+Linux source integration is described below. The capture qualifier remains
+`working_tree_verified_passes_v1` with
 `temporal_atomicity=not_proven`: this is not structural apply/release acceptance.
 File flush plus SQLite commit does not promise power-loss durability on every
 storage stack; missing/corrupt committed files fail honestly after recovery.
@@ -275,6 +283,24 @@ Domain/SQLite failures use `CoreError.code` and `to_dict(request_id)` with
 (e.g. an existing destination file) remain ordinary Python filesystem exceptions;
 an eventual transport bootstrap adapter must map them explicitly. No HTTP status
 mapping, authentication transport or API fallback is implemented here.
+
+## Experimental Linux source integration
+
+The current checkout connects new private projects/default base layers to the
+owned static Go scanner, verified-byte graph assembly, complete generation,
+publication CAS and retained source/graph reads. New capture requires GNU/Linux
+amd64 and trusted startup configuration: `--scanner /absolute/executable` plus
+`--scanner-sha256 <trusted-lowercase-sha256>` for CLI capture or MCP startup.
+Exact committed-operation replay may omit both scanner options; retain the
+original operation ID and expected head. Cancellation is cooperative and does not
+prove rollback when a commit already won the race.
+
+Defaults are 64 MiB total source, 16 MiB per file and 4096 source entries, with a
+120-second operation bound and shorter phase limits. Metadata navigation, diff,
+draft writes, native execution, live writes and macOS remain closed. This source
+integration is not a published Linux capture kit or full product qualification;
+see [PORTABLE-CORE](../docs/product/PORTABLE-CORE.md) for the pending acceptance
+and exact ownership/resource limits.
 
 ## Verification
 

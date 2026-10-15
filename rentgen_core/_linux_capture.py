@@ -164,7 +164,7 @@ def _capture_complete(backend, ctx, head, gate):
     from rentgen_graph.posix_snapshot_adapter import PosixGraphLimits, build_posix_graph_bundle
     from rentgen_graph.snapshot_adapter import RentgenGraphReaderFactory
     limits = backend.limits
-    captured = generation = scanner = scanner_output = bundle = None
+    captured = generation = scanner = active_scanner = scanner_output = bundle = None
     complete = configuration = None
     try:
         captured = capture_posix_sources(state=ctx.state, principal=ctx.principal,
@@ -226,9 +226,9 @@ def _capture_complete(backend, ctx, head, gate):
                         go_memory_target_bytes=limits.go_memory_target_bytes,
                         deadline_seconds=limits.phase_deadline_seconds),
                     authorize=gate.check, cancelled=gate.cancelled)
-                with scanner:
-                    scanner_output = scanner.scan()
-                scanner = None  # Its successful exit precedes graph processing.
+                with scanner as active_scanner:
+                    scanner_output = active_scanner.scan()
+                scanner = active_scanner = None  # Successful exit precedes graph processing.
                 gate.check()
                 graph_budget = limits.resident_byte_budget - source_document_size
                 if graph_budget < 1:
@@ -251,7 +251,7 @@ def _capture_complete(backend, ctx, head, gate):
         _boundary("after_generation_complete", ctx=ctx, complete=complete)
         return complete, configuration
     finally:
-        captured = generation = scanner = scanner_output = bundle = None
+        captured = generation = scanner = active_scanner = scanner_output = bundle = None
         complete = configuration = None
 
 

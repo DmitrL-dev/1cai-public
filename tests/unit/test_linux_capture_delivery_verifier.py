@@ -4,7 +4,7 @@ import importlib.util
 import io
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import platform
 import stat
 import struct
@@ -128,7 +128,8 @@ def test_recovery_protocol_accepts_only_exact_json_and_fixed_builder_diagnostics
             subject.recovery_stderr(invalid, recovery, built=built)
 
 
-def test_pip_and_python_environment_cannot_redirect_install_outside_owned_venv():
+@pytest.mark.parametrize("path_type", [PurePosixPath, PureWindowsPath])
+def test_pip_and_python_environment_cannot_redirect_install_outside_owned_venv(path_type):
     environment = subject.process_environment({"PIP_TARGET": "/outside", "PIP_PREFIX": "/outside",
         "PIP_CONFIG_FILE": "/outside/config", "PIP_USER": "1", "PYTHONPATH": "/outside",
         "PYTHONHOME": "/outside", "LD_PRELOAD": "/outside/library", "LD_AUDIT": "/outside/library",
@@ -137,9 +138,10 @@ def test_pip_and_python_environment_cannot_redirect_install_outside_owned_venv()
     assert not any(key.startswith(("LD_", "DYLD_")) for key in environment)
     assert "PYTHONPATH" not in environment and "PYTHONHOME" not in environment
     assert environment["PATH"] == "preserved"
-    arguments = subject.install_arguments(Path("/owned/environment/bin/python"), Path("/owned/product.whl"))
-    assert arguments == [Path("/owned/environment/bin/python"), "-I", "-m", "pip", "--isolated",
-        "--disable-pip-version-check", "--no-cache-dir", "install", "--no-index", "--no-deps", "/owned/product.whl"]
+    python, wheel = path_type("/owned/environment/bin/python"), path_type("/owned/product.whl")
+    arguments = subject.install_arguments(python, wheel)
+    assert arguments == [python, "-I", "-m", "pip", "--isolated",
+        "--disable-pip-version-check", "--no-cache-dir", "install", "--no-index", "--no-deps", str(wheel)]
 
 
 @unsupported
@@ -159,7 +161,7 @@ def test_script_unsupported_host_emits_only_bounded_public_failure(tmp_path):
         "--source-commit", "a" * 40, "--expected-version", VERSION, "--output", str(output)],
         capture_output=True, timeout=10)
     assert result.returncode == 1 and result.stdout == b""
-    assert result.stderr == b"Installed Linux capture verification failed: Installed capture qualification requires actual Linux/amd64\n"
+    assert result.stderr.replace(b"\r\n", b"\n") == b"Installed Linux capture verification failed: Installed capture qualification requires actual Linux/amd64\n"
     assert not output.exists()
 
 

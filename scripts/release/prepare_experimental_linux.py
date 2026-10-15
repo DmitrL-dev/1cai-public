@@ -236,7 +236,9 @@ https://github.com/DmitrL-dev/1cai-public/blob/{inputs['source_commit']}/docs/pr
 {gui_guide}
 Accepted scope must be read together with the release's installed-smoke receipt:
 basic local identity/registry/project creation and read-only ZIP export analysis.
-Native capture is unavailable on Linux. Installation does not migrate state.
+This supplement does not include or qualify the owned Go scanner/capture route.
+A newer source integration is outside this accepted scope. Installation does not
+migrate state.
 MCP dependencies and MCP installation are not qualified by this supplement.
 Read the exact-source Linux diagnostic report in the CI run identified by
 build-inputs.json for executed, skipped, failed and errored cases. A successful

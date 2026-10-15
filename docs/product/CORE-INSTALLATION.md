@@ -9,7 +9,8 @@
 графа и предложенных правок с BSL-диагностикой и локальным stdio MCP. Полная
 приёмка продукта описана в [состоянии поставки в репозитории](https://github.com/DmitrL-dev/1cai-public/blob/main/docs/product/READINESS.md). Инструкции не
 устанавливают платформу 1С, EDT или модели и не запускают HTTP-сервер или старый
-MCP. Для текущего захвата нужен Windows.
+MCP. Опубликованный dev19 захватывает рабочие исходники на Windows; новый
+Linux source-маршрут описан ниже и ещё требует отдельной приёмки.
 
 ## Сборка из открытых исходников
 
@@ -85,6 +86,22 @@ go -C go build -buildvcs=false -trimpath -o ..\output\bsl-scan.exe ./cmd/bsl-sca
 Путь к scanner передаётся явно доверенным локальным пользователем. Wheel сам по
 себе не содержит исполняемый scanner. Для опубликованного Windows-выпуска
 есть отдельный [офлайн-комплект](CORE-OFFLINE-KIT.md).
+
+## Новый Linux source-маршрут: ещё не выпуск
+
+Текущий checkout содержит ограниченную integration для GNU/Linux amd64: новый
+private project, его default base layer, capture/publication и чтение source/graph.
+Это не обновление опубликованных dev19 wheel/ZIP и не принятый Linux offline-kit.
+Для нового CLI capture нужны `--scanner /absolute/executable` и
+`--scanner-sha256 <trusted-lowercase-sha256>`; MCP получает эти параметры только
+при доверенном запуске сервера. Одного `--scanner` для Linux недостаточно.
+
+Default limits — 64 МиБ всех исходников, 16 МиБ на файл и 4096 source entries;
+полный набор metadata/draft/native/live команд этим не открывается. Local-account
+profile, безопасный bootstrap, точный receipt replay без scanner и незакрытая
+native/installed-приёмка описаны в [PORTABLE-CORE.md](PORTABLE-CORE.md);
+форма запуска MCP — в [CORE-MCP.md](CORE-MCP.md). Windows-команды ниже сохраняют
+свои прежние scanner/SID контракты.
 
 ## Локальный stdio MCP
 

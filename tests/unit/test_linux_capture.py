@@ -293,6 +293,39 @@ def test_storage_cancel_and_deadline_before_commit_roll_back_without_receipt(pro
     assert caught.value.code == "SOURCE_READ_DEADLINE_EXCEEDED" and counts(prepared[0])["snapshots"] == 0
 
 
+@posix
+def test_orchestration_uses_entered_scanner_and_preserves_denial_cleanup(project, monkeypatch):
+    """Real POSIX owners plus a constructed scanner denial; no Linux execution."""
+    denied = CoreError("GRAPH_SCANNER_CANCELLED", "Controlled entered-owner denial")
+    lifecycle = []
+
+    class EnteredScanner:
+        def scan(self):
+            lifecycle.append("scan")
+            raise denied
+
+    @contextmanager
+    def observing_scanner(**options):
+        options["scan_directory"].verify()
+        lifecycle.append("enter")
+        try:
+            yield EnteredScanner()
+        finally:
+            lifecycle.append("exit")
+
+    monkeypatch.setattr(subject, "open_linux_scanner", observing_scanner)
+    ctx = context(project)
+    backend = subject.LinuxCaptureBackend(project.source / "unused-scanner", "0" * 64)
+    gate = subject._CaptureGate(ctx, project.head, backend.limits, lambda: None, lambda: False)
+    with pytest.raises(CoreError) as caught:
+        subject._capture_complete(backend, ctx, project.head, gate)
+    assert caught.value is denied
+    assert lifecycle == ["enter", "scan", "exit"]
+    assert counts(ctx) == dict(snapshots=0, publication_receipts=0, snapshot_events=0, snapshot_outbox=0)
+    assert list((project.state_root / "staging").iterdir())
+    assert list((project.state_root / "generations").iterdir())
+
+
 @pytest.mark.skipif(sys.platform != "darwin", reason="Actual Mac full Linux capture refusal")
 def test_actual_mac_full_capture_refuses_without_source_or_executable_io(project, monkeypatch):
     backend = subject.LinuxCaptureBackend(project.source / "absent-scanner", "0"*64)

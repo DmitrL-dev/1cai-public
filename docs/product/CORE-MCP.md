@@ -22,8 +22,27 @@ The experimental Linux subset instead uses the explicit local-account
 profile described in [PORTABLE-CORE.md](PORTABLE-CORE.md).
 Registry and scanner paths are trusted process arguments. Tool arguments cannot
 set actor, permissions, source root, registry, executable, environment or an
-output file. Project memberships are checked again on each operation. This SID
+output file. Project memberships are checked again on each operation. This local OS
 adapter must not be reused as end-user authentication for an HTTP service.
+
+The current checkout adds a bounded Linux/amd64 source capture/read integration;
+it is not present in published dev19 and still requires exact-source native and
+installed qualification. For a new capture, trusted startup must provide both an
+absolute static CGO-disabled Go scanner and its trusted lowercase SHA-256:
+
+```sh
+python -m rentgen_core.stdio_mcp --registry /absolute/registry.sqlite3 \
+  --identity-profile /absolute/identity.json \
+  --scanner /absolute/bsl-scan-owned-linux --scanner-sha256 TRUSTED_SHA256
+```
+
+Replace the paths and digest with your reviewed installation inputs. Requests
+cannot select or change the executable/hash. Reads and exact committed-operation
+replay may omit both scanner options. The Linux source route admits only capture,
+source-list/read and graph-resolve/impact in addition to the existing portable
+state/history subset. Its defaults are 64 MiB total source, 16 MiB per file and
+4096 source entries; metadata/draft writes, diff, native and live tools stay
+closed. See [PORTABLE-CORE.md](PORTABLE-CORE.md) for bounds and pending acceptance.
 
 ## Startup scope (dev6)
 
@@ -45,12 +64,12 @@ set or widen startup scope. Current membership/permission checks remain in force
 Without either option the published Windows dev19 server exposes all 33 registered tools.
 Project-only startup exposes the 31 tools with explicit project selectors,
 excluding `rentgen_project_list` and `rentgen_capabilities`. Explicitly combining
-project scope with either registry-wide tool is a startup error. Tool-only scope may access the SID's authorized projects.
+project scope with either registry-wide tool is a startup error. Tool-only scope may access the local principal's authorized projects.
 Unknown/duplicate tool names, invalid/repeated project selectors and incompatible
 combinations exit with code 2 before runtime initialization. Scope is immutable
 for the connection; changing it requires restarting with trusted arguments.
 
-This limits this MCP process, not other processes running as the same Windows
+This limits this MCP process, not other processes running as the same OS
 account. It is separate from Cline's UI approval settings and from protected
 output permission checks. State schema 4 is unchanged.
 
@@ -196,10 +215,11 @@ Installation, CLI equivalents and result interpretation: [PROPOSAL-CHECK.md](PRO
   the transport before SDK tool dispatch. Diagnostics go to stderr; stdout
   contains only MCP protocol messages.
 - Source responses permit at most 1 MiB of raw bytes. Larger sources return
-  `SOURCE_OUTPUT_LIMIT_EXCEEDED`; use local CLI export. The existing core retained
-  reader may read up to its capture file limit (64 MiB) to verify the hash before
-  the MCP response-size check; the MCP adapter does not expose a private raw file
-  reader or weaken verification to avoid this read.
+  `SOURCE_OUTPUT_LIMIT_EXCEEDED`; use local CLI export. The Windows retained
+  reader may read up to its 64 MiB capture file limit before the response-size
+  check; new Linux capture defaults to 16 MiB per file. Complete retained-byte
+  verification still precedes disclosure. The MCP adapter does not expose a
+  private raw file reader or weaken verification to avoid this read.
 - Each serialized tool result is at most 2 MiB. Larger results return
   `OUTPUT_LIMIT_EXCEEDED`, never a truncated successful result. Text and structured
   content contain the same JSON, so the complete MCP response can be approximately
