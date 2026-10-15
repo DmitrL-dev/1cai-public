@@ -11,6 +11,8 @@ import zipfile
 
 import pytest
 
+from raw_zip_test_support import assert_raw_zip_member
+
 ROOT = Path(__file__).resolve().parents[2]
 LOCKS = ROOT / "requirements/locks"
 
@@ -44,10 +46,14 @@ def write_inputs(tmp_path, checker, *, filename="mcp-1.30.0-py3-none-any.whl", m
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as archive:
         for name, blob in members.items():
-            if isinstance(name, zipfile.ZipInfo):
-                archive.writestr(name, blob)
+            if isinstance(name, str):
+                member = zipfile.ZipInfo(name)
+                # This fixture must retain hostile raw bytes on every host;
+                # ZipInfo normally rewrites Windows separators and strips NUL.
+                member.filename = name
             else:
-                archive.writestr(name, blob)
+                member = name
+            archive.writestr(member, blob)
     blob = buffer.getvalue()
     wheelhouse = tmp_path / "wheelhouse"
     wheelhouse.mkdir()
@@ -167,9 +173,12 @@ def test_wrong_binary_wheel_target_is_refused(tmp_path, checker, filename):
         checker.verify_wheelhouse(wheelhouse, provenance_path=provenance, lock_path=lock)
 
 
-@pytest.mark.parametrize("name", ["../escape", "/absolute", "a\\b", "a:stream"])
-def test_hostile_original_archive_names_are_refused(tmp_path, checker, name):
+@pytest.mark.parametrize("name", ["../escape", "/absolute", "a\\b", "a:stream", "a\x00b"])
+def test_hostile_original_archive_names_are_refused(tmp_path, checker, monkeypatch, name):
     wheelhouse, provenance, lock = write_inputs(tmp_path, checker, members={name: b"fixture"})
+    assert_raw_zip_member(next(wheelhouse.iterdir()).read_bytes(), name)
+    monkeypatch.setattr(checker.email.parser, "BytesParser",
+                        lambda *a, **k: pytest.fail("Metadata parsed before raw member refusal"))
     with pytest.raises(ValueError, match="unsafe wheel archive"):
         checker.verify_wheelhouse(wheelhouse, provenance_path=provenance, lock_path=lock)
     assert not (tmp_path / "escape").exists()

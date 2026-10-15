@@ -55,8 +55,9 @@ Its exact interpreter target is CPython 3.11.15 on GNU/Linux x86_64 with glibc â
 and kernel â‰¥ 5.9. The Windows MCP lock is not a Linux dependency profile; Python
 3.12 source/CLI CI does not qualify SDK offline closure. The new verifier exercises
 installed CLI and official-SDK stdio history/replay plus controlled pre-CAS
-cancellation, but **actual offline SDK acceptance is currently NOT_RUN**.
-PR #102 capture CI and a successful exporter build do not provide that evidence.
+cancellation. Its actual result is determined by a separately verified
+`acceptance.json` bound to the exact source and delivered bytes. PR #102 capture
+CI and a successful exporter build do not provide that evidence.
 The candidate leaves published dev19 / Companion 0.1.20 unchanged.
 
 ## Startup scope (dev6)

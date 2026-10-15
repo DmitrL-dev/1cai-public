@@ -85,5 +85,7 @@ Also verify installed-module origins and bytes, then use the real installed SDK
 stdio client/server for capture, retained source/graph/history reads, replay and
 cancellation. The full runtime must be installed from accepted local inputs;
 an online dependency install or source-checkout MCP smoke does not close this
-gate. **Native Linux offline install, `pip check` and installed SDK acceptance
-have not run for this candidate.** No GitHub CI or release success is claimed.
+gate. The actual result belongs to a separately verified `acceptance.json`
+bound to the exact source, lock and final archive/manifest bytes; see the
+[kit acceptance contract](../../scripts/release/OWNED-LINUX-KIT.md#qualification-still-required).
+This dependency lock is not GitHub CI evidence or a release receipt.

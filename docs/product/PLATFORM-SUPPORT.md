@@ -11,7 +11,7 @@
 | Опубликованные Core dev19 / Companion 0.1.20 | Ранний доступ, Windows x64 / CPython 3.11, ограниченные проверенные сценарии | Linux x86_64: отдельное экспериментальное дополнение для state/history/planners, Rust ZIP import и read-only GUI с поиском и сравнением ZIP. Полный Linux/macOS-маршрут не принят |
 | Проверенный development main `413cc65` | Отдельный CI и installed editor API first/restart приняты; human GUI/native 1С открыты. Это не новые опубликованные пакеты | Linux reader/LiveTree и прежний state/ZIP/GUI scope имеют отдельный CI; macOS продукта не принят |
 | Проверенный PR #102 source `366db69` | Windows regression, installed editor API и GUI проверены в [scope записи](evidence/development-ci-366db69-20261016.json); без новой native 1С/human приёмки | Linux/amd64 новый private project/default base source+graph capture/publication/history: actual Linux/source SDK и installed CLI проверены. Main `2e2dd4f` имеет то же дерево; fresh push CI отдельно. Offline installed SDK, metadata/drafts/diff/native/live/macOS закрыты |
-| Следующий source-кандидат offline CLI/MCP | Принятый Windows-профиль не меняется | Отдельный `owned-linux-cli-mcp-py311-x86_64-v1`: CPython 3.11.15 / x86_64, glibc ≥ 2.34 / kernel ≥ 5.9 и 29 locked SDK wheels; actual offline install/SDK-приёмка NOT_RUN. Python 3.12 — source/CLI CI, без SDK offline closure |
+| Следующий source-кандидат offline CLI/MCP | Принятый Windows-профиль не меняется | Отдельный `owned-linux-cli-mcp-py311-x86_64-v1`: CPython 3.11.15 / x86_64, glibc ≥ 2.34 / kernel ≥ 5.9 и 29 locked SDK wheels; результат actual offline/SDK-приёмки — только в отдельной проверенной `acceptance.json` точных source/bytes. Python 3.12 — source/CLI CI, без SDK offline closure |
 | Захват, снимки и граф в опубликованном Core | Windows retained-file sessions и доверенный scanner | Безопасные адаптеры чтения/захвата ещё нужно принять |
 | BSL/1С/EDT, live apply, Observer-служба | Свои runtime, права и ограничения; не универсальное применение | Не включаются автоматически вместе с переносимым CLI |
 | VSCodium / Cline / Companion | Текущий профиль требует Windows и доверенную рабочую папку | Наличие самого редактора на ОС не переносит интеграцию Рентгена |
@@ -48,7 +48,7 @@ platform-fixture отказы учтены отдельно от целевых 
 приняты в ограниченном scope на [PR #102, HEAD `366db69`](evidence/development-ci-366db69-20261016.json):
 Linux/amd64 новый private project/default base, trusted static Go scanner с SHA-256,
 complete generation, publication receipt и история. Actual Linux/source SDK и
-installed CLI проверены отдельно; offline installed SDK пока не принят.
+installed CLI проверены отдельно; они не квалифицируют offline installed SDK.
 Main `2e2dd4f` имеет то же дерево, его fresh push CI — отдельная проверка.
 Defaults 64 МиБ total / 16 МиБ file / 4096 entries не являются приёмкой максимального
 workload или полного B07. Этот маршрут не входит в dev19; его PR receipt

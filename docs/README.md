@@ -41,8 +41,9 @@ actual Linux, installed CLI и отдельно source SDK MCP; main `2e2dd4f` �
 capture не содержат; offline installed SDK этим не квалифицирован.
 Следом подготовлен source-кандидат [отдельного Linux CLI/MCP offline-комплекта](../scripts/release/OWNED-LINUX-KIT.md)
 с 29 закреплёнными SDK wheels для CPython 3.11.15 / GNU/Linux x86_64.
-Actual offline-установка и SDK-приёмка пока **NOT_RUN**; отдельный CI capture
-их не подтверждает. Этот кандидат не меняет опубликованный dev19.
+Результат actual offline/SDK-приёмки определяется отдельной проверенной
+`acceptance.json` для точных source и bytes; CI capture её не заменяет.
+Этот source/build-кандидат не меняет опубликованный dev19.
 [Аудит плана выпуска](../scripts/release/RELEASE-PLAN-CONTRACT.md)
 отделяет проверенные bytes и заявленное покрытие от ещё не принятого полного продукта.
 Лицензированного стенда 1С/EDT пока нет, native-gates остаются открытыми.

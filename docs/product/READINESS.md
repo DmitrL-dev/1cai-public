@@ -58,8 +58,13 @@ glibc ≥ 2.34, kernel ≥ 5.9. Exporter связывает точные исх�
 Go scanner, Rust helper, лицензии и [29 закреплённых SDK wheels](../../requirements/locks/LINUX-MCP-LOCK.md).
 Реализована отдельная проверка извлечённого комплекта: offline install, `pip check`,
 installed CLI и настоящий SDK stdio capture/read/history/replay/cancellation.
-**Фактическая offline SDK-приёмка пока NOT_RUN.** Подготовка архива, local controls
-и CI source capture из PR #102 не квалифицируют этот комплект. Python 3.12 остаётся
+Результат actual offline/SDK-приёмки определяет только отдельная проверенная
+`acceptance.json` с точными source/bytes bindings по контракту комплекта.
+[Первый CI HEAD `5f7522b`](evidence/development-ci-5f7522b-20261016.json) завершился
+с ошибками: exporter отказал до SDK-фазы, поэтому она осталась NOT_RUN; нового
+owned-kit artifact нет. Эта датированная запись не изменяется последующими прогонами.
+Подготовка архива, local controls и PR #102 source capture CI не заменяют новую
+приёмку. Python 3.12 остаётся
 обычным source/CLI CI target; SDK offline closure для него не принята. Новый
 кандидат не меняет принятые dev19 / Companion 0.1.20 или полный финальный статус.
 

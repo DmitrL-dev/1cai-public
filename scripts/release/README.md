@@ -58,12 +58,15 @@ Exporter `prepare_owned_linux.py build` только подготавливае�
 `verify_owned_linux_delivery.py` с внешними archive/manifest hashes, точным
 source commit и обоими native helper hashes. Точная команда — в
 [CORE-INSTALLATION](../../docs/product/CORE-INSTALLATION.md#кандидат-linux-climcp-offline-комплекта).
-Проверка финального извлечённого комплекта пока **NOT_RUN**. Local packaging
-controls, dependency metadata checks и PR #102 source capture CI её не заменяют.
+Результат проверки финального извлечённого комплекта фиксируется отдельно в
+`acceptance.json` по [контракту приёмки](OWNED-LINUX-KIT.md#qualification-still-required);
+CI-копия `owned-linux-acceptance.json` входит в artifact из четырёх файлов.
+Local packaging controls, dependency metadata checks и PR #102 source capture CI
+не заменяют проверенную квитанцию точных source/bytes.
 
 Manifest подготовки всегда сохраняет `candidate:true`, `accepted:false`,
 `published:false`, `linux_installed_cli_mcp_qualified:false` и
-`full_product_ready:false`; отдельная будущая acceptance receipt не переписывает
+`full_product_ready:false`; отдельная acceptance receipt не переписывает
 этот снимок подготовки. Никакие существующие release records, теги или assets
 этим профилем не изменяются. Выпуск потребует новой версии/qualification decision
 и публикации ровно принятых bytes по штатной политике.

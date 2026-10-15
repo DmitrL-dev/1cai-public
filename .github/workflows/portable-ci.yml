@@ -177,14 +177,20 @@ jobs:
           spec = importlib.util.spec_from_file_location("owned_kit_exporter", "scripts/release/prepare_owned_linux.py")
           exporter = importlib.util.module_from_spec(spec)
           spec.loader.exec_module(exporter)
-          # These are observations of locally built, already source-bound bytes.
+          # Reuse the plain copies made by the preceding installed-CLI step.
+          # Strict nlink=1 remains mandatory; never chmod or rewrite producer aliases.
           # The exporter independently reopens and verifies every pinned input.
-          def record(path, asset):
+          def record(component, path, asset, limit=exporter.MAX_FILE):
               path = Path(os.path.abspath(path))
               with exporter.OwnedDirectory(path.parent) as parent:
                   before = os.stat(path.name, dir_fd=parent.fd, follow_symlinks=False)
-                  assert stat.S_ISREG(before.st_mode) and before.st_nlink == 1
-                  assert 0 < before.st_size <= exporter.MAX_FILE
+                  if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
+                      kinds = {stat.S_IFREG: "regular", stat.S_IFDIR: "directory", stat.S_IFLNK: "symlink",
+                          stat.S_IFIFO: "fifo", stat.S_IFSOCK: "socket", stat.S_IFCHR: "character", stat.S_IFBLK: "block"}
+                      raise ValueError("Owned Linux input refused: " + json.dumps(dict(component=component,
+                          object_type=kinds.get(stat.S_IFMT(before.st_mode), "other"),
+                          link_count=before.st_nlink, size_bytes=before.st_size), sort_keys=True))
+                  assert 0 < before.st_size <= limit, component + ': input size budget'
                   descriptor = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent.fd)
                   try:
                       assert exporter._stamp(os.fstat(descriptor)) == exporter._stamp(before)
@@ -194,7 +200,7 @@ jobs:
                           if not block:
                               break
                           content.extend(block)
-                          assert len(content) <= exporter.MAX_FILE
+                          assert len(content) <= limit, component + ': input size budget'
                       assert exporter._stamp(os.fstat(descriptor)) == exporter._stamp(before)
                       assert exporter._stamp(os.stat(path.name, dir_fd=parent.fd, follow_symlinks=False)) == exporter._stamp(before)
                       assert len(content) == before.st_size
@@ -203,18 +209,37 @@ jobs:
               return dict(asset=asset, sha256=hashlib.sha256(content).hexdigest(), size_bytes=len(content))
           paths = {
               "wheel": root / "dist" / f"rentgen_core-{version}-py3-none-any.whl",
-              "scanner": Path(os.environ["RENTGEN_TEST_LINUX_SCANNER"]),
-              "scanner_license": root / "output/linux-scanner-GO-LICENSE",
-              "scanner_provenance": root / "output/linux-scanner-provenance.json",
-              "rust_helper": Path(os.environ["RENTGEN_INPUT_CORE_TEST_BINARY"]),
+              "scanner": root / "output/experimental-linux/bsl-scan-owned-linux",
+              "scanner_license": root / "output/experimental-linux/licenses/GO-LICENSE",
+              "scanner_provenance": root / "output/experimental-linux/GO-SCANNER-PROVENANCE.json",
+              "rust_helper": root / "output/experimental-linux/rentgen-input-core",
           }
           assets = {"wheel": f"rentgen_core-{version}-py3-none-any.whl", "scanner": "bsl-scan-owned-linux",
               "scanner_license": "GO-LICENSE", "scanner_provenance": "go-scanner-build-inputs.json",
               "rust_helper": "rentgen-input-core"}
           inputs = dict(schema=1, profile=exporter.PROFILE, version=version, source_commit=source, source_tree=tree)
-          inputs.update({name: record(path, assets[name]) for name, path in paths.items()})
+          inputs.update({name: record(name, path, assets[name]) for name, path in paths.items()})
           assert inputs["scanner"]["sha256"] == os.environ["RENTGEN_TEST_LINUX_SCANNER_SHA256"]
           exporter.validate_inputs(inputs)
+          # Bind these existing staged copies to the exact bytes exercised in step 13.
+          def prior_receipt(component, relative):
+              path = root / relative
+              pin = record(component, path, path.name, exporter.MAX_JSON)
+              raw = exporter.read_pinned(path, {key: pin[key] for key in ("sha256", "size_bytes")}, limit=exporter.MAX_JSON)
+              return exporter.parse_json(raw)
+          portable = prior_receipt("installed_cli_receipt", "output/installed-portable/acceptance.json")
+          capture = prior_receipt("installed_capture_receipt", "output/installed-linux-capture/acceptance.json")
+          assert (portable["schema"] == 1 and portable["version"] == version
+              and portable["source_unchanged"] is True and portable["project_head_unchanged"] is True
+              and capture["schema"] == 1 and capture["version"] == version
+              and capture["source_commit"] == source and capture["source_tree"] == tree
+              and capture["isolated_installed_core_and_graph"] is True
+              and capture["installed_product_bytes_equal_checkout"] is True), "Prior installed receipt binding differs"
+          assert portable["wheel_sha256"] == inputs["wheel"]["sha256"], "Previously installed Core wheel differs"
+          assert portable["binary_sha256"] == inputs["rust_helper"]["sha256"], "Previously exercised Rust helper differs"
+          for name in ("wheel", "scanner"):
+              assert {key: inputs[name][key] for key in ("sha256", "size_bytes")} == {
+                  key: capture[name][key] for key in ("sha256", "size_bytes")}, "Previously exercised " + name + " differs"
           private = Path("output/owned-linux-inputs")
           private.mkdir(mode=0o700, exist_ok=False)
           input_path = private / "build-inputs.json"

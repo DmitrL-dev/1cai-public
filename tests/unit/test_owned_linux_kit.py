@@ -16,6 +16,8 @@ import zipfile
 
 import pytest
 
+from raw_zip_test_support import assert_raw_zip_member
+
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("owned_linux_kit", ROOT / "scripts/release/prepare_owned_linux.py")
 kit = importlib.util.module_from_spec(SPEC)
@@ -71,7 +73,11 @@ def wheel_bytes(name, version, product=None, *, requires=(), tags="py3-none-any"
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as archive:
         for path, raw in sorted(files.items()):
-            archive.writestr(path, raw)
+            member = zipfile.ZipInfo(path)
+            # Bypass only the test writer's normalization, so malicious names
+            # actually reach the production reader as original ZIP bytes.
+            member.filename = path
+            archive.writestr(member, raw)
     return buffer.getvalue(), files
 
 
@@ -325,9 +331,12 @@ def test_wrong_linux_abi_or_platform_wheel_is_refused(tag):
         kit.wheel_files(f"fixture-1.0-{tag}.whl", raw, "fixture", "1.0")
 
 
-@pytest.mark.parametrize("name", ["../escape", "/absolute", "a\\b", "a:stream", "module/CON.txt"])
-def test_wheel_traversal_and_ambiguous_names_are_refused(name):
+@pytest.mark.parametrize("name", ["../escape", "/absolute", "a\\b", "a:stream", "module/CON.txt", "a\x00b"])
+def test_wheel_traversal_and_ambiguous_names_are_refused(monkeypatch, name):
     raw, _ = wheel_bytes("fixture", "1.0", extra_members={name: b"fixture"})
+    assert_raw_zip_member(raw, name)
+    monkeypatch.setattr(kit, "BytesParser",
+                        lambda *a, **k: pytest.fail("Metadata parsed before raw member refusal"))
     with pytest.raises(ValueError, match="path"):
         kit.wheel_files("fixture-1.0-py3-none-any.whl", raw, "fixture", "1.0")
 

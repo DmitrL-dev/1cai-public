@@ -1,0 +1,137 @@
+{
+  "schema": 1,
+  "kind": "dated_development_ci_observation",
+  "repository": "DmitrL-dev/1cai-public",
+  "pull_request": "https://github.com/DmitrL-dev/1cai-public/pull/103",
+  "head": "5f7522be38451a37d84de3f97034da52908827cc",
+  "base": "2e2dd4f1b34057fa58d9810f24781ce706a47f19",
+  "tree": "3885d1a8b8d171329c8b88ef018004c1bba68ee9",
+  "portable_checkout": "9f1e9ba611008b1e0f1c2f76d09cdcfcffc26204",
+  "checkout_parents": [
+    "2e2dd4f1b34057fa58d9810f24781ce706a47f19",
+    "5f7522be38451a37d84de3f97034da52908827cc"
+  ],
+  "result": "FAIL",
+  "checks": {
+    "success": 10,
+    "failure": 3,
+    "expected_PR_Pages_deploy_skip": 1
+  },
+  "runs": {
+    "product": 38781546323,
+    "portable": 38781546694,
+    "gui": 38781546335,
+    "diagnostic": 38781546332,
+    "pages": 38781546358
+  },
+  "windows": {
+    "passed": 4463,
+    "skipped": 1108,
+    "failed": 2,
+    "errors": 0,
+    "additional_passed_subtests": 51,
+    "unique_testcases": 5573,
+    "failures": [
+      "test_wheel_traversal_and_ambiguous_names_are_refused[a\\b]",
+      "test_hostile_original_archive_names_are_refused[a\\b]"
+    ],
+    "diagnosis": "The fixture writers normalize backslash before writing ZIP headers. Controlled CPython3.11.9 source reproduction matched both messages. Raw fixture corrections require new actual Windows CI; production raw-name guards remain unchanged.",
+    "current_idle_stop_cases_passed": 2,
+    "prior_main_idle_failure_explained": false,
+    "downstream_Node_controls_Go": "NOT_RUN"
+  },
+  "linux": {
+    "python_3_11": {
+      "passed": 4598,
+      "skipped": 976,
+      "failed": 0,
+      "errors": 0,
+      "actual_native_cases_passed": 46,
+      "source_SDK_cases_passed": 2,
+      "ordinary_installed_CLI_calls": 45,
+      "ordinary_installed_outcomes": 10,
+      "export_step_15": "FAIL at regular-file AND single-link guard; specific component/type/link count UNKNOWN",
+      "actual_offline_SDK_step_16": "NOT_RUN",
+      "public_4_file_upload": "NOT_RUN"
+    },
+    "python_3_12": {
+      "passed": 4596,
+      "skipped": 977,
+      "failed": 1,
+      "errors": 0,
+      "actual_native_cases_passed": 46,
+      "source_SDK_cases_passed": 2,
+      "failure": "test_failed_pidfd_acquisition_reaps_the_exact_already_owned_subprocess",
+      "diagnosis": "Global os.pidfd_open is patched before anyio.open_process; asyncio PidfdChildWatcher receives the injected error during child creation, before probe.acquire_pidfd.",
+      "ordinary_installed_CLI": "NOT_RUN",
+      "offline_SDK_profile": "NOT_ADMITTED; candidate targets CPython3.11.15 only"
+    }
+  },
+  "original_artifacts": [
+    {
+      "artifact_id": 11995298130,
+      "size_bytes": 12114,
+      "sha256": "3f55be67312af5757c70a256ae4e4e643ebd7288c03fb3b3b5436c1c21605437",
+      "url": "https://api.github.com/repos/DmitrL-dev/1cai-public/actions/artifacts/11995298130"
+    },
+    {
+      "artifact_id": 11996159563,
+      "size_bytes": 115077,
+      "sha256": "ee0033c3a4aa5a0c8afc836cfc9e5dfb355f3457a9826d0ad7209c338963476e",
+      "url": "https://api.github.com/repos/DmitrL-dev/1cai-public/actions/artifacts/11996159563"
+    },
+    {
+      "artifact_id": 11996352650,
+      "size_bytes": 4477,
+      "sha256": "4c62ac8736137fbc353303a9dd7872fd51002bdca199b52dd47a730891cc8616",
+      "url": "https://api.github.com/repos/DmitrL-dev/1cai-public/actions/artifacts/11996352650"
+    },
+    {
+      "artifact_id": 11996677844,
+      "size_bytes": 4866859,
+      "sha256": "4758facd064472ec6cfd235334c58a5b6abf5b028f6f7502fb6ff55fb548c805",
+      "url": "https://api.github.com/repos/DmitrL-dev/1cai-public/actions/artifacts/11996677844"
+    },
+    {
+      "artifact_id": 11996913629,
+      "size_bytes": 4587111,
+      "sha256": "37509b8d98b43ccf046da38b29c3f19f46dc79bd90a738c9554bf088fa611009",
+      "url": "https://api.github.com/repos/DmitrL-dev/1cai-public/actions/artifacts/11996913629"
+    },
+    {
+      "artifact_id": 11998780257,
+      "size_bytes": 101020,
+      "sha256": "4d16de2df7309c98df8a39cab8b7ac62f24daf59bd11d4cad59d976b798ece5a",
+      "url": "https://api.github.com/repos/DmitrL-dev/1cai-public/actions/artifacts/11998780257"
+    }
+  ],
+  "artifact_verification": "All six original GitHub API digest/size pins checked before guarded extraction; independent reductions retained. No owned offline SDK artifact exists from this failed run.",
+  "qualification": {
+    "linux_installed_CLI_MCP_offline": false,
+    "actual_offline_SDK_run": "NOT_RUN",
+    "release_created": false,
+    "native_1C_EDT": false,
+    "model_competence": false,
+    "human_acceptance": false,
+    "full_product_ready": false
+  },
+  "immutability": "Negative observation of exact HEAD5f. Later fixes or CI do not reclassify this failed run. This is not a release record or acceptance authority.",
+  "prior_main_push": {
+    "head": "2e2dd4f1b34057fa58d9810f24781ce706a47f19",
+    "run_id": 38778180652,
+    "job_id": 116571163975,
+    "result": "FAIL",
+    "passed": 4375,
+    "skipped": 1039,
+    "failed": 1,
+    "additional_passed_subtests": 51,
+    "failure": "test_continuous_git_stop_interrupts_idle_wait[True]",
+    "cause": "UNKNOWN; original report did not retain worker result/stack",
+    "artifact": {
+      "artifact_id": 11996925853,
+      "original_bytes": 97275,
+      "original_sha256": "3c62ebe2394dbc3993c5281c583de6cc7e05d024a18a7ae9a785ca9129062567"
+    },
+    "current_PR_idle_passes_do_not_explain_or_reclassify_this_failure": true
+  }
+}

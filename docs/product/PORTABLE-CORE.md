@@ -54,7 +54,8 @@ actual Linux scanner/kernel/ACL, publication/history/replay, installed CLI из 
 PR слит в main `2e2dd4f` с тем же деревом `32454b3da4a1fb6cbfc373a2b0c225bbb657bcd1`.
 Fresh main push CI — отдельная проверка; PR receipt её не заменяет. Этот capture
 не входит в опубликованный dev19. Source SDK и installed CLI не квалифицируют
-следующий offline installed SDK-комплект; его приёмка пока NOT_RUN.
+следующий offline installed SDK-комплект; он требует собственной проверенной
+`acceptance.json` с точными source/bytes bindings.
 
 Целевой сценарий — GNU/Linux amd64, новый private project и его default base layer:
 сохранить исходники и статический граф, перечитать их в свежем процессе, сохранить
@@ -126,9 +127,11 @@ Generated `INSTALL.md` устанавливает только локальны�
 и контролируемая отмена до CAS с cleanup. Поздняя отмена по-прежнему может уступить
 commit; отсутствие публикации в контролируемом pre-CAS сценарии не даёт общего rollback.
 
-**Actual offline SDK install/acceptance пока NOT_RUN.** Local exporter/guard tests
-и отдельный source capture CI не являются этой приёмкой. Новая поставка требует
-своего точного source SHA, final archive/manifest hashes и actual target execution;
+Actual offline SDK install/acceptance фиксируется отдельной `acceptance.json`;
+проверяйте её точные source/bytes bindings по
+[контракту комплекта](../../scripts/release/OWNED-LINUX-KIT.md#qualification-still-required).
+Local exporter/guard tests и source capture CI не являются этой приёмкой.
+Новая поставка требует своего source SHA, final archive/manifest hashes и actual target execution;
 manifest кандидата остаётся `accepted:false`, `published:false` и
 `linux_installed_cli_mcp_qualified:false`. Metadata/drafts/diff/live/native,
 Companion, macOS, AI и полный B07 этим профилем не допускаются.

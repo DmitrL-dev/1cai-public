@@ -302,8 +302,9 @@ Defaults are 64 MiB total source, 16 MiB per file and 4096 source entries, with 
 120-second operation bound and shorter phase limits. Metadata navigation, diff,
 draft writes, native execution, live writes and macOS remain closed. This source
 integration was qualified only for the PR source/actual Linux/installed CLI scope
-above, not a published Linux capture kit or full product. The future offline SDK
-candidate is still NOT_RUN; see [PORTABLE-CORE](../docs/product/PORTABLE-CORE.md)
+above, not a published Linux capture kit or full product. The offline SDK
+source/build candidate requires its own verified `acceptance.json` bound to
+exact source and bytes; see [PORTABLE-CORE](../docs/product/PORTABLE-CORE.md)
 for the distinct qualification scopes and exact ownership/resource limits.
 
 ## Verification

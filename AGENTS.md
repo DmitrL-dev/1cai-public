@@ -18,8 +18,9 @@
 - Продуктовый комплект: Windows x64 / CPython 3.11. Linux state/ZIP/GUI и
   отдельно проверенный [PR #102 source capture/graph/history](docs/product/evidence/development-ci-366db69-20261016.json) —
   ограниченные экспериментальные маршруты GNU/Linux x86_64, без нового выпуска.
-  [Следующий offline SDK-кандидат](scripts/release/OWNED-LINUX-KIT.md) пока NOT_RUN;
-  source SDK tests и installed CLI его не квалифицируют. Точные границы —
+  [Offline SDK-кандидат](scripts/release/OWNED-LINUX-KIT.md) требует отдельной
+  проверенной `acceptance.json` с привязкой к точным source и bytes; source SDK
+  tests и installed CLI её не заменяют. Точные границы —
   [PORTABLE-CORE](docs/product/PORTABLE-CORE.md). Наличие pure-Python wheel
   не означает поддержку всех команд или macOS.
 - Python: `python -m pytest -q <relevant tests>`; полный Windows suite и

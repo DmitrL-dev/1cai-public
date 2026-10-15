@@ -215,11 +215,12 @@ def test_failed_pidfd_acquisition_reaps_the_exact_already_owned_subprocess(monke
     # pidfds or qualify the SDK server route on this host.
     import anyio
     def unavailable(pid):raise OSError("pidfd resource unavailable")
-    monkeypatch.setattr(probe.os,"pidfd_open",unavailable,raising=False)
     async def scenario():
         process=await anyio.open_process([sys.executable,"-I","-c","import time;time.sleep(60)"],stdout=-1,stderr=-1)
         try:
-            with pytest.raises(OSError,match="pidfd resource"):await probe.acquire_pidfd(process)
+            with monkeypatch.context() as fault:
+                fault.setattr(probe.os,"pidfd_open",unavailable,raising=False)
+                with pytest.raises(OSError,match="pidfd resource"):await probe.acquire_pidfd(process)
             assert process.returncode is not None
             for stream in (process.stdout,process.stderr):
                 with pytest.raises(anyio.ClosedResourceError):await stream.receive()

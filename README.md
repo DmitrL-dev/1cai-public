@@ -51,12 +51,13 @@
 actual Linux scanner, publication/history, installed CLI и отдельный source SDK MCP.
 PR слит в main `2e2dd4f` с тем же деревом; fresh main push CI учитывается отдельно.
 Опубликованный dev19 capture на Linux не содержит; offline installed SDK ниже
-пока не квалифицирован.
+требует отдельной приёмки точного комплекта.
 Для следующей доставки подготовлен отдельный source-кандидат
 [Linux CLI/MCP offline-комплекта](scripts/release/OWNED-LINUX-KIT.md):
 CPython 3.11.15 / GNU/Linux x86_64, Go scanner и 29 закреплённых SDK wheels.
-**Установка этого комплекта и installed SDK-сценарий ещё не выполнялись.**
-CI capture-блока не заменяет эту приёмку; опубликованные dev19 / 0.1.20 прежние.
+Это source/build-кандидат: результат installed CLI/SDK-приёмки определяет только
+проверенная отдельная `acceptance.json` для точных source и bytes. CI capture-блока
+её не заменяет; опубликованные dev19 / 0.1.20 прежние.
 
 [Аудит плана выпуска](scripts/release/RELEASE-PLAN-CONTRACT.md) проверяет локальные
 bytes и полноту заявленных проверок; готовность финального продукта он не подтверждает.

@@ -93,6 +93,26 @@ Go and Rust notices/provenance are delivered separately.
 
 ## Qualification still required
 
+Build output is a candidate contract, not a statement that installation passed.
+The actual scoped result belongs to the separate `acceptance.json` produced by
+`verify_owned_linux_delivery.py`. In CI its copy is named
+`owned-linux-acceptance.json`, alongside the candidate `.tar.gz`,
+`owned-linux-manifest-v1.json` and `owned-linux-SHA256SUMS`: exactly four files
+in artifact `owned-linux-cli-mcp-py311-x86_64-v1`. Select the exact workflow run
+and source commit/tree; verify the original artifact size/digest before bounded
+extraction, then check the receipt against the archive/manifest hashes and sizes,
+Core wheel/input inventory, Go/Rust hashes, SDK lock/provenance and all 29 wheels.
+The receipt must show CPython 3.11.15 on actual GNU/Linux x86_64, successful local
+offline install/`pip check`, installed CLI evidence and `sdk.accepted:true`.
+File presence, exporter success and PR #102 source SDK tests are insufficient.
+The build manifest keeps all five candidate flags above unchanged even after a
+positive separate receipt; neither file authorizes publication or a release.
+
+The [first CI for HEAD `5f7522b`](../../docs/product/evidence/development-ci-5f7522b-20261016.json)
+failed before the installed SDK phase: that phase was NOT_RUN and no new owned-kit
+artifact was produced. This dated failure remains evidence for those exact bytes;
+a later source/run needs its own verified receipt and does not rewrite it.
+
 The generated `INSTALL.md` creates a fresh environment, installs the SDK with
 `--no-index --require-hashes --only-binary=:all:`, installs the exact Core wheel
 with its hash and runs `pip check`. These instructions must be executed against

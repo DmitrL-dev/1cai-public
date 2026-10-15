@@ -11,7 +11,7 @@
 устанавливают платформу 1С, EDT или модели и не запускают HTTP-сервер или старый
 MCP. Опубликованный dev19 захватывает рабочие исходники на Windows; новый
 Linux source-маршрут ниже имеет отдельную PR source/installed CLI-приёмку;
-offline installed SDK-комплект ещё не принят.
+offline installed SDK-комплект требует собственной приёмки точных bytes.
 
 ## Сборка из открытых исходников
 
@@ -136,8 +136,12 @@ python3.11 scripts/verification/verify_owned_linux_delivery.py \
 Замените placeholders проверенными входами; output должен быть новым, его parent
 должен существовать. Verifier сверяет tooling с selected source, проверяет archive
 и manifest до извлечения, устанавливает final bytes и проверяет installed CLI/SDK.
-**Этот offline SDK-сценарий пока NOT_RUN.** Local tests и PR #102 capture CI его
-не заменяют; успешный будущий запуск сам по себе не публикует кандидат.
+Результат фиксируется отдельно в `acceptance.json`; в CI она поставляется как
+`owned-linux-acceptance.json` вместе с тремя файлами кандидата в artifact
+`owned-linux-cli-mcp-py311-x86_64-v1`. Проверяйте её source/bytes bindings по
+[контракту приёмки](../../scripts/release/OWNED-LINUX-KIT.md#qualification-still-required).
+Local tests и PR #102 capture CI её не заменяют; успешный запуск сам по себе
+не публикует кандидат и не изменяет его build-manifest.
 
 ## Локальный stdio MCP
 
