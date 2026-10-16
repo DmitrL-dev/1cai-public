@@ -102,8 +102,9 @@ def test_cross_volume_source_refuses_before_live_journal(proposal_project, monke
     assert module.read_bytes() == original
 
 
+@pytest.mark.parametrize("after_replace", [False, True])
 def test_interrupted_apply_is_unknown_until_explicit_recovery(
-    proposal_project, monkeypatch
+    proposal_project, monkeypatch, after_replace
 ):
     from rentgen_core import proposal_live_apply
 
@@ -113,6 +114,8 @@ def test_interrupted_apply_is_unknown_until_explicit_recovery(
 
     def interrupt(source, target):
         if Path(target).resolve() == module.resolve():
+            if after_replace:
+                original_replace(source, target)
             raise OSError("simulated interruption")
         return original_replace(source, target)
 
@@ -123,12 +126,13 @@ def test_interrupted_apply_is_unknown_until_explicit_recovery(
         )
     monkeypatch.setattr(proposal_live_apply.os, "replace", original_replace)
 
-    assert (
-        proposal_live_apply.get_live_status(ctx, operation)["status"]
-        == "OUTCOME_UNKNOWN"
-    )
+    assert module.read_bytes() == (proposal.replacement_bytes if after_replace else original)
+    status = proposal_live_apply.get_live_status(ctx, operation)
+    assert status["status"] == "OUTCOME_UNKNOWN"
+    assert status["live_source_written"] is None
     recovered = proposal_live_apply.recover_live(ctx, operation, target="original")
     assert recovered["status"] == "recovered"
+    assert recovered["live_source_written"] is True
     assert module.read_bytes() == original
 
 
@@ -159,6 +163,7 @@ def test_interrupted_undo_is_unknown_until_explicit_recovery(
     status = proposal_live_apply.get_live_status(ctx, operation)
     assert status["status"] == "OUTCOME_UNKNOWN"
     assert status["phase"] == "undoing"
+    assert status["live_source_written"] is None
     assert (
         proposal_live_apply.recover_live(ctx, operation, target="original")["status"]
         == "recovered"

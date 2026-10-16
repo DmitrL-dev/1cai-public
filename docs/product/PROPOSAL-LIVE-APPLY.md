@@ -29,7 +29,14 @@ as `OUTCOME_UNKNOWN`; callers must inspect status and explicitly request
 `recover_live(..., target="original")`. Undo uses a compare-and-swap against the
 confirmed after-inventory and refuses to overwrite foreign source bytes.
 An interrupted Undo or Recover also reports `OUTCOME_UNKNOWN` until a terminal
-state matches its sealed result ID. Recover can be repeated after an interrupted
+state matches its sealed result ID. In development source, every synthesized
+`OUTCOME_UNKNOWN` response has `live_source_written: null`: a replacement may
+already have happened, even when no terminal receipt exists. `null` is unknown,
+not proof of an untouched source tree. Confirmed `applied`, `undone`, and
+`recovered` receipts keep `live_source_written: true`. Clients must inspect the
+status and use explicit recovery; this field never authorizes an automatic retry.
+This response contract does not change existing stored terminal receipts.
+Recover can be repeated after an interrupted
 replacement: it validates the owned recovery stage, restores consumed files
 from the sealed backup, and resumes. Unexpected stage entries or a changed
 same-size staged file fail closed for operator inspection. A cross-volume

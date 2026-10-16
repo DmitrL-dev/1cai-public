@@ -166,8 +166,9 @@ def test_live_undo_refuses_foreign_change_without_overwriting_it(captured):
     assert target.read_bytes() == b"foreign after apply"
 
 
+@pytest.mark.parametrize("replacements_before_interrupt", [0, 1, 2])
 def test_interrupted_live_apply_is_unknown_until_explicit_recovery(
-    captured, monkeypatch
+    captured, monkeypatch, replacements_before_interrupt
 ):
     ctx, request, _, _ = _request(captured)
     before = _bytes(ctx.source_root)
@@ -175,9 +176,14 @@ def test_interrupted_live_apply_is_unknown_until_explicit_recovery(
     calls = {"count": 0}
 
     def interrupt(source, target):
-        calls["count"] += 1
-        if str(target).startswith(str(ctx.source_root)) and calls["count"] == 2:
-            raise OSError("simulated interruption")
+        if Path(target).is_relative_to(ctx.source_root):
+            if replacements_before_interrupt == 0:
+                raise OSError("simulated interruption before source write")
+            result = original_replace(source, target)
+            calls["count"] += 1
+            if calls["count"] == replacements_before_interrupt:
+                raise OSError("simulated interruption after source write")
+            return result
         return original_replace(source, target)
 
     monkeypatch.setattr(metadata_live_apply.os, "replace", interrupt)
@@ -185,12 +191,16 @@ def test_interrupted_live_apply_is_unknown_until_explicit_recovery(
         metadata_live_apply.apply_live(ctx, request["operation_id"])
     monkeypatch.setattr(metadata_live_apply.os, "replace", original_replace)
 
+    current = _bytes(ctx.source_root)
+    assert sum(current[name] != raw for name, raw in before.items()) == replacements_before_interrupt
     status = metadata_live_apply.get_live_status(ctx, request["operation_id"])
     assert status["status"] == "OUTCOME_UNKNOWN"
+    assert status["live_source_written"] is None
     recovered = metadata_live_apply.recover_live(
         ctx, request["operation_id"], target="original"
     )
     assert recovered["status"] == "recovered"
+    assert recovered["live_source_written"] is True
     assert (
         metadata_live_apply.get_live_status(ctx, request["operation_id"])["status"]
         == "recovered"
@@ -218,6 +228,7 @@ def test_interrupted_undo_is_unknown_until_explicit_recovery(captured, monkeypat
     status = metadata_live_apply.get_live_status(ctx, request["operation_id"])
     assert status["status"] == "OUTCOME_UNKNOWN"
     assert status["phase"] == "undoing"
+    assert status["live_source_written"] is None
     assert (
         metadata_live_apply.recover_live(
             ctx, request["operation_id"], target="original"

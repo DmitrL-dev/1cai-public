@@ -1,10 +1,11 @@
 """MCP contract tests for the bounded direct BSL writer."""
 
+import json
 from types import SimpleNamespace
 
 import pytest
 
-from rentgen_core import stdio_mcp
+from rentgen_core import cli, stdio_mcp
 from test_stdio_native_archive import OPERATION, PROJECT, SNAPSHOT, _Runtime
 
 
@@ -126,6 +127,35 @@ def test_mcp_dispatches_direct_bsl_apply_with_source_edit_scope(monkeypatch):
     assert calls[0][1] == OPERATION
     assert calls[0][2] == "validated-proposal"
     assert calls[0][3].project_id == PROJECT
+
+
+@pytest.mark.parametrize("family", ["metadata", "proposal"])
+def test_live_status_transports_preserve_unknown_write_outcome(monkeypatch, capsys, family):
+    """Transport-only DTO contract; native journal behavior is tested separately."""
+    runtime = _Runtime()
+    principal = SimpleNamespace(id="tester", authority="local_os")
+    status = {"schema": 1, "project_id": PROJECT, "operation_id": OPERATION,
+              "status": "OUTCOME_UNKNOWN", "phase": "applying", "live_source_written": None}
+    monkeypatch.setattr(f"rentgen_core.{family}_live_apply.get_live_status", lambda *a: status)
+    tool = f"rentgen_{family}_live_status"
+    args = {"project_id": PROJECT, "operation_id": OPERATION}
+    argv = [f"{family}-live-status", "--registry", "unused.sqlite3",
+            "--project", PROJECT, "--operation-id", OPERATION]
+    if family == "metadata":
+        args["snapshot_id"] = SNAPSHOT
+        argv += ["--snapshot", SNAPSHOT]
+    result = stdio_mcp._execute(runtime, principal, tool, args,
+        scope=stdio_mcp.McpScope(project_id=PROJECT, allowed_tools={tool}))
+    assert result.isError is False
+    assert result.structuredContent["result"][f"{family}_live"] == status
+    assert json.loads(result.content[0].text) == result.structuredContent
+
+    monkeypatch.setattr(cli, "_runtime", lambda _: runtime)
+    monkeypatch.setattr(cli, "current_local_principal", lambda: principal)
+    assert cli.main(argv) == 0
+    output = capsys.readouterr()
+    assert not output.err
+    assert json.loads(output.out)["result"] == status
 
 
 @pytest.fixture(autouse=True)

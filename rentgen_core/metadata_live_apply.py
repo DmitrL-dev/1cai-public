@@ -520,7 +520,8 @@ def _status_locked(ctx, operation_id):
             "changed_paths": intent["changed_paths"],
             "before_digest": _digest(list(before.values())),
             "after_digest": _digest(list(after.values())),
-            "live_source_written": False,
+            # The journal has no confirmed outcome; replacements may have run.
+            "live_source_written": None,
             "phase": state["phase"] if state else "missing",
         },
         "result_id",

@@ -35,6 +35,7 @@
 | `PORT-GATE-01` (часть) | Раздел `components` в capability report; GUI проверяет его до чтения входов | `platform`: фактический отказ на macOS |
 | `ANALYZER-01` (часть) | SARIF принимается только от заявленного анализатора и версии | `dev`: unit-тесты BSL-LS адаптера; `decision`: Sonar/Vanessa |
 | `OWNER-NOTIFY-01` (часть) | Обязательная проверка прав перед каждой отправкой и ack | `dev`: журнал попыток, планировщик повторов, wiring; `decision`: production endpoint |
+| `IDE-SC-24` (часть) | [Metadata](METADATA-LIVE-APPLY.md) и [BSL proposal](PROPOSAL-LIVE-APPLY.md): неизвестный исход live-операции обозначается `live_source_written=null`, включая прерывание после замены; CLI/MCP сохраняют это значение | `dev`: остальные долгие операции, ранняя выдача operation ID, неполные native runs и reconciliation; полный критерий остаётся открытым |
 
 ## Строки, требующие стенда 1С/EDT (`stand`)
 
@@ -93,7 +94,7 @@ read sessions), `SNAP-PUB-01` (атрибуция orphan attempts), `SNAP-OBS-02
 (видимые пропуски опроса, kill-test), `GIT-WATCH-01` (точная привязка tree/blob),
 `RUST-DELIVERY-01` (квитанция текущего HEAD), `UPDATE-3WAY-01`,
 `UPDATE-SEMANTICS-01`, `UPDATE-BSL-01`, `EDT-IDENTITY-01`, `META-WORKSPACE-01`,
-`IDE-SC-24`, `IDE-SC-08`, `IDE-SC-09`, `IDE-SC-17`,
+`IDE-SC-08`, `IDE-SC-09`, `IDE-SC-17`,
 `OWNER-REPORT-01`, `OWNER-STORE-01`, `ROADMAP-03`,
 `ROADMAP-05`, `ROADMAP-07`, `FINAL-PORTABLE-01`, `DIAG-CONTEXT-01`,
 `DIAG-RECEIVER-01`, `DIAG-HOST-01`, `DIAG-PROTOCOL-01`, `DIAG-REVISION-01`,
