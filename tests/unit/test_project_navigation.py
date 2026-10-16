@@ -208,7 +208,8 @@ def test_cli_enforces_utf8_output_limit_without_partial_result(scope, command, m
     assert "result" not in output
 
 
-@pytest.mark.parametrize("platform", ["linux", "darwin"])
+# Linux admits read-only navigation over POSIX retained sessions; macOS stays closed.
+@pytest.mark.parametrize("platform", ["darwin", "freebsd14"])
 def test_new_navigation_remains_unavailable_before_identity_and_registry_io(monkeypatch, capsys, platform):
     monkeypatch.setattr(capabilities, "_platform", platform)
     monkeypatch.setattr(cli, "current_local_principal", lambda *a, **k: pytest.fail("Unsupported operation read identity"))

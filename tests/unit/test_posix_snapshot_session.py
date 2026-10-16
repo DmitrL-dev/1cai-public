@@ -36,21 +36,28 @@ MODULE = "CommonModules/Caller/Ext/Module.bsl"
 
 @pytest.fixture
 def make_generation(tmp_path):
-    def build(*, graph_damage=None):
+    def build(*, graph_damage=None, extra=None, source_format="unknown"):
         root = tmp_path.resolve() / str(uuid4())
         root.mkdir(mode=0o700)
         owner, principal = Principal("owner", "local_os"), Principal("reader", "local_os")
         state = ProjectState.create(root / "state.sqlite3", PROJECT, owner)
         with state.transaction(owner, write=True) as tx:
             grant_membership(tx, principal, {"project:read"})
+        revision = 1
+        if source_format != "unknown":
+            live = root.parent / ("live-" + root.name); live.mkdir(mode=0o700)
+            with state.transaction(owner, write=True) as tx:
+                revision = tx.configure_source_layers(
+                    (SourceLayerSpec("base", 0, "base", ".", source_format),),
+                    expected_revision=1, source_root=live).revision
         generations = root / "generations"; generations.mkdir(mode=0o700)
         path = generations / str(uuid4()); path.mkdir(mode=0o700)
         contents = {MODULE: b"Procedure Caller() Export\nCallee.Target();\nEndProcedure\n",
                     "CommonModules/Callee/Ext/Module.bsl": b"Procedure Target() Export\nEndProcedure\n",
-                    "data.xml": "<data>fixture</data>\n".encode()}
+                    "data.xml": "<data>fixture</data>\n".encode(), **(extra or {})}
         entries = tuple(CapturedInput("base", name, sha256(raw), len(raw), "utf-8")
                         for name, raw in sorted(contents.items()))
-        source = build_source_document(PROJECT, SourceConfiguration(1, (SourceLayerSpec("base", 0, "base", ".", "unknown"),)), (), entries)
+        source = build_source_document(PROJECT, SourceConfiguration(revision, (SourceLayerSpec("base", 0, "base", ".", source_format),)), (), entries)
         bindings = sorted([dict(asdict(entry), graph_source_path="base/" + entry.relative_path)
                            for entry in entries if entry.relative_path.endswith(".bsl")], key=lambda row: row["graph_source_path"])
         receipt = GraphBuildReceipt("2", "source-path-v1", sha256(source), sha256(canonical_bytes(bindings)),
@@ -84,7 +91,7 @@ def make_generation(tmp_path):
                                        1, datetime.now(timezone.utc).isoformat())
         with state.transaction(owner, write=True) as tx:
             tx.commit_publication(expected_head=tx.get_project_head(), catalog=catalog,
-                layers=(SnapshotLayer("base", 0, "base", None, "unresolved", "unknown"),), operation_id=str(uuid4()))
+                layers=(SnapshotLayer("base", 0, "base", None, "unresolved", source_format),), operation_id=str(uuid4()))
         copied = len(manifest) + len(raw_graph) + sum(map(len, contents.values())) + sum(row["size_bytes"] for row in derived)
         resident = len(manifest) + sum(map(len, contents.values())) + 2 * len(raw_graph)
         options = dict(state=state, principal=principal, snapshot=snapshot, graph_reader_factory=RentgenGraphReaderFactory(),
