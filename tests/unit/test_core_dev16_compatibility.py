@@ -16,7 +16,7 @@ def adapter(name):
     return module
 
 
-@pytest.mark.parametrize("version", ["0.1.0.dev16", "0.1.0.dev17", "0.1.0.dev19"])
+@pytest.mark.parametrize("version", ["0.1.0.dev16", "0.1.0.dev17", "0.1.0.dev19", "0.1.0.dev20"])
 def test_editor_probe_accepts_qualified_core_with_exact_mcp_python_and_project(monkeypatch, version):
     module = adapter("prepare.py")
     project = "6e461c4d-e19c-4e37-85b3-3aa0961580b7"
@@ -44,7 +44,7 @@ def test_editor_probe_accepts_qualified_core_with_exact_mcp_python_and_project(m
     assert commands[1][2:5] == ["-m", "rentgen_core", "project-head"]
 
 
-@pytest.mark.parametrize("version", ["0.1.0.dev16", "0.1.0.dev17", "0.1.0.dev19", "0.1.0.dev18", "0.1.0.dev999"])
+@pytest.mark.parametrize("version", ["0.1.0.dev16", "0.1.0.dev17", "0.1.0.dev19", "0.1.0.dev20", "0.1.0.dev18", "0.1.0.dev999"])
 def test_runtime_installer_admits_qualified_core_and_refuses_unqualified_versions(
     monkeypatch, version
 ):

@@ -53,6 +53,8 @@ _GROUPS = {
         "edt-profile-list", "edt-profile-disable", "metadata-preview",
         "metadata-result", "metadata-evidence", "native-archive", "draft-check",
     ),
+    # Read-only qualification of retained native evidence; it never executes.
+    "native.evidence.read": ("test-run-qualify",),
     "source.live.mutate": (
         "proposal-live-apply", "proposal-live-undo", "proposal-live-recover",
         "metadata-live-apply", "metadata-live-undo", "metadata-live-recover",
@@ -127,6 +129,36 @@ def require_operation(name):
         )
 
 
+# Long-running or host-integrated components, separate from per-operation groups.
+# Each entry mirrors the platform gate of its entry point; nothing is inferred.
+_COMPONENTS = {
+    "local_gui": (
+        frozenset({"linux"}),
+        "The experimental local ZIP GUI is qualified only on Linux",
+    ),
+    "observer_service": (
+        frozenset({"win32"}),
+        "Observer and the source service require the Windows SCM and retained IO",
+    ),
+    "native_execution": (
+        frozenset({"win32"}),
+        "Native 1C/EDT execution requires the Windows process and retained IO adapter",
+    ),
+    "companion_editor": (
+        frozenset({"win32"}),
+        "The Companion editor profile is accepted only for Windows Core installations",
+    ),
+}
+
+
+def component_status(name):
+    if name not in _COMPONENTS:
+        return {"supported": False, "reason": "No reviewed component contract exists"}
+    platforms, reason = _COMPONENTS[name]
+    supported = _platform in platforms
+    return {"supported": supported, "reason": None if supported else reason}
+
+
 def capability_report():
     """Support matrix only: this grants no membership or installed-runtime claim."""
     return {
@@ -137,6 +169,9 @@ def capability_report():
             capability: {**capability_status(capability), "operations": list(commands)}
             for capability, commands in _GROUPS.items()
         },
+        # CLI and stdio MCP processes start on every OS; each operation above is
+        # admitted or refused before identity, project or payload access.
+        "components": {name: component_status(name) for name in _COMPONENTS},
         "permissions": "Current project membership is checked independently on every operation",
         "dependencies": "Installed native runtimes and profiles are checked by their adapters",
     }

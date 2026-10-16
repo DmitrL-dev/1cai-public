@@ -18,7 +18,10 @@ adapter = WebhookAdapter(
     max_payload_bytes=65536,
     max_response_bytes=4096,
 )
-receipts = deliver_outbox(NotificationOutbox(outbox_path), adapter, limit=25)
+receipts = deliver_outbox(
+    NotificationOutbox(outbox_path), adapter, limit=25,
+    authorize=check_current_permissions,  # raises when access was revoked
+)
 for receipt in receipts:
     if receipt.status is DeliveryStatus.RETRYABLE:
         schedule_explicit_retry(receipt.notification_id)
@@ -27,6 +30,10 @@ for receipt in receipts:
 The example host and caller functions are placeholders, not installed services.
 There is no CLI command, background thread, service registration, implicit
 network call from the watcher, or automatic retry loop.
+
+`authorize` is required. It runs before every send and again before every ack;
+a refusal stops the batch, and the current event stays pending. Delivery never
+assumes a permission that was valid when the batch started.
 
 ## Wire contract and outcomes
 

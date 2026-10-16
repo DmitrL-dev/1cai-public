@@ -157,6 +157,28 @@ Workflow не создаёт теги, не принимает manifests, не �
 зафиксируйте фактические records и выполните штатный `prepare/verify`;
 публикуйте те же проверенные байты. При ошибке кандидат не считается принятым.
 
+## Инструменты подготовки milestone
+
+Эти инструменты не создают qualification/publication records, теги или Release.
+
+- Допуск версий Core в Companion задан одним списком
+  `integrations/vscode-rentgen/lib/core-versions.cjs` (ступени dev4/dev7/dev8).
+  Новая версия Core добавляется туда только после квалификации пары; dev18
+  остаётся закрытой. Тест `test_core_version_admission_consistency.py` сверяет
+  с ним списки `integrations/open-editor` и версию `pyproject.toml`.
+- `python scripts/release/check_version_claims.py` сверяет каждую пару
+  «Core devN / Companion X.Y.Z» в текущих Markdown/HTML с заголовком
+  «Текущая опубликованная пара» в [READINESS](../../docs/product/READINESS.md),
+  а теги — на входных страницах. Исторические разделы, датированные и
+  версионные документы, evidence и releases не проверяются. Код 1 перечисляет
+  расхождения; ручной полный поиск номеров перед final push остаётся обязательным.
+- `python scripts/release/collect_ci_evidence.py metadata --sha SHA --output DIR`
+  сохраняет check-runs, workflow runs, jobs и artifacts точного commit и
+  отказывает, если какой-либо check не успешен (`--allow-skipped NAME` для
+  ожидаемого PR deploy). `download --evidence DIR --run-id ID --name ARTIFACT`
+  сверяет API size/SHA256 до любого разбора ZIP и извлекает через production
+  guard. Содержимое оценивают отдельные reducers.
+
 ## Общие заметки и локальные теги
 
 `create_release.py --version v1.2.3` только готовит RELEASE_NOTES.md. Текущий тег
