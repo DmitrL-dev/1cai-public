@@ -144,6 +144,7 @@ def _parser():
         "native-archive",
         "proposal-test",
         "proposal-test-result",
+        "test-run-qualify",
         "draft-save",
         "draft-start",
         "draft-edit",
@@ -298,7 +299,7 @@ def _parser():
             )
         elif name == "publication-receipt":
             command.add_argument("--operation-id", required=True, action=_Once)
-        elif name in {"proposal-platform-result", "proposal-test-result"}:
+        elif name in {"proposal-platform-result", "proposal-test-result", "test-run-qualify"}:
             command.add_argument("--operation-id", required=True, action=_Once)
         elif name.startswith("proposal-live-"):
             command.add_argument("--operation-id", required=True, action=_Once)
@@ -1296,6 +1297,7 @@ def _execute(args, *, proposal_scope=None):
             "proposal-platform-result",
             "proposal-test",
             "proposal-test-result",
+            "test-run-qualify",
             "test-profile-list",
             "edt-profile-list",
             "metadata-plan",
@@ -1518,7 +1520,7 @@ def _execute(args, *, proposal_scope=None):
         return _ProposalCommandResult(value, ctx, frozenset(permissions))
     if (
         args.command.startswith("test-profile-")
-        or args.command == "proposal-test-result"
+        or args.command in {"proposal-test-result", "test-run-qualify"}
     ):
         from . import test_profiles
 
@@ -1538,6 +1540,10 @@ def _execute(args, *, proposal_scope=None):
             value = test_profiles.list_profiles(ctx)
         elif args.command == "test-profile-disable":
             value = test_profiles.disable_profile(ctx, args.profile_id)
+        elif args.command == "test-run-qualify":
+            from .test_run_qualification import qualify_test_run
+
+            value = qualify_test_run(ctx, args.operation_id)
         else:
             from .platform_runs import get_platform_run
 

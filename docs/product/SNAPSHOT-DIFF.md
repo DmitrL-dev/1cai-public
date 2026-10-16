@@ -15,8 +15,11 @@ Linux CLI/MCP-маршрут реализован в development-исходни�
 CI более раннего main `8e7346e` этот новый блок не проверял.
 [Первый CI `597e50e`](evidence/development-ci-597e50e-20261016.json)
 сохраняет Linux tool-catalog oracle failure до capture и Windows installed-workflow
-failure с неизвестной внутренней причиной. Installed pair этого HEAD не принят;
-исправленные проверяющие клиенты требуют собственной новой приёмки.
+failure с неизвестной внутренней причиной. Installed pair этого HEAD не принят.
+[Exact-source CI `c2b6cd2`](evidence/development-ci-c2b6cd2-20261016.json) с
+исправленными клиентами принял Linux 3.11/3.12, installed CLI и официальный SDK
+с тремя настоящими capture, forward/reverse/self, страницами и historical bytes, а
+также Windows regression. Это синтетическая development-приёмка, не выпуск.
 
 ## CLI и MCP
 

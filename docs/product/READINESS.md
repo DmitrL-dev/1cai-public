@@ -98,6 +98,15 @@ Windows CLI остаётся legacy; новый MCP имеет общий deadli
 остался отрицательным: Linux остановился на неверном tool-prefix oracle до capture,
 Windows — в installed MCP workflow с недоступной внутренней ошибкой. Исправление
 проверяющих клиентов требует нового точного CI; прежний отказ не переписывается.
+[Exact-source CI `c2b6cd2`](evidence/development-ci-c2b6cd2-20261016.json) (PR #104,
+squash main `2d8254a` с тем же tree) принял это исправление: Linux 3.11/3.12
+4836/4835 passed без failures, installed CLI 45 вызовов, официальный SDK pair на трёх
+capture, Windows 4652 passed / 1160 skipped без failures. Original artifacts сверены
+по API size/SHA256 до разбора и независимо перепроверены.
+
+Следующий source-блок — [TEST-RUN-QUAL-01](TEST-RUN-QUALIFICATION.md): `test-run-qualify`
+и команда Companion повторно сверяют retained JUnit/exit/settings/журналы/inventory/
+roundtrip с отчётом без запуска 1С. Досье `local_unattested`; native-приёмка открыта.
 Опубликованные dev19 / Companion 0.1.20, 127 требований и 24 IDE-сценария
 сохраняют прежний статус; full-product/native/model/human acceptance не объявлена.
 

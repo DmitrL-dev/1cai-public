@@ -14,7 +14,8 @@ Workbench, POSIX reader/LiveTree и diagnostic pilot объединены в mai
 Следующая часть — [SNAP-DIFF-01](docs/product/SNAPSHOT-DIFF.md): source-контракт
 Linux paired CLI/MCP с общим POSIX budget и конечным output guard.
 Его actual Linux/installed SDK-приёмка относится только к новой точной сборке;
-положительные `c9` / `8e` её не заменяют. Новый выпуск и полный B07 не объявлены.
+положительные `c9` / `8e` её не заменяют. [Exact-source CI `c2b6cd2`](docs/product/evidence/development-ci-c2b6cd2-20261016.json)
+принял синтетические fixtures этого блока; новый выпуск и полный B07 не объявлены.
 Лицензированного стенда 1С/EDT пока нет: native-gates открыты,
 реализация и обычный CI продолжаются.
 
@@ -153,7 +154,8 @@ Linux сравнивает ordered pair из catalog в двух owned read sess
 Windows CLI сохраняет прежний контракт; новый Windows MCP получает общий
 deadline/output guard с прежними per-session ресурсами. Public macOS закрыт.
 Для каждой новой сборки нужны свои actual Linux, installed CLI/SDK и Windows
-regression receipts; прежние `c9` / `8e` этот diff не проверяли.
+regression receipts; прежние `c9` / `8e` этот diff не проверяли. Для `c2b6cd2`
+они получены и сохранены в [квитанции](docs/product/evidence/development-ci-c2b6cd2-20261016.json).
 
 Отделить интерфейс безопасного чтения от Windows-реализации. Для Linux и macOS
 принимать отдельные адаптеры чтения принадлежащих хранилищу снимков: ограничения

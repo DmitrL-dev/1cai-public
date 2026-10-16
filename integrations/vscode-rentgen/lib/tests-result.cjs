@@ -31,4 +31,19 @@ function validateTests(report,id,receipt,proposal,profile){
  }
  if(report.tests.status!==report.tests.candidate.status)fail();return report;
 }
-module.exports={validateProfiles,validateTests};
+const checks=['report_identity','profile_definition','input_inventories','native_roundtrip','step_sequence','runner_settings','junit_exit','engine_source','scratch_cleanup'];
+const states=new Set(['verified','mismatch','missing','not_applicable']),outcomes=new Set(['passed','failed','incomplete','not_run']);
+const code=/^[A-Z][A-Z0-9_]{0,79}$/,uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+// The dossier is local_unattested consistency evidence, never native or apply authority.
+function validateQualification(d,id,project){
+ if(d?.schema!==1||d.kind!=='yaxunit-retained-run-qualification'||d.run_id!==id||!uuid.test(id)||d.project_id!==project||!['completed','failed','incomplete'].includes(d.run_status)||!['consistent','inconsistent','incomplete'].includes(d.qualification)||d.evidence!=='local_unattested'||d.execution!=='not_performed'||d.apply?.status!=='unavailable'||!hash.test(d.dossier_sha256)||!Array.isArray(d.checks)||d.checks.length!==checks.length||!Array.isArray(d.limitations))fail();
+ d.checks.forEach((row,i)=>{if(row?.id!==checks[i]||!states.has(row.status)||(row.detail!==null&&!code.test(row.detail))||(row.status==='verified')!==(row.detail===null))fail();});
+ const seen=new Set(d.checks.map(row=>row.status));
+ const expected=d.run_status!=='completed'?'incomplete':seen.has('mismatch')?'inconsistent':seen.has('missing')?'incomplete':'consistent';
+ if(d.qualification!==expected||(d.run_status!=='completed')!==seen.has('not_applicable'))fail();
+ if(d.failure_code!==null&&(d.run_status!=='failed'||!code.test(d.failure_code)))fail();
+ if(d.test_result!==null&&(d.run_status!=='completed'||!['status','baseline','candidate'].every(k=>outcomes.has(d.test_result[k]))||d.test_result.status!==d.test_result.candidate||!hash.test(d.candidate_sha256)||!hash.test(d.report_sha256)))fail();
+ if(d.profile!==null&&(!hash.test(d.profile?.profile_id)||typeof d.profile.enabled!=='boolean'))fail();
+ return d;
+}
+module.exports={validateProfiles,validateTests,validateQualification};

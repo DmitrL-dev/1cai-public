@@ -51,6 +51,8 @@ _GROUPS = {
         "edt-profile-list", "edt-profile-disable", "metadata-preview",
         "metadata-result", "metadata-evidence", "native-archive", "draft-check",
     ),
+    # Read-only qualification of retained native evidence; it never executes.
+    "native.evidence.read": ("test-run-qualify",),
     "source.live.mutate": (
         "proposal-live-apply", "proposal-live-undo", "proposal-live-recover",
         "metadata-live-apply", "metadata-live-undo", "metadata-live-recover",
