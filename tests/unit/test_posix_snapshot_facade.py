@@ -502,3 +502,32 @@ def test_manual_draft_authoring_reads_exact_retained_source_on_posix(generation,
         draft_editing.edit_draft(ctx, draft, expected_revision=1, operation_id=str(uuid4()),
                                  edits=[{"old_text": "Callee.Target();", "new_text": "stale"}])
     assert error.value.code.startswith("DRAFT")
+
+
+def test_proposal_diff_and_raw_draft_save_revalidate_retained_source_on_posix(generation):
+    from uuid import uuid4
+    from rentgen_core import drafts
+    from rentgen_core.proposals import ProposalLimits, create_proposal_presentation, parse_proposal_presentation
+
+    sources = sources_for(generation, _principal=generation.owner)
+    ctx = ProjectContext(generation.snapshot.project_id, generation.owner, "fixture-request",
+                         generation.state, generation.root / "live", generation.snapshot, sources,
+                         facade.PosixSnapshotGraph(generation.snapshot, sources))
+    ref = sources.resolve("base", MODULE)
+    limits = ProposalLimits(1024**2, 1024**2, 1536 * 1024, 256 * 1024)
+    replacement = generation.contents[MODULE].replace(b"Callee.Target();", b"Callee.Target(); // diff")
+    created = create_proposal_presentation(ctx, ref, replacement, limits=limits)
+    assert created.diff.status == "complete" and "// diff" in created.diff.text
+    assert parse_proposal_presentation(ctx, created.canonical_json, limits=limits) == created
+    draft = str(uuid4())
+    saved = drafts.save_draft(ctx, created.canonical_json, draft_id=draft, title="Raw save",
+                              expected_revision=0, operation_id=str(uuid4()))
+    assert saved["revision"] == 1 and saved["source_ref"]["relative_path"] == MODULE
+    # A proposal whose retained source no longer matches the snapshot is refused.
+    forged = created.canonical_json.replace(ref.raw_sha256.encode(), b"0" * 64)
+    assert forged != created.canonical_json
+    with pytest.raises(CoreError):
+        drafts.save_draft(ctx, forged, draft_id=draft, title="Raw save",
+                          expected_revision=1, operation_id=str(uuid4()))
+    assert [row["revision"] for row in drafts.draft_history(ctx, draft)["items"]] == [1]
+    assert not (generation.root / "live").exists()
