@@ -1,6 +1,8 @@
 # Backlog полного финального релиза
 
-Дата классификации: **16 октября 2026**, main после PR #104 `2d8254a`.
+Дата исходной классификации: **16 октября 2026**, main после PR #104 `2d8254a`.
+Частичный прогресс ниже актуализирован по интеграции PR #110, #112–#116;
+он не закрывает полные критерии реестра и не является новой публикацией.
 Источник требований — [реестр 127 ID](FULL-FINAL-PLAN.md#реестр-127-требований);
 этот документ не меняет их статусы и не закрывает ни одного критерия. Он фиксирует,
 **чего не хватает** для каждой открытой строки, чтобы реализуемая часть шла в
@@ -33,9 +35,11 @@
 | `WORKFLOW-MIGRATION-01` (часть) | Контракты schema3→4: сохранность строк, откат на каждой границе, replay/conflict, отказы, подделка receipt; Windows runner с читаемым backup | `dev`: конкурентный запуск и подменённый backup на Windows |
 | `GUI-IDE-BOUNDARY-01` | Статический guard: замыкание импортов GUI без IDE-модулей и закрытый набор read-only маршрутов | — |
 | `PORT-GATE-01` (часть) | Раздел `components` в capability report; GUI проверяет его до чтения входов | `platform`: фактический отказ на macOS |
-| `ANALYZER-01` (часть) | SARIF принимается только от заявленного анализатора и версии | `dev`: unit-тесты BSL-LS адаптера; `decision`: Sonar/Vanessa |
+| `ANALYZER-01` (часть) | SARIF принимается только от заявленного анализатора и версии; unit-контракты BSL-LS проверяют unavailable/partial и точные source/candidate hashes | `decision`: Sonar/Vanessa; полная приёмка адаптеров остаётся отдельной |
 | `OWNER-NOTIFY-01` (часть) | Обязательная проверка прав перед каждой отправкой и ack | `dev`: журнал попыток, планировщик повторов, wiring; `decision`: production endpoint |
-| `IDE-SC-24` (часть) | [Metadata](METADATA-LIVE-APPLY.md) и [BSL proposal](PROPOSAL-LIVE-APPLY.md): неизвестный исход live-операции обозначается `live_source_written=null`, включая прерывание после замены; CLI/MCP сохраняют это значение | `dev`: остальные долгие операции, ранняя выдача operation ID, неполные native runs и reconciliation; полный критерий остаётся открытым |
+| `IDE-SC-24` (часть) | Неизвестный исход [metadata](METADATA-LIVE-APPLY.md) и [BSL live-операции](PROPOSAL-LIVE-APPLY.md) сохраняет `live_source_written=null`; [platform CLI](PROPOSAL-PLATFORM-CHECK.md) заранее выдаёт recovery ID; обрыв до request в platform/test runs возвращает incomplete без слепого retry | `dev`: остальные долгие операции, lifecycle отмены и reconciliation; архивирование неполных runs требует отдельного доказательства отсутствия активного исполнителя; полный критерий открыт |
+| `PORT-RETAINED-01` (часть) | [Linux retained metadata navigation и source reads для ручных drafts](PORTABLE-CORE.md) используют проверенные POSIX sessions с повторной авторизацией и ограниченными входами | `platform`: macOS; остальные retained-потребители и полный cross-OS lifetime/security scope остаются открытыми |
+| `IDE-SC-08`, `IDE-SC-09`, `IDE-SC-17` (часть) | Preview rename сохраняет посторонние UUID/name; BSL Problems указывают закреплённый analyzer profile без автоматических правок; синтетические preview/merge/workspace проверки сохраняют binary bytes | Полные IDE-сценарии переименования/диагностики и native MXL-печать остаются открытыми |
 
 ## Строки, требующие стенда 1С/EDT (`stand`)
 
@@ -89,12 +93,11 @@
 ## Очередь разработки (`dev`)
 
 Реализуемо в source+обычном CI без недостающих ресурсов, но не вошло в этот цикл:
-`PORT-RETAINED-01` (Linux metadata navigation), `SNAP-READ-01` (Windows suite
+`SNAP-READ-01` (Windows suite
 read sessions), `SNAP-PUB-01` (атрибуция orphan attempts), `SNAP-OBS-02`
 (видимые пропуски опроса, kill-test), `GIT-WATCH-01` (точная привязка tree/blob),
 `RUST-DELIVERY-01` (квитанция текущего HEAD), `UPDATE-3WAY-01`,
 `UPDATE-SEMANTICS-01`, `UPDATE-BSL-01`, `EDT-IDENTITY-01`, `META-WORKSPACE-01`,
-`IDE-SC-08`, `IDE-SC-09`, `IDE-SC-17`,
 `OWNER-REPORT-01`, `OWNER-STORE-01`, `ROADMAP-03`,
 `ROADMAP-05`, `ROADMAP-07`, `FINAL-PORTABLE-01`, `DIAG-CONTEXT-01`,
 `DIAG-RECEIVER-01`, `DIAG-HOST-01`, `DIAG-PROTOCOL-01`, `DIAG-REVISION-01`,
