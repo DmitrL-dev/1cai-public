@@ -38,6 +38,7 @@ exports.activate = async context => {
   await vscode.commands.executeCommand('setContext', 'rentgen.bslRunning', false);
   if (coldOwnerBootstrap) {
     await vscode.commands.executeCommand('setContext', 'rentgen.testsAvailable', false);
+    await vscode.commands.executeCommand('setContext', 'rentgen.testQualifyAvailable', false);
     const refusal = error => Object.freeze({ready:false, error, owner:coldOwnerBootstrap.snapshot()});
     if (selectedOwnerMode !== 'cold-ready') return refusal('OWNER_MODE_INVALID');
     try {
@@ -106,7 +107,9 @@ exports.activate = async context => {
       try{return await owned.execute(command,args);}finally{owned.dispose();if(testRunner===owned)testRunner=null;}
     }});
     context.subscriptions.push(testClient);
-    const tests=createTestsUI(vscode,createTestService({root,config,client:testClient,trusted:()=>vscode.workspace.isTrusted,cancel:()=>testRunner?.dispose()}),views,context,nativeAvailable);
+    let qualifyAvailable=false;
+    try {qualifyAvailable=(await testClient.testQualifyCapability()).supported;} catch {qualifyAvailable=false;}
+    const tests=createTestsUI(vscode,createTestService({root,config,client:testClient,trusted:()=>vscode.workspace.isTrusted,cancel:()=>testRunner?.dispose()}),views,context,nativeAvailable,{qualifyAvailable});
     let nativeRunner;
     const nativeClient = createClient(config,{trusted:()=>vscode.workspace.isTrusted,execute:async(command,args)=>{
       const owned = createRunner({timeout:args[3]==='proposal-platform-check'?660000:30000});
@@ -123,10 +126,11 @@ exports.activate = async context => {
     await vscode.commands.executeCommand('setContext','rentgen.editAvailable',repairAvailable);
     await vscode.commands.executeCommand('setContext','rentgen.bslAvailable',nativeAvailable);
     await vscode.commands.executeCommand('setContext','rentgen.testsAvailable',nativeAvailable);
+    await vscode.commands.executeCommand('setContext','rentgen.testQualifyAvailable',qualifyAvailable);
     return Object.freeze({ready: restorationError === null, ...(restorationError ? {error:restorationError} : {}),
       projectId: config.project_id, ...views, navigationAvailable:navigation.supported,
       metadataRoots:metadata.roots, metadataChildren:metadata.children, metadataSearch:metadata.search,
-      repairRuns:repair.runs,platformRuns:platform.runs,editSessions:edit.sessions,bslRuns:bsl.runs,testRuns:tests.runs});
+      repairRuns:repair.runs,platformRuns:platform.runs,editSessions:edit.sessions,bslRuns:bsl.runs,testRuns:tests.runs,testQualifyAvailable:qualifyAvailable});
   } catch (error) {
     for (const subscription of context.subscriptions.splice(initialSubscriptions).reverse()) subscription.dispose();
     await vscode.commands.executeCommand('setContext','rentgen.profileLoaded',false);

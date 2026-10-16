@@ -3,7 +3,7 @@ const {NATIVE_CORE_VERSIONS,PROFILE_CORE_VERSIONS}=require('./core-versions.cjs'
 const { createHash } = require('node:crypto');
 const { win32 } = require('node:path');
 const {PROFILE,validateBsl}=require('./bsl-result.cjs');
-const {validateProfiles,validateTests}=require('./tests-result.cjs');
+const {validateProfiles,validateTests,validateQualification}=require('./tests-result.cjs');
 
 const MAX_BYTES = 1048576;
 const MAX_OUTPUT = 2097152 + 1; // CLI envelope limit plus newline
@@ -306,6 +306,19 @@ function createClient(config, { execute, trusted = () => true }) {
       requireValue(profile.enabled,'TEST_PROFILE_UNAVAILABLE');
       requireValue(typeof file==='string'&&/^[A-Za-z]:\\/.test(file)&&!controls.test(file),'INVALID_TEST_PATH');
       return validateTests(await call('proposal-test',['--snapshot',saved.source_ref.snapshot.snapshot_id,'--proposal-json',file,'--test-profile',profile.profile_id,'--operation-id',id]),id,saved,proposal,profile);
+    },
+    async testQualifyCapability() {
+      const value = await call('capabilities', [], false);
+      requireValue(value?.contract_version === 1 && typeof value.platform === 'string' &&
+        value.scope === 'os-adapter-support', 'INVALID_CAPABILITIES_RESPONSE');
+      const group = value.capabilities?.['native.evidence.read'];
+      // Advertised operation admits the read-only action; the Core version number does not.
+      return Object.freeze({supported: group?.supported === true && Array.isArray(group.operations) &&
+        group.operations.length <= 200 && group.operations.includes('test-run-qualify')});
+    },
+    async testQualify(id) {
+      requireValue(uuid.test(id), 'INVALID_OPERATION_ID');
+      return validateQualification(await call('test-run-qualify', ['--operation-id', id]), id, config.project_id);
     },
     async testResult(id) {
       requireValue(NATIVE_CORE_VERSIONS.includes(config.core_version),'TEST_REQUIRES_DEV8');requireValue(uuid.test(id),'INVALID_OPERATION_ID');

@@ -1,6 +1,6 @@
 'use strict';
 const {isDeepStrictEqual}=require('node:util');
-function createTestsUI(vscode,service,views,context,enabled){
+function createTestsUI(vscode,service,views,context,enabled,{qualifyAvailable=false}={}){
  let busy=false;
  const check=()=>{if(!vscode.workspace.isTrusted)throw new Error('TRUST_REQUIRED');if(!enabled)throw new Error('TEST_REQUIRES_DEV8');};
  const status={passed:'пройдены',failed:'есть ошибки',incomplete:'выполнены не все',not_run:'не запущены из-за ошибок компиляции'};
@@ -45,7 +45,26 @@ function createTestsUI(vscode,service,views,context,enabled){
   if(!id){const rows=await service.list();const selected=await vscode.window.showQuickPick(rows.map(r=>({label:`v${r.receipt.revision} · ${r.receipt.source_ref.relative_path}`,description:r.profile.name,detail:r.id,id:r.id})),{title:'Сохранённые запуски тестов'});if(!selected)return null;id=selected.id;}
   return show(await service.inspect(id));
  }
- for(const [name,fn]of [['rentgen.testDraft',start],['rentgen.testResult',inspect]])context.subscriptions.push(vscode.commands.registerCommand(name,async(...args)=>{
+ const verdict={consistent:'сохранённые доказательства согласованы с отчётом',inconsistent:'сохранённые доказательства не совпадают с отчётом',incomplete:'доказательств недостаточно для проверки'};
+ async function qualify(selection){
+  if(!vscode.workspace.isTrusted)throw new Error('TRUST_REQUIRED');if(!qualifyAvailable)throw new Error('TEST_QUALIFY_UNAVAILABLE');if(busy||service.running)throw new Error('TEST_RUNNING');
+  let id=typeof selection==='string'?selection:null,receipt=null,current=()=>true;
+  if(selection&&typeof selection==='object'){
+   const token=selection.token;receipt=views.selectedDraft(token);const contextVersion=views.contextVersion?.();
+   current=()=>{if(contextVersion!==undefined&&views.contextVersion()!==contextVersion)return false;try{return isDeepStrictEqual(views.selectedDraft(token),receipt);}catch(error){if(error?.message==='UNKNOWN_VIEW_HANDLE')return false;throw error;}};
+  }
+  if(!id){const rows=(await service.list()).filter(r=>receipt===null||isDeepStrictEqual(r.receipt,receipt));const selected=await vscode.window.showQuickPick(rows.map(r=>({label:`v${r.receipt.revision} · ${r.receipt.source_ref.relative_path}`,description:r.profile.name,detail:r.id,id:r.id})),{title:'Проверить сохранённый запуск тестов'});if(!selected)return null;id=selected.id;}
+  const {dossier}=await service.qualify(id,{receipt});
+  if(!vscode.workspace.isTrusted)throw new Error('TRUST_REQUIRED');if(!current())return dossier;
+  const first=dossier.checks.find(row=>row.status==='mismatch'||row.status==='missing');
+  const message=`Рентген: запуск ${id} — ${verdict[dossier.qualification]}${first?` (${first.id}: ${first.detail})`:''}. Доказательства local_unattested; повторного запуска и применения не было.`;
+  const document=await vscode.workspace.openTextDocument({language:'json',content:JSON.stringify(dossier,null,2)});
+  if(!vscode.workspace.isTrusted)throw new Error('TRUST_REQUIRED');if(!current())return dossier;
+  await vscode.window.showTextDocument(document,{preview:false});
+  if(!current())return dossier;
+  void vscode.window.showInformationMessage(message);return dossier;
+ }
+ for(const [name,fn]of [['rentgen.testDraft',start],['rentgen.testResult',inspect],['rentgen.testQualify',qualify]])context.subscriptions.push(vscode.commands.registerCommand(name,async(...args)=>{
   try{return await fn(...args);}catch(error){void vscode.window.showErrorMessage('Рентген: '+error.message);throw error;}
  }));context.subscriptions.push(service);return Object.freeze({runs:()=>service.list()});
 }

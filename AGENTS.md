@@ -25,7 +25,8 @@
   [SNAP-DIFF-01](docs/product/SNAPSHOT-DIFF.md) — отдельный source-контракт:
   Linux pair имеет общий POSIX budget; Windows CLI прежний, новый MCP имеет общий
   deadline/output guard с per-session ресурсами. Public macOS закрыт.
-  Старые CI `c9` / `8e` новый diff не квалифицируют. Точные границы —
+  Старые CI `c9` / `8e` новый diff не квалифицируют; его exact-source
+  [CI `c2b6cd2`](docs/product/evidence/development-ci-c2b6cd2-20261016.json) — ограниченная синтетическая приёмка. Точные границы —
   [PORTABLE-CORE](docs/product/PORTABLE-CORE.md); pure-Python wheel не означает
   поддержку всех команд или macOS.
 - Python: `python -m pytest -q <relevant tests>`; полный Windows suite и
