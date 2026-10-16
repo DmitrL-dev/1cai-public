@@ -121,3 +121,19 @@ def test_inputs_are_exact():
         collector.metadata("HEAD", Path("/nonexistent"), runner=runner)
     with pytest.raises(ValueError):
         collector.download(Path("/nonexistent"), 7, "../escape", runner=runner)
+
+
+def test_rerun_duplicate_names_require_an_explicit_artifact_id(tmp_path):
+    runner, _ = fake()
+    collector.metadata(SHA, tmp_path / "ci", runner=runner)
+    summary = tmp_path / "ci/summary.json"
+    value = json.loads(summary.read_text())
+    value["workflows"]["7"]["artifacts"].append(
+        dict(value["workflows"]["7"]["artifacts"][0], id=8)
+    )
+    summary.write_text(json.dumps(value))
+    with pytest.raises(ValueError, match="exactly once"):
+        collector.download(tmp_path / "ci", 7, "report", runner=runner)
+    assert collector.download(tmp_path / "ci", 7, "report", artifact_id=9, runner=runner)[
+        "artifact_id"
+    ] == 9

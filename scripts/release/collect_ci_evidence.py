@@ -131,14 +131,20 @@ def _guard():
     return module
 
 
-def download(evidence, run_id, name, *, runner=subprocess.run):
-    """Download one listed artifact; pin API size/SHA256 before any ZIP parse."""
+def download(evidence, run_id, name, *, artifact_id=None, runner=subprocess.run):
+    """Download one listed artifact; pin API size/SHA256 before any ZIP parse.
+
+    A rerun can list several artifacts with one name; ``artifact_id`` then
+    selects exactly one of them.
+    """
     evidence = Path(evidence)
     if not NAME.fullmatch(name) or type(run_id) is not int:
         raise ValueError("Exact artifact name and run ID required")
     summary = json.loads((evidence / "summary.json").read_text("utf-8"))
     listed = [
-        a for a in summary["workflows"][str(run_id)]["artifacts"] if a["name"] == name
+        a
+        for a in summary["workflows"][str(run_id)]["artifacts"]
+        if a["name"] == name and artifact_id in (None, a["id"])
     ]
     if len(listed) != 1:
         raise ValueError("Artifact is not listed exactly once for this run")
@@ -190,12 +196,15 @@ def main(argv=None):
     get.add_argument("--evidence", type=Path, required=True)
     get.add_argument("--run-id", type=int, required=True)
     get.add_argument("--name", required=True)
+    get.add_argument("--artifact-id", type=int)
     args = parser.parse_args(argv)
     try:
         if args.command == "metadata":
             value = metadata(args.sha, args.output, allow_skipped=tuple(args.allow_skipped))
         else:
-            value = download(args.evidence, args.run_id, args.name)
+            value = download(
+                args.evidence, args.run_id, args.name, artifact_id=args.artifact_id
+            )
     except (ValueError, KeyError, subprocess.CalledProcessError) as exc:
         print(json.dumps({"error": type(exc).__name__, "reason": str(exc)[:240]}))
         return 1
