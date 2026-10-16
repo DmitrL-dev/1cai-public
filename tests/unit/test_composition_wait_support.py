@@ -105,7 +105,7 @@ def _exercise_idle_wait_failure(tmp_path, monkeypatch, phase):
 
         def wait(self, timeout=None):
             if self is created[0]:
-                assert timeout == 15
+                assert timeout == 120
                 assert phase_ready.wait(2)
                 return False
             return super().wait(timeout)
