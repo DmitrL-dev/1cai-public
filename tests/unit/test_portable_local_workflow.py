@@ -39,7 +39,7 @@ def test_every_adapter_operation_has_explicit_capability():
 def test_live_native_snapshot_unknown_capabilities_fail_closed(monkeypatch, platform):
     monkeypatch.setattr(capabilities, "_platform", platform)
     for command in ("capture", "source-read", "proposal-live-apply", "metadata-live-undo", "metadata-workspace-apply", "proposal-test", "draft-save", "new-operation"):
-        if platform == "linux" and command in {"capture", "source-read"}:
+        if platform == "linux" and command in {"capture", "source-read", "draft-save"}:
             capabilities.require_operation(command)
             continue
         with pytest.raises(CoreError) as error:

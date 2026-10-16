@@ -27,6 +27,7 @@ LINUX_PROJECT_TOOLS=(
     "rentgen_graph_resolve","rentgen_impact",
     "rentgen_draft_get","rentgen_draft_list","rentgen_draft_history",
     "rentgen_draft_receipt","rentgen_draft_read",
+    "rentgen_proposal_create","rentgen_draft_start","rentgen_draft_save","rentgen_draft_edit",
 )
 
 
@@ -45,9 +46,8 @@ def test_closed_linux_project_inventory_requires_every_expected_tool(missing):
 
 @pytest.mark.parametrize("extra",[
     "rentgen_project_list","rentgen_capabilities",
-    "rentgen_draft_start","rentgen_draft_edit","rentgen_draft_save",
     "rentgen_draft_archive","rentgen_draft_restore","rentgen_draft_check",
-    "rentgen_proposal_create","rentgen_proposal_check",
+    "rentgen_proposal_check",
     "rentgen_proposal_live_apply","rentgen_proposal_live_undo",
     "rentgen_proposal_live_status","rentgen_proposal_live_recover",
     "rentgen_metadata_live_apply","rentgen_metadata_live_undo",
@@ -68,7 +68,7 @@ def test_closed_linux_project_inventory_cannot_erase_duplicate_tool_names(duplic
 
 
 def test_closed_linux_project_inventory_rejects_wrong_tool_with_same_count():
-    names=list(LINUX_PROJECT_TOOLS);names[-1]="rentgen_draft_start"
+    names=list(LINUX_PROJECT_TOOLS);names[-1]="rentgen_draft_archive"
     with pytest.raises(probe.ProbeFailure,match="inventory differs"):
         probe.require_linux_project_tools(names)
 

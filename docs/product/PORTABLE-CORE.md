@@ -24,6 +24,12 @@ permissions, schema и ограничения входных/выходных д
 - Чтение существующих shared drafts: get/list/history/receipt; MCP также умеет
   bounded `rentgen_draft_read`, включая UTF-8. Это чтение сохранённого state,
   не доказательство доступности или проверки прежних snapshot/source files.
+- Ручное авторство черновиков в development-исходниках после dev19 (группа
+  `draft.authoring`): `proposal-create`, `proposal-diff`, `draft-start`, `draft-save`,
+  `draft-edit` и MCP `rentgen_proposal_create` / `rentgen_draft_start` / `_save` /
+  `_edit`. Исходный модуль читается через свежую проверенную POSIX retained session
+  с целью `proposal-source`; запись идёт только в историю черновиков state.
+  Live-запись, archive/restore, BSL-проверка и native остаются Windows-only.
 - Существующие `metadata-materialize`, `edt-attribute-plan`, `edt-inventory-plan`
   по явно переданным JSON/byte inputs, с прежними bounds и reauthorization.
   Они возвращают план или summary, не применяют изменения к исходникам.

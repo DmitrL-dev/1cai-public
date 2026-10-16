@@ -16,6 +16,10 @@ from .sources import SnapshotCapabilities, SnapshotReadLimits, _source_page
 from .state import ProjectState
 
 
+# Reviewed read-only consumers: each reads bounded bytes via entries/read_source.
+_ADMITTED_PURPOSES = frozenset({"metadata-navigation", "proposal-source"})
+
+
 def _owner():
     return os.getpid(), get_ident()
 
@@ -68,11 +72,11 @@ class PosixSnapshotSources:
     def read_session(self, *, limits, purpose=None):
         """A fresh verified POSIX session for reviewed read-only consumers only.
 
-        Metadata navigation reads bytes through entries/read_source/checkpoint,
-        all bounded by this facade's POSIX limits and reauthorized per read.
+        Metadata navigation and proposal source reads use entries/read_source/
+        checkpoint, bounded by this facade's POSIX limits and reauthorized per read.
         Every other legacy consumer keeps a controlled zero-IO refusal.
         """
-        if purpose != "metadata-navigation" or type(limits) is not SnapshotReadLimits:
+        if purpose not in _ADMITTED_PURPOSES or type(limits) is not SnapshotReadLimits:
             raise CoreError(
                 "CAPABILITY_UNAVAILABLE",
                 "The legacy Windows retained session is unavailable for POSIX snapshots",

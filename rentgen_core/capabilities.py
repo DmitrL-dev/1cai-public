@@ -45,6 +45,10 @@ _GROUPS = {
     "snapshot.compare.read": ("snapshot-diff",),
     # Read-only metadata navigation is admitted separately from other legacy reads.
     "snapshot.metadata.read": ("metadata-summary", "metadata-search", "metadata-object"),
+    # Manual draft authoring: exact retained source -> shared draft history only.
+    "draft.authoring": (
+        "proposal-create", "proposal-diff", "draft-start", "draft-save", "draft-edit",
+    ),
     "source.capture": ("capture",),
     "native.execution": (
         "proposal-check", "proposal-platform-check", "proposal-platform-result",
@@ -92,7 +96,7 @@ def capability_status(capability):
         return {"supported": True, "reason": None}
     if _platform == "linux" and capability in {
         "snapshot.source.read", "snapshot.compare.read", "snapshot.metadata.read",
-        "source.capture",
+        "draft.authoring", "source.capture",
     }:
         return {"supported": True, "reason": None}
     reason = (
