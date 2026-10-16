@@ -305,3 +305,57 @@ def test_status_marks_omitted_history_and_rejects_invalid_limit(observer):
         with pytest.raises(api.CoreError) as error:
             observer.findings_status(limit=limit)
         assert error.value.code == "INVALID_QUERY_OPTIONS"
+
+
+def test_killed_writer_inside_findings_journal_rolls_back_then_restarts(
+    observer, tmp_path
+):
+    """A real child is killed after both journal inserts, before commit."""
+    from observer_kill_support import killed_inside_write
+
+    observer.record_findings(report(observer))
+    before = observer.findings_status()
+    code = """
+import sys
+from pathlib import Path
+import rentgen_core as api
+from rentgen_core.git_observer import FindingReport, GitObservation
+from rentgen_core.local import LocalRuntime
+from rentgen_core.observer import Observer
+registry, project, profile, source = sys.argv[1:-2]
+incoming = FindingReport(
+    GitObservation(source, "b" * 40, "refs/heads/main"),
+    "analyzer-v1",
+    "whole-repository",
+    True,
+    (),
+)
+Observer(
+    LocalRuntime(Path(registry)), api.Principal("owner", "local_os"),
+    project, Path(profile),
+).record_findings(incoming)
+"""
+    with killed_inside_write(
+        code,
+        observer.runtime.registry_path,
+        observer.project_id,
+        observer.profile,
+        observer._context().source_root.resolve(),
+        boundary="findings_journal_saved",
+        ready=tmp_path / "ready",
+    ):
+        assert observer.findings_status() == before
+        with pytest.raises(api.CoreError) as error:
+            observer.record_findings(report(observer, "b", ()))
+        assert error.value.code == "OBSERVER_BUSY"
+    with sqlite3.connect(observer.database) as db:
+        assert db.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+    db.close()
+    assert observer.findings_status() == before
+    restarted = Observer(
+        observer.runtime, observer.principal, observer.project_id, observer.profile
+    )
+    resolved = restarted.record_findings(report(observer, "b", ()))
+    assert [event["kind"] for event in resolved["events"]] == ["resolved"]
+    assert restarted.record_findings(report(observer, "b", ())) == resolved
+    assert len(restarted.findings_status()["reports"]) == 2

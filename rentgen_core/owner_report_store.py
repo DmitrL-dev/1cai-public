@@ -1,6 +1,6 @@
 """Durable, context-bound storage for owner-report evidence."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from contextlib import contextmanager
 import heapq
 import json
@@ -23,6 +23,7 @@ from .context import validate_project_id
 SCHEMA = 1
 MAX_RECORD = 2 * 1024**2
 MAX_REPORTS = 1000
+MAX_FRESHNESS_SECONDS = 366 * 86400
 
 
 def _require(condition, code, message):
@@ -181,6 +182,57 @@ def _report(value):
             "OWNER_REPORT_STORE_INVALID", "Owner report values are invalid"
         ) from exc
     return value
+
+
+def _freshness_clock(max_age_seconds, as_of):
+    """Validate an explicit read policy; None keeps the stored receipt shape."""
+    if max_age_seconds is None:
+        _require(
+            as_of is None,
+            "OWNER_REPORT_STORE_INVALID",
+            "as_of requires an explicit max_age_seconds policy",
+        )
+        return None
+    _require(
+        type(max_age_seconds) is int
+        and 1 <= max_age_seconds <= MAX_FRESHNESS_SECONDS,
+        "OWNER_REPORT_STORE_INVALID",
+        "Owner-report max_age_seconds is out of bounds",
+    )
+    if as_of is None:
+        return None
+    try:
+        return _timestamp(as_of, "as_of")
+    except CoreError as exc:
+        raise CoreError(
+            "OWNER_REPORT_STORE_INVALID", "Owner-report as_of is invalid"
+        ) from exc
+
+
+def _with_freshness(receipt, max_age_seconds, now):
+    """Return a read view with age/historical; stored bytes and IDs are unchanged.
+
+    Age is measured from the stored report's ``generated_at`` to ``now`` and
+    rounded up to whole seconds, so ``historical`` equals
+    ``age_seconds > max_age_seconds``. A report claiming a generation time after
+    ``now`` has no provable age and is historical as well.
+    """
+    delta = now - _timestamp(receipt["report"]["generated_at"], "generated_at")
+    if delta.days < 0:
+        age, reason = None, "generated_after_as_of"
+    else:
+        age = -(-delta // timedelta(seconds=1))
+        reason = "older_than_policy" if age > max_age_seconds else None
+    return {
+        **receipt,
+        "freshness": {
+            "as_of": now.isoformat(),
+            "age_seconds": age,
+            "max_age_seconds": max_age_seconds,
+            "historical": reason is not None,
+            "reason": reason,
+        },
+    }
 
 
 def _report_id(value):
@@ -687,7 +739,13 @@ class OwnerReportStore:
         expected_project_id,
         expected_snapshot_id,
         authorize,
+        max_age_seconds=None,
+        as_of=None,
     ):
+        """Read one receipt; an explicit ``max_age_seconds`` adds ``freshness``.
+
+        ``as_of`` is a trusted host clock override, not stored or report data.
+        """
         if not callable(authorize):
             raise CoreError(
                 "OWNER_REPORT_STORE_AUTHORIZATION",
@@ -696,6 +754,7 @@ class OwnerReportStore:
         _report_id(report_id)
         validate_project_id(expected_project_id)
         _hash(expected_snapshot_id, "snapshot_id", snapshot=True)
+        clock = _freshness_clock(max_age_seconds, as_of)
         self._ready()
         authorize()
         with self._owned_root() as directories, self._locked(directories):
@@ -714,9 +773,23 @@ class OwnerReportStore:
                 "Owner-report receipt does not match expected context",
             )
             authorize()
+        if max_age_seconds is None:
             return receipt
+        # Measured after the final authorization, so delays only add age.
+        now = datetime.now(timezone.utc) if clock is None else clock
+        return _with_freshness(receipt, max_age_seconds, now)
 
-    def list(self, *, expected_project_id, expected_snapshot_id, authorize, limit=100):
+    def list(
+        self,
+        *,
+        expected_project_id,
+        expected_snapshot_id,
+        authorize,
+        limit=100,
+        max_age_seconds=None,
+        as_of=None,
+    ):
+        """List newest receipts; ``max_age_seconds`` adds one-clock freshness."""
         if not callable(authorize):
             raise CoreError(
                 "OWNER_REPORT_STORE_AUTHORIZATION",
@@ -728,6 +801,7 @@ class OwnerReportStore:
             raise CoreError(
                 "OWNER_REPORT_STORE_INVALID", "Report limit is out of bounds"
             )
+        clock = _freshness_clock(max_age_seconds, as_of)
         self._ready()
         authorize()
         with self._owned_root() as directories, self._locked(directories):
@@ -747,4 +821,7 @@ class OwnerReportStore:
                     heapq.heapreplace(selected, item)
         selected.sort(key=lambda item: item[0], reverse=True)
         authorize()
-        return [item[1] for item in selected]
+        if max_age_seconds is None:
+            return [item[1] for item in selected]
+        now = datetime.now(timezone.utc) if clock is None else clock
+        return [_with_freshness(item[1], max_age_seconds, now) for item in selected]
