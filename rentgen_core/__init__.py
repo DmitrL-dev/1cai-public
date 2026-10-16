@@ -52,6 +52,12 @@ from .notification_delivery import (
     WebhookAdapter,
     deliver_outbox,
 )
+from .notification_journal import (
+    AttemptRecord,
+    AttemptState,
+    DeliveryJournal,
+    RetryPolicy,
+)
 from .notification_receiver import NotificationReceiver, ReceiverResult, ReceiverStatus
 from .notification_receiver_asgi import NotificationReceiverASGI
 from .git_snapshot_evidence import GitSnapshotEvidence
@@ -105,6 +111,10 @@ __all__ = [
     "DeliveryStatus",
     "WebhookAdapter",
     "deliver_outbox",
+    "AttemptRecord",
+    "AttemptState",
+    "DeliveryJournal",
+    "RetryPolicy",
     "NotificationReceiver",
     "NotificationReceiverASGI",
     "ReceiverResult",

@@ -186,31 +186,35 @@ def _object(value, path):
         properties,
         _unscoped_fingerprint(node),
         node,
+        root.tag,
     )
 
 
 def _records(tree, label):
     result = {}
     unsupported = []
+    identities = set()
     for path, value in sorted(tree.items(), key=lambda item: item[0].encode("utf-8")):
         item = _object(value, path)
         if item is None:
             unsupported.append(path)
             continue
-        object_type, identity, name, properties, unscoped, node = item
-        key = (object_type, identity)
-        if key in result:
+        object_type, identity, name, properties, unscoped, node, root_tag = item
+        # A UUID names one descriptor per snapshot, whatever its object type.
+        if identity in identities:
             raise CoreError(
                 "THREE_WAY_METADATA_INVALID",
                 f"Duplicate metadata UUID in {label}: {identity}",
             )
-        result[key] = {
+        identities.add(identity)
+        result[(object_type, identity)] = {
             "path": path,
             "name": name,
             "properties": properties,
             "unscoped": unscoped,
             "raw": value,
             "node": node,
+            "root_tag": root_tag,
         }
         if len(result) > _MAX_OBJECTS:
             raise CoreError("THREE_WAY_LIMIT", "Metadata object limit exceeded")
@@ -316,6 +320,11 @@ def _companion_kind(path):
         return "form"
     if path.endswith("/ext/template.xml"):
         return "data_composition_schema"
+    # Unknown structured resources need an explicit owner/scope. Opaque
+    # binary resources retain the existing whole-file path merge contract;
+    # their presence does not claim semantic or UUID ownership verification.
+    if "ext" in path.split("/")[1:-1] and path.endswith((".xml", ".html", ".htm")):
+        return "resource"
     return None
 
 
@@ -323,9 +332,14 @@ def _companion_reason(kind, scope, raw, owner):
     if owner is None:
         return "owner_not_found"
     object_type, record = owner
-    node = record["node"]
-    if node.tag != f"{{{_MD_NS}}}{object_type}":
+    if (
+        record["root_tag"] != f"{{{_MD_NS}}}{_ROOT}"
+        or record["node"].tag != f"{{{_MD_NS}}}{object_type}"
+    ):
         return "owner_namespace_unsupported"
+    if kind == "resource":
+        return "resource_kind_unsupported"
+    node = record["node"]
     if kind == "bsl":
         scope_key = scope.casefold()
         if scope_key not in _MODULE_OWNERS:
@@ -789,6 +803,13 @@ def materialize_metadata_three_way(
     for path, bindings in owners.items():
         if len(bindings) > 1:
             blockers.append({"path": path, "reason": "object_identity_changed"})
+    object_types = {}
+    for found in records.values():
+        for object_type, identity in found:
+            object_types.setdefault(identity, set()).add(object_type)
+    for identity in sorted(object_types):
+        if len(object_types[identity]) > 1:
+            blockers.append({"object_uuid": identity, "reason": "object_type_changed"})
     for row in plan["semantics"]["scopes"]:
         if row["status"] != "supported":
             reason = row["reason"]

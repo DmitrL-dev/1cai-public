@@ -1,5 +1,16 @@
 # UUID-aware metadata updates
 
+Current source guards require one descriptor per UUID in each input snapshot,
+even across different object types. A UUID changing type across snapshots blocks
+materialization with `object_type_changed`; reusing a descriptor path for another
+identity remains blocked. Companion ownership requires both the Designer root
+and object namespaces. Unknown XML/HTML files below any `Ext` directory are explicit
+unsupported resource scopes, including unchanged structured resources: materialization
+refuses `resource_kind_unsupported` or `owner_not_found` instead of silently
+moving or orphaning those bytes. Opaque binary resources and ordinary files
+outside `Ext` retain the existing path-based three-way rules, without semantic
+ownership claims. These guards do not add native Designer/EDT acceptance.
+
 `rentgen_core.metadata_three_way.plan_metadata_three_way()` extends the
 path-bytes update dry-run with a conservative Designer XML object view. For
 recognized `MetaDataObject` files it identifies an object by `(type, UUID)` and
