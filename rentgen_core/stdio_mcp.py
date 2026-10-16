@@ -24,6 +24,7 @@ from .capabilities import capability_report, operation_supported, require_operat
 from .publication import capture_and_publish
 from .snapshots import ProjectHead
 from .source_paths import validate_source_path
+from .owner_report_store import MAX_FRESHNESS_SECONDS
 from . import mcp_drafts
 
 MAX_FRAME_BYTES = 65536
@@ -210,13 +211,18 @@ TOOL_SCHEMAS = {
         ["project_id", "snapshot_id", "operation_id", "namespace"],
     ),
     "rentgen_owner_report_get": _object(
-        {"project_id": _UUID, "snapshot_id": _HASH, "report_id": _UUID}
+        {
+            "project_id": _UUID, "snapshot_id": _HASH, "report_id": _UUID,
+            "max_age_seconds": {"type": "integer", "minimum": 1, "maximum": MAX_FRESHNESS_SECONDS},
+        },
+        ["project_id", "snapshot_id", "report_id"],
     ),
     "rentgen_owner_report_list": _object(
         {
             "project_id": _UUID,
             "snapshot_id": _HASH,
             "limit": {"type": "integer", "minimum": 1, "maximum": 1000},
+            "max_age_seconds": {"type": "integer", "minimum": 1, "maximum": MAX_FRESHNESS_SECONDS},
         },
         ["project_id", "snapshot_id"],
     ),
@@ -292,8 +298,8 @@ _DESCRIPTIONS = {
     "rentgen_graph_resolve": "Resolve a retained source module in an explicit snapshot's graph.",
     "rentgen_impact": "Return bounded static impact from an explicit snapshot's graph.",
     _NATIVE_ARCHIVE_TOOL: "Create an admin-only logical archive for one completed native run after re-resolving its exact project snapshot. Evidence remains readable and counted; no files are deleted or moved.",
-    "rentgen_owner_report_get": "Read one immutable owner report receipt for an exact project snapshot. The server derives the report store from authenticated project state and rechecks project:read before output.",
-    "rentgen_owner_report_list": "List bounded immutable owner report receipts for an exact project snapshot. The server derives the report store from authenticated project state and rechecks project:read before output.",
+    "rentgen_owner_report_get": "Read one immutable owner report receipt for an exact project snapshot. Optional max_age_seconds adds a non-persisted freshness view using the server clock. The server derives the report store from authenticated project state and rechecks project:read before output.",
+    "rentgen_owner_report_list": "List bounded immutable owner report receipt summaries for an exact project snapshot. Optional max_age_seconds adds a non-persisted freshness view using one server clock value. The server derives the report store from authenticated project state and rechecks project:read before output.",
     "rentgen_metadata_live_apply": "Apply one retained rename_catalog_attribute candidate to a supported Designer XML source tree with a sealed receipt and CAS undo boundary.",
     "rentgen_metadata_live_undo": "Undo a confirmed live metadata apply only when the source tree still matches its after inventory.",
     "rentgen_metadata_live_status": "Read the sealed status of one live metadata operation without replaying it.",
@@ -1210,6 +1216,10 @@ def _execute(
             with ctx.state.transaction(ctx.principal) as tx:
                 tx.get_snapshot(arguments["snapshot_id"])
             store = OwnerReportStore(Path(ctx.state.path).parent / "owner-reports")
+            read_policy = (
+                {"max_age_seconds": arguments["max_age_seconds"]}
+                if "max_age_seconds" in arguments else {}
+            )
 
             def authorize():
                 _proposal_permissions(ctx, permissions)
@@ -1220,6 +1230,7 @@ def _execute(
                     expected_project_id=ctx.project_id,
                     expected_snapshot_id=arguments["snapshot_id"],
                     authorize=authorize,
+                    **read_policy,
                 )
                 result = _ProposalToolResult(
                     {"owner_report": value}, proposal_context, permissions, family
@@ -1230,6 +1241,7 @@ def _execute(
                     expected_snapshot_id=arguments["snapshot_id"],
                     authorize=authorize,
                     limit=arguments.get("limit", 100),
+                    **read_policy,
                 )
                 value = [
                     {
@@ -1242,7 +1254,7 @@ def _execute(
                             "status",
                             "created_at",
                             "receipt_id",
-                        )
+                        ) + (("freshness",) if "freshness" in receipt else ())
                     }
                     for receipt in receipts
                 ]

@@ -24,6 +24,7 @@ from .publication import capture_and_publish
 from .resolver import require_snapshot
 from .snapshots import ProjectHead, validate_operation_id
 from .sources import SourceRef
+from .owner_report_store import MAX_FRESHNESS_SECONDS
 
 _MAX_JSON_BYTES = 1024 * 1024
 _OWNER_REPORT_OUTPUT_LIMIT = 2 * 1024**2 + 8192
@@ -73,6 +74,18 @@ class _Once(argparse.Action):
             raise CoreError("INVALID_ARGUMENT", "Repeated option: " + option_string)
         seen.add(self.dest)
         setattr(namespace, self.dest, values)
+
+
+def _owner_report_max_age(value):
+    try:
+        seconds = int(value)
+        if 1 <= seconds <= MAX_FRESHNESS_SECONDS:
+            return seconds
+    except ValueError:
+        pass
+    raise argparse.ArgumentTypeError(
+        f"Report maximum age must be an integer between 1 and {MAX_FRESHNESS_SECONDS} seconds"
+    )
 
 
 def _parser():
@@ -374,6 +387,11 @@ def _parser():
                 command.add_argument("--report-id", required=True, action=_Once)
             else:
                 command.add_argument("--limit", type=int, default=100, action=_Once)
+            if name in {"owner-report-get", "owner-report-list"}:
+                command.add_argument(
+                    "--max-age-seconds", type=_owner_report_max_age, action=_Once,
+                    help="Add a freshness view using the host clock; stored receipts stay unchanged",
+                )
         if name.startswith("draft-"):
             if name not in {"draft-list", "draft-receipt"}:
                 command.add_argument("--draft-id", required=True, action=_Once)
@@ -985,6 +1003,9 @@ def _owner_report_command(args, ctx, permissions, *, runtime=None):
 
     _require_owner_report_snapshot(ctx, args.snapshot, permissions)
     store = _owner_report_store(ctx, args.store)
+    read_policy = {}
+    if args.command in {"owner-report-get", "owner-report-list"} and args.max_age_seconds is not None:
+        read_policy["max_age_seconds"] = args.max_age_seconds
 
     def authorize():
         _proposal_permissions(ctx, permissions)
@@ -1025,6 +1046,7 @@ def _owner_report_command(args, ctx, permissions, *, runtime=None):
             expected_project_id=ctx.project_id,
             expected_snapshot_id=args.snapshot,
             authorize=authorize,
+            **read_policy,
         )
     else:
         receipts = store.list(
@@ -1032,6 +1054,7 @@ def _owner_report_command(args, ctx, permissions, *, runtime=None):
             expected_snapshot_id=args.snapshot,
             authorize=authorize,
             limit=args.limit,
+            **read_policy,
         )
         value = [
             {
@@ -1044,7 +1067,7 @@ def _owner_report_command(args, ctx, permissions, *, runtime=None):
                     "status",
                     "created_at",
                     "receipt_id",
-                )
+                ) + (("freshness",) if "freshness" in receipt else ())
             }
             for receipt in receipts
         ]

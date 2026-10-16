@@ -55,7 +55,7 @@ view = store.get(report_id, expected_project_id=project_id,
 
 Возраст считается от `report.generated_at` сохранённого отчёта до `as_of` и
 округляется вверх до целых секунд. `as_of` — часы хоста после финальной
-авторизации либо явный доверенный параметр `as_of`; файл отчёта его не задаёт.
+авторизации либо явный доверенный библиотечный параметр `as_of`; файл отчёта его не задаёт.
 `historical=true` при `age_seconds > max_age_seconds`
 (`reason="older_than_policy"`) и при `generated_at` позже `as_of`
 (`age_seconds=null`, `reason="generated_after_as_of"`). `list` оценивает все
@@ -63,8 +63,16 @@ view = store.get(report_id, expected_project_id=project_id,
 `receipt_id` и остальные поля не меняются, `freshness` не входит в hash и не
 сохраняется; изменённый `generated_at` по-прежнему закрывает чтение через
 `OWNER_REPORT_STORE_RECOVERY_REQUIRED`. Недопустимая политика или `as_of` без
-неё дают `OWNER_REPORT_STORE_INVALID` до авторизации и чтения. Owner-report
-CLI и MCP эту политику пока не принимают и возвращают прежний формат.
+неё дают `OWNER_REPORT_STORE_INVALID` до авторизации и чтения.
+
+В текущих исходниках Windows CLI `owner-report-get`/`owner-report-list`
+принимают необязательный `--max-age-seconds`, MCP `rentgen_owner_report_get`/
+`rentgen_owner_report_list` — `max_age_seconds`: целое от 1 до 31622400.
+Недопустимое значение даёт `INVALID_ARGUMENT` до доступа к состоянию проекта.
+Часы задаёт только хост; передать `as_of` через CLI/MCP нельзя. Без политики
+формат ответа прежний; с ней get дополняет квитанцию, а list — каждую краткую
+запись полем `freshness`, без полного `report`. Права повторно проверяются перед
+выдачей. Возраст отчёта не подтверждает актуальность работающей 1С или её данных.
 
 ## POSIX library workflow в текущих исходниках
 
@@ -134,7 +142,7 @@ rentgen owner-report-build --registry .\registry.sqlite3 --project <project-id> 
 rentgen owner-report-get --registry .\registry.sqlite3 --project <project-id> `
   --store .\state\owner-reports --snapshot <64-hex-snapshot> --report-id <uuid>
 rentgen owner-report-list --registry .\registry.sqlite3 --project <project-id> `
-  --store .\state\owner-reports --snapshot <64-hex-snapshot> --limit 20
+  --store .\state\owner-reports --snapshot <64-hex-snapshot> --limit 20 --max-age-seconds 86400
 ```
 
 `owner-report-save` сначала проверяет JSON и точное соответствие project/snapshot,
