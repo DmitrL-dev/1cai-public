@@ -1,13 +1,14 @@
 """Qualified in-memory Designer property merges never expose partial trees."""
 
 from collections.abc import Mapping
+import hashlib
 import xml.etree.ElementTree as ET
 
 import pytest
 
 import rentgen_core.metadata_three_way as metadata_merge
 from rentgen_core.errors import CoreError
-from rentgen_core.three_way import plan_three_way
+from rentgen_core.three_way import materialize_three_way, plan_three_way
 
 
 NS = "http://v8.1c.ru/8.3/MDClasses"
@@ -390,3 +391,89 @@ def test_orphan_xml_companion_casing_cannot_bypass_semantic_gate(scope, root, pr
         row["reason"] == "owner_not_found"
         for row in error.value.details["blocking_scopes"]
     )
+
+
+# IDE-SC-17: binary resources are atomic bytes. No MXL or picture model exists,
+# so Rentgen may only preserve or take them whole and must refuse divergence.
+OWNER = "CommonTemplates/Layout.xml"
+TEMPLATE = "CommonTemplates/Layout/Ext/Template.bin"
+PICTURE = "CommonPictures/Logo/Ext/Picture/Picture.png"
+TEMPLATE_BYTES = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1\x00\xff\xfe" + bytes(range(256))
+PICTURE_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR" + bytes(range(255, -1, -1))
+
+
+def template_owner():
+    return (
+        f'<MetaDataObject xmlns="{NS}"><CommonTemplate uuid="{OTHER_UUID}">'
+        "<Properties><Name>Layout</Name><TemplateType>SpreadsheetDocument"
+        "</TemplateType></Properties></CommonTemplate></MetaDataObject>"
+    ).encode()
+
+
+def resources(**changes):
+    tree = {OWNER: template_owner(), TEMPLATE: TEMPLATE_BYTES, PICTURE: PICTURE_BYTES}
+    return {**tree, **changes}
+
+
+def digest(raw):
+    return hashlib.sha256(raw).hexdigest()
+
+
+def test_binary_resources_keep_exact_hashes_beside_a_property_merge():
+    for raw in (TEMPLATE_BYTES, PICTURE_BYTES):
+        with pytest.raises(UnicodeDecodeError):
+            raw.decode("utf-8")
+    base = {PATH: xml("<Code>CAT</Code>"), **resources()}
+    current = {PATH: xml("<Code>CAT</Code>", name="Local"), **resources()}
+    upstream = {PATH: xml("<Code>ITEM</Code>"), **resources()}
+
+    result = materialize(base, current, upstream)
+
+    assert result["counts"]["merged_objects"] == 1
+    for path, raw in ((TEMPLATE, TEMPLATE_BYTES), (PICTURE, PICTURE_BYTES)):
+        assert digest(result["candidate"][path]) == digest(raw)
+    assert result["candidate"][OWNER] == template_owner()
+    plan = metadata_merge.plan_metadata_three_way(base, current, upstream)
+    assert {TEMPLATE, PICTURE} <= set(plan["unsupported_files"])
+    assert not any(
+        row["base_path"] in {TEMPLATE, PICTURE} for row in plan["semantics"]["scopes"]
+    )
+
+
+@pytest.mark.parametrize("function", [materialize_three_way, materialize])
+def test_one_sided_binary_change_is_taken_whole_with_its_exact_hash(function):
+    changed = PICTURE_BYTES[:-1] + b"\x01"  # same size, one byte differs
+    base, current = resources(), resources()
+    upstream = resources(**{PICTURE: changed})
+    row = next(
+        item
+        for item in plan_three_way(base, current, upstream)["changes"]
+        if item["path"] == PICTURE
+    )
+    assert row["action"] == "take_upstream"
+    assert row["base_size_bytes"] == row["upstream_size_bytes"]
+    assert row["upstream_sha256"] == digest(changed)
+
+    result = function(base, current, upstream)
+
+    assert digest(result["candidate"][PICTURE]) == digest(changed)
+    assert digest(result["candidate"][TEMPLATE]) == digest(TEMPLATE_BYTES)
+    same = function(base, upstream, upstream)
+    assert digest(same["candidate"][PICTURE]) == digest(changed)
+
+
+@pytest.mark.parametrize("function", [materialize_three_way, materialize])
+def test_divergent_binary_resource_changes_are_never_merged(function):
+    base = resources()
+    current = resources(**{TEMPLATE: TEMPLATE_BYTES + b"\x01local"})
+    upstream = resources(**{TEMPLATE: TEMPLATE_BYTES + b"\x02remote"})
+    with pytest.raises(CoreError) as error:
+        function(base, current, upstream)
+    assert error.value.code == "THREE_WAY_CONFLICT"
+    details = error.value.details
+    assert "candidate" not in details
+    paths = details.get("conflicting_paths") or [
+        row.get("path") for row in details["blocking_scopes"]
+    ]
+    assert paths == [TEMPLATE]
+    assert "local" not in str(details) and "remote" not in str(details)

@@ -1,6 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
 const {createHash}=require('node:crypto');
+const path=require('node:path'),{readFileSync,readdirSync}=require('node:fs');
 const {createBslProblems}=require('../lib/bsl-problems.cjs');
 const {PROFILE}=require('../lib/bsl-result.cjs');
 const sha=text=>createHash('sha256').update(Buffer.from(text,'utf8')).digest('hex');
@@ -42,7 +43,8 @@ function fixture(text='Процедура Тест()\r\nКонецПроцеду
  const vscode={workspace:{isTrusted:true,openTextDocument:async selected=>{
   assert.equal(selected,uri);return textDocument(uri,text.startsWith('\ufeff')?text.slice(1):text);
  }},DiagnosticSeverity:{Error:0,Warning:1,Information:2,Hint:3},
-  languages:{createDiagnosticCollection:name=>{events.push({type:'create',name});return collection;}},
+  languages:{createDiagnosticCollection:name=>{events.push({type:'create',name});return collection;},
+   registerCodeActionsProvider:()=>{events.push({type:'code-actions'});return {dispose(){}};}},
   Range:class {constructor(startLine,startCharacter,endLine,endCharacter){this.start={line:startLine,character:startCharacter};this.end={line:endLine,character:endCharacter};}},
   Diagnostic:class {constructor(range,message,severity){this.range=range;this.message=message;this.severity=severity;}}};
  const options={readDraft:async saved=>{reads++;assert.deepEqual(saved,receipt);return draft;}};
@@ -65,9 +67,29 @@ test('publishes actual Diagnostic instances on the exact immutable draft URI wit
  const rows=f.published.get(f.uri);assert.deepEqual(rows.map(row=>row.severity),[0,1,2,3]);
  for(const row of rows){
   assert.ok(row instanceof f.vscode.Diagnostic);assert.ok(row.range instanceof f.vscode.Range);
-  assert.equal(row.code,'UnusedVariable');assert.equal(row.source,'Рентген BSL');assert.equal(row.message,'Не используется');
+  assert.equal(row.code,'UnusedVariable');assert.equal(row.source,`Рентген BSL · ${PROFILE}`);assert.equal(row.message,'Не используется');
   assert.deepEqual(row.range.start,{line:0,character:0});assert.deepEqual(row.range.end,{line:0,character:9});
  }
+});
+
+test('every Problem names the pinned analyzer profile and offers no quick fix or automatic edit',async()=>{
+ const f=fixture();f.add();f.add({code:'LineLength',severity:'Information',message:'Длинная строка'});
+ const edits=[];f.vscode.workspace.applyEdit=async edit=>{edits.push(edit);return false;};
+ assert.equal((await f.problems.present(f.result)).status,'published');
+ const rows=f.published.get(f.uri);assert.equal(rows.length,2);
+ assert.equal(PROFILE,'bsl-ls-1.0.5-temurin21.0.12.1-win64-bmp-default-v1');
+ for(const row of rows){
+  // The profile is the validated report field, not a label chosen by the presenter.
+  assert.equal(row.source,`Рентген BSL · ${f.analysis.profile_id}`);
+  assert.deepEqual(Object.keys(row).sort(),['code','message','range','severity','source']);
+ }
+ assert.deepEqual(rows.map(row=>row.code),['UnusedVariable','LineLength']);
+ assert.deepEqual(edits,[]);assert.equal(f.events.filter(event=>event.type==='code-actions').length,0);
+ // A false positive must stay a report: no Companion module registers code actions.
+ const root=path.join(__dirname,'..');
+ const sources=['extension.cjs',...readdirSync(path.join(root,'lib')).filter(name=>name.endsWith('.cjs')).map(name=>'lib/'+name)];
+ for(const name of sources)assert.doesNotMatch(readFileSync(path.join(root,name),'utf8'),/registerCodeActionsProvider|CodeActionKind|\bapplyEdit\b/,name);
+ assert.ok(!Object.hasOwn(JSON.parse(readFileSync(path.join(root,'package.json'),'utf8')).contributes||{},'codeActions'));
 });
 
 test('zero diagnostics is clean only for a complete verified report and sets the URI explicitly',async()=>{

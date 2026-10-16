@@ -2,7 +2,7 @@
 const {createHash}=require('node:crypto');
 const {isDeepStrictEqual}=require('node:util');
 const {sourceRef}=require('./core.cjs');
-const {validateBsl}=require('./bsl-result.cjs');
+const {PROFILE,validateBsl}=require('./bsl-result.cjs');
 
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const hash=/^[0-9a-f]{64}$/;
@@ -44,6 +44,10 @@ function diagnostics(vscode,analysis,candidate,document,delta){
  };
  const severities={Error:vscode.DiagnosticSeverity.Error,Warning:vscode.DiagnosticSeverity.Warning,
   Information:vscode.DiagnosticSeverity.Information,Hint:vscode.DiagnosticSeverity.Hint};
+ // Name the pinned analyzer profile already checked by validateBsl on every row.
+ // Problems stay read-only: no CodeAction, quick fix or automatic edit is offered.
+ requireValue(analysis.profile_id===PROFILE);
+ const source='Рентген BSL · '+analysis.profile_id;
  return analysis.diagnostics.map(row=>{
   requireValue(row&&typeof row.code==='string'&&/^[A-Za-z][A-Za-z0-9_]{0,127}$/.test(row.code)&&
    Object.hasOwn(severities,row.severity)&&typeof row.message==='string'&&
@@ -53,7 +57,7 @@ function diagnostics(vscode,analysis,candidate,document,delta){
   const start=position(row.start),end=position(row.end);
   const range=new vscode.Range(start.line,start.character,end.line,end.character);
   const diagnostic=new vscode.Diagnostic(range,row.message,severities[row.severity]);
-  diagnostic.code=row.code;diagnostic.source='Рентген BSL';return diagnostic;
+  diagnostic.code=row.code;diagnostic.source=source;return diagnostic;
  });
 }
 

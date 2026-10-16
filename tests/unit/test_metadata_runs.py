@@ -74,6 +74,8 @@ def test_preview_token_must_match_the_typed_intent(captured):
     assert runs.preview_hash(response(header), request) == "0123456789abcdef"
     for changed in (
         header.replace("newName: SKU", "newName: Other"),
+        # A same-name attribute of an unrelated catalog is not the planned target.
+        header.replace("Catalog.Products.", "Catalog.Customers."),
         header.replace("problems: 0", "problems: 1"),
         header.replace("\n---\n", "\ncontentHash: 1111111111111111\n---\n"),
     ):
@@ -81,7 +83,7 @@ def test_preview_token_must_match_the_typed_intent(captured):
             runs.preview_hash(response(changed), request)
 
 
-def _finished_run(captured):
+def _finished_run(captured, exports=None):
     ctx, request = captured
     plan = plans.create_plan(ctx, request)
     operation = str(uuid4())
@@ -98,6 +100,11 @@ def _finished_run(captured):
     plans.materialize(ctx, plan, run / "input")
     shutil.copytree(fixtures.FIXTURE, run / "baseline-xml")
     shutil.copytree(fixtures.FIXTURE.parent / "renamed", run / "candidate-xml")
+    for name in ("baseline-xml", "candidate-xml"):
+        for path, raw in (exports or {}).items():
+            target = run / name / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(raw)
     preview = runs._result(binding, build_preview(ctx, plan, run))
     write_record(run / "preview.json", preview)
     write_record(
