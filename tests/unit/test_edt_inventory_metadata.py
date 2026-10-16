@@ -78,7 +78,7 @@ def context(files, layers=(BASE,)):
             return layers
 
         @contextmanager
-        def read_session(self, *, limits):
+        def read_session(self, *, limits, purpose=None):
             self.checkpoint()
             yield self
 

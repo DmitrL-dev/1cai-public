@@ -87,11 +87,9 @@ def test_all_operations_use_distinct_real_sessions_and_close_before_return(gener
     assert not hasattr(sources, "_path")
 
 
-@pytest.mark.parametrize("consumer", ["direct", "metadata", "diff", "proposal", "platform", "metadata-plan"])
+@pytest.mark.parametrize("consumer", ["direct", "other-purpose", "diff", "platform", "metadata-plan"])
 def test_legacy_session_consumers_get_controlled_denial_without_retained_io(generation, monkeypatch, consumer):
-    from rentgen_core.metadata import metadata_summary
     from rentgen_core.snapshot_diff import compare_snapshots
-    from rentgen_core.proposals import create_proposal, ProposalLimits
     from rentgen_core.platform_check import _materialize
     from rentgen_core.metadata_plans import _scan
     from rentgen_core.sources import SnapshotReadLimits
@@ -105,10 +103,8 @@ def test_legacy_session_consumers_get_controlled_denial_without_retained_io(gene
     monkeypatch.setattr(retained.Directory, "file", lambda *a, **k: pytest.fail("Unsupported consumer read retained content"))
     calls = {
         "direct": lambda: sources.read_session(limits=SnapshotReadLimits()),
-        "metadata": lambda: metadata_summary(ctx),
+        "other-purpose": lambda: sources.read_session(limits=SnapshotReadLimits(), purpose="platform-materialization"),
         "diff": lambda: compare_snapshots(ctx, ctx),
-        "proposal": lambda: create_proposal(ctx, ref, generation.contents[MODULE],
-                                          limits=ProposalLimits(1024**2, 1024**2, 1536*1024, 256*1024)),
         "platform": lambda: _materialize(ctx, None, generation.root / "before", generation.root / "after"),
         "metadata-plan": lambda: _scan(ctx, {"catalog": {"name": "Fixture"}}, lambda: None),
     }
@@ -419,3 +415,119 @@ def test_actual_linux_resolver_eager_read_and_fresh_context(generation, monkeypa
         assert ctx.sources.read_source(ref) == generation.contents[MODULE]
         assert ctx.graph.resolve_module(ref)["result"]["graph_modules"]
     assert calls
+
+
+FIXTURE = Path(__file__).resolve().parents[2] / "packaging/fixtures/edt-metadata-v1/created"
+
+
+def test_metadata_navigation_reads_one_verified_posix_session_per_operation(make_generation, monkeypatch):
+    from rentgen_core import project_navigation as nav
+
+    extra = {p.relative_to(FIXTURE).as_posix(): p.read_bytes() for p in sorted(FIXTURE.rglob("*")) if p.is_file()}
+    generation = make_generation(extra=extra, source_format="designer_xml")
+    sources = sources_for(generation)
+    graph = facade.PosixSnapshotGraph(generation.snapshot, sources)
+    ctx = ProjectContext(generation.snapshot.project_id, generation.principal, "fixture-request",
+                         generation.state, generation.root / "live", generation.snapshot, sources, graph)
+    opened, original = [], facade.open_posix_snapshot_session
+    monkeypatch.setattr(facade, "open_posix_snapshot_session",
+                        lambda **options: opened.append(1) or original(**options))
+    summary = nav.summary(ctx)
+    assert summary["schema"] == 1 and summary["snapshot"] == asdict(generation.snapshot)
+    found = nav.search(ctx, query="Products", metadata_type="Catalog", layer_id="base")
+    assert [o["source_ref"]["relative_path"] for o in found["objects"]] == ["Catalogs/Products.xml"]
+    assert found["objects"][0]["uuid_status"] == "unverified"
+    details = nav.object_details(ctx, layer_id="base", relative_path="Catalogs/Products.xml")
+    assert "Article" in [item["name"] for item in details["object"]["attributes"]["items"]]
+    assert len(opened) == 3
+    # Every other POSIX session consumer stays refused, and a busy owner is exclusive.
+    from rentgen_core.sources import SnapshotReadLimits
+    with sources.read_session(limits=SnapshotReadLimits(), purpose="metadata-navigation") as session:
+        assert len(session.entries()) == 3 + len(extra)
+        with pytest.raises(CoreError) as error:
+            with sources.read_session(limits=SnapshotReadLimits(), purpose="metadata-navigation"):
+                pass
+        assert error.value.code == "SNAPSHOT_READ_SESSION_INVALID"
+    with pytest.raises(CoreError):
+        sources.read_session(limits=object(), purpose="metadata-navigation")
+
+
+def test_metadata_navigation_rechecks_current_permission_on_posix(make_generation):
+    from rentgen_core import project_navigation as nav
+
+    extra = {p.relative_to(FIXTURE).as_posix(): p.read_bytes() for p in sorted(FIXTURE.rglob("*")) if p.is_file()}
+    generation = make_generation(extra=extra, source_format="designer_xml")
+    sources = sources_for(generation)
+    ctx = ProjectContext(generation.snapshot.project_id, generation.principal, "fixture-request",
+                         generation.state, generation.root / "live", generation.snapshot, sources,
+                         facade.PosixSnapshotGraph(generation.snapshot, sources))
+    with generation.state.transaction(generation.owner, write=True) as tx:
+        revoke_membership(tx, generation.principal)
+    with pytest.raises(CoreError) as error:
+        nav.summary(ctx)
+    assert error.value.code == "PROJECT_FORBIDDEN"
+
+
+def test_manual_draft_authoring_reads_exact_retained_source_on_posix(generation, monkeypatch):
+    from uuid import uuid4
+    from rentgen_core import draft_editing, drafts
+    from rentgen_core.proposals import ProposalLimits, create_proposal
+
+    sources = sources_for(generation, _principal=generation.owner)
+    ctx = ProjectContext(generation.snapshot.project_id, generation.owner, "fixture-request",
+                         generation.state, generation.root / "live", generation.snapshot, sources,
+                         facade.PosixSnapshotGraph(generation.snapshot, sources))
+    ref = sources.resolve("base", MODULE)
+    opened, original = [], facade.open_posix_snapshot_session
+    monkeypatch.setattr(facade, "open_posix_snapshot_session",
+                        lambda **options: opened.append(1) or original(**options))
+    replacement = generation.contents[MODULE].replace(b"Callee.Target();", b"Callee.Target(); // reviewed")
+    proposal = create_proposal(ctx, ref, replacement,
+                               limits=ProposalLimits(1024**2, 1024**2, 1536 * 1024, 256 * 1024))
+    assert proposal.source_ref == ref and proposal.replacement_bytes == replacement
+    draft = str(uuid4())
+    first = draft_editing.start_draft(ctx, ref, draft_id=draft, title="Manual review",
+                                      operation_id=str(uuid4()))
+    assert first["revision"] == 1 and first["source_ref"]["relative_path"] == MODULE
+    second = draft_editing.edit_draft(ctx, draft, expected_revision=1, operation_id=str(uuid4()),
+                                      edits=[{"old_text": "Callee.Target();", "new_text": "Callee.Target(); // edited"}])
+    assert second["revision"] == 2
+    saved = drafts.get_draft(ctx, draft)
+    assert saved["receipt"]["revision"] == 2
+    assert [row["revision"] for row in drafts.draft_history(ctx, draft)["items"]] == [2, 1]
+    # Each source read used one fresh verified POSIX session; nothing touched live files.
+    assert len(opened) >= 2
+    assert not (generation.root / "live").exists()
+    with pytest.raises(CoreError) as error:
+        draft_editing.edit_draft(ctx, draft, expected_revision=1, operation_id=str(uuid4()),
+                                 edits=[{"old_text": "Callee.Target();", "new_text": "stale"}])
+    assert error.value.code.startswith("DRAFT")
+
+
+def test_proposal_diff_and_raw_draft_save_revalidate_retained_source_on_posix(generation):
+    from uuid import uuid4
+    from rentgen_core import drafts
+    from rentgen_core.proposals import ProposalLimits, create_proposal_presentation, parse_proposal_presentation
+
+    sources = sources_for(generation, _principal=generation.owner)
+    ctx = ProjectContext(generation.snapshot.project_id, generation.owner, "fixture-request",
+                         generation.state, generation.root / "live", generation.snapshot, sources,
+                         facade.PosixSnapshotGraph(generation.snapshot, sources))
+    ref = sources.resolve("base", MODULE)
+    limits = ProposalLimits(1024**2, 1024**2, 1536 * 1024, 256 * 1024)
+    replacement = generation.contents[MODULE].replace(b"Callee.Target();", b"Callee.Target(); // diff")
+    created = create_proposal_presentation(ctx, ref, replacement, limits=limits)
+    assert created.diff.status == "complete" and "// diff" in created.diff.text
+    assert parse_proposal_presentation(ctx, created.canonical_json, limits=limits) == created
+    draft = str(uuid4())
+    saved = drafts.save_draft(ctx, created.canonical_json, draft_id=draft, title="Raw save",
+                              expected_revision=0, operation_id=str(uuid4()))
+    assert saved["revision"] == 1 and saved["source_ref"]["relative_path"] == MODULE
+    # A proposal whose retained source no longer matches the snapshot is refused.
+    forged = created.canonical_json.replace(ref.raw_sha256.encode(), b"0" * 64)
+    assert forged != created.canonical_json
+    with pytest.raises(CoreError):
+        drafts.save_draft(ctx, forged, draft_id=draft, title="Raw save",
+                          expected_revision=1, operation_id=str(uuid4()))
+    assert [row["revision"] for row in drafts.draft_history(ctx, draft)["items"]] == [1]
+    assert not (generation.root / "live").exists()

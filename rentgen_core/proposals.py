@@ -195,7 +195,9 @@ def _original(ctx, ref, limits, *, authorize=None):
     if authorize is not None:
         authorize()
     # Full snapshot validation is bounded independently from the one-file buffer.
-    with ctx.sources.read_session(limits=SnapshotReadLimits()) as session:
+    with ctx.sources.read_session(
+        limits=SnapshotReadLimits(), purpose="proposal-source"
+    ) as session:
         entry = next(
             (
                 item

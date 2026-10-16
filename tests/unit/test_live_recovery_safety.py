@@ -120,6 +120,30 @@ def interrupted_apply(tmp_path, monkeypatch, request):
     )
 
 
+@pytest.mark.parametrize("phase", ["missing", "prepared", "applying", "undoing"])
+@pytest.mark.parametrize("source_state", ["original", "candidate"])
+def test_unknown_status_never_claims_source_was_unwritten(interrupted_apply, phase, source_state):
+    run = interrupted_apply
+    expected = run.original if source_state == "original" else run.changed
+    for name, raw in expected.items():
+        (run.ctx.source_root / name).write_bytes(raw)
+    state = run.journal / "state.json"
+    state.unlink()
+    if phase != "missing":
+        run.writer.write_record(state, run.writer._seal(
+            {"schema": 1, "operation_id": run.operation, "phase": phase}, "state_id"
+        ))
+    journal_before = _tree_bytes(run.journal)
+
+    status = run.writer.get_live_status(run.ctx, run.operation)
+
+    assert status["status"] == "OUTCOME_UNKNOWN"
+    assert status["phase"] == phase
+    assert status["live_source_written"] is None
+    assert _tree_bytes(run.ctx.source_root) == expected
+    assert _tree_bytes(run.journal) == journal_before
+
+
 def test_recovery_preserves_edit_during_staging(interrupted_apply, monkeypatch):
     run = interrupted_apply
     prepare = run.writer.prepare_recovery_stage

@@ -79,6 +79,53 @@ atomic writes and cross-process producer locking remain unchanged. The host
 must serialize consumers. Acceptance followed by process death or local ack
 failure leaves an event eligible for duplicate delivery; ack errors propagate.
 
+## Durable retry journal in current sources
+
+An explicit `DeliveryJournal(path, namespace=adapter_namespace)` can be passed
+as `journal=` together with `retry_policy=RetryPolicy(...)`. The host still
+invokes each batch; no background retry loop or network call is added. All
+consumers of one outbox generation must share that journal and namespace.
+Do not mix journaled delivery with legacy consumers or independent journals.
+
+The journal lock serializes consumers before they read the queue. The whole
+bounded queue is validated before sending; a waiting consumer cannot reconcile
+against a stale queue and discard another consumer's attempt. Each attempt is
+persisted before transport. Retryable outcomes wait
+`min(max_delay_seconds, base_delay_seconds * 2 ** (attempt - 1))`: defaults are
+8 attempts, 30 seconds initial delay and 3600 seconds maximum. Bounds are
+1–100 attempts and 1–86400 seconds, with maximum delay at least the base delay.
+There is no jitter or inferred `Retry-After` support.
+
+Permanent responses and exhausted retries become terminal but remain in the
+outbox. They need the host's explicit operator decision; `journal.rearm(id)`
+grants a fresh bounded attempt budget without changing the payload binding or
+idempotency key. Lowering the policy never grants extra attempts. A trusted
+host clock controls due times; a rollback exceeding the maximum delay makes a
+pending attempt due rather than delaying it indefinitely.
+
+An interrupted `sending` attempt becomes `OUTCOME_UNKNOWN` and consumes its
+attempt budget. It may have reached the receiver, which must deduplicate the
+same key on retry. Once acceptance is durably recorded, an interrupted ack is
+recovered without sending again (`ACK_RECOVERED`). Loss before the acceptance
+record can still cause a duplicate. Authorization is checked before every send
+and ack, including recovered acks. This does not provide exactly-once delivery.
+
+The journal keeps bounded IDs, payload hashes, attempt counts, fixed error
+codes and times; it omits event bodies, endpoint, headers, token and response.
+`DeliveryResult.attempt` and `next_attempt_at` expose the attempt and next due
+time. `journal.records()` is a private host view. The JSON file is limited to
+1 MiB and 1000 entries; reads detect overflow after at most limit + 1 bytes.
+Changed payloads, reused acknowledged IDs and another namespace are refused.
+Malformed files or a leftover `.tmp` require operator recovery and never
+trigger a send. Files and lock directories must be host-owned and protected;
+the journal is not a tamper-proof or cross-account authorization boundary.
+
+Tests use an injected transport and real local files. They cover backoff,
+reopen, revocation, ack loss, a controlled concurrent-consumer interleaving,
+OS-lock exclusion and a real child process exiting inside transport after the
+attempt write. These are source contracts, not live endpoint or power-loss
+qualification.
+
 ## Bounds and credential handling
 
 HTTPS is mandatory. An endpoint must match one of at most 100 exact lowercase

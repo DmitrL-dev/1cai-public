@@ -24,14 +24,16 @@ from .git_observer import (
 from .git_snapshot_evidence import (
     EVIDENCE_SCHEMA,
     GitSnapshotEvidence,
+    bind_git_tree,
     read_evidence,
+    read_git_tree,
     save_evidence,
 )
 from .publication import capture_and_publish
 from .snapshot_diff import compare_snapshots
 from .snapshots import ProjectHead
 from .source_probe import probe_sources
-from .sources import SnapshotReadLimits
+from .sources import SnapshotReadLimits, SnapshotSources
 
 SCHEMA = """
 CREATE TABLE meta (id INTEGER PRIMARY KEY CHECK(id=1), binding TEXT NOT NULL,
@@ -51,6 +53,100 @@ CREATE TABLE finding_binding (
  snapshot_id TEXT NOT NULL, commit_id TEXT PRIMARY KEY
 );
 """
+
+# Created lazily by a worker that declares its poll interval; profiles without
+# this table (API-only ticks, older profiles) report polling as not recorded.
+POLL_INTERVAL_MIN, POLL_INTERVAL_MAX = 5, 86400
+POLL_COUNTER_MAX = 1_000_000
+POLLING_SCHEMA = """CREATE TABLE IF NOT EXISTS polling (
+ id INTEGER PRIMARY KEY CHECK(id=1),
+ interval_seconds INTEGER NOT NULL CHECK(interval_seconds BETWEEN 5 AND 86400),
+ gap_count INTEGER NOT NULL CHECK(gap_count BETWEEN 0 AND 1000000),
+ clock_regressions INTEGER NOT NULL CHECK(clock_regressions BETWEEN 0 AND 1000000),
+ last_gap_after TEXT, last_gap_before TEXT,
+ last_gap_seconds INTEGER CHECK(last_gap_seconds >= 0))"""
+_POLLING_COLUMNS = [
+    ("id", "INTEGER", 0, 1),
+    ("interval_seconds", "INTEGER", 1, 0),
+    ("gap_count", "INTEGER", 1, 0),
+    ("clock_regressions", "INTEGER", 1, 0),
+    ("last_gap_after", "TEXT", 0, 0),
+    ("last_gap_before", "TEXT", 0, 0),
+    ("last_gap_seconds", "INTEGER", 0, 0),
+]
+
+
+def _polling_invalid():
+    return CoreError("OBSERVER_POLLING_INVALID", "Observer polling record is invalid")
+
+
+def _poll_time(value):
+    if type(value) is not str or len(value) > 64:
+        raise _polling_invalid()
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise _polling_invalid() from exc
+    if parsed.utcoffset() is None:
+        raise _polling_invalid()
+    return parsed
+
+
+def _idle_seconds(checked_at, now):
+    """Whole idle seconds since ``checked_at``; None when the clock went back."""
+    delta = now - _poll_time(checked_at)
+    return None if delta.days < 0 else delta.days * 86400 + delta.seconds
+
+
+def _polling_record(db):
+    """Return the validated single polling row, or None when none is recorded."""
+    if (
+        db.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='polling'"
+        ).fetchone()
+        is None
+    ):
+        return None
+    columns = db.execute("PRAGMA table_info(polling)").fetchall()
+    if [(row[1], row[2], row[3], row[5]) for row in columns] != _POLLING_COLUMNS:
+        raise _polling_invalid()
+    rows = db.execute(
+        "SELECT id,interval_seconds,gap_count,clock_regressions,"
+        "last_gap_after,last_gap_before,last_gap_seconds FROM polling LIMIT 2"
+    ).fetchall()
+    if not rows:
+        return None
+    key, interval, gaps, regressions, after, before, seconds = rows[0]
+    if (
+        len(rows) != 1
+        or key != 1
+        or type(interval) is not int
+        or not POLL_INTERVAL_MIN <= interval <= POLL_INTERVAL_MAX
+        or any(
+            type(count) is not int or not 0 <= count <= POLL_COUNTER_MAX
+            for count in (gaps, regressions)
+        )
+        or (gaps == 0) != ((after, before, seconds) == (None, None, None))
+        or (
+            gaps
+            and (
+                type(seconds) is not int
+                or seconds < 2 * POLL_INTERVAL_MIN
+                or _idle_seconds(after, _poll_time(before)) != seconds
+            )
+        )
+    ):
+        raise _polling_invalid()
+    return {
+        "interval_seconds": interval,
+        "gap_count": gaps,
+        "clock_regressions": regressions,
+        "last_gap": (
+            {"after": after, "before": before, "idle_seconds": seconds}
+            if gaps
+            else None
+        ),
+    }
 
 
 def _findings_version(db):
@@ -134,8 +230,12 @@ def _validate_finding_provenance(report, ctx):
         )
 
 
+def _utcnow():
+    return datetime.now(timezone.utc)
+
+
 def _now():
-    return datetime.now(timezone.utc).isoformat()
+    return _utcnow().isoformat()
 
 
 def _json(value):
@@ -154,11 +254,25 @@ def _boundary(name):
 
 
 class Observer:
-    def __init__(self, runtime, principal, project_id, profile, *, git_trust=None):
+    def __init__(
+        self, runtime, principal, project_id, profile, *, git_trust=None,
+        poll_interval=None,
+    ):
+        """``poll_interval`` is declared only by a scheduling worker.
+
+        With it, each ``_tick`` first accounts idle time since the previous
+        persisted check; without it, polling gaps are not recorded.
+        """
+        if poll_interval is not None and (
+            type(poll_interval) is not int
+            or not POLL_INTERVAL_MIN <= poll_interval <= POLL_INTERVAL_MAX
+        ):
+            raise CoreError("INVALID_ARGUMENT", "Poll interval must be 5..86400")
         self.runtime, self.principal, self.project_id = runtime, principal, project_id
         self.profile = Path(profile).resolve()
         self.database = self.profile / "observer.sqlite3"
         self._git_options = {} if git_trust is None else {"trust": git_trust}
+        self.poll_interval = poll_interval
 
     def _context(self, *, write=False):
         return self.runtime.state_context(
@@ -233,9 +347,62 @@ class Observer:
             ).fetchone()
             return dict(row) if row is not None else None
 
+    def _record_poll(self):
+        """Persist a polling gap before this cycle reads sources.
+
+        Idle time is measured from the previous persisted ``checked_at`` to
+        the start of this cycle. At least two intervals means at least one
+        whole scheduled poll was missed. A clock that went back is counted
+        separately and never reported as on schedule.
+        """
+        interval = self.poll_interval
+        with _sqlite.transaction(self.database, write=True) as db:
+            db.execute(POLLING_SCHEMA)
+            record = _polling_record(db) or {
+                "gap_count": 0,
+                "clock_regressions": 0,
+                "last_gap": None,
+            }
+            checked = db.execute("SELECT checked_at FROM meta WHERE id=1").fetchone()[0]
+            now = _utcnow()
+            gaps, regressions = record["gap_count"], record["clock_regressions"]
+            gap = record["last_gap"]
+            if checked is not None:
+                idle = _idle_seconds(checked, now)
+                if idle is None:
+                    regressions = min(regressions + 1, POLL_COUNTER_MAX)
+                elif idle >= 2 * interval:
+                    gaps = min(gaps + 1, POLL_COUNTER_MAX)
+                    gap = {
+                        "after": checked,
+                        "before": now.isoformat(),
+                        "idle_seconds": idle,
+                    }
+            gap = gap or {"after": None, "before": None, "idle_seconds": None}
+            db.execute(
+                "INSERT INTO polling(id,interval_seconds,gap_count,clock_regressions,"
+                "last_gap_after,last_gap_before,last_gap_seconds) VALUES(1,?,?,?,?,?,?) "
+                "ON CONFLICT(id) DO UPDATE SET interval_seconds=excluded.interval_seconds,"
+                "gap_count=excluded.gap_count,clock_regressions=excluded.clock_regressions,"
+                "last_gap_after=excluded.last_gap_after,"
+                "last_gap_before=excluded.last_gap_before,"
+                "last_gap_seconds=excluded.last_gap_seconds",
+                (
+                    interval,
+                    gaps,
+                    regressions,
+                    gap["after"],
+                    gap["before"],
+                    gap["idle_seconds"],
+                ),
+            )
+            _boundary("polling_written")
+
     def _tick(self):
         ctx = self._context(write=True)
         self._validate(ctx)
+        if self.poll_interval is not None:
+            self._record_poll()
         job = self._active()
         if job is not None and job["phase"] == "failed":
             raise CoreError(
@@ -347,6 +514,7 @@ class Observer:
                         "UPDATE jobs SET phase='done',report=?,error=NULL WHERE id=?",
                         (_json(report), job["id"]),
                     )
+                    _boundary("report_journal_written")
                     db.execute(
                         "UPDATE meta SET last_snapshot=?,checked_at=?,error=NULL WHERE id=1",
                         (after_id, _now()),
@@ -386,8 +554,10 @@ class Observer:
     ) -> GitSnapshotEvidence | None:
         """Probe stable sources between clean Git observations; None means no head.
 
-        This does not compute a Git tree digest or prove excluded/untracked files.
         The confined source probe checks both content passes and project head.
+        Every published snapshot file outside the repository's own ``.git`` must
+        equal the blob at the same path of ``commit^{tree}``; tree entries the
+        snapshot does not contain are counted, not proven.
         """
         ctx = self._context(write=True)
         self._validate(ctx)
@@ -412,6 +582,11 @@ class Observer:
                     "GIT_SNAPSHOT_MISMATCH",
                     "Published snapshot differs from observed sources",
                 )
+        tree_binding = (
+            None
+            if catalog is None
+            else self._bind_git_tree(observation, head.snapshot.snapshot_id)
+        )
         if observe_git(ctx.source_root, **self._git_options) != observation:
             raise CoreError("GIT_HEAD_CHANGED", "Git HEAD changed during source probe")
         with ctx.state.transaction(ctx.principal) as tx:
@@ -424,9 +599,47 @@ class Observer:
             None
             if catalog is None
             else GitSnapshotEvidence(
-                self.project_id, observation, head.snapshot.snapshot_id, digest
+                self.project_id,
+                observation,
+                head.snapshot.snapshot_id,
+                digest,
+                tree_binding,
             )
         )
+
+    def _bind_git_tree(self, observation, snapshot_id):
+        """Compare the published snapshot's retained bytes with commit blobs."""
+        tree = read_git_tree(
+            observation.repository, observation.commit, **self._git_options
+        )
+        ctx = self._context()
+        with ctx.state.transaction(self.principal) as tx:
+            catalog = tx.get_snapshot(snapshot_id)
+        # The retained session validates the catalog, manifest and artifact bytes
+        # and reauthorizes every read. Blob binding needs no graph query adapter.
+        sources = SnapshotSources(
+            catalog.snapshot, ctx.state, self.principal,
+            ctx.state.path.parent / catalog.generation_relpath,
+        )
+        with sources.read_session(limits=SnapshotReadLimits()) as session:
+            roots = session.layer_roots()
+            pairs = [
+                (
+                    entry.ref.relative_path
+                    if roots[entry.ref.layer_id] == "."
+                    else roots[entry.ref.layer_id] + "/" + entry.ref.relative_path,
+                    entry.ref,
+                )
+                for entry in session.entries()
+            ]
+            refs = dict(pairs)
+            binding = bind_git_tree(
+                tree,
+                [path for path, _ in pairs],
+                lambda path: session.read_source(refs[path]),
+                roots.values(),
+            )
+        return binding
 
     def _check_git_evidence(self, evidence, observation, catalog):
         if (
@@ -687,6 +900,11 @@ class Observer:
             )
             if provenance is not None:
                 report["quality"]["provenance"] = provenance
+            if (
+                provenance == "git_source_verified"
+                and evidence.tree_binding is not None
+            ):
+                report["quality"]["git_tree"] = asdict(evidence.tree_binding)
             if quality_reason is not None:
                 report["quality"] = {
                     "status": "not_available",
@@ -720,6 +938,21 @@ class Observer:
                     (limit,),
                 )
             ]
+            record = _polling_record(db)
+        idle = None if checked is None else _idle_seconds(checked, _utcnow())
+        polling = {
+            "interval_seconds": None,
+            "gap_count": None,
+            "clock_regressions": None,
+            "last_gap": None,
+            **(record or {}),
+            "idle_seconds": idle,
+        }
+        polling["on_schedule"] = (
+            record is not None
+            and idle is not None
+            and idle < 2 * record["interval_seconds"]
+        )
         document = {
             "last_snapshot": last,
             "checked_at": checked,
@@ -729,6 +962,7 @@ class Observer:
                 for row in jobs
             ],
             "reports": reports,
+            "polling": polling,
         }
         with ctx.state.transaction(ctx.principal) as tx:
             tx.require_all({"project:read"})

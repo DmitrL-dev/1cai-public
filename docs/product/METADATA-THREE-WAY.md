@@ -1,5 +1,16 @@
 # UUID-aware metadata updates
 
+Current source guards require one descriptor per UUID in each input snapshot,
+even across different object types. A UUID changing type across snapshots blocks
+materialization with `object_type_changed`; reusing a descriptor path for another
+identity remains blocked. Companion ownership requires both the Designer root
+and object namespaces. Unknown XML/HTML files below any `Ext` directory are explicit
+unsupported resource scopes, including unchanged structured resources: materialization
+refuses `resource_kind_unsupported` or `owner_not_found` instead of silently
+moving or orphaning those bytes. Opaque binary resources and ordinary files
+outside `Ext` retain the existing path-based three-way rules, without semantic
+ownership claims. These guards do not add native Designer/EDT acceptance.
+
 `rentgen_core.metadata_three_way.plan_metadata_three_way()` extends the
 path-bytes update dry-run with a conservative Designer XML object view. For
 recognized `MetaDataObject` files it identifies an object by `(type, UUID)` and
@@ -21,8 +32,12 @@ properties use `not_available`.
 The planner emits only hashes, sizes and names. It never writes a tree, resolves
 a conflict automatically or invokes 1С/EDT. BSL, forms, СКД and XML files that
 do not expose a supported UUID remain listed in `unsupported_files`, which
-describes files outside the original object view. Recognized companions also
-have UUID-bound `semantics` rows under the
+describes files outside the original object view. Binary and non-UTF-8
+resources such as `Ext/Template.bin` or pictures are also listed there: there is
+no MXL or picture model, so the materializer keeps unchanged bytes with the same
+SHA-256, takes a one-sided change whole and refuses divergent changes with
+`THREE_WAY_CONFLICT`; such bytes are never decoded or merged. Recognized
+companions also have UUID-bound `semantics` rows under the
 [companion scope contract](METADATA-THREE-WAY-SEMANTICS.md). The planner keeps
 these scopes atomic, including BSL modules that the materializer can qualify
 for a composite merge. The result has

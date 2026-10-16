@@ -59,8 +59,13 @@ detail = get_metadata_object(
 через `capabilities`: отчёт должен иметь `contract_version: 1` и
 `scope="os-adapter-support"`, а `snapshot.retained.read` — `supported=true`
 и все три операции в списке `operations`.
-Маршрут остаётся Windows-only; новый filesystem adapter сам по себе не
-включает навигацию на Linux/macOS.
+В development-исходниках после dev19 те же три операции входят и в отдельную
+группу `snapshot.metadata.read`. На Linux они читают сохранённый снимок через
+свежую проверенную POSIX retained session с её ограничениями и повторной
+проверкой прав; каждая операция открывает ровно одну сессию. Остальные прежние
+потребители legacy-сессии (proposal, platform, metadata-plan, diff) на POSIX
+по-прежнему отказывают без чтения. Linux-клиент проверяет поддержку по группе
+`snapshot.metadata.read`; Companion остаётся Windows-only. macOS закрыт.
 
 ```powershell
 python -I -m rentgen_core metadata-summary --registry C:\Rentgen\registry --project PROJECT_UUID --snapshot SNAPSHOT_SHA256

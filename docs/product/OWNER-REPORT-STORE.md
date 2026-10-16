@@ -36,9 +36,35 @@ project/snapshot, исходный отчёт, время записи и hash `
 Каталог ограничен 1000 квитанциями и 2 MiB на квитанцию. В каталоге разрешены
 только канонические UUID-имена с расширением `.json`; ссылки, каталоги,
 посторонние имена и повреждённые квитанции закрывают чтение fail-closed. Store
-не удаляет старые отчёты и не считает их свежими: retention, расписание,
-уведомления и подтверждённый runtime-источник остаются ответственностью
-вызывающего host.
+не удаляет старые отчёты. Retention, расписание, уведомления и подтверждённый
+runtime-источник остаются ответственностью вызывающего host.
+
+## Свежесть при чтении
+
+Без явной политики `get`/`list` возвращают квитанцию в сохранённом виде и не
+судят о свежести. С `max_age_seconds` (целое 1 с – 366 суток) каждая
+возвращённая квитанция дополнена полем `freshness`:
+
+```python
+view = store.get(report_id, expected_project_id=project_id,
+                 expected_snapshot_id=snapshot_id, authorize=authorize,
+                 max_age_seconds=86400)
+# view["freshness"] == {"as_of": ..., "age_seconds": 3600,
+#   "max_age_seconds": 86400, "historical": False, "reason": None}
+```
+
+Возраст считается от `report.generated_at` сохранённого отчёта до `as_of` и
+округляется вверх до целых секунд. `as_of` — часы хоста после финальной
+авторизации либо явный доверенный параметр `as_of`; файл отчёта его не задаёт.
+`historical=true` при `age_seconds > max_age_seconds`
+(`reason="older_than_policy"`) и при `generated_at` позже `as_of`
+(`age_seconds=null`, `reason="generated_after_as_of"`). `list` оценивает все
+элементы по одним часам. Это только представление чтения: байты файла,
+`receipt_id` и остальные поля не меняются, `freshness` не входит в hash и не
+сохраняется; изменённый `generated_at` по-прежнему закрывает чтение через
+`OWNER_REPORT_STORE_RECOVERY_REQUIRED`. Недопустимая политика или `as_of` без
+неё дают `OWNER_REPORT_STORE_INVALID` до авторизации и чтения. Owner-report
+CLI и MCP эту политику пока не принимают и возвращают прежний формат.
 
 ## POSIX library workflow в текущих исходниках
 
@@ -82,8 +108,14 @@ complete final при ошибке не удаляется. Повторное �
 На настоящей macOS arm64 проверены положительный import/store/restart/read,
 отказы на links/FIFO/ACL и подменах namespace, конкурентная запись отдельных
 процессов, no-overwrite/durability failures и сохранение исходного отказа
-авторизации при cleanup. Linux CI и Windows regression для этого нового блока
-ещё требуются. SQLite graph consumers, capture, source sessions, native 1С/EDT,
+авторизации при cleanup. `tests/unit/test_owner_report_store.py` не имеет
+platform skip markers: его исполняют полный Windows suite `core-ci.yml` и
+диагностический полный Linux suite `portable-ci.yml` (ubuntu-24.04, Python 3.11
+и 3.12). Linux lane сравнивается с `linux-baseline-classification-20261005.json`,
+где восемь исходных тестов файла ещё числятся известными Windows retained-IO
+отказами: их отказ на Linux этот gate не блокирует, отказ тестов вне baseline
+блокирует. Результат подтверждает только CI конкретного commit.
+SQLite graph consumers, capture, source sessions, native 1С/EDT,
 Companion и GUI не входят в эту библиотечную проверку; capability admission
 и установленный полный пользовательский маршрут принимаются отдельно.
 

@@ -109,7 +109,11 @@ def main(argv=None):
             RentgenCapturedGoBuilder(args.scanner.resolve()) if args.scanner else None,
         )
         observer = Observer(
-            runtime, principal, args.project, args.profile
+            runtime,
+            principal,
+            args.project,
+            args.profile,
+            poll_interval=args.interval if args.action == "run" else None,
         )
         if args.action == "init":
             observer.initialize()
@@ -146,6 +150,7 @@ def main(argv=None):
                             "OBSERVER_JOB_FAILED",
                             "OBSERVER_PROFILE_MISMATCH",
                             "OBSERVER_JOURNAL_FULL",
+                            "OBSERVER_POLLING_INVALID",
                             "STATE_UNAVAILABLE",
                             "CAPTURE_PLATFORM_UNSUPPORTED",
                         }:

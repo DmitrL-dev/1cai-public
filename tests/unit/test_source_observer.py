@@ -254,3 +254,59 @@ def test_unavailable_journal_stops_worker_without_sleep(observer, monkeypatch, c
     )
     assert code == 2
     assert '"code": "STATE_UNAVAILABLE"' in capsys.readouterr().out
+
+
+def test_killed_worker_inside_report_journal_write_resumes_same_operation(
+    observer, scanner, tmp_path
+):
+    """A real child holds the final journal transaction open and is killed."""
+    import sqlite3
+
+    from observer_kill_support import killed_inside_write
+
+    code = """
+import sys
+from pathlib import Path
+import rentgen_core as api
+from rentgen_core.local import LocalRuntime
+from rentgen_core.observer import Observer
+from rentgen_graph.snapshot_adapter import (
+    RentgenCapturedGoBuilder,
+    RentgenGraphReaderFactory,
+)
+registry, project, profile, scanner = sys.argv[1:-2]
+runtime = LocalRuntime(
+    Path(registry), RentgenGraphReaderFactory(), RentgenCapturedGoBuilder(Path(scanner))
+)
+Observer(runtime, api.Principal("owner", "local_os"), project, Path(profile)).tick()
+"""
+    with killed_inside_write(
+        code,
+        observer.runtime.registry_path,
+        observer.project_id,
+        observer.profile,
+        scanner,
+        boundary="report_journal_written",
+        ready=tmp_path / "ready",
+    ):
+        with pytest.raises(api.CoreError) as error:
+            observer.tick()
+        assert error.value.code == "OBSERVER_BUSY"
+    with sqlite3.connect(observer.database) as db:
+        assert db.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+    db.close()
+    status = observer.status()
+    assert [job["phase"] for job in status["jobs"]] == ["report"]
+    assert (status["reports"], status["last_snapshot"]) == ([], None)
+    restarted = Observer(
+        observer.runtime, observer.principal, observer.project_id, observer.profile
+    )
+    result = restarted.tick()
+    assert result["status"] == "reported"
+    assert result["operation_id"] == status["jobs"][0]["operation_id"]
+    assert restarted.tick()["status"] == "unchanged"
+    assert observer.runtime.graph_builder.calls == 0
+    status = restarted.status()
+    assert [job["phase"] for job in status["jobs"]] == ["done"]
+    assert status["last_snapshot"] == result["snapshot_id"]
+    assert status["reports"][0]["changes"]["kind"] == "baseline"

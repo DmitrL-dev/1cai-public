@@ -1,5 +1,7 @@
 """The owned workspace writer proves file CAS and undo without live 1C writes."""
 
+from dataclasses import asdict
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -9,6 +11,13 @@ import sys
 import pytest
 import rentgen_core as api
 import test_metadata_runs as fixtures
+import test_project_core_publication as publication
+from test_metadata_three_way_materialize import (
+    PICTURE,
+    PICTURE_BYTES,
+    TEMPLATE,
+    TEMPLATE_BYTES,
+)
 
 from rentgen_core import metadata_workspace as workspace
 from rentgen_core import metadata_apply
@@ -1013,3 +1022,59 @@ def test_unowned_admission_does_not_create_lock_or_change_bytes(
             sorted(str(path.relative_to(root)) for path in root.rglob("*")) == entries
         )
         assert not (root / "workspace-operation.lock").exists()
+
+
+BINARIES = {TEMPLATE: TEMPLATE_BYTES, PICTURE: PICTURE_BYTES}
+
+
+def _binary_hashes(root):
+    return {
+        path: hashlib.sha256((root / path).read_bytes()).hexdigest()
+        for path in BINARIES
+    }
+
+
+def test_unchanged_binary_resources_keep_hashes_through_preview_and_workspace(
+    captured, project, tmp_path
+):
+    """IDE-SC-17: binary bytes are copied, never decoded or re-serialized."""
+    ctx, request = captured
+    for path, raw in BINARIES.items():
+        (ctx.source_root / path).parent.mkdir(parents=True, exist_ok=True)
+        (ctx.source_root / path).write_bytes(raw)
+    publication.publish(project)
+    ctx = project[1].resolve_context(ctx.principal, api.Explicit(ctx.project_id))
+    request["snapshot"] = asdict(ctx.snapshot)
+    expected = {
+        path: hashlib.sha256(raw).hexdigest() for path, raw in BINARIES.items()
+    }
+    ctx, preview_operation, _, preview = fixtures._finished_run(
+        (ctx, request), exports=BINARIES
+    )
+    body = preview["preview"]
+    for name in ("original", "baseline", "candidate"):
+        rows = {row["path"]: row["sha256"] for row in body["inventories"][name]}
+        assert {path: rows[path] for path in BINARIES} == expected
+    changed = {
+        change["path"]
+        for section in ("normalization", "edit")
+        for change in body[section]["changes"]
+    }
+    assert changed.isdisjoint(BINARIES)
+
+    operation = "12345678-1234-4234-8234-123456789abc"
+    metadata_apply.preflight_apply(
+        ctx,
+        preview_operation_id=preview_operation,
+        operation_id=operation,
+        expected_preview_id=preview["preview_id"],
+        expected_head=api.get_project_head(ctx),
+    )
+    root = tmp_path / "owned-workspace"
+    workspace.create_workspace(ctx, operation, root)
+    assert _binary_hashes(root / "tree") == expected
+    assert workspace.apply_workspace(ctx, operation, root)["status"] == "applied"
+    assert _binary_hashes(root / "tree") == expected
+    assert workspace.undo_workspace(ctx, operation, root)["status"] == "undone"
+    assert _binary_hashes(root / "tree") == expected
+    assert _binary_hashes(ctx.source_root) == expected

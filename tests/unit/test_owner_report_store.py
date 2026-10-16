@@ -203,3 +203,137 @@ def test_owner_report_store_rejects_inconsistent_incomplete_or_nested_context(
     with pytest.raises(CoreError) as error:
         _store(changed_root).save(changed, authorize=lambda: None)
     assert error.value.code == "OWNER_REPORT_STORE_CONTEXT"
+
+
+GENERATED = "2026-09-01T00:00:00+00:00"
+
+
+def _dated_report():
+    report = dict(_report())
+    report["generated_at"] = GENERATED
+    return report
+
+
+def _read_kwargs(**changes):
+    return {
+        "expected_project_id": PROJECT,
+        "expected_snapshot_id": SNAPSHOT,
+        "authorize": lambda: None,
+        **changes,
+    }
+
+
+def test_owner_report_store_marks_historical_reads_without_changing_receipt(
+    tmp_path,
+):
+    store = _store(tmp_path)
+    receipt = store.save(_dated_report(), authorize=lambda: None)
+    path = store.reports / f"{receipt['report_id']}.json"
+    stored = path.read_bytes()
+
+    def get(as_of, max_age_seconds=3600):
+        return store.get(
+            receipt["report_id"],
+            **_read_kwargs(max_age_seconds=max_age_seconds, as_of=as_of),
+        )
+
+    bound = get("2026-09-01T01:00:00Z")
+    older = get("2026-09-01T01:00:00.000001+00:00")
+    future = get("2026-08-31T23:59:59+00:00")
+    assert bound["freshness"] == {
+        "as_of": "2026-09-01T01:00:00+00:00",
+        "age_seconds": 3600,
+        "max_age_seconds": 3600,
+        "historical": False,
+        "reason": None,
+    }
+    assert older["freshness"] == {
+        "as_of": "2026-09-01T01:00:00.000001+00:00",
+        "age_seconds": 3601,
+        "max_age_seconds": 3600,
+        "historical": True,
+        "reason": "older_than_policy",
+    }
+    assert future["freshness"]["age_seconds"] is None
+    assert future["freshness"]["historical"] is True
+    assert future["freshness"]["reason"] == "generated_after_as_of"
+    for view in (bound, older, future):
+        assert {key: view[key] for key in view if key != "freshness"} == receipt
+    assert store.get(receipt["report_id"], **_read_kwargs()) == receipt
+    assert path.read_bytes() == stored
+    # Editing the sealed generation time cannot make old evidence look fresh.
+    path.write_bytes(stored.replace(GENERATED.encode(), b"2026-09-01T00:59:00+00:00"))
+    with pytest.raises(CoreError) as error:
+        get("2026-09-01T01:00:00+00:00")
+    assert error.value.code == "OWNER_REPORT_STORE_RECOVERY_REQUIRED"
+
+
+def test_owner_report_store_lists_with_one_freshness_clock(tmp_path):
+    store = _store(tmp_path)
+    first = store.save(_dated_report(), authorize=lambda: None)
+    recent = dict(_dated_report(), generated_at="2026-09-02T00:00:00+00:00")
+    second = store.save(recent, authorize=lambda: None)
+    listed = store.list(
+        **_read_kwargs(max_age_seconds=86400, as_of="2026-09-02T12:00:00+00:00")
+    )
+    by_id = {item["report_id"]: item for item in listed}
+    assert set(by_id) == {first["report_id"], second["report_id"]}
+    assert {item["freshness"]["as_of"] for item in listed} == {
+        "2026-09-02T12:00:00+00:00"
+    }
+    assert by_id[first["report_id"]]["freshness"]["historical"] is True
+    assert by_id[first["report_id"]]["freshness"]["age_seconds"] == 129600
+    assert by_id[second["report_id"]]["freshness"]["historical"] is False
+    assert by_id[second["report_id"]]["freshness"]["age_seconds"] == 43200
+    assert by_id[second["report_id"]]["receipt_id"] == second["receipt_id"]
+    plain = store.list(**_read_kwargs())
+    assert all("freshness" not in item for item in plain)
+    assert sorted(plain, key=lambda item: item["report_id"]) == sorted(
+        [first, second], key=lambda item: item["report_id"]
+    )
+
+
+def test_owner_report_store_default_freshness_clock_is_after_generation(tmp_path):
+    store = _store(tmp_path)
+    receipt = store.save(_report(), authorize=lambda: None)
+    view = store.get(receipt["report_id"], **_read_kwargs(max_age_seconds=86400))
+    freshness = view["freshness"]
+    assert freshness["as_of"] >= receipt["report"]["generated_at"]
+    assert type(freshness["age_seconds"]) is int
+    assert 0 <= freshness["age_seconds"] <= 86400
+    assert freshness["historical"] is False
+
+
+@pytest.mark.parametrize(
+    "policy",
+    [
+        {"max_age_seconds": 0},
+        {"max_age_seconds": True},
+        {"max_age_seconds": "60"},
+        {"max_age_seconds": 366 * 86400 + 1},
+        {"as_of": "2026-09-01T00:00:00+00:00"},
+        {"max_age_seconds": 60, "as_of": "2026-09-01T00:00:00"},
+        {"max_age_seconds": 60, "as_of": "yesterday"},
+    ],
+    ids=["zero", "bool", "text", "too-long", "clock-only", "naive", "malformed"],
+)
+def test_owner_report_store_rejects_freshness_policy_before_authorization(
+    tmp_path, policy
+):
+    store = _store(tmp_path)
+    receipt = store.save(_dated_report(), authorize=lambda: None)
+    calls = []
+
+    def authorize():
+        calls.append("auth")
+
+    for read in (
+        lambda: store.get(
+            receipt["report_id"], **_read_kwargs(authorize=authorize, **policy)
+        ),
+        lambda: store.list(**_read_kwargs(authorize=authorize, **policy)),
+    ):
+        with pytest.raises(CoreError) as error:
+            read()
+        assert error.value.code == "OWNER_REPORT_STORE_INVALID"
+    assert calls == []

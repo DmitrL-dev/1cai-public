@@ -574,7 +574,7 @@ class GitWatcher:
             receipt = self.observer.record_findings(
                 report, evidence=evidence, _locked=True
             )
-            return {
+            result = {
                 "status": "analyzed",
                 "snapshot_binding": "git_source_verified"
                 if evidence
@@ -583,6 +583,9 @@ class GitWatcher:
                 "observation": asdict(observation),
                 "receipt": receipt,
             }
+            if evidence is not None and evidence.tree_binding is not None:
+                result["git_tree"] = evidence.tree_binding.tree
+            return result
 
 
 @contextmanager

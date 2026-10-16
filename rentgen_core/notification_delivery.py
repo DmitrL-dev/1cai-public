@@ -1,7 +1,7 @@
 """Explicit, bounded HTTPS delivery for the Git watcher notification outbox."""
 
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import dataclass, replace as _replace
+from datetime import datetime, timedelta
 from enum import Enum
 import hashlib
 import http.client
@@ -13,6 +13,13 @@ import urllib.request
 
 from .errors import CoreError
 from .git_watcher import NotificationOutbox
+from .notification_journal import (
+    DeliveryJournal,
+    RetryPolicy,
+    idempotency_key,
+    utc_now,
+    valid_namespace,
+)
 
 
 class DeliveryStatus(str, Enum):
@@ -23,13 +30,19 @@ class DeliveryStatus(str, Enum):
 
 @dataclass(frozen=True)
 class DeliveryResult:
-    """Safe receipt: never contains endpoint, credentials or response content."""
+    """Safe receipt: never contains endpoint, credentials or response content.
+
+    ``attempt`` and ``next_attempt_at`` are set only by a journaled run: the
+    durable attempt number and, for a scheduled retry, the earliest UTC time.
+    """
 
     status: DeliveryStatus
     notification_id: int | None
     idempotency_key: str | None
     code: str
     http_status: int | None = None
+    attempt: int | None = None
+    next_attempt_at: str | None = None
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -132,8 +145,7 @@ class WebhookAdapter:
             or not isinstance(allowed_hosts, (set, frozenset))
             or not 1 <= len(allowed_hosts) <= 100
             or not all(_host(host) for host in allowed_hosts)
-            or type(namespace) is not str
-            or re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,127}", namespace) is None
+            or not valid_namespace(namespace)
             or type(timeout) not in (int, float)
             or not 0.1 <= timeout <= 30
             or not _bounded_int(max_payload_bytes, 1048576)
@@ -184,11 +196,7 @@ class WebhookAdapter:
         key = (
             None
             if notification_id is None
-            else hashlib.sha256(
-                f"rentgen-notification-v1:{self._namespace}:{notification_id}".encode(
-                    "ascii"
-                )
-            ).hexdigest()
+            else idempotency_key(self._namespace, notification_id)
         )
         try:
             raw = _payload(notification, self._max_payload_bytes)
@@ -240,31 +248,54 @@ class WebhookAdapter:
                     pass
 
 
-def deliver_outbox(outbox, adapter, limit=100, *, authorize):
+def deliver_outbox(
+    outbox,
+    adapter,
+    limit=100,
+    *,
+    authorize,
+    journal=None,
+    retry_policy=None,
+    clock=None,
+):
     """Attempt a bounded batch and ack only accepted events.
 
-    The caller serializes consumers and explicitly decides when to retry pending
-    events. Acceptance followed by an ack failure can cause a later duplicate;
-    the receiver must deduplicate the stable idempotency key. ``authorize`` is
-    the caller's current-permission check: it runs before every send and every
-    ack, and its refusal stops the batch with the event still pending.
+    ``authorize`` is the caller's current-permission check: it runs before
+    every send and every ack, and its refusal stops the batch with the event
+    still pending. Without ``journal`` every invocation attempts each selected
+    event once and the caller decides when to run again; acceptance followed by
+    an ack failure can then cause a later duplicate that the receiver must
+    deduplicate by the stable idempotency key.
+
+    With a ``DeliveryJournal`` the run is serialized by the journal lock and
+    durable: each attempt is counted before sending, retryable outcomes are
+    scheduled by ``retry_policy`` (default ``RetryPolicy()``), permanent or
+    exhausted events become terminal, and an accepted event is acknowledged
+    without being sent again. ``clock`` is a trusted test/host clock returning
+    timezone-aware time.
     """
     if (
         not isinstance(outbox, NotificationOutbox)
         or not isinstance(adapter, WebhookAdapter)
         or not _bounded_int(limit, NotificationOutbox.MAX_EVENTS)
         or not callable(authorize)
+        or (journal is not None and not isinstance(journal, DeliveryJournal))
+        or (retry_policy is not None and not isinstance(retry_policy, RetryPolicy))
+        or (clock is not None and not callable(clock))
+        or (journal is None and (retry_policy is not None or clock is not None))
     ):
         raise _invalid()
-    notifications = outbox.peek(NotificationOutbox.MAX_EVENTS)
-    # Validate the entire bounded queue before the first external side effect.
-    try:
-        for notification in notifications:
-            _payload(notification, NotificationOutbox.MAX_BYTES)
-    except (TypeError, ValueError, OverflowError, RecursionError):
-        raise CoreError(
-            "NOTIFICATION_DELIVERY_INVALID", "Malformed outbox notification"
-        ) from None
+    if journal is not None:
+        return _deliver_journaled(
+            outbox,
+            adapter,
+            limit,
+            authorize,
+            journal,
+            RetryPolicy() if retry_policy is None else retry_policy,
+            clock,
+        )
+    notifications, _ = _read_batch(outbox)
     results = []
     for notification in notifications[:limit]:
         authorize()
@@ -273,4 +304,99 @@ def deliver_outbox(outbox, adapter, limit=100, *, authorize):
         if receipt.status is DeliveryStatus.ACCEPTED:
             authorize()
             outbox.ack(notification["id"])
+    return tuple(results)
+
+
+def _read_batch(outbox):
+    # Validate the entire bounded queue before the first external side effect.
+    notifications = outbox.peek(NotificationOutbox.MAX_EVENTS)
+    try:
+        payloads = [
+            _payload(notification, NotificationOutbox.MAX_BYTES)
+            for notification in notifications
+        ]
+    except (TypeError, ValueError, OverflowError, RecursionError):
+        raise CoreError(
+            "NOTIFICATION_DELIVERY_INVALID", "Malformed outbox notification"
+        ) from None
+    return notifications, payloads
+
+
+def _deliver_journaled(
+    outbox, adapter, limit, authorize, journal, policy, clock
+):
+    results = []
+    with journal._session(adapter._namespace) as session:
+        # Read after acquiring the consumer lock: an earlier queue snapshot
+        # could otherwise prune attempts committed while this consumer waited.
+        notifications, payloads = _read_batch(outbox)
+        digests = {
+            notification["id"]: hashlib.sha256(raw).hexdigest()
+            for notification, raw in zip(notifications, payloads)
+        }
+        session.reconcile(digests, utc_now(clock), policy)
+        for notification in notifications:
+            if len(results) >= limit:
+                break
+            notification_id = notification["id"]
+            key = idempotency_key(adapter._namespace, notification_id)
+            entry = session.entry(notification_id)
+            state = None if entry is None else entry["state"]
+            if state == "terminal":
+                continue
+            if state == "pending" and not session.due(entry, utc_now(clock), policy):
+                continue
+            if state == "accepted":
+                # Accepted earlier, ack interrupted: acknowledge, never resend.
+                authorize()
+                outbox.ack(notification_id)
+                session.forget(notification_id)
+                results.append(
+                    DeliveryResult(
+                        DeliveryStatus.ACCEPTED,
+                        notification_id,
+                        key,
+                        "ACK_RECOVERED",
+                        attempt=entry["attempts"],
+                    )
+                )
+                continue
+            authorize()
+            attempt = session.begin(
+                notification_id, key, digests[notification_id], utc_now(clock)
+            )
+            receipt = adapter.deliver(notification)
+            finished = utc_now(clock)
+            if receipt.status is DeliveryStatus.ACCEPTED:
+                session.accepted(notification_id, finished)
+                results.append(_replace(receipt, attempt=attempt))
+                authorize()
+                outbox.ack(notification_id)
+                session.forget(notification_id)
+            elif (
+                receipt.status is DeliveryStatus.RETRYABLE
+                and attempt < policy.max_attempts
+            ):
+                next_attempt = finished + timedelta(
+                    seconds=policy.delay_seconds(attempt)
+                )
+                session.retry(notification_id, receipt.code, next_attempt, finished)
+                results.append(
+                    _replace(
+                        receipt,
+                        attempt=attempt,
+                        next_attempt_at=next_attempt.isoformat(),
+                    )
+                )
+            else:
+                session.terminal(notification_id, receipt.code, finished)
+                if receipt.status is DeliveryStatus.RETRYABLE:
+                    receipt = DeliveryResult(
+                        DeliveryStatus.PERMANENT,
+                        notification_id,
+                        key,
+                        "RETRY_EXHAUSTED",
+                        receipt.http_status,
+                    )
+                results.append(_replace(receipt, attempt=attempt))
     return tuple(results)

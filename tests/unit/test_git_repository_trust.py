@@ -3,6 +3,7 @@ from dataclasses import FrozenInstanceError
 import hashlib
 import importlib
 from pathlib import Path
+import shutil
 import subprocess
 
 import pytest
@@ -145,3 +146,78 @@ def test_replacement_refs_cannot_change_analyzed_blob_under_original_commit(repo
     report = BslGitAnalyzer(adapter, lambda: None, git_trust=trust)(observation)
     assert report.complete and adapter.calls[0][0] == original_blob
     assert git(repository, 'replace', '-l') == original_commit
+
+
+def pinned(tmp_path, content=b'pinned git placeholder'):
+    executable = tmp_path / 'pinned-git.exe'
+    executable.write_bytes(content)
+    return executable.resolve(), hashlib.sha256(content).hexdigest()
+
+
+def test_pinned_executable_replaces_path_lookup_without_changing_argv_layout(tmp_path):
+    root = tmp_path.resolve()
+    executable, digest = pinned(tmp_path)
+    trust = api().GitRepositoryTrust(root, executable, digest)
+    assert (trust.executable, trust.executable_sha256) == (executable, digest)
+    assert api().git_command(root, 'rev-parse', 'HEAD', trust=trust) == [
+        str(executable), '--no-pager', '-c', 'core.fsmonitor=false', '-c', 'safe.directory=',
+        '-c', 'safe.directory=' + str(root), '-C', str(root), 'rev-parse', 'HEAD']
+
+
+@pytest.mark.parametrize('bad', ['hash_only', 'path_only', 'relative', 'directory', 'absent',
+    'uppercase', 'short', 'not_path', 'not_str', 'parent_alias'])
+def test_invalid_executable_pin_is_refused(tmp_path, bad):
+    executable, digest = pinned(tmp_path)
+    path, value = {'hash_only': (None, digest), 'path_only': (executable, None),
+        'relative': (Path('pinned-git.exe'), digest), 'directory': (tmp_path.resolve(), digest),
+        'absent': (tmp_path.resolve() / 'absent.exe', digest), 'uppercase': (executable, digest.upper()),
+        'short': (executable, digest[:-1]), 'not_path': (str(executable), digest),
+        'not_str': (executable, digest.encode()),
+        'parent_alias': (tmp_path.resolve() / '..' / tmp_path.name / executable.name, digest)}[bad]
+    with pytest.raises(CoreError) as error:
+        api().GitRepositoryTrust(tmp_path.resolve(), path, value)
+    assert error.value.code == 'GIT_TRUST_CONTEXT'
+
+
+@pytest.mark.parametrize('change', ['content', 'removed', 'alias'])
+@pytest.mark.parametrize('operation', ['observe', 'ancestor', 'analyzer', 'tree'])
+def test_changed_executable_is_refused_before_any_child(repository, tmp_path, monkeypatch, change, operation):
+    from rentgen_core.git_snapshot_evidence import read_git_tree
+    executable, digest = pinned(tmp_path)
+    trust = api().GitRepositoryTrust(repository.resolve(), executable, digest)
+    if change == 'content':
+        executable.write_bytes(b'pinned git replaced')
+    elif change == 'removed':
+        executable.unlink()
+    else:
+        original = tmp_path / 'original-git.exe'
+        executable.replace(original)
+        try:
+            executable.symlink_to(original)
+        except OSError:
+            pytest.skip('Symbolic links are unavailable')
+    monkeypatch.setattr(subprocess, 'Popen', lambda *args, **kwargs: pytest.fail('changed Git launched'))
+    with pytest.raises(CoreError) as error:
+        if operation == 'observe': observe_git(repository, trust=trust)
+        elif operation == 'ancestor': require_ancestor(repository, 'a' * 40, 'b' * 40, trust=trust)
+        elif operation == 'tree': read_git_tree(repository, 'a' * 40, trust=trust)
+        else:
+            BslGitAnalyzer(FakeAdapter(), lambda: None, git_trust=trust)(
+                GitObservation(str(repository.resolve()), 'a' * 40, 'refs/heads/main'))
+    assert error.value.code == 'GIT_EXECUTABLE_MISMATCH'
+
+
+def test_real_pinned_executable_runs_every_trusted_probe(repository, monkeypatch):
+    executable = Path(shutil.which('git')).resolve()
+    trust = api().GitRepositoryTrust(repository.resolve(), executable,
+        hashlib.sha256(executable.read_bytes()).hexdigest())
+    calls, run = [], subprocess.Popen
+    def capture(command, **kwargs):
+        calls.append(command)
+        return run(command, **kwargs)
+    monkeypatch.setattr(subprocess, 'Popen', capture)
+    observation = observe_git(repository, trust=trust)
+    require_ancestor(repository, observation.commit, observation.commit, trust=trust)
+    assert len(calls) == 7 and all(command[0] == str(executable) for command in calls)
+    monkeypatch.setattr(subprocess, 'Popen', run)
+    assert observe_git(repository) == observation

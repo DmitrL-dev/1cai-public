@@ -73,6 +73,17 @@ rentgen test-profile-disable @common --profile-id $profileId
 `tests.status` относится к candidate. Ошибки компиляции дают `not_run`, пропуски —
 `incomplete`. Автоматического применения изменений нет.
 
+В development-исходниках после dev19 повтор `proposal-test` после обрыва до
+публикации `request.json` возвращает `PLATFORM_RUN_INCOMPLETE` с `run_id`,
+`status: "incomplete"` и `request_recorded: false` в `error.details`.
+Отсутствующий запрос не доказывает конфликт входов или остановку процесса.
+Журнал, включая частичный `request.tmp`, сохраняется; профиль не открывается,
+исполнитель не запускается. Запросите `proposal-test-result` по тому же UUID.
+Настоящий конфликт записанных входов остаётся `PLATFORM_RUN_CONFLICT`, повреждённая
+запись — `PLATFORM_RUN_CORRUPT`. Завершённый старый отчёт без запроса читается,
+но повторное исполнение под его UUID запрещено. Эта диагностика не является
+новой native 1С/YAxUnit приёмкой или выпуском.
+
 `test-run-qualify` ничего не запускает: он сверяет сохранённые raw artifacts с
 отчётом и возвращает досье `local_unattested` ([контракт](TEST-RUN-QUALIFICATION.md)).
 Опубликованный dev19 этой команды не содержит.

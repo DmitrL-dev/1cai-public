@@ -20,6 +20,60 @@ project, scanner, candidate = fixtures.project, fixtures.scanner, fixtures.candi
 pytestmark, LIMITS = fixtures.pytestmark, fixtures.LIMITS
 
 
+@pytest.mark.parametrize("explicit_id", [False, True])
+@pytest.mark.parametrize("boundary,expected", [("request_published", "incomplete"),
+                                               ("report_published", "completed")])
+def test_cli_identity_reconciles_after_abrupt_exit(
+    candidate, project, counted, monkeypatch, capsys, tmp_path, explicit_id, boundary, expected
+):
+    """Real Windows retained run, simulated process loss, fresh CLI runtime lookup."""
+    from rentgen_core import cli
+    from rentgen_core.local import LocalRuntime
+
+    ctx, raw, platform = candidate
+    resolver = project[1]
+    runtimes = []
+    def runtime(args):
+        value = LocalRuntime(resolver.registry.path, resolver.graph_reader_factory)
+        runtimes.append(value)
+        return value
+    monkeypatch.setattr(cli, "_runtime", runtime)
+    monkeypatch.setattr(cli, "current_local_principal", lambda: ctx.principal)
+    payload = tmp_path / "proposal.json"
+    payload.write_bytes(raw)
+    common = ["--registry", str(resolver.registry.path), "--project", ctx.project_id]
+    operation = str(uuid4())
+    args = ["proposal-platform-check", *common, "--snapshot", ctx.snapshot.snapshot_id,
+            "--proposal-json", str(payload), "--platform", str(platform.executable),
+            "--platform-sha256", platform.executable_sha256]
+    if explicit_id:
+        args += ["--operation-id", operation]
+    def stop(name):
+        if name == boundary:
+            raise SystemExit("simulated abrupt CLI exit")
+    monkeypatch.setattr(implementation, "_boundary", stop)
+
+    with pytest.raises(SystemExit):
+        cli.main(args)
+    output = capsys.readouterr()
+    assert not output.out
+    recovery = json.loads(output.err)["recovery"]
+    assert recovery["project_id"] == ctx.project_id
+    if explicit_id:
+        assert recovery["operation_id"] == operation
+    assert cli.main(["proposal-platform-result", *common,
+                     "--operation-id", recovery["operation_id"]]) == 0
+    lookup = capsys.readouterr()
+    assert not lookup.err
+    saved = json.loads(lookup.out)["result"]
+    assert saved["status"] == expected
+    assert saved["request"]["run_id"] == recovery["operation_id"]
+    if expected == "completed":
+        assert saved["report"]["run_id"] == recovery["operation_id"]
+    assert len(counted) == (1 if expected == "completed" else 0)
+    assert len(runtimes) == 2 and runtimes[0] is not runtimes[1]
+
+
 @pytest.fixture
 def counted(monkeypatch):
     calls = []
@@ -311,7 +365,10 @@ def test_admission_exit_failure_retains_uuid_without_reporting_rejection(
         check_proposal_platform_json(
             ctx, raw, platform, limits=LIMITS, operation_id=operation
         )
-    assert retry.value.code == "PLATFORM_RUN_CONFLICT"
+    assert retry.value.code == "PLATFORM_RUN_INCOMPLETE"
+    assert retry.value.details == {
+        "run_id": operation, "status": "incomplete", "request_recorded": False,
+    }
     assert not counted
     recovered = check_proposal_platform_json(ctx, raw, platform, limits=LIMITS)
     assert recovered["run_id"] != operation and len(counted) == 1

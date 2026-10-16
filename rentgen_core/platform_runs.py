@@ -163,9 +163,26 @@ def get_platform_run(ctx, operation_id, *, namespace="platform-checks"):
         return _get(ctx, operation_id, namespace=namespace)
 
 
+def _replay_binding(saved):
+    """Require recorded inputs without treating missing evidence as a mismatch."""
+    if saved["request"] is None:
+        raise CoreError(
+            "PLATFORM_RUN_INCOMPLETE"
+            if saved["status"] == "incomplete"
+            else "PLATFORM_RUN_CONFLICT",
+            "Run has no retained request; replay is unavailable. Read run status",
+            details={
+                "run_id": saved["run_id"],
+                "status": saved["status"],
+                "request_recorded": False,
+            },
+        )
+    return saved["request"]["input"]
+
+
 def replay_run(ctx, operation_id, binding, *, namespace="platform-checks"):
     saved = get_platform_run(ctx, operation_id, namespace=namespace)
-    if saved["request"] is None or saved["request"]["input"] != binding:
+    if _replay_binding(saved) != binding:
         raise CoreError(
             "PLATFORM_RUN_CONFLICT",
             "Operation ID belongs to different inputs",

@@ -41,8 +41,14 @@ def test_compare_alias_preserves_broad_group_and_admits_only_reviewed_read(monke
     assert groups["snapshot.retained.read"]["supported"] is (platform == "win32")
     assert capabilities.COMMAND_CAPABILITIES["snapshot-diff"] == "snapshot.compare.read"
     assert capabilities.operation_supported("rentgen_snapshot_diff") is (platform in {"linux", "win32"})
-    for hidden in ["metadata-summary", "metadata-object", "draft-save", "proposal-create"]:
+    for hidden in ["draft-archive", "proposal-check", "proposal-live-apply"]:
         assert capabilities.operation_supported(hidden) is (platform == "win32")
+    for authoring in ["proposal-create", "proposal-diff", "draft-start", "draft-save", "draft-edit"]:
+        assert capabilities.COMMAND_CAPABILITIES[authoring] == "draft.authoring"
+        assert capabilities.operation_supported(authoring) is (platform in {"linux", "win32"})
+    for navigation in ["metadata-summary", "metadata-search", "metadata-object"]:
+        assert capabilities.COMMAND_CAPABILITIES[navigation] == "snapshot.metadata.read"
+        assert capabilities.operation_supported(navigation) is (platform in {"linux", "win32"})
 
 
 @pytest.mark.parametrize("platform", ["linux", "win32"])

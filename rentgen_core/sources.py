@@ -424,8 +424,12 @@ class SnapshotSources:
     _principal: object
     _path: Path
 
-    def read_session(self, *, limits):
-        """Create a one-operation owner; entry authorizes and pins all artifacts."""
+    def read_session(self, *, limits, purpose=None):
+        """Create a one-operation owner; entry authorizes and pins all artifacts.
+
+        ``purpose`` names the consumer for adapters that admit consumers
+        individually; the Windows retained session serves every reviewed one.
+        """
         return SnapshotReadSession(self, limits)
 
     def _document(self):
@@ -828,6 +832,15 @@ class SnapshotReadSession:
         with self._operation():
             self._authorize()
             return self._entries
+
+    def layer_roots(self):
+        """Layer roots from this session's digest-verified source document."""
+        with self._operation():
+            self._authorize()
+            return {
+                layer["layer_id"]: layer["root_relative_path"]
+                for layer in self._document["source"]["layers"]
+            }
 
     def read_source(self, ref):
         with self._operation(), self._retained_errors():

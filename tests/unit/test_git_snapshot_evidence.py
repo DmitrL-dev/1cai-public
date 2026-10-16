@@ -1,6 +1,7 @@
 """Git/source evidence uses real Git, publication and the confined two-pass probe."""
 from dataclasses import replace
 import json
+import os
 import sqlite3
 
 import pytest
@@ -26,6 +27,8 @@ def workspace(project, tmp_path):
     git(source, "init", "--initial-branch=main")
     git(source, "config", "user.name", "Evidence test")
     git(source, "config", "user.email", "evidence@example.invalid")
+    # Tree binding compares exact bytes; keep host autocrlf from converting CRLF.
+    git(source, "config", "core.autocrlf", "false")
     git(source, "add", ".")
     git(source, "commit", "-m", "baseline")
     observer = Observer(
@@ -68,6 +71,13 @@ def test_verifier_matches_published_source_digest(workspace):
     assert evidence.project_id == observer.project_id
     with observer._context().state.transaction(observer.principal) as tx:
         assert evidence.source_digest == tx.get_snapshot(snapshot).source_digest
+    binding = evidence.tree_binding
+    assert binding.tree == git(source, "rev-parse", "HEAD^{tree}")
+    assert (binding.schema, binding.object_format, binding.files) == (1, "sha1", 1)
+    assert binding.tree_entries_outside_snapshot == 0
+    # The registered root is the repository root, so its .git is captured too.
+    metadata = sum(len(names) for _, _, names in os.walk(source / ".git"))
+    assert binding.git_metadata_files == metadata > 0
 
 
 def test_snapshot_source_mismatch_fails_before_analysis(workspace):
@@ -185,10 +195,85 @@ def test_watcher_passes_verified_evidence_after_analysis(workspace, monkeypatch)
     assert received and received[0] is not None
     assert received[0].snapshot_id == snapshot
     assert result["snapshot_binding"] == "git_source_verified"
-    assert (
-        observer.owner_report(snapshot)["quality"]["provenance"]
-        == "git_source_verified"
-    )
+    tree = git(source, "rev-parse", "HEAD^{tree}")
+    assert result["git_tree"] == tree
+    quality = observer.owner_report(snapshot)["quality"]
+    assert quality["provenance"] == "git_source_verified"
+    assert quality["git_tree"] == {
+        "schema": 1,
+        "object_format": "sha1",
+        "tree": tree,
+        "files": 1,
+        "git_metadata_files": received[0].tree_binding.git_metadata_files,
+        "tree_entries_outside_snapshot": 0,
+    }
+
+
+@pytest.mark.parametrize("tracked", [False, True])
+def test_snapshot_bytes_outside_commit_tree_fail_before_analysis(workspace, tracked):
+    observer, source, _ = workspace
+    notes = source / "notes.txt"
+    notes.write_bytes(b"captured line\r\n")
+    if tracked:
+        # Git stores LF while the working tree and snapshot keep CRLF.
+        git(source, "config", "core.autocrlf", "true")
+        git(source, "add", "notes.txt")
+        git(source, "commit", "-m", "converted text")
+    observer.tick()
+    calls = []
+    with pytest.raises(CoreError) as error:
+        GitWatcher(observer, lambda observation: calls.append(observation)).tick()
+    assert error.value.code == "GIT_TREE_MISMATCH"
+    assert error.value.details == {"reason": "content" if tracked else "missing"}
+    assert calls == []
+    assert observer.findings_status()["state"] is None
+
+
+def test_fabricated_or_legacy_tree_binding_is_not_recorded(workspace):
+    observer, source, _ = workspace
+    observer.tick()
+    observation = observe_git(source)
+    evidence = verify(observer, observation)
+    width = len(evidence.tree_binding.tree)
+    for forged in (
+        replace(evidence, tree_binding=replace(evidence.tree_binding, tree="0" * width)),
+        replace(evidence, tree_binding=replace(evidence.tree_binding, files=0)),
+        replace(evidence, tree_binding=None),
+    ):
+        with pytest.raises(CoreError) as error:
+            observer.record_findings(report(observation), evidence=forged)
+        assert error.value.code == "GIT_SNAPSHOT_EVIDENCE_INVALID"
+    assert observer.findings_status()["state"] is None
+
+
+@pytest.mark.parametrize("version", ["legacy", "future"])
+def test_stored_tree_binding_versions(workspace, version):
+    observer, source, _ = workspace
+    snapshot = observer.tick()["snapshot_id"]
+    observation = observe_git(source)
+    evidence = verify(observer, observation)
+    observer.record_findings(report(observation), evidence=evidence)
+    with sqlite3.connect(observer.database) as db:
+        raw = json.loads(
+            db.execute("SELECT evidence FROM git_snapshot_evidence").fetchone()[0]
+        )
+        if version == "legacy":
+            del raw["tree_binding"]
+        else:
+            raw["tree_binding"]["schema"] = 2
+        db.execute("UPDATE git_snapshot_evidence SET evidence=?", (json.dumps(raw),))
+    if version == "future":
+        with pytest.raises(CoreError) as error:
+            observer.owner_report(snapshot)
+        assert error.value.code == "GIT_SNAPSHOT_EVIDENCE_INVALID"
+        return
+    # Pre-binding receipts stay readable with their original, weaker meaning.
+    quality = observer.owner_report(snapshot)["quality"]
+    assert quality["provenance"] == "git_source_verified"
+    assert "git_tree" not in quality
+    with pytest.raises(CoreError) as error:
+        observer.record_findings(report(observation), evidence=evidence)
+    assert error.value.code == "FINDINGS_REPLAY_CONFLICT"
 
 
 @pytest.mark.parametrize(
