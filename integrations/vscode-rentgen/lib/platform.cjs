@@ -1,4 +1,5 @@
 'use strict';
+const {NATIVE_CORE_VERSIONS}=require('./core-versions.cjs');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const {randomUUID, createHash} = require('node:crypto');
@@ -47,7 +48,7 @@ function createPlatformService({root, config, client, trusted = () => true, canc
   let busy = false, disposed = false, cancelled = false;
   function check() {
     if (disposed || !trusted()) throw new Error('TRUST_REQUIRED');
-    if (!['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16','0.1.0.dev17','0.1.0.dev19'].includes(config.core_version)) throw new Error('PLATFORM_REQUIRES_DEV8');
+    if (!NATIVE_CORE_VERSIONS.includes(config.core_version)) throw new Error('PLATFORM_REQUIRES_DEV8');
   }
   async function safeDirectory(file) {
     const stat = await fs.lstat(file);

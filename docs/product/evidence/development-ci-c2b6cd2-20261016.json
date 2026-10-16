@@ -1,0 +1,179 @@
+{
+  "schema": 1,
+  "kind": "scoped development source/bytes qualification; not release authority",
+  "observed_at": "2026-10-15T23:00:00+00:00",
+  "repository": "DmitrL-dev/1cai-public",
+  "head": "c2b6cd263ccb59321af30ec990a41f51fae3d770",
+  "tree": "3329c4382ba3bf8f6e2aa59438da410d91f614eb",
+  "base": "8e7346ec973ace409d941e3d3091d1b8f84c6b99",
+  "event": "pull_request",
+  "pull_request": 104,
+  "synthetic_merge_checkout": "bb332a255a460a7e1d23f5b52c82870c10887892",
+  "squash_merged_main": "2d8254a75f4d12e794a0e6597a5d4671aeba0564",
+  "squash_tree_equal": true,
+  "checks": {
+    "executed_success": 13,
+    "expected_pr_deploy_skipped": 1,
+    "other_failures_or_pending": 0
+  },
+  "workflows": {
+    "Product": 38814671329,
+    "portable": 38814671340,
+    "GUI": 38814671330,
+    "diagnostic": 38814671334,
+    "Pages": 38814671357
+  },
+  "method": {
+    "original_api_size_sha256_before_any_zip_parse": true,
+    "production_guarded_extraction": true,
+    "independent_peer_review": "PASS",
+    "pytest_subtests_counted_from_terminal_summary": true,
+    "job_logs_read_in_memory_selected_summaries_only": true
+  },
+  "windows": {
+    "checkout": "bb332a255a460a7e1d23f5b52c82870c10887892",
+    "python_unique": 5812,
+    "passed": 4652,
+    "skipped": 1160,
+    "failed": 0,
+    "errors": 0,
+    "passed_subtests_additional": 51,
+    "suite_test_attribute": 5863,
+    "preflight_passed_separate": 95,
+    "client_contract_tests_passed": 9,
+    "closed_linux_inventory_controls_passed": 62,
+    "node_passed": 585,
+    "go_tested_packages_passed": 2,
+    "go_packages_without_tests": 2,
+    "controls_scope": "6 negative private-pipe harness controls plus 21 local mock cases / 308 assertions; not production native 1C execution"
+  },
+  "linux": {
+    "versions": [
+      {
+        "python": "3.11",
+        "passed": 4836,
+        "skipped": 977,
+        "failed": 0,
+        "errors": 0,
+        "passed_subtests_additional": 53,
+        "actual_linux_cases_passed": 47,
+        "source_sdk_mcp_cases_passed": 3,
+        "installed_cli_fresh_calls": 45,
+        "installed_cli_expected_refusals": 3,
+        "installed_cli_outcomes_passed": 10,
+        "wheel_product_git_blobs_equal": 153,
+        "portable_contracts": {
+          "passed": 318,
+          "skipped": 1
+        },
+        "gui_contracts": {
+          "passed": 315
+        },
+        "gui_node_passed": 98
+      },
+      {
+        "python": "3.12",
+        "passed": 4835,
+        "skipped": 978,
+        "failed": 0,
+        "errors": 0,
+        "passed_subtests_additional": 53,
+        "actual_linux_cases_passed": 47,
+        "source_sdk_mcp_cases_passed": 3,
+        "installed_cli_fresh_calls": 45,
+        "installed_cli_expected_refusals": 3,
+        "installed_cli_outcomes_passed": 10,
+        "wheel_product_git_blobs_equal": 153,
+        "portable_contracts": {
+          "passed": 318,
+          "skipped": 1
+        },
+        "gui_contracts": {
+          "passed": 315
+        },
+        "gui_node_passed": 98
+      }
+    ],
+    "only_lane_difference": "constructed-wheel pip RECORD codec test passes on 3.11 and is skipped on 3.12",
+    "scope": "GNU/Linux amd64 synthetic fixtures; source SDK tests separate from installed SDK"
+  },
+  "owned_linux_offline_sdk": {
+    "profile": "owned-linux-cli-mcp-py311-x86_64-v1",
+    "actual_synthetic_fixture_accepted": true,
+    "source_commit": "bb332a255a460a7e1d23f5b52c82870c10887892",
+    "source_tree": "3329c4382ba3bf8f6e2aa59438da410d91f614eb",
+    "archive_sha256": "a8094fb9462507ac47f6c5744775e4ae3995691a1a993a75862cd039cc56c523",
+    "manifest_sha256": "67095b2761ba362c9f82cef6461411142cc8ceb144fce51263705e783a01dc02",
+    "acceptance_sha256": "c74d804842becfb6b65219f810b6d08938981d96a6d578e9d62e083e1e976898",
+    "inner_cli_canonical_sha256": "ea5f09c771cd60606b70f72c2d6dbe2134bf11ac85133099e9bea4fdf74879ce",
+    "four_original_public_files_independently_equal": true,
+    "canonical_inner_payload_files": 210,
+    "source_product_files": 153,
+    "locked_sdk_wheels": 29,
+    "installed_inventory_distributions": 30,
+    "original_wheel_payload_files": 1083,
+    "read_only_elf_declarations": 6,
+    "observed_runtime": {
+      "architecture": "x86_64",
+      "glibc": "2.39",
+      "implementation": "cpython",
+      "kernel_release": "6.17.0-1022-azure",
+      "python": "3.11.15",
+      "soabi": "cpython-311-x86_64-linux-gnu"
+    },
+    "snapshot_diff_pair": {
+      "three_real_captures": true,
+      "explicit_forward": true,
+      "reverse_pair": true,
+      "self_pair": true,
+      "pagination": {
+        "changes": 3,
+        "counts": {
+          "added": 1,
+          "modified": 1,
+          "removed": 1,
+          "unchanged": 2
+        },
+        "limit": 1,
+        "pages": 3
+      },
+      "historical_bytes_after_live_inputs_removed": true,
+      "broken_unrelated_head_ignored": true,
+      "tampered_or_unknown_refused": true,
+      "wrong_cursor_refused": true,
+      "revoked_current_read_refused": true,
+      "library_negative_controls_scope": "isolated installed-library negative controls, not SDK protocol acceptance"
+    },
+    "manifest_flags": {
+      "accepted": false,
+      "published": false,
+      "linux_installed_cli_mcp_qualified": false,
+      "candidate": true,
+      "full_product_ready": false
+    },
+    "python312_offline_sdk_qualified": false,
+    "minimum_platform_qualified": false,
+    "os_wide_airgap_qualified": false
+  },
+  "product_native_and_gui": {
+    "artifacts_original_pinned": 7,
+    "producer": "kit 40-file manifest; delivered wheel 153 product files API-byte equal; 31 wheel hashes match the lock",
+    "native_windows_scope": "synthetic SCM/Git/BSL/editor API; no licensed 1C/EDT",
+    "GUI": {
+      "browser_passed": 43,
+      "backend_passed": 963,
+      "node_passed": 98
+    }
+  },
+  "diagnostic": {
+    "framework_controls": 38,
+    "synthetic_episodes": 42,
+    "actual_model_runs": 0,
+    "native": false
+  },
+  "limitations": [
+    "Synthetic development fixtures only; not release, minimum-host, full Linux product, native 1C/EDT, model or human acceptance.",
+    "The first H1 attempt 597e50e remains a separate negative receipt.",
+    "Runtime venv inventory hashes remain CI observations, not a public copy of installed bytes."
+  ]
+}

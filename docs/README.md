@@ -27,7 +27,8 @@ product route. Текущие исходники содержат и более 
 [квитанции](product/evidence/release-dev19-publication-20261015.json);
 [датированная сверка](product/RELEASE-PLAN-20261015.md) сохраняет историю этого выпуска.
 Текущий [план полного финального релиза](product/FULL-FINAL-PLAN.md) ведёт
-127 требований, все 24 IDE-сценария и очередь реализации.
+127 требований, все 24 IDE-сценария и очередь реализации;
+[backlog](product/BACKLOG.md) классифицирует, чего не хватает каждой открытой строке.
 [CI main `413cc65`](product/evidence/development-ci-413cc65-20261016.json)
 подтвердил ограниченный installed Core/Companion workbench: первая фаза и restart
 прошли в двух настоящих Windows Extension Hosts с проверкой байтов и cleanup.
@@ -48,6 +49,12 @@ Linux paired CLI/MCP сравнения снимков и `rentgen_snapshot_diff
 Общий budget действует на POSIX pair; Windows CLI остаётся прежним, новый MCP
 добавляет общий deadline/output guard, public macOS закрыт. Старые CI `c9` / `8e`
 новый diff не содержат; actual installed CLI/SDK-приёмка новой сборки нужна отдельно.
+Exact-source CI PR #104 `c2b6cd2` (main `2d8254a`) проверил этот блок на синтетических
+Linux/Windows fixtures; квитанция сохраняется отдельно.
+
+Следующий source-контракт [TEST-RUN-QUAL-01](product/TEST-RUN-QUALIFICATION.md)
+повторно сверяет retained YAxUnit artifacts с отчётом без запуска 1С; native-приёмка
+настоящих pass/fail/crash/timeout/no-tests остаётся в backlog до стенда.
 [Аудит плана выпуска](../scripts/release/RELEASE-PLAN-CONTRACT.md)
 отделяет проверенные bytes и заявленное покрытие от ещё не принятого полного продукта.
 Лицензированного стенда 1С/EDT пока нет, native-gates остаются открытыми.
@@ -132,6 +139,7 @@ BSL, платформа и тесты требуют своей подготов
 | Запустить платформенную проверку в редакторе | [Проверка 1С из Companion](product/EDITOR-PLATFORM-CHECK.md) |
 | Зарегистрировать доверенный тестовый профиль | [Тестовые профили](product/TEST-PROFILES.md) и [профиль YAxUnit](product/YAXUNIT-PLATFORM-PROFILE.md) |
 | Выполнить тесты выбранной ревизии в редакторе | [Тесты из Companion](product/EDITOR-TESTS.md) |
+| Проверить сохранённый запуск тестов по raw artifacts | [TEST-RUN-QUAL-01](product/TEST-RUN-QUALIFICATION.md) |
 
 ## Применить поддержанную правку
 

@@ -1,4 +1,5 @@
 'use strict';
+const {NATIVE_CORE_VERSIONS}=require('./core-versions.cjs');
 const fs=require('node:fs/promises'),path=require('node:path'),{randomUUID}=require('node:crypto'),{isDeepStrictEqual}=require('node:util');
 const {profileConfig,sourceRef}=require('./core.cjs');
 const {validateProfiles,validateTests}=require('./tests-result.cjs');
@@ -11,7 +12,7 @@ async function read(file){
 async function write(file,value,max){const bytes=Buffer.from(JSON.stringify(value));if(bytes.length>max)throw new Error('TEST_INPUT_LIMIT');const handle=await fs.open(file+'.pending','wx');try{await handle.writeFile(bytes);await handle.sync();}finally{await handle.close();}await fs.rename(file+'.pending',file);}
 function createTestService({root,config,client,trusted=()=>true,cancel=()=>{}}){
  config=profileConfig(config);const folder=path.join(root,'test-runs');let busy=false,disposed=false,cancelled=false;
- function check(){if(disposed||!trusted())throw new Error('TRUST_REQUIRED');if(!['0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16','0.1.0.dev17','0.1.0.dev19'].includes(config.core_version))throw new Error('TEST_REQUIRES_DEV8');}
+ function check(){if(disposed||!trusted())throw new Error('TRUST_REQUIRED');if(!NATIVE_CORE_VERSIONS.includes(config.core_version))throw new Error('TEST_REQUIRES_DEV8');}
  async function request(id){
   if(!uuid.test(id))throw new Error('INVALID_OPERATION_ID');await directory(folder);await directory(path.join(folder,id));const r=await read(path.join(folder,id,'request.json'));
   if(r.id!==id||r.receipt?.project_id!==config.project_id||!uuid.test(r.receipt.draft_id)||!Number.isSafeInteger(r.receipt.revision)||r.receipt.revision<1||typeof r.created_at!=='string'||!Number.isFinite(Date.parse(r.created_at)))throw new Error('TEST_REQUEST_INVALID');
@@ -43,6 +44,19 @@ function createTestService({root,config,client,trusted=()=>true,cancel=()=>{}}){
   if(result.status==='failed'&&(result.failure?.run_id!==id||result.failure.project_id!==config.project_id))throw new Error('TEST_RESULT_MISMATCH');
   return result;
  }
- return {start,list,profiles,inspect,get running(){return busy;},cancel(){cancelled=true;if(busy)cancel();},dispose(){disposed=true;if(busy)cancel();}};
+ // Read-only dossier bound to the saved intent; admitted by the advertised Core
+ // operation, never by the published version allowlist. It starts no test run.
+ async function qualify(id,{receipt=null}={}){
+  if(disposed||!trusted())throw new Error('TRUST_REQUIRED');
+  const intent=await request(id);if(receipt!==null&&!isDeepStrictEqual(intent.receipt,receipt))throw new Error('TEST_RESULT_MISMATCH');
+  const value=await client.proposal(intent.receipt.draft_id,intent.receipt.revision);if(!isDeepStrictEqual(value.receipt,intent.receipt))throw new Error('DRAFT_REVISION_MISMATCH');
+  const dossier=await client.testQualify(id);if(disposed||!trusted())throw new Error('TRUST_REQUIRED');
+  const b=dossier.binding;
+  if(b!==null&&(b?.profile_id!==intent.profile.profile_id||b.proposal_content_id!==intent.receipt.proposal_content_id||!isDeepStrictEqual(b.source_ref,intent.receipt.source_ref)))throw new Error('TEST_RESULT_MISMATCH');
+  if(dossier.profile!==null&&dossier.profile.profile_id!==intent.profile.profile_id)throw new Error('TEST_RESULT_MISMATCH');
+  if(dossier.run_status==='completed'&&(b===null||dossier.candidate_sha256!==null&&dossier.candidate_sha256!==value.proposal.replacement.raw_sha256))throw new Error('TEST_RESULT_MISMATCH');
+  return {dossier,intent};
+ }
+ return {start,list,profiles,inspect,qualify,get running(){return busy;},cancel(){cancelled=true;if(busy)cancel();},dispose(){disposed=true;if(busy)cancel();}};
 }
 module.exports={createTestService};

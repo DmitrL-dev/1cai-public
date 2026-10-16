@@ -6,6 +6,7 @@
   `docs/product/READINESS.md`. Текущий план и реестр —
   `docs/product/FULL-FINAL-PLAN.md`: цель — полный финальный релиз со всеми
   текущими планами; компонентный prerelease не закрывает её.
+  `docs/product/BACKLOG.md` называет, чего не хватает каждой открытой строке.
   Датированные планы и evidence не являются результатами текущего HEAD.
 - Проверить `git status`, remote main, открытые PR и актуальный diff перед
   изменениями. Сохранять чужие незакоммиченные правки; работать в одной ветке
@@ -25,7 +26,8 @@
   [SNAP-DIFF-01](docs/product/SNAPSHOT-DIFF.md) — отдельный source-контракт:
   Linux pair имеет общий POSIX budget; Windows CLI прежний, новый MCP имеет общий
   deadline/output guard с per-session ресурсами. Public macOS закрыт.
-  Старые CI `c9` / `8e` новый diff не квалифицируют. Точные границы —
+  Старые CI `c9` / `8e` новый diff не квалифицируют; его exact-source
+  [CI `c2b6cd2`](docs/product/evidence/development-ci-c2b6cd2-20261016.json) — ограниченная синтетическая приёмка. Точные границы —
   [PORTABLE-CORE](docs/product/PORTABLE-CORE.md); pure-Python wheel не означает
   поддержку всех команд или macOS.
 - Python: `python -m pytest -q <relevant tests>`; полный Windows suite и
@@ -86,6 +88,7 @@
   manifests, checksums и актуальных ограничений. Core tag указывает на
   `source_commit` принятого ZIP; записи выпуска могут быть закоммичены позже.
 - Перед финальным push выполнить полный поиск прежних и новых номеров версий
+  (`scripts/release/check_version_claims.py` помогает, но не заменяет поиск)
   по README, docs, integrations, packaging и планам, включая файлы вне текущего
   diff. Проверить все текущие publication/metadata/candidate-утверждения;
   отличать их от датированных origin/evidence и compatibility-history.
