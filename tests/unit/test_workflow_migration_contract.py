@@ -261,3 +261,71 @@ def test_runner_backup_opens_and_lost_acknowledgement_reconciles(
     )
     assert again["backup"] == result["backup"]
     assert again["receipt"] == result["receipt"]
+
+
+def test_concurrent_upgrades_commit_once_and_never_claim_each_other(state_v3, tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+
+    state, admin, _ = state_v3
+    operations = [str(uuid4()) for _ in range(4)]
+    backups = {op: _backup(state, admin, op, 3, tmp_path) for op in operations}
+
+    def run(operation):
+        try:
+            return operation, state.migrate_v3_to_v4(
+                admin, operation_id=operation, backup=backups[operation]
+            )
+        except CoreError as exc:  # a busy writer is an explicit, retryable refusal
+            return operation, exc.code
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        results = dict(pool.map(run, operations))
+    committed = [op for op, value in results.items() if isinstance(value, dict)]
+    assert len(committed) == 1, results
+    assert all(
+        value is None or isinstance(value, str)
+        for op, value in results.items()
+        if op not in committed
+    )
+    assert _version(state.path) == 4
+    with closing(sqlite3.connect(state.path)) as db:
+        assert db.execute("SELECT operation_id FROM workflow_receipts").fetchall() == [
+            (committed[0],)
+        ]
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Verified backup runner uses Windows pins")
+def test_runner_pins_the_backup_and_refuses_a_changed_attempt(state_v3, tmp_path, monkeypatch):
+    state, admin, _ = state_v3
+    directory = tmp_path / "backups"
+    operation = str(uuid4())
+    attempts = []
+
+    def tamper(name, **values):
+        if name == "before_migration":
+            attempt = values["attempt"]
+            attempts.append(attempt)
+            with pytest.raises(OSError):
+                (attempt / "state-v3.sqlite3").write_bytes(b"swapped backup")
+            (attempt / "unexpected.txt").write_bytes(b"foreign file")
+
+    monkeypatch.setattr(workflow, "_boundary", tamper)
+    with pytest.raises(CoreError) as error:
+        workflow.upgrade_project_workflows(
+            state, admin, backup_directory=directory, operation_id=operation
+        )
+    assert error.value.code == "MIGRATION_BACKUP_CORRUPT"
+    assert _version(state.path) == 3
+    attempt = attempts[0]
+    (attempt / "unexpected.txt").unlink()
+    backup = attempt / "state-v3.sqlite3"
+    original = backup.read_bytes()
+    backup.write_bytes(original[:-1] + bytes([original[-1] ^ 1]))
+    monkeypatch.setattr(workflow, "_boundary", lambda *a, **k: None)
+    with pytest.raises(CoreError) as error:
+        workflow.upgrade_project_workflows(
+            state, admin, backup_directory=directory, operation_id=operation
+        )
+    assert error.value.code.startswith("MIGRATION_BACKUP")
+    assert _version(state.path) == 3
+    assert backup.read_bytes() != original  # the existing attempt is never overwritten
