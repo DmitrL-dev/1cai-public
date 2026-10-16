@@ -365,7 +365,10 @@ def test_admission_exit_failure_retains_uuid_without_reporting_rejection(
         check_proposal_platform_json(
             ctx, raw, platform, limits=LIMITS, operation_id=operation
         )
-    assert retry.value.code == "PLATFORM_RUN_CONFLICT"
+    assert retry.value.code == "PLATFORM_RUN_INCOMPLETE"
+    assert retry.value.details == {
+        "run_id": operation, "status": "incomplete", "request_recorded": False,
+    }
     assert not counted
     recovered = check_proposal_platform_json(ctx, raw, platform, limits=LIMITS)
     assert recovered["run_id"] != operation and len(counted) == 1
