@@ -20,6 +20,8 @@ context = SarifContext(
     scope_id="whole-repository",
     complete=True,
     report_sha256=producer_report_sha256,
+    analyzer_name="Sonar",            # exact SARIF tool.driver.name
+    analyzer_version="10.6.0",        # driver version or semanticVersion
 )
 report = parse_sarif(
     report_bytes_or_path,
@@ -39,6 +41,11 @@ the report digest with that evidence. This parser cannot independently prove
 which files an external analyzer inspected. It compares all expected context
 fields and SHA-256 of the imported bytes; a foreign context or changed report
 fails with `SARIF_CONTEXT`. It does not probe whether HEAD has subsequently moved.
+
+The context also pins the analyzer: every SARIF run must name exactly
+`analyzer_name` and carry `analyzer_version` as `tool.driver.version` or
+`semanticVersion`. A different tool, another version or an unversioned report
+fails with `SARIF_CONTEXT` and is never imported as this profile's result.
 
 `complete` must be the boolean `True`. A missing, false or incorrectly typed
 completion attestation raises `SARIF_INCOMPLETE`, even if results are empty and

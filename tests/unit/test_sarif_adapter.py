@@ -42,7 +42,7 @@ def document(results=None):
     return {
         "version": "2.1.0",
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
-        "runs": [{"tool": {"driver": {"name": "Sonar"}}, "results": results or []}],
+        "runs": [{"tool": {"driver": {"name": "Sonar", "version": "10.6.0"}}, "results": results or []}],
     }
 
 
@@ -58,6 +58,8 @@ def parse(raw, observation, *, source=None, authorize=lambda: None, **changes):
         scope_id="repository",
         complete=True,
         report_sha256=hashlib.sha256(raw).hexdigest(),
+        analyzer_name="Sonar",
+        analyzer_version="10.6.0",
     )
     return module.parse_sarif(
         raw if source is None else source,
@@ -140,6 +142,8 @@ def test_foreign_observation_is_rejected(observation, field, value):
         "repository",
         True,
         hashlib.sha256(raw).hexdigest(),
+        "Sonar",
+        "10.6.0",
     )
     with pytest.raises(CoreError) as error:
         module.parse_sarif(
@@ -344,6 +348,8 @@ def test_control_characters_in_context_are_rejected(observation, field):
         **values,
         complete=True,
         report_sha256=hashlib.sha256(raw).hexdigest(),
+        analyzer_name="Sonar",
+        analyzer_version="10.6.0",
     )
     with pytest.raises(CoreError) as error:
         module.parse_sarif(
@@ -404,3 +410,24 @@ def test_empty_or_malformed_file_is_typed(observation, tmp_path, raw):
     source = tmp_path / "report.sarif"
     source.write_bytes(raw)
     assert_error(raw, observation, source=source)
+
+
+@pytest.mark.parametrize(
+    "driver",
+    [
+        {"name": "Other", "version": "10.6.0"},
+        {"name": "Sonar"},
+        {"name": "Sonar", "version": "10.5.0"},
+        {"name": "Sonar", "informationUri": "https://example.test"},
+    ],
+)
+def test_unattested_analyzer_name_or_version_is_never_imported(observation, driver):
+    value = document()
+    value["runs"][0]["tool"]["driver"] = driver
+    assert_error(encode(value), observation, "SARIF_CONTEXT")
+
+
+def test_semantic_version_may_carry_the_attested_analyzer_version(observation):
+    value = document()
+    value["runs"][0]["tool"]["driver"] = {"name": "Sonar", "semanticVersion": "10.6.0"}
+    assert parse(encode(value), observation).complete is True
