@@ -1112,6 +1112,12 @@ def _proposal_command(args, runtime, state_ctx):
             from .native_platform import NativePlatform
             from .platform_check import check_proposal_platform_json
 
+            operation_id = (
+                validate_operation_id(args.operation_id)
+                if args.operation_id is not None
+                else str(uuid4())
+            )
+            platform = NativePlatform(args.platform, args.platform_sha256)
             raw = _proposal_input(
                 state_ctx,
                 args.proposal_json,
@@ -1119,12 +1125,19 @@ def _proposal_command(args, runtime, state_ctx):
                 permissions=permissions,
             )
             _proposal_permissions(state_ctx, permissions)
+            # Publish reconciliation identity before the executor can create a
+            # journal or start work. This is an identity, not an admission receipt.
+            _emit(
+                {"recovery": {"operation_id": operation_id,
+                              "project_id": state_ctx.project_id}},
+                stream=sys.stderr,
+            )
             result = check_proposal_platform_json(
                 ctx,
                 raw,
-                NativePlatform(args.platform, args.platform_sha256),
+                platform,
                 limits=limits,
-                operation_id=args.operation_id,
+                operation_id=operation_id,
             )
             return _ProposalCommandResult(result, state_ctx, permissions)
         if args.command == "proposal-check":
