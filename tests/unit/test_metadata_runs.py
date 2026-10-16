@@ -74,6 +74,8 @@ def test_preview_token_must_match_the_typed_intent(captured):
     assert runs.preview_hash(response(header), request) == "0123456789abcdef"
     for changed in (
         header.replace("newName: SKU", "newName: Other"),
+        # A same-name attribute of an unrelated catalog is not the planned target.
+        header.replace("Catalog.Products.", "Catalog.Customers."),
         header.replace("problems: 0", "problems: 1"),
         header.replace("\n---\n", "\ncontentHash: 1111111111111111\n---\n"),
     ):

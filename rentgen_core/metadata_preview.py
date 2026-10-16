@@ -13,8 +13,14 @@ from .metadata_xml import parse_xml
 from .platform_check import _pin_inputs
 
 
+def _owned_name(item):
+    names = item.findall(MD + "Properties/" + MD + "Name")
+    return names[0].text if len(names) == 1 else None
+
+
 def _verify_identity(folder, inventory, request, check):
-    counts = Counter()
+    """Check target ownership; return every UUID-owned metadata (uuid, name)."""
+    counts, names = Counter(), Counter()
     selected = "Catalogs/" + request["catalog"]["name"] + ".xml"
     found = False
     for row in inventory:
@@ -23,7 +29,9 @@ def _verify_identity(folder, inventory, request, check):
             tree = parse_xml(read_retained(folder / row["path"], 4 * 1024**2))
             for item in tree.iter():
                 if item.tag.startswith(MD) and "uuid" in item.attrib:
-                    counts[item.attrib["uuid"].lower()] += 1
+                    identity = item.attrib["uuid"].lower()
+                    counts[identity] += 1
+                    names[identity, _owned_name(item)] += 1
             if row["path"] == selected:
                 _identity(tree, request)
                 found = True
@@ -31,6 +39,19 @@ def _verify_identity(folder, inventory, request, check):
         found
         and all(counts[request[key]["uuid"]] == 1 for key in ("catalog", "attribute")),
         "Export lost or duplicated object identity",
+    )
+    return names
+
+
+def _require_only_renamed(before, after, request):
+    """Same-name unrelated objects and all other UUIDs keep their names."""
+    expected = Counter(before)
+    identity = request["attribute"]["uuid"]
+    expected[identity, request["attribute"]["name"]] -= 1
+    expected[identity, request["new_name"]] += 1
+    require(
+        +expected == +after,
+        "Export renamed, added or removed other metadata identities",
     )
 
 
@@ -114,13 +135,14 @@ def build_preview(ctx, plan, run):
             for folder, rows in zip(folders, inventories):
                 pins.enter_context(_pin_inputs(folder, rows))
             request = plan["request"]
-            _verify_identity(folders[1], inventories[1], request, check)
+            before = _verify_identity(folders[1], inventories[1], request, check)
             renamed = deepcopy(request)
             renamed["attribute"]["name"], renamed["new_name"] = (
                 request["new_name"],
                 request["attribute"]["name"],
             )
-            _verify_identity(folders[2], inventories[2], renamed, check)
+            after = _verify_identity(folders[2], inventories[2], renamed, check)
+            _require_only_renamed(before, after, request)
             normalization = _diff(
                 folders[0], folders[1], inventories[0], inventories[1], check
             )
