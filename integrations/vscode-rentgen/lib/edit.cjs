@@ -1,4 +1,5 @@
 'use strict';
+const {REPAIR_CORE_VERSIONS}=require('./core-versions.cjs');
 const fs=require('node:fs/promises'),path=require('node:path');
 const {randomUUID,createHash}=require('node:crypto');
 const {isDeepStrictEqual:same}=require('node:util');
@@ -24,7 +25,7 @@ async function entries(folder,limit){
 }
 function createEditService({root,config,client,trusted=()=>true}){
  config=profileConfig(config);const home=path.join(root,'edit-sessions');let busy=false,disposed=false;
- function check(){requireValue(!disposed&&trusted(),'TRUST_REQUIRED');requireValue(['0.1.0.dev7','0.1.0.dev8','0.1.0.dev9','0.1.0.dev10','0.1.0.dev11','0.1.0.dev12','0.1.0.dev13','0.1.0.dev14','0.1.0.dev15','0.1.0.dev16','0.1.0.dev17','0.1.0.dev19'].includes(config.core_version),'EDIT_REQUIRES_DEV7_OR_DEV8');}
+ function check(){requireValue(!disposed&&trusted(),'TRUST_REQUIRED');requireValue(REPAIR_CORE_VERSIONS.includes(config.core_version),'EDIT_REQUIRES_DEV7_OR_DEV8');}
  function validateReceipt(r){
   requireValue(r?.project_id===config.project_id&&uuid.test(r.draft_id)&&Number.isSafeInteger(r.revision)&&r.revision>0&&sha.test(r.proposal_content_id),'EDIT_RECEIPT_INVALID');
   sourceRef(r.source_ref,config.project_id);
