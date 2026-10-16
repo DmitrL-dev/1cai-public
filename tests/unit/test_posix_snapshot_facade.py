@@ -87,9 +87,8 @@ def test_all_operations_use_distinct_real_sessions_and_close_before_return(gener
     assert not hasattr(sources, "_path")
 
 
-@pytest.mark.parametrize("consumer", ["direct", "metadata", "diff", "proposal", "platform", "metadata-plan"])
+@pytest.mark.parametrize("consumer", ["direct", "other-purpose", "diff", "proposal", "platform", "metadata-plan"])
 def test_legacy_session_consumers_get_controlled_denial_without_retained_io(generation, monkeypatch, consumer):
-    from rentgen_core.metadata import metadata_summary
     from rentgen_core.snapshot_diff import compare_snapshots
     from rentgen_core.proposals import create_proposal, ProposalLimits
     from rentgen_core.platform_check import _materialize
@@ -105,7 +104,7 @@ def test_legacy_session_consumers_get_controlled_denial_without_retained_io(gene
     monkeypatch.setattr(retained.Directory, "file", lambda *a, **k: pytest.fail("Unsupported consumer read retained content"))
     calls = {
         "direct": lambda: sources.read_session(limits=SnapshotReadLimits()),
-        "metadata": lambda: metadata_summary(ctx),
+        "other-purpose": lambda: sources.read_session(limits=SnapshotReadLimits(), purpose="proposal"),
         "diff": lambda: compare_snapshots(ctx, ctx),
         "proposal": lambda: create_proposal(ctx, ref, generation.contents[MODULE],
                                           limits=ProposalLimits(1024**2, 1024**2, 1536*1024, 256*1024)),
@@ -419,3 +418,54 @@ def test_actual_linux_resolver_eager_read_and_fresh_context(generation, monkeypa
         assert ctx.sources.read_source(ref) == generation.contents[MODULE]
         assert ctx.graph.resolve_module(ref)["result"]["graph_modules"]
     assert calls
+
+
+FIXTURE = Path(__file__).resolve().parents[2] / "packaging/fixtures/edt-metadata-v1/created"
+
+
+def test_metadata_navigation_reads_one_verified_posix_session_per_operation(make_generation, monkeypatch):
+    from rentgen_core import project_navigation as nav
+
+    extra = {p.relative_to(FIXTURE).as_posix(): p.read_bytes() for p in sorted(FIXTURE.rglob("*")) if p.is_file()}
+    generation = make_generation(extra=extra, source_format="designer_xml")
+    sources = sources_for(generation)
+    graph = facade.PosixSnapshotGraph(generation.snapshot, sources)
+    ctx = ProjectContext(generation.snapshot.project_id, generation.principal, "fixture-request",
+                         generation.state, generation.root / "live", generation.snapshot, sources, graph)
+    opened, original = [], facade.open_posix_snapshot_session
+    monkeypatch.setattr(facade, "open_posix_snapshot_session",
+                        lambda **options: opened.append(1) or original(**options))
+    summary = nav.summary(ctx)
+    assert summary["schema"] == 1 and summary["snapshot"] == asdict(generation.snapshot)
+    found = nav.search(ctx, query="Products", metadata_type="Catalog", layer_id="base")
+    assert [o["source_ref"]["relative_path"] for o in found["objects"]] == ["Catalogs/Products.xml"]
+    assert found["objects"][0]["uuid_status"] == "unverified"
+    details = nav.object_details(ctx, layer_id="base", relative_path="Catalogs/Products.xml")
+    assert "Article" in [item["name"] for item in details["object"]["attributes"]["items"]]
+    assert len(opened) == 3
+    # Every other POSIX session consumer stays refused, and a busy owner is exclusive.
+    from rentgen_core.sources import SnapshotReadLimits
+    with sources.read_session(limits=SnapshotReadLimits(), purpose="metadata-navigation") as session:
+        assert len(session.entries()) == 3 + len(extra)
+        with pytest.raises(CoreError) as error:
+            with sources.read_session(limits=SnapshotReadLimits(), purpose="metadata-navigation"):
+                pass
+        assert error.value.code == "SNAPSHOT_READ_SESSION_INVALID"
+    with pytest.raises(CoreError):
+        sources.read_session(limits=object(), purpose="metadata-navigation")
+
+
+def test_metadata_navigation_rechecks_current_permission_on_posix(make_generation):
+    from rentgen_core import project_navigation as nav
+
+    extra = {p.relative_to(FIXTURE).as_posix(): p.read_bytes() for p in sorted(FIXTURE.rglob("*")) if p.is_file()}
+    generation = make_generation(extra=extra, source_format="designer_xml")
+    sources = sources_for(generation)
+    ctx = ProjectContext(generation.snapshot.project_id, generation.principal, "fixture-request",
+                         generation.state, generation.root / "live", generation.snapshot, sources,
+                         facade.PosixSnapshotGraph(generation.snapshot, sources))
+    with generation.state.transaction(generation.owner, write=True) as tx:
+        revoke_membership(tx, generation.principal)
+    with pytest.raises(CoreError) as error:
+        nav.summary(ctx)
+    assert error.value.code == "PROJECT_FORBIDDEN"

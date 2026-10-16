@@ -249,7 +249,9 @@ def _operation(ctx, layer_id, limits):
         raise CoreError("INVALID_QUERY_OPTIONS", "Typed metadata limits required")
     if layer_id is not None and layer_id not in {layer.layer_id for layer in layers}:
         raise CoreError("SOURCE_LAYER_NOT_FOUND", "Layer is absent from this snapshot")
-    with ctx.sources.read_session(limits=SnapshotReadLimits()) as session:
+    with ctx.sources.read_session(
+        limits=SnapshotReadLimits(), purpose="metadata-navigation"
+    ) as session:
         reader = _Read(session, limits)
         yield reader, [
             layer for layer in layers if layer_id is None or layer.layer_id == layer_id

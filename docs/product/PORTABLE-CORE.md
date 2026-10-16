@@ -92,7 +92,8 @@ write transaction; если короткий commit уже выиграл гон
 Capability contract остаётся v1. Новый узкий alias `snapshot.source.read` и
 `source.capture` допускают только этот source/graph маршрут на Linux. Старая
 широкая группа `snapshot.retained.read` сохраняет Windows-совместимость и остаётся
-закрытой на Linux. Metadata navigation, snapshot diff, создание/редактирование
+закрытой на Linux. Snapshot diff и metadata navigation допускаются позже отдельными
+узкими группами `snapshot.compare.read` и `snapshot.metadata.read`; создание/редактирование
 черновиков, native execution, live writes и macOS этим блоком не допускаются.
 
 Default capture limits: **64 МиБ всех исходников, 16 МиБ на файл, 4096 записей**,

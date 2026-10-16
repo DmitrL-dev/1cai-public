@@ -1,5 +1,6 @@
 """Request-owned POSIX read facades; a fresh verified session per operation."""
 
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 import os
 from threading import get_ident
@@ -11,7 +12,7 @@ from .context import Principal, SnapshotRef
 from .errors import CoreError
 from .manifests import parse_manifest
 from .source_paths import validate_source_path
-from .sources import SnapshotCapabilities, _source_page
+from .sources import SnapshotCapabilities, SnapshotReadLimits, _source_page
 from .state import ProjectState
 
 
@@ -64,12 +65,34 @@ class PosixSnapshotSources:
     def _verify(self):
         self._run(lambda session: None)
 
-    def read_session(self, *, limits):
-        """Controlled zero-IO refusal for unadmitted legacy session consumers."""
-        raise CoreError(
-            "CAPABILITY_UNAVAILABLE",
-            "The legacy Windows retained session is unavailable for POSIX snapshots",
-        )
+    def read_session(self, *, limits, purpose=None):
+        """A fresh verified POSIX session for reviewed read-only consumers only.
+
+        Metadata navigation reads bytes through entries/read_source/checkpoint,
+        all bounded by this facade's POSIX limits and reauthorized per read.
+        Every other legacy consumer keeps a controlled zero-IO refusal.
+        """
+        if purpose != "metadata-navigation" or type(limits) is not SnapshotReadLimits:
+            raise CoreError(
+                "CAPABILITY_UNAVAILABLE",
+                "The legacy Windows retained session is unavailable for POSIX snapshots",
+            )
+        return self._owned_session()
+
+    @contextmanager
+    def _owned_session(self):
+        if self._owner != _owner() or self._busy:
+            raise CoreError("SNAPSHOT_READ_SESSION_INVALID", "POSIX facade is not active on its owner")
+        object.__setattr__(self, "_busy", True)
+        try:
+            with open_posix_snapshot_session(
+                state=self._state, principal=self._principal, snapshot=self.snapshot,
+                graph_reader_factory=self._factory, limits=self._limits,
+                graph_limits=self._graph_limits, authorize_read=self._authorize_read,
+            ) as session:
+                yield session
+        finally:
+            object.__setattr__(self, "_busy", False)
 
     def resolve(self, layer_id, relative_path):
         def operation(session):
