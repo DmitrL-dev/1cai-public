@@ -33,7 +33,7 @@ from .publication import capture_and_publish
 from .snapshot_diff import compare_snapshots
 from .snapshots import ProjectHead
 from .source_probe import probe_sources
-from .sources import SnapshotReadLimits
+from .sources import SnapshotReadLimits, SnapshotSources
 
 SCHEMA = """
 CREATE TABLE meta (id INTEGER PRIMARY KEY CHECK(id=1), binding TEXT NOT NULL,
@@ -612,8 +612,16 @@ class Observer:
         tree = read_git_tree(
             observation.repository, observation.commit, **self._git_options
         )
-        snapshot = self.runtime.resolve(self.principal, self.project_id, snapshot_id)
-        with snapshot.sources.read_session(limits=SnapshotReadLimits()) as session:
+        ctx = self._context()
+        with ctx.state.transaction(self.principal) as tx:
+            catalog = tx.get_snapshot(snapshot_id)
+        # The retained session validates the catalog, manifest and artifact bytes
+        # and reauthorizes every read. Blob binding needs no graph query adapter.
+        sources = SnapshotSources(
+            catalog.snapshot, ctx.state, self.principal,
+            ctx.state.path.parent / catalog.generation_relpath,
+        )
+        with sources.read_session(limits=SnapshotReadLimits()) as session:
             roots = session.layer_roots()
             pairs = [
                 (

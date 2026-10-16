@@ -169,6 +169,7 @@ def test_sha256_repository_binds_with_sha256_blob_ids(tmp_path):
         pytest.skip("Installed Git cannot create SHA-256 repositories")
     git(root, "config", "user.name", "Tree binding test")
     git(root, "config", "user.email", "tree@example.invalid")
+    git(root, "config", "core.autocrlf", "false")
     (root / "Module.bsl").write_bytes(MODULE)
     git(root, "add", ".")
     git(root, "commit", "-m", "baseline")

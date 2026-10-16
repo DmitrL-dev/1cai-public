@@ -210,11 +210,8 @@ class DeliveryJournal:
             if os.name == "nt":
                 import msvcrt
 
-                stream.seek(0)
-                if stream.read(1) == b"":
-                    stream.seek(0)
-                    stream.write(b"0")
-                    stream.flush()
+                # Windows permits locking beyond EOF. Acquire before touching
+                # the byte: even reading it fails while another holder owns it.
                 for _ in range(20):
                     stream.seek(0)
                     try:
