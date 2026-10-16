@@ -24,7 +24,9 @@ from .git_observer import (
 from .git_snapshot_evidence import (
     EVIDENCE_SCHEMA,
     GitSnapshotEvidence,
+    bind_git_tree,
     read_evidence,
+    read_git_tree,
     save_evidence,
 )
 from .publication import capture_and_publish
@@ -386,8 +388,10 @@ class Observer:
     ) -> GitSnapshotEvidence | None:
         """Probe stable sources between clean Git observations; None means no head.
 
-        This does not compute a Git tree digest or prove excluded/untracked files.
         The confined source probe checks both content passes and project head.
+        Every published snapshot file outside the repository's own ``.git`` must
+        equal the blob at the same path of ``commit^{tree}``; tree entries the
+        snapshot does not contain are counted, not proven.
         """
         ctx = self._context(write=True)
         self._validate(ctx)
@@ -412,6 +416,11 @@ class Observer:
                     "GIT_SNAPSHOT_MISMATCH",
                     "Published snapshot differs from observed sources",
                 )
+        tree_binding = (
+            None
+            if catalog is None
+            else self._bind_git_tree(observation, head.snapshot.snapshot_id)
+        )
         if observe_git(ctx.source_root, **self._git_options) != observation:
             raise CoreError("GIT_HEAD_CHANGED", "Git HEAD changed during source probe")
         with ctx.state.transaction(ctx.principal) as tx:
@@ -424,9 +433,39 @@ class Observer:
             None
             if catalog is None
             else GitSnapshotEvidence(
-                self.project_id, observation, head.snapshot.snapshot_id, digest
+                self.project_id,
+                observation,
+                head.snapshot.snapshot_id,
+                digest,
+                tree_binding,
             )
         )
+
+    def _bind_git_tree(self, observation, snapshot_id):
+        """Compare the published snapshot's retained bytes with commit blobs."""
+        tree = read_git_tree(
+            observation.repository, observation.commit, **self._git_options
+        )
+        snapshot = self.runtime.resolve(self.principal, self.project_id, snapshot_id)
+        with snapshot.sources.read_session(limits=SnapshotReadLimits()) as session:
+            roots = session.layer_roots()
+            pairs = [
+                (
+                    entry.ref.relative_path
+                    if roots[entry.ref.layer_id] == "."
+                    else roots[entry.ref.layer_id] + "/" + entry.ref.relative_path,
+                    entry.ref,
+                )
+                for entry in session.entries()
+            ]
+            refs = dict(pairs)
+            binding = bind_git_tree(
+                tree,
+                [path for path, _ in pairs],
+                lambda path: session.read_source(refs[path]),
+                roots.values(),
+            )
+        return binding
 
     def _check_git_evidence(self, evidence, observation, catalog):
         if (
@@ -687,6 +726,11 @@ class Observer:
             )
             if provenance is not None:
                 report["quality"]["provenance"] = provenance
+            if (
+                provenance == "git_source_verified"
+                and evidence.tree_binding is not None
+            ):
+                report["quality"]["git_tree"] = asdict(evidence.tree_binding)
             if quality_reason is not None:
                 report["quality"] = {
                     "status": "not_available",

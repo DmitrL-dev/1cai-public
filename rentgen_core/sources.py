@@ -833,6 +833,15 @@ class SnapshotReadSession:
             self._authorize()
             return self._entries
 
+    def layer_roots(self):
+        """Layer roots from this session's digest-verified source document."""
+        with self._operation():
+            self._authorize()
+            return {
+                layer["layer_id"]: layer["root_relative_path"]
+                for layer in self._document["source"]["layers"]
+            }
+
     def read_source(self, ref):
         with self._operation(), self._retained_errors():
             self._authorize()
