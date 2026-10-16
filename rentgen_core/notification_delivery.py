@@ -240,17 +240,20 @@ class WebhookAdapter:
                     pass
 
 
-def deliver_outbox(outbox, adapter, limit=100):
+def deliver_outbox(outbox, adapter, limit=100, *, authorize):
     """Attempt a bounded batch and ack only accepted events.
 
     The caller serializes consumers and explicitly decides when to retry pending
     events. Acceptance followed by an ack failure can cause a later duplicate;
-    the receiver must deduplicate the stable idempotency key.
+    the receiver must deduplicate the stable idempotency key. ``authorize`` is
+    the caller's current-permission check: it runs before every send and every
+    ack, and its refusal stops the batch with the event still pending.
     """
     if (
         not isinstance(outbox, NotificationOutbox)
         or not isinstance(adapter, WebhookAdapter)
         or not _bounded_int(limit, NotificationOutbox.MAX_EVENTS)
+        or not callable(authorize)
     ):
         raise _invalid()
     notifications = outbox.peek(NotificationOutbox.MAX_EVENTS)
@@ -264,8 +267,10 @@ def deliver_outbox(outbox, adapter, limit=100):
         ) from None
     results = []
     for notification in notifications[:limit]:
+        authorize()
         receipt = adapter.deliver(notification)
         results.append(receipt)
         if receipt.status is DeliveryStatus.ACCEPTED:
+            authorize()
             outbox.ack(notification["id"])
     return tuple(results)

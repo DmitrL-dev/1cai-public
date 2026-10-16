@@ -780,7 +780,9 @@ def main(argv=None):
     parser.add_argument("--port", type=int, default=0)
     parser.add_argument("--open-browser", action="store_true")
     args = parser.parse_args(argv)
-    if sys.platform != "linux":
+    from .capabilities import component_status
+
+    if not component_status("local_gui")["supported"]:
         parser.error("This experimental ZIP workflow is currently supported on Linux only")
     if not 0 <= args.port <= 65535 or re.fullmatch(r"[0-9a-f]{64}", args.input_core_sha256) is None:
         parser.error("Invalid port or executable SHA-256")

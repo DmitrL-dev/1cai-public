@@ -249,7 +249,7 @@ def test_deliver_outbox_acks_only_accepted_and_respects_limit(tmp_path):
         calls.append(request)
         return Response(204 if len(calls) == 1 else 503)
 
-    results = module.deliver_outbox(outbox, adapter(sender), limit=2)
+    results = module.deliver_outbox(outbox, adapter(sender), limit=2, authorize=lambda: None)
     assert [r.status.value for r in results] == ["accepted", "retryable"]
     assert [i["id"] for i in outbox.peek()] == [2, 3]
     assert len(calls) == 2
@@ -258,7 +258,7 @@ def test_deliver_outbox_acks_only_accepted_and_respects_limit(tmp_path):
 def test_permanent_delivery_remains_pending(tmp_path):
     outbox = NotificationOutbox(tmp_path / "outbox.json")
     outbox.enqueue({"status": "error"})
-    api().deliver_outbox(outbox, adapter(Sender(Response(403))), limit=1)
+    api().deliver_outbox(outbox, adapter(Sender(Response(403))), limit=1, authorize=lambda: None)
     assert len(outbox.peek()) == 1
 
 
@@ -266,7 +266,8 @@ def test_permanent_delivery_remains_pending(tmp_path):
 def test_outbox_limit_fails_closed(tmp_path, limit):
     with pytest.raises(CoreError):
         api().deliver_outbox(
-            NotificationOutbox(tmp_path / "outbox.json"), adapter(Sender()), limit=limit
+            NotificationOutbox(tmp_path / "outbox.json"), adapter(Sender()), limit=limit,
+            authorize=lambda: None,
         )
 
 
@@ -282,7 +283,7 @@ def test_corrupt_outbox_never_sends_or_acknowledges(tmp_path):
     before = path.read_bytes()
     sender = Sender()
     with pytest.raises(CoreError):
-        api().deliver_outbox(NotificationOutbox(path), adapter(sender), limit=1)
+        api().deliver_outbox(NotificationOutbox(path), adapter(sender), limit=1, authorize=lambda: None)
     assert sender.calls == []
     assert path.read_bytes() == before
 
@@ -338,7 +339,7 @@ def test_malformed_later_batch_event_blocks_all_delivery(tmp_path):
     )
     sender = Sender()
     with pytest.raises(CoreError):
-        api().deliver_outbox(NotificationOutbox(path), adapter(sender), limit=2)
+        api().deliver_outbox(NotificationOutbox(path), adapter(sender), limit=2, authorize=lambda: None)
     assert sender.calls == []
 
 
@@ -356,7 +357,7 @@ def test_malformed_event_beyond_batch_limit_blocks_all_delivery(tmp_path):
     )
     sender = Sender()
     with pytest.raises(CoreError):
-        api().deliver_outbox(NotificationOutbox(path), adapter(sender), limit=1)
+        api().deliver_outbox(NotificationOutbox(path), adapter(sender), limit=1, authorize=lambda: None)
     assert sender.calls == []
 
 
@@ -375,3 +376,25 @@ def test_oversized_payload_receipt_preserves_validated_identity():
         receipt.idempotency_key
         == adapter(Sender()).deliver(notification(42)).idempotency_key
     )
+
+
+def test_revoked_rights_stop_before_send_or_ack_and_keep_events_pending(tmp_path):
+    outbox = NotificationOutbox(tmp_path / "outbox.json")
+    for status in ("analyzed", "error"):
+        outbox.enqueue({"status": status})
+    sender, checks = Sender(Response(204)), []
+
+    def authorize():
+        checks.append(len(sender.calls))
+        if len(checks) == 2:  # revoked after the first send, before its ack
+            raise CoreError("PROJECT_FORBIDDEN", "Access revoked")
+
+    with pytest.raises(CoreError) as error:
+        api().deliver_outbox(outbox, adapter(sender), limit=2, authorize=authorize)
+    assert error.value.code == "PROJECT_FORBIDDEN"
+    assert len(sender.calls) == 1 and [i["id"] for i in outbox.peek()] == [1, 2]
+    with pytest.raises(TypeError):  # the permission check is never implicit
+        api().deliver_outbox(outbox, adapter(sender), limit=1)
+    with pytest.raises(CoreError):
+        api().deliver_outbox(outbox, adapter(sender), limit=1, authorize=None)
+    assert len(sender.calls) == 1
