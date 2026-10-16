@@ -90,6 +90,8 @@ jobs:
               stream.write(f"RENTGEN_TEST_LINUX_SCANNER={scanner}\n")
               stream.write(f"RENTGEN_TEST_LINUX_SCANNER_SHA256={digest}\n")
           PY
+      - name: Linux manual draft CLI and SDK contracts
+        run: python -m pytest -q --tb=short tests/unit/test_draft_cli_contract.py tests/unit/test_linux_mcp_capture.py -k 'DraftCliContractTests or manual_draft_cli_and_sdk' --junitxml=output/linux-draft-contracts.xml
       - name: Locked Rust native and process contracts
         run: |
           cargo +1.92.0 test --locked --manifest-path rust/input-core/Cargo.toml
@@ -384,6 +386,7 @@ jobs:
           name: experimental-linux-python-${{ matrix.python }}
           path: |
             output/portable-contracts.xml
+            output/linux-draft-contracts.xml
             output/gui-contracts.xml
             output/gui-js-tests.log
             output/linux-diagnostic.xml

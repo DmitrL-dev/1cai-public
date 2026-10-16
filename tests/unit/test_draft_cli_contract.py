@@ -1,4 +1,4 @@
-"""Portable CLI parsing and real Linux refusal; no Windows IO is substituted."""
+"""Portable CLI parsing and Linux identity gate; no Windows IO is substituted."""
 import json
 from pathlib import Path
 import subprocess
@@ -76,14 +76,15 @@ class DraftCliContractTests(unittest.TestCase):
                         cli._execute(cli._parser().parse_args(arguments(command)))
                     self.assertEqual(caught.exception.code, "CAPABILITY_UNAVAILABLE")
 
-    @unittest.skipUnless(sys.platform == "linux", "Actual Linux process refusal")
-    def test_real_linux_process_refuses_before_opening_any_input(self):
+    @unittest.skipUnless(sys.platform == "linux", "Actual Linux identity gate")
+    def test_real_linux_process_requires_identity_before_payload_io(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / "uncreated"
             for command in ("draft-start", "draft-edit"):
                 with self.subTest(command=command):
                     result = subprocess.run(
-                        [sys.executable, "-S", "-m", "rentgen_core", *arguments(command, root)],
+                        [sys.executable, "-S", "-m", "rentgen_core", *arguments(command, root),
+                         "--identity-profile", str(root / "identity.json")],
                         cwd=Path(__file__).resolve().parents[2],
                         capture_output=True, timeout=5, check=False,
                     )
@@ -91,8 +92,7 @@ class DraftCliContractTests(unittest.TestCase):
                     self.assertEqual(result.stderr, b"")
                     self.assertEqual(len(result.stdout.splitlines()), 1)
                     value = json.loads(result.stdout)
-                    self.assertEqual(value["error"]["code"], "CAPABILITY_UNAVAILABLE")
-                    self.assertEqual(value["error"]["details"]["operation"], command)
+                    self.assertEqual(value["error"]["code"], "LOCAL_IDENTITY_UNAVAILABLE")
                     self.assertFalse(root.exists())
 
 

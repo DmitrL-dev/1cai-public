@@ -36,10 +36,12 @@ def test_v1_alias_preserves_windows_contract_without_opening_linux_writers(monke
     for operation in _SOURCE_READS | {"capture", "snapshot-diff"}:
         assert capabilities.operation_supported(operation) is (platform != "darwin")
     navigation = {"metadata-summary", "metadata-search", "metadata-object"}
+    authoring = {"proposal-create", "proposal-diff", "draft-save", "draft-start", "draft-edit"}
     assert set(groups["snapshot.metadata.read"]["operations"]) == navigation
-    for operation in navigation:
+    assert set(groups["draft.authoring"]["operations"]) == authoring
+    for operation in navigation | authoring:
         assert capabilities.operation_supported(operation) is (platform != "darwin")
-    for operation in _LEGACY_RETAINED - _SOURCE_READS - navigation - {"snapshot-diff"}:
+    for operation in _LEGACY_RETAINED - _SOURCE_READS - navigation - authoring - {"snapshot-diff"}:
         assert capabilities.operation_supported(operation) is (platform == "win32")
     assert not capabilities.operation_supported("unreviewed-source-command")
 

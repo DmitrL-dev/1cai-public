@@ -34,14 +34,17 @@ LINUX_PROJECT_TOOLS=frozenset({
     "rentgen_graph_resolve","rentgen_impact",
     "rentgen_draft_get","rentgen_draft_list","rentgen_draft_history",
     "rentgen_draft_receipt","rentgen_draft_read",
+    "rentgen_proposal_create","rentgen_draft_start","rentgen_draft_save","rentgen_draft_edit",
 })
 
 
 def require_linux_project_tools(names):
     """Independent closed inventory for the default project-scoped Linux SDK.
 
-    Draft history reads are portable. Windows writers/native tools and CLI-only
-    byte-plan commands have no place in this MCP inventory. Do not derive the
+    Draft history reads and manual draft authoring (proposal create, draft
+    start/save/edit into shared history) are portable. Live/native writers,
+    draft archive/restore/check and CLI-only byte-plan commands have no place in
+    this MCP inventory. Do not derive the
     expectation from the runtime capability map being checked.
     """
     require(type(names) is list and all(type(name) is str for name in names),
