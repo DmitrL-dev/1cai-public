@@ -1,0 +1,60 @@
+{
+  "binary_sha256": "8a374c45b52ae9f66e73d64fa1aedd4e30acac15ca2709a00927b6b297581a04",
+  "checks": [
+    {
+      "command": "identity-init",
+      "exit": 0
+    },
+    {
+      "command": "registry-init",
+      "exit": 0
+    },
+    {
+      "command": "project-register",
+      "exit": 0
+    },
+    {
+      "command": "export-analyze",
+      "exit": 0
+    },
+    {
+      "command": "export-analyze",
+      "exit": 0
+    },
+    {
+      "command": "project-head",
+      "exit": 0
+    },
+    {
+      "command": "capture",
+      "exit": 2
+    }
+  ],
+  "counts": {
+    "files": 2,
+    "metadata_candidates": 1,
+    "metadata_objects": 1,
+    "modules": 1,
+    "other_files": 0,
+    "unsupported_metadata_roots": 0
+  },
+  "gui": {
+    "console_entry_point": true,
+    "foreign_origin_refused": true,
+    "graceful_shutdown": true,
+    "hash_bound_source_read": true,
+    "http_rust_import": true,
+    "isolated_installed_package": true,
+    "loopback_only": true,
+    "project_and_inputs_unchanged": true,
+    "static_assets_equal_wheel": 9,
+    "temporary_files_removed": true,
+    "unauthenticated_refused": true
+  },
+  "project_head_unchanged": true,
+  "schema": 1,
+  "scope": "experimental Linux installed CLI and read-only GUI import; not Windows/macOS or full Linux qualification",
+  "source_unchanged": true,
+  "version": "0.1.0.dev20",
+  "wheel_sha256": "13a526b31adc1837c1e6a5b6e758f1ca486c4c59247c9c8be60034bf097cb965"
+}
