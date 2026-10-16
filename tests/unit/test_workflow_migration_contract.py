@@ -7,7 +7,6 @@ from contextlib import closing
 from dataclasses import asdict
 from datetime import datetime, timezone
 import hashlib
-import json
 import os
 from pathlib import Path
 import sqlite3
@@ -245,11 +244,12 @@ def test_runner_backup_opens_and_lost_acknowledgement_reconciles(
         state, admin, backup_directory=tmp_path / "backups", operation_id=operation
     )
     assert _version(state.path) == 4
-    assert result.outcome in {"committed", "reconciled"}
-    assert result.migration_attribution == "operation_receipt"
-    backup = Path(result.backup.path)
+    assert result["outcome"] in {"committed", "reconciled"}
+    assert result["migration_attribution"] == "operation_receipt"
+    assert result["receipt"]["backup"] == result["backup"]
+    backup = Path(result["backup"]["path"])
     raw = backup.read_bytes()
-    assert hashlib.sha256(raw).hexdigest() == result.backup.sha256
+    assert hashlib.sha256(raw).hexdigest() == result["backup"]["sha256"]
     with closing(sqlite3.connect(f"file:{backup}?mode=ro&immutable=1", uri=True)) as db:
         assert db.execute("PRAGMA integrity_check").fetchall() == [("ok",)]
         assert db.execute("PRAGMA user_version").fetchone() == (3,)
@@ -259,5 +259,5 @@ def test_runner_backup_opens_and_lost_acknowledgement_reconciles(
     again = workflow.upgrade_project_workflows(
         state, admin, backup_directory=tmp_path / "backups", operation_id=operation
     )
-    assert again.backup == result.backup
-    assert json.loads(json.dumps(asdict(again.backup))) == asdict(result.backup)
+    assert again["backup"] == result["backup"]
+    assert again["receipt"] == result["receipt"]
