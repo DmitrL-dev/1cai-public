@@ -94,7 +94,7 @@ read sessions), `SNAP-PUB-01` (атрибуция orphan attempts), `SNAP-OBS-02
 (видимые пропуски опроса, kill-test), `GIT-WATCH-01` (точная привязка tree/blob),
 `RUST-DELIVERY-01` (квитанция текущего HEAD), `UPDATE-3WAY-01`,
 `UPDATE-SEMANTICS-01`, `UPDATE-BSL-01`, `EDT-IDENTITY-01`, `META-WORKSPACE-01`,
-`IDE-SC-24`, `IDE-SC-08`, `IDE-SC-09`, `IDE-SC-17`,
+`IDE-SC-08`, `IDE-SC-09`, `IDE-SC-17`,
 `OWNER-REPORT-01`, `OWNER-STORE-01`, `ROADMAP-03`,
 `ROADMAP-05`, `ROADMAP-07`, `FINAL-PORTABLE-01`, `DIAG-CONTEXT-01`,
 `DIAG-RECEIVER-01`, `DIAG-HOST-01`, `DIAG-PROTOCOL-01`, `DIAG-REVISION-01`,
