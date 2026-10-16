@@ -808,10 +808,13 @@ def test_continuous_git_stop_interrupts_idle_wait(configured, workspace, monkeyp
 
     thread.start()
     try:
-        assert waiting.wait(15), diagnostic()
+        # This phase includes real Git probes, capture and publication, each
+        # with its own bounded IO. It is not the idle cancellation deadline.
+        assert waiting.wait(120), diagnostic()
     finally:
         stop.set()
-        thread.join(15)
+        # Once idle, stopping must remain prompt even with a one-day interval.
+        thread.join(5 if waiting.is_set() else 120)
         error = sys.exception()
         if error is not None:
             try:

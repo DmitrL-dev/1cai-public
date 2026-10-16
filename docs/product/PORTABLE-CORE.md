@@ -35,6 +35,10 @@ permissions, schema и ограничения входных/выходных д
   `_edit`. Исходный модуль читается через свежую проверенную POSIX retained session
   с целью `proposal-source`; запись идёт только в историю черновиков state.
   Live-запись, archive/restore, BSL-проверка и native остаются Windows-only.
+  Linux CI отдельно запускает CLI/SDK-контракт на настоящем owned capture:
+  общая история, повтор operation ID, отказ устаревшей ревизии и неизменность
+  live-файлов и project head. Отчёт `linux-draft-contracts.xml` относится к
+  checkout-коду; он не заменяет installed/offline приёмку новой поставки.
 - Существующие `metadata-materialize`, `edt-attribute-plan`, `edt-inventory-plan`
   по явно переданным JSON/byte inputs, с прежними bounds и reauthorization.
   Они возвращают план или summary, не применяют изменения к исходникам.

@@ -253,7 +253,10 @@ def test_real_stdio_mcp_reads_saved_draft_and_filters_unsupported_tools(portable
                     assert "rentgen_draft_read" in listed
                     assert "rentgen_proposal_live_apply" not in listed
                     assert {"rentgen_capture", "rentgen_source_list", "rentgen_source_read", "rentgen_graph_resolve", "rentgen_impact"} <= listed
-                    assert "rentgen_draft_save" not in listed
+                    assert {"rentgen_proposal_create", "rentgen_draft_start",
+                            "rentgen_draft_save", "rentgen_draft_edit"} <= listed
+                    assert {"rentgen_draft_check", "rentgen_draft_archive",
+                            "rentgen_draft_restore"}.isdisjoint(listed)
                     caps = await session.call_tool("rentgen_capabilities", {})
                     assert caps.structuredContent["result"]["platform"] == "linux"
                     result = await session.call_tool("rentgen_draft_receipt", {"project_id": project, "operation_id": operation})

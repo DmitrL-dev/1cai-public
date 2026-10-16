@@ -170,6 +170,75 @@ def test_native_sdk_stdio_capture_read_graph_replay_and_historical_bytes(local_p
     asyncio.run(scenario())
 
 
+def test_manual_draft_cli_and_sdk_share_history_without_live_writes(local_project, scanner, tmp_path, monkeypatch):
+    project = local_project
+    replacement = project["images"][CALLEE].replace(b"Return 1", b"Return 2")
+
+    async def scenario():
+        async with server(project, scanner, tmp_path / "draft-sdk.stderr", monkeypatch) as (session, _):
+            head = await call(session, "rentgen_project_head", {"project_id": project["project_id"]})
+            captured = await call(session, "rentgen_capture", dict(project_id=project["project_id"],
+                operation_id=str(uuid4()), expected_head=head))
+            pin = dict(project_id=project["project_id"], snapshot_id=captured["snapshot"]["snapshot_id"])
+            page = await call(session, "rentgen_source_list", pin | {"kind": "module"})
+            ref = next(row["ref"] for row in page["entries"] if row["ref"]["relative_path"] == CALLEE)
+            proposed = await call(session, "rentgen_proposal_create", pin | {
+                "source_ref": ref, "replacement_base64": base64.b64encode(replacement).decode("ascii")})
+            assert proposed["diff"]["status"] == "complete" and "Return 2" in proposed["diff"]["text"]
+            raw_draft = str(uuid4())
+            saved = await call(session, "rentgen_draft_save", pin | {
+                "draft_id": raw_draft, "operation_id": str(uuid4()), "expected_revision": 0,
+                "title": "Raw SDK draft", "proposal": proposed["proposal"]})
+            assert saved["revision"] == 1
+            draft = str(uuid4())
+            started = await call(session, "rentgen_draft_start", pin | {
+                "draft_id": draft, "operation_id": str(uuid4()), "title": "SDK draft", "source_ref": ref})
+            assert started["revision"] == 1
+            edit_args = pin | {"draft_id": draft, "operation_id": str(uuid4()), "expected_revision": 1,
+                              "edits": [{"old_text": "Return 1", "new_text": "Return 2"}]}
+            edited = await call(session, "rentgen_draft_edit", edit_args)
+            assert edited["revision"] == 2
+            assert await call(session, "rentgen_draft_edit", edit_args) == edited
+            rejected = await session.call_tool("rentgen_draft_edit", edit_args | {"operation_id": str(uuid4())})
+            assert rejected.isError and rejected.structuredContent["error"]["code"] == "DRAFT_CONFLICT"
+            history = await call(session, "rentgen_draft_history", {"project_id": project["project_id"], "draft_id": draft})
+            assert [row["revision"] for row in history["items"]] == [2, 1]
+            assert await call(session, "rentgen_project_head", {"project_id": project["project_id"]}) == captured["head"]
+            await read_exact(session, project, pin["snapshot_id"], project["images"][CALLEE])
+            return pin, ref, draft, captured["head"]
+
+    pin, ref, sdk_draft, head = asyncio.run(scenario())
+    common = [*project["common"], "--project", project["project_id"]]
+    selected = [*common, "--snapshot", pin["snapshot_id"]]
+    ref_path, edits_path = tmp_path / "source-ref.json", tmp_path / "edits.json"
+    ref_path.write_text(json.dumps(ref), encoding="utf-8")
+    edits_path.write_text(json.dumps([{"old_text": "Return 2", "new_text": "Return 3"}]), encoding="utf-8")
+    # The separate CLI process sees the SDK's exact revision and advances it.
+    edited = command("draft-edit", *selected, "--draft-id", sdk_draft, "--expected-revision", 2,
+                     "--operation-id", str(uuid4()), "--edits-json", edits_path)
+    assert edited["revision"] == 3
+    history = command("draft-history", *common, "--draft-id", sdk_draft)
+    assert [row["revision"] for row in history["items"]] == [3, 2, 1]
+    readback = command("draft-get", *common, "--draft-id", sdk_draft)
+    assert readback["receipt"] == edited
+    assert base64.b64decode(readback["proposal"]["replacement"]["base64"], validate=True) == replacement.replace(b"Return 2", b"Return 3")
+    started = command("draft-start", *selected, "--draft-id", str(uuid4()),
+                      "--operation-id", str(uuid4()), "--source-ref-json", ref_path, "--title", "CLI draft")
+    assert started["revision"] == 1
+    replacement_path = tmp_path / "replacement.bsl"
+    replacement_path.write_bytes(replacement)
+    proposed = command("proposal-create", *selected, "--source-ref-json", ref_path, "--replacement-file", replacement_path)
+    proposal_path = tmp_path / "proposal.json"
+    proposal_path.write_text(json.dumps(proposed["proposal"]), encoding="utf-8")
+    diff = command("proposal-diff", *selected, "--proposal-json", proposal_path)
+    assert diff["diff"]["status"] == "complete" and "Return 2" in diff["diff"]["text"]
+    saved = command("draft-save", *selected, "--draft-id", str(uuid4()), "--expected-revision", 0,
+                    "--operation-id", str(uuid4()), "--proposal-json", proposal_path, "--title", "CLI raw draft")
+    assert saved["revision"] == 1
+    assert command("project-head", *common) == head
+    assert {name: (project["source"] / name).read_bytes() for name in project["images"]} == project["images"]
+
+
 def process_stat(pid):
     try:
         raw = (Path("/proc") / str(pid) / "stat").read_text()
