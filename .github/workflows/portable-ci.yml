@@ -90,6 +90,8 @@ jobs:
               stream.write(f"RENTGEN_TEST_LINUX_SCANNER={scanner}\n")
               stream.write(f"RENTGEN_TEST_LINUX_SCANNER_SHA256={digest}\n")
           PY
+      - name: Linux manual draft CLI and SDK contracts
+        run: python -m pytest -q --tb=short tests/unit/test_draft_cli_contract.py tests/unit/test_linux_mcp_capture.py -k 'DraftCliContractTests or manual_draft_cli_and_sdk' --junitxml=output/linux-draft-contracts.xml
       - name: Locked Rust native and process contracts
         run: |
           cargo +1.92.0 test --locked --manifest-path rust/input-core/Cargo.toml
@@ -100,8 +102,6 @@ jobs:
       - name: Portable CLI MCP planners and real Rust acceptance
         run: |
           python -m pytest -q --tb=short tests/unit/test_portable_local_workflow.py tests/unit/test_rust_input_workflow.py tests/unit/test_metadata_materialize_cli.py tests/unit/test_edt_attribute_cli.py tests/unit/test_edt_identity_three_way_cli.py tests/unit/test_mcp_tool_annotations.py tests/unit/test_state_migration_contract.py tests/unit/test_core_dev16_compatibility.py tests/unit/test_linux_baseline_gate.py tests/unit/test_portable_gui_delivery.py --junitxml=output/portable-contracts.xml
-      - name: Linux manual draft CLI and SDK contracts
-        run: python -m pytest -q --tb=short tests/unit/test_draft_cli_contract.py tests/unit/test_linux_mcp_capture.py -k 'DraftCliContractTests or manual_draft_cli_and_sdk' --junitxml=output/linux-draft-contracts.xml
       - name: Local graphical workspace HTTP Rust and frontend contracts
         run: |
           python -m pytest -q --tb=short tests/unit/test_local_gui.py tests/unit/test_local_gui_search.py tests/unit/test_local_gui_modules.py tests/unit/test_local_gui_pagination.py tests/unit/test_local_gui_comparison.py tests/unit/test_local_gui_source_search.py tests/unit/test_local_gui_search_comparison.py tests/unit/test_local_gui_report.py --junitxml=output/gui-contracts.xml
