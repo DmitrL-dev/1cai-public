@@ -9,7 +9,7 @@ from .manifests import canonical_bytes, sha256
 from .native_platform import NativePlatform
 from .native_resources import reserve_run
 from .platform_check import _materialize, _pin_inputs, _run_attempt
-from .platform_runs import get_platform_run, replay_run, run_path, write_record
+from .platform_runs import _replay_binding, get_platform_run, replay_run, run_path, write_record
 from .proposals import parse_proposal
 from .test_profiles import (
     PERMISSIONS,
@@ -34,7 +34,7 @@ def check_proposal_tests(ctx, raw_json, profile_id, operation_id, *, limits):
         }
         if folder.exists():
             saved = get_platform_run(ctx, operation_id, namespace="test-runs")
-            binding = saved["request"]["input"] if saved["request"] else {}
+            binding = _replay_binding(saved)
             if any(binding.get(k) != v for k, v in minimal.items()):
                 raise CoreError(
                     "PLATFORM_RUN_CONFLICT",
