@@ -21,8 +21,12 @@ properties use `not_available`.
 The planner emits only hashes, sizes and names. It never writes a tree, resolves
 a conflict automatically or invokes 1С/EDT. BSL, forms, СКД and XML files that
 do not expose a supported UUID remain listed in `unsupported_files`, which
-describes files outside the original object view. Recognized companions also
-have UUID-bound `semantics` rows under the
+describes files outside the original object view. Binary and non-UTF-8
+resources such as `Ext/Template.bin` or pictures are also listed there: there is
+no MXL or picture model, so the materializer keeps unchanged bytes with the same
+SHA-256, takes a one-sided change whole and refuses divergent changes with
+`THREE_WAY_CONFLICT`; such bytes are never decoded or merged. Recognized
+companions also have UUID-bound `semantics` rows under the
 [companion scope contract](METADATA-THREE-WAY-SEMANTICS.md). The planner keeps
 these scopes atomic, including BSL modules that the materializer can qualify
 for a composite merge. The result has
