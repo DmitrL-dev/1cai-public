@@ -129,8 +129,8 @@ Semantic failures after schema validation keep their existing core error codes.
 | `rentgen_proposal_create` | `project_id`, `snapshot_id`, `source_ref`, `replacement_base64` | none |
 | `rentgen_proposal_check` | `project_id`, `snapshot_id`, `proposal`, `diagnostics_profile` | none |
 | `rentgen_native_archive` | `project_id`, `snapshot_id`, `operation_id`, `namespace` | `profile_id` for `test-runs` and `metadata-runs` |
-| `rentgen_owner_report_get` | `project_id`, `snapshot_id`, `report_id` | none |
-| `rentgen_owner_report_list` | `project_id`, `snapshot_id` | `limit` (1–1000, default 100) |
+| `rentgen_owner_report_get` | `project_id`, `snapshot_id`, `report_id` | `max_age_seconds` (integer 1–31622400) |
+| `rentgen_owner_report_list` | `project_id`, `snapshot_id` | `limit` (1–1000, default 100), `max_age_seconds` (integer 1–31622400) |
 | `rentgen_metadata_live_apply` | `project_id`, `snapshot_id`, `operation_id` | none |
 | `rentgen_metadata_live_undo` | `project_id`, `snapshot_id`, `operation_id` | none |
 | `rentgen_metadata_live_status` | `project_id`, `snapshot_id`, `operation_id` | none |
@@ -246,6 +246,17 @@ authenticated project's derived `owner-reports` store. They require
 `project:read`, bind every receipt to the selected snapshot, return bounded
 sealed receipts and recheck access at the final output boundary. The MCP
 adapter never accepts a report-store path from the caller.
+
+In current source, optional `max_age_seconds` adds a `freshness` read view to
+the get receipt or each list summary; list still omits the full `report`.
+The server evaluates age from retained `report.generated_at` using its own
+clock (one value for the whole list); callers cannot supply `as_of`.
+Older-than-policy or future-dated reports are marked historical. This view
+does not change stored bytes or receipt hashes and is not evidence of live 1C
+data freshness. Omitting the policy preserves the previous response shape.
+Invalid policies fail with `INVALID_ARGUMENT` before project state access.
+Public owner-report CLI/MCP admission remains Windows-only; details and fields
+are in [OWNER-REPORT-STORE](OWNER-REPORT-STORE.md).
 
 The four `rentgen_metadata_live_*` tools expose the bounded direct writer from
 [`METADATA-LIVE-APPLY.md`](METADATA-LIVE-APPLY.md). They require the full
