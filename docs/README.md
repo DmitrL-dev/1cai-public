@@ -27,7 +27,8 @@ product route. Текущие исходники содержат и более 
 [квитанции](product/evidence/release-dev19-publication-20261015.json);
 [датированная сверка](product/RELEASE-PLAN-20261015.md) сохраняет историю этого выпуска.
 Текущий [план полного финального релиза](product/FULL-FINAL-PLAN.md) ведёт
-127 требований, все 24 IDE-сценария и очередь реализации.
+127 требований, все 24 IDE-сценария и очередь реализации;
+[backlog](product/BACKLOG.md) классифицирует, чего не хватает каждой открытой строке.
 [CI main `413cc65`](product/evidence/development-ci-413cc65-20261016.json)
 подтвердил ограниченный installed Core/Companion workbench: первая фаза и restart
 прошли в двух настоящих Windows Extension Hosts с проверкой байтов и cleanup.
