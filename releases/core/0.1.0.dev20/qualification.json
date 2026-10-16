@@ -1,0 +1,373 @@
+{
+  "schema": 1,
+  "source_commit": "2a30f48799354fcef4bd57d1a03212fefa7f75fb",
+  "source_tree": "bf6fcf5cd1fd5b90ab1c2ae72f6be1608a246c08",
+  "scope": "Core dev20 / Companion 0.1.21 exact-source component prerelease qualification; not full product, IDE, AI or native 1C business acceptance",
+  "source_ci_qualification_passed": true,
+  "main_runs": {
+    "product": {
+      "id": 38846064838,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38846064838",
+      "conclusion": "success",
+      "jobs": {
+        "windows-artifacts": 116796755885,
+        "windows": 116796756125,
+        "native-editor-workbench": 116797493355,
+        "native-git-diagnostic": 116797493455,
+        "native-scm": 116797493479,
+        "native-stock-git": 116797493483
+      }
+    },
+    "portable": {
+      "id": 38846064917,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38846064917",
+      "conclusion": "success",
+      "jobs": {
+        "Linux experimental contracts (Python 3.11)": 116796755647,
+        "Linux experimental contracts (Python 3.12)": 116796755830
+      }
+    },
+    "gui": {
+      "id": 38846064927,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38846064927",
+      "conclusion": "success",
+      "jobs": {
+        "Linux GUI real browser and 200% zoom": 116796755644
+      }
+    },
+    "diagnostic_kernel": {
+      "id": 38846064820,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38846064820",
+      "conclusion": "success",
+      "jobs": {
+        "Synthetic Rust contracts (ubuntu-24.04)": 116796755372,
+        "Synthetic broker and policy comparison (Linux)": 116796755623,
+        "Synthetic Rust contracts (windows-latest)": 116796755710
+      }
+    },
+    "release_candidate": {
+      "id": 38848501426,
+      "url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38848501426",
+      "event": "workflow_dispatch",
+      "conclusion": "success",
+      "jobs": {
+        "linux-candidate": 116804294371
+      }
+    }
+  },
+  "windows": {
+    "python": {
+      "testcases": 5907,
+      "passed": 4747,
+      "skipped": 1160,
+      "failed": 0,
+      "errors": 0,
+      "junit_header_tests": 5958,
+      "successful_subtests_additionally_reported": 51,
+      "preflight_passed_included_not_added": 95
+    },
+    "node": {
+      "passed": 592,
+      "skipped": 0,
+      "failed": 0
+    },
+    "go": "passed",
+    "kit_builds_identical": true,
+    "kit_payload_files_verified": 40,
+    "dependency_wheels": 30,
+    "offline_hash_locked_install": true,
+    "mcp_tools": 34,
+    "installed_snapshot_comparison": true,
+    "installed_observer_separate_processes": true,
+    "companion_cli_interoperability": {
+      "accepted": true,
+      "scenarios": 1,
+      "revisions": [
+        1,
+        2,
+        3
+      ],
+      "draft_save_calls": 3,
+      "lost_response_receipt_recovered": true,
+      "stale_edit_refused": true,
+      "actual_editor_gui_run": false,
+      "artifact": {
+        "id": 12023511272,
+        "name": "draft-companion-evidence",
+        "sha256": "9bdcbf4c6a07e04a50c5fe6babcb12c64e5d82d547b9aaae12b3ba9af62ac040",
+        "size_bytes": 15041
+      }
+    },
+    "editor_workbench": {
+      "accepted": true,
+      "runtime": "actual_windows_electron_extension_host",
+      "app": "VSCodium",
+      "editor_api_version": "1.135.0",
+      "phases": [
+        "first",
+        "restart"
+      ],
+      "companion_files_inventoried": 57,
+      "real_bsl_language_server": true,
+      "problems_exact_revision": true,
+      "concurrent_cli": true,
+      "stale_refused": true,
+      "revoked_write_refused": true,
+      "reconciled_unobserved_commit": true,
+      "persisted_context_restored": true,
+      "pinned_snapshot_restored": true,
+      "historical_draft_restored": true,
+      "source_unchanged": true,
+      "all_editor_process_trees_closed": true,
+      "model_calls": 0,
+      "live_1c_apply": false,
+      "human_gui_accessibility": "NOT_RUN",
+      "allowed_installed_package_json_rewrite": true,
+      "artifact": {
+        "id": 12023387025,
+        "name": "native-editor-workbench-evidence",
+        "sha256": "b7567ee6c56c21fb50b6d8bf6c81685393a7122a432ca7155447b429a0c942e0",
+        "size_bytes": 4449
+      }
+    },
+    "native_scm_lifecycle": true,
+    "native_stock_git_bsl_lifecycle": true,
+    "native_git_ownership_diagnostic": true,
+    "native_git_scm_accepted_by_diagnostic": false,
+    "continuous_git_accepted_by_diagnostic": false,
+    "production_trust_policy_selected": false,
+    "stock_active_bsl_interruption_exercised": false,
+    "stock_raw_bsl_report_retained": false,
+    "stock_interruption_scope": "quiet continuous wait after unchanged tick",
+    "native_service_absent_after_each_run": true,
+    "native_cleanup_errors": [],
+    "human_editor_acceptance": false,
+    "native_1c_business_acceptance": false
+  },
+  "linux": {
+    "strict_portable_each_lane": {
+      "passed": 320,
+      "skipped": 1,
+      "failed": 0,
+      "errors": 0
+    },
+    "gui_backend_each_portable_lane": {
+      "passed": 315,
+      "skipped": 0,
+      "failed": 0,
+      "errors": 0
+    },
+    "gui_javascript_each_portable_lane": {
+      "passed": 98,
+      "skipped": 0,
+      "failed": 0
+    },
+    "diagnostic_full": {
+      "3.11": {
+        "testcases": 5908,
+        "passed": 4922,
+        "skipped": 986,
+        "failed": 0,
+        "errors": 0,
+        "junit_header_tests": 5961,
+        "successful_subtests_additionally_reported": 53
+      },
+      "3.12": {
+        "testcases": 5908,
+        "passed": 4921,
+        "skipped": 987,
+        "failed": 0,
+        "errors": 0,
+        "junit_header_tests": 5961,
+        "successful_subtests_additionally_reported": 53
+      },
+      "new_failure_ids": [],
+      "missing_baseline_cases": [],
+      "full_suite_green": true
+    },
+    "installed_linux_capture_each_lane": true,
+    "main_browser": {
+      "backend_passed": 963,
+      "browser_passed": 43,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "fresh_isolated_installed_wheel": true,
+      "sandbox_enabled": true,
+      "keyboard_narrow_and_native_200_percent_zoom": true,
+      "artifact": {
+        "id": 12023119998,
+        "name": "linux-gui-browser-evidence",
+        "sha256": "6dba95ee6c29cc7bb868583181239ebb3d15c3f76981f7b75c039f5151a001fa",
+        "size_bytes": 4863106
+      }
+    },
+    "scope": "Experimental GNU/Linux x86_64 supplement: state/history/planners and read-only ZIP CLI/GUI from the canonical Windows wheel plus the Linux CI Rust helper. Linux capture/retained reads are source CI qualified separately; the supplement has no Go scanner, MCP dependency set, Observer, live apply, native 1C, Companion or macOS.",
+    "final_supplement_qualification_passed": true,
+    "supplement": {
+      "asset": "rentgen-core-0.1.0.dev20-experimental-linux-x86_64.tar.gz",
+      "size_bytes": 1089954,
+      "sha256": "fe09f3e3b6f26310141f19489c259188914eb73524e3d820edc6e8b4d4068223",
+      "run_id": 38848501426,
+      "run_url": "https://github.com/DmitrL-dev/1cai-public/actions/runs/38848501426",
+      "artifact_id": 12023993372,
+      "artifact_sha256": "28331d23e43871b2a348c8f5595b2d48c2421c263abde9596083fe76ba2fdbad",
+      "artifact_size_bytes": 1095945,
+      "canonical_windows_wheel": true,
+      "regular_members": 141,
+      "wheel_members_verified": 159,
+      "ci_gzip_bytes_preserved": true,
+      "cross_zlib_reproducibility_claimed": false,
+      "fresh_extracted_installed_smoke": true,
+      "browser_passed": 43,
+      "browser_skipped": 0,
+      "sandbox_enabled": true,
+      "credentials_removed": true,
+      "manifest_platform_constants": {
+        "full_linux_suite_green": false,
+        "known_full_linux_failures": 90,
+        "known_full_linux_errors": 2,
+        "note": "Historical conservative constants emitted by the source packager; the measured exact-source full Linux suite is green on both lanes. Corrected in a later source, not by rewriting these bytes."
+      },
+      "receipts": {
+        "installed": "experimental-linux-installation.json",
+        "installed_sha256": "e06eb69fc31ecb8975916e150bd992e9c1920db0d502d1eaaaca2bd543f05b47",
+        "qualification": "experimental-linux-qualification.json",
+        "qualification_sha256": "6f96af8a74dc17268bc57d0cb83c4ac961db7b80f922b3d03222b7811f1617e2",
+        "packaging": "experimental-linux-packaging.json",
+        "packaging_sha256": "d393d6432b8167b77b5631165496b3aed75055a9572adfdb30e5da620187f2b2"
+      },
+      "local_packaging": {
+        "two_fresh_directories_all_three_files_identical": true,
+        "matches_qualified_ci_bytes": true,
+        "platform": "Darwin",
+        "python": "3.11.15",
+        "zlib_runtime_version": "1.2.12",
+        "assembly_only": true,
+        "linux_execution_on_macos_claimed": false
+      }
+    },
+    "canonical_windows_wheel_members_equal": 159,
+    "wheel_container_hashes_equal": false
+  },
+  "assets": {
+    "windows_artifact": {
+      "id": 12023182658,
+      "name": "verified-core-development",
+      "sha256": "1e3f269c5f739d9ea244a2d260ad4e8de330161f8e17d52e446a6165e163379a",
+      "size_bytes": 19173393
+    },
+    "python_report_artifact": {
+      "id": 12023624743,
+      "name": "python-contract-report",
+      "sha256": "fc753e20dde7917c7c65388ee2db8305702a8796ff1a1dbee8e9f411daef1480",
+      "size_bytes": 106805
+    },
+    "linux311_artifact": {
+      "id": 12023529436,
+      "name": "experimental-linux-python-3.11",
+      "sha256": "d8aef8cd1d83935c0ed2fa899a4c13dfae20091987dee667f6abebd492ecbd33",
+      "size_bytes": 4635226
+    },
+    "linux312_artifact": {
+      "id": 12023494614,
+      "name": "experimental-linux-python-3.12",
+      "sha256": "81253e87377f7602c06b07822ad955d91249dcc0a458e4e35a3219170c71ff90",
+      "size_bytes": 4635576
+    },
+    "native_artifacts": [
+      {
+        "id": 12023064065,
+        "name": "native-scm-evidence",
+        "sha256": "1b57aac75a6ed1771a97d68d481914c2401e27a8de0d21bb7a54379c155c10f9",
+        "size_bytes": 619219
+      },
+      {
+        "id": 12022714371,
+        "name": "native-git-diagnostic-evidence",
+        "sha256": "6c5d1b0bace60d4fc393f3d93797d5bc9bd215b48249d9432ed463fdc3e210fb",
+        "size_bytes": 520100
+      },
+      {
+        "id": 12023690679,
+        "name": "native-stock-git-evidence",
+        "sha256": "7527e8e41e4aa6f8efee06f13b48d4d693fb4bc19226e8638f2d6dbf2959a94d",
+        "size_bytes": 690041
+      },
+      {
+        "id": 12023387025,
+        "name": "native-editor-workbench-evidence",
+        "sha256": "b7567ee6c56c21fb50b6d8bf6c81685393a7122a432ca7155447b429a0c942e0",
+        "size_bytes": 4449
+      }
+    ],
+    "windows_kit": {
+      "asset": "rentgen-core-0.1.0.dev20-windows-py311.zip",
+      "size_bytes": 21020043,
+      "sha256": "56efbadefe6e22ff23133477e9547243d369a1e8e0f219330a47a17ee454b40c"
+    },
+    "canonical_wheel": {
+      "sha256": "13a526b31adc1837c1e6a5b6e758f1ca486c4c59247c9c8be60034bf097cb965",
+      "size_bytes": 613171
+    },
+    "sdist": {
+      "sha256": "fecead9ef9f62f8899d838597a65e2ff1f66f796ef4513d9daa4d598f331eb9f",
+      "size_bytes": 1074479
+    },
+    "companion_vsix": {
+      "asset": "rentgen-companion-0.1.21.vsix",
+      "sha256": "0c0d07b1ae9195d3a1a84d0d8467aa32fecc486aff6b900b04cd4387d5e08a4d",
+      "size_bytes": 477441,
+      "independent_local_rebuild_identical": true
+    }
+  },
+  "full_product_ready": false,
+  "historical_acceptance_not_inherited": true,
+  "visual_review": {
+    "schema": 1,
+    "source_commit": "2a30f48799354fcef4bd57d1a03212fefa7f75fb",
+    "ci_run": 38846064927,
+    "artifact_id": 12023119998,
+    "artifact_sha256": "6dba95ee6c29cc7bb868583181239ebb3d15c3f76981f7b75c039f5151a001fa",
+    "reviewer": "Claude image inspection; not human acceptance",
+    "scope": "Three exact-source Linux CI screenshots: 200% line diff, full import provenance, 390px narrow line diff",
+    "observations": [
+      "200% diff controls and byte/line provenance remain legible",
+      "Import provenance and result boundaries render without text or control overlap",
+      "390px comparison and diff fit the narrow layout without horizontal overflow",
+      "Synthetic markup is displayed as source text",
+      "Boundaries distinguish archive inspection from live diagnostics or merge/apply"
+    ],
+    "blocking_visual_findings": [],
+    "non_blocking_observations": [
+      "In the 390px full-page capture the focused skip link overlays one line of the After source panel; this is the transient keyboard-focus state of the skip link"
+    ],
+    "limitations": [
+      "Static screenshot inspection does not replace browser execution or human usability acceptance",
+      "390x3178 image was displayed resized to 245x2000"
+    ],
+    "images": [
+      {
+        "path": "results/line-diff-real-Chromium-20-4861b-ne-line-navigation-operable/line-diff-200-percent.png",
+        "size_bytes": 133168,
+        "sha256": "b9696288b4822a0bee717521ffa76ffbc23e3f64e540338b1ae4930b3c96f09c"
+      },
+      {
+        "path": "results/acceptance-real-UI-ZIP-imp-5315c--source-and-byte-provenance/real-import-provenance.png",
+        "size_bytes": 169973,
+        "sha256": "39da8f861f4bcb3dfdd81da94f7c2d8dd12b4b00554eda8a686ac954b88b4570"
+      },
+      {
+        "path": "results/line-diff-390px-inline-dif-ef116-overflow-or-transient-toast/line-diff-390px.png",
+        "size_bytes": 273781,
+        "sha256": "dc46be7d2db94c51cfb4e863434beed88792aa7159b47711ffe76fdf00b29535"
+      }
+    ]
+  },
+  "companion_tag_workflow_verified": false,
+  "release_publication_verified": false,
+  "subsequent_gates": [
+    "Companion tag workflow reproduces exact accepted VSIX and creates draft/prerelease",
+    "Unauthenticated public download verifies every published asset size and SHA256; separate later receipt"
+  ]
+}
