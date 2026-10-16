@@ -35,6 +35,7 @@
 | `PORT-GATE-01` (часть) | Раздел `components` в capability report; GUI проверяет его до чтения входов | `platform`: фактический отказ на macOS |
 | `ANALYZER-01` (часть) | SARIF принимается только от заявленного анализатора и версии | `dev`: unit-тесты BSL-LS адаптера; `decision`: Sonar/Vanessa |
 | `OWNER-NOTIFY-01` (часть) | Обязательная проверка прав перед каждой отправкой и ack | `dev`: журнал попыток, планировщик повторов, wiring; `decision`: production endpoint |
+| `IDE-SC-24` (часть) | [Metadata](METADATA-LIVE-APPLY.md) и [BSL proposal](PROPOSAL-LIVE-APPLY.md): неизвестный исход live-операции обозначается `live_source_written=null`, включая прерывание после замены; CLI/MCP сохраняют это значение | `dev`: остальные долгие операции, ранняя выдача operation ID, неполные native runs и reconciliation; полный критерий остаётся открытым |
 
 ## Строки, требующие стенда 1С/EDT (`stand`)
 
