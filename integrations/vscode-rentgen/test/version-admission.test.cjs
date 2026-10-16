@@ -28,14 +28,14 @@ for (const [name, factory, minimum, earlier, refusal] of capabilities) {
     const unexpected = () => {throw new Error('UNEXPECTED_CORE_EXECUTION');};
     let reads = 0;
     const client = {async head() {reads++; return {};}};
-    for (const core_version of [minimum, '0.1.0.dev17', '0.1.0.dev19', earlier, '0.1.0.dev18', '0.1.0.dev999']) {
+    for (const core_version of [minimum, '0.1.0.dev17', '0.1.0.dev19', '0.1.0.dev20', earlier, '0.1.0.dev18', '0.1.0.dev999']) {
       const makeService = () => {
         const service = factory({root, extensionRoot:root, config:{...config, core_version}, client,
           runnerFactory:unexpected});
         t.after(() => service.dispose?.());
         return service;
       };
-      if ([minimum, '0.1.0.dev17', '0.1.0.dev19'].includes(core_version)) {
+      if ([minimum, '0.1.0.dev17', '0.1.0.dev19', '0.1.0.dev20'].includes(core_version)) {
         assert.deepEqual(await makeService().list(), []);
       } else {
         const before = reads;

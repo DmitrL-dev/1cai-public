@@ -328,7 +328,8 @@ def test_git_worker_stop_finishes_active_cycle_and_prevents_later_ticks(
         return wait_diagnostic(thread, started, entered, finished, results)
     thread.start()
     try:
-        assert entered.wait(10), diagnostic()
+        # Liveness, not speed: real Git capture under parallel CI load can exceed 10 s.
+        assert entered.wait(60), diagnostic()
         stop.set()
         release.set()
         thread.join(10)

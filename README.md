@@ -40,7 +40,11 @@
 
 **Текущая цель — полный финальный релиз со всеми запланированными сценариями.**
 [Единый план и реестр 127 требований](docs/product/FULL-FINAL-PLAN.md)
-сохраняет все 24 IDE-сценария открытыми.
+сохраняет все 24 IDE-сценария открытыми. [Backlog](docs/product/BACKLOG.md)
+для каждой открытой строки называет, чего не хватает: стенда 1С/EDT, запусков
+модели, людей, платформы, решения владельца или только разработки.
+Исходники main объявляют следующий кандидат Core 0.1.0.dev20 и Companion 0.1.21;
+он не опубликован, пока не получит собственную квалификацию bytes.
 [CI main `413cc65`](docs/product/evidence/development-ci-413cc65-20261016.json)
 подтвердил ограниченный Core/Companion workbench в настоящем Windows-редакторе:
 обе фазы, восстановление контекста и точные установленные байты прошли проверку.
@@ -62,7 +66,14 @@
 Этот source-контракт требует собственной exact-source installed CLI/SDK-приёмки;
 CI `c9` / `8e` новый diff не содержит и не квалифицирует.
 [Первый CI `597e50e`](docs/product/evidence/development-ci-597e50e-20261016.json)
-сохранён как отрицательный; Linux/Windows installed pair этого HEAD не принят.
+сохранён как отрицательный. [Exact-source CI `c2b6cd2`](docs/product/evidence/development-ci-c2b6cd2-20261016.json)
+(PR #104, main `2d8254a` с тем же tree) принял синтетические Linux pair,
+installed CLI/официальный SDK и Windows regression fixtures — development-приёмка,
+не новый выпуск.
+
+Следующий source-блок — [TEST-RUN-QUAL-01](docs/product/TEST-RUN-QUALIFICATION.md):
+ограниченная повторная сверка сохранённых YAxUnit artifacts с отчётом в Core, CLI
+и Companion без запуска 1С; native pass/fail/crash/timeout/no-tests остаются в backlog.
 
 [Аудит плана выпуска](scripts/release/RELEASE-PLAN-CONTRACT.md) проверяет локальные
 bytes и полноту заявленных проверок; готовность финального продукта он не подтверждает.

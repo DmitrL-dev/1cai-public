@@ -18,6 +18,11 @@ Linux byte/session contracts и ограничения.
 матрицей `os-adapter-support`. Это проверка реализации OS adapter, не выдача прав
 и не обещание наличия установленного native runtime. Membership, текущие
 permissions, schema и ограничения входных/выходных данных проверяются отдельно.
+В development-исходниках после dev19 отчёт также содержит `components`: явную
+поддержку `local_gui` (только Linux), `observer_service`, `native_execution` и
+`companion_editor` (только Windows) с причиной отказа. Локальный GUI проверяет
+этот же статус до чтения входов; остальные точки входа сохраняют свои прежние
+коды отказа до побочных эффектов.
 
 - Явный bootstrap локальной identity и нового registry/project.
 - Чтение project list/head, layers, publication receipt, membership list/receipt.
@@ -171,7 +176,8 @@ Public macOS не допущен. Точные команды, cursor и гра�
 
 Новая source-сборка требует отдельных actual Linux pair controls, installed
 CLI/официального SDK scenarios и Windows regression receipts. Положительные
-`c9` / `8e` этот diff не содержат и не квалифицируют.
+`c9` / `8e` этот diff не содержат и не квалифицируют; для `c2b6cd2` такие
+receipts получены ([квитанция](evidence/development-ci-c2b6cd2-20261016.json)).
 
 ## Local ownership, не новый IAM
 
