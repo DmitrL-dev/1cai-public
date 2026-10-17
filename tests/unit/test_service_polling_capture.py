@@ -20,13 +20,14 @@ def test_real_service_capture_restart_records_gap_without_reanalysis(
 ):
     observer, _, module, _, adapter = fixtures.autonomous(configured, workspace, monkeypatch, scanner)
     document = json.loads(configured.path.read_text(encoding="utf-8"))
-    document.update(schema=schema, interval_seconds=60)
+    document.update(schema=schema, interval_seconds=60, max_cycles=1)
     if schema == 1:
         del document["diagnostics_root"]
         del document["mode"]
     else:
         document["trust_registered_source"] = trusted
     configured.path.write_text(json.dumps(document), encoding="utf-8")
+    assert service_entry.load_config(configured.path).max_cycles == 1
     now = [T0]
     monkeypatch.setattr(implementation, "_utcnow", lambda: now[0])
     original = module.read_bytes()
