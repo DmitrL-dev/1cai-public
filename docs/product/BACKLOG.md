@@ -34,6 +34,7 @@
 | `TEST-PROFILE-01`, `IDE-SC-20` (часть) | [TEST-RUN-QUAL-01](TEST-RUN-QUALIFICATION.md): повторная сверка retained YAxUnit artifacts в Core/CLI/Companion | `stand`: новые native pass/fail/crash/timeout/no-tests; `decision`: trusted executor attestation |
 | `RELEASE-MILESTONE-01`, `RELEASE-DOC-SWEEP-01` (часть) | Один список допуска Core в Companion, проверка version claims, сборщик exact-commit CI evidence | Публикация milestone — действие владельца |
 | `WORKFLOW-MIGRATION-01` (часть) | Контракты schema3→4: сохранность строк, откат на каждой границе, replay/conflict, отказы, подделка receipt; конкурентные state writers и Windows runner с читаемым/pinned backup, отказом на подмену | Полный crash/read-back критерий и точная поставочная приёмка остаются открытыми; source-тесты не подменяют её |
+| `SNAP-PUB-01` (часть) | [Атрибуция точного locator](SNAPSHOT-PUBLICATION-ADR.md#read-only-generation-attribution-development-source) через Core и Windows/Linux CLI: согласованные catalog/head/latest receipt, historical/reuse и явное `unreferenced_at_read` | Не определяется операция незарегистрированной попытки, её активность или состояние файлов; cleanup требует отдельного lifecycle/exclusivity протокола. Полный критерий и установленная приёмка остаются открытыми |
 | `GUI-IDE-BOUNDARY-01` | Статический guard: замыкание импортов GUI без IDE-модулей и закрытый набор read-only маршрутов | — |
 | `PORT-GATE-01` (часть) | Раздел `components` в capability report; GUI проверяет его до чтения входов | `platform`: фактический отказ на macOS |
 | `ANALYZER-01` (часть) | SARIF принимается только от заявленного анализатора и версии; unit-контракты BSL-LS проверяют unavailable/partial и точные source/candidate hashes | `decision`: Sonar/Vanessa; полная приёмка адаптеров остаётся отдельной |
@@ -99,7 +100,7 @@
 
 Реализуемо в source+обычном CI без недостающих ресурсов, но не вошло в этот цикл:
 `SNAP-READ-01` (Windows suite
-read sessions), `SNAP-PUB-01` (атрибуция orphan attempts),
+read sessions), `SNAP-PUB-01` (lifecycle незарегистрированных attempts после read-only атрибуции),
 `RUST-DELIVERY-01` (квитанция текущего HEAD), `UPDATE-3WAY-01`,
 `UPDATE-BSL-01`, `EDT-IDENTITY-01`, `META-WORKSPACE-01`,
 `OWNER-REPORT-01`, `ROADMAP-03`,

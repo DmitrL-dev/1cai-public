@@ -22,6 +22,8 @@ from .source_configuration import (
     get_source_configuration,
 )
 from .snapshots import (
+    GenerationAttribution,
+    get_generation_attribution,
     ProjectHead,
     PublishResult,
     SnapshotCatalogEntry,
@@ -94,6 +96,8 @@ from .sources import (
 )
 
 __all__ = [
+    "GenerationAttribution",
+    "get_generation_attribution",
     "capture_and_publish",
     "build_owner_report",
     "RuntimeMetric",

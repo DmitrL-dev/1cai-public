@@ -33,6 +33,23 @@ def validate_operation_id(value):
     return value
 
 
+def validate_generation_relpath(value):
+    """Accept one canonical UUID attempt or legacy SHA-256 locator, never a path."""
+    valid = False
+    if isinstance(value, str) and len(value) in (48, 76) and value.startswith("generations/"):
+        name = value[len("generations/"):]
+        if len(name) == 64:
+            valid = all(c in "0123456789abcdef" for c in name)
+        else:
+            try:
+                valid = str(UUID(name)) == name
+            except ValueError:
+                pass
+    if not valid:
+        raise CoreError("INVALID_GENERATION_LOCATOR", "Expected a canonical generation locator")
+    return value
+
+
 @dataclass(frozen=True)
 class ProjectHead:
     project_id: str
@@ -129,6 +146,27 @@ class PublishResult:
             or self.head.snapshot != self.snapshot
         ):
             raise _snapshot_invalid("Invalid publication receipt")
+
+
+@dataclass(frozen=True)
+class GenerationAttribution:
+    """One authorized state read; no physical attempt or file-lifetime evidence."""
+
+    generation_relpath: str
+    status: Literal["catalog_referenced", "unreferenced_at_read"]
+    observed_head: ProjectHead
+    catalog: SnapshotCatalogEntry | None
+    latest_publication: PublishResult | None
+    physical_state: Literal["not_inspected"] = "not_inspected"
+    removal_permitted: Literal[False] = False
+
+
+def get_generation_attribution(ctx: ProjectContext, generation_relpath: str) -> GenerationAttribution:
+    """Inspect an exact catalog locator without opening or promoting its files."""
+    if ctx is None:
+        raise CoreError("CONTEXT_REQUIRED", "Project context is required")
+    with ctx.state.transaction(ctx.principal) as tx:
+        return tx.get_generation_attribution(generation_relpath)
 
 
 def get_project_head(ctx: ProjectContext) -> ProjectHead:
