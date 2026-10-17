@@ -261,6 +261,14 @@ Observer capture cycle and retains its separate scheduler journal.
 The status describes source checks, not SCM health, successful capture or live
 1C freshness. See [Observer polling semantics](OBSERVER.md#пропуски-опроса).
 
+An embedding Python host can explicitly compose `GitAuditWorker.notification_host`
+for this worker's outbox and fixed profile delivery journal. It schedules bounded
+journaled batches, rechecks project authorization, and stops when the worker closes.
+The caller supplies the trusted HTTPS adapter/secret and explicitly starts its
+foreground `run()`. Service JSON and the normal console/SCM audit run do not enable
+network delivery. See [notification host lifecycle](NOTIFICATION-DELIVERY.md#explicit-foreground-host-in-current-sources)
+for retry, stop, restart, partial-batch semantics and remaining installed-delivery gates.
+
 Under its existing lifetime lease, each tick authorizes `project:read` and
 `analysis:run` before probing Git. It verifies the durable analysis profile/scope
 and ancestry before snapshot writes, runs the existing Observer capture/report
