@@ -14,6 +14,7 @@ import rentgen_core as api
 from rentgen_core.local import LocalRuntime
 
 ROOT = Path(__file__).resolve().parents[2]
+_WINDOWS_MARKERS = os.name == "nt"
 
 
 def backend(executable, digest):
@@ -82,27 +83,40 @@ def _worker(config_path):
         (directory / "unwound").write_text("Python finally executed", encoding="utf-8")
 
 
+def _wait_for_marker(child, directory, *, timeout):
+    """Wait for readable atomic publication; Windows sharing denials stay bounded."""
+    ready = directory / "ready.json"
+    deadline = time.monotonic() + timeout
+    while True:
+        if child.poll() is not None:
+            raise AssertionError("Publisher exited before boundary: " +
+                (directory / "child.log").read_text(errors="replace")[-2000:])
+        if time.monotonic() >= deadline:
+            raise AssertionError("Publisher did not expose a readable boundary marker")
+        try:
+            return json.loads(ready.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            pass
+        except PermissionError:
+            # Rename publication can be visible before another Windows handle
+            # permits this open. This is harness IO, not a publication retry.
+            if not _WINDOWS_MARKERS:
+                raise
+        time.sleep(0.025)
+
+
 @contextmanager
 def killed_publisher(directory, options, *, timeout=180):
     """Yield the boundary marker while alive, then force termination and reap."""
     directory.mkdir()
     config = directory / "request.json"
     config.write_text(json.dumps(options), encoding="utf-8")
-    ready = directory / "ready.json"
     with (directory / "child.log").open("wb") as log:
         child = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), str(config)],
             cwd=ROOT, env={**os.environ, "PYTHONPATH": str(ROOT)},
             stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT)
         try:
-            deadline = time.monotonic() + timeout
-            while not ready.exists():
-                if child.poll() is not None:
-                    raise AssertionError("Publisher exited before boundary: " +
-                        (directory / "child.log").read_text(errors="replace")[-2000:])
-                if time.monotonic() >= deadline:
-                    raise AssertionError("Publisher did not reach boundary")
-                time.sleep(0.025)
-            marker = json.loads(ready.read_text(encoding="utf-8"))
+            marker = _wait_for_marker(child, directory, timeout=timeout)
             assert marker["boundary"] == options["boundary"] and marker["pid"] == child.pid
             assert child.poll() is None
             yield marker
