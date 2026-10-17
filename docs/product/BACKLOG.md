@@ -100,7 +100,7 @@
 
 Реализуемо в source+обычном CI без недостающих ресурсов, но не вошло в этот цикл:
 `SNAP-READ-01` (Windows suite
-read sessions), `SNAP-PUB-01` (lifecycle незарегистрированных attempts после read-only атрибуции),
+read sessions),
 `RUST-DELIVERY-01` (квитанция текущего HEAD), `UPDATE-3WAY-01`,
 `UPDATE-BSL-01`, `EDT-IDENTITY-01`, `META-WORKSPACE-01`,
 `OWNER-REPORT-01`, `ROADMAP-03`,
