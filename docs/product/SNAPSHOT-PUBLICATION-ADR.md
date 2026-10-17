@@ -97,6 +97,12 @@ No production fault-injection flag or cleanup operation is added.
   using synthetic catalog rows. They prove state recovery only, not scanner,
   retained-file validity, installed-package acceptance or macOS admission.
 
+Boundary markers are atomically renamed outside the generation. The parent waits
+for a readable marker while checking that the same publisher is alive and the
+harness deadline has not expired. Windows marker open denials are retried within
+that deadline; permanent denial, malformed JSON or an exited publisher still
+fails. This retries only test-control IO, never capture or publication.
+
 Run the focused suite with `python -m pytest -q
 tests/unit/test_publication_process_kill.py`. Native tests require Windows or
 Linux/amd64 and the Go toolchain; platform skips are not acceptance evidence.
