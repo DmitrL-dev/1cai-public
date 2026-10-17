@@ -27,9 +27,10 @@ for receipt in receipts:
         schedule_explicit_retry(receipt.notification_id)
 ```
 
-The example host and caller functions are placeholders, not installed services.
-There is no CLI command, background thread, service registration, implicit
-network call from the watcher, or automatic retry loop.
+The example endpoint and caller functions are placeholders, not installed services.
+There is no CLI command, background thread, service registration or implicit
+network call from the watcher. Current source has an explicitly started foreground
+host described below; constructing it does not start delivery.
 
 `authorize` is required. It runs before every send and again before every ack;
 a refusal stops the batch, and the current event stays pending. Delivery never
@@ -83,7 +84,8 @@ failure leaves an event eligible for duplicate delivery; ack errors propagate.
 
 An explicit `DeliveryJournal(path, namespace=adapter_namespace)` can be passed
 as `journal=` together with `retry_policy=RetryPolicy(...)`. The host still
-invokes each batch; no background retry loop or network call is added. All
+invokes each batch, directly or through the foreground host; no background
+thread or implicit network call is added. All
 consumers of one outbox generation must share that journal and namespace.
 Do not mix journaled delivery with legacy consumers or independent journals.
 
@@ -125,6 +127,71 @@ reopen, revocation, ack loss, a controlled concurrent-consumer interleaving,
 OS-lock exclusion and a real child process exiting inside transport after the
 attempt write. These are source contracts, not live endpoint or power-loss
 qualification.
+
+## Explicit foreground host in current sources
+
+`NotificationDeliveryHost(outbox, adapter, authorize=..., journal=...)` schedules
+the existing journaled batches. The journal is required and must use the
+adapter's namespace; queue, journal and their `.lock`/`.tmp` paths must not
+overlap. Construction performs no send, queue read or journal write. `run()`
+runs on the calling thread once and returns the number of completed batches.
+Defaults are one batch, 100 selected events and a 30-second interval. Bounds:
+`max_cycles=1..10000`, `batch_limit=1..1000`, `interval_seconds=5..86400`;
+booleans and an unbounded cycle count are rejected.
+
+The interval is a delay after a completed batch, not a fixed-rate promise.
+The journal remains the authority for retry due times, attempt exhaustion,
+terminal records and explicit rearm. A pending retry can run on the first
+scheduled batch after its due time. Empty/not-due batches still count toward
+the finite cycle budget. `last_results` holds only the last completed batch,
+bounded by `batch_limit`; it is not an audit log or proof of an empty queue.
+An interrupted batch can have durable effects even when its receipts were not
+returned. Inspect the journal before recovery.
+
+`stop()` wakes interval waits and is checked before each batch, send and ack.
+The host also rechecks current authorization before reading/reconciling an idle
+batch. Authorization/storage errors propagate and end the host; they are not
+transport retries. An active sender must return before stop takes effect.
+If a successful response is persisted before stop prevents ack, a new host
+using the same journal recovers the ack without resending. This does not add
+a hard transport deadline or an exactly-once guarantee.
+
+The existing Windows `GitAuditWorker` exposes an explicit `notification_host`
+factory for schema 2/3 in `read-only` mode. It binds the worker's existing
+`git-outbox.json`, fixed `notification-delivery.json` in the Observer profile,
+current project authorization and lifetime. No endpoint or credential is added
+to service JSON. The embedding host supplies the configured adapter and secret:
+
+```python
+from threading import Event
+from rentgen_core.service_composition import GitAuditWorker
+from rentgen_core.service_entry import load_config
+
+# Existing schema 2/3 read-only config; set max_cycles=1 for this foreground job.
+worker = GitAuditWorker(load_config(config_path))
+try:
+    worker.run(Event())                 # Audit only: never sends notifications.
+    delivery = worker.notification_host(adapter, max_cycles=3)
+    completed_batches = delivery.run()  # Explicit network operation.
+    receipts = delivery.last_results
+finally:
+    worker.close()                     # Also stops the configured delivery host.
+```
+
+Only one delivery host can be composed per worker lifetime. Closing the worker
+stops it; restart creates a new worker/host with the same journal and namespace.
+An embedding host that runs delivery on its own thread must stop and join that
+thread; `close()` does not forcibly terminate an in-flight sender. The normal
+`rentgen-service` console/SCM entrypoint remains audit-only. Installed SCM delivery,
+production endpoint/secret provisioning and live TLS/DNS acceptance remain separate.
+
+`test_notification_host.py` uses real queue/journal files and an injected sender
+for scheduling, stop, concurrency, retry/rearm and ack recovery.
+`test_service_notification_host.py` checks real service bindings and project
+revocation; its events are fixtures and POSIX substitutes only the Windows lease.
+`test_service_notification_capture.py` separately covers real Windows capture,
+Git analysis, owner-report event creation and restart/ack recovery with injected
+BSL/HTTPS adapters. These tests do not qualify native SCM delivery, 1C or power loss.
 
 ## Bounds and credential handling
 

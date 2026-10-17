@@ -2,11 +2,12 @@
 
 Sources/refs are read-only. Writes are confined to existing Observer evidence,
 its scheduler journal/local outbox, the owner-report store and BSL scratch data.
-Schema 3 also captures owned snapshots. There is no runtime export,
-notification sender or SCM installer.
+Schema 3 also captures owned snapshots. Explicit notification_host composition
+adds its delivery journal; audit run never sends. No runtime export or SCM install.
 """
 
 from contextlib import nullcontext
+from threading import Lock
 import stat
 
 from .errors import CoreError
@@ -162,6 +163,8 @@ class GitAuditWorker:
         self.config = config
         self._lease = None
         self._started = False
+        self._notification_host = None
+        self._notification_lock = Lock()
         runtime = LocalRuntime(config.registry)
         if config.scanner is not None:
             from rentgen_graph.snapshot_adapter import (
@@ -270,7 +273,47 @@ class GitAuditWorker:
         # The journal retains the total even beyond the scheduler's 1000 events.
         return self.journal.read()["cycle"]
 
+    def notification_host(
+        self, adapter, *, interval_seconds=30, max_cycles=1, batch_limit=100,
+        retry_policy=None, clock=None,
+    ):
+        """Explicitly compose delivery for this worker's outbox, without sending.
+
+        The embedding host supplies its trusted adapter/secret and calls run.
+        JSON configuration and the audit scheduler never enable network sends.
+        """
+        from .notification_delivery import WebhookAdapter
+        from .notification_host import NotificationDeliveryHost
+        from .notification_journal import DeliveryJournal
+
+        def authorize():
+            if self._lease is None:
+                raise CoreError("SERVICE_HOST_ALREADY_RUN", "Git audit worker is closed")
+            self.watcher.authorize()
+
+        with self._notification_lock:
+            authorize()
+            if self._notification_host is not None:
+                raise CoreError("NOTIFICATION_HOST_ALREADY_RUN", "Delivery host already configured")
+            if not isinstance(adapter, WebhookAdapter):
+                raise CoreError("NOTIFICATION_HOST_INVALID", "Configured webhook adapter required")
+            path = self.config.profile / "notification-delivery.json"
+            if not all(_safe_output_leaf(path.with_name(path.name + suffix))
+                       for suffix in ("", ".lock", ".tmp")):
+                raise CoreError("NOTIFICATION_HOST_INVALID", "Invalid delivery journal placement")
+            host = NotificationDeliveryHost(
+                self.outbox, adapter, authorize=authorize,
+                journal=DeliveryJournal(path, namespace=adapter._namespace),
+                interval_seconds=interval_seconds, max_cycles=max_cycles,
+                batch_limit=batch_limit, retry_policy=retry_policy, clock=clock,
+            )
+            self._notification_host = host
+            return host
+
     def close(self):
-        lease, self._lease = self._lease, None
+        with self._notification_lock:
+            if self._notification_host is not None:
+                self._notification_host.stop()
+            lease, self._lease = self._lease, None
         if lease is not None:
             lease.__exit__(None, None, None)
