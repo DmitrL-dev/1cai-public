@@ -248,7 +248,8 @@ class ObserverWorker:
             RentgenCapturedGoBuilder(config.scanner),
         )
         self._observer = Observer(
-            runtime, current_windows_principal(), config.project, config.profile
+            runtime, current_windows_principal(), config.project, config.profile,
+            poll_interval=config.interval_seconds,
         )
         self._lease = self._observer.locked()
         self._lease.__enter__()
