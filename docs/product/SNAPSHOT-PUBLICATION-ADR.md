@@ -64,10 +64,48 @@ read-only SQLite query with `immutable=1`; sidecars are rejected. The core impor
 no concrete graph/HTTP adapter. Unsupported platforms fail explicitly.
 
 Tests use public temporary sources and the real Go scanner, actual SQLite files,
-Windows junction/sharing checks, separate competing publisher processes, and
-process kills before/after complete verification and before/after state commit.
-They cover exact operation replay, same-content concurrent attempts, ABA, source
-configuration/permission changes, corrupt files and pinned S1 after S2.
+Windows junction/sharing checks, injected exceptions, and the separate abrupt
+process-death checks below. They cover exact operation replay, same-content
+attempts, ABA, source configuration/permission changes, corrupt files and pinned
+S1 after S2. An injected exception exercises Python cleanup; it is not evidence
+of recovery after forced process termination.
+
+## Abrupt-process publication recovery (development source)
+
+`tests/unit/test_publication_process_kill.py` starts a separate Python publisher,
+waits for a marker at a private publication boundary, observes state from the
+parent, then force-kills and reaps the publisher. Markers are outside generations.
+The harness requires the expected kill exit status, no acknowledgment and no
+Python `finally` marker; a premature exit or boundary timeout fails the test.
+No production fault-injection flag or cleanup operation is added.
+
+- Windows capture with the real Go scanner is killed before complete verification,
+  after complete verification, inside the uncommitted publication transaction,
+  and after commit but before acknowledgment.
+- Linux/amd64 uses its actual owned-scanner backend and is killed after generation
+  completion, inside the uncommitted publication transaction, and after commit.
+- Precommit checks observe an unchanged head and no catalog/receipt/event/outbox
+  rows both while the publisher is blocked and after its death. Resolver refuses
+  the orphan. Explicit retry with the original operation and head allocates a new
+  generation; the old attempt remains retained and unreferenced.
+- Postcommit checks require the complete catalog/head/receipt/event/outbox unit,
+  including same-content catalog reuse. Real retained source and graph reads work
+  after the kill. After a later publication and deletion of the live source,
+  replay returns the original operation receipt without a builder, another
+  generation, another event or another outbox row. The later head is unchanged.
+- Two additional portable tests kill a writer around the same SQLite transaction
+  using synthetic catalog rows. They prove state recovery only, not scanner,
+  retained-file validity, installed-package acceptance or macOS admission.
+
+Run the focused suite with `python -m pytest -q
+tests/unit/test_publication_process_kill.py`. Native tests require Windows or
+Linux/amd64 and the Go toolchain; platform skips are not acceptance evidence.
+The full Windows and portable Linux CI suites include these tests.
+
+These are deterministic kills at named boundaries, not interruption inside
+SQLite COMMIT, filesystem flush or an OS/power failure. They establish no orphan
+removal lease and do not prove that an arbitrary observed attempt is inactive.
+Full lifecycle/exclusivity and installed-release qualification remain open.
 
 ## Read-only generation attribution (development source)
 
