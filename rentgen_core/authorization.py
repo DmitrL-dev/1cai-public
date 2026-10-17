@@ -19,6 +19,8 @@ from .access import (
     principal_value,
 )
 from .snapshots import (
+    GenerationAttribution,
+    validate_generation_relpath,
     ProjectHead,
     PublishResult,
     SnapshotCatalogEntry,
@@ -511,6 +513,33 @@ class StateTransaction:
         if row[0] != ref.manifest_hash:
             raise CoreError("SNAPSHOT_CORRUPT", "Catalog manifest binding is invalid")
         return SnapshotCatalogEntry(ref, *row[1:])
+
+    def get_generation_attribution(self, generation_relpath: str) -> GenerationAttribution:
+        self._require_snapshot_schema()
+        validate_generation_relpath(generation_relpath)
+        head = self.get_project_head()
+        row = self._connection.execute(
+            "SELECT snapshot_id FROM snapshots WHERE project_id=? AND generation_relpath=?",
+            (self._project_id, generation_relpath),
+        ).fetchone()
+        if row is None:
+            return GenerationAttribution(generation_relpath, "unreferenced_at_read", head, None, None)
+        catalog = self.get_snapshot(row[0])
+        operation = self._connection.execute(
+            "SELECT operation_id FROM publication_receipts WHERE project_id=? AND snapshot_id=? "
+            "ORDER BY committed_head_revision DESC LIMIT 1",
+            (self._project_id, row[0]),
+        ).fetchone()
+        if operation is None:
+            raise CoreError("STATE_CORRUPT", "Catalog reference has no publication receipt")
+        receipt, expected = self._find_publication(operation[0])
+        if (receipt.head.revision != expected.revision + 1
+                or receipt.head.revision > head.revision
+                or receipt.head.source_revision > head.source_revision
+                or (head.snapshot == catalog.snapshot and receipt.head.revision != head.revision)
+                or (receipt.head.revision == head.revision and receipt.snapshot != head.snapshot)):
+            raise CoreError("STATE_CORRUPT", "Publication receipt conflicts with project head")
+        return GenerationAttribution(generation_relpath, "catalog_referenced", head, catalog, receipt)
 
     def get_snapshot_layers(self, snapshot_id: str) -> tuple[SnapshotLayer, ...]:
         self._require_snapshot_schema()

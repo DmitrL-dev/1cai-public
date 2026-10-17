@@ -16,7 +16,7 @@ _GROUPS = {
     "identity.bootstrap": ("identity-init",),
     "registry.bootstrap": ("registry-init", "project-register"),
     "project.state.read": (
-        "project-list", "project-head", "layers-get", "publication-receipt",
+        "project-list", "project-head", "layers-get", "publication-receipt", "generation-attribution",
         "membership-list", "membership-receipt",
     ),
     "draft.history.read": (

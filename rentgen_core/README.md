@@ -264,6 +264,14 @@ identical content reuse the existing verified catalog locator and still record
 their own head revision/receipt/event. If an acknowledgment is lost and the exact
 receipt cannot be read, the result is `PUBLICATION_OUTCOME_UNKNOWN` with operation ID.
 
+Development API `get_generation_attribution(ctx, "generations/<attempt-uuid>")`
+and CLI `generation-attribution --generation-relpath generations/<attempt-uuid>`
+(with explicit registry/project) inspect the catalog reference, current head and
+latest receipt in one authorized state read. They do not open generation files.
+`unreferenced_at_read` does not establish an inactive orphan: both outcomes keep
+`physical_state=not_inspected` and `removal_permitted=false`. Historical references
+and same-content reuse are preserved. See the [attribution contract](../docs/product/SNAPSHOT-PUBLICATION-ADR.md#read-only-generation-attribution-development-source).
+
 Source and graph capabilities retain the same `SnapshotRef` and reauthorize each
 public call. Source refs require exact snapshot/layer/path/hash equality. Source
 pages are bounded to 1..200 entries, with cursors tied to project, snapshot, page

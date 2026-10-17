@@ -270,11 +270,6 @@ class NotificationOutbox:
             if os.name == "nt":
                 import msvcrt
 
-                stream.seek(0)
-                if stream.read(1) == b"":
-                    stream.seek(0)
-                    stream.write(b"0")
-                    stream.flush()
                 for _ in range(20):
                     stream.seek(0)
                     try:
@@ -298,6 +293,13 @@ class NotificationOutbox:
                     "GIT_WATCHER_NOTIFICATION_BUSY",
                     "Another outbox operation is active",
                 )
+            # Windows byte locks also deny reads. Acquire before probing or
+            # initializing the byte; CRT permits locking beyond EOF.
+            # https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/locking
+            if os.name == "nt" and os.fstat(stream.fileno()).st_size < 1:
+                stream.seek(0)
+                stream.write(b"0")
+                stream.flush()
             yield
         finally:
             if acquired:

@@ -69,8 +69,45 @@ process kills before/after complete verification and before/after state commit.
 They cover exact operation replay, same-content concurrent attempts, ABA, source
 configuration/permission changes, corrupt files and pinned S1 after S2.
 
-No automatic GC or cleanup of potentially committed attempts is introduced. An
-explicit future recovery tool must attribute catalog references before removal.
+## Read-only generation attribution (development source)
+
+`get_generation_attribution(ctx, generation_relpath)` and the Windows/Linux CLI
+query one exact locator in an authorized SQLite read transaction:
+
+```sh
+rentgen generation-attribution --registry /path/registry.sqlite3 \
+  --project <project-uuid> --generation-relpath generations/<attempt-uuid>
+```
+
+Linux can additionally pass `--identity-profile /path/identity.json`. The locator
+must be a canonical UUID or legacy lowercase SHA-256 under `generations/`.
+The API requires current `project:read`; the CLI checks it again after output
+serialization. Schema 2/3/4 are supported without migration, schema 1 refuses.
+No source, graph adapter, directory inventory or generation file is opened.
+
+- `catalog_referenced` returns the exact catalog entry, its latest committed
+  publication receipt and `observed_head` from the same read transaction. A later
+  head does not hide a historical catalog reference. Same-content publications
+  reuse a locator; the latest receipt identifies that catalog publication, **not
+  the operation that created the physical directory**.
+- `unreferenced_at_read` means this project catalog had no reference to the exact
+  locator in that read. An active attempt may commit immediately afterwards;
+  it may also be a failed/redundant attempt or a nonexistent directory. The query
+  does not infer which. It cannot attribute an unregistered attempt to an operation.
+- Both results state `physical_state=not_inspected` and
+  `removal_permitted=false`. Catalog presence does not verify retained files.
+  Missing or inconsistent receipt bindings for a referenced catalog fail rather
+  than returning an unreferenced result.
+
+This is a bounded single-locator diagnostic, not automatic discovery, a cleanup
+lease, an orphan promotion or a deletion operation. Tests exercise real SQLite
+state, Windows capture failures/retry/reuse/lost acknowledgment, CLI authorization
+and a Linux CLI subprocess with absent sources/generations. Source CI does not
+qualify a new installed release or expand the macOS platform contract.
+
+No automatic GC or cleanup of potentially committed attempts is introduced.
+Future removal still requires exclusive lifecycle ownership, proof that no active
+publisher or retained reader can use the attempt, and fresh catalog attribution.
 File flushing reduces risk but universal directory/power-loss durability is not
 claimed. This ADR does not complete E1–E4 source enrichment/CLI/MCP/HTTP/UI cutover,
 canonical metadata identity, structural apply, release readiness or observer

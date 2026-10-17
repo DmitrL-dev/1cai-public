@@ -106,6 +106,7 @@ def _parser():
         "layers-get",
         "layers-set",
         "publication-receipt",
+        "generation-attribution",
         "state-migrate",
         "state-upgrade-access",
         "state-upgrade-workflows",
@@ -310,6 +311,8 @@ def _parser():
             command.add_argument(
                 "--layers-json", type=Path, required=True, action=_Once
             )
+        elif name == "generation-attribution":
+            command.add_argument("--generation-relpath", required=True, action=_Once)
         elif name == "publication-receipt":
             command.add_argument("--operation-id", required=True, action=_Once)
         elif name in {"proposal-platform-result", "proposal-test-result", "test-run-qualify"}:
@@ -1373,6 +1376,14 @@ def _execute(args, *, proposal_scope=None):
         else set()
     )
     ctx = runtime.state_context(principal, args.project, permissions=permissions)
+    if args.command == "generation-attribution":
+        permissions = frozenset({"project:read"})
+        if proposal_scope is not None:
+            proposal_scope.context = ctx
+            proposal_scope.permissions = permissions
+        with ctx.state.transaction(principal) as tx:
+            value = asdict(tx.get_generation_attribution(args.generation_relpath))
+        return _ProposalCommandResult(value, ctx, permissions)
     if args.command == "export-analyze":
         from .submitted_export import analyze_export
 
