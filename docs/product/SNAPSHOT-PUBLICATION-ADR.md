@@ -107,6 +107,51 @@ SQLite COMMIT, filesystem flush or an OS/power failure. They establish no orphan
 removal lease and do not prove that an arbitrary observed attempt is inactive.
 Full lifecycle/exclusivity and installed-release qualification remain open.
 
+## Exact generation verification (development source)
+
+`verify_catalog_generation(ctx, generation_relpath, graph_reader_factory=...)`
+and the Windows/Linux CLI verify one exact **catalog-referenced** generation:
+
+```sh
+rentgen generation-verify --registry /path/registry.sqlite3 \
+  --project <project-uuid> --generation-relpath generations/<attempt-uuid>
+```
+
+Linux also accepts `--identity-profile /path/identity.json`; its API caller must
+supply a verified-byte graph reader adapter. Windows uses the retained SQLite
+validator directly. Canonical UUID and matching legacy hash locators work on
+schema 2/3/4; schema 1 refuses. Current `project:read` is required before locator
+lookup. Unreferenced locators fail with `GENERATION_UNREFERENCED` before retained
+IO, even if a complete directory exists. There is no discovery or orphan promotion.
+
+The operation verifies manifest/catalog bindings, every source and derived file,
+graph hashes/provenance/schema and the exact file inventory. Windows holds file
+handles and checks entry/exit inventories; Linux uses private verified copies
+with entry/post-copy/exit checks. Existing session resource bounds apply (30-second
+session deadline, at most 20,000 source entries and 2,560 MiB verified/copied bytes;
+Linux additionally caps resident image accounting at 4 GiB). Failure, including
+missing files or incomplete cleanup, produces no successful verification result.
+
+The initially selected catalog entry must still match when the session begins,
+at session authorization checkpoints and after successful session cleanup. A
+historical generation remains selectable after a later head; same-content reuse
+does not change its physical locator. The live source tree and scanner are not
+needed for verification. The CLI rechecks permissions after output serialization,
+including error redaction when access was revoked.
+
+Success contains `catalog`, the platform-specific `validation` summary,
+`physical_state=verified_at_read` and `removal_permitted=false`. This describes the
+completed bounded observation. It is not an atomic filesystem/SQLite snapshot,
+ongoing validity guarantee, activity verdict, cleanup lease, power-loss proof or
+claim about the current head. Files/catalog may change after observation. No state
+mutation, generation removal, release bump or macOS admission is introduced.
+
+`tests/unit/test_generation_verification.py` covers portable refusals and real
+POSIX storage fixtures; `tests/unit/test_generation_verification_capture.py`
+uses actual Windows/Linux capture, historical/reused and legacy locators, damage,
+catalog drift, CLI revocation and a fresh CLI process without live sources.
+Native skips on another host are not native or installed-release acceptance.
+
 ## Read-only generation attribution (development source)
 
 `get_generation_attribution(ctx, generation_relpath)` and the Windows/Linux CLI

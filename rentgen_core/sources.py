@@ -513,12 +513,14 @@ class SnapshotReadSession:
     This object is an internal capability, never a transport-selected locator.
     """
 
-    def __init__(self, sources, limits):
+    def __init__(self, sources, limits, *, expected_catalog=None):
         if not isinstance(limits, SnapshotReadLimits):
             raise CoreError(
                 "INVALID_QUERY_OPTIONS", "Typed read session limits required"
             )
         self._sources, self._limits = sources, limits
+        if expected_catalog is not None:
+            self._catalog = expected_catalog
         self._phase = "new"
         self._owner = None
         self._handles = []

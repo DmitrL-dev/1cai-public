@@ -31,6 +31,11 @@ permissions, schema и ограничения входных/выходных д
   head/latest receipt. [Границы атрибуции](SNAPSHOT-PUBLICATION-ADR.md#read-only-generation-attribution-development-source):
   файлы не читаются, `unreferenced_at_read` не разрешает удаление; новой
   installed qualification или публикации этим source-контрактом не заявлено.
+- Отдельная development-группа `snapshot.generation.verify` допускает Windows/Linux
+  CLI `generation-verify`: [ограниченная физическая проверка](SNAPSHOT-PUBLICATION-ADR.md#exact-generation-verification-development-source)
+  одного catalog-referenced locator, включая историю и legacy hash. Хеши, graph и
+  inventory проверяются без live source; результат не даёт cleanup lease. macOS и
+  новая installed qualification этим контрактом не допускаются.
 - Чтение существующих shared drafts: get/list/history/receipt; MCP также умеет
   bounded `rentgen_draft_read`, включая UTF-8. Это чтение сохранённого state,
   не доказательство доступности или проверки прежних snapshot/source files.

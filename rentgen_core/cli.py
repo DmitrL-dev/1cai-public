@@ -107,6 +107,7 @@ def _parser():
         "layers-set",
         "publication-receipt",
         "generation-attribution",
+        "generation-verify",
         "state-migrate",
         "state-upgrade-access",
         "state-upgrade-workflows",
@@ -311,7 +312,7 @@ def _parser():
             command.add_argument(
                 "--layers-json", type=Path, required=True, action=_Once
             )
-        elif name == "generation-attribution":
+        elif name in {"generation-attribution", "generation-verify"}:
             command.add_argument("--generation-relpath", required=True, action=_Once)
         elif name == "publication-receipt":
             command.add_argument("--operation-id", required=True, action=_Once)
@@ -1370,19 +1371,25 @@ def _execute(args, *, proposal_scope=None):
             "draft-restore",
         }
         else {"project:read"}
-        if args.command.startswith("draft-") or args.command == "snapshot-diff"
+        if args.command.startswith("draft-") or args.command in {"snapshot-diff", "generation-verify"}
         else {"analysis:run"}
         if args.command == "capture"
         else set()
     )
     ctx = runtime.state_context(principal, args.project, permissions=permissions)
-    if args.command == "generation-attribution":
+    if args.command in {"generation-attribution", "generation-verify"}:
         permissions = frozenset({"project:read"})
         if proposal_scope is not None:
             proposal_scope.context = ctx
             proposal_scope.permissions = permissions
-        with ctx.state.transaction(principal) as tx:
-            value = asdict(tx.get_generation_attribution(args.generation_relpath))
+        if args.command == "generation-attribution":
+            with ctx.state.transaction(principal) as tx:
+                value = asdict(tx.get_generation_attribution(args.generation_relpath))
+        else:
+            from .generation_verification import verify_catalog_generation
+
+            value = asdict(verify_catalog_generation(ctx, args.generation_relpath,
+                graph_reader_factory=None if sys.platform == "win32" else _graph_factory()))
         return _ProposalCommandResult(value, ctx, permissions)
     if args.command == "export-analyze":
         from .submitted_export import analyze_export
