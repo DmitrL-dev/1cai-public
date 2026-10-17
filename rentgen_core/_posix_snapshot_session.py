@@ -49,15 +49,17 @@ def _limit():
 
 
 def open_posix_snapshot_session(*, state, principal, snapshot, graph_reader_factory,
-                                limits, graph_limits, authorize_read, operation_budget=None):
+                                limits, graph_limits, authorize_read, operation_budget=None,
+                                expected_catalog=None):
     """Trusted internal factory; derive the retained root from the state locator."""
     return _PosixSnapshotSession(state, principal, snapshot, graph_reader_factory,
-                                 limits, graph_limits, authorize_read, operation_budget)
+                                 limits, graph_limits, authorize_read, operation_budget,
+                                 expected_catalog)
 
 
 class _PosixSnapshotSession:
     def __init__(self, state, principal, snapshot, factory, limits, graph_limits, authorize,
-                 operation_budget=None):
+                 operation_budget=None, expected_catalog=None):
         if (type(state) is not ProjectState or type(principal) is not Principal
                 or type(snapshot) is not SnapshotRef or state.project_id != snapshot.project_id
                 or type(limits) is not PosixSnapshotLimits
@@ -65,6 +67,8 @@ class _PosixSnapshotSession:
                 or (operation_budget is not None and type(operation_budget) is not ReadOperationBudget)):
             raise CoreError("INVALID_QUERY_OPTIONS", "Typed trusted POSIX session inputs required")
         self._state, self._principal, self.snapshot = state, principal, snapshot
+        if expected_catalog is not None:
+            self._catalog = expected_catalog
         self._factory, self._limits, self._graph_limits = factory, limits, graph_limits
         self._authorize_read = authorize
         self._phase, self._owner, self._busy = "new", None, False

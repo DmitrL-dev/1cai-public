@@ -43,6 +43,7 @@ _GROUPS = {
         "source-list", "source-read", "graph-resolve", "impact",
     ),
     "snapshot.compare.read": ("snapshot-diff",),
+    "snapshot.generation.verify": ("generation-verify",),
     # Read-only metadata navigation is admitted separately from other legacy reads.
     "snapshot.metadata.read": ("metadata-summary", "metadata-search", "metadata-object"),
     # Manual draft authoring: exact retained source -> shared draft history only.
@@ -98,6 +99,7 @@ def capability_status(capability):
         return {"supported": True, "reason": None}
     if _platform == "linux" and capability in {
         "snapshot.source.read", "snapshot.compare.read", "snapshot.metadata.read",
+        "snapshot.generation.verify",
         "draft.authoring", "source.capture",
     }:
         return {"supported": True, "reason": None}

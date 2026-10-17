@@ -12,6 +12,7 @@ from .context import (
     UseConfiguredDefault,
 )
 from .errors import CoreError
+from .generation_verification import GenerationVerification, verify_catalog_generation
 from .registry import ProjectRegistry
 from .resolver import ContextResolver, require_permission, require_snapshot
 from .state import ProjectState
@@ -96,6 +97,8 @@ from .sources import (
 )
 
 __all__ = [
+    "GenerationVerification",
+    "verify_catalog_generation",
     "GenerationAttribution",
     "get_generation_attribution",
     "capture_and_publish",
