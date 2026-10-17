@@ -492,10 +492,11 @@ def test_default_adapter_holds_authorized_observer_lease(configured, monkeypatch
     monkeypatch.setattr(local_identity, "current_windows_principal", lambda: principal)
 
     class AuthorizedObserver:
-        def __init__(self, runtime, identity, project, profile):
+        def __init__(self, runtime, identity, project, profile, *, poll_interval):
             assert runtime.registry_path == config.registry
             assert identity is principal
             assert (project, profile) == (config.project, config.profile)
+            assert poll_interval == config.interval_seconds
 
         @contextmanager
         def locked(self):

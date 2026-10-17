@@ -248,7 +248,18 @@ Go scanner, with the same path checks and deployment integrity obligations as
 schema 1. The worker constructs `RentgenGraphReaderFactory` and
 `RentgenCapturedGoBuilder`. Mode still defaults to `dry-run`, cycles to 1, and
 all schema 2 bounds apply. Dry-run does not construct or start the scanner.
-Schema 1/2 behavior and the generic scheduler's defaults remain unchanged.
+Schema 2 behavior and the generic scheduler's defaults remain unchanged.
+
+In current source, schema 1 and schema 3 declare their configured
+`interval_seconds` to Observer. Its existing durable `polling` status records
+gaps and clock regressions when an authorized capture/check cycle starts,
+including after a worker restart. Schema 3 preserves this interval when
+`trust_registered_source` selects the explicitly trusted Git observer.
+Construction and status reads do not record a poll; schema 3 Git preflight
+failures before capture do not advance the Observer check. Schema 2 has no
+Observer capture cycle and retains its separate scheduler journal.
+The status describes source checks, not SCM health, successful capture or live
+1C freshness. See [Observer polling semantics](OBSERVER.md#пропуски-опроса).
 
 Under its existing lifetime lease, each tick authorizes `project:read` and
 `analysis:run` before probing Git. It verifies the durable analysis profile/scope

@@ -181,6 +181,9 @@ class GitAuditWorker:
             current_windows_principal(),
             config.project,
             config.profile,
+            # Only schema 3 runs Observer capture/check cycles. Schema 2 has
+            # its own scheduler journal and must not claim capture freshness.
+            poll_interval=config.interval_seconds if config.scanner is not None else None,
         )
 
         def authorize():
@@ -200,7 +203,8 @@ class GitAuditWorker:
         if config.trust_registered_source:
             git_options = {"git_trust": GitRepositoryTrust(source)}
             observer = Observer(
-                runtime, observer.principal, config.project, config.profile, **git_options
+                runtime, observer.principal, config.project, config.profile,
+                poll_interval=observer.poll_interval, **git_options
             )
             authorize()
         adapter = InstalledDiagnostics(
