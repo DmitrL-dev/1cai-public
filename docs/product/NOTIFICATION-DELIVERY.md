@@ -76,7 +76,11 @@ retries. A constructor configuration error raises the sanitized
 The batch reads and validates the entire bounded queue before making the first
 request, then attempts at most `limit` events (`1..1000`, default 100). A malformed
 queue raises CoreError with no delivery or acknowledgement. Existing outbox
-atomic writes and cross-process producer locking remain unchanged. The host
+atomic writes and cross-process producer exclusion remain in place. Windows
+acquires the outbox byte lock before initializing its byte, including an empty
+lock file. A competing holder reaches the bounded lock acquisition loop and
+`GIT_WATCHER_NOTIFICATION_BUSY` instead of an unguarded read raising
+`PermissionError`. No queue bytes are read or written before acquisition. The host
 must serialize consumers. Acceptance followed by process death or local ack
 failure leaves an event eligible for duplicate delivery; ack errors propagate.
 
