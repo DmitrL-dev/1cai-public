@@ -357,6 +357,12 @@ async def main():
     cancellation_spec.loader.exec_module(cancellation_probe)
     publication_cancellation = await cancellation_probe.verify(
         sys.executable, scanner, working / "publication-cancellation", isolated=True)
+    overlap_spec = importlib.util.spec_from_file_location("publication_overlap_probe",
+        Path(__file__).with_name("publication_overlap_probe.py"))
+    overlap_probe = importlib.util.module_from_spec(overlap_spec)
+    overlap_spec.loader.exec_module(overlap_probe)
+    publication_overlap = overlap_probe.verify(sys.executable, scanner,
+        hashlib.sha256(Path(scanner).read_bytes()).hexdigest(), working / "publication-overlap")
     print(
         json.dumps(
             {
@@ -376,6 +382,7 @@ async def main():
                 "generation_diagnostics": generation_diagnostics,
                 "mcp_generations": mcp_generations,
                 "publication_cancellation": publication_cancellation,
+                "publication_overlap": publication_overlap,
                 "origins": {m.__name__: m.__file__ for m in modules},
             }
         )

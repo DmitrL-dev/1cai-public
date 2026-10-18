@@ -229,7 +229,7 @@ def verify(archive, manifest, archive_sha256, manifest_sha256, output, expected_
     base.require(helper_raw == source_blob(source_commit, HELPER), "Installed probe differs from committed source")
     tooling={}
     generation_helper="scripts/verification/generation_delivery_probe.py"
-    for relative in (HELPER,generation_helper,"scripts/verification/verify_owned_linux_delivery.py",
+    for relative in (HELPER,generation_helper,"scripts/verification/publication_overlap_probe.py","scripts/verification/verify_owned_linux_delivery.py",
             "scripts/verification/verify_linux_capture_delivery.py","scripts/release/prepare_owned_linux.py",
             "requirements/locks/check_linux_mcp_lock.py"):
         raw=base.read_regular(ROOT/relative,1024**2)

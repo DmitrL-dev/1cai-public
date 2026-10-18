@@ -127,6 +127,8 @@ def verify(archive_path, output, expected_sha256):
                     working / "generation_delivery_probe.py")
     shutil.copyfile(Path(__file__).with_name("publication_cancellation_probe.py"),
                     working / "publication_cancellation_probe.py")
+    shutil.copyfile(Path(__file__).with_name("publication_overlap_probe.py"),
+                    working / "publication_overlap_probe.py")
     wheel = next(kit.glob("*.whl"))
     body = run(
         "workflow",

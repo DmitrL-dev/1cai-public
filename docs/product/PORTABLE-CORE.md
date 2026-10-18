@@ -78,6 +78,17 @@ native execution, diagnostics и непроверенные state writes воз�
 ещё требуют отдельной реализации и native приёмки. POSIX file descriptor не
 объявляется эквивалентом Windows deny-write/deny-delete retained handle.
 
+## Windows/Linux: два publisher-процесса в development
+
+Новый [gate двух живых publisher-процессов](SNAPSHOT-PUBLICATION-ADR.md#two-live-publisher-processes-development-gate)
+проверяет replay одной операции, `HEAD_CONFLICT` разных операций и
+`OPERATION_CONFLICT` разного содержимого одной операции, с обоими порядками
+победителя. Проверяются единая публикация, неизменность retained attempts и replay
+после следующего head без live source или настроенного scanner. Gate включён в
+native source suite и installed Windows/Linux CLI; каждой сборке нужна собственная
+квитанция. Барьер находится до write transaction, записи выполняются последовательно:
+это не проверка одновременного COMMIT, cleanup lease, power-loss или 1С/EDT.
+
 ## Windows: cooperative отмена публикации в development
 
 После dev19 Windows Core и MCP проверяют отмену между фазами capture/build/

@@ -222,6 +222,40 @@ its native skips elsewhere are not acceptance. Installed gates run outside the
 checkout with installed product packages. No cleanup, active-attempt attribution,
 lifecycle exclusivity or publication recovery behavior is added here.
 
+## Two live publisher processes (development gate)
+
+`publication_overlap_probe.py` runs two actual CLI publisher processes against one
+owned project on Windows or Linux/amd64. Both finish capture/build/validation and
+pause at the private `before_state_transaction` test boundary before either writes.
+The Linux boundary follows the last head/configuration gate check. Both processes
+are live at the barrier, with separately bound PID/nonce/operation/head markers and
+different physical generation UUIDs. This adds no public barrier or product option.
+
+Three scenarios run with each possible winner (six cases): an identical operation
+and content replays the exact winner receipt; different operations with the same
+original head/content produce `HEAD_CONFLICT`; the same operation with different
+captured content produces `OPERATION_CONFLICT`. Independent read-only SQLite
+observations require no publication before release, exactly one catalog/head/
+receipt/event/outbox unit after the winner, and identical complete state after the
+loser. Both children must exit normally. The winner is physically verified; the
+retained loser is unreferenced and neither diagnostic authorizes removal. A later
+publication advances head, then the original receipt replays without live sources
+or a configured scanner and without state changes or another physical attempt.
+
+The six native source cases and the installed Windows CLI, Linux 3.11/3.12 CLI and
+owned Linux kit CLI gates use this same fixture. Installed child processes use
+isolated Python outside the checkout; receipts bind probe and scanner hashes and
+retain the observations for each case. Portable negative controls reject wrong,
+missing or malformed process markers and detect state mutations with unchanged
+table counts. Native skips on other hosts do not qualify this behavior. Each build
+requires its own exact-source installed receipts; this is not a new release.
+
+Publication writes are deliberately released in sequence while the losing process
+remains alive. These cases do not qualify simultaneous COMMIT/lock contention,
+power-loss, lifecycle exclusivity, an active-attempt journal, cleanup leases,
+1C/EDT or full SNAP-PUB-01 completion. Existing process-kill and cooperative
+cancellation gates remain separate and mandatory.
+
 ## Windows cooperative publication cancellation (development source)
 
 Windows `capture_and_publish(..., cancelled=trusted_callback)` now observes
