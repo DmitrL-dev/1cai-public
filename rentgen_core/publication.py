@@ -101,13 +101,14 @@ def capture_and_publish(ctx, *, expected_head, builder, operation_id, cancelled=
             ctx, expected_head=expected_head, operation_id=operation_id,
             cancelled=cancelled,
         )
+    _check_cancelled(cancelled)
     result = None
     try:
         with _capture_generation(
             ctx, expected_head=expected_head, operation_id=operation_id
         ) as captured:
             result = _publish_captured(
-                ctx, captured, expected_head, builder, operation_id
+                ctx, captured, expected_head, builder, operation_id, cancelled=cancelled
             )
         return result
     except Exception:
@@ -143,9 +144,18 @@ def _reconcile(ctx, expected_head, operation_id, snapshot):
     return None
 
 
-def _publish_captured(ctx, captured, expected_head, builder, operation_id):
+def _check_cancelled(cancelled):
+    """Trusted callback only outside the publication write transaction."""
+    if not callable(cancelled):
+        raise CoreError("INVALID_QUERY_OPTIONS", "Trusted cancellation callback required")
+    if cancelled():
+        raise CoreError("GRAPH_SCANNER_CANCELLED", "Capture was cancelled before publication")
+
+
+def _publish_captured(ctx, captured, expected_head, builder, operation_id, *, cancelled=lambda: False):
     path = captured.staging_path
     _boundary("after_capture", ctx=ctx, captured=captured)
+    _check_cancelled(cancelled)
     (path / "build-work").mkdir()
     try:
         receipt = builder.build(
@@ -155,6 +165,8 @@ def _publish_captured(ctx, captured, expected_head, builder, operation_id):
         raise
     except Exception as exc:
         raise CoreError("GRAPH_BUILD_FAILED", "Captured graph build failed") from exc
+    _boundary("after_build", ctx=ctx, captured=captured)
+    _check_cancelled(cancelled)
     manifest, graph = _assemble(captured, receipt)
     snapshot = SnapshotRef(ctx.project_id, sha256(manifest), sha256(manifest))
     with (path / "manifest.json").open("xb") as stream:
@@ -187,9 +199,12 @@ def _publish_captured(ctx, captured, expected_head, builder, operation_id):
         for layer in document["layers"]
     )
     _boundary("before_complete", ctx=ctx, catalog=catalog)
+    _check_cancelled(cancelled)
     _flush_outputs(path)
+    _check_cancelled(cancelled)
     verify_generation(path, catalog)
     _boundary("after_complete", ctx=ctx, catalog=catalog)
+    _check_cancelled(cancelled)
     # Physical attempt UUID is independent of content identity. Reuse only a
     # catalogued and verified locator; never overwrite an old generation.
     with ctx.state.transaction(ctx.principal) as tx:
@@ -203,6 +218,7 @@ def _publish_captured(ctx, captured, expected_head, builder, operation_id):
         verify_generation(ctx.state.path.parent / existing.generation_relpath, existing)
         catalog = replace(catalog, generation_relpath=existing.generation_relpath)
     _boundary("before_state_transaction", ctx=ctx, catalog=catalog)
+    _check_cancelled(cancelled)  # Last callback: never execute arbitrary code inside the write UOW.
     commit_attempted = False
     try:
         with ctx.state.transaction(ctx.principal, write=True) as tx:

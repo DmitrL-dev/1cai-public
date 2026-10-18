@@ -351,6 +351,12 @@ async def main():
         async with ClientSession(read, write) as session:
             await session.initialize()
             mcp_generations = await probe.verify_mcp(session, working / "state", source, captured, newer)
+    cancellation_spec = importlib.util.spec_from_file_location("publication_cancellation_probe",
+        Path(__file__).with_name("publication_cancellation_probe.py"))
+    cancellation_probe = importlib.util.module_from_spec(cancellation_spec)
+    cancellation_spec.loader.exec_module(cancellation_probe)
+    publication_cancellation = await cancellation_probe.verify(
+        sys.executable, scanner, working / "publication-cancellation", isolated=True)
     print(
         json.dumps(
             {
@@ -369,6 +375,7 @@ async def main():
                 "second_snapshot": newer["snapshot"],
                 "generation_diagnostics": generation_diagnostics,
                 "mcp_generations": mcp_generations,
+                "publication_cancellation": publication_cancellation,
                 "origins": {m.__name__: m.__file__ for m in modules},
             }
         )

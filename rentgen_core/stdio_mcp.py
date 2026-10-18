@@ -989,7 +989,7 @@ def _dispatch(runtime, principal, name, args, *, cancelled=lambda: False):
             expected_head=ProjectHead(**head),
             operation_id=args["operation_id"],
             builder=runtime.graph_builder,
-            **({"cancelled": cancelled} if sys.platform == "linux" else {}),
+            cancelled=cancelled,
         )
     # Authenticate before importing/opening the graph adapter or generation.
     runtime.state_context(principal, project)
@@ -1434,9 +1434,7 @@ def create_server(runtime, principal, *, cancellations=None, scope=None):
                     protocol_request_id=request_id,
                     scope=scope,
                     **({"cancelled": lambda: cancellations.active.get(request_id, False)}
-                       if name == _DIFF_TOOL or (
-                           name == "rentgen_capture" and sys.platform == "linux"
-                       ) else {}),
+                       if name in {_DIFF_TOOL, "rentgen_capture"} else {}),
                 ),
                 abandon_on_cancel=False,
                 limiter=limiter,

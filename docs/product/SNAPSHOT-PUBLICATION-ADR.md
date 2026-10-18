@@ -222,6 +222,43 @@ its native skips elsewhere are not acceptance. Installed gates run outside the
 checkout with installed product packages. No cleanup, active-attempt attribution,
 lifecycle exclusivity or publication recovery behavior is added here.
 
+## Windows cooperative publication cancellation (development source)
+
+Windows `capture_and_publish(..., cancelled=trusted_callback)` now observes
+cancellation before allocating a candidate and between capture, graph build,
+manifest/flush, complete-generation validation and the final publication write
+transaction. MCP forwards the admitted request's cancellation flag to this same
+Core path. A sampled cancellation returns `GRAPH_SCANNER_CANCELLED`; an invalid
+callback refuses with `INVALID_QUERY_OPTIONS` before candidate/source IO.
+The callback is never polled inside the write transaction or after commit.
+A previously committed exact-operation receipt is replayed before polling the
+callback, even after a later head and without live sources or a scanner.
+
+This is cooperative phase cancellation, not an interrupt of an active scanner,
+source copy, fsync or validator. These synchronous phases must return before the
+next poll. Cancellation arriving after the final poll may lose to commit. The
+SDK cancellation acknowledgment does not prove rollback or worker completion:
+reconcile the original operation receipt after the worker drains. Before commit,
+no catalog/head/receipt/event/outbox unit is published; the unreferenced attempt
+is retained and its handles close. An explicit retry with the original operation
+and expected head allocates a new attempt. No automatic retry, promotion, deletion
+or cleanup lease is added. Existing Linux owned-scanner cancellation is unchanged.
+
+`test_publication_cancellation.py` combines portable admission/replay controls
+with actual Windows phase cancellation, handle-release/retry and late-commit
+receipt cases. `test_publication_cancellation_sdk.py` runs real Windows capture
+and official SDK notifications at private test barriers before the write
+transaction and after commit. The installed Windows offline gate repeats this
+scenario outside the checkout with `-I`, recording `workflow.publication_cancellation`:
+exact outgoing request IDs, protocol acknowledgment while the worker is paused,
+worker drain, independent SQLite counts/fingerprints, retained orphan bytes,
+new-attempt retry and exact replay after a later head with absent live sources
+and scanner. Barriers exist only in the verification host, never public options.
+Source tests and non-Windows skips do not replace that installed receipt.
+Each accepted build requires its own exact-source/byte evidence; this change
+is not a new release or completion of lifecycle exclusivity, power-loss safety,
+active native 1C/EDT cancellation or full SNAP-PUB-01.
+
 ## Read-only generation attribution (development source)
 
 `get_generation_attribution(ctx, generation_relpath)` and the Windows/Linux CLI
