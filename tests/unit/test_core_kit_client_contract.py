@@ -76,6 +76,20 @@ def test_old_or_missing_client_frame_returns_fixed_diagnostic(monkeypatch):
     assert module.client_failure_locations("\n" * 65536) == "unavailable"
 
 
+@pytest.mark.parametrize("filename", ["publication_overlap_probe.py", "overlap.py"])
+def test_overlap_traceback_reports_only_allowlisted_filename_and_line(tmp_path, monkeypatch, filename):
+    module = verifier(monkeypatch)
+    code = compile('raise ValueError("PRIVATE_OVERLAP_OUTPUT")\n', str(tmp_path / filename), "exec")
+    try:
+        exec(code, {})
+    except ValueError:
+        stderr = traceback.format_exc()
+    else:
+        pytest.fail("fixture did not raise")
+    assert module.client_failure_locations(stderr) == filename + ":1"
+    assert module.client_failure_locations(stderr.replace(filename, "other_probe.py")) == "unavailable"
+
+
 def test_real_anyio_exception_group_preserves_client_frame_numbers(tmp_path, monkeypatch):
     module = verifier(monkeypatch)
     filename = str(tmp_path / "client.py")
