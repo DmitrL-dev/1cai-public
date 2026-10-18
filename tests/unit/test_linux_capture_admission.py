@@ -66,11 +66,8 @@ def test_execute_dispatch_preserves_capture_cancellation_and_authority(monkeypat
         assert ctx is context and kwargs["builder"] is builder
         assert kwargs["operation_id"] == operation
         assert kwargs["expected_head"].project_id == project
-        if platform == "linux":
-            assert kwargs["cancelled"] is cancelled
-            assert kwargs["cancelled"]() is True
-        else:
-            assert "cancelled" not in kwargs
+        assert kwargs["cancelled"] is cancelled
+        assert kwargs["cancelled"]() is True
         observed.append(True)
         return {"controlled_dispatch": True}
 
@@ -101,7 +98,7 @@ def test_sdk_worker_observes_cancel_until_completion_and_releases_request(monkey
 
     def execute(*args, protocol_request_id=None, scope=None, **kwargs):
         assert protocol_request_id == request_id
-        if platform == "linux" and name == "rentgen_capture":
+        if name == "rentgen_capture":
             retained.append(kwargs["cancelled"])
             observed.append(kwargs["cancelled"]())
         else:

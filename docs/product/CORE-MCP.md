@@ -327,6 +327,15 @@ Installation, CLI equivalents and result interpretation: [PROPOSAL-CHECK.md](PRO
   returns its protocol cancellation response; that response is **not evidence of
   rollback**. The worker may commit. On stdin EOF, the server waits for an active
   worker before exiting and may be unable to deliver its response.
+- Development Windows capture now observes the request cancellation flag
+  between publication phases, including immediately before the write transaction.
+  It does not interrupt a running scanner, source copy, fsync or validation;
+  the worker drains cooperatively. A cancellation sampled before the write
+  transaction leaves the attempt unreferenced; late cancellation can still commit.
+  Exact durable receipt replay wins over cancellation. The
+  [Windows cancellation contract and installed SDK gate](SNAPSHOT-PUBLICATION-ADR.md#windows-cooperative-publication-cancellation-development-source)
+  describe the retained-attempt/retry limits. Linux owned-scanner cancellation
+  keeps its existing contract.
 - Repeated cancellation notifications for an admitted active tool call are
   suppressed before SDK dispatch, so SDK 1.30 emits only one cancellation response
   while its shielded worker finishes. Tracking is limited to the eight admitted

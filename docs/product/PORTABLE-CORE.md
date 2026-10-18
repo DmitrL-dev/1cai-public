@@ -78,6 +78,18 @@ native execution, diagnostics и непроверенные state writes воз�
 ещё требуют отдельной реализации и native приёмки. POSIX file descriptor не
 объявляется эквивалентом Windows deny-write/deny-delete retained handle.
 
+## Windows: cooperative отмена публикации в development
+
+После dev19 Windows Core и MCP проверяют отмену между фазами capture/build/
+validation и непосредственно перед write transaction. Синхронная фаза сначала
+завершается; активный scanner этим контрактом не прерывается. Отмена до commit
+оставляет незарегистрированную попытку и закрывает handles; поздняя отмена может
+уступить commit. Повтор точной операции возвращает durable receipt даже после
+смены head и удаления live source. Подробности и отдельный installed SDK gate —
+[Windows publication cancellation](SNAPSHOT-PUBLICATION-ADR.md#windows-cooperative-publication-cancellation-development-source).
+Это development-контракт с обязательной квитанцией каждой сборки, без нового
+выпуска, cleanup lease или расширения macOS/1С/EDT-поддержки.
+
 ## Linux capture и чтение снимков
 
 Ограниченный маршрут проверен на [PR #102, HEAD `366db69`](evidence/development-ci-366db69-20261016.json):
