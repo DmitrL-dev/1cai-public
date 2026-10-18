@@ -93,6 +93,24 @@ This limits this MCP process, not other processes running as the same OS
 account. It is separate from Cline's UI approval settings and from protected
 output permission checks. State schema 4 is unchanged.
 
+## Development generation diagnostics
+
+After dev19, Windows/Linux additionally expose `rentgen_generation_attribution`
+and `rentgen_generation_verify`. Both take only `project_id` and
+`generation_relpath`, require current `project:read`, and obey startup scope.
+Attribution reports catalog/head/receipt state without reading retained files;
+verification checks one catalog-referenced generation, including history, without
+live sources. Both return `removal_permitted=false`; neither grants cleanup.
+
+Success uses `result.generation_attribution` or `result.generation_verification`.
+Scoped diagnostic errors use the standard error envelope plus
+`error.details.operation`. Text and structured output must agree. The server
+rechecks permissions after final serialization, strips private authority metadata
+and caps the SDK response at 128 KiB. Verification additionally rechecks its exact
+catalog binding. See [the contract and installed SDK gates](SNAPSHOT-PUBLICATION-ADR.md#mcp-generation-diagnostics-development-gate)
+for bounds and receipt locations. These tools do not expand public macOS support
+or the published dev19 inventory below.
+
 ## Tool contract
 
 Published dev19 exposes thirty-three tools on Windows, including the

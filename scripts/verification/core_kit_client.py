@@ -347,6 +347,10 @@ async def main():
     generation_diagnostics = probe.verify(
         lambda name, *args, **kwargs: command(name, *selector, *args, isolated=True, **kwargs),
         working / "state", source, captured, newer)
+    async with stdio_client(config) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            mcp_generations = await probe.verify_mcp(session, working / "state", source, captured, newer)
     print(
         json.dumps(
             {
@@ -364,6 +368,7 @@ async def main():
                 "first_snapshot": captured["snapshot"],
                 "second_snapshot": newer["snapshot"],
                 "generation_diagnostics": generation_diagnostics,
+                "mcp_generations": mcp_generations,
                 "origins": {m.__name__: m.__file__ for m in modules},
             }
         )

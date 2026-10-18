@@ -23,6 +23,7 @@ BEFORE,AFTER="a"*64,"b"*64
 
 LINUX_PROJECT_TOOLS=(
     "rentgen_project_head","rentgen_publication_receipt","rentgen_capture",
+    "rentgen_generation_attribution","rentgen_generation_verify",
     "rentgen_source_list","rentgen_source_read","rentgen_snapshot_diff",
     "rentgen_graph_resolve","rentgen_impact",
     "rentgen_draft_get","rentgen_draft_list","rentgen_draft_history",
