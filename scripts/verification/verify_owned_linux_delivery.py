@@ -303,6 +303,7 @@ def verify(archive, manifest, archive_sha256, manifest_sha256, output, expected_
         sdk_provenance_sha256=base.sha(payload["python-dependency-provenance.json"]),
         sdk_wheels=lock_receipt["wheels"], source_probe_sha256=base.sha(helper_raw),
         cli_receipt_sha256=base.sha(base.canonical(cli_receipt)), sdk=sdk_receipt,
+        publication_overlap=cli_receipt["publication_overlap"],
         offline_install=dict(no_index=True, require_hashes=True, binary_only=True, pip_check=True,
                              bootstrap_and_core_unchanged=True),
         limitations=["Actual synthetic installed CLI+SDK stdio fixture only, not full Linux product or native 1C/EDT",
