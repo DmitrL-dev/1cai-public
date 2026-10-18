@@ -538,6 +538,12 @@ print(json.dumps({'version':importlib.metadata.version('rentgen-core'),
     generation_diagnostics = probe.verify(
         lambda name, *args, **kwargs: cli(name, *selected, *args, **kwargs),
         state_root, source, first, second)
+    overlap_spec = importlib.util.spec_from_file_location("publication_overlap_probe",
+        Path(__file__).with_name("publication_overlap_probe.py"))
+    overlap_probe = importlib.util.module_from_spec(overlap_spec)
+    overlap_spec.loader.exec_module(overlap_probe)
+    publication_overlap = overlap_probe.verify(python, output / "scanner-after-two",
+        scanner_sha256, workspace / "publication-overlap")
     receipt = dict(schema=1, scope="actual Linux/amd64 installed CLI synthetic capture/restart/history/replay fixture only",
         source_commit=source_commit, source_tree=source_tree, version=expected_version,
         wheel=dict(sha256=sha(wheel_raw), size_bytes=len(wheel_raw), product_files=len(product), product_source_inventory_sha256=product_digest),
@@ -550,6 +556,7 @@ print(json.dumps({'version':importlib.metadata.version('rentgen-core'),
             changed_fixture_sha256=sha(canonical({name: sha(raw) for name, raw in sorted(changed.items())}))),
         first=first_binding, second=second_binding, original_graph=first_graph, checks=checks,
         generation_diagnostics=generation_diagnostics,
+        publication_overlap=publication_overlap,
         outcomes=dict(capture=True, fresh_process_reads=True, historical_snapshot=True,
             live_mutation_independent=True, replay_without_source_or_scanner=True,
             forged_ref_refused=True, stale_operation_refused=True, stale_head_refused=True,

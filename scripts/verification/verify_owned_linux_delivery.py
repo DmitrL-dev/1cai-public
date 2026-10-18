@@ -229,7 +229,7 @@ def verify(archive, manifest, archive_sha256, manifest_sha256, output, expected_
     base.require(helper_raw == source_blob(source_commit, HELPER), "Installed probe differs from committed source")
     tooling={}
     generation_helper="scripts/verification/generation_delivery_probe.py"
-    for relative in (HELPER,generation_helper,"scripts/verification/verify_owned_linux_delivery.py",
+    for relative in (HELPER,generation_helper,"scripts/verification/publication_overlap_probe.py","scripts/verification/verify_owned_linux_delivery.py",
             "scripts/verification/verify_linux_capture_delivery.py","scripts/release/prepare_owned_linux.py",
             "requirements/locks/check_linux_mcp_lock.py"):
         raw=base.read_regular(ROOT/relative,1024**2)
@@ -303,6 +303,7 @@ def verify(archive, manifest, archive_sha256, manifest_sha256, output, expected_
         sdk_provenance_sha256=base.sha(payload["python-dependency-provenance.json"]),
         sdk_wheels=lock_receipt["wheels"], source_probe_sha256=base.sha(helper_raw),
         cli_receipt_sha256=base.sha(base.canonical(cli_receipt)), sdk=sdk_receipt,
+        publication_overlap=cli_receipt["publication_overlap"],
         offline_install=dict(no_index=True, require_hashes=True, binary_only=True, pip_check=True,
                              bootstrap_and_core_unchanged=True),
         limitations=["Actual synthetic installed CLI+SDK stdio fixture only, not full Linux product or native 1C/EDT",

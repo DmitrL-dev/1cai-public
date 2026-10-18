@@ -18,10 +18,10 @@ def client_failure_locations(stderr):
     if type(stderr) is not str:
         return "unavailable"
     lines = re.findall(
-        r'^[ \t|]*File "(?:[^"\r\n]*[\\/])?client\.py", line ([1-9][0-9]{0,5})(?:,|$)',
+        r'^[ \t|]*File "(?:[^"\r\n]*[\\/])?(client\.py|publication_overlap_probe\.py|overlap\.py)", line ([1-9][0-9]{0,5})(?:,|$)',
         stderr[-65536:], re.MULTILINE,
     )
-    return ", ".join("client.py:" + line for line in lines[-4:]) or "unavailable"
+    return ", ".join(name + ":" + line for name, line in lines[-4:]) or "unavailable"
 
 
 def digest(path):
@@ -127,6 +127,8 @@ def verify(archive_path, output, expected_sha256):
                     working / "generation_delivery_probe.py")
     shutil.copyfile(Path(__file__).with_name("publication_cancellation_probe.py"),
                     working / "publication_cancellation_probe.py")
+    shutil.copyfile(Path(__file__).with_name("publication_overlap_probe.py"),
+                    working / "publication_overlap_probe.py")
     wheel = next(kit.glob("*.whl"))
     body = run(
         "workflow",
