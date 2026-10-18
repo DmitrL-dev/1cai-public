@@ -123,6 +123,8 @@ def verify(archive_path, output, expected_sha256):
     working.mkdir()
     client = working / "client.py"
     shutil.copyfile(Path(__file__).with_name("core_kit_client.py"), client)
+    shutil.copyfile(Path(__file__).with_name("generation_delivery_probe.py"),
+                    working / "generation_delivery_probe.py")
     wheel = next(kit.glob("*.whl"))
     body = run(
         "workflow",
