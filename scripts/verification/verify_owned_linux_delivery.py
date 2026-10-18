@@ -228,7 +228,8 @@ def verify(archive, manifest, archive_sha256, manifest_sha256, output, expected_
     helper_raw = base.read_regular(ROOT / HELPER, 1024**2)
     base.require(helper_raw == source_blob(source_commit, HELPER), "Installed probe differs from committed source")
     tooling={}
-    for relative in (HELPER,"scripts/verification/verify_owned_linux_delivery.py",
+    generation_helper="scripts/verification/generation_delivery_probe.py"
+    for relative in (HELPER,generation_helper,"scripts/verification/verify_owned_linux_delivery.py",
             "scripts/verification/verify_linux_capture_delivery.py","scripts/release/prepare_owned_linux.py",
             "requirements/locks/check_linux_mcp_lock.py"):
         raw=base.read_regular(ROOT/relative,1024**2)
@@ -270,6 +271,7 @@ def verify(archive, manifest, archive_sha256, manifest_sha256, output, expected_
     code, _, error = base.run([python, "-I", "-B", "-m", "pip", "--isolated", "--disable-pip-version-check", "check"], cwd=work, timeout=30)
     base.require(code == 0 and not error, "Offline installed dependency consistency check failed")
     helper = work / "probe.py"; base.copy_owned(helper, helper_raw, 0o600)
+    base.copy_owned(work / "generation_delivery_probe.py", source_blob(source_commit, generation_helper), 0o600)
     cache = work / "unused-bytecode"; cache.mkdir(mode=0o700)
     config = work / "probe-inputs.json"
     base.save(config, dict(prefix=str(environment), site=str(site), workspace=str(work),
@@ -282,6 +284,14 @@ def verify(archive, manifest, archive_sha256, manifest_sha256, output, expected_
     base.require(sdk_receipt.get("schema") == 1 and sdk_receipt.get("accepted") is True,
                  "Installed SDK fixture did not produce positive receipt")
     require_snapshot_diff_acceptance(sdk_receipt.get("snapshot_diff"))
+    generations=sdk_receipt.get("mcp_generations")
+    base.require(type(generations) is dict and generations.get("transport")=="official_sdk_stdio"
+        and generations.get("output_scope_private") is True
+        and len(generations.get("checks",[]))==29
+        and generations.get("damage_cases")==["source","derived","graph","manifest","extra","sidecar","missing"]
+        and generations.get("outcomes")==dict(historical_verified=True,current_verified=True,unreferenced_refused=True,
+            damaged_refused=True,state_unchanged=True,retained_bytes_restored=True,live_source_absent=True),
+        "Installed generation SDK receipt required")
     receipt = dict(schema=1, profile=kit.PROFILE, candidate=True, release_authority=False,
         runtime=runtime,qualification_tooling_sha256=tooling,
         source_commit=source_commit, source_tree=inputs["source_tree"], version=expected_version,

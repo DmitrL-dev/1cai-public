@@ -149,3 +149,42 @@ def verify(command, state_root, source_root, first, second):
         **records, checks=checks, unreferenced=unknown, damage_cases=list(names), state_sha256=before,
         outcomes=dict(historical_verified=True, current_verified=True, unreferenced_refused=True,
             damaged_refused=True, state_unchanged=True, retained_bytes_restored=True, live_source_absent=True))
+
+
+async def verify_mcp(session, state_root, source_root, first, second):
+    """Repeat the independent oracle through a real official SDK stdio session."""
+    from datetime import timedelta
+    from functools import partial
+    import anyio
+
+    project = first["snapshot"]["project_id"]
+    async def call(name, arguments, expected, error_code):
+        args = {"project_id": project}
+        require(len(arguments) in (0, 2), "Unexpected diagnostic command arguments")
+        if arguments:
+            require(arguments[0] in {"--generation-relpath", "--operation-id"}, "Unexpected diagnostic selector")
+            args[arguments[0][2:].replace("-", "_")] = arguments[1]
+        reply = await session.call_tool("rentgen_" + name.replace("-", "_"), args,
+                                        read_timeout_seconds=timedelta(seconds=60))
+        document = reply.model_dump(by_alias=True, mode="json", exclude_none=True)
+        require("_meta" not in document, "Internal output scope reached SDK client")
+        require(len(reply.content) == 1 and json.loads(reply.content[0].text) == reply.structuredContent,
+                "SDK generation representations differ")
+        payload = reply.structuredContent
+        require(reply.isError is (expected == 2), "SDK generation outcome differs")
+        if error_code:
+            require(set(payload) == {"error"} and payload["error"]["code"] == error_code, "SDK generation refusal differs")
+            return None
+        require(set(payload) == {"result", "request_id"}, "SDK generation envelope differs")
+        keys = {"generation-attribution": "generation_attribution", "generation-verify": "generation_verification"}
+        if name in keys:
+            require(set(payload["result"]) == {keys[name]}, "SDK generation result kind differs")
+            return payload["result"][keys[name]]
+        return payload["result"]
+
+    def command(name, *args, expected=0, error_code=None):
+        return anyio.from_thread.run(partial(call, name, args, expected, error_code))
+    result = await anyio.to_thread.run_sync(
+        partial(verify, command, state_root, source_root, first, second), abandon_on_cancel=False)
+    return dict(result, scope="official SDK owned two-generation fixture; no cleanup or full product qualification",
+                transport="official_sdk_stdio", output_scope_private=True)

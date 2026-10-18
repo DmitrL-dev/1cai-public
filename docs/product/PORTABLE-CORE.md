@@ -40,6 +40,12 @@ permissions, schema и ограничения входных/выходных д
   проверяет эти две команды на Windows kit и Linux wheel: historical/current,
   unreferenced и семь повреждений с восстановлением. Приёмка каждой сборки требует
   её собственных `generation_diagnostics` receipts; настройка gate не является выпуском.
+  Development MCP добавляет `rentgen_generation_attribution` и
+  `rentgen_generation_verify` с защитой финального ответа и лимитом 128 KiB.
+  [Installed SDK gate](SNAPSHOT-PUBLICATION-ADR.md#mcp-generation-diagnostics-development-gate)
+  повторяет диагностический сценарий на Windows kit и owned Linux CPython 3.11;
+  отдельные `mcp_generations` receipts обязательны для каждой принятой сборки.
+  Linux 3.12 CLI gate не является SDK-приёмкой.
 - Чтение существующих shared drafts: get/list/history/receipt; MCP также умеет
   bounded `rentgen_draft_read`, включая UTF-8. Это чтение сохранённого state,
   не доказательство доступности или проверки прежних snapshot/source files.

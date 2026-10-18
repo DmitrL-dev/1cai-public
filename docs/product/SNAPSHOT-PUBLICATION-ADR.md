@@ -182,8 +182,45 @@ Windows offline-install `acceptance.json`, and at top level in each Linux
 installed-capture `acceptance.json`. The enclosing artifact supplies the exact
 wheel/source binding. A configured gate or a local source-CLI rehearsal is not a
 passed installed receipt; each candidate requires fresh CI and inspection of
-these artifacts. This bounded synthetic scenario adds no MCP generation tools,
-release publication, 1C/EDT, lifecycle/exclusivity or full-product qualification.
+these artifacts. This CLI gate itself adds no MCP transport qualification, release publication,
+1C/EDT, lifecycle/exclusivity or full-product qualification.
+
+## MCP generation diagnostics (development gate)
+
+Development Windows/Linux MCP exposes `rentgen_generation_attribution` and
+`rentgen_generation_verify`, each taking only explicit `project_id` and canonical
+`generation_relpath`. Both are read-only, obey startup project/tool scope and
+require current `project:read`. They call the same bounded Core operations as CLI;
+macOS remains unavailable. Success returns `result.generation_attribution` or
+`result.generation_verification`. Errors retain the standard Core envelope;
+a scoped diagnostic error identifies its tool in `error.details.operation`.
+
+The output boundary binds both SDK representations to the request, project,
+locator, result kind and canonical payload digest. Private `_meta` authority is
+removed before delivery. Missing/inconsistent authority refuses disclosure,
+including diagnostic errors. Permissions are rechecked after final serialization
+and immediately before synchronous output; verified claims also recheck the
+entire selected catalog entry. Attribution remains an observation of its earlier
+transaction. The actual SDK response is capped at 128 KiB. Retained handles and
+sessions close inside the worker; existing worker draining on cancellation remains
+in force. There is no new whole-transport deadline or continuous filesystem lease.
+
+The Windows installed offline client and GNU/Linux CPython 3.11 owned offline
+SDK gate repeat the independent CLI oracle through the official SDK stdio client:
+29 generation checks, two captured generations, absent live source, unreferenced
+refusals and all seven damage/restore cases. The receipt adds
+`transport=official_sdk_stdio` and `output_scope_private=true`. Windows stores it
+under `workflow.mcp_generations`; the owned Linux artifact stores it under
+`sdk.mcp_generations`. The Linux 3.12 installed CLI receipt is not SDK acceptance.
+Each accepted build needs its own exact-source, installed-byte receipt; configuring
+these gates is not a release or qualification of 1C/EDT and full SNAP-PUB-01.
+
+Portable tests cover schemas, inventory and final-output controls with real
+SQLite authorization/catalog changes. `test_generation_mcp_capture.py` separately
+uses real Windows/Linux capture, SDK processes, damage/restoration and revocation;
+its native skips elsewhere are not acceptance. Installed gates run outside the
+checkout with installed product packages. No cleanup, active-attempt attribution,
+lifecycle exclusivity or publication recovery behavior is added here.
 
 ## Read-only generation attribution (development source)
 

@@ -5,6 +5,7 @@ import csv
 from datetime import timedelta
 import hashlib
 import importlib
+import importlib.util
 import io
 import json
 import os
@@ -30,6 +31,7 @@ def require(condition, message):
 
 LINUX_PROJECT_TOOLS=frozenset({
     "rentgen_project_head","rentgen_publication_receipt","rentgen_capture",
+    "rentgen_generation_attribution","rentgen_generation_verify",
     "rentgen_source_list","rentgen_source_read","rentgen_snapshot_diff",
     "rentgen_graph_resolve","rentgen_impact",
     "rentgen_draft_get","rentgen_draft_list","rentgen_draft_history",
@@ -772,6 +774,21 @@ async def cancelled(config):
                 worker_drained=True,no_publication=True,scope="deliberately paused pre-CAS child; late cancellation can lose to commit")
 
 
+async def generation_diagnostics(config):
+    fixture=project(config,"sdk-generations")
+    async with server(config,fixture) as (session,_):
+        head=await call(session,"rentgen_project_head",dict(project_id=fixture["project_id"]))
+        first=await call(session,"rentgen_capture",dict(project_id=fixture["project_id"],operation_id=str(uuid4()),expected_head=head))
+        (fixture["source"]/CALLEE).write_bytes(IMAGES[CALLEE].replace(b"Return 1",b"Return 2"))
+        second=await call(session,"rentgen_capture",dict(project_id=fixture["project_id"],operation_id=str(uuid4()),expected_head=first["head"]))
+    fixture["source"].rename(fixture["source"].with_name("removed-live-source"))
+    spec=importlib.util.spec_from_file_location("generation_probe",Path(__file__).with_name("generation_delivery_probe.py"))
+    probe=importlib.util.module_from_spec(spec);spec.loader.exec_module(probe)
+    async with server(config,fixture,scanner=False) as (session,_):
+        require_linux_project_tools([tool.name for tool in (await session.list_tools()).tools])
+        return await probe.verify_mcp(session,fixture["state"].parent,fixture["source"],first,second)
+
+
 def main():
     config=json.loads(read(Path(sys.argv[1]),8*1024**2))
     prefix=Path(config["prefix"]).resolve();site=Path(config["site"]).resolve()
@@ -786,13 +803,14 @@ def main():
     wrappers={name:read(wrapper_root/name,65536) for name in config["expected"]["scripts"]}
     audit_before=audit(prefix,site,config["expected"],config["baseline"],wrappers)
     imports=check_imports(site,config["expected"])
-    async def scenario():return await happy(config),await cancelled(config),await snapshot_diff(config)
-    history,cancellation,comparison=asyncio.run(scenario())
+    async def scenario():return await happy(config),await cancelled(config),await snapshot_diff(config),await generation_diagnostics(config)
+    history,cancellation,comparison,generations=asyncio.run(scenario())
     check_imports(site,config["expected"])
     audit_after=audit(prefix,site,config["expected"],config["baseline"],wrappers)
     require(audit_before==audit_after,"Installed bytes changed during SDK scenarios")
     print(json.dumps(dict(schema=1,accepted=True,scope="actual installed offline-input SDK synthetic fixture only",
         inventory=audit_after,imports=imports,history=history,cancellation=cancellation,snapshot_diff=comparison,
+        mcp_generations=generations,
         no_source_checkout_imports=True,old_bytecode_not_loaded=True)))
 
 

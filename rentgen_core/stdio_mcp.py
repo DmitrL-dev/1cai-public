@@ -25,7 +25,7 @@ from .publication import capture_and_publish
 from .snapshots import ProjectHead
 from .source_paths import validate_source_path
 from .owner_report_store import MAX_FRESHNESS_SECONDS
-from . import mcp_drafts
+from . import mcp_drafts, mcp_generations
 
 MAX_FRAME_BYTES = 65536
 MAX_SOURCE_BYTES = 1024 * 1024
@@ -52,6 +52,8 @@ _UUID = {
     "maxLength": 36,
 }
 _HASH = {"type": "string", "pattern": r"^[0-9a-f]{64}$", "maxLength": 64}
+_GENERATION = {"type": "string", "maxLength": 76,
+    "pattern": r"^generations/(?:[0-9a-f]{64}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$"}
 _SNAPSHOT = _object({"project_id": _UUID, "snapshot_id": _HASH, "manifest_hash": _HASH})
 _HEAD = _object(
     {
@@ -164,6 +166,7 @@ TOOL_SCHEMAS = {
     ),
     "rentgen_project_list": _object({}),
     "rentgen_project_head": _object({"project_id": _UUID}),
+    **{name: _object({"project_id": _UUID, "generation_relpath": _GENERATION}) for name in mcp_generations.TOOLS},
     "rentgen_publication_receipt": _object(
         {"project_id": _UUID, "operation_id": _UUID}
     ),
@@ -290,6 +293,8 @@ _DESCRIPTIONS = {
     "rentgen_capabilities": "Report OS adapter support only; this does not grant project permissions or assert installed native dependencies.",
     "rentgen_project_list": "List authorized project IDs and labels; no source reads.",
     "rentgen_project_head": "Read the current project head without opening a generation.",
+    "rentgen_generation_attribution": "Attribute one explicit generation locator in project state; does not inspect files or permit removal.",
+    "rentgen_generation_verify": "Verify one explicit catalog-referenced generation under bounded retained reads; observation only, no cleanup lease.",
     "rentgen_publication_receipt": "Reconcile one capture operation using its durable receipt.",
     "rentgen_capture": "Capture and publish against the original expected head. Cancellation is not rollback; reconcile the operation receipt.",
     "rentgen_source_list": "Find retained sources across an explicit snapshot by path substring, file kind and exact layer; filters apply before pagination.",
@@ -1050,7 +1055,9 @@ def _execute(
     try:
         prepared = validate_arguments(name, arguments, scope=scope)
         require_operation(name)
-        if name == _DIFF_TOOL:
+        if name in mcp_generations.TOOLS:
+            return mcp_generations.execute(runtime, principal, name, arguments, request_id, protocol_request_id)
+        elif name == _DIFF_TOOL:
             from .snapshot_diff import compare_retained_pair
 
             operation = compare_retained_pair(
@@ -1509,6 +1516,10 @@ class _GuardedOutput:
             and "snapshot_diff" in payload["result"] for payload in payloads
         )
         diff_scope = type(scope) is dict and scope.get("family") == "diff"
+        generation_payload = any(mcp_generations.protected_payload(payload) for payload in payloads)
+        if generation_payload or type(scope) is dict and scope.get("family") == "generation":
+            raw = mcp_generations.guarded_bytes(document, result, scope, self._runtime, self._principal, self._bytes, self._error)
+            return self._write_bytes(raw, text)
         if diff_payload or diff_scope:
             raw = self._diff_bytes(document, result, scope)
             return self._write_bytes(raw, text)
