@@ -9,6 +9,7 @@ import configparser
 from contextlib import closing
 from email.parser import BytesParser
 import hashlib
+import importlib.util
 import io
 import json
 import os
@@ -530,6 +531,13 @@ print(json.dumps({'version':importlib.metadata.version('rentgen-core'),
             and cli("publication-receipt", *selected, "--operation-id", op2) == second
             and state_records(state_root / "state.sqlite3", project)[0] == second_binding["counts"], "Replay/refusal changed publication state")
     require(inspect_generation(state_root, project, first, IMAGES, scanner_sha256)["manifest_sha256"] == first_binding["manifest_sha256"], "Replay changed historical generation")
+    probe_spec = importlib.util.spec_from_file_location("generation_delivery_probe",
+        Path(__file__).with_name("generation_delivery_probe.py"))
+    probe = importlib.util.module_from_spec(probe_spec)
+    probe_spec.loader.exec_module(probe)
+    generation_diagnostics = probe.verify(
+        lambda name, *args, **kwargs: cli(name, *selected, *args, **kwargs),
+        state_root, source, first, second)
     receipt = dict(schema=1, scope="actual Linux/amd64 installed CLI synthetic capture/restart/history/replay fixture only",
         source_commit=source_commit, source_tree=source_tree, version=expected_version,
         wheel=dict(sha256=sha(wheel_raw), size_bytes=len(wheel_raw), product_files=len(product), product_source_inventory_sha256=product_digest),
@@ -541,6 +549,7 @@ print(json.dumps({'version':importlib.metadata.version('rentgen-core'),
             original_fixture_sha256=sha(canonical({name: sha(raw) for name, raw in sorted(IMAGES.items())})),
             changed_fixture_sha256=sha(canonical({name: sha(raw) for name, raw in sorted(changed.items())}))),
         first=first_binding, second=second_binding, original_graph=first_graph, checks=checks,
+        generation_diagnostics=generation_diagnostics,
         outcomes=dict(capture=True, fresh_process_reads=True, historical_snapshot=True,
             live_mutation_independent=True, replay_without_source_or_scanner=True,
             forged_ref_refused=True, stale_operation_refused=True, stale_head_refused=True,

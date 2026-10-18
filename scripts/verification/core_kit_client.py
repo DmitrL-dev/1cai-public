@@ -64,15 +64,23 @@ async def main():
     )
     module.write_bytes(original)
 
-    def command(name, *args):
+    def command(name, *args, expected=0, error_code=None, isolated=False):
+        executable = [sys.executable, "-I", "-m", "rentgen_core"] if isolated else [cli]
         result = subprocess.run(
-            [cli, name, "--registry", str(registry), *map(str, args)],
+            [*executable, name, "--registry", str(registry), *map(str, args)],
             capture_output=True,
             encoding="utf-8",
             timeout=30,
         )
-        assert result.returncode == 0, result.stdout + result.stderr
-        return json.loads(result.stdout)["result"]
+        assert result.returncode == expected, result.stdout + result.stderr
+        if isolated:
+            assert not result.stderr, result.stderr
+        value = json.loads(result.stdout)
+        if error_code is not None:
+            assert set(value) == {"error"} and value["error"]["code"] == error_code
+            return None
+        assert set(value) == {"result", "request_id"}
+        return value["result"]
 
     command("registry-init")
     project = command(
@@ -331,6 +339,14 @@ async def main():
                 retained["draft"]["text"].encode("utf-8")
                 == expected[: retained["draft"]["size_bytes"]]
             )
+    source.rename(working / "live-source-after-two")
+    probe_path = Path(__file__).with_name("generation_delivery_probe.py")
+    probe_spec = importlib.util.spec_from_file_location("generation_delivery_probe", probe_path)
+    probe = importlib.util.module_from_spec(probe_spec)
+    probe_spec.loader.exec_module(probe)
+    generation_diagnostics = probe.verify(
+        lambda name, *args, **kwargs: command(name, *selector, *args, isolated=True, **kwargs),
+        working / "state", source, captured, newer)
     print(
         json.dumps(
             {
@@ -347,6 +363,7 @@ async def main():
                 "draft_id": draft_id,
                 "first_snapshot": captured["snapshot"],
                 "second_snapshot": newer["snapshot"],
+                "generation_diagnostics": generation_diagnostics,
                 "origins": {m.__name__: m.__file__ for m in modules},
             }
         )

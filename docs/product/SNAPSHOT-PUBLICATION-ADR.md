@@ -158,6 +158,33 @@ uses actual Windows/Linux capture, historical/reused and legacy locators, damage
 catalog drift, CLI revocation and a fresh CLI process without live sources.
 Native skips on another host are not native or installed-release acceptance.
 
+## Installed CLI generation diagnostics (development gate)
+
+The Windows offline-kit client and both Linux installed-wheel capture verifiers
+run `generation_delivery_probe.py` against two actual scanner-built generations.
+Every diagnostic CLI call uses a fresh installed Python process with `-I`, outside
+the source checkout. The live source is absent and the first generation is
+historical. The oracle independently reads catalog rows, manifest hashes and
+the complete logical SQLite state with the standard library; it imports no
+product code.
+
+The gate requires correct attribution and physical verification of both exact
+locators, plus `GENERATION_UNREFERENCED` for an absent locator and an owned
+unregistered directory. Seven controlled corruptions of the historical generation
+(source, derived input, graph, manifest, extra file, SQLite sidecar, missing
+manifest) must return `SNAPSHOT_CORRUPT`, while state-only attribution remains
+unchanged. After each restoration the installed verifier must succeed again.
+Final checks compare head, both receipts, every logical SQLite row and both
+generations' file/directory inventories and content hashes. No cleanup is granted.
+
+Successful receipts contain `generation_diagnostics`: under `workflow` in the
+Windows offline-install `acceptance.json`, and at top level in each Linux
+installed-capture `acceptance.json`. The enclosing artifact supplies the exact
+wheel/source binding. A configured gate or a local source-CLI rehearsal is not a
+passed installed receipt; each candidate requires fresh CI and inspection of
+these artifacts. This bounded synthetic scenario adds no MCP generation tools,
+release publication, 1C/EDT, lifecycle/exclusivity or full-product qualification.
+
 ## Read-only generation attribution (development source)
 
 `get_generation_attribution(ctx, generation_relpath)` and the Windows/Linux CLI
