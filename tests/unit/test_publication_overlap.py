@@ -2,8 +2,10 @@
 import importlib.util
 import json
 import sqlite3
+import subprocess
 import sys
 from types import SimpleNamespace
+import venv
 
 import pytest
 
@@ -31,7 +33,7 @@ def test_two_live_native_publishers(tmp_path, scanner, mode, winner):
 def test_marker_refuses_unbound_or_unreadable_publisher(tmp_path, fault):
     expected = dict(nonce="nonce", operation_id="operation", expected_head={"revision": 0},
         phase="before_state_transaction")
-    value = dict(pid=123, **expected)
+    value = dict(pid=123, parent_pid=456, **expected)
     child = SimpleNamespace(pid=123, poll=lambda: 2 if fault == "exited" else None)
     if fault in value:
         value[fault] = "wrong"
@@ -40,6 +42,42 @@ def test_marker_refuses_unbound_or_unreadable_publisher(tmp_path, fault):
     with pytest.raises((ValueError, json.JSONDecodeError)):
         probe.wait_marker(child, tmp_path, expected, timeout=.05)
     assert not (tmp_path / "release").exists()
+
+
+@pytest.mark.parametrize("windows,pid,parent,accepted", [
+    (False, 123, 456, True), (True, 123, 456, True),
+    (True, 789, 123, True), (False, 789, 123, False), (True, 789, 456, False),
+])
+def test_marker_process_identity_requires_owned_launcher(monkeypatch, windows, pid, parent, accepted):
+    monkeypatch.setattr(probe, "_WINDOWS_LAUNCHERS", windows)
+    assert probe.process_binding(dict(pid=pid, parent_pid=parent), 123) is accepted
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Actual Windows venv redirector")
+def test_actual_windows_venv_redirector_binds_interpreter_marker(tmp_path):
+    environment = tmp_path / "environment"
+    venv.EnvBuilder(with_pip=False).create(environment)
+    code = """
+import json, os, pathlib, sys, time
+root = pathlib.Path(sys.argv[1])
+temporary = root / 'ready.tmp'
+temporary.write_text(json.dumps(dict(pid=os.getpid(), parent_pid=os.getppid(), nonce='owned')), encoding='utf-8')
+temporary.replace(root / 'ready.json')
+end = time.monotonic() + 20
+while not (root / 'release').exists():
+    if time.monotonic() >= end: raise RuntimeError('owned marker expired')
+    time.sleep(.01)
+"""
+    child = subprocess.Popen([str(environment / "Scripts/python.exe"), "-I", "-c", code, str(tmp_path)],
+        stdin=subprocess.DEVNULL)
+    try:
+        marker = probe.wait_marker(child, tmp_path, {"nonce": "owned"}, timeout=10)
+        assert marker["pid"] != child.pid
+        assert marker["parent_pid"] == marker["launcher_pid"] == child.pid
+    finally:
+        (tmp_path / "release").touch()
+        child.wait(timeout=25)
+    assert child.returncode == 0
 
 
 def test_state_oracle_detects_same_count_mutation(tmp_path):

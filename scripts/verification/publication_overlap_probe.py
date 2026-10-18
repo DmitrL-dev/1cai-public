@@ -17,6 +17,7 @@ TABLES = ("snapshots", "publication_receipts", "snapshot_events", "snapshot_outb
 MODES = ("same-operation-same-content", "different-operations-same-content", "same-operation-different-content")
 CASES = tuple((mode, winner) for mode in MODES for winner in (0, 1))
 IMAGE = b"Function Value() Export\nReturn 1;\nEndFunction\n"
+_WINDOWS_LAUNCHERS = os.name == "nt"
 
 
 def require(value, message):
@@ -67,7 +68,7 @@ def worker(config_path):
             return
         require(not fired and values["ctx"].project_id == config["head"]["project_id"], "Unexpected second publication boundary")
         fired = True
-        save(directory / "ready.json", dict(pid=os.getpid(), nonce=config["nonce"],
+        save(directory / "ready.json", dict(pid=os.getpid(), parent_pid=os.getppid(), nonce=config["nonce"],
             phase=name, operation_id=config["operation"], expected_head=config["head"],
             catalog=asdict(values["catalog"])))
         end = time.monotonic() + 75
@@ -76,8 +77,16 @@ def worker(config_path):
             time.sleep(.01)
     implementation._boundary = boundary
     code = cli.main(config["arguments"])
-    save(directory / "drained.json", dict(pid=os.getpid(), nonce=config["nonce"], exit=code))
+    save(directory / "drained.json", dict(pid=os.getpid(), parent_pid=os.getppid(), nonce=config["nonce"], exit=code))
     return code
+
+
+def process_binding(value, launcher_pid):
+    # A Windows venv executable is a waiting redirector. The fixed owned worker
+    # reports both OS identities; this never grants authority to kill that PID.
+    return (type(value) is dict and all(type(value.get(key)) is int and value[key] > 0
+        for key in ("pid", "parent_pid")) and (value["pid"] == launcher_pid
+        or (_WINDOWS_LAUNCHERS and value["parent_pid"] == launcher_pid)))
 
 
 def wait_marker(child, directory, expected, *, timeout=30):
@@ -94,17 +103,19 @@ def wait_marker(child, directory, expected, *, timeout=30):
                 raise
             value = None
         if value is not None:
-            require(type(value) is dict and value.get("pid") == child.pid
+            require(process_binding(value, child.pid)
                 and all(value.get(key) == item for key, item in expected.items()), "Publisher marker binding differs")
             require(child.poll() is None, "Publisher exited while supplying its marker")
+            value["launcher_pid"] = child.pid
             return value
         time.sleep(.01)
 
 
-def finish(child, directory, config):
+def finish(child, directory, config, marker):
     child.wait(timeout=30)
     drained = json.loads((directory / "drained.json").read_text(encoding="utf-8"))
-    require(drained == dict(pid=child.pid, nonce=config["nonce"], exit=child.returncode), "Publisher did not drain normally")
+    require(drained == dict(pid=marker["pid"], parent_pid=marker["parent_pid"],
+        nonce=config["nonce"], exit=child.returncode), "Publisher did not drain normally")
     raw, error = (directory / "stdout").read_bytes(), (directory / "stderr").read_bytes()
     require(len(raw) <= 128 * 1024 and len(error) <= 32 * 1024, "Publisher output exceeded fixture bounds")
     value = json.loads(raw)
@@ -204,6 +215,7 @@ def verify(python, scanner, scanner_sha256, workspace, *, isolated=True, checkou
                 markers.append(marker(second, 1))
                 children = [first, second]
                 require(first.pid != second.pid and all(child.poll() is None for child in children), "Publishers did not overlap")
+                require(markers[0]["pid"] != markers[1]["pid"], "Publishers share an interpreter identity")
                 catalogs = [value["catalog"] for value in markers]
                 roots = [state.parent / value["generation_relpath"] for value in catalogs]
                 require(roots[0] != roots[1] and set((state.parent / "generations").iterdir()) == set(roots), "Attempts are not distinct")
@@ -216,7 +228,7 @@ def verify(python, scanner, scanner_sha256, workspace, *, isolated=True, checkou
                 require(state_view(state) == initial, "A paused publisher made its attempt visible")
                 loser = 1 - winner
                 (workers[winner] / "release").touch()
-                won = finish(children[winner], workers[winner], configs[winner])
+                won = finish(children[winner], workers[winner], configs[winner], markers[winner])
                 require(won["exit"] == 0 and won["result"]["snapshot"] == catalogs[winner]["snapshot"], "Selected winner did not publish")
                 published = state_view(state)
                 require(published["counts"] == dict.fromkeys(TABLES, 1)
@@ -225,7 +237,7 @@ def verify(python, scanner, scanner_sha256, workspace, *, isolated=True, checkou
                     and published["operations"] == [operations[winner]], "Winner did not publish one exact atomic unit")
                 require(children[loser].poll() is None, "Losing publisher escaped its barrier")
                 (workers[loser] / "release").touch()
-                lost = finish(children[loser], workers[loser], configs[loser])
+                lost = finish(children[loser], workers[loser], configs[loser], markers[loser])
                 if mode == "same-operation-same-content":
                     require(lost == won, "Concurrent exact operation did not replay the winning receipt")
                 else:

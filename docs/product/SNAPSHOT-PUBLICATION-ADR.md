@@ -230,6 +230,9 @@ pause at the private `before_state_transaction` test boundary before either writ
 The Linux boundary follows the last head/configuration gate check. Both processes
 are live at the barrier, with separately bound PID/nonce/operation/head markers and
 different physical generation UUIDs. This adds no public barrier or product option.
+Windows venv markers distinguish the owned launcher PID from its interpreter child
+PID and parent PID; normal drain must retain the same interpreter identity. The
+fixture only terminates its own launch process tree, never a PID supplied by a marker.
 
 Three scenarios run with each possible winner (six cases): an identical operation
 and content replays the exact winner receipt; different operations with the same
