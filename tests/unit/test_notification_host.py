@@ -132,6 +132,14 @@ def test_stop_during_transport_retains_acceptance_and_restart_only_recovers_ack(
     adapter._sender = stopping_sender
     assert host.run() == 0 and len(calls) == 1
     assert len(outbox.peek()) == 1 and journal.records()[0].state == "accepted"
+
+    # A host stopped before recovery must not ack or resend; a later host owns it.
+    paused = make_host(setup_delivery)
+    paused.stop()
+    assert paused.run() == 0
+    assert len(calls) == 1 and len(outbox.peek()) == 1
+    assert journal.records()[0].state == "accepted"
+
     adapter._sender = sender
     restarted = make_host(setup_delivery)
     assert restarted.run() == 1 and len(calls) == 1 and outbox.peek() == []

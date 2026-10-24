@@ -280,3 +280,117 @@ def test_revocation_before_send_does_not_consume_attempt(delivery):
 def test_retry_policy_bounds(options):
     with pytest.raises(CoreError):
         RetryPolicy(**options)
+
+
+def test_interrupted_last_attempt_is_terminal_unknown_until_explicit_rearm(
+    delivery, monkeypatch
+):
+    outbox, journal, now, calls, statuses, run = delivery
+    policy = RetryPolicy(max_attempts=1, base_delay_seconds=10, max_delay_seconds=10)
+    original = WebhookAdapter.deliver
+
+    def interrupted(*args):
+        raise SystemExit("simulated process loss")
+
+    monkeypatch.setattr(WebhookAdapter, "deliver", interrupted)
+    with pytest.raises(SystemExit):
+        run(retry_policy=policy)
+    assert journal.records()[0].state.value == "sending"
+    monkeypatch.setattr(WebhookAdapter, "deliver", original)
+
+    # The unknown last attempt consumes the whole budget; reconciliation must
+    # terminalize it and must not call the transport again.
+    assert run(retry_policy=policy) == ()
+    record = journal.records()[0]
+    assert (record.state.value, record.attempts, record.last_error) == (
+        "terminal",
+        1,
+        "OUTCOME_UNKNOWN",
+    )
+    assert calls == [] and len(outbox.peek()) == 1
+
+    now[0] += timedelta(seconds=10)
+    journal.rearm(1, clock=lambda: now[0])
+    statuses[0] = 204
+    accepted = run(retry_policy=policy)[0]
+    assert accepted.status.value == "accepted" and accepted.attempt == 1
+    assert outbox.peek() == [] and len(calls) == 1
+
+
+def test_lowered_policy_terminalizes_pending_without_an_extra_attempt(delivery):
+    outbox, journal, now, calls, statuses, run = delivery
+    first = run()[0]
+    assert first.status.value == "retryable" and first.attempt == 1
+
+    lowered = RetryPolicy(max_attempts=1, base_delay_seconds=10, max_delay_seconds=20)
+    now[0] += timedelta(seconds=10)
+    assert run(retry_policy=lowered) == ()
+    record = journal.records()[0]
+    assert (record.state.value, record.attempts, record.last_error) == (
+        "terminal",
+        1,
+        "HTTP_SERVER_ERROR",
+    )
+    assert len(calls) == 1 and len(outbox.peek()) == 1
+
+    journal.rearm(1, clock=lambda: now[0])
+    statuses[0] = 204
+    assert run(retry_policy=lowered)[0].attempt == 1
+    assert len(calls) == 2 and outbox.peek() == []
+
+
+def test_clock_rollback_beyond_max_delay_makes_pending_retry_due(delivery):
+    outbox, journal, now, calls, statuses, run = delivery
+    first = run()[0]
+    assert first.next_attempt_at == (now[0] + timedelta(seconds=10)).isoformat()
+
+    now[0] -= timedelta(seconds=100)
+    result = run()[0]
+    assert result.attempt == 2 and len(calls) == 2
+    record = journal.records()[0]
+    assert record.state.value == "pending"
+    assert record.next_attempt_at == (now[0] + timedelta(seconds=20)).isoformat()
+
+
+def test_changed_payload_after_acceptance_conflicts_before_ack(delivery, monkeypatch):
+    outbox, journal, now, calls, statuses, run = delivery
+    statuses[0] = 204
+    original = outbox.ack
+
+    def fail(*args):
+        raise CoreError("LOCAL_ACK_FAILURE", "ack failed")
+
+    monkeypatch.setattr(outbox, "ack", fail)
+    with pytest.raises(CoreError) as failed:
+        run()
+    assert failed.value.code == "LOCAL_ACK_FAILURE"
+    assert journal.records()[0].state.value == "accepted"
+    assert len(outbox.peek()) == 1
+    monkeypatch.setattr(outbox, "ack", original)
+
+    document = json.loads(outbox.path.read_text())
+    document["events"][0]["event"]["private"] = "changed"
+    outbox.path.write_text(json.dumps(document))
+    with pytest.raises(CoreError) as caught:
+        run()
+    assert caught.value.code == "NOTIFICATION_JOURNAL_CONFLICT"
+    assert len(calls) == 1
+    assert journal.records()[0].state.value == "accepted"
+    assert len(outbox.peek()) == 1
+
+
+def test_rearm_refuses_missing_or_pending_entries(delivery):
+    outbox, journal, now, calls, statuses, run = delivery
+    assert not journal.path.exists()
+    with pytest.raises(CoreError) as missing:
+        journal.rearm(1, clock=lambda: now[0])
+    assert missing.value.code == "NOTIFICATION_DELIVERY_INVALID"
+    assert not journal.path.exists()
+
+    run()
+    before = journal.path.read_bytes()
+    with pytest.raises(CoreError) as pending:
+        journal.rearm(1, clock=lambda: now[0])
+    assert pending.value.code == "NOTIFICATION_DELIVERY_INVALID"
+    assert journal.path.read_bytes() == before
+    assert journal.records()[0].state.value == "pending"
