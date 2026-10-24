@@ -349,6 +349,44 @@ def test_commit_failure_never_acknowledges_and_retry_is_safe(
     assert instance.count() == 1
 
 
+@pytest.mark.parametrize("phase", ["before", "after"])
+def test_initialization_commit_failure_is_unavailable_and_retry_discovers_state(
+    tmp_path, monkeypatch, phase
+):
+    cls, _ = api()
+    instance = cls(tmp_path / "receiver.sqlite3", bearer_token="test-secret-123")
+    connect = sqlite3.connect
+
+    class FailedCommit(sqlite3.Connection):
+        def commit(self):
+            if phase == "after":
+                super().commit()
+            raise sqlite3.OperationalError("commit outcome unavailable")
+
+    calls = {"n": 0}
+
+    def failing_connect(*args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return connect(*args, **kwargs, factory=FailedCommit)
+        return connect(*args, **kwargs)
+
+    monkeypatch.setattr(sqlite3, "connect", failing_connect)
+    with pytest.raises(CoreError) as caught:
+        instance.initialize()
+    assert caught.value.code == "NOTIFICATION_RECEIVER_UNAVAILABLE"
+    with pytest.raises(CoreError) as caught:
+        instance.accept(headers(), body(notification()))
+    assert caught.value.code == "NOTIFICATION_RECEIVER_NOT_INITIALIZED"
+    if phase == "after":
+        instance.initialize()
+        assert instance.count() == 0
+    else:
+        with pytest.raises(CoreError) as caught:
+            instance.initialize()
+        assert caught.value.code == "NOTIFICATION_RECEIVER_RECOVERY_REQUIRED"
+
+
 def test_independent_receivers_serialize_conflicting_payloads(tmp_path):
     first = receiver(tmp_path)
     second = receiver(tmp_path)
@@ -534,3 +572,31 @@ def test_empty_preexisting_database_is_not_silently_initialized(tmp_path):
         instance.initialize()
     assert caught.value.code == "NOTIFICATION_RECEIVER_RECOVERY_REQUIRED"
     assert path.read_bytes() == b""
+
+
+@pytest.mark.parametrize("variant", ["parent", "database"])
+def test_symlinked_parent_or_database_is_rejected_on_posix(tmp_path, variant):
+    if os.name == "nt":
+        pytest.skip("POSIX symlink contract")
+    cls, _ = api()
+    target = tmp_path / "owned"
+    target.mkdir()
+    if variant == "parent":
+        path = tmp_path / "redirected"
+        path.symlink_to(target, target_is_directory=True)
+        database = path / "receiver.sqlite3"
+        before = list(target.iterdir())
+    else:
+        real = target / "foreign.sqlite3"
+        real.write_bytes(b"foreign state")
+        database = tmp_path / "receiver.sqlite3"
+        database.symlink_to(real)
+        before = real.read_bytes()
+    instance = cls(database, bearer_token="test-secret-123")
+    with pytest.raises(CoreError) as caught:
+        instance.initialize()
+    assert caught.value.code == "NOTIFICATION_RECEIVER_CONFLICT"
+    if variant == "parent":
+        assert list(target.iterdir()) == before
+    else:
+        assert real.read_bytes() == before

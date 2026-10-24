@@ -305,7 +305,16 @@ class NotificationReceiver:
                         "INSERT INTO receiver_meta(schema) VALUES (?)", (SCHEMA,)
                     )
                 self._validate_state(connection)
-                connection.commit()
+                try:
+                    connection.commit()
+                except (OSError, sqlite3.Error) as exc:
+                    # The transaction may have committed before the error. The
+                    # next initialize() discovers the durable outcome; do not
+                    # demand operator recovery for an uncertain commit.
+                    raise _error(
+                        "NOTIFICATION_RECEIVER_UNAVAILABLE",
+                        "Receiver database commit is unavailable",
+                    ) from exc
         except CoreError:
             raise
         except (OSError, sqlite3.Error) as exc:

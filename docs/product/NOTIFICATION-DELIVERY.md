@@ -129,8 +129,11 @@ the journal is not a tamper-proof or cross-account authorization boundary.
 Tests use an injected transport and real local files. They cover backoff,
 reopen, revocation, ack loss, a controlled concurrent-consumer interleaving,
 OS-lock exclusion and a real child process exiting inside transport after the
-attempt write. These are source contracts, not live endpoint or power-loss
-qualification.
+attempt write. They also pin an interrupted last allowed attempt becoming
+terminal `OUTCOME_UNKNOWN` until explicit rearm, lowered-policy terminalization,
+a clock rollback beyond the maximum delay making a pending retry due, and a
+changed payload after durable acceptance conflicting before ack. These are source
+contracts, not live endpoint or power-loss qualification.
 
 ## Explicit foreground host in current sources
 

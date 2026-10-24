@@ -132,18 +132,20 @@ Storage/configuration failures raise `CoreError`, rather than returning a
 `NOTIFICATION_RECEIVER_CONFLICT` (unsafe path),
 `NOTIFICATION_RECEIVER_RECOVERY_REQUIRED` (invalid state),
 `NOTIFICATION_RECEIVER_LIMIT`, or `NOTIFICATION_RECEIVER_UNAVAILABLE` (including
-busy state and failed/uncertain commits). The host must never turn these errors
-into 2xx; unavailable state should be retryable, with fixed diagnostics and no
-raw exception chains in HTTP responses. A retry after an uncertain commit safely
-discovers whether the receipt was persisted. The immutable result contains only
-status, fixed code, HTTP status and optional validated key/digest.
+busy state and failed/uncertain receipt or initialization commits). The host must
+never turn these errors into 2xx; unavailable state should be retryable, with fixed
+diagnostics and no raw exception chains in HTTP responses. A retry after an
+uncertain commit safely discovers whether the receipt or schema was persisted.
+The immutable result contains only status, fixed code, HTTP status and optional
+validated key/digest.
 
 Local tests cover malformed requests/state, linked paths, concurrent retries
-and conflicts, commit failures before/after commit, and an injected
-outbox → sender → receiver round trip with a lost response followed by reopening
-the database. The outbox remains pending after that lost response and is
-acknowledged only after the repeated request receives 204. ASGI contract tests
-cover wire headers, framing, disconnects and fail-closed startup. A separate
+and conflicts, commit failures before/after commit during both receipt acceptance
+and initialization, and an injected outbox → sender → receiver round trip with a
+lost response followed by reopening the database. The outbox remains pending
+after that lost response and is acknowledged only after the repeated request
+receives 204. ASGI contract tests cover wire headers, framing, disconnects,
+fail-closed startup and post-shutdown readiness. A separate
 loopback test starts Uvicorn/httptools with a generated, trusted TLS certificate
 and uses the existing `WebhookAdapter` to send, restart the receiver and retry.
 It also checks that plain HTTP and an untrusted certificate create no receipt,

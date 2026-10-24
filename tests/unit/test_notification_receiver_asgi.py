@@ -419,3 +419,24 @@ def test_unexpected_receiver_error_does_not_escape_http_boundary(tmp_path, monke
         await _with_startup(app, exercise)
 
     asyncio.run(scenario())
+
+
+def test_shutdown_revokes_readiness_without_writing_receipts(tmp_path):
+    from rentgen_core.notification_receiver_asgi import NotificationReceiverASGI
+
+    receiver = NotificationReceiver(tmp_path / "receiver.sqlite3", bearer_token=TOKEN)
+    app = NotificationReceiverASGI(receiver)
+
+    async def scenario():
+        async def exercise():
+            body = _body()
+            assert (await _call(app, _scope(body), body))[0]["status"] == 204
+            assert receiver.count() == 1
+
+        await _with_startup(app, exercise)
+        body = _body()
+        response = await _call(app, _scope(body), body)
+        assert response[0]["status"] == 503
+        assert receiver.count() == 1
+
+    asyncio.run(scenario())
